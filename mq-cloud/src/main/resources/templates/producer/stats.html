@@ -1,0 +1,84 @@
+<!-- 	准备搜索部分 -->
+<div class="row">
+	<div class="col-md-12">
+		<div style="float:left;margin:10px 5px;"><h5><b>${RequestParameters.producer}</b>客户端耗时统计图</h5></div>
+		<div id="pstats_search" style="float:right;margin:10px 0px;"></div>
+	</div>
+</div>
+<!-- 	准备曲线图 -->
+<div id="pstats_lineChart"><center>暂无数据</center></div>
+<script>
+var statMap;
+$(function() {
+	lineChart("pstats", function (){
+		$("#producerGroupStats").val("${RequestParameters.producer}");
+	}, function chartToolTip(chart){
+		if(!chart){
+			statMap = null;
+			return;
+		}
+		if(chart.dataMap){
+			if(!statMap){
+				statMap = chart.dataMap;
+			} else {
+				for(var k in chart.dataMap){
+					statMap[k] = chart.dataMap[k];
+				}
+			}
+		}
+		chart.tooltip = {
+				formatter: function () {
+					var s = '';
+					s += "<table style='background-color:white;'><thead><tr>";
+					s += "<td>时间</td>";
+					$.each(this.points, function () {
+						s += "<td><font color='"+this.series.color+"'>" + this.series.name + "</font></td>";
+					});
+					s += "</tr></thead><tr>";
+					s += "<td>"+this.x+"</td>";
+					$.each(this.points, function () {
+						s += "<td><font color='"+this.series.color+"'>";
+						s += this.y;
+						if(this.series.name == "调用量"){
+							s += "次";
+						} else {
+							s += "ms";
+						}
+						s += "</font></td>";
+					});
+					s += "</tr></table>";
+					var statId = this.points[this.points.length - 1].point.id;
+					if(statId){
+						var stats = statMap[statId];
+						if(stats){
+							s += "<table><thead><tr><td>broker</td><td>count</td><td>max</td><td>avg</td></tr></thead>";
+							for(var i in stats){
+								var stat = stats[i];
+			            		s += "<tr>";
+			            		s += "<td>" + stat.broker + "</td>";
+			            		s += "<td>" + stat.count + "</td>";
+			            		s += "<td>" + stat.max + "ms</td>";
+			            		s += "<td>" + stat.avg + "ms</td>";
+			            		s += "</tr>";
+			            		if(stat.exceptionJson){
+			            			s += "<tr>";
+									for(var k in stat.exceptionJson){
+										s += "<td style='text-align:center;color:red;' colspan=4>" + k +":"+ stat.exceptionJson[k] + "</td>";
+									}
+									s += "</tr>";
+								}
+							}
+							s += "</table>";
+						}
+					}
+					return s;
+				},
+				backgroundColor: '#FFF',
+				useHTML: true,
+				shared: true
+			};
+		// 使用grafana click效果
+		grafanaClick(chart);
+	});
+});
+</script>

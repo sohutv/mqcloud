@@ -1,0 +1,94 @@
+<div id="registerModal" class="modal fade" tabindex="-1" data-width="400" data-backdrop="static" data-keyboard="false">
+	<div class="modal-dialog">
+		<div class="modal-content">
+
+			<div class="modal-header">
+				<h4 class="modal-title">您好，欢迎使用MQCloud</h4>
+			</div>
+
+
+			<div class="modal-body">
+				<!-- 用户信息补全 -->
+				<form class="form-horizontal form-bordered form-row-stripped" id="registerForm">
+					<div class="row">
+						<div class="col-md-12">
+							<div class="form-body">
+								<div class="form-group">
+									<label class="control-label col-md-4"> 邮箱: </label>
+									<div class="col-md-5">
+										<input type="text" name="email" id="email"
+											placeholder="邮箱"
+											class="form-control" />
+									</div>
+								</div>
+								<div class="form-group">
+									<label class="control-label col-md-4"> 姓名: </label>
+									<div class="col-md-5">
+										<input type="text" name="name" id="username"
+											value="" placeholder="姓名"
+											class="form-control" />
+									</div>
+								</div>
+								<div class="form-group">
+									<label class="control-label col-md-4"> 手机: </label>
+									<div class="col-md-5">
+										<input type="text" name="mobile"
+											value="" placeholder="手机"
+											class="form-control" />
+									</div>
+								</div>
+								<div class="form-group">
+									<label class="control-label col-md-4"> 密码: </label>
+									<div class="col-md-5">
+										<input type="password" name="password" id="password"
+											value="" placeholder="密码"
+											class="form-control" />
+									</div>
+								</div>
+								<div class="form-group">
+									<label class="control-label col-md-4"> 确认密码: </label>
+									<div class="col-md-5">
+										<input type="password" id="password2"
+											value="" placeholder="密码"
+											class="form-control" />
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-primary" onclick="register()">注册</button>
+				</div>
+			</form>
+		</div>
+	</div>
+</div>
+<script>
+$(function(){
+	$("#registerModal").modal("show");
+})
+function register(){
+	if(!$("#email").val()) {
+		alert("邮箱不能为空");
+		return;
+	}
+	if(!$("#password").val() || $("#password").val() != $("#password2").val()) {
+		alert("两次密码不一致");
+		return;
+	}
+	$.post('${request.contextPath}/register/add',
+		$("#registerForm").serialize(),
+        function(data){
+            if(data.status == 200){
+				toastr.success("注册成功，系统将自动刷新");  
+				setTimeout("toTopicList()",3000);
+		    }else{
+		    	toastr.error("注册失败！"+data.message);  
+		    }
+        }, 'json');
+}
+function toTopicList(){
+	window.location.href= "${request.contextPath}/user/topic";
+}
+</script>

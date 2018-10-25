@@ -1,0 +1,16 @@
+<#if response.empty>
+	<tr>
+	    <td colspan="4"class="text-center" >
+	    	暂无数据
+	    </td>
+	<tr>
+<#else>
+	<#list response.result as userMessage>
+		<tr>
+			<td>${userMessage_index + 1}</td>
+			<td>${userMessage.message}</td>
+			<td><#if userMessage.status == 0>未读<#else>已读</#if></td>
+			<td>${userMessage.createDate?string("yyyy-MM-dd HH:mm:ss")}</td>
+		</tr>
+	</#list>
+</#if>

@@ -1,0 +1,126 @@
+<#if response.notOK>
+<div class="modal-body">
+	<div class="form-body">
+		<div class="form-group">
+			<div>异常数据</div>
+		</div>
+	</div>
+</div>
+<#else>
+<div class="modal-body">
+	<div class="row">
+		<div class="col-md-12">
+			<div class="form-body">
+				<div class="form-group">
+					<label class="control-label col-md-3"> Topic: </label>
+			        <div class="col-md-5">
+						<input type="text" value="${response.result.topic}" readonly="readonly" class="form-control" />
+					</div>
+				</div>
+				<div class="form-group">
+					<label class="control-label col-md-3"> 生产者: </label>
+					<div class="col-md-5">
+						<input type="text" value="${response.result.producer}" readonly="readonly" class="form-control" >
+					</div>
+				</div>
+				<div class="form-group">
+					<label class="control-label col-md-3"> 关联用户: </label>
+					<div class="col-md-5">
+						<input type="text" value="${response.result.user}" readonly="readonly" class="form-control" >
+					</div>
+				</div>
+				<div class="form-group">
+					<label class="control-label col-md-3"> 拒绝理由: </label>
+					<div class="col-md-5">
+						<textarea type="text" id="associateProducerRefuseReason" rows="3" class="form-control" placeholder="请填写"></textarea>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+<div class="modal-footer" id="auditTopicFooter">
+	<button type="button" data-dismiss="modal" class="btn" >取消</button>
+	<button type="button" class="btn btn-success" id="validateBtn" onclick="validate()" data-target="#producerConnectionModal" data-toggle="modal">校验一下</button>
+	<button type="button" class="btn btn-warning" id="disAgreeAssociateProducerBtn" onclick="disAgreeAssociateProducer()">拒绝</button>
+	<button type="button" class="btn btn-primary" id="agreeAssociateProducerBtn" onclick="agreeAssociateProducer()">同意</button>
+</div>
+
+<div id="producerConnectionModal" class="modal fade" tabindex="-1" data-width="350" style="z-index:2000;">
+	<div class="modal-dialog" style="width:400px">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" onclick="hideProducerConnectionModal()" aria-hidden="true">&times;</button>
+				<h4 class="modal-title">链接情况</h4>
+			</div>
+			<table class="table table-striped table-hover" style="margin-top: 0px">
+				<thead>
+					<tr>
+						<td>序号</td>
+						<td>客户端</td>
+						<td>client_id</td>
+<!-- 						<td>版本</td> -->
+					</tr>
+				</thead>
+				<tbody id="connectionBody">
+				</tbody>
+			</table>
+		</div>
+	</div>
+</div>
+
+<script>
+function agreeAssociateProducer(){
+	disable("agreeAssociateProducerBtn");
+	$.post('${request.contextPath}/admin/audit/producer/associate',
+		{
+			aid: ${response.result.aid}
+		},
+        function(data){
+            if(data.status == 200){
+            	toastr.success("审核成功, 系统将自动刷新");
+            	reload(3000);
+		    }else{
+		    	toastr.error("审核失败！"+data.message);
+		    	enable("agreeAssociateProducerBtn");
+		    }
+       }, 'json');
+}
+function disAgreeAssociateProducer(){
+	var refuseReason = $("#associateProducerRefuseReason").val();
+	if(!refuseReason){
+		alert("请填写拒绝理由");
+		return;
+	}
+	disable("disAgreeAssociateProducerBtn");
+	$.post('${request.contextPath}/admin/audit/refuse',
+		{
+			aid: ${response.result.aid},
+			refuseReason: refuseReason
+		},
+        function(data){
+            if(data.status == 200){
+            	toastr.success("拒绝成功, 系统将自动刷新");
+            	reload(3000);
+		    }else{
+		    	toastr.error("拒绝失败！"+data.message);
+		    	enable("disAgreeAssociateProducerBtn");
+		    }
+       }, 'json');
+}
+function validate(){
+	disable("validateBtn");
+	$.post('${request.contextPath}/admin/audit/producer/connection',
+		{
+			aid: ${response.result.aid}
+		},
+        function(data){
+			enable("validateBtn");
+			$("#connectionBody").html(data);
+       });
+}
+function hideProducerConnectionModal(){
+	$('#producerConnectionModal').modal('hide');
+}
+</script>
+</#if>

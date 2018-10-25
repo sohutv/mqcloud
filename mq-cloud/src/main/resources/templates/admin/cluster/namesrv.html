@@ -1,0 +1,16 @@
+<table class="table table-striped table-hover" style="margin-top: 0px">
+	<tbody>
+		<tr>
+			<td>NameServer url:</td>
+			<td>${response.result.nsUrl}</td>
+		</tr>
+		<tr>
+			<td rowspan=${response.result.nsList?size + 1}>NameServer 列表</td>
+		</tr>
+		<#list response.result.nsList as ns>
+			<tr>
+				<td>${ns}</td>
+			</tr>
+		</#list>
+	</tbody>
+</table>

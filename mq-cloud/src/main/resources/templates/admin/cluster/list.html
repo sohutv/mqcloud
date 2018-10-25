@@ -1,0 +1,855 @@
+<!-- 无集群 -->
+<#if response.notOK>
+<div class="main">
+	<form class="form-inline" role="form">
+		<div class="form-group">
+			<label for="mqClusterSelect"> 集群: 暂无数据 </label>
+		</div>
+	</form>
+	<hr/>
+</div>
+<#else>
+<!-- 有集群 -->
+<div class="main">
+	<form class="form-inline" role="form">
+		<div class="form-group">
+			<label for="mqClusterSelect"> 集群: </label>
+			<select name="type" id="mqClusterSelect" class="form-control select2_category">
+				<#list response.result.mqCluster as mqCluster>
+					<option value="${mqCluster.id}"
+						<#if mqCluster.id == response.result.selectedMQCluster.id>selected="selected"</#if>
+					>${mqCluster.name}</option>
+				</#list>
+			</select>
+		</div>
+		<#if response.result.hasNameServer>
+			<div class="form-group">
+				<button type="button" class="btn btn-success" onclick="addBroker()" data-target="#addBrokerModal" data-toggle="modal"><span class="glyphicon glyphicon-plus" aria-hidden="true"></span>&nbsp;Master</button>
+			</div>
+		</#if>
+		<#if response.result.brokerGroup??>
+			<div class="form-group" style="float:right;">
+				<button type="button" data-placement="bottom" title="该功能用于将已有RocketMQ集群的topic写入topic表中（可以执行多次，因为数据库有唯一索引）。" class="btn btn-success" onclick="initTopic()" data-toggle="modal">topic初始化</button>
+				<button type="button" data-placement="bottom" title="该功能用于将已有RocketMQ集群的topic的在线消费者写入consumer表中（可以执行多次，因为数据库有唯一索引）。" class="btn btn-success" onclick="initConsumer()" data-toggle="modal">consumer初始化</button>
+			</div>
+		</#if>
+	</form>
+	<hr/>
+	<table class="table table-striped table-hover" style="margin-top: 0px">
+		<thead>
+			<tr>
+				<td>Broker名字</td>
+				<td>BrokerID</td>
+				<td>地址</td>
+				<td>生产量/秒</td>
+				<td>消费量/秒</td>
+				<td>版本</td>
+				<td>启动时间</td>
+				<td>其他</td>
+				<td>操作</td>
+			</tr>
+		</thead>
+		<tbody>
+			<#if response.result.brokerGroup??>
+			<#assign brokerGroup=response.result.brokerGroup />
+			<#assign i = 0>
+			<#list brokerGroup?keys as key>
+				<#list brokerGroup[key]?keys as bkey>
+					<tr>
+						<#assign i = i + 1>
+						<#if bkey == "0">
+							<td rowspan=${brokerGroup[key]?size}>${key}</td>
+						</#if>
+						<td>${bkey}</td>
+						<td>
+							<#if bkey == "0">
+								<a href='#' onclick="setIp('${brokerGroup[key][bkey].brokerAddr}')" data-target="#brokerTrafficModal" data-toggle="modal" title="查看broker流量">${brokerGroup[key][bkey].brokerAddr}</a>
+							<#else>
+								${brokerGroup[key][bkey].brokerAddr}
+							</#if>
+						</td>
+						<td>
+							${brokerGroup[key][bkey].inTps}
+						</td>
+						<td>
+							${brokerGroup[key][bkey].outTps}
+						</td>
+						<td>
+							${brokerGroup[key][bkey].version}
+						</td>
+						<td>
+							${brokerGroup[key][bkey].bootTime}
+						</td>
+						<td>
+							<a href="#" data-target="#clusterInfoModal${i}" data-toggle="modal"><i class="fa fa-user"></i>查看</a>
+							<div id="clusterInfoModal${i}" class="modal fade" tabindex="-1" data-width="400" aria-hidden="true">
+								<div class="modal-dialog">
+									<div class="modal-content">
+										<div class="modal-header">
+											<button type="button" class="close" data-dismiss="modal"
+												aria-hidden="true">&times;</button>
+											<h4 class="modal-title">其余信息展示</h4>
+										</div>
+										<table class="table table-striped table-hover" style="margin-top: 0px">
+											<thead>
+												<tr>
+													<td>指标项</td>
+													<td>值</td>
+												</tr>
+											</thead>
+											<tbody>
+												<#list brokerGroup[key][bkey].info?keys as ikey>
+													<tr>
+														<td>${ikey}</td>
+														<td>
+															${brokerGroup[key][bkey].info[ikey]}
+														</td>
+													<tr>
+												</#list>
+											</tbody>
+										</table>
+									</div>
+								</div>
+							</div>
+						</td>
+						<td>
+							<#if bkey == "0">
+								<button title="禁止客户端写入，broker下线前需要先禁止写入，等没有人写入后，再下线" type="button" onclick="program('${brokerGroup[key][bkey].brokerAddr}', 'program${i}')" class="btn btn-sm btn-success" data-target="#nowriteModal${i}" data-toggle="modal">停写</button>
+								<button title="已经停写的broker，可以进行关闭操作" type="button" class="btn btn-sm btn-success" data-target="#brokerOfflineModal${i}" onclick="program('${brokerGroup[key][bkey].brokerAddr}', 'brokerOfflineProgram${i}')" data-toggle="modal">下线</button>
+								<#if brokerGroup[key]?size <= 1>
+									<button title="增加slave" type="button" class="btn btn-sm btn-success"  onclick="addBroker('${key}')" data-target="#addBrokerModal" data-toggle="modal"><span class="glyphicon glyphicon-plus" aria-hidden="true"></span>&nbsp;Slave</button>
+								</#if>
+								<!-- 停写 -->
+								<div id="nowriteModal${i}" class="modal fade" tabindex="-1" data-width="400">
+									<div class="modal-dialog" style="width:1000px">
+										<div class="modal-content">
+											<div class="modal-header">
+												<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+												<h4 class="modal-title">确定要停止写入?</h4>
+											</div>
+											<form class="form-horizontal form-bordered form-row-stripped" id="nowrite${i}">
+												<div class="modal-body">
+													<div class="row">
+														<div class="col-md-12">
+															<div class="form-body">
+																<div class="form-group">
+																	<label class="control-label col-md-1"> broker: </label>
+															        <div class="col-md-4">
+																		<input type="text" name="broker" value="${key}" class="form-control" readonly />
+																	</div>
+																</div>
+																<div class="form-group">
+																	<label class="control-label col-md-1"> 进程: </label>
+															        <div class="col-md-10">
+																		<textarea id="program${i}" type="text" name="info" rows="10" class="form-control" readonly></textarea>
+																	</div>
+																</div>
+																<input type="hidden" name="cid" value="${response.result.selectedMQCluster.id}">
+															</div>
+														</div>
+													</div>
+												</div>
+												<div class="modal-footer">
+													<button type="button" data-dismiss="modal" class="btn" >取消</button>
+													<button type="button" class="btn btn-primary" onclick="nowrite('nowrite${i}')" id="nowrite${i}Btn">确定</button>
+												</div>
+											</form>
+										</div>
+									</div>
+								</div>
+							<#else>
+								<button title="slave可以直接进行关闭" type="button" class="btn btn-sm btn-success" data-target="#brokerOfflineModal${i}" onclick="program('${brokerGroup[key][bkey].brokerAddr}', 'brokerOfflineProgram${i}')" data-toggle="modal">下线</button>
+							</#if>
+							
+							<!-- 下线 -->
+							<div id="brokerOfflineModal${i}" class="modal fade" tabindex="-1" data-width="400">
+								<div class="modal-dialog" style="width:1000px">
+									<div class="modal-content">
+										<div class="modal-header">
+											<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+											<h4 class="modal-title">确定要下线broker?</h4>
+										</div>
+										<form class="form-horizontal form-bordered form-row-stripped" id="brokerOffline${i}">
+											<div class="modal-body">
+												<div class="row">
+													<div class="col-md-12">
+														<div class="form-body">
+															<div class="form-group">
+																<label class="control-label col-md-1"> 地址: </label>
+														        <div class="col-md-4">
+																	<input type="text" name="addr" value="${brokerGroup[key][bkey].brokerAddr}" class="form-control" readonly />
+																</div>
+															</div>
+															<div class="form-group">
+																<label class="control-label col-md-1"> 进程: </label>
+														        <div class="col-md-10">
+																	<textarea id="brokerOfflineProgram${i}" type="text" rows="10" class="form-control" readonly></textarea>
+																</div>
+															</div>
+														</div>
+													</div>
+												</div>
+											</div>
+											<div class="modal-footer">
+												<button type="button" data-dismiss="modal" class="btn" >取消</button>
+												<button type="button" class="btn btn-primary" onclick="brokerOffline('brokerOffline${i}')" id="brokerOffline${i}Btn">确定</button>
+											</div>
+										</form>
+									</div>
+								</div>
+							</div>
+						</td>
+					</tr>
+				</#list>
+			</#list>
+			<#else>
+				<tr>
+					<td colspan=9 class="text-center">暂无数据</td>
+				</tr>
+			</#if>
+		</tbody>
+	</table>
+	
+	<!-- 	准备搜索部分 -->
+	<div class="row">
+		<div class="col-md-12">
+			<div class="border-top"></div>
+			<div style="float:left;margin:10px 5px;"><h5><b>${response.result.selectedMQCluster.name}</b> 流量图</h5></div>
+			<div id="cluster_search" style="float:right;margin:10px 0px;"></div>
+		</div>
+	</div>
+	<!-- 	准备曲线图 -->
+	<div id="cluster_lineChart"><center>暂无数据</center></div>
+</div>
+
+<!-- 新建broker -->
+<div id="addBrokerModal" class="modal fade" tabindex="-1">
+	<div class="modal-dialog" style="width:1000px;">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+				<h4 class="modal-title">新建Broker</h4><b style="font-size:8px;"><i>请建好/opt/mqcloud目录并将其赋权给${username}用户：chown ${username}:${username} /opt/mqcloud</i></b>
+			</div>
+			<div class="modal-body">
+				<div class="row bs-wizard" style="border-bottom:0;">
+	                <div id="brokerServer" class="col-xs-1 bs-wizard-step disabled">
+	                  <div class="text-center bs-wizard-stepnum">服务器选择</div>
+	                  <div class="progress"><div class="progress-bar"></div></div>
+	                  <a href="#" class="bs-wizard-dot"></a>
+	                  <div class="bs-wizard-info text-center">broker安装到哪</div>
+	                </div>
+	                
+	                <div id="brokerJdk" class="col-xs-2 bs-wizard-step disabled">
+	                  <div class="text-center bs-wizard-stepnum">JDK校验</div>
+	                  <div class="progress"><div class="progress-bar"></div></div>
+	                  <a href="#" class="bs-wizard-dot"></a>
+	                  <div class="bs-wizard-info text-center">校验jdk是否配置完成，版本要求>=1.8</div>
+	                </div>
+	                
+	                <div id="brokerPort" class="col-xs-1 bs-wizard-step disabled">
+	                  <div class="text-center bs-wizard-stepnum">端口校验</div>
+	                  <div class="progress"><div class="progress-bar"></div></div>
+	                  <a href="#" class="bs-wizard-dot"></a>
+	                  <div class="bs-wizard-info text-center">检查端口是否被占用</div>
+	                </div>
+	                
+	                <div id="brokerDir" class="col-xs-1 bs-wizard-step disabled">
+	                  <div class="text-center bs-wizard-stepnum">目录校验</div>
+	                  <div class="progress"><div class="progress-bar"></div></div>
+	                  <a href="#" class="bs-wizard-dot"></a>
+	                  <div class="bs-wizard-info text-center">检查安装目录是否被占用</div>
+	                </div>
+	                
+	                <div id="brokerWget" class="col-xs-1 bs-wizard-step disabled">
+	                  <div class="text-center bs-wizard-stepnum">下载安装包</div>
+	                  <div class="progress"><div class="progress-bar"></div></div>
+	                  <a href="#" class="bs-wizard-dot"></a>
+	                  <div class="bs-wizard-info text-center">从仓库下载安装包到服务器/tmp下</div>
+	                </div>
+	                <div id="brokerUnzip" class="col-xs-1 bs-wizard-step disabled">
+	                  <div class="text-center bs-wizard-stepnum">解压</div>
+	                  <div class="progress"><div class="progress-bar"></div></div>
+	                  <a href="#" class="bs-wizard-dot"></a>
+	                  <div class="bs-wizard-info text-center">解压到安装目录下</div>
+	                </div>
+	                <div id="brokerConfig" class="col-xs-2 bs-wizard-step disabled">
+	                  <div class="text-center bs-wizard-stepnum">生成配置文件</div>
+	                  <div class="progress"><div class="progress-bar"></div></div>
+	                  <a href="#" class="bs-wizard-dot"></a>
+	                  <div class="bs-wizard-info text-center">生成mq.conf,run.sh和topic配置</div>
+	                </div>
+	                <div id="brokerInitConfig" class="col-xs-1 bs-wizard-step disabled">
+	                  <div class="text-center bs-wizard-stepnum">初始化配置</div>
+	                  <div class="progress"><div class="progress-bar"></div></div>
+	                  <a href="#" class="bs-wizard-dot"></a>
+	                  <div class="bs-wizard-info text-center">执行os.sh</div>
+	                </div>
+	                <div id="brokerStartup" class="col-xs-1 bs-wizard-step disabled">
+	                  <div class="text-center bs-wizard-stepnum">启动</div>
+	                  <div class="progress"><div class="progress-bar"></div></div>
+	                  <a href="#" class="bs-wizard-dot"></a>
+	                  <div class="bs-wizard-info text-center">启动broker</div>
+	                </div>
+	                <div id="brokerProgram" class="col-xs-1 bs-wizard-step disabled">
+	                  <div class="text-center bs-wizard-stepnum">完成</div>
+	                  <div class="progress"><div class="progress-bar"></div></div>
+	                  <a href="#" class="bs-wizard-dot"></a>
+	                  <div class="bs-wizard-info text-center">获取启动后的进程信息</div>
+	                </div>
+	            </div>
+				<form class="form-horizontal form-bordered form-row-stripped" id="broker">
+					<div class="form-body">
+						<div class="form-group">
+							<label class="control-label col-md-3"> 服务器: </label>
+					        <div class="col-md-8">
+								<select id="brokerServerSelect" class="selectpicker" title="请选择" data-live-search-placeholder="搜索" name="ip" data-live-search="true"></select>
+							</div>
+						</div>
+						<div class="form-group">
+							<label class="control-label col-md-3"> brokerName: </label>
+					        <div class="col-md-8">
+								<input type="text" id="brokerName" name="brokerName" placeholder="格式类似：broker-a" value="" class="form-control"/>
+								<input type="hidden" id="dir" name="dir" value=""/>
+							</div>
+						</div>
+						<div class="form-group">
+							<label class="control-label col-md-3"> 安装路径: </label>
+					        <div class="col-md-8">
+								<input type="text" id="brokerPath" placeholder="/opt/mqcloud/broker-a" value="" class="form-control" readonly/>
+							</div>
+						</div>
+						<div class="form-group">
+							<label class="control-label col-md-3"> 角色: </label>
+					        <div class="col-md-8 checkbox">
+							    <span id="brokerRole_async_span"><input type="radio" id="brokerRole_async" name="brokerRole" value="ASYNC_MASTER">异步复制</span>
+							    <span id="brokerRole_sync_span"><input type="radio" id="brokerRole_sync" name="brokerRole" value="SYNC_MASTER">同步双写</span>
+							    <span id="brokerRole_slave_span"><input type="radio" id="brokerRole_slave" name="brokerRole" value="SLAVE">Slave</span>
+							</div>
+						</div>
+						<div class="form-group">
+							<label class="control-label col-md-3"> 监听端口: </label>
+					        <div class="col-md-8">
+								<input type="text" id="listenPort" name="port" placeholder="master默认10915,slave默认20915" value="" class="form-control" />
+							</div>
+						</div>
+						<div class="form-group">
+							<label class="control-label col-md-3"> 刷盘方式: </label>
+					        <div class="col-md-8 checkbox">
+							    <input type="radio" name="flushDiskType" value="ASYNC_FLUSH" checked>异步刷盘
+							    <input type="radio" name="flushDiskType" value="SYNC_FLUSH">同步刷盘
+							</div>
+						</div>
+						<div class="form-group">
+							<label class="control-label col-md-3"> 数据保留时间: </label>
+					        <div class="col-md-8">
+					        	<div class="input-group">
+								    <input type="text" id="fileReservedTime" name="fileReservedTime" value="168" placeholder="默认保留7天" class="form-control" />
+									<span class="input-group-addon">小时</span>
+								</div>
+							</div>
+						</div>
+						<div class="form-group">
+							<label class="control-label col-md-3"> 所属集群: </label>
+					        <div class="col-md-8">
+								<input type="text" value="${response.result.selectedMQCluster.name}" class="form-control" readonly/>
+								<input type="hidden" name="mqClusterId" value="${response.result.selectedMQCluster.id}"/>
+							</div>
+						</div>
+						<div class="form-group">
+							<label class="control-label col-md-3"> 进程: </label>
+					        <div class="col-md-8">
+								<textarea id="brokerProgramInfo" type="text" rows="1" class="form-control" readonly></textarea>
+							</div>
+						</div>
+						<div class="form-group">
+							<label class="control-label col-md-3"> 提示: </label>
+					        <div class="col-md-8">
+								<div class="form-control-static">如果安装遇到错误警告，请登录服务器解决后再<b>继续</b>执行</div>
+							</div>
+						</div>
+					</div>
+				</form>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-primary" id="installBtn" data-toggle="modal" onclick="install('broker')"><span id="brokerInstall">一键安装<span></button>
+			</div>
+		</div>
+	</div>
+</div>
+
+
+<!-- broker统计 -->
+<div id="brokerTrafficModal" class="modal fade" tabindex="-1" data-width="400">
+	<div class="modal-dialog" style="width:1100px;">
+		<div class="modal-content">
+			<div class="modal-body" style="padding-top:5px;">
+				<div id="brokerTrafficChart"></div>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- 初始化结果 -->
+<div id="initModal" class="modal fade" tabindex="-1" data-width="400">
+	<div class="modal-dialog" style="width:1000px">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal"
+					aria-hidden="true">&times;</button>
+				<h4 class="modal-title"><span id="initDiv">topic</span>初始化结果</h4>
+			</div>
+			<div class="modal-body" id="initBody">
+			</div>
+		</div>
+	</div>
+</div>
+
+<script>
+var installId = "";
+var method = "";
+/**
+ * 安装NameSrv
+ */
+function install(id){
+	installId = id;
+	if(!$('#'+id+'ServerSelect').val()){
+		alert("请先选择服务器");
+		return;
+	}
+	if("broker" == id){
+		if(!$('#brokerName').val()){
+			alert("请填写brokerName");
+			return;
+		}
+		if(!$('input[name="brokerRole"]').is(":checked")){
+			alert("请选择broker角色");
+			return;
+		}
+		if(!$('#listenPort').val()){
+			alert("请填写监听端口");
+			return;
+		}
+		if(!$('input[name="flushDiskType"]').is(":checked")){
+			alert("请选择刷盘方式");
+			return;
+		}
+		if(!$('#fileReservedTime').val()){
+			alert("请填写数据保留时间");
+			return;
+		}
+	}
+	if($('#'+id+'Install').html() == "继续"){
+		setTimeout(method+'()', 500);
+	} else {
+		validateJDK();
+	}
+	disableStep("installBtn");
+}
+/**
+ * 继续
+ */
+function goOn(m){
+	$("#"+installId+"Install").html("继续");
+	active("installBtn");
+	method = m;
+}
+/**
+ * 校验jdk
+ */
+function validateJDK(){
+	var wizardId = installId+"Jdk";
+	active(wizardId);
+	$.get('${request.contextPath}/admin/deploy/check/jdk',
+		$("#"+installId).serialize(),
+        function(data){
+            if(data.status == 200){
+            	var version = data.result.substring(0, 3);
+            	if(version >= 1.8){
+            		complete(wizardId);
+            		// 校验端口
+            		setTimeout('checkPort()', 1000);
+            	} else {
+            		alert("jdk环境校验失败，最低为1.8，目前版本为："+data.result);
+            		warn(wizardId);
+            		goOn("validateJDK");
+            	}
+		    }else{
+		    	toastr.error("数据获取失败！"+data.message);  
+		    	warn(wizardId);
+		    	goOn("validateJDK");
+		    }
+       }, 'json');
+}
+/**
+ * 端口校验
+ */
+function checkPort(){
+	var wizardId = installId+"Port";
+	active(wizardId);
+	$.post('${request.contextPath}/admin/deploy/check/port',
+		$("#"+installId).serialize(),
+        function(data){
+            if(data.status == 200){
+            	complete(wizardId);
+            	// 校验目录
+            	setTimeout('checkDir()', 1000);
+		    } else if(data.status == 500){
+		    	toastr.error("端口被该程序占用："+data.result);  
+		    	warn(wizardId);
+		    	goOn("checkPort");
+		    } else {
+		    	toastr.error("校验失败！"+data.message);  
+		    	warn(wizardId);
+		    	goOn("checkPort");
+		    }
+       }, 'json');
+}
+/**
+ * 目录校验
+ */
+function checkDir(){
+	var wizardId = installId+"Dir";
+	active(wizardId);
+	$.post('${request.contextPath}/admin/deploy/check/dir',
+		$("#"+installId).serialize(),
+        function(data){
+            if(data.status == 200){
+            	complete(wizardId);
+            	// 下载文件
+        		setTimeout('wget()', 1000);
+		    } else {
+		    	toastr.error("校验失败！"+data.message);  
+		    	warn(wizardId);
+		    	goOn("checkDir");
+		    }
+       }, 'json');
+}
+/**
+ * wget
+ */
+function wget(){
+	var wizardId = installId+"Wget";
+	active(wizardId);
+	$.post('${request.contextPath}/admin/deploy/wget',
+		$("#"+installId).serialize(),
+        function(data){
+            if(data.status == 200){
+            	complete(wizardId);
+            	// 解压文件
+        		setTimeout('unzip()', 1000);
+		    } else {
+		    	toastr.error("下载失败！"+data.message);  
+		    	warn(wizardId);
+		    	goOn("wget");
+		    }
+       }, 'json');
+}
+/**
+ * 解压
+ */
+function unzip(){
+	var wizardId = installId+"Unzip";
+	active(wizardId);
+	$.post('${request.contextPath}/admin/deploy/unzip',
+		$("#"+installId).serialize(),
+        function(data){
+            if(data.status == 200){
+            	complete(wizardId);
+            	// 配置
+        		setTimeout('config()', 1000);
+		    } else {
+		    	toastr.error("解压失败！"+data.message);  
+		    	warn(wizardId);
+		    	goOn("unzip");
+		    }
+       }, 'json');
+}
+/**
+ * 配置
+ */
+function config(){
+	var wizardId = installId+"Config";
+	active(wizardId);
+	$.post('${request.contextPath}/admin/deploy/config/' + installId,
+		$("#"+installId).serialize(),
+        function(data){
+            if(data.status == 200){
+            	complete(wizardId);
+            	if("ns" == installId){
+	            	// 启动
+	        		setTimeout('startup()', 1000);
+            	}else{
+            		// 初始化配置
+            		setTimeout('initConfig()', 1000);
+            	}
+            		
+		    } else {
+		    	toastr.error("配置失败！"+data.message);  
+		    	warn(wizardId);
+		    	goOn("config");
+		    }
+       }, 'json');
+}
+/**
+ * 初始化配置
+ */
+function initConfig(){
+	var wizardId = "brokerInitConfig";
+	active(wizardId);
+	$.post('${request.contextPath}/admin/deploy/config/init',
+		$("#"+installId).serialize(),
+        function(data){
+            if(data.status == 200){
+            	complete(wizardId);
+            	if(confirm("配置成功，是否直接启动？")){
+            		startup();
+            	} else {
+        			goOn("startup");
+            	}
+		    } else {
+		    	toastr.error("初始化配置失败！"+data.message);  
+		    	warn(wizardId);
+		    	goOn("initConfig");
+		    }
+       }, 'json');
+}
+/**
+ * 启动实例
+ */
+function startup(){
+	var wizardId = installId+"Startup";
+	active(wizardId);
+	$.post('${request.contextPath}/admin/deploy/startup',
+		$("#"+installId).serialize(),
+        function(data){
+            if(data.status == 200){
+            	complete(wizardId);
+            	var time = 5000;
+            	if("broker" == installId){
+            		time = 10000;
+            	}
+            	// 检测进程
+        		setTimeout('checkProgram()', time);
+		    } else {
+		    	toastr.error("启动失败！"+data.message);  
+		    	warn(wizardId);
+		    	goOn("startup");
+		    }
+       }, 'json');
+}
+/**
+ * 检测启动的进程
+ */
+function checkProgram(){
+	var wizardId = installId+"Program";
+	active(wizardId);
+	$.post('${request.contextPath}/admin/deploy/check/program',
+		$("#"+installId).serialize(),
+        function(data){
+            if(data.status == 200){
+            	$("#"+installId+"ProgramInfo").attr("rows", 5).html(data.result);
+            	complete(wizardId);
+            	alert("恭喜你，安装完成啦！");
+            	$("#"+installId+"Install").parent().attr("disabled", "disabled");
+		    } else {
+		    	toastr.error("检查失败！"+data.message);  
+		    	warn(wizardId);
+		    	goOn("checkProgram");
+		    }
+       }, 'json');
+}
+function addBroker(brokerName){
+	if(brokerName){
+		$("#brokerName").val(brokerName).attr("readonly","readonly");
+		$("#dir").val($("#brokerName").val()+"-s");
+		$("#brokerPath").val("/opt/mqcloud/"+$("#dir").val());
+		$('#brokerRole_slave').attr('checked', 'checked');
+		$("#listenPort").val("20915");
+		$('#brokerRole_async_span').hide();
+		$('#brokerRole_sync_span').hide();
+	} else {
+		$('#brokerRole_slave_span').hide();
+	}
+	initServerList("brokerServerSelect");
+}
+/**
+ * 初始化server下拉列表
+ */
+function initServerList(componentId){
+	$.get('${request.contextPath}/admin/server/all',
+	        function(data){
+	            if(data.status == 200){
+	            	var content = "";
+	            	for(var i in data.result){
+	            		var server = data.result[i];
+	            		content += "<option value='"+server.ip+"'>"+server.ip+"</option>";
+	            	}
+	        		$("#"+componentId).html(content);
+	        		$("#"+componentId).selectpicker('refresh');
+			    }else{
+			    	toastr.error("数据获取失败！"+data.message);  
+			    }
+        }, 'json');
+}
+/**
+ * 停写
+ */
+function nowrite(formId){
+	disable(formId+"Btn");
+	$.post('${request.contextPath}/admin/cluster/nowrite',
+			$("#"+formId).serialize(),
+	        function(data){
+	            if(data.status == 200){
+	            	toastr.success("停写成功，请耐心等待客户端写入结束！");  
+	            	modalHide(3000, function(){
+	            		enable(formId+"Btn");
+	            	});
+			    }else{
+			    	toastr.error("操作失败！"+data.message);  
+			    	enable(formId+"Btn");
+			    }
+        }, 'json');
+}
+
+/**
+ * 获取进程信息
+ */
+function program(addr, programId){
+	$.get('${request.contextPath}/admin/deploy/program',
+			{
+				addr: addr
+			},
+	        function(data){
+				$("#"+programId).html(data.result);
+        }, 'json');
+}
+
+/**
+ * 下线
+ */
+function brokerOffline(formId){
+	disable(formId+"Btn");
+	$.post('${request.contextPath}/admin/deploy/shutdown',
+			$("#"+formId).serialize(),
+	        function(data){
+	            if(data.status == 200){
+	            	toastr.success("下线成功");  
+	            	reload(3000);
+			    }else{
+			    	toastr.error("操作失败！"+data.message);  
+			    	enable(formId+"Btn");
+			    }
+        }, 'json');
+}
+$('#mqClusterSelect').on('change',function(){
+	window.location.href = "${request.contextPath}/admin/cluster/list?cid="+$(this).val();
+});
+
+$(function(){
+	// broker server select change
+	$('#brokerServerSelect').on('shown.bs.select', function(e) {
+		active("brokerServer");
+	});
+	$('#brokerServerSelect').on('hidden.bs.select', function(e) {
+		if(!$('#brokerServerSelect').val()){
+			disableStep("brokerServer");
+		}
+	});
+	$('#brokerServerSelect').on('changed.bs.select', function(e) {
+		complete("brokerServer");
+	});
+	
+	$("#brokerName").bind('input propertychange', function(){
+		$("#dir").val($("#brokerName").val());
+		$("#brokerPath").val("/opt/mqcloud/"+$("#brokerName").val());
+	});
+	
+	$('input[name="brokerRole"]').click(function(){
+	    if("SLAVE" == $(this).val()){
+	    	$("#listenPort").val("20915");
+	    } else {
+	    	$("#listenPort").val("10915");
+	    }
+	});
+	
+	
+	// fix bootstrap model & highcharts resize
+	$('#brokerTrafficModal').on('shown.bs.modal', function() {
+		brokerTraffic();
+	});
+	
+	// cluster traffic
+	lineChart("cluster", function (){
+		$("#clusterId").val("${response.result.selectedMQCluster.id}");
+	});
+});
+
+function warn(id){
+	$("#"+id).addClass("warn");
+}
+function disableStep(id){
+	$("#"+id).removeClass("active").addClass("disabled");
+}
+function active(id){
+	$("#"+id).removeClass("disabled").removeClass("warn").addClass("active");
+}
+function complete(id){
+	$("#"+id).removeClass("active").removeClass("warn").addClass("complete");
+}
+
+var brokerIp;
+function setIp(ip){
+	var idx = ip.indexOf(":");
+	if(idx != -1){
+		ip = ip.substring(0, idx);
+	}
+	brokerIp = ip;
+	$("#brokerTrafficChart").empty();
+}
+
+/**
+ * 获取broker流量图
+ */
+function brokerTraffic(){
+	$.get('${request.contextPath}/admin/cluster/traffic',
+		{
+		ip: brokerIp
+		},
+        function(data){
+            $("#brokerTrafficChart").html(data);
+    });	
+}
+
+/**
+ * 初始化topic
+ */
+function initTopic(){
+	$("#initBody").empty();
+	$("#initDiv").html("topic");
+	post('${request.contextPath}/admin/cluster/init/topic',
+		{
+		cid: ${response.result.selectedMQCluster.id}
+		},
+        function(data){
+			$("#initBody").html(data);
+			$('#initModal').modal('show');
+    });	
+}
+
+/**
+ * 初始化consumer
+ */
+function initConsumer(){
+	$("#initBody").empty();
+	$("#initDiv").html("consumer");
+	post('${request.contextPath}/admin/cluster/init/consumer',
+		{
+		cid: ${response.result.selectedMQCluster.id}
+		},
+        function(data){
+			$("#initBody").html(data);
+			$('#initModal').modal('show');
+    });	
+}
+</script>
+</#if>

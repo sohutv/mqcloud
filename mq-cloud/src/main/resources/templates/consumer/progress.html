@@ -1,0 +1,751 @@
+<div class="row">
+	<br/>
+	<div class="col-md-12">
+        <table class="table table-striped table-hover" style="margin-top: 0px">
+		        <colgroup>
+					<col width="50px">
+					<col width="300px">
+					<col width="150px">
+					<col width="80px">
+					<col width="60px">
+					<col width="50px">
+					<col width="160px">
+					<col>
+				</colgroup>
+                <thead>
+	                <tr>
+	                	<td>序号</td>
+	                    <td>消费者(consumer group)</td>
+	                    <td data-toggle="tooltip" title="谁持有这个消费者">归属于</td>
+	                    <td data-toggle="tooltip" title="集群模式：所有的消费者均分消息进行消费； 广播模式：每个消费者会消费所有消息">消费模式</td>
+	                    <td data-toggle="tooltip" title="消费者未消费的消息数量">堆积量</td>
+	                    <td data-toggle="tooltip">TPS</td>
+	                    <td data-toggle="tooltip" title="所有队列中的最小更新时间">更新时间</td>
+	                    <td>操作</td>
+	                </tr>
+                </thead>
+                <tbody>
+	                <#if response.empty && resultExt.empty>
+					     <tr>
+		                    <td colspan=8 align="center">
+		                    	暂无数据
+		                    </td>
+		                <tr>
+					<#else>
+						<#list response.result as consumerProgressVO>
+							<tr>
+								<td>${consumerProgressVO_index + 1}</td>
+		                    	<td><a style="cursor:pointer" title="查看消费详情" data-target="#consumeDetailModel${consumerProgressVO_index}" data-toggle="modal">${consumerProgressVO.consumer.name}</a></td>
+		                    	<#if consumerProgressVO.ownerList??>
+		                    		<td>
+			                    		<#if consumerProgressVO.ownerList?seq_contains(userInfo.user) || userInfo.user.type == 1>
+					                    		<#list consumerProgressVO.ownerList as user>
+										    		<span onclick="prepareDeleteUserConsumer(${user.id},'${user.name!user.getEmailName()}',${consumerProgressVO.consumer.id})" data-toggle="tooltip" title="移除${user.name!user.getEmailName()}?" class="producer_delete pointer">${user.name!user.getEmailName()}</span>
+							                    	<#if user_index + 1 lt consumerProgressVO.ownerList?size>
+							                    		,
+							                    	</#if>
+					                    		</#list>
+			                    				<span class="glyphicon glyphicon-plus-sign pointer" data-toggle="tooltip" title="授权其他用户查看${consumerProgressVO.consumer.name}?" onclick="associateUserConsumer(${consumerProgressVO.consumer.id},'${consumerProgressVO.consumer.name}')"></span>
+			                    		<#else>
+			                    				<#list consumerProgressVO.ownerList as user>
+										    		<span class="pointer">${user.name!user.getEmailName()}</span>
+							                    	<#if user_index + 1 lt consumerProgressVO.ownerList?size>
+							                    		,
+							                    	</#if>
+					                    		</#list>
+			                    		</#if>  		
+		                    		</td>
+		                    	<#else>
+		                    		<td>暂无</td>
+		                    	</#if>
+	                    		<td>集群消费</td>
+	                    		<td>${consumerProgressVO.diff}</td>
+	                    		<td>${consumerProgressVO.consumeTps}</td>
+	                    		<#if consumerProgressVO.minLastTimestamp == 0>
+	                    			<td>暂无</td>
+	                    		<#else>
+	                    			<#if consumerProgressVO.minLastTimestamp == long.MAX_VALUE>
+	                    				<td>消费进度不存在</td>
+	                    			<#else>
+			                    		<td>${consumerProgressVO.minLastTimestamp?number_to_datetime?string("yyyy-MM-dd HH:mm:ss")}</td>
+	                    			</#if>
+	                    		</#if>
+		                    	<td>
+		                    		<#if consumerProgressVO.offsetMap??>
+<!-- 		                    		<button type="button" class="btn btn-info" data-target="#consumeDetailModel${consumerProgressVO_index}" data-toggle="modal">详情</button>&nbsp; -->
+		                    		<button title="跳过堆积的消息，直接消费至最新的消息" type="button" class="btn btn-success" data-target="#skipAccumulationModel${consumerProgressVO_index}" data-toggle="modal">跳过堆积</button>&nbsp;
+		                    		<button title="消费过去一段时间至现在的消息" type="button" class="btn btn-success" data-target="#resetOffSetModel${consumerProgressVO_index}" data-toggle="modal">消息回溯</button>&nbsp;
+		                    		</#if>
+		                    		<button type="button" class="btn btn-warning" data-target="#deleteConsumerModel${consumerProgressVO_index}" data-toggle="modal"><span class="glyphicon glyphicon-trash" aria-hidden="true"></span></button>&nbsp;
+		                    		
+		                    		<#if consumerProgressVO.offsetMap??>
+		                    		<!-- 详情 -->
+		                    		<div id="consumeDetailModel${consumerProgressVO_index}" class="modal fade" tabindex="-1" aria-hidden="true">
+										<div class="modal-dialog">
+											<div class="modal-content">
+												<div class="modal-header">
+													<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+													<h4 class="modal-title"><b>${consumerProgressVO.consumer.name}</b> 消费详情</h4>
+												</div>
+												<table class="table table-striped table-hover" style="margin-top: 0px">
+													<thead>
+														<tr>
+															<td>broker</td>
+															<td>队列</td>
+															<td>broker偏移量</td>
+															<td>消费者偏移量</td>
+															<td>堆积量</td>
+															<td>消费到</td>
+														</tr>
+													</thead>
+													<tbody>
+													    <#if consumerProgressVO.retryTopic?? && consumerProgressVO.retryOffsetMap??>
+														<tr>
+															<td class="warning" colspan="6">重试Topic：<b>${consumerProgressVO.retryTopic}</b></td>
+														</tr>
+														<#list consumerProgressVO.retryOffsetMap as k, v>
+															<tr>
+																<td>${k.brokerName}</td>
+																<td>${k.queueId}</td>
+																<td>
+																	${v.brokerOffset}
+																</td>
+																<td>
+																	${v.consumerOffset}
+																</td>
+																<td>
+																	${v.brokerOffset - v.consumerOffset}
+																</td>
+																<#if v.lastTimestamp == 0>
+									                    			<td>暂无</td>
+									                    		<#else>
+																	<td>
+																		${v.lastTimestamp?number_to_datetime?string("yyyy-MM-dd HH:mm:ss")}
+																	</td>
+																</#if>
+															</tr>
+														</#list>
+														</#if>
+														<tr>
+															<td class="warning" colspan="6">正常Topic：<b>${consumerProgressVO.topic}</b></td>
+														</tr>
+														<#list consumerProgressVO.offsetMap as k, v>
+															<tr>
+																<td>${k.brokerName}</td>
+																<td>${k.queueId}</td>
+																<td>
+																	${v.brokerOffset}
+																</td>
+																<td>
+																	${v.consumerOffset}
+																</td>
+																<td>
+																	${v.brokerOffset - v.consumerOffset}
+																</td>
+																<#if v.lastTimestamp == 0>
+									                    			<td>暂无</td>
+									                    		<#else>
+																	<td>
+																		${v.lastTimestamp?number_to_datetime?string("yyyy-MM-dd HH:mm:ss")}
+																	</td>
+																</#if>
+															</tr>
+														</#list>
+													</tbody>
+												</table>
+											</div>
+										</div>
+									</div> <!-- 详情结束 -->
+									<!-- 跳过堆积 -->
+									<div id="skipAccumulationModel${consumerProgressVO_index}" class="modal fade" tabindex="-1" aria-hidden="true">
+										<div class="modal-dialog">
+											<div class="modal-content">
+												<div class="modal-header">
+													<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+													<h4 class="modal-title"><b>确定跳过堆积的消息吗?</h4>
+												</div>
+												<form class="form-horizontal form-bordered form-row-stripped">
+													<div class="modal-body">
+														<div class="row">
+															<div class="col-md-12">
+																<div class="form-body">
+																	<div class="form-group">
+																		<label class="control-label col-md-3"> Topic: </label>
+																		<div class="col-md-5">
+																			<input type="text" readonly="readonly" value="${consumerProgressVO.topic}" class="form-control" />
+																		</div>
+																	</div>
+																	<div class="form-group">
+																		<label class="control-label col-md-3"> 消费者: </label>
+																		<div class="col-md-5">
+																			<input type="text" readonly="readonly" value="${consumerProgressVO.consumer.name}" class="form-control" />
+																		</div>
+																	</div>
+																</div>
+															</div>
+														</div>
+													</div>
+													<div  class="modal-footer">
+														<button type="button" data-dismiss="modal" class="btn" >取消</button>
+														<button type="button" id="skipAccumulationBtn${consumerProgressVO_index}" class="btn btn-primary" onclick="skipAccumulation(${consumerProgressVO.consumer.tid},${consumerProgressVO.consumer.id},'skipAccumulationBtn${consumerProgressVO_index}')">确定</button>
+													</div>
+												</form>
+											</div>
+										</div>
+									</div><!-- 跳过堆积结束 -->
+									<!-- 消息回溯-->
+									<div id="resetOffSetModel${consumerProgressVO_index}" class="modal fade" tabindex="-1" aria-hidden="true">
+										<div class="modal-dialog">
+											<div class="modal-content">
+												<div class="modal-header">
+													<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+													<h4 class="modal-title"><b>消息回溯</h4>
+												</div>
+												<form class="form-horizontal form-bordered form-row-stripped">
+													<div class="modal-body">
+														<div class="row">
+															<div class="col-md-12">
+																<div class="form-body">
+																	<div class="form-group">
+																		<label class="control-label col-md-3"> Topic: </label>
+																		<div class="col-md-5">
+																			<input type="text" readonly="readonly" value="${consumerProgressVO.topic}" class="form-control" />
+																		</div>
+																	</div>
+																	<div class="form-group">
+																		<label class="control-label col-md-3"> 消费者: </label>
+																		<div class="col-md-5">
+																			<input type="text" readonly="readonly" value="${consumerProgressVO.consumer.name}" class="form-control" />
+																		</div>
+																	</div>
+																	<div class="form-group">
+																		<label class="control-label col-md-3"> 回溯到: </label>
+																		<div class="col-md-5">
+																			<input type="text" id="resetOffsetDate${consumerProgressVO_index}" name="resetOffsetDate" class="Wdate form-control" onclick="WdatePicker({ dateFmt: 'yyyy-MM-dd HH:mm:ss',maxDate:'%y-%M-%d',minDate:'%y-%M-{%d-5}'})" style="width:100%;height:34px;cursor:pointer;" readonly="readonly">
+																		</div>
+																	</div>
+																</div>
+															</div>
+														</div>
+													</div>
+													<div  class="modal-footer">
+														<button type="button" data-dismiss="modal" class="btn" >取消</button>
+														<button type="button" id="resetOffsetBtn${consumerProgressVO_index}" class="btn btn-primary" onclick="resetOffset(${consumerProgressVO_index},${consumerProgressVO.consumer.tid},${consumerProgressVO.consumer.id},'resetOffsetBtn${consumerProgressVO_index}')">确定</button>
+													</div>
+												</form>
+											</div>
+										</div>
+									</div><!-- 消息回溯-->
+									</#if>
+									<!-- 删除consumer -->
+									<div id="deleteConsumerModel${consumerProgressVO_index}" class="modal fade" tabindex="-1" aria-hidden="true">
+										<div class="modal-dialog">
+											<div class="modal-content">
+												<div class="modal-header">
+													<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+													<h4 class="modal-title"><b>确定删除消费者吗?</h4>
+												</div>
+												<form class="form-horizontal form-bordered form-row-stripped">
+													<div class="modal-body">
+														<div class="row">
+															<div class="col-md-12">
+																<div class="form-body">
+																	<div class="form-group">
+																		<label class="control-label col-md-3"> Topic: </label>
+																		<div class="col-md-5">
+																			<input type="text" readonly="readonly" value="${consumerProgressVO.topic}" class="form-control" />
+																		</div>
+																	</div>
+																	<div class="form-group">
+																		<label class="control-label col-md-3"> 消费者: </label>
+																		<div class="col-md-5">
+																			<input type="text" readonly="readonly" value="${consumerProgressVO.consumer.name}" class="form-control" />
+																		</div>
+																	</div>
+																</div>
+															</div>
+														</div>
+													</div>
+													<div  class="modal-footer">
+														<button type="button" data-dismiss="modal" class="btn" >取消</button>
+														<button type="button" id="deleteConsumerBtn${consumerProgressVO_index}" class="btn btn-primary" onclick="deleteConsumer(${consumerProgressVO.consumer.tid},${consumerProgressVO.consumer.id},'deleteConsumerBtn${consumerProgressVO_index}')">确定</button>
+													</div>
+												</form>
+											</div>
+										</div>
+									</div>
+									<!-- 删除consumer-->
+		                    	</td>
+		                   	</tr>
+						</#list>
+						<!-- 广播模式 -->
+						<#list resultExt.result as consumerProgressVO>
+							<tr>
+								<td>${consumerProgressVO_index + 1 + response.result?size}</td>
+		                    	<td><a style="cursor:pointer" title="查看消费详情" data-target="#consumeDetailModel${consumerProgressVO_index}b" data-toggle="modal">${consumerProgressVO.consumer.name}</a></td>
+		                    	<#if consumerProgressVO.ownerList??>
+			                    	<td>
+			                    		<#if consumerProgressVO.ownerList?seq_contains(userInfo.user) || userInfo.user.type == 1>
+				                    		<#list consumerProgressVO.ownerList as user>
+									    		<span onclick="prepareDeleteUserConsumer(${user.id},'${user.name!user.getEmailName()}',${consumerProgressVO.consumer.id})" data-toggle="tooltip" title="移除${user.name!user.getEmailName()}?" class="producer_delete pointer">${user.name!user.getEmailName()}</span>
+						                    	<#if user_index + 1 lt consumerProgressVO.ownerList?size>
+						                    		,
+						                    	</#if>
+				                    		</#list>
+		                    				<span class="glyphicon glyphicon-plus-sign pointer" data-toggle="tooltip" title="授权其他用户查看${consumerProgressVO.consumer.name}?" onclick="associateUserConsumer(${consumerProgressVO.consumer.id},'${consumerProgressVO.consumer.name}')"></span>
+		                    			<#else>
+		                    				<#list consumerProgressVO.ownerList as user>
+									    		<span class="pointer">${user.name!user.getEmailName()}</span>
+						                    	<#if user_index + 1 lt consumerProgressVO.ownerList?size>
+						                    		,
+						                    	</#if>
+				                    		</#list>
+		                    			</#if>    		
+			                    	</td>
+		                    	<#else>
+		                    		<td>暂无</td>
+		                    	</#if>
+	                    		<td>广播消费</td>
+	                    		<td>${consumerProgressVO.diff}</td>
+	                    		<td>${consumerProgressVO.consumeTps}</td>
+	                    		<td>暂无</td>
+		                    	<td>
+		                    		<#if consumerProgressVO.offsetMap??>
+<!-- 		                    		<button type="button" class="btn btn-info" data-target="#consumeDetailModel${consumerProgressVO_index}b" data-toggle="modal">详情</button>&nbsp; -->
+		                    		<button title="跳过堆积的消息，直接消费至最新的消息" type="button" class="btn btn-success" data-target="#skipAccumulationModel${consumerProgressVO_index}b" data-toggle="modal">跳过堆积</button>&nbsp;
+		                    		<button title="消费过去一段时间至现在的消息" type="button" class="btn btn-success" data-target="#resetOffSetModel${consumerProgressVO_index}b" data-toggle="modal">消息回溯</button>&nbsp;
+		                    		</#if>
+		                    		<button type="button" class="btn btn-warning" data-target="#deleteConsumerModel${consumerProgressVO_index}b" data-toggle="modal"><span class="glyphicon glyphicon-trash" aria-hidden="true"></span></button>&nbsp;
+		                    		
+		                    		<#if consumerProgressVO.offsetMap??>
+		                    		<!-- 详情 -->
+		                    		<div id="consumeDetailModel${consumerProgressVO_index}b" class="modal fade" tabindex="-1" aria-hidden="true">
+										<div class="modal-dialog">
+											<div class="modal-content">
+												<div class="modal-header">
+													<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+													<h4 class="modal-title"><b>${consumerProgressVO.consumer.name}</b> 消费详情</h4>
+												</div>
+												<table class="table table-striped table-hover" style="margin-top: 0px">
+													<thead>
+														<tr>
+															<td>clientId</td>
+															<td>broker</td>
+															<td>队列</td>
+															<td>broker偏移量</td>
+															<td>消费者偏移量</td>
+															<td>堆积量</td>
+														</tr>
+													</thead>
+													<tbody>
+														<#list consumerProgressVO.consumeStatsList as consumeStats>
+															<tr>
+																<td rowspan=${consumeStats.offsetTable?size+1}>${consumeStats.clientId}</td>
+															</tr>
+															<#list consumeStats.offsetTable as mq,offset>
+															<tr>
+																<td>${mq.brokerName}</td>
+																<td>${mq.queueId}</td>
+																<td>
+																	${offset.brokerOffset}
+																</td>
+																<td>
+																	${offset.consumerOffset}
+																</td>
+																<td>
+																	${offset.brokerOffset - offset.consumerOffset}
+																</td>
+															</tr>
+															</#list>
+														</#list>
+													</tbody>
+												</table>
+											</div>
+										</div>
+									</div> <!-- 详情结束 -->
+									<!-- 跳过堆积 -->
+									<div id="skipAccumulationModel${consumerProgressVO_index}b" class="modal fade" tabindex="-1" aria-hidden="true">
+										<div class="modal-dialog">
+											<div class="modal-content">
+												<div class="modal-header">
+													<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+													<h4 class="modal-title"><b>确定跳过堆积的消息吗?</h4>
+												</div>
+												<form class="form-horizontal form-bordered form-row-stripped">
+													<div class="modal-body">
+														<div class="row">
+															<div class="col-md-12">
+																<div class="form-body">
+																	<div class="form-group">
+																		<label class="control-label col-md-3"> Topic: </label>
+																		<div class="col-md-5">
+																			<input type="text" readonly="readonly" value="${consumerProgressVO.topic}" class="form-control" />
+																		</div>
+																	</div>
+																	<div class="form-group">
+																		<label class="control-label col-md-3"> 消费者: </label>
+																		<div class="col-md-5">
+																			<input type="text" readonly="readonly" value="${consumerProgressVO.consumer.name}" class="form-control" />
+																		</div>
+																	</div>
+																</div>
+															</div>
+														</div>
+													</div>
+													<div  class="modal-footer">
+														<button type="button" data-dismiss="modal" class="btn" >取消</button>
+														<button type="button" id="skipAccumulationBtn${consumerProgressVO_index}b" class="btn btn-primary" onclick="skipAccumulation(${consumerProgressVO.consumer.tid},${consumerProgressVO.consumer.id},'skipAccumulationBtn${consumerProgressVO_index}b')">确定</button>
+													</div>
+												</form>
+											</div>
+										</div>
+									</div><!-- 跳过堆积结束 -->
+									<!-- 消息回溯-->
+									<div id="resetOffSetModel${consumerProgressVO_index}b" class="modal fade" tabindex="-1" aria-hidden="true">
+										<div class="modal-dialog">
+											<div class="modal-content">
+												<div class="modal-header">
+													<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+													<h4 class="modal-title"><b>消息回溯</h4>
+												</div>
+												<form class="form-horizontal form-bordered form-row-stripped">
+													<div class="modal-body">
+														<div class="row">
+															<div class="col-md-12">
+																<div class="form-body">
+																	<div class="form-group">
+																		<label class="control-label col-md-3"> Topic: </label>
+																		<div class="col-md-5">
+																			<input type="text" readonly="readonly" value="${consumerProgressVO.topic}" class="form-control" />
+																		</div>
+																	</div>
+																	<div class="form-group">
+																		<label class="control-label col-md-3"> 消费者: </label>
+																		<div class="col-md-5">
+																			<input type="text" readonly="readonly" value="${consumerProgressVO.consumer.name}" class="form-control" />
+																		</div>
+																	</div>
+																	<div class="form-group">
+																		<label class="control-label col-md-3"> 回溯到: </label>
+																		<div class="col-md-5">
+																			<input type="text" id="resetOffsetDate${consumerProgressVO_index}b" name="resetOffsetDate" class="Wdate form-control" onclick="WdatePicker({ dateFmt: 'yyyy-MM-dd HH:mm:ss',maxDate:'%y-%M-%d',minDate:'%y-%M-{%d-5}'})" style="width:100%;height:34px;cursor:pointer;" readonly="readonly">
+																		</div>
+																	</div>
+																</div>
+															</div>
+														</div>
+													</div>
+													<div  class="modal-footer">
+														<button type="button" data-dismiss="modal" class="btn" >取消</button>
+														<button type="button" id="resetOffsetBtn${consumerProgressVO_index}b" class="btn btn-primary" onclick="resetOffset('${consumerProgressVO_index}b',${consumerProgressVO.consumer.tid},${consumerProgressVO.consumer.id},'resetOffsetBtn${consumerProgressVO_index}b')">确定</button>
+													</div>
+												</form>
+											</div>
+										</div>
+									</div><!-- 消息回溯-->
+									</#if>
+									<!-- 删除consumer -->
+									<div id="deleteConsumerModel${consumerProgressVO_index}b" class="modal fade" tabindex="-1" aria-hidden="true">
+										<div class="modal-dialog">
+											<div class="modal-content">
+												<div class="modal-header">
+													<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+													<h4 class="modal-title"><b>确定删除消费者吗?</h4>
+												</div>
+												<form class="form-horizontal form-bordered form-row-stripped">
+													<div class="modal-body">
+														<div class="row">
+															<div class="col-md-12">
+																<div class="form-body">
+																	<div class="form-group">
+																		<label class="control-label col-md-3"> Topic: </label>
+																		<div class="col-md-5">
+																			<input type="text" readonly="readonly" value="${consumerProgressVO.topic}" class="form-control" />
+																		</div>
+																	</div>
+																	<div class="form-group">
+																		<label class="control-label col-md-3"> 消费者: </label>
+																		<div class="col-md-5">
+																			<input type="text" readonly="readonly" value="${consumerProgressVO.consumer.name}" class="form-control" />
+																		</div>
+																	</div>
+																</div>
+															</div>
+														</div>
+													</div>
+													<div  class="modal-footer">
+														<button type="button" data-dismiss="modal" class="btn" >取消</button>
+														<button type="button" id="deleteConsumerBtn${consumerProgressVO_index}b" class="btn btn-primary" onclick="deleteConsumer(${consumerProgressVO.consumer.tid},${consumerProgressVO.consumer.id},'deleteConsumerBtn${consumerProgressVO_index}b')">确定</button>
+													</div>
+												</form>
+											</div>
+										</div>
+									</div>
+									<!-- 删除consumer-->
+		                    	</td>
+		                   	</tr>
+						</#list>
+					</#if>
+                </tbody>
+           </table>
+    </div>
+</div>
+<!-- 提示弹窗 -->
+<div class="modal fade" id="deleteUserConsumerModal" aria-hidden="true">  
+  <div class="modal-dialog">  
+    <div class="modal-content message_align">  
+      <div class="modal-header">  
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">×</span></button>  
+        <h4 class="modal-title">确定要移除用户吗？</h4>  
+      </div>  
+		<form class="form-horizontal form-bordered form-row-stripped">
+			<div class="modal-body">
+				<div class="row">
+					<!-- 控件开始 -->
+					<div class="col-md-12">
+						<!-- form-body开始 -->
+						<div class="form-body">
+							<div class="form-group">
+								<label class="control-label col-md-3"> 用户: </label>
+								<div class="col-md-5">
+									<input type="text" id="user_name" class="form-control" readonly="readonly"/>
+									<input type="hidden" id="currentUid"/>
+									<input type="hidden" id="currentCid"/>
+								</div>
+							</div>						
+						</div>
+						<!-- form-body 结束 -->
+					</div>
+					<div id="info"></div>
+					<!-- 控件结束 -->
+				</div>
+			</div>
+			
+			<div class="modal-footer">
+				<button type="button" data-dismiss="modal" class="btn" >取消</button>
+				<button type="button" id="deleteUserConsumerBtn" onclick="deleteUserConsumer()" class="btn btn-primary">确定</button>
+			</div>
+		
+		</form>
+    </div>
+  </div>
+</div>
+<div id="addUserConsumerModal" class="modal fade" tabindex="-1" data-width="400">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+				<h4 class="modal-title">授权其他用户</h4>
+			</div>
+			<form class="form-horizontal form-bordered form-row-stripped" id="addUserProducerModalForm">
+				<div class="modal-body">
+					<div class="row">
+						<div class="col-md-12">
+							<div class="form-body">
+								<div class="form-group">
+									<label class="control-label col-md-3"> Topic: </label>
+									<div class="col-md-5">
+										<input type="text" id="topicName" readonly="readonly" class="form-control"/>
+									</div>
+								</div>
+								<div id="consumerGroup" class="form-group">
+									<label class="control-label col-md-3"> 消费者: </label>
+									<div class="col-md-5">
+										<input type="text" id="consumerGroupName" readonly="readonly" class="form-control" />
+										<input type="hidden" id="consumerGroupID"/>
+									</div>
+								</div>
+								<div class="form-group">
+									<label class="control-label col-md-3"> 选择用户: </label>
+							        <div class="col-md-5">
+			    						<select id="user_search_select" class="selectpicker" title="请选择" data-live-search-placeholder="搜索" data-live-search="true"></select> 	  			
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" data-dismiss="modal" class="btn" >取消</button>
+					<button type="button" class="btn btn-primary" id="associateUserConsumerBtn" onclick="addUserCounsumerRelationship()">确定</button>
+				</div>
+			</form>
+		</div>
+	</div>
+</div>
+<!-- 	准备搜索部分 -->
+<div class="row">
+<div class="col-md-12">
+	<div class="border-top"></div>
+	<div style="float:left;margin:10px 5px;"><h5><b>${topic.name}</b> 消费流量图</h5></div>
+	<div id="consume_search" style="float:right;margin:10px 0px;"></div>
+</div>
+</div>
+<!-- 	准备曲线图 -->
+<div id="consume_lineChart"><center>暂无数据</center></div>
+<script>
+<#if response.OK>
+$(function() {
+	lineChart("consume", function (){
+		$("#tid").val("${RequestParameters.tid}");
+	});
+});
+</#if>
+</script>
+
+<script>
+/**
+ * 跳过堆积
+ */
+function skipAccumulation(tid, cid, btn){
+	disable(btn);
+	$.get('${request.contextPath}/consumer/reset/offset',{
+		tid: tid,
+		consumerId: cid
+	},function(data){
+        if(data.status == 200){
+			toastr.success("跳过堆积申请成功");  
+			modalHide(3000);
+	    }else{
+	    	toastr.error("操作失败！"+data.message);  
+	    	enable(btn);
+	    }
+    }, 'json');
+}
+/**
+ * 重置偏移量
+ */
+function resetOffset(idx, tid, cid, btn){
+	var resetOffsetTo = $("#resetOffsetDate"+idx).val();
+	if(!resetOffsetTo){
+		alert("请选择回溯到的时间!");
+		return;
+	}
+	disable(btn);
+	$.get('${request.contextPath}/consumer/reset/offset',{
+		tid: tid,
+		consumerId: cid,
+		offset: resetOffsetTo
+	},function(data){
+        if(data.status == 200){
+			toastr.success("消息回溯申请成功");  
+			modalHide(3000);
+	    }else{
+	    	toastr.error("操作失败！"+data.message);  
+	    	enable(btn);
+	    }
+    }, 'json');
+}
+/**
+ * 删除消费者
+ */
+function deleteConsumer(tid, cid, btn){
+	disable(btn);
+	$.post('${request.contextPath}/consumer/delete',{
+		tid: tid,
+		consumerId: cid
+	},
+    function(data){
+        if(data.status == 200){
+			toastr.success("删除消费者申请成功");  
+			modalHide(3000);
+	    }else{
+	    	toastr.error("操作失败！"+data.message);  
+	    	enable(btn);
+	    }
+    }, 'json');
+}
+
+$(function(){
+	$("[data-toggle='tooltip']").tooltip({container: 'body'});
+	$("[data-toggle='modal']").tooltip({container: 'body'});
+	 //添加删除特效
+    $(".producer_delete").hover(function(){
+    	$(this).addClass("delete");
+    },function(){
+    	$(this).removeClass("delete");
+    });
+ 	// 初始化user列表
+	initUserList('user_search_select');
+});
+//准备删除
+function prepareDeleteUserConsumer(uid,userName,consumerID){
+	$("#user_name").val(userName);
+	$("#currentUid").val(uid);
+	$("#currentCid").val(consumerID);
+	$("#deleteUserConsumerModal").modal('show');
+}
+//删除用户与消费者关联
+function deleteUserConsumer(){
+	disable("deleteUserConsumerBtn");
+	$.post('${request.contextPath}/userConsumer/delete',
+		{
+			uid: $("#currentUid").val(),
+			cid: $("#currentCid").val()
+		},
+        function(data){
+            if(data.status == 200){
+            	toastr.success("申请成功！请耐心等待！");  	            	
+            	reload(1000);            	
+		    }else{
+		    	toastr.error("删除失败！"+data.message);  
+		    	enable("deleteUserConsumerBtn");
+		    }
+    }, 'json');
+}
+/**
+ * 初始化user下拉列表
+ */
+function initUserList(componentId){
+	$.get('${request.contextPath}/user/list',
+	        function(data){
+	            if(data.status == 200){
+	            	var content = "";
+	            	for(var i in data.result){
+	            		var user = data.result[i];
+	            		var value = user.email.substring(0, user.email.indexOf("@"));
+	            		if(user.name && user.name != value){
+	            			value = user.name + "【" + value +"】";
+	            		}
+	            		content += "<option value='"+user.id+"'>"+value+"</option>";	
+	            	}
+	        		$("#"+componentId).html(content);
+	        		$("#"+componentId).selectpicker('refresh');
+			    }else{
+			    	toastr.error("数据获取失败！"+data.message);  
+			    }
+        }, 'json');
+}
+//关联用户
+function associateUserConsumer(consumerGroupID,consumerGroupName){
+	$("#topicName").val('${topic.name}');
+	$("#consumerGroupName").val(consumerGroupName);
+	$("#consumerGroupID").val(consumerGroupID);
+	$("#addUserConsumerModal").modal('show');
+}
+/**
+ * 发送添加用户请求
+ */
+function addUserCounsumerRelationship(){
+	if(!$("#user_search_select").val()){
+		alert("请先选择用户");
+		return;
+	}
+	disable("associateUserConsumerBtn");
+	$.post('${request.contextPath}/consumer/auth/associate',
+			{
+				cid: $("#consumerGroupID").val(),
+				tid: $("#tid").val(),
+				uid: $('#user_search_select option:selected').val(),
+			},
+	        function(data){
+	            if(data.status == 200){
+	            	toastr.success("申请成功！请耐心等待！");  	            	
+	            	reload(1000);            	
+			    }else{
+			    	toastr.error("申请失败！"+data.message);  
+			    	enable("associateUserConsumerBtn");
+			    }
+	    }, 'json');
+}
+</script>

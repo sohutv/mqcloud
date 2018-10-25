@@ -1,0 +1,55 @@
+<div id="feedbackModal" class="modal fade" tabindex="-1" data-width="400">
+	<div class="modal-dialog">
+		<div class="modal-content">
+
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+				<h4 class="modal-title">欢迎反馈</h4>
+			</div>
+			
+			<div class="modal-body">
+				<div class="text-center">因为有您的支持与关注，我们才会一点点进步，期待听到您的声音！</div>
+			</div>
+			<form class="form-horizontal form-bordered form-row-stripped" id="feedbackForm">
+				<div class="modal-body">
+					<div class="row">
+						<div class="col-md-12">
+							<div class="form-body">
+								<div class="form-group">
+									<label class="control-label col-md-3"> 内容: </label>
+									<div class="col-md-5">
+										<textarea type="text" id="feedbackContent" name="content" rows="8" class="form-control" placeholder="欢迎反馈任何问题，建议，bug，想法等等"></textarea>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</form>
+			<div class="modal-footer">
+				<button type="button" data-dismiss="modal" class="btn" >取消</button>
+				<button type="botton" id="feedbackBtn" onclick="addFeedback()" class="btn btn-primary">确定</button>
+			</div>
+		</div>
+	</div>
+</div>
+<script>
+function addFeedback(){
+	if($.trim($("#feedbackContent").val()) == ""){
+		alert("请输入您的反馈！");
+		return;
+	}
+	disable("feedbackBtn");
+	$.post('${request.contextPath}/feedback/add',
+		$("#feedbackForm").serialize(),
+       	function(data){
+           if(data.status == 200){
+				toastr.success("我们已经收到您的反馈，非常感谢！");  
+				reload(3000);
+           } else{
+	    		enable("feedbackBtn");
+	    		toastr.error("反馈失败！"+data.message);  
+	   	   }
+    }, 'json');
+}
+</script>

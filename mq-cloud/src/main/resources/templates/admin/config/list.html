@@ -1,0 +1,106 @@
+<div class="main">
+	<form class="form-inline" role="form">
+		<div class="form-group">
+			<label> 通用配置列表: </label>
+		</div>
+	</form>
+	<hr/>
+	<table class="table table-striped table-hover">
+		<colgroup>
+		  <col width="50px">
+		  <col>
+		  <col>
+		  <col>
+		  <col width="50px">
+		</colgroup>
+		<thead>
+			<tr>
+				<td>序号</td>
+				<td>配置项</td>
+				<td>配置值</td>
+				<td>注释</td>
+				<td>操作</td>
+			</tr>
+		</thead>
+		<tbody>
+			<#list response.result as config>
+				<tr>
+					<td>${config_index + 1}</td>
+					<td id="key${config.id}">${config.key}</td>
+					<td id="value${config.id}">${config.value}</td>
+					<td id="comment${config.id}">${config.comment}</td>
+					<td><button type="button" class="btn btn-success" data-target="#updateConfigModal" onclick="updateConfig(${config.id})" data-toggle="modal">修改</button></td>
+				</tr>
+			</#list>
+		</tbody>
+	</table>
+</div>
+
+<div id="updateConfigModal" class="modal fade" tabindex="-1" data-width="400">
+	<div class="modal-dialog">
+		<div class="modal-content">
+
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+				<h4 class="modal-title">修改配置</h4>
+			</div>
+
+			<form class="form-horizontal form-bordered form-row-stripped" id="updateConfigForm">
+				<div class="modal-body">
+					<div class="row">
+						<div class="col-md-12">
+							<div class="form-body">
+								<div class="form-group">
+									<label class="control-label col-md-3"> 配置项: </label>
+									<div class="col-md-5">
+										<input type="text" id="configKey" name="key" class="form-control" readonly="readonly"/>
+									</div>
+								</div>
+								<div class="form-group">
+									<label class="control-label col-md-3"> 配置值: </label>
+									<div class="col-md-5">
+										<textarea type="text" id="configValue" name="value" rows="6" class="form-control"></textarea>
+									</div>
+								</div>
+								<div class="form-group">
+									<label class="control-label col-md-3"> 注释: </label>
+									<div class="col-md-5">
+										<textarea type="text" id="configComment" name="comment" rows="6" class="form-control"></textarea>
+									</div>
+								</div>
+								<input type="hidden" id="configId" name="id" />
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" data-dismiss="modal" class="btn" >取消</button>
+					<button type="button" class="btn btn-primary" id="updateConfigBtn" onclick="update()">确定</button>
+				</div>
+			</form>
+		</div>
+	</div>
+</div>
+
+<script>
+	function updateConfig(id){
+		$("#configId").val(id);
+		$("#configKey").val($("#key"+id).html());
+		$("#configValue").val($("#value"+id).html());
+		$("#configComment").val($("#comment"+id).html());
+	}
+	function update(){
+		disable("updateConfigBtn");
+		$.post('${request.contextPath}/admin/config/update',
+			$("#updateConfigForm").serialize(),
+	        function(data){
+	            if(data.status == 200){
+					toastr.success("操作成功，系统将自动刷新");  
+			        reload(3000);
+			    }else{
+			    	toastr.error("操作失败！"+data.message); 
+			    	enable("updateConfigBtn");
+			    }
+	        }, 'json');
+	}
+</script>

@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<parent>
+		<groupId>com.sohu.tv</groupId>
+		<artifactId>mq</artifactId>
+		<version>1.0.RELEASE</version>
+	</parent>
+
+	<artifactId>mq-client-common-open</artifactId>
+	<packaging>jar</packaging>
+
+	<dependencies>
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-api</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.rocketmq</groupId>
+			<artifactId>rocketmq-client</artifactId>
+		</dependency>
+		<dependency>
+            <groupId>io.protostuff</groupId>
+            <artifactId>protostuff-runtime</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.protostuff</groupId>
+            <artifactId>protostuff-core</artifactId>
+        </dependency>
+		<dependency>
+			<groupId>com.netflix.hystrix</groupId>
+			<artifactId>hystrix-core</artifactId>
+			<optional>true</optional>
+		</dependency>
+	</dependencies>
+	
+	<build>
+		<plugins>
+			<!-- 为了获取项目版本，并上报 -->
+			<plugin>
+			    <groupId>org.codehaus.mojo</groupId>
+			    <artifactId>templating-maven-plugin</artifactId>
+			    <version>1.0.0</version>
+			    <executions>
+			        <execution>
+			            <id>filter-src</id>
+			            <goals>
+			                <goal>filter-sources</goal>
+			            </goals>
+			            <configuration>              
+		                  <sourceDirectory>${basedir}/src/main/template</sourceDirectory>
+		                  <outputDirectory>${basedir}/src/main/java/com/sohu/tv/mq/util</outputDirectory>
+		                </configuration>
+			        </execution>
+			    </executions>
+			</plugin>
+		</plugins>
+	</build>
+</project>

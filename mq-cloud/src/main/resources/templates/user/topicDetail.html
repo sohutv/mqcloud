@@ -1,0 +1,45 @@
+<script type="text/javascript" src="${request.contextPath}/resources/echarts/echarts.min.js"></script>
+<div class="tabbable-custom">
+    <ul class="nav nav-tabs" id="tabs">
+        <li id="topology" class="active"><a href="#topologyTab" data-url="${request.contextPath}/user/topic/${response.result}/topology" data-toggle="tab">详情</a></li>
+        <li id="produce"><a href="#produceTab" data-url="${request.contextPath}/topic/${response.result}/produce/progress" data-toggle="tab">生产详情</a></li>
+        <li id="consume"><a href="#consumeTab" data-url="${request.contextPath}/consumer/progress?tid=${response.result}" data-toggle="tab">消费详情</a></li>
+        <li id="msg"><a href="#msgTab" data-url="${request.contextPath}/msg/index?tid=${response.result}" data-toggle="tab">消息</a></li>
+    </ul>
+    <div class="tab-content" id="tabContent">
+        <div class="tab-pane active" id="topologyTab">
+        </div>
+        <div class="tab-pane" id="produceTab">
+        </div>
+        <div class="tab-pane" id="consumeTab">
+        </div>
+        <div class="tab-pane" id="msgTab">
+        </div>
+    </div>
+</div>
+<script type="text/javascript">
+    $('#tabs a').click(function (e) {
+        e.preventDefault();
+        // 清除之前tab下的内容
+        $("#tabContent div.active").empty();
+        var href = this.hash;
+        var url = $(this).attr("data-url");
+        var pane = $(this);
+        $.get(url, function (result) {
+        	$(href).html(result);
+            pane.tab('show');
+        });
+    });
+    function refreshActiveTab(){
+    	var tab = getQueryString("tab");
+    	if(tab){
+    		$("#"+tab).addClass("active").siblings().removeClass("active");
+    		$("#"+tab+"Tab").addClass("active").siblings().removeClass("active");
+    	}
+    	$("#tabs li.active a").click();
+    	$("#tabs li a").tooltip({placement:"bottom"});
+    }
+    $(function(){
+    	refreshActiveTab();
+    });
+</script>

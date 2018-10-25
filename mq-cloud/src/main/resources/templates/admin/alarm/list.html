@@ -1,0 +1,486 @@
+<div class="main">
+	<form class="form-inline" role="form">
+		<div class="form-group">
+			<label> 报警阈值列表: </label>
+		</div>
+	</form>
+	<hr/>
+	<div style="vertical-align: middle;margin-bottom:10px;">
+	  <span><b>全局报警:</b></span>
+	</div>
+	<table class="table table-striped table-hover">
+		<thead>
+			<tr class="text-center ">
+				<td>序号</td>
+				<td>堆积时间</td>
+				<td>堆积数量</td>
+				<td>堵塞时间</td>
+				<td>消费失败数量</td>
+				<td>忽略堆积报警主题</td>
+				<td>报警频率限制</td>
+				<td>是否接收报警</td>
+				<td>操作</td>
+			</tr>
+		</thead>
+		<tbody>
+            <#if !response.OK || !response.result.defaultConfig??>
+			     <tr>
+                    <td colspan="9"class="text-center" >
+                    	暂无数据
+                    </td>
+                <tr>
+			<#else>
+			    <#assign defaultConfig = response.result.defaultConfig>
+				<tr class="text-center ">
+					<td>1</td>
+					<td>${defaultConfig.accumulateTime}</td>
+					<td>${defaultConfig.accumulateCount}</td>
+					<td>${defaultConfig.blockTime}</td>
+					<td>${defaultConfig.consumerFailCount}</td>
+					<td>${defaultConfig.ignoreTopic}</td>				
+					<td>${defaultConfig.spliceWarnFrequency()}</td>
+					<td>${(defaultConfig.ignoreWarn==0)?string('是','否')}</td>
+					<td><button type="button" onclick="updateAlarmConfig(${defaultConfig.id},false)" class="btn btn-success"><span class="glyphicon glyphicon-cog" aria-hidden="true"></span></button></td>
+				</tr>
+
+			</#if>
+		</tbody>
+	</table>
+	<div style="vertical-align: middle;margin-bottom:10px;">
+	  <span><b>用户自定义报警:</b></span>
+	  <button type="button" onclick="addUserAlarmConfig()" class="btn btn-success"><span class="glyphicon glyphicon-cog" aria-hidden="true">添加配置</span></button>
+	</div>
+	<table class="table table-striped table-hover">
+		<thead>
+			<tr class="text-center ">
+				<td>序号</td>
+				<td>用户</td>
+				<td>主题</td>
+				<td>堆积时间</td>
+				<td>堆积数量</td>
+				<td>堵塞时间</td>
+				<td>消费失败数量</td>
+				<td>忽略堆积报警主题</td>
+				<td>报警频率限制</td>
+				<td>是否接收报警</td>
+				<td>操作</td>
+			</tr>
+		</thead>
+		<tbody>
+            <#if !response.OK || !response.result.userAlarmConfig??>
+			     <tr>
+                    <td colspan="11"class="text-center" >
+                    	暂无数据
+                    </td>
+                <tr>
+			<#else>
+			    <#list response.result.userAlarmConfig as userAlarmConfig>
+					<tr class="text-center ">
+						<td>${userAlarmConfig_index+1}</td>
+						<td>${userAlarmConfig.user.name!userAlarmConfig.user.emailName}</td>
+						<td>${userAlarmConfig.topic}</td>
+						<td>${userAlarmConfig.accumulateTime}</td>
+						<td>${userAlarmConfig.accumulateCount}</td>
+						<td>${userAlarmConfig.blockTime}</td>
+						<td>${userAlarmConfig.consumerFailCount}</td>
+						<td>${userAlarmConfig.ignoreTopic}</td>						
+						<td>${userAlarmConfig.spliceWarnFrequency()}</td>
+						<td>${(userAlarmConfig.ignoreWarn==0)?string('是','否')}</td>
+						<td>
+							<button type="button" onclick="updateAlarmConfig(${userAlarmConfig.id},true)" class="btn btn-success"><span class="glyphicon glyphicon-cog" aria-hidden="true"></span></button>
+						 	<button type="button" onclick="deleteUserAlarm(${userAlarmConfig.id},'${userAlarmConfig.topic}','${userAlarmConfig.user.name!userAlarmConfig.user.emailName}')" class="btn btn-warning"><span class="glyphicon glyphicon-trash" aria-hidden="true"></span></button>
+						</td>
+					</tr>		    		
+				</#list>
+			</#if>
+		</tbody>
+	</table>
+</div>
+
+<!-- 修改配置报警阈值 -->
+<div id="updateAlarmThresholdModal" class="modal fade" tabindex="-1" data-width="400">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+				<h4 class="modal-title">Topic报警阈值配置</h4>
+			</div>
+			<form class="form-horizontal form-bordered form-row-stripped" id="updateAlarmThresholdForm">
+				<div class="modal-body">
+					<div class="row">
+						<div class="col-md-12">
+							<div class="form-body">
+								<div class="form-group" id="userInputID">
+									<label class="control-label col-md-4"> 用户: </label>
+							        <div class="col-md-5">
+			    						<select id="userSearchSelect" class="selectpicker" title="请选择" data-live-search-placeholder="搜索" name="uid" data-live-search="true"></select> 	  			
+									</div>
+								</div>
+								<div class="form-group" id="topicInputID">
+									<label class="control-label col-md-4"> 主题: </label>
+							        <div class="col-md-5">
+										<select id="topicSearchSelect" class="selectpicker" title="请选择" data-live-search-placeholder="搜索" name="topic" data-live-search="true"></select>
+									</div>
+								</div>
+								<div class="form-group">
+									<label class="control-label col-md-4"> 接收报警: </label>
+									<div class="col-md-5 checkbox">
+									    <input type="radio" name="ignoreWarn" value="0">
+									    	是
+									    <input type="radio" name="ignoreWarn" value="1">
+									    	<span data-toggle="modal" title="此选项优先级较高，会使下面配置失效，请谨慎使用">否</span>
+									</div>
+								</div>
+								<div class="form-group" id="accumulateTimeID">
+									<label class="control-label col-md-4"> 堆积时间: </label>
+							        <div class="col-md-5">
+										<input type="text" id="accumulateTimeInput" name="accumulateTime" placeholder="300000-单位毫秒" class="form-control" />
+									</div>
+								</div>
+								<div class="form-group" id="accumulateCountID">
+										<label class="control-label col-md-4"> 堆积数量: </label>
+							        <div class="col-md-5">
+										<input type="text" id="accumulateCountInput" name="accumulateCount"
+											placeholder="10000" class="form-control" />
+									</div>
+								</div>
+								<div class="form-group" id="blockTimeID">
+									<label class="control-label col-md-4"> 堵塞时间: </label>
+									<div class="col-md-5">
+										<input type="text" id="blockTimeInput" name="blockTime" 
+										placeholder="10000-单位毫秒" class="form-control" />
+									</div>
+								</div>
+								<div class="form-group" id="consumerFailCountrID">
+									<label class="control-label col-md-4"> 消费失败数量: </label>
+									<div class="col-md-5">
+										<input type="text" id="consumerFailCountrInput" name="consumerFailCount" 
+										placeholder="10" class="form-control" />
+									</div>
+								</div>
+								<div class="form-group" id="warnFrequencyID">
+									<label class="control-label col-md-4"> 报警频率限制: </label>
+									<div class="col-md-5">
+										<div class="input-group">
+											<span class="input-group-addon">时间：</span><input type="text" id="warnUnitTimeInput" 
+											name="warnUnitTime" placeholder="1-单位小时" class="form-control" />
+											<span class="input-group-addon">小时</span>
+	    								</div>
+									</div>
+								</div>
+								<div class="form-group">
+									<label class="control-label col-md-4"> </label>
+									<div class="col-md-5">
+										<div class="input-group">
+											<span class="input-group-addon">次数：</span><input type="text" id="warnUnitCountInput" 
+											name="warnUnitCount" placeholder="2" class="form-control" />
+	    								</div>
+									</div>
+								</div>
+								<div class="form-group">
+									<label class="control-label col-md-4"> 忽略的主题: </label>
+									<div class="col-md-5">
+										<textarea type="text" id="ignoreTopicInput" name="ignoreTopic" rows="4" class="form-control"
+											 placeholder="多个主题用英文逗号分隔"></textarea>
+									</div>
+								</div>
+								<input type="hidden" id="currentRecordId" name="id"/>
+								<input type="hidden" id="isAddAlarmRecord" />
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" data-dismiss="modal" class="btn" >取消</button>
+					<button type="submit" class="btn btn-primary" id="updateAlarmThresholdBtn">确定</button>
+				</div>
+			</form>
+		</div>
+	</div>
+</div>
+<!-- 删除提示 -->
+<div class="modal fade" id="deleteUserAlarmModal" aria-hidden="true">  
+  <div class="modal-dialog">  
+    <div class="modal-content message_align">  
+      <div class="modal-header">  
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">×</span></button>  
+        <h4 class="modal-title">确定要删除报警配置吗？</h4>  
+      </div>  
+		<form class="form-horizontal form-bordered form-row-stripped">
+			<div class="modal-body">
+				<div class="row">
+					<!-- 控件开始 -->
+					<div class="col-md-12">
+						<!-- form-body开始 -->
+						<div class="form-body">
+							<div class="form-group">
+								<label class="control-label col-md-3"> 用户: </label>
+								<div class="col-md-5">
+									<input type="text" id="currentDeleteUser" class="form-control" readonly="readonly"/>
+								</div>
+							</div>
+							<div class="form-group">
+								<label class="control-label col-md-3"> 主题: </label>
+								<div class="col-md-5">
+									<input type="text" id="currentDeleteTopic" class="form-control" readonly="readonly"/>
+								</div>
+							</div>
+						</div>
+					</div>
+					<input type="hidden" id="currentDeleteId"/>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" data-dismiss="modal" class="btn" >取消</button>
+				<button type="button" id="deleteUserAlarmBtn" onclick="submitDeleteUserAlarm()" class="btn btn-primary">确定</button>
+			</div>
+		
+		</form>
+    </div>
+  </div>
+</div>
+<script>
+$(function () {
+// 初始化user列表
+initUserList('userSearchSelect');
+//初始化topic列表
+initTopicList('topicSearchSelect', true);
+});
+
+//用户报警配置表单校验
+$('#updateAlarmThresholdForm').bootstrapValidator({
+　　	message: 'This value is not valid',
+        　		feedbackIcons: {
+            　　　　　　　　valid: 'glyphicon glyphicon-ok',
+            　　　　　　　　invalid: 'glyphicon glyphicon-remove',
+            　　　　　　　　validating: 'glyphicon glyphicon-refresh'
+        　　　　　　　　   },
+        fields: {
+            accumulateTime: {
+                validators: {
+                	notEmpty: {
+                        message: '堆积时间不能为空'
+                    },
+	               regexp: {
+	                   regexp: /^[+]{0,1}(\d+)$/,
+	                   message: '堆积数量要大于0'
+	               }
+                }
+            },
+            accumulateCount: {
+                validators: {
+                	notEmpty: {
+                        message: '堆积数量不能为空'
+                    },
+                	regexp: {
+                        regexp: /^[+]{0,1}(\d+)$/,
+                        message: '堆积数量要大于0'
+                    }           
+                }
+            },
+            blockTime: {
+                validators: {
+                	notEmpty: {
+                        message: '阻塞时间不能为空'
+                    },
+	                regexp: {
+	                    regexp: /^[+]{0,1}(\d+)$/,
+	                    message: '阻塞时间要大于0'
+	                }
+                }
+            },
+            consumerFailCount: {
+                validators: {
+                	notEmpty: {
+                        message: '消费失败数量不能为空'
+                    },
+	                regexp: {
+	                    regexp: /^[+]{0,1}(\d+)$/,
+	                    message: '消费失败数量要大于0'
+	                }
+                }
+            },
+            warnUnitTime: {
+                validators: {
+                	notEmpty: {
+                        message: '报警时间限制不能为空'
+                    },
+	                regexp: {
+	                    regexp: /^[+]{0,1}(\d+)$/,
+	                    message: '报警时间限制要大于0'
+	                }
+                }
+            }, 
+            warnUnitCount: {
+                validators: {
+                	notEmpty: {
+                        message: '报警次数限制不能为空'
+                    },
+	                regexp: {
+	                    regexp: /^[+]{0,1}(\d+)$/,
+	                    message: '报警次数限制要大于0'
+	                }
+                }
+            }, 
+            ignoreWarn: {
+                validators: {
+                	notEmpty: {
+                        message: '是否接收报警不能为空'
+                    },
+                }
+            },
+        }
+}).on('success.form.bv', function(e) {
+	// 阻止默认事件提交
+    e.preventDefault();
+	disable("updateAlarmThresholdBtn");
+	//更新和添加公用一个model
+	if($("#isAddAlarmRecord").val() == 1){
+		$.post('${request.contextPath}/admin/alarm/config/update/',
+				$("#updateAlarmThresholdForm").serialize(),
+		        function(data){
+		            if(data.status == 200){
+						toastr.success("操作成功，即将刷新页面");  
+						modalHide(3000, function(){
+							$("#updateAlarmThresholdForm")[0].reset();
+							$("#updateAlarmThresholdForm").data('bootstrapValidator').resetForm();
+						});
+						reload(1000); 
+				    }else{
+				    	toastr.error("操作失败！"+data.message);  
+		            	enable("updateAlarmThresholdBtn");
+				    }
+		        }, 'json');
+	}else{
+		$.post('${request.contextPath}/admin/alarm/config/add/',
+				$("#updateAlarmThresholdForm").serialize(),
+		        function(data){
+		            if(data.status == 200){
+						toastr.success("操作成功，即将刷新页面");  
+						modalHide(3000, function(){
+							$("#updateAlarmThresholdForm")[0].reset();
+							$("#updateAlarmThresholdForm").data('bootstrapValidator').resetForm();
+						});
+						reload(1000); 
+				    }else{
+				    	toastr.error("操作失败！"+data.message);  
+			            enable("updateAlarmThresholdBtn");
+				    }
+		        }, 'json');
+	}
+	
+});
+//修改用户报警配置
+function updateAlarmConfig(id,flag){
+	$.get('${request.contextPath}/admin/alarm/config/detail/'+id,
+	        function(data){
+	            if(data.status == 200){
+	            	$("#isAddAlarmRecord").val(1);
+	            	$("#currentRecordId").val(data.result.id);
+	            	$("input[name='ignoreWarn'][value='"+data.result.ignoreWarn+"']").attr("checked",true);
+	            	$("#accumulateTimeInput").val(data.result.accumulateTime);
+	            	$("#accumulateCountInput").val(data.result.accumulateCount);
+	            	$("#blockTimeInput").val(data.result.blockTime);
+	            	$("#warnUnitCountInput").val(data.result.warnUnitCount);
+	            	$("#warnUnitTimeInput").val(data.result.warnUnitTime);
+	            	$("#consumerFailCountrInput").val(data.result.consumerFailCount);
+	            	$("#ignoreTopicInput").val(data.result.ignoreTopic);
+	            	//区分用户配置和默认配置
+	            	if(flag){//用户
+	            		$("#userSearchSelect").val(data.result.uid).trigger('change');
+		            	$("#topicSearchSelect").val(data.result.topic).trigger('change');
+		            	$("#userInputID").removeClass("hide");
+	            		$("#topicInputID").removeClass("hide");
+	            	}else{//默认
+	            		$("#userInputID").addClass("hide");
+	            		$("#topicInputID").addClass("hide");
+	            		$("#userSearchSelect option:selected").val(0);
+		            	$("#topicSearchSelect option:selected").val("");
+
+	            	}
+			    }else{
+			    	toastr.error("数据获取失败！"+data.message);  
+			    }
+        }, 'json');
+	$("#updateAlarmThresholdModal").modal('show');
+}
+//删除用户报警配置
+function deleteUserAlarm(id,topic,userName){
+	$("#currentDeleteId").val(id);
+	$("#currentDeleteUser").val(userName);
+	$("#currentDeleteTopic").val(topic);
+	$("#deleteUserAlarmModal").modal('show');
+}
+//提交删除请求
+function submitDeleteUserAlarm(){
+	disable("deleteUserAlarmBtn");
+	$.post('${request.contextPath}/admin/alarm/config/delete/'+$("#currentDeleteId").val(),
+	        function(data){
+	            if(data.status == 200){
+	            	toastr.success("操作成功，即将刷新页面");  
+					reload(3000);    	
+			    }else{
+			    	toastr.error("数据获取失败！"+data.message);  
+	            	enable("deleteUserAlarmBtn");
+			    }
+        }, 'json');
+}
+
+/**
+ * 初始化topic下拉列表
+ */
+function initTopicList(componentId, needName){
+	$.get('${request.contextPath}/topic/list',
+	        function(data){
+	            if(data.status == 200){
+	            	var content = "";
+	            	for(var i in data.result){
+	            		var topic = data.result[i];
+	            		if(needName){
+	            			content += "<option value='"+topic.name+"'>"+topic.name+"</option>";
+	            		} else {
+		            		content += "<option value='"+topic.id+"'>"+topic.name+"</option>";
+	            		}
+	            	}
+	        		$("#"+componentId).html(content);
+	        		$("#"+componentId).selectpicker('refresh');
+			    }else{
+			    	toastr.error("数据获取失败！"+data.message);  
+			    }
+        }, 'json');
+}
+/**
+ * 初始化user下拉列表
+ */
+function initUserList(componentId){
+	$.get('${request.contextPath}/user/list',
+	        function(data){
+	            if(data.status == 200){
+	            	var content = "";
+	            	for(var i in data.result){
+	            		var user = data.result[i];
+	            		var value = user.email.substring(0, user.email.indexOf("@"));
+	            		if(user.name && user.name != value){
+	            			value = user.name + "【" + value +"】";
+	            		}
+	            		content += "<option value='"+user.id+"'>"+value+"</option>";	
+	            	}
+	        		$("#"+componentId).html(content);
+	        		$("#"+componentId).selectpicker('refresh');
+			    }else{
+			    	toastr.error("数据获取失败！"+data.message);  
+			    }
+        }, 'json');
+}
+//添加用户报警
+function addUserAlarmConfig(){
+	$("#currentRecordId").val(1);//此项无意义，仅为通过校验
+	$("#isAddAlarmRecord").val(0);//判断当前是添加还是修改，0添加，1修改
+	$("#userInputID").removeClass("hide");
+	$("#topicInputID").removeClass("hide");
+	$("#updateAlarmThresholdForm")[0].reset();
+	$("#topicSearchSelect").selectpicker('refresh');
+	$("#userSearchSelect").selectpicker('refresh');
+	$("#updateAlarmThresholdModal").modal('show');
+}
+</script>

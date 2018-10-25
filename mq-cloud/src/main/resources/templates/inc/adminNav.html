@@ -1,0 +1,42 @@
+<nav class="navbar navbar-inverse navbar-fixed-top">
+    <div class="header-inner header-inner2">
+          <a class="navbar-brand glyphicon glyphicon-home" href="${request.contextPath}/user/topic"> MQCloud</a>
+          <ul class="nav navbar-nav navbar-left">
+              <li id="introLi">
+                  <a href="${request.contextPath}/admin/intro" class="glyphicon glyphicon-road" style="padding-top:17px;">快速指南</a>
+              </li>
+          </ul>
+          <ul class="nav navbar-nav navbar-right">
+              <li class="dropdown">
+              	<a href="#" class="dropdown-toggle" data-toggle="dropdown"><font id="userNameComponent" color='white'>
+                  <#if userInfo.user.name??>
+                  	${userInfo.user.name}
+                  <#else>
+                  	${userInfo.user.email}
+                  </#if>
+                  </font><b class="caret"></b>
+			      <i class="fa fa-angle-down"></i>
+				</a>
+				<ul class="dropdown-menu">
+					<li><a href="#" data-target="#updateUserModal" data-toggle="modal"><i class="fa fa-user glyphicon glyphicon-edit"></i> 修改资料</a></li>
+					<li><a href="#" onclick="logout()"><i class="fa fa-user  glyphicon glyphicon-off"></i> 注销</a></li>
+				</ul>
+              </li>
+          </ul>
+    </div>
+</nav>
+<div id="cover"></div>
+<#include "../user/update.html">
+
+<script>
+	function logout(){
+		$.get('${request.contextPath}/user/logout',function(data){
+			if(data.status == 200){
+				toastr.success("注销成功，欢迎再次使用MQCloud！");
+				$("#userNameComponent").html("");
+			} else {
+				toastr.error("注销失败，" + data.message);
+			}
+	    },'json');
+	}
+</script>
