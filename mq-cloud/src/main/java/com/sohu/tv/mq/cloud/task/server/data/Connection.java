@@ -1,6 +1,6 @@
 package com.sohu.tv.mq.cloud.task.server.data;
 
-import org.apache.commons.lang.math.NumberUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 
 /**
  * tcp连接

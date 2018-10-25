@@ -3,7 +3,7 @@ package com.sohu.tv.mq.cloud.task.server.data;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.commons.lang.math.NumberUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 
 /**
  * 系统负载

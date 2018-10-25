@@ -11,7 +11,7 @@
 	<artifactId>mq-cloud</artifactId>
 	<packaging>war</packaging>
 	
-	<!-- spring boot&cloud dependency -->
+	<!-- spring boot dependency -->
 	<dependencyManagement>
 		<dependencies>
 			<dependency>
@@ -21,13 +21,6 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
-			<dependency>
-				<groupId>org.springframework.cloud</groupId>
-				<artifactId>spring-cloud-dependencies</artifactId>
-				<version>Edgware.SR3</version>
-				<type>pom</type>
-				<scope>import</scope>
-			</dependency>
 		</dependencies>
 	</dependencyManagement>
 
@@ -48,10 +41,6 @@
 		<dependency>
 			<groupId>com.sohu.tv</groupId>
 			<artifactId>mq-cloud-common</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework.cloud</groupId>
-			<artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
