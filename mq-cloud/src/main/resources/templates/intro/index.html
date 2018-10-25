@@ -1,0 +1,481 @@
+<link href="${request.contextPath}/resources/bwizard/bwizard.min.css" rel="stylesheet">
+<script type="text/javascript" src="${request.contextPath}/resources/bwizard/bwizard.min.js"></script>
+<link href="${request.contextPath}/resources/prettify/prettify.css" rel="stylesheet">
+<script type="text/javascript" src="${request.contextPath}/resources/prettify/prettify.js"></script>
+<div class="row">
+	<div class="col-md-4">
+		<h2>引导页&首页</h2>
+		<p>1. 引导页主要用于新用户注册。</p>
+		<p>2. 首页主要展示用户的topic，并提供新建，消费，删除，关联等功能。</p>
+		<p><a class="btn btn-success" data-target="#topicListModal" data-toggle="modal">查看详情 &raquo;</a></p>
+	</div>
+	<div class="col-md-4">
+		<h2>生产和消费</h2>
+		<p>1. 新建topic和producer group。</p>
+		<p>2. 消费消息及细节设置。</p>
+		<p><a class="btn btn-success" data-target="#produceAndConsumeModal" data-toggle="modal">查看详情 &raquo;</a></p>
+	</div>
+	<div class="col-md-4">
+		<h2>我是老用户</h2>
+		<p>
+			MQCloud并不知道之前的topic及消费者归属于谁，所以使用者需要通过<b>我是老用户</b>入口，
+			将用户与生产者或消费者进行关联，这样才能让MQCloud为您服务。
+		</p>
+		<p><a class="btn btn-success" data-target="#oldUserModal" data-toggle="modal">查看详情 &raquo;</a></p>
+	</div>
+</div>
+<div class="row">
+	<div class="col-md-4">
+		<h2>topic详情</h2>
+		<p>包括topic概要，拓扑，流量，消息查询功能。</p>
+		<p><a class="btn btn-success" data-target="#topicDetailModal" data-toggle="modal">查看详情 &raquo;</a></p>
+	</div>
+	<div class="col-md-4">
+		<h2>预警功能</h2>
+		<p>
+			针对消费失败，堆积，客户端阻塞等情况进行预警。
+		</p>
+		<p><a class="btn btn-success" data-target="#warnModal" data-toggle="modal">查看详情 &raquo;</a></p>
+	</div>
+	<div class="col-md-4">
+		<h2>客户端接入</h2>
+		<p>提供生产和消费者接入指导，并提供部分编码样例。</p>
+		<p><a class="btn btn-success" data-target="#clientDemoModal" data-toggle="modal">查看详情 &raquo;</a></p>
+	</div>
+</div>
+
+<!-- topic列表页 -->
+<div id="topicListModal" class="modal fade" tabindex="-1" data-width="400">
+	<div class="modal-dialog" style="width:900px">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal"
+					aria-hidden="true">&times;</button>
+				<h4 class="modal-title">引导页和首页</h4>
+			</div>
+			<div class="modal-body">
+				<div class="wizard">
+					<ol>
+						<li>引导页</li>
+						<li>首页</li>
+					</ol>
+					<div class="text-center">
+						<p>引导用户注册：</p>
+						<img src="${request.contextPath}/img/intro/intro.png" class="img-rounded" alt="引导用户">
+					</div>
+					<div class="text-center">
+						<p>主要展示用户所属的topic列表，功能区域见下图描述：</p>
+						<img src="${request.contextPath}/img/intro/topicList.png" class="img-rounded" alt="topic列表">
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- 生产和消费 -->
+<div id="produceAndConsumeModal" class="modal fade" tabindex="-1" data-width="400">
+	<div class="modal-dialog" style="width:700px">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal"
+					aria-hidden="true">&times;</button>
+				<h4 class="modal-title">生产和消费</h4>
+			</div>
+			<div class="modal-body">
+				<div class="wizard">
+					<ol>
+						<li>我要生产消息</li>
+						<li>我要消费消息</li>
+						<li>完成</li>
+					</ol>
+					<div class="text-center">
+						<p>创建topic和生成producer group。
+						为了规范命名，只需要输入组名和业务名即可，规则见下图：</p>
+						<img src="${request.contextPath}/img/intro/produce.png" class="img-rounded" alt="选择topic">
+					</div>
+					<div class="text-center">
+						<p>选择topic，按照规范命名消费者名字，详见下图：</p>
+						<img src="${request.contextPath}/img/intro/consume.png" class="img-rounded" alt="选择生产者">
+					</div>
+					<div class="text-center">
+						<p>点击<b>确定</b>按钮即可，耐心等待管理员审核吧，审核通过会有消息提醒哦。</p>
+						<img src="${request.contextPath}/img/intro/oldUser4.png" style="width:600px;" class="img-rounded" alt="选择生产者">
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- 老用户入口 -->
+<div id="oldUserModal" class="modal fade" tabindex="-1" data-width="400">
+	<div class="modal-dialog" style="width:700px">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal"
+					aria-hidden="true">&times;</button>
+				<h4 class="modal-title">我是老用户</h4>
+			</div>
+			<div class="modal-body">
+				<div class="wizard">
+					<ol>
+						<li>选择Topic</li>
+						<li>选择角色-生产者</li>
+						<li>选择角色-消费者</li>
+						<li>完成</li>
+					</ol>
+					<div>
+						<p>点击topic选择框，可以直接选择，如果没有想找的topic，请联系管理员添加。</p>
+						<img src="${request.contextPath}/img/intro/oldUser1.png" class="img-rounded" alt="选择topic">
+					</div>
+					<div>
+						<p><b>生产者</b>：需要输入之前的producer group，一般查看代码配置就能知道了。</p>
+						<img src="${request.contextPath}/img/intro/oldUser2.png" class="img-rounded" alt="选择生产者">
+					</div>
+					<div>
+						<p><b>消费者</b>：这里可以直接选择自己的消费者名字，如果没有的话，请联系管理员添加。</p>
+						<img src="${request.contextPath}/img/intro/oldUser3.png" class="img-rounded" alt="选择生产者">
+					</div>
+					<div>
+						<p>点击<b>确定</b>按钮即可，耐心等待管理员审核吧，审核通过会有消息提醒哦。</p>
+						<img src="${request.contextPath}/img/intro/oldUser4.png" style="width:600px;" class="img-rounded" alt="选择生产者">
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- topic详情 -->
+<div id="topicDetailModal" class="modal fade" tabindex="-1" data-width="400">
+	<div class="modal-dialog" style="width:1200px">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal"
+					aria-hidden="true">&times;</button>
+				<h4 class="modal-title">topic详情</h4>
+			</div>
+			<div class="modal-body">
+				<div class="wizard">
+					<ol>
+						<li>概要</li>
+						<li>今日流量</li>
+						<li>拓扑</li>
+						<li>客户端统计</li>
+						<li>生产详情</li>
+						<li>生产流量</li>
+						<li>消费详情</li>
+						<li>消费流量</li>
+						<li>消息</li>
+					</ol>
+					<div class="text-center">
+						<p>功能：展示topic所属集群，配置，拥有者等，详见如下：</p>
+						<img src="${request.contextPath}/img/intro/topicDesc.png" class="img-rounded" alt="选择topic">
+					</div>
+					<div class="text-center">
+						<p>功能：展示今日所有生产和消费的流量占比，详见如下：</p>
+						<img src="${request.contextPath}/img/intro/topicTraffic.png" class="img-rounded" alt="选择topic">
+					</div>
+					<div class="text-center">
+						<p>功能：展示生产消费拓扑，包含客户端ip，最近一分钟流量信息，详见如下：</p>
+						<img src="${request.contextPath}/img/intro/topology.png" class="img-rounded" alt="选择topic">
+					</div>
+					<div>
+						<p>功能：展示客户端生产者发送耗时，异常等统计，详见如下：</p>
+						<img src="${request.contextPath}/img/intro/clientStats.png" class="img-rounded" alt="选择topic">
+						<br><br>
+						<p>关于客户端的百分位数耗时统计，下图进行了简单介绍：</p>
+						<p>1. 存储结构采用了按照最大耗时预哈希的分段方法，保证占用内存固定，永不溢出，且已经排好顺序。</p>
+						<img src="${request.contextPath}/img/intro/clientStats_design1.png" class="img-rounded" alt="选择topic">
+						<p>2. 数据统计采用AtomicLong，支持并发。</p>
+						<p>3. 每分钟对数据进行快照。并使用当前数据和上次快照数据计算出百分位数耗时。</p>
+						<img src="${request.contextPath}/img/intro/clientStats_design2.png" class="img-rounded" alt="选择topic">
+					</div>
+					<div class="text-center">
+						<p>功能：展示发往该topic的每个broker上的消息量及更新时间，详见下图：</p>
+						<img src="${request.contextPath}/img/intro/produceDetail.png" class="img-rounded" alt="选择生产者">
+					</div>
+					<div class="text-center">
+						<p>功能：展示发往该topic的流量(基于broker端的统计)，详见下图：</p>
+						<img src="${request.contextPath}/img/intro/produceTraffic.png" style="width:1120px;" class="img-rounded" alt="选择生产者">
+					</div>
+					<div class="text-center">
+						<p>功能：展示消费该topic的每个消费者的消费情况，支持跳过堆积，重置时间等，详见下图：</p>
+						<img src="${request.contextPath}/img/intro/consumeDetail.png" style="width:1120px;" class="img-rounded" alt="选择生产者">
+					</div>
+					<div class="text-center">
+						<p>功能：展示每个消费者的流量，详见下图：</p>
+						<img src="${request.contextPath}/img/intro/consumeTraffic.png" class="img-rounded" alt="选择生产者">
+					</div>
+					<div class="text-center">
+						<p>功能：查询前后一分钟消息，可以指定搜索内容，详见下图：</p>
+						<img src="${request.contextPath}/img/intro/msgSearch.png" class="img-rounded" alt="选择生产者">
+						<br><br>
+						<p>点击消息后的眼睛链接，可以查看消息轨迹，详见下图：</p>
+						<img src="${request.contextPath}/img/intro/msgTrack.png" class="img-rounded" alt="选择生产者">
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- 预警介绍 -->
+<div id="warnModal" class="modal fade" tabindex="-1" data-width="400">
+	<div class="modal-dialog" style="width:900px">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal"
+					aria-hidden="true">&times;</button>
+				<h4 class="modal-title">预警功能</h4>
+			</div>
+			<div class="modal-body">
+				<div class="wizard">
+					<ol>
+						<li>消费堆积</li>
+						<li>客户端阻塞</li>
+						<li>客户端异常</li>
+						<li>消费失败</li>
+						<li>偏移量错误</li>
+						<li>订阅错误</li>
+					</ol>
+					<div class="text-center">
+						<p>预警只针对集群方式的消费者，检测采取broker的每个队列的情况和消费者上报的数据。</p>
+						<img src="${request.contextPath}/img/intro/warn_accumulate.png" class="img-rounded" alt="选择topic">
+					</div>
+					<div class="text-center">
+						<p>预警只针对push方式非全局一致性消费，检测采取客户端的消费队列的数据。</p>
+						<img src="${request.contextPath}/img/intro/warn_block.png" class="img-rounded" alt="选择生产者">
+					</div>
+					<div class="text-center">
+						<p>采用最新的客户端，才有耗时和异常上报。</p>
+						<img src="${request.contextPath}/img/intro/clientException.png" class="img-rounded" alt="选择生产者">
+					</div>
+					<div class="text-center">
+						<p>预警只针对集群方式的消费者，检测采取broker的重试队列的数据。</p>
+						<img src="${request.contextPath}/img/intro/warn_consume_fail.png" class="img-rounded" alt="选择生产者">
+					</div>
+					<div class="text-center">
+						<p>消费者拉取消息不存在。检测采取系统内置topic：OFFSET_MOVED_EVENT的数据。</p>
+						<img src="${request.contextPath}/img/intro/warn_offset_err.png" class="img-rounded" alt="选择生产者">
+					</div>
+					<div class="text-center">
+						<p>一个consumer group只能对应一个topic，检测采取客户端的消费队列的数据。</p>
+						<img src="${request.contextPath}/img/intro/warn_subscribe_more.png" class="img-rounded" alt="选择生产者">
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- 客户端接入 -->
+<div id="clientDemoModal" class="modal fade" tabindex="-1" data-width="400">
+	<div class="modal-dialog" style="width:800px">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal"
+					aria-hidden="true">&times;</button>
+				<h4 class="modal-title">客户端接入</h4>
+			</div>
+			<div class="modal-body">
+				<div class="wizard">
+					<ol>
+						<li>公共部分</li>
+						<li>生产者接入</li>
+						<li>消费者接入</li>
+						<li>常见问题</li>
+					</ol>
+					<div>
+						<p>1：仓库</p>
+						<pre class="prettyprint">
+&lt;repository&gt;
+    &lt;id&gt;sohu.nexus&lt;/id&gt;
+    &lt;url&gt;http://${nexusDomain}/nexus/content/groups/public&lt;/url&gt;
+&lt;/repository&gt;</pre>
+						<p>2：pom依赖</p>
+						<pre class="prettyprint">
+&lt;dependency&gt;
+    &lt;groupId&gt;com.sohu.tv&lt;/groupId&gt;
+    &lt;artifactId&gt;${clientArtifactId}&lt;/artifactId&gt;
+    &lt;version&gt;${version}&lt;/version&gt;
+&lt;/dependency&gt;</pre>
+						<p>3：【可选】<a target="_blank" href="${request.contextPath}/file/logback_rocketmq_client.xml">logback日志</a>【下载后放置到classpath下】</p>
+						<p>4：【可选】<a target="_blank" href="${request.contextPath}/file/log4j_rocketmq_client.xml">log4j日志</a>【下载后放置到classpath下】</p>
+						<p>5：【可选】<a target="_blank" href="${request.contextPath}/file/log4j2_rocketmq_client.xml">log4j2日志</a>【下载后放置到classpath下】</p>
+					</div>
+					<div>
+						<b>老用户请先通过“我是老用户”入口关联生产者</b>
+						<p>1.1：初始化之spring xml方式</p>
+						<pre class="prettyprint">
+&lt;!-- 采用spring xml方式 --&gt;			
+&lt;bean id=&quot;xxxProducer&quot; class=&quot;${producerClass}&quot; init-method=&quot;start&quot; destroy-method=&quot;shutdown&quot;&gt;
+    &lt;constructor-arg index=&quot;0&quot; value=&quot;${r"${请从topic详情查询生产者的producer group}"}&quot;&gt;&lt;/constructor-arg&gt;
+    &lt;constructor-arg index=&quot;1&quot; value=&quot;${r"${topic名字}"}&quot;&gt;&lt;/constructor-arg&gt;
+&lt;/bean&gt;</pre>
+						<p>1.2：初始化之java方式</p>
+							<pre class="prettyprint">
+// 生产者初始化 注意：只用初始化一次
+${producerClass?substring(producerClass?last_index_of(".") + 1)} producer = new ${producerClass?substring(producerClass?last_index_of(".") + 1)}("xxx-producer", "xxx-topic");
+// 注意，只用启动一次
+producer.start();
+// 应用退出时
+producer.shutdown();</pre>
+						<p>2：发送消息示例：</p>
+							<pre class="prettyprint">
+Map&lt;String, Object&gt; message = new HashMap&lt;String, Object&gt;();
+message.put(&quot;vid&quot;, &quot;123456&quot;);
+message.put(&quot;aid&quot;, &quot;789172&quot;);
+//这里message推荐使用map，当然也可以使用json
+Result&lt;SendResult&gt; sendResult = producer.publish(message);
+if(!sendResult.isSuccess){
+    //失败消息处理
+}</pre>					<p>3：发送消息示例【hystrix版：MQ集群如果出现故障，将会拖慢发送方，故提供了hystrix版，以保证即使MQ集群整体不可用，也不会拖死发送方】：</p>
+							<pre class="prettyprint">
+Map&lt;String, String&gt; map = new HashMap&lt;String, String&gt;();
+map.put(&quot;aid&quot;, &quot;123456&quot;);
+map.put(&quot;vid&quot;, &quot;765432&quot;);
+// 1.oneway方式 - 此种方式发送效率最高，但是无法获取返回的结果
+new PublishOnewayCommand(producer, map).execute();
+// 2.async方式 - 此种方式发送效率高于普通方式，可以通过异步回调的方式校验返回结果
+SendCallback sendCallback = new SendCallback() {
+            public void onSuccess(SendResult sendResult) {
+                // 成功回调
+            }
+            public void onException(Throwable e) {
+                // 失败回调
+            }
+        };
+new PublishAsyncCommand(producer, map, sendCallback).execute();
+// 3.普通方式 - 此种方式即为普通方式的hystrix封装，与普通发送方式无异
+Result&lt;SendResult&gt; result = new PublishCommand(producer, map).execute();</pre>
+						<p>注意：hystrix配置默认采用线程池隔离，容量为30，超时时间为rocketmq客户端默认超时3s，如果使用hystrix版，还需要显示依赖hystrix，如下：</p>
+						<pre class="prettyprint">
+&lt;dependency&gt;
+    &lt;groupId&gt;com.netflix.hystrix&lt;/groupId&gt;
+    &lt;artifactId&gt;hystrix-core&lt;/artifactId&gt;
+    &lt;version&gt;1.3.20&lt;/version&gt;
+&lt;/dependency&gt;</pre>
+					</div>
+					<div>
+						<b>老用户请先通过“我是老用户”入口关联消费者</b>
+						<p>1：初始化之spring xml方式</p>
+						<pre class="prettyprint">
+&lt;bean id=&quot;consumer&quot; class=&quot;${consumerClass}&quot;
+    init-method=&quot;start&quot; destroy-method=&quot;shutdown&quot;&gt;
+    &lt;constructor-arg index=&quot;0&quot; value=&quot;${r"${请从topic详情查询消费者的consumer group}"}&quot;/&gt;
+    &lt;constructor-arg index=&quot;1&quot; value=&quot;${r"${topic名字}"}&quot;/&gt;
+    &lt;!-- 如果topic的消息格式是map，可以使用此属性 --&gt;
+    &lt;property name=&quot;consumerExecutor&quot; ref=&quot;consumerExecutorBean&quot;/&gt; 
+    &lt;!-- 如果topic的消息格式是map或byte[]或其他格式，可以使用此属性(兼容所有类型) --&gt;
+    &lt;property name=&quot;consumerCallback&quot; ref=&quot;consumerCallbackBean&quot;/&gt; 
+&lt;/bean&gt;</pre>
+						<p>2：初始化之java方式</p>
+						<pre class="prettyprint">
+// 消费者初始化 注意：只用初始化一次
+${consumerClass?substring(consumerClass?last_index_of(".") + 1)} consumer = new ${consumerClass?substring(consumerClass?last_index_of(".") + 1)}(&quot;xxx-consumer&quot;, &quot;xxx-topic&quot;);
+// 设置消费回调
+consumer.setConsumerCallback(new ConsumerCallback&lt;Map&lt;String, Object&gt;, MessageExt&gt;() {
+    public void call(Map&lt;String, Object&gt; t, MessageExt k) {
+            try {
+                // 消费逻辑
+            } catch (Exception e) {
+                logger.error("consume err, msgid:{}, msg:{}", k.getMsgId(), t, e);
+                // 如果需要重新消费，这里需要把异常抛出，消费失败的消息将发回rocketmq，重试消费
+                throw e;
+            }
+    }
+});
+// 注意，只用启动一次
+consumer.start();
+// 应用退出时
+consumer.shutdown();</pre>
+						<p>3：Consumer部分参数释义【如非有特殊需求不必修改】：</p>
+						<pre class="prettyprint">
+/**
+ * 消费线程数，默认20
+ * 
+ * @param num
+ */
+public void setConsumeThreadMin(int num) {
+    if (num &lt;= 0) {
+        return;
+    }
+    consumer.setConsumeThreadMin(num);
+}
+/**
+ * 消费线程数，默认64
+ * 
+ * @param num
+ */
+public void setConsumeThreadMax(int num) {
+    if (num &lt;= 0) {
+        return;
+    }
+    consumer.setConsumeThreadMax(num);
+}
+/**
+ * queue中缓存多少个消息时进行流控 ，默认1000
+ * 
+ * @param size
+ */
+public void setPullThresholdForQueue(int size) {
+    if (size &lt; 0) {
+        return;
+    }
+    consumer.setPullThresholdForQueue(size);
+}</pre>
+					</div>
+					<div>
+						<p>1：我能否用一个topic发送多种消息？</p>
+						<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;最好一个topic只负责一类消息，topic的数量对MQ集群几乎无影响。</p>
+						<p>2：能否用同样的producer名（即producer group）往多个topic发送消息？</p>
+						<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;可以发送成功，但是不要这样做。</p>
+						<p>3：能否用同样的consumer名（即consumer group）消费多个topic的消息？</p>
+						<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;不可以，consumer group与topic的关系是，多对一。</p>
+						<p>4：消息采用什么格式发送？</p>
+						<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;推荐使用map，优点：生产者和消费者解耦，无序列化和反序列化问题。</p>
+						<p>5：三种消息发送方式的应用场景？</p>
+						<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;1.如果是通知类型消息，即消息可以丢失，推荐采用oneway方式发送。</p>
+						<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2.如果需要知道消息是否发送成功，但是不能阻塞主流程，推荐采用asyn方式发送。</p>
+						<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;3.如果消息必须发送成功，不在乎是否阻塞主流程，推荐采用普通方式发送。</p>
+						<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.以上三种方式都有对应的hystrix隔离版，可以在MQ集群故障时保障客户端主流程不阻塞。</p>
+						<p>6：生产者注意事项：</p>
+						<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;检查发送消息后的返回值，针对失败的消息进行重试发送或降级处理。</p>
+						<p>7：【集群模式】消费者注意事项：</p>
+						<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;针对需要重试的消息，消费失败需要抛出异常，这样会将失败的消息发回重试队列。</p>
+						<p>8：能否使用tags？</p>
+						<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;不建议使用tags，理由如下：</p>
+						<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;1. 说起tags不得不说consumer group，其必须在整个集群中全局唯一，否则会在消费时导致部分消息丢失的问题：<a href="https://blog.csdn.net/a417930422/article/details/50663639">参见测试</a>，而MQCloud在业务层面保证了这个唯一性。</p>
+						<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2. 那么跟tags有什么关系？关系就是同一个topic，同样的consumer group，使用不同的tags，会导致和consumer group一样的问题。</p>
+						<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;也就是说<b>topic<->consumer group<->tags需要一一对应！</b></p>
+						<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;3. 引起这两个问题的原因都跟rocketmq心跳机制有关，具体类可以参见<a href="https://github.com/apache/rocketmq/blob/master/broker/src/main/java/org/apache/rocketmq/broker/client/ConsumerManager.java">ConsumerManager</a>，中的结构：</p>
+						<pre class="prettyprint">private final ConcurrentMap&lt;String/* Consumer Group */, ConsumerGroupInfo&gt; consumerTable = new ConcurrentHashMap&lt;String, ConsumerGroupInfo&gt;(1024);</pre>
+						<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4. 如果自己能确保上述的一一对应关系，可以参考如下相关代码：</p>
+						<pre class="prettyprint">
+// 生产者：注意一条消息只支持设置一个tag
+producer.publish(msg, tags, null, null);
+// 消费者：在启动之前设置
+consumer.setSubExpression("tagA || tagB");
+</pre>
+						<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5. tags替代方案：消息体增加type字段，各个消费者自己过滤。</p>
+						<p>9：已知问题：</p>
+						<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;1.org.apache.rocketmq.client.exception.MQBrokerException: CODE: 25  DESC: the consumer's subscription not latest。</p>
+						<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;该问题是rocketmq4.2版本的bug，拉取消息流程控制不严格导致，但是并不影响消息消费，在4.2版本出现，在4.3版本修复，<a href="https://github.com/apache/rocketmq/issues/370">参见</a>。</p>
+						<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2.org.apache.rocketmq.client.exception.MQBrokerException: CODE: 2  DESC: [TIMEOUT_CLEAN_QUEUE]broker busy, start flow control for a while</p>
+						<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;该问题是由于rocketmq4.1之后broker针对处理发送过来的请求增加了快速失败机制，对于响应超过200ms的请求移除队列。默认broker端采用单线程和spin lock来处理。引起的原因可能是SYN_FLUSH,SYN_MASTER,gc,iops过高等,<a href="https://stackoverflow.com/questions/43154365/rocketmqmqbrokerexception-code-2-desc-timeout-clean-queue">参考1</a>,<a href="https://issues.apache.org/jira/browse/ROCKETMQ-311">参考2</a>。</p>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+<script>
+$(function(){
+	$(".wizard").bwizard({backBtnText: "",nextBtnText: ""});
+	$("#introLi").addClass("active");
+	PR.prettyPrint();
+});
+</script>

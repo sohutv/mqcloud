@@ -1,0 +1,93 @@
+<nav class="navbar navbar-inverse navbar-fixed-top">
+    <div class="container">
+        <div class="navbar-header">
+            <a class="navbar-brand glyphicon glyphicon-home" href="${request.contextPath}/user/topic"> MQCloud</a>
+        </div>
+        <div class="navbar-collapse collapse">
+        	<ul class="nav navbar-nav navbar-left">
+                <li id="introLi">
+                    <a href="${request.contextPath}/intro" class="glyphicon glyphicon-road" style="padding-top:17px;">快速指南</a>
+                </li>
+            </ul>
+            <#if userInfo??>
+            <#if userInfo.user??>
+            <ul class="nav navbar-nav navbar-left">
+                <li id="introLi">
+                    <a href="#" data-target="#feedbackModal" data-toggle="modal" style="padding-top:20px;padding-bottom:0px;"><span class="glyphicon glyphicon-comment"></span>反馈</a>
+                </li>
+            </ul>
+            <ul class="nav navbar-nav navbar-left">
+                <li id="introLi">
+                    <a href="#" onclick="contactUS()" data-target="#contactModal" data-toggle="modal" class="glyphicon glyphicon-user" style="padding-top:17px;">联系我们</a>
+                </li>
+            </ul>
+            </#if>
+            </#if>
+            <ul class="nav navbar-nav navbar-right">
+	            <li class="dropdown">
+	            	<a href="#" class="dropdown-toggle" data-toggle="dropdown" style="padding-right:0px;">
+	            		<font id="notifyBox" color='white' class="glyphicon glyphicon-bell" style="display:none;"></font>
+	            	</a>
+	            </li>
+                <li class="dropdown">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                    	<font id="userNameComponent" color='white'><#if userInfo??><#if userInfo.user??>${userInfo.user.name!userInfo.user.emailName}<#else>${userInfo.loginId}</#if></#if></font><b class="caret"></b><i class="fa fa-angle-down"></i>
+					</a>
+					<#if userInfo??>
+					<#if userInfo.user??>
+						<ul class="dropdown-menu">
+							<li><a href="#" data-target="#updateUserModal" data-toggle="modal">
+								<i class="fa fa-user glyphicon glyphicon-edit"></i> 
+								<#if userInfo.user.name??>修改<#else>完善</#if>资料</a>
+							</li>
+							<#if userInfo.user.type == 1>
+								<li><a target="_blank" href="${request.contextPath}/admin/audit/list"><i class="fa fa-user glyphicon glyphicon-cog"></i> 管理后台</a></li>
+							<#else>
+<!-- 								<li><a target="_blank" href="${request.contextPath}/admin/cluster/list"><i class="fa fa-user glyphicon glyphicon-cog"></i> 申请管理员</a></li> -->
+							</#if>
+							<li><a href="#" onclick="logout()"><i class="fa fa-user glyphicon glyphicon-off"></i> 注销</a></li>
+						</ul>
+					</#if>
+					</#if>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+<div id="cover"></div>
+<div id="contactModal" class="modal fade" tabindex="-1" data-width="400">
+	<div class="modal-dialog" style="width:700px;">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+				<h4 class="modal-title">联系我们</h4>
+			</div>
+			<div class="modal-body" id="contactUS">
+			</div>
+		</div>
+	</div>
+</div>
+<#if userInfo??>
+<#if userInfo.user??>
+	<#include "../user/update.html">
+	<#include "../feedback/add.html">
+	<script>
+		function logout(){
+			$.get('${request.contextPath}/user/logout',function(data){
+				if(data.status == 200){
+					toastr.success("注销成功，欢迎再次使用MQCloud！");
+					$("#userNameComponent").html("");
+				} else {
+					toastr.error("注销失败，" + data.message);
+				}
+		    },'json');
+		}
+		function contactUS(){
+			$.get('${request.contextPath}/contact',
+		        function(data){
+		            $("#contactUS").html(data);
+	        });
+		}
+	</script>
+</#if>
+</#if>

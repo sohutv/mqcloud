@@ -1,0 +1,151 @@
+<#if response.notOK>
+<div class="modal-body">
+	<div class="form-body">
+		<div class="form-group">
+			<div>异常数据</div>
+		</div>
+	</div>
+</div>
+<#else>
+<div class="modal-body">
+	<div class="row">
+		<div class="col-md-12">
+			<div class="form-body">
+				<div class="form-group">
+					<label class="control-label col-md-3"> Topic: </label>
+			        <div class="col-md-5">
+						<input type="text" value="${response.result.name}" readonly="readonly" class="form-control" />
+					</div>
+				</div>
+				<div class="form-group">
+					<label class="control-label col-md-3"> 队列数量: </label>
+					<div class="col-md-5">
+						<input type="text" value="${response.result.queueNum}" readonly="readonly" class="form-control" />
+					</div>
+				</div>
+				<div class="form-group">
+					<label class="control-label col-md-3"> 生产者: </label>
+					<div class="col-md-5">
+						<input type="text" value="${response.result.producer}" readonly="readonly" class="form-control" />
+					</div>
+				</div>
+				<div class="form-group">
+					<label class="control-label col-md-3"> 消息顺序: </label>
+					<div class="col-md-5 checkbox">
+					    <input type="radio" name="ordered" value="0" disabled="disabled" <#if response.result.ordered == 0>checked</#if>>局部有序
+					    <input type="radio" name="ordered" value="1" disabled="disabled" <#if response.result.ordered == 1>checked</#if>>全局有序
+					</div>
+				</div>
+				<div class="form-group">
+					<label class="control-label col-md-3"> 一天消息量: </label>
+					<div class="col-md-5">
+						<div class="input-group">
+							<input type="text" value="${response.result.qpd}" readonly="readonly" class="form-control" />
+							<span class="input-group-addon">万</span>
+						</div>
+					</div>
+				</div>
+				<div class="form-group">
+					<label class="control-label col-md-3"> 高峰消息量: </label>
+					<div class="col-md-5">
+						<div class="input-group">
+							<input type="text" value="${response.result.qps}" readonly="readonly" class="form-control" />
+							<span class="input-group-addon">每秒</span>
+						</div>
+					</div>
+				</div>
+				<div class="form-group" id="opnionRadio">
+					<label class="control-label col-md-3"> 是否同意: </label>
+					<div class="col-md-5 checkbox">
+					    <input type="radio" name="creatTopicRadio" onclick="agree()" value="0">同意
+					    <input type="radio" name="creatTopicRadio" onclick="disAgree()" value="1">不同意
+					</div>
+				</div>
+				<div class="form-group" style="display:none;" id="clusterDiv" >
+					<label class="control-label col-md-3"> 在哪个集群创建: </label>
+					<div class="col-md-5">
+						<select name="type" id="clusterSelect" class="form-control select2_category">
+							<#list clusters as cluster>
+								<option value="${cluster.getId()}">${cluster.getName()}</option>
+							</#list>
+						</select>
+					</div>
+				</div>
+				<div id="refuseReasonDiv" class="form-group" style="display:none;">
+					<label class="control-label col-md-3"> 拒绝理由: </label>
+					<div class="col-md-5">
+						<textarea type="text" id="topicCreateRefuseReason" rows="3" class="form-control" placeholder="请填写"></textarea>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+<div class="modal-footer" id="auditTopicFooter">
+	<button type="button" data-dismiss="modal" class="btn" >取消</button>
+	<button type="button" class="btn btn-primary" id="auditAddTopicBtn" onclick="auditAddTopic()">确定</button>
+</div>
+
+<script>
+function agree(){
+	$("#clusterDiv").show();
+	$("#refuseReasonDiv").hide();
+}
+function disAgree(){
+	$("#refuseReasonDiv").show();
+	$("#clusterDiv").hide();
+}
+function auditAddTopic(){
+	var agree = $("input[name='creatTopicRadio']:checked").val();
+	if(agree == 0){
+		var cid = $("#clusterSelect").val();
+		if(!cid){
+			alert("请选择在哪个集群创建");
+			return;
+		}
+		disable("auditAddTopicBtn");
+		$.post('${request.contextPath}/admin/audit/topic/create',
+			{
+				aid: ${response.result.aid},
+				cid: cid
+			},
+	        function(data){
+	            if(data.status == 200){
+	            	toastr.success("审核成功, 系统将自动刷新");
+	            	reload(3000);
+			    }else{
+			    	toastr.error("审核失败！"+data.message);
+			    	enable("auditAddTopicBtn");
+			    }
+        }, 'json');
+	} else if(agree == 1){
+		var refuseReason = $("#topicCreateRefuseReason").val();
+		if(!refuseReason){
+			alert("请填写拒绝理由");
+			return;
+		}
+		disable("auditAddTopicBtn");
+		$.post('${request.contextPath}/admin/audit/refuse',
+			{
+				aid: ${response.result.aid},
+				refuseReason: refuseReason
+			},
+	        function(data){
+	            if(data.status == 200){
+	            	toastr.success("拒绝成功, 系统将自动刷新");
+	            	reload(3000);
+			    }else{
+			    	toastr.error("拒绝失败！"+data.message);
+			    	enable("auditAddTopicBtn");
+			    }
+        }, 'json');
+	} else {
+		alert("获取是否同意错误！");
+	}
+}
+function hideAudit(){
+	$("#opnionRadio").hide();
+	$("#auditTopicFooter").hide();
+}
+</script>
+</#if>

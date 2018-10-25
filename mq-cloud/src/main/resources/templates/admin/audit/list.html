@@ -1,0 +1,139 @@
+<div class="main">
+	<form class="form-inline" role="form" action="${request.contextPath}/admin/audit/list">
+		<div class="form-group">
+			<label for="type"> 申请类型: </label>
+			<select name="type" id="type" class="form-control select2_category">
+				<option value="-1" 
+					<#if RequestParameters.type??>
+						<#if RequestParameters.type == "-1">
+							selected="selected"
+						</#if> 
+					<#else>
+						selected="selected"
+					</#if> 
+				>全部</option>
+				<#list type as tp>
+					<option value="${tp.getType()}" <#if RequestParameters.type?? && RequestParameters.type == tp.getType()?c>selected="selected"</#if>>${tp.getName()}</option>
+				</#list>
+			</select>
+		</div>
+		<div class="form-group">
+			<label for="status"> 申请状态: </label>
+			<select name="status" id="status" class="form-control select2_category">
+				<option value="-1" <#if RequestParameters.status?? && RequestParameters.status == "-1">selected="selected"</#if> >全部</option>
+				<option value="0"
+					<#if RequestParameters.status??>
+						<#if RequestParameters.status == "0">
+							selected="selected"
+						</#if> 
+					<#else>
+						selected="selected"
+					</#if> 
+				>待审</option>
+				<#list status as stat>
+					<#if stat.getStatus() != 0>
+						<option value="${stat.getStatus()}" <#if RequestParameters.status?? && RequestParameters.status == stat.getStatus()?c>selected="selected"</#if>>${stat.getName()}</option>
+					</#if>
+				</#list>
+			</select>
+		</div>
+		<button type="submit" class="btn btn-search"><span class="glyphicon glyphicon-search" aria-hidden="true"></span></button>
+	</form>
+	<hr/>
+	<table class="table table-striped table-hover" style="margin-top: 0px;word-break:break-all; word-wrap:break-all;">
+		<thead>
+			<colgroup>
+				<col width="45px">
+				<col>
+				<col width="120px">
+				<col width="155px">
+				<col width="155px">
+				<col width="45px">
+				<col width="15%">
+				<col width="7%">
+				<col>
+				<col>
+			</colgroup>
+			<tr>
+				<td>序号</td>
+				<td>申请人</td>
+				<td>类型</td>
+				<td>申请时间</td>
+				<td>更新时间</td>
+				<td>状态</td>
+				<td>申请原因</td>
+				<td>拒绝理由</td>
+				<td>审核者</td>
+				<td>操作</td>
+			</tr>
+		</thead>
+		<tbody>
+			<#if response.empty>
+				<tr>
+					<td colspan=9 style="text-align:center">
+						暂无数据
+					</td>
+				</tr>
+			<#else>
+				<#list response.result as audit>
+					<tr>
+						<td>${audit_index+1}</td>
+						<td><#if audit.user??>${audit.user.name!audit.user.emailName}<#else>${audit.uid}</#if></td>
+						<td>${audit.typeEnum.getName()}</td>
+						<td>${audit.createTime?string("yyyy-MM-dd HH:mm:ss")}</td>
+						<td>${audit.updateTime?string("yyyy-MM-dd HH:mm:ss")}</td>
+						<td>${audit.statusEnum.getName()}</td>
+						<td>${audit.info!}</td>
+						<td>${audit.refuseReason!}</td>
+						<td>${audit.auditor!}</td>
+						<td>
+							<#if audit.statusEnum.getStatus() == 0>
+							<button type="button" class="btn btn-success" onclick="auditDetail('<#if audit.user??>${audit.user.name!audit.user.emailName}<#else>${audit.uid}</#if>', '${audit.typeEnum.getName()}', '${audit.typeEnum.getType()}', '${audit.id}', '${audit.statusEnum.getStatus()}')" 
+							data-target="#auditDetailModal" data-toggle="modal"><span class="glyphicon glyphicon-pencil" aria-hidden="true">审核</span></button>
+							<#else>
+							<button type="button" class="btn btn-success" onclick="auditDetail('<#if audit.user??>${audit.user.name!audit.user.emailName}<#else>${audit.uid}</#if>', '${audit.typeEnum.getName()}', '${audit.typeEnum.getType()}', '${audit.id}', '${audit.statusEnum.getStatus()}')" 
+							data-target="#auditDetailModal" data-toggle="modal">查看</button>
+							</#if>
+						</td>
+					<tr>
+				</#list>
+			</#if>
+		</tbody>
+	</table>
+</div>
+
+<div id="auditDetailModal" class="modal fade" tabindex="-1" data-width="400">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+				<h4 class="modal-title"><b id="auditDetailUser"></b>申请<b id="auditDetailAction"></b></h4>
+			</div>
+			<form class="form-horizontal form-bordered form-row-stripped" id="auditDetailForm">
+			</form>
+		</div>
+	</div>
+</div>
+
+
+<script>
+function auditDetail(username, action, type, aid, status){
+	$("#auditDetailUser").html(username);
+	$("#auditDetailAction").html(action);
+	$.get('${request.contextPath}/admin/audit/detail',
+		{
+			type: type,
+			aid: aid
+		},
+        function(data){
+			$("#auditDetailForm").html(data);
+			if(status != 0){
+				$(".modal-footer").hide();
+				if(typeof hideAudit == "function"){
+					hideAudit();
+				}
+			}
+        });
+}
+</script>
+

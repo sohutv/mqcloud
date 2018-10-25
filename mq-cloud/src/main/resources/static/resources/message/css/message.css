@@ -1,0 +1,229 @@
+.message-content-list, .message-content-list ul, .message-content-list ul{
+    margin: 0;
+    padding: 0;
+}
+.animated {
+    -webkit-animation-duration: 1s;
+    animation-duration: 1s;
+    -webkit-animation-fill-mode: both;
+    animation-fill-mode: both;
+}
+
+@-webkit-keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+.fadeIn {
+    -webkit-animation-name: fadeIn;
+    animation-name: fadeIn;
+}
+
+.bell-dot {
+	position: relative;
+    display: inline-block;
+    font-size: 12px;
+    text-align: center;
+    background-color: #FF5722;
+    color: #fff;
+    border-radius: 10px;
+    line-height: 16px;
+    top: -7px;
+    width: 8px;
+    height: 8px;
+    padding: 0;
+    border-radius: 50%;
+}
+
+.badge, .badge-dot {
+    position: relative;
+    display: inline-block;
+    font-size: 12px;
+    text-align: center;
+    background-color: #FF5722;
+    color: #fff;
+    border-radius: 10px;
+    line-height: 16px;
+}
+
+.badge-dot {
+    width: 8px;
+    height: 8px;
+    padding: 0;
+    border-radius: 50%;
+}
+
+
+.message-bell {
+    color: #000;
+    margin: 10px 20px;
+    display:inline-block;
+}
+.message-bell-btn:hover {
+    color: #999;
+}
+
+.message-bell-btn{
+    font-size: 18px;
+    cursor: pointer;
+    width: 30px;
+    height: 30px;
+    display: inline;
+    line-height: 30px;
+    text-align: center;
+}
+
+.message-bell .badge-dot, .message-bell .badge {
+    top: -10px;
+    left: -5px;
+}
+
+.message-frame {
+    z-index: 99999999;
+    position: fixed;
+    min-height: 100px;
+    border: 1px solid #d2d2d2;
+    background-color: #fff;
+    animation-duration: 0.3s !important;
+    -moz-box-shadow:0px 1px 4px #454545;
+    -webkit-box-shadow:0px 1px 4px #454545;
+    box-shadow:0px 1px 4px #454545;
+    color: #555;
+    border-radius: 4px;
+    right: 3px;
+}
+
+.message-pagination {
+    border-top: 1px solid #F2F2F2;
+    width: 100%;
+    bottom: 0px;
+    position: absolute;
+    height: 30px;
+}
+
+.message-none-msg {
+    width:100%;
+    text-align: center;
+    height: 30px;
+    line-height: 30px;
+    color: #999;
+}
+
+.message-btn {
+    display: inline-block;
+    padding: 4px 12px;
+    margin-bottom: 0;
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 1.42857143;
+    text-align: center;
+    white-space: nowrap;
+    vertical-align: middle;
+    -ms-touch-action: manipulation;
+    touch-action: manipulation;
+    cursor: pointer;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    background-image: none;
+    border: 1px solid transparent;
+    border-radius: 4px;
+}
+
+.message-frame-header {
+    width: 100%;
+    height: 40px;
+    border-bottom: 1px solid #eee;
+}
+
+.message-btn {
+    border-radius: 3px;
+}
+
+.message-btn-blue {
+    color: #ffffff !important;
+    background-color: #23b7e5;
+    border-color: #23b7e5;
+}
+
+.message-btn-blue:hover {
+    color: #ffffff !important;
+    background-color: #19a9d5;
+    border-color: #189ec8;
+}
+
+.message-btn-header {
+    font-size: 12px;
+    margin: 5px 5px;
+    float: right;
+}
+
+.message-content {
+    font-size: 12px;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.message-content-list {
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.message-content-list, .message-content-list li{
+    width: 100%;
+}
+
+.message-content-list li{
+    min-height: 30px;
+    border-bottom: 1px solid #EEEEEE;
+    display:block;
+    padding: 5px;
+    list-style-type:none;
+    cursor: pointer;
+}
+
+.message-content-list li:hover {
+    background-color: #f2f2f2;
+}
+
+.message-footer {
+    color: #0e9aef;
+    text-align: center;
+    font-size: 12px;
+    height: 24px;
+    line-height: 24px;
+    width: 100%;
+    cursor: pointer;
+}
+
+.message-content-list-item-detail {
+    display: inline-block;
+}
+
+.message-content-list-item-dot {
+    width: 20px;
+    text-align: center;
+    vertical-align: top;
+    height: 100%;
+}
+
+.message-content-list-item-content {
+    display:inline-block;
+}
+

@@ -1,0 +1,27 @@
+<form class="form-inline" id="${response.result.path}_searchForm">
+	<#if response.OK && response.result.searchHeader??>
+		<#list response.result.searchHeader.searchFieldList as searchItem>
+	  		<#if searchItem.hidden>
+				<input id="${searchItem.key}" type="hidden" name="${searchItem.key}" value="${searchItem.value!}">
+			<#else>
+				<#if searchItem.type == 0>
+					<input type="text" class="form-control" name="${searchItem.key}" value="${searchItem.value!}" placeholder="${searchItem.title}">
+				</#if>
+				<#if searchItem.type == 1>
+					<select name="${searchItem.key}" class="form-control select2_category">
+						<#list searchItem.kvList as kv>
+							<option value="${kv.k}" <#if kv.v == searchItem.value> selected="selected" </#if>>${kv.v}</option>
+						</#list>
+					</select>
+			  	</#if>
+				<#if searchItem.type == 2>
+					<input type="text" name="${searchItem.key}" class="Wdate form-control" onclick="WdatePicker({ dateFmt: 'yyyy-MM-dd',maxDate:'%y-%M-%d',minDate:'%y-%M-{%d-<#if searchItem.daysBefore ==0>28<#else>${searchItem.daysBefore}</#if>}'})" style="width:120px;height:34px;cursor:pointer;" readonly="readonly"
+  								value="${.now?string("yyyy-MM-dd")}">
+				</#if>
+			</#if>
+		</#list>
+	</#if>
+	<#if response.result.searchHeader.searchFieldList??>
+		  <button type="button" onclick="drawLineChart('${response.result.path}')" class="btn"><span class="glyphicon glyphicon-search" aria-hidden="true"></span></button>
+	</#if>
+</form>

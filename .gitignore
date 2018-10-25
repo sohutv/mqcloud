@@ -1,0 +1,25 @@
+*.class
+ 
+# Package Files #
+*.war
+*.ear
+ 
+# ignore Maven generated target folders
+target
+PROJECT_DIR_IS_UNDEFINED
+logs
+pom.xml.versionsBackup
+
+# ignore eclipse files
+.project
+.classpath
+.settings
+.metadata
+.cache
+
+# ignore sohu module
+mq-client
+mq-cloud-common-sohu
+*-sohu.yml
+
+!**/msg-type/*.class

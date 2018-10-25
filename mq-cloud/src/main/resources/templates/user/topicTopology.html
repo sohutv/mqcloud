@@ -1,0 +1,799 @@
+<#if (response.result.totalTopicTraffic?? && response.result.totalTopicTraffic.count gt 0) ||
+	(response.result.totalConsumerTraffic?? && response.result.totalConsumerTraffic.count gt 0)>
+	<#assign trafficPie = true>
+<#else>
+	<#assign trafficPie = false>
+</#if>
+<!-- 	拓扑部分 -->
+<div class="row border-bottom">
+	<div class="col-md-6 border-right">
+		<h3 class="text-center">topic信息</h3>
+		<table class="table table-striped table-hover" style="margin-top: 0px">
+			<thead>
+				<colgroup>
+					<col width="40%"></col>
+					<col width="60%"></col>
+				</colgroup>
+			</thead>
+			<tbody>
+				<tr>
+					<td>topic:</td>
+					<td>${response.result.topic.name}</td>
+				</tr>
+				<tr>
+					<td>所属集群:</td>
+					<td>${response.result.topic.clusterName}</td>
+				</tr>
+				<tr>
+					<td>每个broker上的队列数:</td>
+					<td>${response.result.topic.queueNum} 
+						<#if response.result.own>
+            			<button type="submit" class="btn btn-success btn-sm" data-target="#updateTopicRouteModal" data-toggle="modal" >修改</button>
+            			</#if>
+            		</td>
+				</tr>
+				<tr>
+					<td>整个集群队列数:</td>
+					<td>${response.result.topic.queueNum*response.result.brokerSize}</td>
+				</tr>
+				<tr>
+					<td>消息顺序:</td>
+					<td>
+						<#if response.result.topic.ordered == 0>
+							局部有序
+						<#else>
+							全局有序
+						</#if>
+					</td>
+				</tr>
+				<tr>
+					<td>所属用户</td>
+					<td>生产者(producer group)</td>
+				</tr>
+			 	<#if response.result.producerFilterMap?? && response.result.producerFilterMap?size gt 0>
+			 	    <#list response.result.producerFilterMap as key, producers>
+			 	   		<tr>
+						    <td>
+						    	<#assign flag = 0>
+						    	<#assign userName = userInfo.user.name!userInfo.user.getEmailName()>
+						    	<#list producers as producer>
+							    	<#if producer.username == userName>
+							    	  <#assign flag = 1>
+							    	</#if>
+						    	</#list>
+						    	<#if flag == 1 || userInfo.user.type == 1>
+							    	<#list producers as producer>
+							    		<#if producer_index != 0>
+							    		,
+							    		</#if>
+							    		<span onclick="prepareDeleteUserProducer(${producer.id})" data-toggle="tooltip" title="移除${producer.username}?" id="producer_${producer.id}" class="producer_delete pointer">${producer.username}</span>
+								    	</#list>
+							    	<span class="glyphicon glyphicon-plus-sign pointer" data-toggle="tooltip" title="授权其他用户查看${response.result.topic.name}?" onclick="associateUserProducer('${key.producer}')"></span>
+							    <#else>
+							    	<#list producers as producer>
+							    		<span class="pointer">${producer.username}</span>
+							    	</#list>
+							    </#if>					    	
+						    </td>
+						    <td><a href="${request.contextPath}/user/topic/${response.result.topic.id}/detail?tab=produce">${key.producer}</a></td>
+						</tr>
+					</#list>
+				<#else>
+					<tr>
+					<td colspan=2 class="text-center">生产者还未进行关联</td>
+					</tr>
+				</#if>
+			</tbody>
+		</table>
+	</div>
+	<div class="col-md-6">
+		<h3 class="text-center">今日流量</h3>
+		<div id="trafficPie" style="height:230px;"></div>
+	</div>
+</div>
+<!-- 	拓扑部分 -->
+<div class="row">
+	<h3 class="text-center">拓扑</h3>
+	<div class="col-md-12">
+		<center><div id="topologyDiv" style="height:550px;width:100%;"></div></center>
+	</div>
+</div>
+<script>
+var curProducer;
+var ipCache = new Array();
+<#if response.OK>
+<#setting number_format="#">
+$(function() {
+	<#if response.result.consumerList??>
+		<#if response.result.consumerList?size <= 1>
+			$("#topologyDiv").attr("style", "height:200px;width:70%;");
+		<#elseif response.result.consumerList?size <= 2>
+			$("#topologyDiv").attr("style", "height:400px;width:80%;");
+		<#elseif response.result.consumerList?size <= 5>
+			$("#topologyDiv").attr("style", "height:450px;width:80%;");
+		</#if>
+	</#if>
+	<#if response.result.producerFilterMap??>
+		<#if response.result.producerFilterMap?size gt 1 && response.result.consumerList?size <= 1>
+			$("#topologyDiv").attr("style", "height:400px;width:70%;");
+		</#if>
+	</#if>
+	// 绘制拓扑
+	var dom = document.getElementById("topologyDiv");
+	var myChart = echarts.init(dom);
+	var option = {
+	    tooltip: {
+	    	confine: true,
+	    	enterable: true,
+	    	trigger : 'item',
+	    	backgroundColor : 'white',
+	    	padding : 0,
+	    	textStyle: {
+	    		color: 'no',
+	    	},
+	    	borderWidth: 1,
+	    	formatter: function (params, ticket, callback) {
+	    		if(params.dataType == 'node'){
+		    		if(params.data._type){
+		    			if(ipCache[params.data._group]){
+		    				if(ipCache[params.data._group] != 1 && ipCache[params.data._group] != 2){
+			    				return ipCache[params.data._group];
+		    				}
+		    			} else {
+		    				ipCache[params.data._group] = params.data._type;
+				    	    $.post('${request.contextPath}/topic/connection', {
+				    	    	topic: params.data._topic,
+				    	    	type: params.data._type,
+				    	    	cid: params.data._cid,
+				    	    	group: params.data._group
+				    	    },function (content) {
+				    	    	ipCache[params.data._group] = content;
+				    	    	callback(ticket, content);
+				    	    	console.log($("#ipList").val());
+				    	    });
+		    			}
+		    		} else {
+		    			return '';
+		    		}
+	    		} else if(params.dataType == 'edge') {
+    				if(params.data.target == 0){
+		    			return '生产消息量和生产消息大小';
+    				} else {
+    					return '消费消息量和消费消息大小';
+    				}
+	    		} else {
+	    			return '';
+	    		}
+	    	    return '加载中...';
+	    	}
+	    },
+	    animationDurationUpdate: 1500,
+	    animationEasingUpdate: 'quinticInOut',
+	    series : [
+	        {
+	            type: 'graph',
+	            layout: 'none',
+	            roam: true,
+	            label: {
+	                normal: {
+	                    show: true
+	                }
+	            },
+	            edgeSymbol: ['circle', 'arrow'],
+	            edgeSymbolSize: [4, 10],
+	            edgeLabel: {
+	                normal: {
+	                    textStyle: {
+	                        fontSize: 12
+	                    }
+	                }
+	            },
+	            data: [{
+	                name: '${splitUtil.getNewLine(response.result.topic.name, 20)}',
+	                x: 500,
+	                y: 400,
+	                symbolSize: 150,
+	                hoverAnimation: false,
+	                itemStyle : {
+	                	normal: {
+                        	color: {
+                        	    type: 'linear',
+                        	    x: 0,
+                        	    y: 0,
+                        	    x2: 0,
+                        	    y2: 1,
+                        	    colorStops: [{
+                        	        offset: 0, color: 'rgb(255,99,0)' // 0% 处的颜色
+                        	    }, {
+                        	        offset: 1, color: 'rgb(255,182,0)' // 100% 处的颜色
+                        	    }],
+                        	    globalCoord: false // 缺省为 false
+                        	}
+	                    },
+	                    emphasis: {
+	                        barBorderWidth: 1,
+	                        shadowBlur: 20,
+	                        shadowOffsetX: 0,
+	                        shadowOffsetY: 0,
+	                        shadowColor: 'rgba(0,0,0,0.5)'
+	                    }
+	                }
+	            }
+	            <#if response.result.consumerList?? && response.result.consumerList?size gt 0>
+		            <#if response.result.consumerList?size == 1>
+		            	<#assign symbolSize = "100">
+		            	<#assign consumerY = 800>
+		            <#elseif response.result.consumerList?size == 2>
+		            	<#assign symbolSize = "90">
+	            		<#assign consumerY = 800/response.result.consumerList?size>
+		            <#else>
+		            	<#assign symbolSize = "[80, 28]">
+		            	<#assign consumerY = 800/response.result.consumerList?size>
+		            </#if>
+	            	<#list response.result.consumerList as consumer>
+	            	, {
+		                name: '${splitUtil.getNewLine(consumer.name, 20)}',
+		                tag: '${consumer.name}_1',
+		                _type: 2,
+		                _group: '${consumer.name}',
+		                _topic: '${response.result.topic.name}',
+		                _cid: ${response.result.topic.clusterId},
+		                x: 1000,
+		                y: ${consumer_index * consumerY + consumerY / 2},
+		                symbolSize: ${symbolSize},
+		                itemStyle : {
+		                	normal: {
+		                        color: 'rgb(255,182,13)'
+		                    },
+		                    emphasis: {
+		                        barBorderWidth: 1,
+		                        shadowBlur: 20,
+		                        shadowOffsetX: 0,
+		                        shadowOffsetY: 0,
+		                        shadowColor: 'rgba(0,0,0,0.5)'
+		                    }
+		                },
+		                label : {
+		                	color: '#000',
+		                	textShadowColor: '#808A87',
+		                	textShadowBlur : '3'
+		                }
+		            }
+	            	</#list>
+		        <#else>
+		            , {
+		                name: '暂无消费者',
+		                x: 1000,
+		                y: 400,
+		                symbolSize: 100,
+		                hoverAnimation: false,
+		                itemStyle : {
+		                	normal: {
+		                        color: 'rgb(255,182,13)'
+		                    },
+		                    emphasis: {
+		                        barBorderWidth: 1,
+		                        shadowBlur: 20,
+		                        shadowOffsetX: 0,
+		                        shadowOffsetY: 0,
+		                        shadowColor: 'rgba(0,0,0,0.5)'
+		                    }
+		                }
+		            }
+	            </#if>
+	            <#if response.result.producerFilterMap?? && response.result.producerFilterMap?size gt 0>
+		            <#if response.result.producerFilterMap?size == 1>
+		            	<#assign producerY = 800>
+		            <#else>
+		            	<#assign producerY = 800/response.result.producerFilterMap?size>
+		            </#if>
+	            	<#list response.result.producerFilterMap as producer, v>
+	            	, {
+		                name: '${splitUtil.getNewLine(producer.producer, 20)}',
+		                tag: '${producer}_0',
+		                _type: 1,
+		                _group: '${producer.producer}',
+		                _topic: '${response.result.topic.name}',
+		                _cid: ${response.result.topic.clusterId},
+		                <#if !producer.stats>
+		                	_stats: 0,
+		                	hoverAnimation: false,
+		                <#else>
+		                	_stats: 1,
+		                </#if>
+		                x: 0,
+		                y: ${producer_index * producerY + producerY / 2},
+		                symbolSize: 100,
+		                itemStyle : {
+		                	normal: {
+		                        color: 'rgb(255,99,2)'
+		                    },
+		                    emphasis: {
+		                        barBorderWidth: 1,
+		                        shadowBlur: 20,
+		                        shadowOffsetX: 0,
+		                        shadowOffsetY: 0,
+		                        shadowColor: 'rgba(0,0,0,0.5)'
+		                    }
+		                }
+		            }
+	            	</#list>
+	            <#else>
+	            	, {
+		                name: '暂无生产者',
+		                x: 0,
+		                y: 400,
+		                symbolSize: 100,
+		                hoverAnimation: false,
+		                itemStyle : {
+		                	normal: {
+		                        color: 'rgb(255,99,2)'
+		                    },
+		                    emphasis: {
+		                        barBorderWidth: 1,
+		                        shadowBlur: 20,
+		                        shadowOffsetX: 0,
+		                        shadowOffsetY: 0,
+		                        shadowColor: 'rgba(0,0,0,0.5)'
+		                    }
+		                }
+		            }
+	            </#if>
+	           ],
+	            links: [
+	            <#if response.result.consumerList?? && response.result.consumerList?size gt 0>
+	            	<#list response.result.consumerList as consumer>
+	            	{
+	            		source: 0,
+		                target: ${consumer_index + 1},
+		                lineStyle : {
+                        	color: {
+                        	    type: 'linear',
+                        	    x: 0,
+                        	    y: 0,
+                        	    x2: 0,
+                        	    y2: 1,
+                        	    colorStops: [{
+                        	        offset: 0, color: 'rgb(255,182,0)' // 0% 处的颜色
+                        	    }, {
+                        	        offset: 1, color: 'rgb(255,182,13)' // 100% 处的颜色
+                        	    }],
+                        	    globalCoord: false // 缺省为 false
+                        	},
+                        	type : 'dotted'
+		                },
+		                label: {
+		                    show: true,
+		                    formatter: function (){
+		                    	<#if consumer.consumerTraffic??>
+			                    	return "${consumer.consumerTraffic.countFormat}/分 ${consumer.consumerTraffic.sizeFormat}/分";
+			                    <#else>
+		                    		return "";
+		                    	</#if>
+		                    }
+		                },
+		            },
+	            	</#list>
+	            </#if>
+	            <#if response.result.producerFilterMap?? && response.result.producerFilterMap?size gt 0>
+		            <#if response.result.consumerList?size == 0>
+		            	<#assign consumerSize = 1>
+		            <#else>
+		            	<#assign consumerSize = response.result.consumerList?size>
+		            </#if>
+	            	<#list response.result.producerFilterMap as producer, v>
+	            	{
+	            		source: ${producer_index + 1 + consumerSize},
+		                target: 0,
+		                lineStyle : {
+                        	color: {
+                        	    type: 'linear',
+                        	    x: 0,
+                        	    y: 0,
+                        	    x2: 0,
+                        	    y2: 1,
+                        	    colorStops: [{
+                        	        offset: 0, color: 'rgb(255,99,2)' // 0% 处的颜色
+                        	    }, {
+                        	        offset: 1, color: 'rgb(255,99,0)' // 100% 处的颜色
+                        	    }],
+                        	    globalCoord: false // 缺省为 false
+                        	},
+                        	type : 'dotted'
+		                },
+		                label: {
+		                    show: true,
+		                    formatter: function (){
+		                    	<#if response.result.topicTraffic??>
+			                    	return "${response.result.topicTraffic.countFormat}/分 ${response.result.topicTraffic.sizeFormat}/分";
+			                    <#else>
+		                    		return "";
+		                    	</#if>
+		                    }
+		                },
+		            },
+	            	</#list>
+	            </#if>	
+	           	],
+	            lineStyle: {
+	                normal: {
+	                    opacity: 0.9,
+	                    width: 2,
+	                    curveness: 0
+	                }
+	            }
+	        }
+	    ]
+	};
+	myChart.setOption(option, true);
+	myChart.on('click', function (params) {
+	    if(params.data._type){
+	    	if(params.data._type == 2){
+	    		location.href="${request.contextPath}/user/topic/${response.result.topic.id}/detail?tab=consume";
+	    	} else {
+	    		if(params.data._stats == 1){
+	    			curProducer = params.data._group;
+	    			$("#producerStatsChart").empty();
+		    		$('#producerStatsModal').modal('show');
+	    		} else {
+		    		location.href="${request.contextPath}/user/topic/${response.result.topic.id}/detail?tab=produce";
+	    		}
+	    	}
+	    }
+	});
+	
+	// 绘制流量饼图
+	<#if trafficPie>
+		// 绘制流量饼图
+	   var chart = {
+	       plotBackgroundColor: null,
+	       plotBorderWidth: null,
+	       plotShadow: false
+	   };
+	   var tooltip = {
+	      pointFormat: '{series.name}: <b>{point.percentage:.1f}%</b>'
+	   };
+	   var plotOptions = {
+	      pie: {
+	         allowPointSelect: true,
+	         cursor: 'pointer',
+	         dataLabels: {
+	            enabled: true,
+	            distance:-50,
+	            formatter:function(){
+	            	var tip = '<b>'+ this.point.name +'</b>:'+ Highcharts.numberFormat(this.percentage, 1) + "%";
+	            	return tip;
+                }
+	         },
+	         showInLegend: false,
+	         events: { 
+                click: function(e) { 
+                	if(e.point.name == "生产"){
+                		location.href="${request.contextPath}/user/topic/${response.result.topic.id}/detail?tab=produce"
+                	} else {
+	                	location.href="${request.contextPath}/user/topic/${response.result.topic.id}/detail?tab=consume"
+                	}
+                } 
+	         } 
+	      }
+	   };
+	   var colors = [
+           'rgb(255,99,0)',
+           'rgb(255,182,0)'
+       ];
+	   var series= [{
+	      type: 'pie',
+	      name: '消息量',
+	      data: [
+	         ['消费',   <#if response.result.totalConsumerTraffic??>${response.result.totalConsumerTraffic.count}<#else>0</#if>],
+	         ['生产',   <#if response.result.totalTopicTraffic??>${response.result.totalTopicTraffic.count}<#else>0</#if>]
+	      ]
+	   }];     
+	   var json = {};   
+	   json.chart = chart; 
+	   json.tooltip = tooltip;  
+	   json.colors = colors;
+	   json.title = "";
+	   json.series = series;
+	   json.plotOptions = plotOptions;
+	   $('#trafficPie').highcharts(json); 
+	<#else>
+		$('#trafficPie').html("暂无数据").addClass("text-center");
+	</#if>
+});
+</#if>
+</script>
+
+<!-- 修改路由 -->
+<div id="updateTopicRouteModal" class="modal fade" tabindex="-1" data-width="400">
+	<div class="modal-dialog">
+		<div class="modal-content">
+
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+				<h4 class="modal-title">队列数量修改</h4>
+			</div>
+
+			<form class="form-horizontal form-bordered form-row-stripped" id="updateTopicRouteForm">
+				<div class="modal-body">
+					<div class="row">
+						<!-- 控件开始 -->
+						<div class="col-md-12">
+							<!-- form-body开始 -->
+							<div class="form-body">
+								<div class="form-group">
+									<label class="control-label col-md-3"> 队列数: </label>
+									<div class="col-md-5">
+										<input type="text" name="queueNum" value="${response.result.topic.queueNum}" placeholder="队列数" class="form-control" />
+									</div>
+								</div>
+								<div class="form-group">
+									<label class="control-label col-md-3"> 申请原因: </label>
+									<div class="col-md-5">
+										<textarea type="text" name="info" rows="3" class="form-control" placeholder="请填写"></textarea>
+									</div>
+								</div>
+								<input type="hidden" name="tid" value="${response.result.topic.id}"/>
+							</div>
+							<!-- form-body 结束 -->
+						</div>
+						<div id="info"></div>
+						<!-- 控件结束 -->
+					</div>
+				</div>
+				
+				<div class="modal-footer">
+					<button type="button" data-dismiss="modal" class="btn" >取消</button>
+					<button type="submit" id="updateTopicBtn" class="btn btn-primary">确定</button>
+				</div>
+			
+			</form>
+		</div>
+	</div>
+</div>
+<!-- 提示弹窗 -->
+<div class="modal fade" id="deleteUserProducerModal" aria-hidden="true">  
+  <div class="modal-dialog">  
+    <div class="modal-content message_align">  
+      <div class="modal-header">  
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">×</span></button>  
+        <h4 class="modal-title">确定要移除用户吗？</h4>  
+      </div>  
+		<form class="form-horizontal form-bordered form-row-stripped">
+			<div class="modal-body">
+				<div class="row">
+					<!-- 控件开始 -->
+					<div class="col-md-12">
+						<!-- form-body开始 -->
+						<div class="form-body">
+							<div class="form-group">
+								<label class="control-label col-md-3"> 用户: </label>
+								<div class="col-md-5">
+									<input type="text" id="producer" class="form-control" readonly="readonly"/>
+								</div>
+							</div>
+							<input type="hidden" id="pid" name="pid"/>
+						</div>
+						<!-- form-body 结束 -->
+					</div>
+					<div id="info"></div>
+					<!-- 控件结束 -->
+				</div>
+			</div>
+			
+			<div class="modal-footer">
+				<button type="button" data-dismiss="modal" class="btn" >取消</button>
+				<button type="button" id="deleteProducerBtn" onclick="deleteUserProducer()" class="btn btn-primary">确定</button>
+			</div>
+		
+		</form>
+    </div>
+  </div>
+</div>
+<div id="addUserProducerModal" class="modal fade" tabindex="-1" data-width="400">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+				<h4 class="modal-title">授权其他用户</h4>
+			</div>
+			<form class="form-horizontal form-bordered form-row-stripped" id="addUserProducerModalForm">
+				<div class="modal-body">
+					<div class="row">
+						<div class="col-md-12">
+							<div class="form-body">
+								<div class="form-group">
+									<label class="control-label col-md-3"> Topic: </label>
+									<div class="col-md-5">
+										<input type="text" name="tid" value="${response.result.topic.name}" data-toggle="tooltip"  title="${response.result.topic.name}" readonly="readonly" class="form-control"/>
+										<input id="currentTopicID" type="hidden" value="${response.result.topic.id}"/>
+									</div>
+								</div>
+								<div id="producerGroup" class="form-group"  style="display:none;">
+									<label class="control-label col-md-3"> 生产者: </label>
+									<div class="col-md-5">
+										<input type="text" name="producer" id="producerGroupName" data-toggle="tooltip" readonly="readonly" class="form-control" />
+									</div>
+								</div>
+								<div class="form-group">
+									<label class="control-label col-md-3"> 选择用户: </label>
+							        <div class="col-md-5">
+										<#if response.result?? && response.result?size gt 0>
+			    						<select id="userSearchSelect" class="selectpicker" title="请选择" data-live-search-placeholder="搜索" name="user" data-live-search="true"></select> 	  			
+										<#else>
+										<input type="text" value="拉取用户列表失败"/>
+									    </#if>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" data-dismiss="modal" class="btn" >取消</button>
+					<button type="button" class="btn btn-primary" id="associateBtn" onclick="addUserProducerRelationship()">确定</button>
+				</div>
+			</form>
+		</div>
+	</div>
+</div> 
+
+<!-- 客户端统计 -->
+<div id="producerStatsModal" class="modal fade" tabindex="-1" data-width="400">
+	<div class="modal-dialog" style="width:1100px;">
+		<div class="modal-content">
+			<div class="modal-body" style="padding-top:5px;">
+				<div id="producerStatsChart"></div>
+			</div>
+		</div>
+	</div>
+</div>
+<script>
+	$(function () {
+		// 初始化提示组件
+		$("[data-toggle='tooltip']").tooltip();
+		// 初始化user列表
+		initUserList('userSearchSelect');
+		// 绑定更新topic校验
+        $('#updateTopicRouteForm').bootstrapValidator({
+　　　　　　	message: 'This value is not valid',
+            　		feedbackIcons: {
+                　　　　　　　　valid: 'glyphicon glyphicon-ok',
+                　　　　　　　　invalid: 'glyphicon glyphicon-remove',
+                　　　　　　　　validating: 'glyphicon glyphicon-refresh'
+            　　　　　　　　   },
+            fields: {
+            	queueNum: {
+                    validators: {
+                        between: {
+			               message: '队列最小为1,最大为20',
+			               min: '1',
+			               max: '20'
+                        }
+                    }
+                }
+            }
+        }).on('success.form.bv', function(e) {
+        // 阻止默认事件提交
+        e.preventDefault();
+        disable("updateTopicBtn");
+		$.post('${request.contextPath}/topic/updateRoute',
+				$("#updateTopicRouteForm").serialize(),
+		        function(data){
+		            if(data.status == 200){
+						toastr.success("申请成功");  
+						modalHide(3000, function(){
+							$("#updateTopicRouteForm").data('bootstrapValidator').resetForm();
+						});
+				    }else{
+				    	toastr.error("申请失败！"+data.message);  
+				    	enable("updateTopicBtn");
+				    }
+		        }, 'json');
+    	});
+        
+        //添加删除特效
+        $(".producer_delete").hover(function(){
+        	$(this).addClass("delete");
+        },function(){
+        	$(this).removeClass("delete");
+        });
+        
+        // fix bootstrap model & highcharts resize
+        $('#producerStatsModal').on('shown.bs.modal', function() {
+        	producerStats();
+        });
+	});
+	
+	// 准备删除生产者
+	function prepareDeleteUserProducer(pid){
+		$("#pid").val(pid);
+		$("#producer").val($("#producer_"+pid).text());
+		$("#deleteUserProducerModal").modal('show');
+	}
+	// 删除生产者
+	function deleteUserProducer(){
+		disable("deleteProducerBtn");
+		$.post('${request.contextPath}/userProducer/delete',
+			{
+				pid: $("#pid").val()
+			},
+	        function(data){
+	            if(data.status == 200){
+	            	toastr.success("申请成功！请耐心等待！");  	            	
+	            	reload(1000);            	
+			    }else{
+			    	toastr.error("删除失败！"+data.message);  
+			    	enable("deleteProducerBtn");
+			    }
+	    }, 'json');
+	}
+	// 关联用户
+	function associateUserProducer(producerGroupName){		
+	  $("#producerGroupName").val(producerGroupName);
+	  $("#producerGroupName").attr("title",producerGroupName).tooltip('fixTitle');
+	  $('#associateBtn').attr("disabled",false);
+	  $("#addUserProducerModal").modal('show');
+	}
+	/**
+	 * 初始化user下拉列表
+	 */
+	function initUserList(componentId){
+		$.get('${request.contextPath}/user/list',
+		        function(data){
+		            if(data.status == 200){
+		            	var content = "";
+		            	for(var i in data.result){
+		            		var user = data.result[i];
+		            		var value = user.email.substring(0, user.email.indexOf("@"));
+		            		if(user.name && user.name != value){
+		            			value = user.name + "【" + value +"】";
+		            		}
+		            		content += "<option value='"+user.id+"'>"+value+"</option>";	
+		            	}
+		        		$("#"+componentId).html(content);
+		        		$("#"+componentId).selectpicker('refresh');
+				    }else{
+				    	toastr.error("数据获取失败！"+data.message);  
+				    }
+	        }, 'json');
+	}
+/**
+ * 发送添加用户请求
+ */
+function addUserProducerRelationship(){
+	if(!$("#userSearchSelect").val()){
+		alert("请先选择用户");
+		return;
+	}
+	disable("associateBtn");
+	$.post('${request.contextPath}/topic/auth/associate',
+			{
+				producer: $("#producerGroupName").val(),
+				tid: $("#currentTopicID").val(),
+				uid: $('#userSearchSelect option:selected').val(),
+			},
+	        function(data){
+	            if(data.status == 200){
+	            	toastr.success("申请成功！请耐心等待！");  	            	
+	            	reload(1000);            	
+			    }else{
+			    	toastr.error("申请失败！"+data.message);  
+			    	enable("associateBtn");
+			    }
+	    }, 'json');
+}
+
+/**
+ * 获取生产者统计图
+ */
+function producerStats(){
+	$.get('${request.contextPath}/producer/stats',
+		{
+			producer: curProducer
+		},
+        function(data){
+            $("#producerStatsChart").html(data);
+    });	
+}
+</script>

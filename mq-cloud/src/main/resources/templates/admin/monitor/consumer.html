@@ -1,0 +1,113 @@
+<div class="main">
+	<form class="form-inline" role="form">
+		<div class="form-group">
+			<label> 监控列表: </label>
+		</div>
+	</form>
+	<hr/>
+	<table class="table table-striped table-hover" style="margin-top: 0px;word-break:break-all; word-wrap:break-all;">
+    	<thead>  
+			<colgroup>
+			  <col>
+			  <col>
+			  <col width='160px'>
+			  <col width='80px'>
+			  <col width='70px'>
+			  <col>
+			  <col width='150px'>
+			  <col>
+			</colgroup>
+            <tr>  
+              <td>消费者</td>
+              <td>topic</td>
+              <td>监控收集时间</td>
+              <td data-toggle="tooltip" title="堆积总消息数">总堆积量</td>
+              <td data-toggle="tooltip" title="单队列最大堆积消息数">堆积量</td>
+              <td data-toggle="tooltip" title="消费延迟时间(相对于broker最新生产的消息时间)">滞后时间</td>
+              <td data-toggle="tooltip" title="同一个ConsumerGroup订阅不同topic">订阅错误</td>
+              <td data-toggle="tooltip" title="有消息且超过1分钟未消费认为发生过阻塞">历史详情</td>
+            </tr>  
+          </thead>  
+          <tbody>
+             <#if response.empty>
+			     <tr>
+                    <td colspan="8"class="text-center" >
+                    	暂无数据
+                    </td>
+                <tr>
+			<#else>
+				<#list response.result as consumerStat>
+				<tr>
+					<td>${consumerStat.consumerGroup}</td>
+					<td><a href="${request.contextPath}/user/topic/${consumerStat.tid}/detail?tab=consume">${consumerStat.topic!}</a></td>
+					<td>${consumerStat.updatetime?string("yyyy-MM-dd HH:mm:ss")}</td>
+					<td>${consumerStat.undoneMsgCount!}</td>
+					<td>${consumerStat.undone1qMsgCount!}</td>
+					<td>
+						<#if consumerStat.undoneDelay gt 1000>
+							${consumerStat.undoneDelay/1000}秒
+						<#elseif consumerStat.undoneDelay gt 0>
+							${consumerStat.undoneDelay}毫秒
+						<#else>
+							无滞后
+						</#if>
+					</td>
+					<td>${consumerStat.sbscription!"无错误"}</td>
+					<td>
+						<#if consumerStat.blockList??>
+							<button class="btn btn-success" data-toggle="modal" data-target="#${consumerStat.consumerGroup}">查看</button>
+		      		         <div class="modal fade text-center" id="${consumerStat.consumerGroup}" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+						    	<div class="modal-dialog" style="display: inline-block; width: auto;">
+							        <div class="modal-content">
+							            <div class="modal-header">
+							                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+							                <h5 class="modal-title" id="myModalLabel">${consumerStat.consumerGroup}</h5>
+							            </div>
+							            <div class="modal-body">
+								            <table class="table table-bordered table-hover">  
+								                  <thead>  
+								                    <tr>  
+								                      <th>clientId</th>
+								                      <th>broker</th>
+								                      <th>qid</th>
+								                      <th>监控收集时间</th>
+								                      <th data-toggle="tooltip" title="相对于当前时间">阻塞时间</th>
+								                      <th>偏移量错误时间</th>
+								                      <th>偏移量错误次数</th>
+								                    </tr>  
+								                  </thead>  
+								                  <tbody>
+								                  	 <#list consumerStat.blockList as consumerBlock>
+								                  	 	<tr>
+														  	<td>${consumerBlock.instance!}</td>
+														  	<td>${consumerBlock.broker!}</td>
+														  	<td>${consumerBlock.qid}</td>
+					    								    <td>${consumerBlock.updatetime?string("yyyy-MM-dd HH:mm:ss")}</td>
+					    								    <td>${consumerBlock.blockTime}秒</td>
+					    								    <td>
+					    								    	<#if consumerBlock.offsetMovedTime?? && consumerBlock.offsetMovedTime gt 0>
+						    								    ${consumerBlock.offsetMovedTime?number_to_datetime?string("yyyy-MM-dd HH:mm:ss")}</td>
+					    								    	</#if>
+					    								    <td>
+					    								    	<#if consumerBlock.offsetMovedTimes gt 0>
+					    								    		${consumerBlock.offsetMovedTimes}
+					    								    	</#if>
+					    								    </td>
+				    								     </tr>
+								                  	 </#list>
+			    								  </tbody>
+			    						 	</table>
+							            </div><!-- /.modal-body -->
+							        </div><!-- /.modal-content -->
+							    </div><!-- /.modal -->
+							</div>
+						<#else>
+							暂无
+						</#if>
+					</td>
+				</tr>
+				</#list>
+			</#if>
+            </tbody>
+      </table>
+</div>

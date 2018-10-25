@@ -1,0 +1,52 @@
+server: 
+  port: 8080
+  contextPath: /
+  tomcat: 
+    maxThreads: 500
+    uriEncoding: utf-8
+    basedir: '${PROJECT_DIR:/tmp}' 
+    accesslog: 
+      enabled: true
+      buffered: false
+      pattern: '%{yyyy-MM-dd HH:mm:ss.sss}t %I %r %h %s %b %D %F %{X-Forwarded-For}i'
+      
+eureka: 
+  client: 
+    registerWithEureka: false
+    fetchRegistry: false
+
+management: 
+  port: 8088
+  security: 
+    enabled: false
+endpoints: 
+  heapdump: 
+    enabled: false 
+  pause: 
+    enabled: false  
+    
+spring: 
+  profiles: 
+    active: local
+  mvc:
+    favicon:
+      enabled: false
+  freemarker:
+    expose-request-attributes: true
+    request-context-attribute: request
+    suffix: .html
+  jackson: 
+    default-property-inclusion: non-null
+  datasource: 
+    tomcat: 
+      max-wait: 60000
+      test-while-idle: true
+      test-on-borrow: false
+      test-on-return: false
+      validation-query: SELECT 1
+      time-between-eviction-runs-millis: 30000
+      min-evictable-idle-time-millis: 55000
+      num-tests-per-eviction-run: 20
+      remove-abandoned: true
+      remove-abandoned-timeout: 180
+      log-abandoned: true

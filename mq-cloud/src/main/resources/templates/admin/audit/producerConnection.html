@@ -1,0 +1,11 @@
+<#if response.empty>
+	<tr class='danger'><td colspan=4 class='text-center'>查无链接，请谨慎审批</td></tr>
+<#else>
+	<#list response.result as conn>
+		<tr>
+			<td>${conn_index+1}</td>
+			<td>${conn.connection.clientAddr}</td>
+			<td>${conn.connection.clientId}</td>
+		</tr>
+	</#list>
+</#if>

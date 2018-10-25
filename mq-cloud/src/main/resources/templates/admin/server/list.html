@@ -1,0 +1,278 @@
+<div class="main">
+	<form class="form-inline" role="form">
+		<div class="form-group">
+			<label> 机器列表: </label>
+			<button type="button" class="btn btn-success" data-target="#addServerModal" data-toggle="modal"><span class="glyphicon glyphicon-plus" aria-hidden="true"></span>&nbsp;机器</button>
+		</div>
+	</form>
+	<hr/>
+	<table class="table table-striped table-hover" style="margin-top: 0px;word-break:break-all; word-wrap:break-all;">
+		<thead>
+			<colgroup>
+			  <col>
+			  <col width='120px'>
+			  <col>
+			  <col>
+			  <col width='120px'>
+			  <col>
+			  <col>
+			  <col>
+			  <col>
+			  <col>
+			  <col>
+			  <col>
+			  <col>
+			  <col>
+			  <col width='140px'>
+			  <col>
+			</colgroup>
+			<tr>
+				<td>序号</td>
+				<td>ip</td>
+				<td>host</td>
+				<td data-toggle="tooltip" title="cpu核数">cpu</td>
+				<td data-toggle="tooltip" title="使用/总内存">内存</td>
+				<td data-toggle="tooltip" title="一分钟load">load1</td>
+				<td data-toggle="tooltip" title="磁盘读速率 单位K/s">ior</td>
+				<td data-toggle="tooltip" title="磁盘写速率 单位K/s">iow</td>
+				<td data-toggle="tooltip" title="磁盘io速率 交互次数/s">iops</td>
+				<td data-toggle="tooltip" title="磁盘io带宽使用百分比">iobusy</td>
+				<td data-toggle="tooltip" title="网络入流量 单位K/s">入网</td>
+				<td data-toggle="tooltip" title="网络出流量 单位k/s">出网</td>
+				<td data-toggle="tooltip" title="tcp estab连接数">连接</td>
+				<td data-toggle="tooltip" title="tcp time wait连接数">等待</td>
+				<td>收集时间</td>
+				<td>操作</td>
+			</tr>
+		</thead>
+		<tbody>
+            <#if response.empty>
+			     <tr>
+                    <td colspan="17"class="text-center" >
+                    	暂无数据
+                    </td>
+                <tr>
+			<#else>
+				<#list response.result as server>
+					<tr>
+						<td>${server_index+1}</td>
+						<td><a href="#" onclick="setIp('${server.ip}')" data-target="#monitorModal" data-toggle="modal">${server.ip}</a></td>
+						<td>${server.host!}</td>
+						<td>${server.cpus!}</td>
+						<td>
+							<#if server.mtotal != 0>
+								<div class="progress" style="margin-bottom:10px;">
+		                         	<div class="progress-bar progress-bar-info" aria-valuenow="60"  aria-valuemax="100" aria-valuemin="0" style="width:${(server.mtotal-server.mfree)*100.0/server.mtotal}%;">
+		        						<span>${((server.mtotal-server.mfree)/1024)?string("#.#")}g/${(server.mtotal/1024)?string("#.#")}g</span>
+		        					</div>
+		        				</div>
+							</#if>
+						</td>
+						<td>${server.cload1!}</td>
+						<td>${server.dread!}</td>
+						<td>${server.dwrite!}</td>
+						<td>${server.diops!}</td>
+						<td>${server.dbusy!}%</td>
+						<td>${server.nin!}</td>
+						<td>${server.nout!}</td>
+						<td>${server.tuse!}</td>
+						<td>${server.twait!}</td>
+						<td>
+						<#if server.cdate??>
+							${server.cdate!} ${server.ctime?substring(0,2)}:${server.ctime?substring(2)}
+						</#if>
+						</td>
+						<td><button type="button" onclick="deleteServer('${server.ip}');" class="btn-xs btn-warning"><span class="glyphicon glyphicon-trash" aria-hidden="true"></span></button></td>
+					</tr>
+				</#list>
+			</#if>
+		</tbody>
+	</table>
+</div>
+
+<!-- 添加机器 -->
+<div id="addServerModal" class="modal fade" tabindex="-1" data-width="400">
+	<div class="modal-dialog" style="width:800px;">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h4 class="modal-title">添加机器</h4>
+			</div>
+			<form class="form-horizontal form-bordered form-row-stripped" id="addServerForm">
+				<div class="modal-body">
+					<div class="row">
+						<div class="col-md-12">
+							<div class="form-body">
+								<div class="form-group">
+									<label class="control-label col-md-2"> 初始化脚本: </label>
+									<div class="col-md-9">
+										<textarea type="text" rows="5" class="form-control" readonly>1. useradd ${username}
+2. passwd ${username} （密码为：${password}）
+3. echo "${username}     ALL=(ALL)       NOPASSWD: ALL" >> /etc/sudoers
+4. sed -i "s/Defaults    requiretty/#Defaults    requiretty/g" /etc/sudoers</textarea>
+									</div>
+								</div>
+								<div id="producerGroup" class="form-group">
+									<label class="control-label col-md-2"> 机器IP: </label>
+									<div class="col-md-5">
+										<input type="text" id="ipInput" name="ip" value="" placeholder="IP" class="form-control" />
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" data-dismiss="modal" class="btn" >取消</button>
+					<button type="button" class="btn btn-primary" id="addTopicBtn" onclick="addServer()">确定</button>
+				</div>
+			</form>
+		</div>
+	</div>
+</div>
+<!-- 删除 -->
+<div class="modal fade" id="deleteServerModal" aria-hidden="true">  
+  <div class="modal-dialog">  
+    <div class="modal-content message_align">  
+      <div class="modal-header">  
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">×</span></button>  
+        <h4 class="modal-title">确定要删除当前服务器吗？</h4>  
+      </div>  
+		<form class="form-horizontal form-bordered form-row-stripped">
+			<div class="modal-body">
+				<div class="row">
+					<!-- 控件开始 -->
+					<div class="col-md-12">
+						<!-- form-body开始 -->
+						<div class="form-body">
+							<div class="form-group">
+								<label class="control-label col-md-3"> IP: </label>
+								<div class="col-md-5">
+									<input type="text" id="deleteIpInput" class="form-control" readonly="readonly"/>
+								</div>
+							</div>
+						</div>
+						<!-- form-body 结束 -->
+					</div>
+					<div id="info"></div>
+					<!-- 控件结束 -->
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" data-dismiss="modal" class="btn" >取消</button>
+				<button type="button" id="deleteServerBtn" onclick="deleteServerConfirm()" class="btn btn-primary">确定</button>
+			</div>
+		</form>
+    </div>
+  </div>
+</div>
+<!-- 监控 -->
+<div id="monitorModal" class="modal fade" tabindex="-1">
+	<div class="modal-dialog" style="width:90%;height:90%;">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+				<h4 class="modal-title"><b id="ipB"></b> 状况</h4>
+			</div>
+			<div class="container" style="padding:0px;margin:0px;">
+			    <div class="tabbable-custom">
+			        <ul class="nav nav-pills" id="server_app_tabs">
+			            <li class="active"><a href="#overview" data-url="${request.contextPath}/admin/server/overview" data-toggle="tab">概览</a></li>
+			            <li><a href="#cpu" data-url="${request.contextPath}/admin/server/cpu" data-toggle="tab">cpu</a></li>
+			            <li><a href="#net" data-url="${request.contextPath}/admin/server/net" data-toggle="tab">net</a></li>
+			        	<li><a href="#disk" data-url="${request.contextPath}/admin/server/disk" data-toggle="tab">disk</a></li>
+			        </ul>
+			        <div class="tab-content">
+			            <div class="tab-pane active" id="overview">
+			            </div>
+			            <div class="tab-pane" id="cpu">
+			            </div>
+			            <div class="tab-pane" id="net">
+			            </div>
+			            <div class="tab-pane" id="disk">
+			            </div>
+			        </div>
+			    </div>
+			</div>
+		</div>
+	</div>
+</div>
+
+<input type="hidden" id="ipInput">
+
+<script>
+/**
+ * 添加机器
+ */
+function addServer(){
+	if(!$("#ipInput").val()){
+		alert("请输入ip");
+		return;
+	}
+	disable("addTopicBtn");
+	$.post('${request.contextPath}/admin/server/add',
+			{
+				ip: $("#ipInput").val()
+			},
+	        function(data){
+	            if(data.status == 200){
+	            	toastr.success("添加成功，将自动刷新！");  
+	            	reload(3000);
+			    }else{
+			    	toastr.error("添加失败！"+data.message);  
+			    	enable("addTopicBtn");
+			    }
+        }, 'json');
+}
+
+$('#server_app_tabs a').click(function (e) {
+    e.preventDefault();
+    var href = this.hash;
+    var url = $(this).attr("data-url");
+    var ip = $("#ipInput").val();
+    var date = $("#dateInput").val();
+    if(ip){
+        if(url.indexOf("?") == -1){
+        	url += "?";
+        }
+    	url += "&ip="+ip;
+    }
+    if(date){
+        if(url.indexOf("?") == -1){
+        	url += "?";
+        }
+    	url += "&date="+date;
+    }
+    $.get(url, function (result) {
+    	$(href).html(result);
+    });
+});
+function setIp(ip){
+	$("#ipInput").val(ip);
+	$("#ipB").html(ip);
+}
+$('#monitorModal').on('shown.bs.modal', function (e) {
+	$("#server_app_tabs li.active a").click();
+})
+//删除机器
+function deleteServer(ip){
+	$("#deleteIpInput").val(ip);
+	$("#deleteServerModal").modal('show');
+}
+//发送删除请求
+function deleteServerConfirm(){
+	disable("deleteServerBtn");
+	$.post('${request.contextPath}/admin/server/delete',
+		{
+			ip: $("#deleteIpInput").val()
+		},
+        function(data){
+            if(data.status == 200){
+            	toastr.success("删除成功！即将刷新页面！");
+            	reload(3000);            	
+		    }else{
+		    	toastr.error("删除失败！"+data.message);  
+		    	enable("deleteServerBtn");
+		    }
+    }, 'json');
+}
+</script>

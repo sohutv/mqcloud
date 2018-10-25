@@ -1,0 +1,13 @@
+spring: 
+  application:
+    name: sohu.mq-cloud.local
+  datasource: 
+    tomcat: 
+      initial-size: 1
+      min-idle: 1
+      max-idle: 3
+      max-active: 3
+    mq: 
+      url: jdbc:mysql://127.0.0.1:3306/mq-cloud?useUnicode=true&characterEncoding=UTF-8
+      username: mqcloud
+      password: mqcloud

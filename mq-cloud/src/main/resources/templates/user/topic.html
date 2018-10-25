@@ -1,0 +1,803 @@
+<div id="mqcloud-warning"><span class="glyphicon glyphicon-volume-up" style="position:relative;top:2px;" aria-hidden="true"></span> <b id="warning-content"></b></div>
+<div class="row">
+    <div class="col-md-12">
+        <div class="page-header">
+            <h4>Topic列表</h4>
+        </div>
+		<div style="float:right">
+			<form class="form-inline" id="topicList">
+		  	  <#if userInfo.user.type == 1>
+		  	     <div class="form-group">
+				    <select id="topicSearchSelect" class="selectpicker" title="请选择" data-live-search-placeholder="搜索" name="topic" data-live-search="true"></select>
+		 	     </div>
+		 	  <#else>
+		  	  	 <#if pagination.result.totalPages gt 1>
+			 	     <div class="form-group">
+			    	    <input type="text" class="form-control" name="topic" value="<#if response.OK>${response.result.queryTopic!}</#if>" placeholder="Topic名字">
+			  	     </div>
+					 <button type="submit" onclick="searchTopic()" class="btn btn-search"><span class="glyphicon glyphicon-search" aria-hidden="true"></span></button>
+		 	     </#if>
+		  	  </#if>
+			  <button type="submit" class="btn btn-success" data-target="#addTopicModal" data-toggle="modal">我要生产消息</button>
+			  <button type="submit" class="btn btn-success" onclick="initTopicList('topicSelectForConsumer')" data-target="#addConsumerModal" data-toggle="modal">我要消费消息</button>
+			  <button type="submit" class="btn btn-success" onclick="initTopicList('topicSelect')" data-target="#buildRelationshipModal" data-toggle="modal" data-toggle="tooltip" title="RocketMQ的老用户通过这个入口来关联生产者和消费者">我是老用户</button>
+			</form>
+		</div>
+	</div>
+</div>
+<div class="row">
+	<br/>
+	<div class="col-md-12">
+        <table class="table table-striped table-hover" style="margin-top: 0px">
+                <thead>
+	                <tr>
+	                	<td>序号</td>
+	                    <td>Topic</td>
+	                    <td data-toggle="tooltip" title="每分钟生产的消息数量">生产量</td>
+	                    <td data-toggle="tooltip" title="每分钟消费的消息数量">消费量</td>
+	                    <td data-toggle="tooltip" title="每分钟生产的消息大小">生产大小</td>
+	                    <td data-toggle="tooltip" title="每分钟消费的消息大小">消费大小</td>
+	                    <td>操作</td>
+	                </tr>
+                </thead>
+                <tbody>
+	                <#if !response.OK || !response.result.topicTrafficVOList??>
+					     <tr>
+		                    <td colspan="7"class="text-center" >
+		                    	暂无数据
+		                    </td>
+		                <tr>
+					<#else>
+						<#list response.result.topicTrafficVOList as topicTrafficVO>
+							<tr>
+								<td>${(pagination.result.currentPage - 1)*pagination.result.numOfPage + topicTrafficVO_index + 1}</td>
+		                    	<td><a title="查看详情" href="${request.contextPath}/user/topic/${topicTrafficVO.id}/detail">${topicTrafficVO.name}</a></td>
+		                    	<#if topicTrafficVO.topicTraffic??>
+		                    		<td>${topicTrafficVO.topicTraffic.countFormat}</td>
+		                    	<#else>
+		                    		<td>0</td>
+								</#if>
+		                    	<#if topicTrafficVO.consumerTraffic??>
+		                    		<td>${topicTrafficVO.consumerTraffic.countFormat}</td>
+		                    	<#else>
+		                    		<td>0</td>
+								</#if>
+								<#if topicTrafficVO.topicTraffic??>
+		                    		<td>${topicTrafficVO.topicTraffic.sizeFormat}</td>
+		                    	<#else>
+		                    		<td>0</td>
+								</#if>
+								<#if topicTrafficVO.consumerTraffic??>
+		                    		<td>${topicTrafficVO.consumerTraffic.sizeFormat}</td>
+		                    	<#else>
+		                    		<td>0</td>
+								</#if>
+								<td>
+									<#if topicTrafficVO.own>
+										<button type="button" class="btn btn-warning" data-target="#deleteTopicModal${topicTrafficVO_index}" data-toggle="modal"><span class="glyphicon glyphicon-trash" aria-hidden="true"></span></button>
+										<!-- 删除topic -->
+										<div id="deleteTopicModal${topicTrafficVO_index}" class="modal fade" tabindex="-1">
+											<div class="modal-dialog" style="width:400px">
+												<div class="modal-content">
+													<div class="modal-header">
+														<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+														<h4 class="modal-title">删除确认</h4>
+													</div>
+													<form class="form-inline form-bordered form-row-stripped" id="deleteTopicForm">
+														<div class="modal-body">
+																<div class="form-group text-center">
+																	<span>确定删除 <b>${topicTrafficVO.name}</b> 吗?</span>
+																</div>
+														</div>
+														<div class="modal-footer">
+															<button type="button" data-dismiss="modal" class="btn" >取消</button>
+															<button type="button" class="btn btn-primary" onclick="deleteTopic(${topicTrafficVO.id})" id="deleteTopicBtn${topicTrafficVO.id}">确定</button>
+														</div>
+													</form>
+												</div>
+											</div>
+										</div>
+									</#if>
+								</td>
+		                   	</tr>
+						</#list>
+					</#if>
+                </tbody>
+           </table>
+    </div>
+</div>
+
+<ul id="pagination" data-url="${request.contextPath}/user/topic?topic=<#if response.OK>${response.result.queryTopic!}</#if>" style="float:right"></ul>
+<#include "../inc/pagination.html">
+
+<!-- 新建topic -->
+<div id="addTopicModal" class="modal fade" tabindex="-1" data-width="400">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+				<h4 class="modal-title">新建Topic</h4>
+			</div>
+			<form class="form-horizontal form-bordered form-row-stripped" id="addTopicForm">
+				<div class="modal-body">
+					<div class="row">
+						<div class="col-md-12">
+							<div class="form-body">
+								<div class="form-group">
+									<label class="control-label col-md-3"> 组名: </label>
+							        <div class="col-md-5">
+										<input type="text" id="teamNameInput" name="teamName" value="" placeholder="组名简称" class="form-control" />
+									</div>
+								</div>
+								<div class="form-group">
+									<label class="control-label col-md-3"> 业务名: </label>
+							        <div class="col-md-5">
+										<input type="text" id="bizNameInput" name="bizName" value="" placeholder="业务简称" class="form-control" />
+									</div>
+								</div>
+								<div class="form-group">
+										<label class="control-label col-md-3"> Topic: </label>
+							        <div class="col-md-5">
+										<input type="text" id="topicNameInput" name="name" value="" readonly="readonly"
+											placeholder="组名-业务名-topic" class="form-control" />
+									</div>
+								</div>
+								<div class="form-group">
+									<label class="control-label col-md-3" data-toggle="modal" title="这里的队列数量是指每个broker上的队列数，一般至少有4个broker，如果这里填8，那么共有32个队列"> 队列数量: </label>
+									<div class="col-md-5">
+										<input type="text" id="topicNumInput" name="queueNum" value="8" 
+										placeholder="默认为8，不建议修改" class="form-control" />
+									</div>
+								</div>
+								<div class="form-group">
+									<label class="control-label col-md-3"> 生产者: </label>
+									<div class="col-md-5">
+										<input type="text" id="producerInput" name="producer" value="" readonly="readonly"
+										placeholder="组名-业务名-topic-producer" class="form-control" />
+									</div>
+								</div>
+								<div class="form-group">
+									<label class="control-label col-md-3"> 消息顺序: </label>
+									<div class="col-md-5 checkbox">
+									    <input type="radio" name="ordered" value="0" checked>
+									    	局部有序
+									    <input type="radio" name="ordered" value="1">
+									    	<span data-toggle="modal" title="在分布式系统中保持全局消息有序有性能损耗，请谨慎使用">全局有序</span>
+									</div>
+								</div>
+								<div class="form-group">
+									<label class="control-label col-md-3"> 一天消息量: </label>
+									<div class="col-md-5">
+										<div class="input-group">
+											<input type="text" id="qpd" name="qpd" value=""
+											placeholder="一天发送多少万条消息" class="form-control" />
+											<span class="input-group-addon">万</span>
+	    								</div>
+									</div>
+								</div>
+								<div class="form-group">
+									<label class="control-label col-md-3"> 高峰消息量: </label>
+									<div class="col-md-5">
+										<div class="input-group">
+											<input type="text" id="qps" name="qps" value=""
+											placeholder="高峰一秒发送多少条消息" class="form-control" />
+											<span class="input-group-addon">条/秒</span>
+	    								</div>
+									</div>
+								</div>
+								<div class="form-group">
+									<label class="control-label col-md-3"> 申请原因: </label>
+									<div class="col-md-5">
+										<textarea type="text" name="info" rows="3" class="form-control" placeholder="请填写"></textarea>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" data-dismiss="modal" class="btn" >取消</button>
+					<button type="submit" class="btn btn-primary" id="addTopicBtn" disabled="disabled">确定</button>
+				</div>
+			</form>
+		</div>
+	</div>
+</div>
+
+<!-- 新建消费者 -->
+<div id="addConsumerModal" class="modal fade" tabindex="-1" data-width="400">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+				<h4 class="modal-title">消费Topic</h4>
+			</div>
+			<form class="form-horizontal form-bordered form-row-stripped" id="addConsumerForm">
+				<div class="modal-body">
+					<div class="row">
+						<div class="col-md-12">
+							<div class="form-body">
+								<div class="form-group">
+									<label class="control-label col-md-3"> Topic: </label>
+									<div class="col-md-6">
+										<select id="topicSelectForConsumer" class="selectpicker" title="请选择" data-live-search-placeholder="搜索" name="tid" data-live-search="true">
+										</select>
+									</div>
+								</div>
+								<div class="form-group">
+										<label class="control-label col-md-3"> 消费者: </label>
+							        <div class="col-md-6">
+										<input type="text" id="consumerNameInput" name="consumer" value=""
+											placeholder="组名-业务名-部分topic名-consumer" class="form-control" />
+									</div>
+								</div>
+								<div class="form-group">
+									<label class="control-label col-md-3"> 消费方式: </label>
+									<div class="col-md-6 checkbox">
+									    <input type="radio" name="consumeWay" value="0" checked> 
+									    	<span data-toggle="modal" title="所有的消费者均分消息进行消费">集群消费</span>
+									    <input type="radio" name="consumeWay" value="1">
+									    	<span data-toggle="modal" title="每个消费者会消费所有消息">广播消费</span>
+									</div>
+								</div>
+								<div class="form-group">
+									<label class="control-label col-md-3"> 申请原因: </label>
+									<div class="col-md-6">
+										<textarea type="text" name="info" rows="3" class="form-control" placeholder="请填写"></textarea>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" data-dismiss="modal" class="btn" >取消</button>
+					<button type="submit" class="btn btn-primary" id="addConsumerBtn" disabled="disabled">确定</button>
+				</div>
+			</form>
+		</div>
+	</div>
+</div>
+
+<!-- 老用户入口 -->
+<div id="buildRelationshipModal" class="modal fade" tabindex="-1" data-width="400">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+				<h4 class="modal-title">建立联系</h4>
+			</div>
+			<form class="form-horizontal form-bordered form-row-stripped" id="buildRelationshipForm">
+				<div class="modal-body">
+					<div class="row">
+						<div class="col-md-12">
+							<div class="form-body">
+								<div class="form-group">
+									<label class="control-label col-md-3"> Topic: </label>
+									<div class="col-md-5">
+										<select id="topicSelect" class="selectpicker" title="请选择" data-live-search-placeholder="搜索" name="tid" data-live-search="true">
+										</select>
+									</div>
+								</div>
+								<div class="form-group">
+									<label class="control-label col-md-3"> 我是: </label>
+									<div class="col-md-5 checkbox">
+									    <input type="radio" name="role" onclick="selectProducer()" value="0">生产者
+									    <input type="radio" name="role" onclick="selectConsumer()" value="1">消费者
+									</div>
+								</div>
+								<div id="producerGroup" class="form-group" style="display:none;">
+									<label class="control-label col-md-3"> 生产者: </label>
+									<div class="col-md-5">
+										<input type="text" id="producerGroupInput" name="producer" value="" 
+										placeholder="请输入producer group" class="form-control" />
+									</div>
+								</div>
+								<div id="consumerGroup" class="form-group" style="display:none;">
+									<label class="control-label col-md-3"> 消费者: </label>
+									<div class="col-md-5">
+										<select id="consumerSelect" class="selectpicker" title="请选择consumer group" data-live-search-placeholder="搜索" name="cid" data-live-search="true">
+										</select>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" data-dismiss="modal" class="btn" >取消</button>
+					<button type="button" class="btn btn-primary" id="associateBtn" onclick="buildRelationship()">确定</button>
+				</div>
+			</form>
+		</div>
+	</div>
+</div>
+
+
+<!-- 历史消息 -->
+<div id="messageModel" class="modal fade" tabindex="-1" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+				<h4 class="modal-title">全部消息</h4>
+			</div>
+			<table class="table table-striped table-hover" style="margin-top: 0px">
+				<thead>
+					<colgroup>
+					  <col width='50px'></col>
+					  <col></col>
+					  <col width='50px'></col>
+					  <col width='160px'></col>
+					</colgroup>
+					<tr>
+						<td>序号</td>
+						<td>消息</td>
+						<td>状态</td>
+						<td>创建时间</td>
+					</tr>
+				</thead>
+				<tbody id="messageBody">
+				</tbody>
+			</table>
+		</div>
+	</div>
+</div> <!-- 历史消息结束 -->
+
+<script type="text/javascript">
+	/**
+	 * 查询topic
+	 */
+	function searchTopic(){
+		window.location.href="${request.contextPath}/user/topic?"+$("#topicList").serialize();
+	}
+	
+	$(function(){
+		$("[data-toggle='tooltip']").tooltip({container: 'body'});
+		$("[data-toggle='modal']").tooltip();
+		
+		// 初始化topic列表
+  		<#if userInfo.user.type == 1>
+	  		initTopicList('topicSearchSelect', true);
+ 	 	</#if>
+		
+		// 获取通知
+		$.get('${request.contextPath}/notice',
+	        function(data){
+	            if(data.status == 200){
+	            	$('#mqcloud-warning').show();
+					$('#warning-content').html(data.result.content);
+			    }
+	        }, 'json');
+		
+   		// 展示铃铛
+   		$("#notifyBox").show();
+		// 获取用户未读消息
+		$.get('${request.contextPath}/message',
+	        function(data){
+            	$("#notifyBox").parent().css("padding-top", "7px");
+	            if(data.status == 200){
+	        	    MessagePlugin.init({
+	        	        elem: "#notifyBox",
+	        	        msgData: data.result,
+        	            msgUnReadData: data.result.length,
+        	            msgClick: function(obj) {
+        	                read($(obj).attr("data"));
+        	            },
+        	            allRead: function(obj) {
+        	            	readAll();
+        	            },
+        	            getNodeHtml: function(obj, node) {
+        	                if (obj.readStatus == 1) {
+        	                    node.isRead = true;
+        	                } else {
+        	                    node.isRead = false;
+        	                }
+        	                var html = "<p>"+ obj.text +"</p>";
+        	                node.html = html;
+        	                return node;
+        	            },
+        	            allMsg: "allMessage()"
+	        	   });
+			    } else {
+			    	MessagePlugin.init({
+	        	        elem: "#notifyBox",
+	        	        allMsg: "allMessage()",
+	        	        msgClick: function(obj) {
+        	                read($(obj).attr("data"));
+        	            },
+        	            allRead: function(obj) {
+        	            	readAll();
+        	            },
+        	            getNodeHtml: function(obj, node) {
+        	                if (obj.readStatus == 1) {
+        	                    node.isRead = true;
+        	                } else {
+        	                    node.isRead = false;
+        	                }
+        	                var html = "<p>"+ obj.text +"</p>";
+        	                node.html = html;
+        	                return node;
+        	            }
+	        	   });
+			    }
+        }, 'json');
+		
+		// 下拉框change事件
+		$('#topicSelect').on('changed.bs.select',function(e, clickedIndex, newValue, oldValue){
+			if($("#consumerGroup").is(":visible")){
+				refreshConsumerSelect($(this).val());
+			}
+		});
+		
+		
+		// 用户topic表单校验
+        $('#addTopicForm').bootstrapValidator({
+    　　　　　　	message: 'This value is not valid',
+                　		feedbackIcons: {
+                    　　　　　　　　valid: 'glyphicon glyphicon-ok',
+                    　　　　　　　　invalid: 'glyphicon glyphicon-remove',
+                    　　　　　　　　validating: 'glyphicon glyphicon-refresh'
+                　　　　　　　　   },
+                fields: {
+                	teamName: {
+                        validators: {
+                        	notEmpty: {
+                                message: '组名不能为空'
+                            },
+    	                     regexp: {
+    	                         regexp: /^[a-zA-Z0-9_\-]+$/,
+    	                         message: '只能包含大小写英文字符，数字，下划线，中划线'
+    	                     }
+                        }
+                    },
+                    bizName: {
+                        validators: {
+                        	notEmpty: {
+                                message: '业务名不能为空'
+                            },
+    	                     regexp: {
+    	                         regexp: /^[a-zA-Z0-9_\-]+$/,
+    	                         message: '只能包含大小写英文字符，数字，下划线，中划线'
+    	                     }
+                        }
+                    },
+                    queueNum: {
+                        validators: {
+                            notEmpty: {
+                                message: '队列数量不能为空'
+                            },
+                            between: {
+    	                         min: 1,
+    	                         max: 20,
+    	                         message: '队列数量需介于1和20之间'
+    	                     }
+                        }
+                    },
+                    qpd: {
+                        validators: {
+                            notEmpty: {
+                                message: '一天消息量不能为空'
+                            }
+                        }
+                    },
+                    qps: {
+                        validators: {
+                            notEmpty: {
+                                message: '高峰消息量不能为空'
+                            }
+                        }
+                    }
+                }
+        }).on('success.form.bv', function(e) {
+            // 阻止默认事件提交
+            e.preventDefault();
+ 		   	disable("addTopicBtn");
+    		$.post('${request.contextPath}/topic/add',
+   				$("#addTopicForm").serialize(),
+   		        function(data){
+   		            if(data.status == 200){
+   						toastr.success("操作成功，请稍后查看");  
+   						modalHide(3000, function(){
+	   						$("#addTopicForm")[0].reset();
+	   						$("#addTopicForm").data('bootstrapValidator').resetForm();
+	   						enable("addTopicBtn");
+   						});
+   				    }else{
+   				    	toastr.error("操作失败！"+data.message);  
+   				    	enable("addTopicBtn");
+   				    }
+   		        }, 'json');
+        });
+		
+		// topic change事件
+		$("#teamNameInput").bind('input propertychange', function(){
+			$("#topicNameInput").val($(this).val()+"-"+$("#bizNameInput").val()+"-topic");
+			$("#producerInput").val($("#topicNameInput").val()+"-producer");
+		});
+		$("#bizNameInput").bind('input propertychange', function(){
+			$("#topicNameInput").val($("#teamNameInput").val()+"-"+$(this).val()+"-topic");
+			$("#producerInput").val($("#topicNameInput").val()+"-producer");
+		});
+		
+		
+		// 用户消费表单校验
+        $('#addConsumerForm').bootstrapValidator({
+    　　　　　　	message: 'This value is not valid',
+                　		feedbackIcons: {
+                    　　　　　　　　valid: 'glyphicon glyphicon-ok',
+                    　　　　　　　　invalid: 'glyphicon glyphicon-remove',
+                    　　　　　　　　validating: 'glyphicon glyphicon-refresh'
+                　　　　　　　　   },
+                fields: {
+                	consumer: {
+                        validators: {
+                        	notEmpty: {
+                                message: '消费者不能为空'
+                            },
+    	                     regexp: {
+    	                         regexp: /^[a-zA-Z0-9_-]+$/,
+    	                         message: '只能包含大小写英文字母,数字,下划线,中划线'
+    	                     }
+                        }
+                    },
+                    tid: {
+                        validators: {
+                        	notEmpty: {
+                                message: '请选择Topic'
+                            }
+                        }
+                    }
+                }
+        }).on('success.form.bv', function(e) {
+            // 阻止默认事件提交
+            e.preventDefault();
+ 		   	disable("addConsumerBtn");
+    		$.post('${request.contextPath}/consumer/add',
+   				$("#addConsumerForm").serialize(),
+   		        function(data){
+   		            if(data.status == 200){
+   						toastr.success("操作成功，请稍后查看");  
+   						modalHide(3000, function(){
+	   						$("#addConsumerForm")[0].reset();
+	   						$("#addConsumerForm").data('bootstrapValidator').resetForm();
+	   						enable("addConsumerBtn");
+   						});
+   				    }else{
+   				    	toastr.error("操作失败！"+data.message);
+   				    	enable("addConsumerBtn");
+   				    }
+   		        }, 'json');
+        });
+		
+		
+		// select change
+		$('#topicSearchSelect').on('changed.bs.select', function(e) {
+			searchTopic();
+		});
+	});
+	
+	/**
+	 * 查看所有消息
+	 */
+	function allMessage(){
+		$.get('${request.contextPath}/message/all',
+	        function(data){
+				$("#messageBody").html(data);
+				$("#messageModel").modal("show");
+	        });
+	}
+
+	/**
+	 * 全部读取消息
+	 */
+	function readAll(){
+		$.post('${request.contextPath}/message/read/all',
+	        function(data){
+	            if(data.status == 200){
+	            	for(var i in MessagePlugin.option.msgData){
+	            		var data = MessagePlugin.option.msgData[i];
+	            		data.readStatus = 1;
+	            	}
+	        		$("#notifyBox").find(".bell-dot").remove();
+	            	$(".message-frame").find(".badge-dot").remove();
+			    }
+        }, 'json');
+	}
+	
+	/**
+	 * 标记消息已读
+	 */
+	function read(mid){
+		$.post('${request.contextPath}/message/'+mid+'/read',
+	        function(data){
+	            if(data.status == 200){
+	            	var allRead = true;
+	            	for(var i in MessagePlugin.option.msgData){
+	            		var msgData = MessagePlugin.option.msgData[i];
+	            		if(msgData.id == mid){
+	            			msgData.readStatus = 1;
+	            		}
+	            		if(msgData.readStatus == 0){
+	            			allRead = false;
+	            		}
+	            	}
+	            	if(allRead){
+	            		$("#notifyBox").find(".bell-dot").remove();
+	            	}
+			    }
+        }, 'json');
+	}
+	
+	/**
+	 * 初始化topic下拉列表
+	 */
+	function initTopicList(componentId, needName){
+		$.get('${request.contextPath}/topic/list',
+		        function(data){
+		            if(data.status == 200){
+		            	var content = "";
+		            	for(var i in data.result){
+		            		var topic = data.result[i];
+		            		if(needName){
+		            			content += "<option value='"+topic.name+"'>"+topic.name+"</option>";
+		            		} else {
+			            		content += "<option value='"+topic.id+"'>"+topic.name+"</option>";
+		            		}
+		            	}
+		        		$("#"+componentId).html(content);
+		        		$("#"+componentId).selectpicker('refresh');
+		        		if(needName){
+		        			<#if response.OK && response.result.queryTopic??>
+				        		$('#' + componentId).selectpicker('val', '${response.result.queryTopic}');
+		        			</#if>
+		        		}
+				    }else{
+				    	toastr.error("数据获取失败！"+data.message);  
+				    }
+	        }, 'json');
+	}
+	
+	/**
+	 * 选择生产者单选按钮
+	 */
+	function selectProducer(){
+		$("#producerGroup").show();
+		$("#consumerGroup").hide();
+	}
+	
+	/**
+	 * 选择消费者单选按钮
+	 */
+	function selectConsumer(){
+		$("#producerGroup").hide();
+		$("#consumerGroup").show();
+		var topicId = $("#topicSelect").val();
+		refreshConsumerSelect(topicId);
+	}
+	/**
+	 * 刷新消费者下拉框
+	 */
+	function refreshConsumerSelect(topicId){
+		if(!topicId){
+			return;
+		}
+		$.get('${request.contextPath}/consumer/list',
+				{
+					tid: topicId
+				},
+		        function(data){
+		            if(data.status == 200){
+		            	var content = "";
+		            	for(var i in data.result){
+		            		var consumer = data.result[i];
+		            		content += "<option value='"+consumer.id+"'>"+consumer.name+"</option>";
+		            	}
+		        		$("#consumerSelect").html(content);
+		        		$("#consumerSelect").selectpicker('refresh');
+				    }else{
+				    	toastr.error("数据获取失败！"+data.message);  
+				    }
+	        }, 'json');
+	}
+	
+	/**
+	 * 建立关联
+	 */
+	function buildRelationship(){
+		if(!$("#topicSelect").val()){
+			alert("请先选择Topic");
+			return;
+		}
+		var role = $("input[name='role']:checked").val();
+		var module = "";
+		if(role == 0) {
+			if(!$("#producerGroupInput").val()){
+				alert("请先填写生产者名字");
+				return;
+			}
+			module = "topic"
+		} else if(role == 1){
+			if(!$("#consumerSelect").val()){
+				alert("请选择消费者");
+				return;
+			}
+			module = "consumer"
+		} else {
+			alert("请选择生产者还是消费者");
+			return;
+		}
+		if(!module){
+			alert("参数错误");
+			return;
+		}
+		disable("associateBtn");
+		$.post('${request.contextPath}/'+module+'/associate',
+				$("#buildRelationshipForm").serialize(),
+		        function(data){
+		            if(data.status == 200){
+		            	toastr.success("申请成功，请耐心等候！");  
+		            	modalHide(3000, function(){
+		            		enable("associateBtn");
+			            	$("#buildRelationshipForm")[0].reset();
+		            	});
+				    }else{
+				    	toastr.error("申请失败！"+data.message);  
+				    	enable("associateBtn");
+				    }
+	        }, 'json');
+	}
+	
+	/**
+	 * 删除topic
+	 */
+	function deleteTopic(tid){
+		disable("deleteTopicBtn"+tid);
+		$.post('${request.contextPath}/topic/delete/'+tid,
+	        function(data){
+	            if(data.status == 200){
+	            	toastr.success("申请成功，请耐心等候！");  
+	            	modalHide(3000, function(){
+	            		enable("deleteTopicBtn"+tid);
+	            	});
+			    }else{
+			    	toastr.error("申请失败！"+data.message);  
+			    	enable("deleteTopicBtn"+tid);
+			    }
+        }, 'json');
+	}
+	
+	
+	// 拉取消息
+	function fetchMessage(){
+		$.get('${request.contextPath}/message',
+	        function(data){
+	            if(data.status == 200){
+	            	var refresh = false;
+	            	outer: for(var i in data.result) {
+	            		var msg = data.result[i];
+	            		if(MessagePlugin.option.msgData.length > 0){
+		            		for(var j in MessagePlugin.option.msgData) {
+		            			var exitMsg = MessagePlugin.option.msgData[j];
+		            			if(msg.id != exitMsg.id) {
+		            				refresh = true;
+		            				break outer;
+		            			}
+		            		}
+	            		} else {
+	            			refresh = true;
+	            			break;
+	            		}
+	            	}
+	            	if(refresh) {
+	            		MessagePlugin.refresh(0, {
+    	        	        msgData: data.result,
+            	            msgUnReadData: data.result.length
+    	        	   	});
+	            	}
+			    }
+        }, 'json');
+	}
+	//长轮询，30秒发送一次ajax请求
+	window.setInterval(fetchMessage, 30000);
+</script>
