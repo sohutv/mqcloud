@@ -325,3 +325,8 @@
 6. 版本管理
 
    因为使用者会依赖mq-client-*相关模块，所以如果涉及到mq-client-\*中的代码修改，需要在父pom中修改version，然后执行`mvn -N versions:update-child-modules `，这样所有的子模块的版本均会更新(`com.sohu.tv.mq.util.Version`中的版本号也会自动修改)。
+----------
+
+## 联系方式
+
+MQCloud QQ交流群：474960759
