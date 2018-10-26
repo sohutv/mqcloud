@@ -5,7 +5,7 @@
 
 * 预警功能：针对生产或消费堆积，失败，异常等情况预警，处理。
 
-* 简单明了：用户视图-对拓扑，流量，消费状况等指标进行直接展示；管理员视图-集群维护监控，流程审批等。
+* 简单明了：用户视图-拓扑、流量、消费状况等指标直接展示；管理员视图-集群运维、监控、流程审批等。
 
 * 安全：用户隔离，操作审批，数据安全。
 
@@ -19,7 +19,7 @@
 ----------
 
 ## 特性概览
-* 用户topic列表-不用用户看到不同的topic，管理员可以管理所有topic
+* 用户topic列表-不同用户看到不同的topic，管理员可以管理所有topic
 
   ![用户topic列表](mq-cloud/src/main/resources/static/img/intro/index.png)
 
@@ -86,7 +86,7 @@
 
 2. 初始化数据
 
-   初始化sql脚本，参见`mq-cloud/sql/init.sql`
+   初始化sql脚本，参见[init.sql](https://github.com/sohutv/sohu-tv-mq/blob/master/mq-cloud/sql/init.sql)。
 
 3. 运行
 
@@ -96,7 +96,7 @@
 
    2. 外部运行：
 
-      使用下载或编译的war包，执行
+      使用[下载](https://github.com/sohutv/sohu-tv-mq/releases)或编译的war包，执行
 
       ```
       java -Dspring.profiles.active=online -DPROJECT_DIR=日志路径 -jar mq-cloud.war
@@ -132,7 +132,7 @@
 
 5. 已有集群如何使用MQCloud管理？
 
-   1. 在`机器管理`模块，使用`+机器`功能将目前部署name server和broker的linux机器都添加进来。
+   1. 执行上面步骤中的`1. 添加机器`。
    2. 执行上面步骤中的`2. 修改通用配置`。
    3. 执行上面步骤中的`3. 集群发现`。
    4. 导入topic：使用`集群管理`模块的`topic初始化`完成。
@@ -164,7 +164,7 @@
    setMqCloudDomain("通用配置模块的domain");
    ```
 
-   如果消息希望序列化，还需要如下配置(采用protostuff)：
+   如果消息希望序列化，还需要如下配置(采用[protostuff](https://protostuff.github.io/))：
 
    ```
    setMessageSerializer(new DefaultMessageSerializer<Object>());
@@ -172,9 +172,51 @@
 
 3. 消息序列化相关
 
-   如果发送消息时使用参数为Message对象的方法，那么消息不会经过序列化。
+   如果发送消息时使用参数为Message对象的方法，那么消息不会经过序列化，方法类似如下：
 
-   如果发送消息时使用参数为Object对象的方法，那么消息将会进行序列化，需要在MQCloud的`common_config`表中加入如下配置(用于MQCloud消息查询时反序列化使用)：
+   ```
+   /**
+    * 发送消息
+    *
+    * @param message 消息
+    * @return 发送结果
+    */
+   public Result<SendResult> publish(Message message) {
+       try {
+           SendResult sendResult = producer.send(message);
+           return new Result<SendResult>(true, sendResult);
+       } catch (Exception e) {
+           logger.error(e.getMessage(), e);
+           return new Result<SendResult>(false, e);
+       }
+   }
+   ```
+
+   如果发送消息时使用参数为Object对象的方法，那么消息将会进行序列化，方法类似如下：
+
+   ```
+   /**
+    * 发送消息
+    * 
+    * @param messageObject 消息数据
+    * @param tags tags
+    * @param keys key
+    * @param delayLevel 延时级别
+    * @return 发送结果
+    */
+   public Result<SendResult> publish(Object messageObject, String tags, String keys, MessageDelayLevel delayLevel) {
+       Message message = null;
+       try {
+           message = buildMessage(messageObject, tags, keys, delayLevel);
+       } catch (Exception e) {
+           logger.error(e.getMessage(), e);
+           return new Result<SendResult>(false, e);
+       }
+       return publish(message);
+   }
+   ```
+
+   另外，如果使用序列化消息的发送方法，需要在MQCloud的`common_config`表中加入如下配置(用于MQCloud消息查询时反序列化使用)：
 
    ```
    INSERT INTO `common_config` (`key`, `value`, `comment`) VALUES ( 'messageSerializerClass', 'com.sohu.tv.mq.serializable.DefaultMessageSerializer', '消息序列化工具，如果发送和消费使用了该类，MQCloud也需要配置该类');
