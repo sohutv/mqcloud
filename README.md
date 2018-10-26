@@ -51,7 +51,14 @@
 
   ![addBroker](mq-cloud/src/main/resources/static/img/intro/addBroker.png)
 
+----------
 
+## 目前运维的规模
+1. 服务器：20台+
+2. 集群：4个+
+3. topic：250个+
+4. 生产消费消息量/日：10亿条+
+5. 生产消费消息大小/日：1T+
 ----------
 
 ## 模块介绍及编译

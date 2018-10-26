@@ -17,9 +17,9 @@ pom.xml.versionsBackup
 .metadata
 .cache
 
+!**/msg-type/*.class
+
 # ignore sohu module
 mq-client
 mq-cloud-common-sohu
 *-sohu.yml
-
-!**/msg-type/*.class
