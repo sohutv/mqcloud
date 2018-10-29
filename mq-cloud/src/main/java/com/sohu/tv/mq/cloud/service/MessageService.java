@@ -53,6 +53,7 @@ import com.sohu.tv.mq.cloud.util.MessageTypeLoader;
 import com.sohu.tv.mq.cloud.util.Result;
 import com.sohu.tv.mq.cloud.util.Status;
 import com.sohu.tv.mq.cloud.web.controller.param.MessageParam;
+import com.sohu.tv.mq.serializable.DefaultMessageSerializer;
 import com.sohu.tv.mq.serializable.MessageSerializer;
 
 /**
@@ -84,8 +85,7 @@ public class MessageService {
     @Autowired
     private MQCloudConfigHelper mqCloudConfigHelper;
     
-    @Autowired(required = false)
-    private MessageSerializer<Object> messageSerializer;
+    private MessageSerializer<Object> messageSerializer = new DefaultMessageSerializer<Object>();
     
     /**
      * 查询消息
@@ -181,15 +181,11 @@ public class MessageService {
                         continue;
                     }
                     Object decodedBody = bytes;
-                    if(messageSerializer != null) {
-                        try {
-                            decodedBody = messageSerializer.deserialize(bytes);
-                        } catch (Exception e) {
-                            logger.warn("deserialize topic:{} message err:{}", mqOffset.getMq().getTopic(), e.getMessage());
-                        }
-                    }
-                    if (decodedBody == null) {
-                        continue;
+                    try {
+                        decodedBody = messageSerializer.deserialize(bytes);
+                    } catch (Exception e) {
+                        logger.debug("deserialize topic:{} message err:{}", mqOffset.getMq().getTopic(), e.getMessage());
+                        decodedBody = bytes;
                     }
                     DecodedMessage m = new DecodedMessage();
                     // 将主体消息转换为String

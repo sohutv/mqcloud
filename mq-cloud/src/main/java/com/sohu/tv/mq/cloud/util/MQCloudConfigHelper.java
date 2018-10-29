@@ -10,6 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
 import com.alibaba.fastjson.JSON;
@@ -22,6 +23,7 @@ import com.sohu.tv.mq.cloud.service.CommonConfigService;
  * @author yongfeigao
  */
 @Component
+@ConfigurationProperties(prefix = "mqcloud")
 public class MQCloudConfigHelper {
     
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
@@ -45,12 +47,6 @@ public class MQCloudConfigHelper {
     
     // nexus的域名
     private String nexusDomain;
-
-    // 提醒类实现
-    private String alertClass;
-
-    // 登录类实现
-    private String loginClass;
 
     // 密码助手的key
     private String ciperKey;
@@ -87,9 +83,6 @@ public class MQCloudConfigHelper {
     
     // 客户端包的artifactId
     private String clientArtifactId;
-    
-    // 消息序列化实现
-    private String messageSerializerClass;
     
     // 发送者类，用于快速指南里提示
     private String producerClass;
@@ -162,14 +155,6 @@ public class MQCloudConfigHelper {
         return HTTP_SCHEMA + getDomain() + "/software/" + ROCKETMQ_FILE;
     }
 
-    public String getAlertClass() {
-        return alertClass;
-    }
-
-    public String getLoginClass() {
-        return loginClass;
-    }
-
     public String getCiperKey() {
         return ciperKey;
     }
@@ -238,10 +223,6 @@ public class MQCloudConfigHelper {
         return clientArtifactId;
     }
 
-    public String getMessageSerializerClass() {
-        return messageSerializerClass;
-    }
-
     public String getProducerClass() {
         return producerClass;
     }
@@ -254,15 +235,34 @@ public class MQCloudConfigHelper {
         return nexusDomain;
     }
 
+    public void setNexusDomain(String nexusDomain) {
+        this.nexusDomain = nexusDomain;
+    }
+
+    public void setTicketKey(String ticketKey) {
+        this.ticketKey = ticketKey;
+    }
+
+    public void setClientArtifactId(String clientArtifactId) {
+        this.clientArtifactId = clientArtifactId;
+    }
+
+    public void setProducerClass(String producerClass) {
+        this.producerClass = producerClass;
+    }
+
+    public void setConsumerClass(String consumerClass) {
+        this.consumerClass = consumerClass;
+    }
+
     @Override
     public String toString() {
         return "MQCloudConfigHelper [contextPath=" + contextPath + ", profile=" + profile + ", domain=" + domain
-                + ", alertClass=" + alertClass + ", loginClass=" + loginClass + ", ciperKey=" + ciperKey
-                + ", ticketKey=" + ticketKey + ", serverUser=" + serverUser + ", serverPassword=" + serverPassword
-                + ", serverPort=" + serverPort + ", serverConnectTimeout=" + serverConnectTimeout + ", serverOPTimeout="
-                + serverOPTimeout + ", operatorContact=" + operatorContact + ", specialThx=" + specialThx
-                + ", classList=" + classList + ", mapWithByteList=" + mapWithByteList + ", clientArtifactId="
-                + clientArtifactId + ", messageSerializerClass=" + messageSerializerClass + ", producerClass="
+                + ", nexusDomain=" + nexusDomain + ", ciperKey=" + ciperKey + ", ticketKey=" + ticketKey
+                + ", serverUser=" + serverUser + ", serverPassword=" + serverPassword + ", serverPort=" + serverPort
+                + ", serverConnectTimeout=" + serverConnectTimeout + ", serverOPTimeout=" + serverOPTimeout
+                + ", operatorContact=" + operatorContact + ", specialThx=" + specialThx + ", classList=" + classList
+                + ", mapWithByteList=" + mapWithByteList + ", clientArtifactId=" + clientArtifactId + ", producerClass="
                 + producerClass + ", consumerClass=" + consumerClass + "]";
     }
 }

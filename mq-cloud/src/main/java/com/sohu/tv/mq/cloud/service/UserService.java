@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.codec.digest.DigestUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -305,7 +306,7 @@ public class UserService {
     public Result<User> queryByEmailAndPassword(String email, String password) {
         User user = null;
         try {
-            user = userDao.selectByEmailAndPassword(email, password);
+            user = userDao.selectByEmailAndPassword(email, DigestUtils.md5Hex(password));
         } catch (Exception e) {
             logger.error("queryByEmailAndPassword err, email:{}", email, e);
             return Result.getDBErrorResult(e);

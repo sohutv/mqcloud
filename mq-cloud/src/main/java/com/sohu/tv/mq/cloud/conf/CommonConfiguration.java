@@ -18,6 +18,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.core.io.support.ResourcePatternResolver;
@@ -41,7 +42,6 @@ import com.sohu.tv.mq.cloud.mq.MQAdminPooledObjectFactory;
 import com.sohu.tv.mq.cloud.service.ClientStatsConsumer;
 import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper;
 import com.sohu.tv.mq.cloud.util.MessageTypeLoader;
-import com.sohu.tv.mq.serializable.MessageSerializer;
 import com.sohu.tv.mq.stats.dto.ClientStats;
 
 /**
@@ -222,67 +222,58 @@ public class CommonConfiguration {
      * 预警bean配置
      * 
      * @return
+     * @throws Exception 
      */
     @Bean
-    @SuppressWarnings("rawtypes")
-    public AlertMessageSender alertMessageSender() {
-        String clazz = mqCloudConfigHelper.getAlertClass();
-        if (clazz == null) {
-            return null;
-        }
-        try {
-            Class clz = Class.forName(clazz);
-            return (AlertMessageSender) clz.newInstance();
-        } catch (Exception e) {
-            logger.error("clazz:{} construct err!", clazz, e);
-        }
-        return null;
+    @Profile({"local-sohu", "test-sohu", "online-sohu"})
+    public AlertMessageSender sohuAlertMessageSender() throws Exception {
+        Class<?> clz = Class.forName("com.sohu.tv.mq.cloud.common.service.impl.AlertMessageSenderImpl");
+        return (AlertMessageSender) clz.newInstance();
+    }
+    
+    /**
+     * 预警bean配置
+     * 
+     * @return
+     */
+    @Bean
+    @Profile({"local", "online"})
+    public AlertMessageSender defaultAlertMessageSender() {
+        return new com.sohu.tv.mq.cloud.service.impl.DefaultAlertMessageSender();
     }
 
     /**
      * 登录服务配置
      * 
      * @return
+     * @throws Exception
      */
     @Bean
-    @SuppressWarnings("rawtypes")
-    public LoginService loginService() {
-        String clazz = mqCloudConfigHelper.getLoginClass();
-        if (clazz == null) {
-            return null;
-        }
-        try {
-            Class clz = Class.forName(clazz);
-            AbstractLoginService loginService = (AbstractLoginService) clz.newInstance();
-            loginService.setCipherHelper(cipherHelper());
-            loginService.setTicketKey(mqCloudConfigHelper.getTicketKey());
-            loginService.setOnline(mqCloudConfigHelper.isOnline());
-            loginService.init();
-            return loginService;
-        } catch (Exception e) {
-            logger.error("clazz:{} construct err!", clazz, e);
-        }
-        return null;
+    @Profile({"local-sohu", "test-sohu", "online-sohu"})
+    public LoginService sohuLoginService() throws Exception {
+        Class<?> clz = Class.forName("com.sohu.tv.mq.cloud.common.service.impl.SohuLoginService");
+        AbstractLoginService loginService = (AbstractLoginService) clz.newInstance();
+        loginService.setCipherHelper(cipherHelper());
+        loginService.setTicketKey(mqCloudConfigHelper.getTicketKey());
+        loginService.setOnline(mqCloudConfigHelper.isOnline());
+        loginService.init();
+        return loginService;
     }
-    
+
     /**
-     * 消息序列化工具
+     * 登录服务配置
      * 
      * @return
+     * @throws UnsupportedEncodingException
      */
     @Bean
-    @SuppressWarnings({"rawtypes", "unchecked"})
-    public MessageSerializer<Object> messageSerializer() {
-        String clazz = mqCloudConfigHelper.getMessageSerializerClass();
-        if (clazz == null) {
-            return null;
-        }
-        try {
-            Class clz = Class.forName(clazz);
-            return (MessageSerializer<Object>) clz.newInstance();
-        } catch (Exception e) {
-            logger.error("clazz:{} construct err!", clazz, e);
-        }
-        return null;
+    @Profile({"local", "online"})
+    public LoginService defaultLoginService() throws UnsupportedEncodingException {
+        AbstractLoginService loginService = new com.sohu.tv.mq.cloud.service.impl.DefaultLoginService();
+        loginService.setCipherHelper(cipherHelper());
+        loginService.setTicketKey(mqCloudConfigHelper.getTicketKey());
+        loginService.setOnline(mqCloudConfigHelper.isOnline());
+        loginService.init();
+        return loginService;
     }
 }

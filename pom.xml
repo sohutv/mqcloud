@@ -6,7 +6,7 @@
 	<artifactId>mq</artifactId>
 	<packaging>pom</packaging>
 	<name>mq</name>
-	<version>1.0.RELEASE</version>
+	<version>1.1.RELEASE</version>
 
 	<modules>
 		<module>mq-client-common-open</module>

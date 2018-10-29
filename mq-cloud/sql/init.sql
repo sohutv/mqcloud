@@ -522,20 +522,13 @@ INSERT INTO `user` VALUES ('1', 'admin', 'admin@admin.com', '18688888888', '1', 
 -- common_config init
 -- ----------------------------
 INSERT INTO `common_config` VALUES ('1', 'domain', '127.0.0.1:8080', 'mqcloud的域名');
-INSERT INTO `common_config` VALUES ('2', 'nexusDomain', 'mqcloud.com', 'nexus 的域名，用于快速指南使用');
-INSERT INTO `common_config` VALUES ('3', 'alertClass', 'com.sohu.tv.mq.cloud.service.impl.DefaultAlertMessageSender', '提醒类实现');
-INSERT INTO `common_config` VALUES ('4', 'loginClass', 'com.sohu.tv.mq.cloud.service.impl.DefaultLoginService', '登录类实现');
 INSERT INTO `common_config` VALUES ('5', 'serverUser', 'mqcloud', '服务器 ssh 用户');
 INSERT INTO `common_config` VALUES ('6', 'serverPassword', '9j7t4SDJOIusddca+Mzd6Q==', '服务器 ssh 密码');
 INSERT INTO `common_config` VALUES ('7', 'serverPort', '22', '服务器 ssh 端口');
 INSERT INTO `common_config` VALUES ('8', 'serverConnectTimeout', '6000', '服务器 ssh 链接建立超时时间');
 INSERT INTO `common_config` VALUES ('9', 'serverOPTimeout', '12000', '服务器 ssh 操作超时时间');
 INSERT INTO `common_config` VALUES ('10', 'ciperKey', 'DJs32jslkdghDSDf', '密码助手的key');
-INSERT INTO `common_config` VALUES ('11', 'ticketKey', 'ticket', 'cas登录返回后的key，用户名密码可以忽略');
 INSERT INTO `common_config` VALUES ('12', 'operatorContact', '[{\"name\":\"admin\",\"phone\":\"010-1234\",\"mobile\":\"18688888888\",\"qq\":\"88888888\",\"email\":\"admin@admin.com\"}]', '运维人员json');
-INSERT INTO `common_config` VALUES ('13', 'clientArtifactId', 'mq-client-open', '客户端依赖包-在快速指南里显示');
-INSERT INTO `common_config` VALUES ('14', 'producerClass', 'com.sohu.tv.mq.rocketmq.RocketMQProducer', '发送者类，用于快速指南里提示');
-INSERT INTO `common_config` VALUES ('15', 'consumerClass', 'com.sohu.tv.mq.rocketmq.RocketMQConsumer', '消费者类，用于快速指南里提示');
 
 -- ----------------------------
 -- warn_config init
@@ -551,3 +544,10 @@ INSERT INTO `notice` (`content`, `status`, `create_date`) VALUES ('欢迎您使�
 -- user message init
 -- ----------------------------
 INSERT INTO `user_message` (`uid`, `message`, `status`, `create_date`) VALUES (1, 'Hello！Welcome to MQCloud！', 0, now());
+
+-- ----------------------------
+-- update for user password init for 1.1.RELEASE
+-- ----------------------------
+alter table user modify column `password` varchar(256) COMMENT '登录方式采用用户名密码验证时使用';
+update user set `password` = '21232f297a57a5a743894a0e4a801fc3' where email = 'admin@admin.com';
+delete from `common_config` where `key` in ('nexusDomain','alertClass','loginClass','ticketKey','clientArtifactId','producerClass','consumerClass');

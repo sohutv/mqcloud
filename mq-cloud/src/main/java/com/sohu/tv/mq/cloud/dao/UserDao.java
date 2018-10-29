@@ -32,7 +32,7 @@ public interface UserDao {
             + "#{user.email},now(),#{user.type}"
             + "<if test=\"user.name != null\">,#{user.name}</if>"
             + "<if test=\"user.mobile != null\">,#{user.mobile}</if>"
-            + "<if test=\"user.password != null\">,password(#{user.password})</if>"
+            + "<if test=\"user.password != null\">,#{user.password}</if>"
             + ")</script>")
     public void insert(@Param("user") User user);
     
@@ -54,7 +54,7 @@ public interface UserDao {
      * 
      * @param email
      */
-    @Select("select * from user where email = #{email} and password = password(#{password})")
+    @Select("select * from user where email = #{email} and password = #{password}")
     public User selectByEmailAndPassword(@Param("email") String email, @Param("password") String password);
     
     /**

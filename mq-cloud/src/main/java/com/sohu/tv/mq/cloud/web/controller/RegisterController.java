@@ -2,6 +2,7 @@ package com.sohu.tv.mq.cloud.web.controller;
 
 import java.util.Map;
 
+import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -56,7 +57,7 @@ public class RegisterController extends ViewController {
         if(StringUtils.isBlank(password)) {
             return Result.getResult(Status.PARAM_ERROR);
         }
-        user.setPassword(password);
+        user.setPassword(DigestUtils.md5Hex(password));
         
         if(StringUtils.isNotBlank(name)) {
             user.setName(name);
