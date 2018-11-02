@@ -274,22 +274,21 @@ public class SohuMonitorListener implements MonitorListener {
 			OffsetMovedEvent event = deleteMsgsEvent.getOffsetMovedEvent(); 
 			String consumerGroup = event.getConsumerGroup();
 			
+			// 保存consume状态
 			ConsumerStat consumerStat = new ConsumerStat();
             consumerStat.setConsumerGroup(consumerGroup);
             consumerStat.setTopic(event.getMessageQueue().getTopic());
             consumerStatDao.saveSimpleConsumerStat(consumerStat);
             int id = consumerStat.getId();
             
-            Integer rows = consumerStatDao.getConsumerBlockByCsid(id);
-            
+            // 保存block状态
 			long time = deleteMsgsEvent.getEventTimestamp();
 			String broker = event.getMessageQueue().getBrokerName();
 			int qid = event.getMessageQueue().getQueueId();
 			consumerStatDao.saveSomeConsumerBlock(id, broker, qid, time);
-            // 第一次发现，发送预警
-            if (rows <= 0) {
-                offsetMoveWarn(deleteMsgsEvent);
-            }
+			
+			// 预警
+            offsetMoveWarn(deleteMsgsEvent);
 		} catch (Exception e) {
 			log.error("receive offset event:{}", deleteMsgsEvent, e);
 		}
@@ -303,6 +302,10 @@ public class SohuMonitorListener implements MonitorListener {
         Set<Long> userID = getUserID(event.getMessageQueue().getTopic(), event.getConsumerGroup());
         TopicExt topicExt = getUserEmail(event.getMessageQueue().getTopic(), userID);
         if(topicExt == null) {
+            return;
+        }
+        // 验证报警频率
+        if (!alarmConfigBridingService.needWarn("offsetMove", event.getConsumerGroup())) {
             return;
         }
         StringBuilder content = new StringBuilder("详细如下:<br><br>");
