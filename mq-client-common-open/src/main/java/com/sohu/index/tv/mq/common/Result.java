@@ -61,4 +61,9 @@ public class Result<T> implements Serializable {
     public void setException(Exception exception) {
         this.exception = exception;
     }
+
+    @Override
+    public String toString() {
+        return "Result [isSuccess=" + isSuccess + ", result=" + result + ", exception=" + exception + "]";
+    }
 }

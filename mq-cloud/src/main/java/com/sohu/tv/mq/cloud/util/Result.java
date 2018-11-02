@@ -141,7 +141,7 @@ public class Result<T> {
 	 * @return
 	 */
 	public static <T> Result<T> getWebErrorResult(Exception e) {
-		return (Result<T>) getResult(Status.WEB_ERROR).setMessage(e.getMessage());
+		return getErrorResult(Status.WEB_ERROR, e);
 	}
 	
 	/**
@@ -151,7 +151,21 @@ public class Result<T> {
      * @return
      */
     public static <T> Result<T> getWebParamErrorResult(Exception e) {
-        return (Result<T>) getResult(Status.PARAM_ERROR).setMessage(e.getMessage());
+        return getErrorResult(Status.PARAM_ERROR, e);
+    }
+    
+    /**
+     * 获取异常返回结果
+     * 
+     * @param status
+     * @return
+     */
+    public static <T> Result<T> getErrorResult(Status status, Exception e) {
+        String error = e.getMessage();
+        if(error == null) {
+            error = e.getClass().getName();
+        }
+        return (Result<T>) getResult(status).setMessage(error);
     }
 	
 	/**

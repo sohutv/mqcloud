@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import org.apache.rocketmq.client.QueryResult;
 import org.apache.rocketmq.client.consumer.DefaultMQPullConsumer;
 import org.apache.rocketmq.client.consumer.MQPullConsumer;
 import org.apache.rocketmq.client.consumer.PullResult;
@@ -86,6 +87,90 @@ public class MessageService {
     private MQCloudConfigHelper mqCloudConfigHelper;
     
     private MessageSerializer<Object> messageSerializer = new DefaultMessageSerializer<Object>();
+    
+    /**
+     * 根据key查询消息
+     * @param cluster
+     * @param topic
+     * @param key key
+     * @param begin 开始时间
+     * @param end 结束时间
+     * @return
+     */
+    public Result<List<DecodedMessage>> queryMessageByKey(Cluster cluster, String topic, String key, long begin, long end) {
+        return mqAdminTemplate.execute(new MQAdminCallback<Result<List<DecodedMessage>>>() {
+            public Result<List<DecodedMessage>> callback(MQAdminExt mqAdmin) throws Exception {
+                // 其实这里只能查询64条消息，broker端有限制
+                QueryResult queryResult = mqAdmin.queryMessage(topic, key, 100, begin, end);
+                List<MessageExt> messageExtList = queryResult.getMessageList();
+                if(messageExtList == null || messageExtList.size() == 0) {
+                    logger.warn("msg list is null, cluster:{} topic:{} msgId:{}", cluster, topic, key);
+                    return Result.getResult(Status.NO_RESULT);
+                }
+                // 特定类型使用自定义的classloader
+                if(mqCloudConfigHelper.getClassList() != null && 
+                        mqCloudConfigHelper.getClassList().contains(topic)) {
+                    Thread.currentThread().setContextClassLoader(messageTypeLoader);
+                }
+                List<DecodedMessage> messageList = new ArrayList<DecodedMessage>();
+                for (MessageExt msg : messageExtList) {
+                    byte[] bytes = msg.getBody();
+                    if (bytes == null || bytes.length == 0) {
+                        logger.warn("MessageExt={}, MessageBody is null", msg);
+                        continue;
+                    }
+                    messageList.add(toDecodedMessage(msg));
+                }
+                // 按时间排序
+                Collections.sort(messageList, new Comparator<DecodedMessage>() {
+                    public int compare(DecodedMessage o1, DecodedMessage o2) {
+                        return (int)(o1.getBornTimestamp() - o2.getBornTimestamp());
+                    }
+                });
+                return Result.getResult(messageList);
+            }
+            public Result<List<DecodedMessage>> exception(Exception e) throws Exception {
+                logger.error("queryMessage cluster:{} topic:{} key:{}", cluster, topic, key, e);
+                return Result.getWebErrorResult(e);
+            }
+            public Cluster mqCluster() {
+                return cluster;
+            }
+        });
+    }
+    
+    /**
+     * 根据msgId查询消息
+     * @param cluster
+     * @param topic
+     * @param msgId
+     * @return
+     */
+    public Result<DecodedMessage> queryMessage(Cluster cluster, String topic, String msgId) {
+        return mqAdminTemplate.execute(new MQAdminCallback<Result<DecodedMessage>>() {
+            public Result<DecodedMessage> callback(MQAdminExt mqAdmin) throws Exception {
+                MessageExt messageExt = mqAdmin.viewMessage(topic, msgId);
+                byte[] bytes = messageExt.getBody();
+                if (bytes == null || bytes.length == 0) {
+                    logger.warn("MessageExt={}, MessageBody is null", messageExt);
+                    return Result.getResult(Status.NO_RESULT);
+                }
+                // 特定类型使用自定义的classloader
+                if(mqCloudConfigHelper.getClassList() != null && 
+                        mqCloudConfigHelper.getClassList().contains(topic)) {
+                    Thread.currentThread().setContextClassLoader(messageTypeLoader);
+                }
+                return Result.getResult(toDecodedMessage(messageExt));
+            }
+            public Result<DecodedMessage> exception(Exception e) throws Exception {
+                logger.error("queryMessage cluster:{} topic:{} msgId:{}", cluster, topic, msgId, e);
+                return Result.getWebErrorResult(e);
+            }
+            public Cluster mqCluster() {
+                return cluster;
+            }
+        });
+    }
     
     /**
      * 查询消息
@@ -175,35 +260,14 @@ public class MessageService {
                         continue;
                     }
                     byte[] bytes = msg.getBody();
-                    msg.setBody(null);
                     if (bytes == null || bytes.length == 0) {
                         logger.warn("MessageExt={}, MessageBody is null", msg);
                         continue;
                     }
-                    Object decodedBody = bytes;
-                    try {
-                        decodedBody = messageSerializer.deserialize(bytes);
-                    } catch (Exception e) {
-                        logger.debug("deserialize topic:{} message err:{}", mqOffset.getMq().getTopic(), e.getMessage());
-                        decodedBody = bytes;
-                    }
-                    DecodedMessage m = new DecodedMessage();
-                    // 将主体消息转换为String
-                    if (decodedBody instanceof byte[]) {
-                        m.setDecodedBody(new String((byte[]) decodedBody));
-                    } else if (decodedBody instanceof String) {
-                        m.setDecodedBody((String) decodedBody);
-                    } else if (decodedBody instanceof Map && 
-                            mqCloudConfigHelper.getMapWithByteList() != null &&
-                            !mqCloudConfigHelper.getMapWithByteList().contains(messageQueryCondition.getTopic())) {
-                        m.setDecodedBody(decodedBody.toString());
-                    } else {
-                        m.setDecodedBody(JSON.toJSONString(decodedBody));
-                    }
+                    DecodedMessage m = toDecodedMessage(msg);
                     // 判断是否包含关键字
                     if (messageQueryCondition.getKey() == null) {
                         messageList.add(m);
-                        BeanUtils.copyProperties(msg, m);
                     } else {
                         String message = m.getDecodedBody();
                         int start = message.indexOf(messageQueryCondition.getKey());
@@ -220,7 +284,6 @@ public class MessageService {
                         }
                         m.setDecodedBody(message);
                         messageList.add(m);
-                        BeanUtils.copyProperties(msg, m);
                     }
                 }
                 // 保存当前记录数
@@ -230,6 +293,38 @@ public class MessageService {
                 throw e;
             }
         }
+    }
+    
+    /**
+     * 转换为解码后的消息
+     * @param msg
+     * @return DecodedMessage
+     */
+    private DecodedMessage toDecodedMessage(MessageExt msg) {
+        DecodedMessage m = new DecodedMessage();
+        byte[] bytes = msg.getBody();
+        msg.setBody(null);
+        Object decodedBody = bytes;
+        try {
+            decodedBody = messageSerializer.deserialize(bytes);
+        } catch (Exception e) {
+            logger.debug("deserialize topic:{} message err:{}", msg.getTopic(), e.getMessage());
+            decodedBody = bytes;
+        }
+        // 将主体消息转换为String
+        if (decodedBody instanceof byte[]) {
+            m.setDecodedBody(new String((byte[]) decodedBody));
+        } else if (decodedBody instanceof String) {
+            m.setDecodedBody((String) decodedBody);
+        } else if (decodedBody instanceof Map && 
+                mqCloudConfigHelper.getMapWithByteList() != null &&
+                !mqCloudConfigHelper.getMapWithByteList().contains(msg.getTopic())) {
+            m.setDecodedBody(decodedBody.toString());
+        } else {
+            m.setDecodedBody(JSON.toJSONString(decodedBody));
+        }
+        BeanUtils.copyProperties(msg, m);
+        return m;
     }
 
     /**

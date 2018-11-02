@@ -4,26 +4,65 @@
 </style>
 <div class="row">
 <div class="col-md-12">
+	<div style="float:left;margin:10px 5px;">
+	<form class="form-inline">
+		<div class="form-group">
+			<label for="type">查询方式: </label>
+			<label class="radio-inline" data-toggle='tooltip' title="查询消息时间前后一分钟内的消息">
+			    <input type="radio" name="searchType" onclick="changeSearchType('time')" checked="checked">时间段
+			</label>
+			<label class="radio-inline" data-toggle='tooltip' title="按照消息id查询">
+		    	<input type="radio" name="searchType" onclick="changeSearchType('msgId')">消息id
+		    </label>
+		    <label class="radio-inline" data-toggle='tooltip' title="如果发送消息传了keys，可以使用key来查询，最多可查时间段内的${brokerSize*64}条">
+		    	<input type="radio" name="searchType" onclick="changeSearchType('key')">key
+		    </label>
+		</div>
+	</form>
+	</div>
 	<div style="float:right;margin:10px 0px;">
 	<form class="form-inline" id="msgSearchForm">
-		<div class="form-group">
-			<label for="type"> 消息时间: </label>
-			<input type="text" name="time" class="Wdate form-control" onclick="WdatePicker({ dateFmt: 'yyyy-MM-dd HH:mm:ss',maxDate:'%y-%M-%d',minDate:'%y-%M-{%d-5}'})" style="width:180px;height:34px;cursor:pointer;" readonly="readonly"
+		<!-- 时间段查询 -->
+		<div class="form-group time">
+			<label for="time"> 消息时间: </label>
+			<input id="time" type="text" name="time" class="Wdate form-control" onclick="WdatePicker({ dateFmt: 'yyyy-MM-dd HH:mm:ss',maxDate:'%y-%M-%d',minDate:'%y-%M-{%d-5}'})" style="width:180px;height:34px;cursor:pointer;" readonly="readonly"
   								value="${response.result.time?number_to_datetime?string("yyyy-MM-dd HH:mm:ss")}">
 		</div>
-		<div class="form-group">
+		<div class="form-group time">
     	    <input type="text" class="form-control" id="key" name="key" value="${response.result.key!}" placeholder="关键字，支持模糊匹配">
   	    </div>
+		<!-- 消息查询 -->
+  	    <div class="form-group msgId" style="display:none;">
+    	    <input type="text" class="form-control" id="msgId" name="msgId" value="${response.result.msgId!}" placeholder="消息id">
+  	    </div>
+  	    <!-- key查询 -->
+  	    <div class="form-group key" style="display:none;">
+			<label for="time"> 开始时间: </label>
+			<input id="start" type="text" name="start" class="Wdate form-control" onclick="WdatePicker({ dateFmt: 'yyyy-MM-dd HH:mm:ss',maxDate:'%y-%M-%d',minDate:'%y-%M-{%d-6}'})" style="width:180px;height:34px;cursor:pointer;" readonly="readonly"
+  								value="${response.result.time?number_to_datetime?string("yyyy-MM-dd 00:00:00")}">
+  			<label for="time"> 结束时间: </label>
+			<input id="end" type="text" name="end" class="Wdate form-control" onclick="WdatePicker({ dateFmt: 'yyyy-MM-dd HH:mm:ss',maxDate:'%y-%M-%d',minDate:'%y-%M-{%d-6}'})" style="width:180px;height:34px;cursor:pointer;" readonly="readonly"
+  								value="${.now?string("yyyy-MM-dd HH:mm:ss")}">
+		</div>
+  	    <div class="form-group key" style="display:none;">
+    	    <input type="text" class="form-control" id="msgKey" name="msgKey" placeholder="消息key">
+		</div>
+		<!-- 时间段查询参数 -->
   	    <input type="hidden" id="cid" name="cid" value="${response.result.cid}">
   	    <input type="hidden" id="topicDiv" name="topic" value="${response.result.topic}">
   	    <input type="hidden" id="append" name="append" value="false">
   	    <input type="hidden" id="messageParam" name="messageParam" value="${response.result.serialize()}">
-		<button type="button" onclick="searchMessage(false)" data-toggle='tooltip' title="查询消息时间前后一分钟内的消息" class="btn btn-search"><span class="glyphicon glyphicon-search" aria-hidden="true"></span></button>
+		<button type="button" onclick="searchMessage(false)" data-toggle='tooltip' title="查询消息时间前后一分钟内的消息" class="btn btn-search time"><span class="glyphicon glyphicon-search" aria-hidden="true"></span></button>
+		<!-- 消息查询 -->
+		<button type="button" onclick="viewMessage()" class="btn btn-search msgId" style="display:none;"><span class="glyphicon glyphicon-search" aria-hidden="true"></span></button>
+		<!-- key查询 -->
+		<button type="button" onclick="searchKeyMessage()" class="btn btn-search key" style="display:none;"><span class="glyphicon glyphicon-search" aria-hidden="true"></span></button>
 	</form>
 	</div>
 	<table id="dataTable" class="table table-striped table-hover" style="margin-top: 0px;word-break:break-all; word-wrap:break-all;">
 		<colgroup>
 			<col width="50px">
+			<col width="300px">
 			<col width="155px">
 			<col>
 			<col width="80px">
@@ -33,6 +72,7 @@
 		<thead>
 			<tr>
 				<td>序号</td>
+				<td>消息id</td>
 				<td>发送时间</td>
 				<td>消息</td>
 				<td>keys</td>
@@ -41,7 +81,7 @@
 			</tr>
 		</thead>
 		<tbody>
-			<tr class="no_more_data"><td colspan=6 class="text-center">暂无数据</td></tr>
+			<tr class="no_more_data"><td colspan=7 class="text-center">暂无数据</td></tr>
 		</tbody>
 	</table>
 	<ul class="pager" id="pager" style="display:none;">
@@ -117,6 +157,30 @@ function searchMessage(append){
 			$("#dataTable tbody").remove();
 			$("#dataTable input").remove();
 		}
+       	$("#dataTable").append(data);
+    });
+}
+//消息id搜索
+function viewMessage(){
+	if(!$("#msgId").val()){
+		alert("消息id不能为空");
+		return;
+	}
+	post('${request.contextPath}/msg/id/search', $("#msgSearchForm").serialize(), function(data){
+		$("#dataTable tbody").remove();
+		$("#dataTable input").remove();
+       	$("#dataTable").append(data);
+    });
+}
+// 消息key搜索
+function searchKeyMessage() {
+	if(!$("#msgKey").val()){
+		alert("消息key不能为空");
+		return;
+	}
+	post('${request.contextPath}/msg/key/search', $("#msgSearchForm").serialize(), function(data){
+		$("#dataTable tbody").remove();
+		$("#dataTable input").remove();
        	$("#dataTable").append(data);
     });
 }
@@ -364,5 +428,23 @@ function setTrackOption(msg){
 	        }
 	    ]
 	};
+}
+
+var prevSearchType = "time";
+function changeSearchType(type){
+	// 无改变
+	if(prevSearchType == type){
+		return;
+	}
+	$("."+type).show();
+	if(prevSearchType) {
+		$("."+prevSearchType).hide();
+	}
+	prevSearchType = type;
+	
+	// 清空数据
+	$("#dataTable tbody").html("<tr class='no_more_data'><td colspan=7 class='text-center'>暂无数据</td></tr>");
+	$("#dataTable input").remove();
+	$("#pager").hide();
 }
 </script>

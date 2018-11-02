@@ -1,6 +1,9 @@
 package com.sohu.tv.mq.cloud.web.controller;
 
 import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.List;
 import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
@@ -8,6 +11,8 @@ import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.rocketmq.common.protocol.body.ClusterInfo;
+import org.apache.rocketmq.tools.admin.MQAdminExt;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -15,9 +20,14 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import com.alibaba.fastjson.JSON;
+import com.sohu.tv.mq.cloud.bo.Cluster;
+import com.sohu.tv.mq.cloud.bo.DecodedMessage;
 import com.sohu.tv.mq.cloud.bo.MessageData;
 import com.sohu.tv.mq.cloud.bo.MessageQueryCondition;
 import com.sohu.tv.mq.cloud.bo.Topic;
+import com.sohu.tv.mq.cloud.mq.DefaultCallback;
+import com.sohu.tv.mq.cloud.mq.MQAdminTemplate;
+import com.sohu.tv.mq.cloud.service.ClusterService;
 import com.sohu.tv.mq.cloud.service.MessageService;
 import com.sohu.tv.mq.cloud.service.TopicService;
 import com.sohu.tv.mq.cloud.util.CompressUtil;
@@ -45,6 +55,12 @@ public class TopicMessageController extends ViewController {
     @Autowired
     private TopicService topicService;
     
+    @Autowired
+    private ClusterService clusterService;
+    
+    @Autowired
+    private MQAdminTemplate mqAdminTemplate;
+    
     /**
      * 首页
      * @return
@@ -68,6 +84,18 @@ public class TopicMessageController extends ViewController {
         // 舍掉毫秒
         calculateTime(messageQueryCondition, (System.currentTimeMillis() - MessageQueryCondition.TIME_SPAN) / 1000 * 1000);
         setResult(map, messageQueryCondition);
+        
+        // 获取集群信息
+        ClusterInfo clusterInfo = mqAdminTemplate.execute(new DefaultCallback<ClusterInfo>() {
+            public ClusterInfo callback(MQAdminExt mqAdmin) throws Exception {
+                return mqAdmin.examineBrokerClusterInfo();
+            }
+            public Cluster mqCluster() {
+                return clusterService.getMQClusterById(topic.getClusterId());
+            }
+        });
+        int brokerSize = clusterInfo.getBrokerAddrTable().size();
+        setResult(map, "brokerSize", brokerSize);
         return view;
     }
     
@@ -99,6 +127,68 @@ public class TopicMessageController extends ViewController {
         Result<MessageData> result = messageService.queryMessage(messageQueryCondition);
         setResult(map, result);
         return view;
+    }
+    
+    /**
+     * 根据msgId查询消息
+     * @return
+     * @throws Exception
+     */
+    @RequestMapping("/id/search")
+    public String view(UserInfo userInfo, 
+            HttpServletRequest request, 
+            HttpServletResponse response, 
+            @RequestParam("topic") String topic,
+            @RequestParam("cid") int cid,
+            @RequestParam(name="msgId") String msgId,
+            Map<String, Object> map) throws Exception {
+        String view = viewModule() + "/idSearch";
+        Cluster cluster = clusterService.getMQClusterById(cid);
+        // 消息查询
+        Result<?> result = messageService.queryMessage(cluster, topic, msgId);
+        setResult(map, result);
+        return view;
+    }
+    
+    /**
+     * key搜索
+     * @return
+     * @throws Exception
+     */
+    @RequestMapping("/key/search")
+    public String keySearch(UserInfo userInfo, 
+            HttpServletRequest request, 
+            HttpServletResponse response, 
+            @RequestParam("topic") String topic,
+            @RequestParam("start") String start,
+            @RequestParam("end") String end,
+            @RequestParam("cid") int cid,
+            @RequestParam(name="msgKey") String msgKey,
+            Map<String, Object> map) throws Exception {
+        String view = viewModule() + "/keySearch";
+        Cluster cluster = clusterService.getMQClusterById(cid);
+        // 时间点
+        long beginTime = toLong(start);
+        long endTime = toLong(end);
+        if(beginTime == 0 || endTime == 0 || beginTime > endTime) {
+            setResult(map, Result.getResult(Status.PARAM_ERROR));
+        } else {
+            // 消息查询
+            Result<List<DecodedMessage>> result = messageService.queryMessageByKey(cluster, topic, msgKey, beginTime, endTime);
+            setResult(map, result);
+        }
+        return view;
+    }
+    
+    private long toLong(String dt) {
+        SimpleDateFormat simpleDateFormat = DateUtil.getFormat(DateUtil.YMD_DASH_BLANK_HMS_COLON);
+        try {
+            Date startDate = simpleDateFormat.parse(dt);
+            return startDate.getTime();
+        } catch (Exception e) {
+            logger.error("parse dt:{}", dt, e);
+        }
+        return 0;
     }
     
     /**
