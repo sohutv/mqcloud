@@ -478,7 +478,11 @@
                         validators: {
                             notEmpty: {
                                 message: '一天消息量不能为空'
-                            }
+                            },
+                           	regexp: {
+	   	                         regexp: /^[0-9]+$/,
+	   	                         message: '只能为正整数'
+   	                     	}
                         }
                     },
                     qps: {
@@ -486,7 +490,11 @@
                             notEmpty: {
                                 message: '高峰消息量不能为空'
                             }
-                        }
+                        },
+                       	regexp: {
+	                        regexp: /^[0-9]+$/,
+	                        message: '只能为正整数'
+	                    }
                     }
                 }
         }).on('success.form.bv', function(e) {
