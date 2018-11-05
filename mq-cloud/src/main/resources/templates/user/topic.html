@@ -166,12 +166,18 @@
 									</div>
 								</div>
 								<div class="form-group">
-									<label class="control-label col-md-3"> 一天消息量: </label>
+									<label class="control-label col-md-3"> 消息量: </label>
 									<div class="col-md-5">
 										<div class="input-group">
-											<input type="text" id="qpd" name="qpd" value=""
-											placeholder="一天发送多少万条消息" class="form-control" />
-											<span class="input-group-addon">万</span>
+											<select name="qpd" class="form-control">
+												<option value="10000">1万</option>
+												<option value="100000">10万</option>
+												<option value="1000000">100万</option>
+												<option value="10000000">1000万</option>
+												<option value="100000000">1亿</option>
+												<option value="1000000000">10亿</option>
+											</select>
+											<span class="input-group-addon">条/天</span>
 	    								</div>
 									</div>
 								</div>
@@ -179,8 +185,14 @@
 									<label class="control-label col-md-3"> 高峰消息量: </label>
 									<div class="col-md-5">
 										<div class="input-group">
-											<input type="text" id="qps" name="qps" value=""
-											placeholder="高峰一秒发送多少条消息" class="form-control" />
+											<select name="qps" class="form-control">
+												<option value="100">100</option>
+												<option value="1000">1000</option>
+												<option value="10000">1万</option>
+												<option value="100000">10万</option>
+												<option value="1000000">100万</option>
+												<option value="10000000">1000万</option>
+											</select>
 											<span class="input-group-addon">条/秒</span>
 	    								</div>
 									</div>
@@ -473,28 +485,6 @@
     	                         message: '队列数量需介于1和20之间'
     	                     }
                         }
-                    },
-                    qpd: {
-                        validators: {
-                            notEmpty: {
-                                message: '一天消息量不能为空'
-                            },
-                           	regexp: {
-	   	                         regexp: /^[0-9]+$/,
-	   	                         message: '只能为正整数'
-   	                     	}
-                        }
-                    },
-                    qps: {
-                        validators: {
-                            notEmpty: {
-                                message: '高峰消息量不能为空'
-                            }
-                        },
-                       	regexp: {
-	                        regexp: /^[0-9]+$/,
-	                        message: '只能为正整数'
-	                    }
                     }
                 }
         }).on('success.form.bv', function(e) {
