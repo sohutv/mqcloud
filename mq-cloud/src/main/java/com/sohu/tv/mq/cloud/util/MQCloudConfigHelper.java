@@ -11,6 +11,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.context.ApplicationEventPublisherAware;
 import org.springframework.stereotype.Component;
 
 import com.alibaba.fastjson.JSON;
@@ -24,7 +26,7 @@ import com.sohu.tv.mq.cloud.service.CommonConfigService;
  */
 @Component
 @ConfigurationProperties(prefix = "mqcloud")
-public class MQCloudConfigHelper {
+public class MQCloudConfigHelper implements ApplicationEventPublisherAware {
     
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
     
@@ -90,8 +92,23 @@ public class MQCloudConfigHelper {
     // 消费者类，用于快速指南里提示
     private String consumerClass;
     
+    // 以下为邮件发送相关
+    private String mailHost;
+    
+    private int mailPort;
+    
+    private String mailProtocol;
+    
+    private String mailUsername;
+    
+    private String mailPassword;
+    // ms
+    private int mailTimeout;
+    
     @Autowired
     private CommonConfigService commonConfigService;
+    
+    private ApplicationEventPublisher publisher;
     
     @PostConstruct
     public void init() throws IllegalArgumentException, IllegalAccessException {
@@ -118,7 +135,8 @@ public class MQCloudConfigHelper {
                 field.set(this, JSON.parseObject(value, fieldType));
             }
         }
-        
+        // 发布更新时间
+        publisher.publishEvent(new MQCloudConfigEvent());
         logger.info("init ok:{}", this);
     }
     
@@ -255,6 +273,54 @@ public class MQCloudConfigHelper {
         this.consumerClass = consumerClass;
     }
 
+    public String getMailHost() {
+        return mailHost;
+    }
+
+    public int getMailPort() {
+        return mailPort;
+    }
+
+    public String getMailProtocol() {
+        return mailProtocol;
+    }
+
+    public int getMailTimeout() {
+        return mailTimeout;
+    }
+
+    public String getMailUsername() {
+        return mailUsername;
+    }
+
+    public String getMailPassword() {
+        return mailPassword;
+    }
+
+    public void setMailHost(String mailHost) {
+        this.mailHost = mailHost;
+    }
+
+    public void setMailPort(int mailPort) {
+        this.mailPort = mailPort;
+    }
+
+    public void setMailProtocol(String mailProtocol) {
+        this.mailProtocol = mailProtocol;
+    }
+
+    public void setMailUsername(String mailUsername) {
+        this.mailUsername = mailUsername;
+    }
+
+    public void setMailPassword(String mailPassword) {
+        this.mailPassword = mailPassword;
+    }
+
+    public void setMailTimeout(int mailTimeout) {
+        this.mailTimeout = mailTimeout;
+    }
+
     @Override
     public String toString() {
         return "MQCloudConfigHelper [contextPath=" + contextPath + ", profile=" + profile + ", domain=" + domain
@@ -263,6 +329,20 @@ public class MQCloudConfigHelper {
                 + ", serverConnectTimeout=" + serverConnectTimeout + ", serverOPTimeout=" + serverOPTimeout
                 + ", operatorContact=" + operatorContact + ", specialThx=" + specialThx + ", classList=" + classList
                 + ", mapWithByteList=" + mapWithByteList + ", clientArtifactId=" + clientArtifactId + ", producerClass="
-                + producerClass + ", consumerClass=" + consumerClass + "]";
+                + producerClass + ", consumerClass=" + consumerClass + ", mailHost=" + mailHost + ", mailPort="
+                + mailPort + ", mailProtocol=" + mailProtocol + ", mailUsername=" + mailUsername + ", mailPassword="
+                + mailPassword + ", mailTimeout=" + mailTimeout + "]";
+    }
+
+    @Override
+    public void setApplicationEventPublisher(ApplicationEventPublisher applicationEventPublisher) {
+        publisher = applicationEventPublisher;
+    }
+    
+    /**
+     * 配置事件
+     */
+    public class MQCloudConfigEvent {
+
     }
 }

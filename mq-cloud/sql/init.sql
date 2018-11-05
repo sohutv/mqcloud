@@ -527,7 +527,7 @@ INSERT INTO `common_config` VALUES ('6', 'serverPassword', '9j7t4SDJOIusddca+Mzd
 INSERT INTO `common_config` VALUES ('7', 'serverPort', '22', '服务器 ssh 端口');
 INSERT INTO `common_config` VALUES ('8', 'serverConnectTimeout', '6000', '服务器 ssh 链接建立超时时间');
 INSERT INTO `common_config` VALUES ('9', 'serverOPTimeout', '12000', '服务器 ssh 操作超时时间');
-INSERT INTO `common_config` VALUES ('10', 'ciperKey', 'DJs32jslkdghDSDf', '密码助手的key');
+INSERT INTO `common_config` VALUES ('10', 'ciperKey', 'DJs32jslkdghDSDf', '密码助手的key,长度需为8的倍数');
 INSERT INTO `common_config` VALUES ('12', 'operatorContact', '[{\"name\":\"admin\",\"phone\":\"010-1234\",\"mobile\":\"18688888888\",\"qq\":\"88888888\",\"email\":\"admin@admin.com\"}]', '运维人员json');
 
 -- ----------------------------
@@ -551,3 +551,14 @@ INSERT INTO `user_message` (`uid`, `message`, `status`, `create_date`) VALUES (1
 alter table user modify column `password` varchar(256) COMMENT '登录方式采用用户名密码验证时使用';
 update user set `password` = '21232f297a57a5a743894a0e4a801fc3' where email = 'admin@admin.com';
 delete from `common_config` where `key` in ('nexusDomain','alertClass','loginClass','ticketKey','clientArtifactId','producerClass','consumerClass');
+
+
+-- ----------------------------
+-- update for email server init for 1.2.RELEASE
+-- ----------------------------
+INSERT INTO `common_config`(`key`, `value`, `comment`) VALUES ('mailHost', 'smtp.qq.com', '邮件服务器域名');
+INSERT INTO `common_config`(`key`, `value`, `comment`) VALUES ('mailUsername', 'xxx@qq.com', '邮件服务器用户');
+INSERT INTO `common_config`(`key`, `value`, `comment`) VALUES ('mailPassword', 'qq邮箱授权码', '邮件服务器用户密码');
+INSERT INTO `common_config`(`key`, `value`, `comment`) VALUES ('mailPort', '25', '邮件服务器端口');
+INSERT INTO `common_config`(`key`, `value`, `comment`) VALUES ('mailProtocol', 'smtp', '邮件服务器通信协议');
+INSERT INTO `common_config`(`key`, `value`, `comment`) VALUES ('mailTimeout', '5000', '邮件服务器超时时间');

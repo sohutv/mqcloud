@@ -34,7 +34,6 @@ import com.sohu.tv.mq.cloud.cache.LocalCache;
 import com.sohu.tv.mq.cloud.cache.LocalCacheStats;
 import com.sohu.tv.mq.cloud.common.Destroyable;
 import com.sohu.tv.mq.cloud.common.MemoryMQ;
-import com.sohu.tv.mq.cloud.common.service.AlertMessageSender;
 import com.sohu.tv.mq.cloud.common.service.LoginService;
 import com.sohu.tv.mq.cloud.common.service.impl.AbstractLoginService;
 import com.sohu.tv.mq.cloud.common.util.CipherHelper;
@@ -216,30 +215,6 @@ public class CommonConfiguration {
     public CipherHelper cipherHelper() throws UnsupportedEncodingException {
         CipherHelper cipherHelper = new CipherHelper(mqCloudConfigHelper.getCiperKey());
         return cipherHelper;
-    }
-
-    /**
-     * 预警bean配置
-     * 
-     * @return
-     * @throws Exception 
-     */
-    @Bean
-    @Profile({"local-sohu", "test-sohu", "online-sohu"})
-    public AlertMessageSender sohuAlertMessageSender() throws Exception {
-        Class<?> clz = Class.forName("com.sohu.tv.mq.cloud.common.service.impl.AlertMessageSenderImpl");
-        return (AlertMessageSender) clz.newInstance();
-    }
-    
-    /**
-     * 预警bean配置
-     * 
-     * @return
-     */
-    @Bean
-    @Profile({"local", "online"})
-    public AlertMessageSender defaultAlertMessageSender() {
-        return new com.sohu.tv.mq.cloud.service.impl.DefaultAlertMessageSender();
     }
 
     /**
