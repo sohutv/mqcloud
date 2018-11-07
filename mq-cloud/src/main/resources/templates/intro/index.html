@@ -328,7 +328,8 @@ Map&lt;String, Object&gt; message = new HashMap&lt;String, Object&gt;();
 message.put(&quot;vid&quot;, &quot;123456&quot;);
 message.put(&quot;aid&quot;, &quot;789172&quot;);
 //这里message推荐使用map，当然也可以使用json
-Result&lt;SendResult&gt; sendResult = producer.publish(message);
+//建议设置keys参数(也可以忽略该参数)，比如keys指定为vid，那么就可以根据vid查询消息
+Result&lt;SendResult&gt; sendResult = producer.publish(message, "keys：业务id，比如vid");
 if(!sendResult.isSuccess){
     //失败消息处理
 }</pre>					<p>3：发送消息示例【hystrix版：MQ集群如果出现故障，将会拖慢发送方，故提供了hystrix版，以保证即使MQ集群整体不可用，也不会拖死发送方】：</p>
