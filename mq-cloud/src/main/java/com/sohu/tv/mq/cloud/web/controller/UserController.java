@@ -10,7 +10,7 @@ import java.util.Set;
 
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
-
+import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.rocketmq.common.protocol.body.ClusterInfo;
 import org.apache.rocketmq.tools.admin.MQAdminExt;
 import org.springframework.beans.BeanUtils;
@@ -105,6 +105,35 @@ public class UserController extends ViewController {
         return Result.getOKResult();
     }
 
+    /**
+     * 用户密码重置
+     * 
+     * @param uid
+     * @param passwordOld
+     * @param passwordNew
+     * @return
+     */
+    @ResponseBody
+    @RequestMapping(value = "/resetPassword", method = RequestMethod.POST)
+    public Result<?> resetPassword(@RequestParam("uid") int uid,
+            @RequestParam("passwordOld") String passwordOld,
+            @RequestParam("passwordNew") String passwordNew) {
+        if (uid < 0 || passwordOld == "" || passwordNew == "") {
+            return Result.getResult(Status.PARAM_ERROR);
+        }
+        // 校验老密码是否正确
+        Result<User> userResult = userService.query(uid);
+        if (userResult.isNotOK()) {
+            return userResult;
+        }
+        String password = userResult.getResult().getPassword();
+        if (password != null && password != "" && !DigestUtils.md5Hex(passwordOld).equals(password)) {
+            return Result.getResult(Status.OLD_PASSWORD_ERROR);
+        }
+        Result<Integer> result = userService.resetPassword(uid, passwordNew);
+        return result;
+    }
+    
     /**
      * 获取user列表
      * 

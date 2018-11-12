@@ -139,6 +139,6 @@ public class ServerStatusTask {
 		if(osInfo == null) {
 			return;
 		}
-		serverDataService.saveServerInfo(ip, osInfo.getIssue());
+		serverDataService.saveServerInfo(ip, osInfo.getIssue(), -1);
 	}
 }

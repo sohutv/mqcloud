@@ -8,14 +8,18 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.interceptor.TransactionAspectSupport;
 
 import com.sohu.tv.mq.cloud.bo.ServerInfo;
 import com.sohu.tv.mq.cloud.bo.ServerInfoExt;
 import com.sohu.tv.mq.cloud.bo.ServerStatus;
+import com.sohu.tv.mq.cloud.dao.ServerAlarmConfigDao;
 import com.sohu.tv.mq.cloud.dao.ServerStatusDao;
 import com.sohu.tv.mq.cloud.task.server.data.Server;
 import com.sohu.tv.mq.cloud.util.DateUtil;
 import com.sohu.tv.mq.cloud.util.Result;
+import com.sohu.tv.mq.cloud.util.Status;
 /**
  * 服务器数据
  * @Description: 
@@ -25,9 +29,12 @@ import com.sohu.tv.mq.cloud.util.Result;
 @Service
 public class ServerDataService {
 	private static final Logger logger = LoggerFactory.getLogger(ServerDataService.class);
-	
-	@Autowired
-	private ServerStatusDao serverStatusDao;
+
+    @Autowired
+    private ServerStatusDao serverStatusDao;
+
+    @Autowired
+    private ServerAlarmConfigDao serverAlarmConfigDao;
 	
 	/**
 	 * 查询server信息
@@ -73,8 +80,9 @@ public class ServerDataService {
 	 * 保存服务器发行版信息
 	 * @param ip
 	 * @param dist
+	 * @param type
 	 */
-	public void saveServerInfo(String ip, String dist) {
+	public void saveServerInfo(String ip, String dist, int type) {
 		if(dist == null) {
 			return;
 		}
@@ -83,9 +91,9 @@ public class ServerDataService {
 			return;
 		}
 		try {
-			serverStatusDao.saveServerInfo(ip, dist);
+			serverStatusDao.saveServerInfo(ip, dist, type);
 		} catch (Exception e) {
-			logger.error("saveServerInfo err:"+ip+" dist="+dist, e);
+			logger.error("saveServerInfo err:"+ip+" dist="+dist+ "type="+type, e);
 		}
 	}
 
@@ -154,19 +162,47 @@ public class ServerDataService {
     }
     
     /**
-     * 删除数据
+     * 删除机器
      * 
      * @param ip
      * @return
      */
+    @Transactional
     public Result<Integer> deleteServer(String ip) {
-        Integer rows = 0;
         try {
-            rows = serverStatusDao.deleteServer(ip);
+            // 第一步删除机器
+            Integer count = serverStatusDao.deleteServer(ip);
+            if (count == null || count != 1) {
+                return Result.getResult(Status.DB_ERROR);
+            }
+            // 第二步 删除当前机器的报警配置
+            Integer deleteCount = serverAlarmConfigDao.delete(ip);
+            if (deleteCount == null) {
+                return Result.getResult(Status.DB_ERROR);
+            }
         } catch (Exception e) {
             logger.error("deleteServer err, ip:{}", ip, e);
+            TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+            return Result.getDBErrorResult(e);
+        }
+        return Result.getOKResult();
+    }
+    
+    /**
+     * 修改数据
+     * 
+     * @param ip
+     * @param type
+     * @return
+     */
+    public Result<Integer> updateServer(String ip, int type) {
+        Integer rows = 0;
+        try {
+            rows = serverStatusDao.updateServer(ip, type);
+        } catch (Exception e) {
+            logger.error("updateServer err, ip:{}", ip, e);
             return Result.getDBErrorResult(e);
         }
         return Result.getResult(rows);
-    }
+    } 
 }

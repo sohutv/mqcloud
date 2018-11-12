@@ -52,6 +52,53 @@
 		</div>
 	</div>
 </div>
+<!-- 重置密码 -->
+<div id="resertPasswordModal" class="modal fade" tabindex="-1" data-width="400">
+	<div class="modal-dialog">
+		<div class="modal-content">
+
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+				<h4 class="modal-title">密码重置</h4>
+			</div>
+
+			<form class="form-horizontal form-bordered form-row-stripped">
+				<div class="modal-body">
+					<div class="row">
+						<div class="col-md-12">
+							<div class="form-body">
+								<input type="hidden" value="${userInfo.user.id}" id="currentLoggedUserId"/>
+								<div class="form-group">
+									<label class="control-label col-md-4"> 旧密码: </label>
+									<div class="col-md-5">
+										<input type="password" id="passwordOld" placeholder="密码" class="form-control"/>
+									</div>
+								</div>
+								<div class="form-group">
+									<label class="control-label col-md-4"> 新密码: </label>
+									<div class="col-md-5">
+										<input type="password" id="passwordNewC" value="" placeholder="密码" class="form-control" />
+									</div>
+								</div>
+								<div class="form-group">
+									<label class="control-label col-md-4"> 确认密码: </label>
+									<div class="col-md-5">
+										<input type="password" id="passwordNewC2" value="" placeholder="密码" class="form-control" />
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" data-dismiss="modal" class="btn" >取消</button>
+					<button type="button" id="resertPasswordBtn" onclick="resertPasswordCommit()" class="btn btn-primary">确定</button>
+				</div>
+			
+			</form>
+		</div>
+	</div>
+</div>
 <script>
 	$(function () {
         $('#updateUserForm').bootstrapValidator({
@@ -98,4 +145,32 @@
    		        }, 'json');
         });
     });
+
+	//发送更新请求
+	function resertPasswordCommit(){
+		if(!$("#passwordOld").val() || $("#passwordNewC").val() == $("#passwordOld").val()) {
+			alert("新密码不能与旧密码一致");
+			return;
+		}
+		if(!$("#passwordNewC").val() || $("#passwordNewC").val() != $("#passwordNewC2").val()) {
+			alert("两次密码不一致");
+			return;
+		}
+		disable("resertPasswordBtn");
+		$.post('${request.contextPath}/user/resetPassword',
+				{
+					uid : $("#currentLoggedUserId").val(),
+					passwordOld : $("#passwordOld").val(),
+					passwordNew : $("#passwordNewC").val()
+				},
+		        function(data){
+		            if(data.status == 200){
+						toastr.success("操作成功，系统将自动刷新");  
+						reload(3000);
+				    }else{
+				    	toastr.error("操作失败！"+data.message);  
+				    	enable("resertPasswordBtn");
+				    }
+		        }, 'json');
+	}
 </script>

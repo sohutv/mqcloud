@@ -51,8 +51,9 @@ public interface ServerStatusDao {
      * @param ip
      * @param dist from /etc/issue
      */
-    @Insert("insert ignore into server(ip,dist) values (#{ip},#{dist})")
-    public void saveServerInfo(@Param("ip") String ip, @Param("dist") String dist);
+    @Insert("<script>insert ignore into server(ip,dist<if test=\"type >= 0\">,machine_type</if>) "
+            + "values (#{ip},#{dist}<if test=\"type >= 0\">,#{type}</if>)</script>")
+    public void saveServerInfo(@Param("ip") String ip, @Param("dist") String dist, @Param("type") int type);
     
     /**
      * 删除服务器信息
@@ -115,9 +116,18 @@ public interface ServerStatusDao {
 	
 	/**
      * 删除数据
-     * @param date
+     * @param ip
      * @return
      */
     @Delete("delete from server where ip = #{ip}")
     public Integer deleteServer(@Param("ip") String ip);
+    
+    /**
+     * 修改数据
+     * @param ip
+     * @param type
+     * @return
+     */
+    @Update("update server set machine_type=#{type} where ip = #{ip}")
+    public Integer updateServer(@Param("ip") String ip, @Param("type") int type);
 }

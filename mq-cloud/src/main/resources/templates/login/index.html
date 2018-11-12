@@ -31,7 +31,9 @@
 					</div>
 				</div>
 				<div class="modal-footer">
+				<#if !response.result?? || (response.result?? && response.result == 1)>
 					<button type="button" class="btn btn-info" onclick="register()">注册</button>
+				</#if>
 					<button type="button" class="btn btn-primary" onclick="login()">登录</button>
 				</div>
 			</form>

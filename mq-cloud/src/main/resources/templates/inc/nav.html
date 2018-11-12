@@ -45,6 +45,11 @@
 							<#else>
 <!-- 								<li><a target="_blank" href="${request.contextPath}/admin/cluster/list"><i class="fa fa-user glyphicon glyphicon-cog"></i> 申请管理员</a></li> -->
 							</#if>
+							<#if userInfo.user.password?? && userInfo.user.password != "">
+								<li><a href="#" data-target="#resertPasswordModal" data-toggle="modal">
+									<i class="fa fa-user glyphicon glyphicon-wrench"></i> 密码重置</a>
+								</li>
+							</#if>
 							<li><a href="#" onclick="logout()"><i class="fa fa-user glyphicon glyphicon-off"></i> 注销</a></li>
 						</ul>
 					</#if>

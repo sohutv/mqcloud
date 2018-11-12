@@ -1,7 +1,6 @@
 package com.sohu.tv.mq.cloud.web.controller;
 
 import java.util.Map;
-
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,6 +12,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.sohu.tv.mq.cloud.bo.User;
 import com.sohu.tv.mq.cloud.service.UserService;
+import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper;
 import com.sohu.tv.mq.cloud.util.Result;
 import com.sohu.tv.mq.cloud.util.Status;
 
@@ -29,6 +29,9 @@ public class RegisterController extends ViewController {
     @Autowired
     private UserService userService;
 
+    @Autowired
+    private MQCloudConfigHelper mqCloudConfigHelper;
+    
     @RequestMapping
     public String index(Map<String, Object> map) {
         setView(map, "index");
@@ -47,6 +50,10 @@ public class RegisterController extends ViewController {
             @RequestParam(value = "name", required = false) String name,
             @RequestParam(value = "mobile", required = false) String mobile,
             @RequestParam(value = "password") String password) throws Exception {
+        // 验证用户是否开启注册功能
+        if (mqCloudConfigHelper.getIsOpenRegister() != null && mqCloudConfigHelper.getIsOpenRegister() != 1) {
+            return Result.getResult(Status.PERMISSION_DENIED_ERROR);
+        }
         User user = new User();
         email = email.trim();
         if(StringUtils.isBlank(email)) {

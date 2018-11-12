@@ -552,7 +552,6 @@ alter table user modify column `password` varchar(256) COMMENT '登录方式采�
 update user set `password` = '21232f297a57a5a743894a0e4a801fc3' where email = 'admin@admin.com';
 delete from `common_config` where `key` in ('nexusDomain','alertClass','loginClass','ticketKey','clientArtifactId','producerClass','consumerClass');
 
-
 -- ----------------------------
 -- update for email server init for 1.2.RELEASE
 -- ----------------------------
@@ -562,3 +561,24 @@ INSERT INTO `common_config`(`key`, `value`, `comment`) VALUES ('mailPassword', '
 INSERT INTO `common_config`(`key`, `value`, `comment`) VALUES ('mailPort', '25', '邮件服务器端口');
 INSERT INTO `common_config`(`key`, `value`, `comment`) VALUES ('mailProtocol', 'smtp', '邮件服务器通信协议');
 INSERT INTO `common_config`(`key`, `value`, `comment`) VALUES ('mailTimeout', '5000', '邮件服务器超时时间');
+INSERT INTO `common_config`(`key`, `value`, `comment`) VALUES ('isOpenRegister', '1', '是否开启注册功能：0-不开启，1-开启');
+alter table server add `machine_type` int(4) DEFAULT NULL COMMENT '机器类型：0-未知，1-物理机，2-虚拟机，3-docker';
+
+-- ----------------------------
+-- Table structure for `server_warn_config`
+-- ----------------------------
+DROP TABLE IF EXISTS `server_warn_config`;
+CREATE TABLE `server_warn_config` (
+  `ip` varchar(15) NOT NULL COMMENT 'ip',
+  `memory_usage_rate` int(4) NOT NULL DEFAULT '0' COMMENT '内存使用率',
+  `load1` int(4) NOT NULL DEFAULT '0' COMMENT '一分钟load',
+  `connect` int(4) NOT NULL DEFAULT '0' COMMENT 'tcp连接数',
+  `wait` int(4) NOT NULL DEFAULT '0' COMMENT 'tcp等待数',
+  `iops` int(4) NOT NULL DEFAULT '0' COMMENT '磁盘io速率 交互次数/s',
+  `iobusy` int(4) NOT NULL DEFAULT '0' COMMENT '磁盘io带宽使用百分比',
+  `cpu_usage_rate` int(4) NOT NULL DEFAULT '0' COMMENT 'cpu使用率',
+  `net_in` int(4) NOT NULL DEFAULT '0' COMMENT '入网流量',
+  `net_out` int(4) NOT NULL DEFAULT '0' COMMENT '出网流量',
+  `io_usage_rate` int(4) NOT NULL DEFAULT '0' COMMENT '磁盘使用率',
+  UNIQUE KEY `ip` (`ip`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='服务器预警配置表';

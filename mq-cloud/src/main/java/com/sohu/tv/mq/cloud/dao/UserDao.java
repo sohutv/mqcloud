@@ -102,4 +102,13 @@ public interface UserDao {
             + "<foreach collection=\"idList\" item=\"id\" separator=\",\" open=\"(\" close=\")\">#{id}</foreach>"
             + "</script>")
     public List<User> selectByIdList(@Param("idList") Collection<Long> idList);
+    
+    /**
+     * 密码重置
+     * 
+     * @param uid
+     * @param password
+     */
+    @Update("update user set password=#{password} where id = #{uid}")
+    public Integer resetPassword(@Param("uid") long uid, @Param("password") String password);
 }

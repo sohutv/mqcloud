@@ -313,4 +313,21 @@ public class UserService {
         }
         return Result.getResult(user);
     }
+    
+    /**
+     * 重置密码
+     * 
+     * @param uid
+     * @param password
+     */
+    public Result<Integer> resetPassword(long uid, String password) {
+        Integer count = null;
+        try {
+            count = userDao.resetPassword(uid, DigestUtils.md5Hex(password));
+        } catch (Exception e) {
+            logger.error("resetPassword err, uid:{}, password:{}", uid, password, e);
+            return Result.getDBErrorResult(e);
+        }
+        return Result.getResult(count);
+    }
 }

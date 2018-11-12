@@ -26,6 +26,7 @@ public enum Status {
     NOT_INIT_IP(304, "请先配置好服务器环境"),
     REPEAT_ERROR(305, "关联关系已存在"),
     LONGIN_ERROR(306, "用户名或密码错误"),
+    OLD_PASSWORD_ERROR(307, "原始密码输入有误"),
     
     // 4xx代表请求问题
     NOT_FOUND_ERROR(404, "请求不存在"),

@@ -2,6 +2,7 @@
 	<form class="form-inline" role="form">
 		<div class="form-group">
 			<label> 用户列表: </label>
+			<button type="button" class="btn btn-success" data-target="#addUserModal" data-toggle="modal"><span class="glyphicon glyphicon-plus" aria-hidden="true"></span>&nbsp;用户</button>
 		</div>
 	</form>
 	<hr/>
@@ -36,10 +37,15 @@
 						<td>${user.createDate?string("yyyy-MM-dd")}</td>
 						<td>${user.updateTime?string("yyyy-MM-dd HH:mm:ss")}</td>
 						<td>
+							<button data-toggle='tooltip' title="重置用户密码" type="button" 
+								onclick="updateUserPassword('${user.name!user.email}', ${user.id})" class="btn-xs btn-success">
+								<span class="glyphicon glyphicon-cog" aria-hidden="true"></span>
+							</button>
+							&nbsp;
 							<#if user.type == 1>
-								<div data-toggle='tooltip' title="是否接收MQCloud发送的各种报警，审批等通知">
+								<span data-toggle='tooltip' title="是否接收MQCloud发送的各种报警，审批等通知">
 									<input onclick="monitor(this,${user.id})" <#if user.receiveNotice == 1>checked="checked"</#if> type="checkbox" style="vertical-align: -2px">接收通知
-								</div>
+								</span>
 							</#if>
 						</td>
 					</tr>
@@ -47,6 +53,108 @@
 			</#if>
 		</tbody>
 	</table>
+</div>
+<!-- 添加用户 -->
+<div id="addUserModal" class="modal fade" tabindex="-1" data-width="400">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+				<h4 class="modal-title">添加用户</h4>
+			</div>
+			<form class="form-horizontal form-bordered form-row-stripped" id="addUserForm">
+				<div class="modal-body">
+					<div class="row">
+						<div class="col-md-12">
+							<div class="form-body">
+								<div class="form-group">
+									<label class="control-label col-md-4"> 姓 名: </label>
+									<div class="col-md-5">
+										<input type="text" id="nameInput" name="name" value="" placeholder="姓名" class="form-control" />
+									</div>
+								</div>
+								<div class="form-group">
+									<label class="control-label col-md-4"> 邮 箱: </label>
+									<div class="col-md-5">
+										<input type="text" id="emailInput" name="email" value="" placeholder="邮箱" class="form-control" />
+									</div>
+								</div>
+								<div class="form-group">
+									<label class="control-label col-md-4"> 手 机: </label>
+									<div class="col-md-5">
+										<input type="text" id="mobileInput" name="mobile" value="" placeholder="手机" class="form-control" />
+									</div>
+								</div>
+								<div class="form-group">
+									<label class="control-label col-md-4"> 密 码: </label>
+									<div class="col-md-5">
+										<input type="password" id="password" name="password" value="" placeholder="密码" class="form-control" />
+									</div>
+								</div>
+								<div class="form-group">
+									<label class="control-label col-md-4"> 确认密码: </label>
+									<div class="col-md-5">
+										<input type="password" id="password2" value="" placeholder="密码" class="form-control" />
+									</div>
+								</div>
+								<div class="form-group">
+									<label class="control-label col-md-4"> 角 色: </label>
+									<div class="col-md-5">
+										<select class="selectpicker" name="type" >
+											<option value="0" selected>普通用户</option>
+											<option value="1">管理员</option>
+										</select>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" data-dismiss="modal" class="btn" >取消</button>
+					<button type="button" class="btn btn-primary" id="addUserBtn" onclick="addUser()">确定</button>
+				</div>
+			</form>
+		</div>
+	</div>
+</div>
+<!-- 密码重置 -->
+<div id="updateUserPasswordModal" class="modal fade" tabindex="-1" data-width="400">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+				<h4 class="modal-title"><b id="userNameUpdateInput"></b>&nbsp;密码重置</h4>
+			</div>
+			<form class="form-horizontal form-bordered form-row-stripped">
+				<div class="modal-body">
+					<div class="row">
+						<div class="col-md-12">
+							<div class="form-body">
+								<input type="hidden" id="updateUserIdInput"/>
+								<div class="form-group">
+									<label class="control-label col-md-4"> 新密码: </label>
+									<div class="col-md-5">
+										<input type="password" id="passwordNew" value="" placeholder="密码" class="form-control" />
+									</div>
+								</div>
+								<div class="form-group">
+									<label class="control-label col-md-4"> 确认密码: </label>
+									<div class="col-md-5">
+										<input type="password" id="passwordNew2" value="" placeholder="密码" class="form-control" />
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" data-dismiss="modal" class="btn" >取消</button>
+					<button type="button" class="btn btn-primary" id="updateUserPasswordBtn" onclick="updateUserPasswordCommit()">确定</button>
+				</div>
+			</form>
+		</div>
+	</div>
 </div>
 <script>
 function monitor(t, uid){
@@ -70,4 +178,55 @@ function monitor(t, uid){
 $(function(){
 	$("[data-toggle='modal']").tooltip();
 });
+// 添加用户
+function addUser(){
+	if(!$("#email").val()) {
+		alert("邮箱不能为空");
+		return;
+	}
+	if(!$("#password").val() || $("#password").val() != $("#password2").val()) {
+		alert("两次密码不一致");
+		return;
+	}
+	$.post('${request.contextPath}/admin/user/add',
+		$("#addUserForm").serialize(),
+        function(data){
+            if(data.status == 200){
+				toastr.success("添加成功，系统将自动刷新");  
+				reload(3000);
+		    }else{
+		    	toastr.error("添加失败！"+data.message);  
+		    }
+        }, 'json');
+}
+//编辑用户
+function updateUserPassword(name, uid){
+	$("#passwordNew").val('');
+	$("#passwordNew2").val('');
+	$("#userNameUpdateInput").text(name);
+	$("#updateUserIdInput").val(uid);
+	$("#updateUserPasswordModal").modal('show');
+}
+//发送更新请求
+function updateUserPasswordCommit(){
+	if(!$("#passwordNew").val() || $("#passwordNew").val() != $("#passwordNew2").val()) {
+		alert("两次密码不一致");
+		return;
+	}
+	disable("updateUserPasswordBtn");
+	$.post('${request.contextPath}/admin/user/resetPassword',
+			{
+				uid : $("#updateUserIdInput").val(),
+				password : $("#passwordNew").val()
+			},
+	        function(data){
+	            if(data.status == 200){
+					toastr.success("操作成功，系统将自动刷新");  
+					reload(3000);
+			    }else{
+			    	toastr.error("操作失败！"+data.message);  
+			    	enable("updateUserPasswordBtn");
+			    }
+	        }, 'json');
+}
 </script>

@@ -3,17 +3,20 @@
 		<div class="form-group">
 			<label> 机器列表: </label>
 			<button type="button" class="btn btn-success" data-target="#addServerModal" data-toggle="modal"><span class="glyphicon glyphicon-plus" aria-hidden="true"></span>&nbsp;机器</button>
+			<button type="button" data-toggle="tooltip" title="批量修改预警阈值" class="btn btn-success" onclick="batchUpdateServerAlarmConfig()"><span class="glyphicon glyphicon-cog" aria-hidden="true"></span>&nbsp;预警阈值</button>
 		</div>
 	</form>
 	<hr/>
-	<table class="table table-striped table-hover" style="margin-top: 0px;word-break:break-all; word-wrap:break-all;">
+	<table class="table table-striped table-hover" id="serverTable" style="margin-top: 0px;word-break:break-all; word-wrap:break-all;">
 		<thead>
 			<colgroup>
+			  <col width='20px'>
 			  <col>
 			  <col width='120px'>
 			  <col>
 			  <col>
 			  <col width='120px'>
+			  <col>
 			  <col>
 			  <col>
 			  <col>
@@ -27,6 +30,7 @@
 			  <col>
 			</colgroup>
 			<tr>
+				<td><input class="pointer" type="checkbox" name="monitor" id="checkAll" onclick="checkAll(this)" data-toggle="tooltip" title="单击全选或反选"/></td>
 				<td>序号</td>
 				<td>ip</td>
 				<td>host</td>
@@ -41,6 +45,7 @@
 				<td data-toggle="tooltip" title="网络出流量 单位k/s">出网</td>
 				<td data-toggle="tooltip" title="tcp estab连接数">连接</td>
 				<td data-toggle="tooltip" title="tcp time wait连接数">等待</td>
+				<td>机器类型</td>
 				<td>收集时间</td>
 				<td>操作</td>
 			</tr>
@@ -55,6 +60,7 @@
 			<#else>
 				<#list response.result as server>
 					<tr>
+						<td><input class="pointer" type="checkbox" name="monitor" value="${server.ip}" onclick="checkThis(this)" /></td>
 						<td>${server_index+1}</td>
 						<td><a href="#" onclick="setIp('${server.ip}')" data-target="#monitorModal" data-toggle="modal">${server.ip}</a></td>
 						<td>${server.host!}</td>
@@ -78,11 +84,21 @@
 						<td>${server.tuse!}</td>
 						<td>${server.twait!}</td>
 						<td>
+							<#if server.machineType??>
+								${server.machineTypeName}
+							<#else>
+								<button type="button" data-toggle="tooltip" title="添加机器类型" onclick="updateServer('${server.ip}');" class="btn-xs btn-success"><span class="glyphicon glyphicon-plus" aria-hidden="true"></span></button>
+							</#if>
+						</td>
+						<td>
 						<#if server.cdate??>
 							${server.cdate!} ${server.ctime?substring(0,2)}:${server.ctime?substring(2)}
 						</#if>
 						</td>
-						<td><button type="button" onclick="deleteServer('${server.ip}');" class="btn-xs btn-warning"><span class="glyphicon glyphicon-trash" aria-hidden="true"></span></button></td>
+						<td>
+							<button type="button" onclick="deleteServer('${server.ip}');" class="btn-xs btn-warning"><span class="glyphicon glyphicon-trash" aria-hidden="true"></span></button>
+							<button type="button" data-toggle="tooltip" title="修改预警阈值" onclick="updateServerWarnConfig('${server.ip}');" class="btn-xs btn-info"><span class="glyphicon glyphicon-bell" aria-hidden="true"></span></button>
+						</td>
 					</tr>
 				</#list>
 			</#if>
@@ -117,6 +133,12 @@
 										<input type="text" id="ipInput" name="ip" value="" placeholder="IP" class="form-control" />
 									</div>
 								</div>
+								<div id="machineTypeGroup" class="form-group">
+									<label class="control-label col-md-2"> 机器类型: </label>
+							        <div class="col-md-5">
+			    						<select id="machineTypeSearchSelect" class="selectpicker" title="请选择"  name="machineType"></select>
+									</div>
+								</div>
 							</div>
 						</div>
 					</div>
@@ -124,6 +146,131 @@
 				<div class="modal-footer">
 					<button type="button" data-dismiss="modal" class="btn" >取消</button>
 					<button type="button" class="btn btn-primary" id="addTopicBtn" onclick="addServer()">确定</button>
+				</div>
+			</form>
+		</div>
+	</div>
+</div>
+<!-- 修改机器报警配置 -->
+<div id="addServerAlarmConfigModal" class="modal fade" tabindex="-1" data-width="400">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h4 class="modal-title">配置预警阈值</h4>
+			</div>
+			<form class="form-horizontal form-bordered form-row-stripped" id="addAlarmConfigForm">
+				<div class="modal-body">
+					<div class="row">
+						<div class="col-md-12">
+							<div class="form-body">
+								<fieldset>
+           							<legend>待配置IP</legend>
+									<div class="form-group">
+										<div class="col-md-10" style="padding-left:90px">
+											<textarea id="toBeConfiguredIpList" type="text" name="ipList" rows="3" class="form-control" readonly></textarea>
+										</div
+									</div>
+								</fieldset>
+								<fieldset>
+           							<legend>负载</legend>
+									<div class="form-group">
+										<label class="control-label col-md-4"> CPU使用率(User): </label>
+										<div class="col-md-6">
+											<div class="input-group">
+												<input type="text" id="cpuUseRateInput" name="cpuUsageRate" value="" placeholder="建议70%" class="form-control" />
+												<span class="input-group-addon">%</span>
+		    								</div>
+										</div>
+									</div>
+									<div class="form-group">
+										<label class="control-label col-md-4"> 一分钟Load: </label>
+										<div class="col-md-6">
+											<input type="text" id="load1Input" name="load1" value="" placeholder="建议逻辑核数*80%" class="form-control" />
+										</div>
+									</div>
+								</fieldset>
+								<fieldset>
+           							<legend>内存</legend>
+									<div class="form-group">
+										<label class="control-label col-md-4"> 内存使用率: </label>
+										<div class="col-md-6">
+											<div class="input-group">
+												<input type="text" id="memoryUseRateInput" name="memoryUsageRate" value="" placeholder="建议为60%" class="form-control" />
+												<span class="input-group-addon">%</span>
+		    								</div>
+										</div>
+									</div>
+								</fieldset>
+								<fieldset>
+           							<legend>网络</legend>
+									<div class="form-group">
+										<label class="control-label col-md-4"> 连接数: </label>
+										<div class="col-md-6">
+											<input type="text" id="connectInput" name="connect" value="" class="form-control" />
+										</div>
+									</div>
+									<div class="form-group">
+										<label class="control-label col-md-4" data-placement="right" data-toggle="modal" title="TIME_WAIT状态的连接数"> 等待关闭数: </label>
+										<div class="col-md-6">
+											<input type="text" id="waitInput" name="wait" value="" class="form-control" />
+										</div>
+									</div>
+									<div class="form-group">
+										<label class="control-label col-md-4"> 入流量: </label>
+										<div class="col-md-6">
+											<div class="input-group">
+												<input type="text" id="netInInput" name="netIn" class="form-control" />
+												<span class="input-group-addon">k/s</span>
+		    								</div>
+										</div>
+									</div>
+									<div class="form-group">
+										<label class="control-label col-md-4"> 出流量: </label>
+										<div class="col-md-6">
+											<div class="input-group">
+												<input type="text" id="netOutInput" name="netOut" class="form-control" />
+												<span class="input-group-addon">k/s</span>
+		    								</div>
+										</div>
+									</div>
+								</fieldset>
+								<fieldset>
+           							<legend>磁盘</legend>
+									<div class="form-group">
+										<label class="control-label col-md-4" data-placement="right" data-toggle="modal" title="io繁忙程度，最大100%，同iostat %util字段"> iobusy: </label>
+										<div class="col-md-6">
+											<div class="input-group">
+												<input type="text" id="ioBusyInput" name="iobusy" value="" placeholder="建议20%" class="form-control" />
+												<span class="input-group-addon">%</span>
+		    								</div>
+										</div>
+									</div>
+									<div class="form-group">
+										<label data-placement="right" data-toggle="modal" title="磁盘io速率：交互次数/s" class="control-label col-md-4"> iops: </label>
+										<div class="col-md-6">
+											<div class="input-group">
+												<input type="text" id="iopsInput" name="iops" class="form-control" />
+												<span class="input-group-addon">次/秒</span>
+		    								</div>
+										</div>
+									</div>
+									<div class="form-group">
+										<label  class="control-label col-md-4"> 使用率: </label>
+										<div class="col-md-6">
+											<div class="input-group">
+												<input type="text" id="ioUsageRateInput" name="ioUsageRate" placeholder="各分区使用率，建议90%" class="form-control" />
+												<span class="input-group-addon">%</span>
+		    								</div>
+										</div>
+									</div>
+								</fieldset>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" data-dismiss="modal" class="btn" >取消</button>
+					<button type="button" class="btn btn-primary" onclick="submitUpdateServerAlarmConfig()" id="addAlarmConfigBtn">确定</button>
 				</div>
 			</form>
 		</div>
@@ -165,6 +312,41 @@
     </div>
   </div>
 </div>
+<!-- 修改 -->
+<div class="modal fade" id="updateServerModal" aria-hidden="true">  
+  <div class="modal-dialog">  
+    <div class="modal-content message_align">  
+      <div class="modal-header">  
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">×</span></button>  
+        <h4 class="modal-title"><b id="updateIpInput"></b> 服务器类型修改</h4>  
+      </div>  
+		<form class="form-horizontal form-bordered form-row-stripped">
+			<div class="modal-body">
+				<div class="row">
+					<!-- 控件开始 -->
+					<div class="col-md-12">
+						<!-- form-body开始 -->
+						<div class="form-body">
+							<div class="form-group">
+								<label class="control-label col-md-3"> 机器类型: </label>
+								<div class="col-md-5">
+									<select id="machineTypeSelect" class="selectpicker" title="请选择"  name="machineType"></select>
+								</div>
+							</div>
+						</div>
+						<!-- form-body 结束 -->
+					</div>
+					<!-- 控件结束 -->
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" data-dismiss="modal" class="btn" >取消</button>
+				<button type="button" id="updateServerBtn" onclick="updateServerConfirm()" class="btn btn-primary">确定</button>
+			</div>
+		</form>
+    </div>
+  </div>
+</div>
 <!-- 监控 -->
 <div id="monitorModal" class="modal fade" tabindex="-1">
 	<div class="modal-dialog" style="width:90%;height:90%;">
@@ -200,6 +382,98 @@
 <input type="hidden" id="ipInput">
 
 <script>
+$(function(){
+	// 适应小屏幕
+	if(window.screen.width == 1366){
+		$("#serverTable").addClass('tableUpdate');
+	}
+	//初始化
+	initMachineTypeList();
+});
+//全选
+function checkAll(t){
+	if(t.checked){
+		$("input[name='monitor']").each(function(){ //反选 
+			       $(this).prop("checked",true);    
+			    });
+	}else{
+		$("input[name='monitor']").each(function(){ //反选 
+			       $(this).prop("checked",false); 
+			    });  
+	} 
+}
+//单选操作
+function checkThis(t) {
+	if(t.checked){
+		$(this).prop("checked",false);	
+	}else{
+		$(this).prop("checked",true);
+	}  
+}
+//批量修改预警配置
+function batchUpdateServerAlarmConfig(){
+	if(!$("input[name='monitor']:checked").val()){
+		alert("请至少选择一个机器！");
+		return;
+	}	
+	var str = "";
+	$("input:checkbox[name='monitor']:checked").each(function(i) {
+		var val = $(this).val();
+		if($(this).val() != "on"){
+			str = val+" , "+str;
+		}
+	});
+	$("#addAlarmConfigForm")[0].reset();
+	$("#toBeConfiguredIpList").val(str.substring(0,str.length-3));
+	$("#addServerAlarmConfigModal").modal('show');
+}
+//发送更新请求
+function submitUpdateServerAlarmConfig(){
+	// 兼容用户不关心的预警项，故此处只是简单的数据校验
+	if(!checkData()){
+		return;
+	};
+	disable("addAlarmConfigBtn");
+	$.post('${request.contextPath}/admin/server/alarm/config/update',
+			$("#addAlarmConfigForm").serialize(),
+	        function(data){
+	            if(data.status == 200){
+	            	toastr.success("修改成功，将自动刷新！");  
+	            	reload(3000);
+			    }else{
+			    	toastr.error("修改失败！"+data.message);
+			    	enable("addAlarmConfigBtn");
+			    }
+        }, 'json');
+}
+
+// 单个报警配置
+function updateServerWarnConfig(ip){
+	$.get('${request.contextPath}/admin/server/alarm/config/detail',
+			{
+				ip: ip
+			},
+	        function(data){
+	            if(data.status == 200){
+	            	var config = data.result;
+	            	$("#toBeConfiguredIpList").val(ip);
+	            	$("#cpuUseRateInput").val(config.cpuUsageRate > 0 ? config.cpuUsageRate : '');
+	            	$("#load1Input").val(config.load1 > 0 ? config.load1 : '');
+	            	$("#memoryUseRateInput").val(config.memoryUsageRate > 0 ? config.memoryUsageRate : '');
+	            	$("#connectInput").val(config.connect > 0 ? config.connect : '');
+	            	$("#waitInput").val(config.wait > 0 ? config.wait : '');
+	            	$("#netInInput").val(config.netIn > 0 ? config.netIn : '');
+	            	$("#netOutInput").val(config.netOut > 0 ? config.netOut : '');
+	            	$("#ioBusyInput").val(config.iobusy > 0 ? config.iobusy : '');
+	            	$("#iopsInput").val(config.iops > 0 ? config.iops : '');
+	            	$("#ioUsageRateInput").val(config.ioUsageRate > 0 ? config.ioUsageRate : '');
+			    }else{
+			    	$("#addAlarmConfigForm")[0].reset();
+			    	$("#toBeConfiguredIpList").val(ip);
+			    }
+        }, 'json');
+	$("#addServerAlarmConfigModal").modal('show');
+}
 /**
  * 添加机器
  */
@@ -208,10 +482,15 @@ function addServer(){
 		alert("请输入ip");
 		return;
 	}
+	if(!$("#machineTypeSearchSelect").val()){
+		alert("请选择机器类型");
+		return;
+	}
 	disable("addTopicBtn");
 	$.post('${request.contextPath}/admin/server/add',
 			{
-				ip: $("#ipInput").val()
+				ip: $("#ipInput").val(),
+				type : $("#machineTypeSearchSelect").val()
 			},
 	        function(data){
 	            if(data.status == 200){
@@ -261,7 +540,7 @@ function deleteServer(ip){
 //发送删除请求
 function deleteServerConfirm(){
 	disable("deleteServerBtn");
-	$.post('${request.contextPath}/admin/server/delete',
+	$.get('${request.contextPath}/admin/server/delete',
 		{
 			ip: $("#deleteIpInput").val()
 		},
@@ -274,5 +553,57 @@ function deleteServerConfirm(){
 		    	enable("deleteServerBtn");
 		    }
     }, 'json');
+}
+//修改机器
+function updateServer(ip){
+	$("#updateIpInput").text(ip);
+	$("#updateServerModal").modal('show');
+}
+//发送修改请求
+function updateServerConfirm(){
+	disable("updateServerBtn");
+	$.post('${request.contextPath}/admin/server/update',
+		{
+			ip: $("#updateIpInput").text(),
+			type: $("#machineTypeSelect").val()
+		},
+        function(data){
+            if(data.status == 200){
+            	toastr.success("修改成功！即将刷新页面！");
+            	reload(3000);            	
+		    }else{
+		    	toastr.error("修改失败！"+data.message);  
+		    	enable("updateServerBtn");
+		    }
+    }, 'json');
+}
+// 初始化机器类型列表
+function initMachineTypeList(){
+	$.get('${request.contextPath}/admin/server/type',
+	        function(data){
+	            if(data.status == 200){
+	            	var content = "";
+	            	for(var i in data.result){
+	            		var type = data.result[i];
+	            		content += "<option value='"+type.key+"'>"+type.value+"</option>";	
+	            	}
+	        		$("#machineTypeSelect").html(content);
+	        		$("#machineTypeSearchSelect").html(content);
+			    }else{
+			    	toastr.error("数据获取失败！"+data.message);  
+			    }
+        }, 'json');
+}
+// 校验服务器监控指标的配置
+function checkData(){
+	var arr = ["cpuUseRateInput", "load1Input", "memoryUseRateInput", "connectInput", 
+		"waitInput", "netInInput", "netOutInput", "ioBusyInput", "iopsInput", "ioUsageRateInput"];
+	 for(var i=0;i<arr.length;i++){
+		if($("#"+arr[i]).val() && $("#"+arr[i]).val() <= 0){
+			alert("配置项允许为空但所填项均要大于0");
+			return false;
+		}
+	}
+	 return true;
 }
 </script>

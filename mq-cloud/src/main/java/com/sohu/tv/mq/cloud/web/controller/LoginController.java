@@ -15,6 +15,7 @@ import com.sohu.tv.mq.cloud.bo.User;
 import com.sohu.tv.mq.cloud.common.util.CipherHelper;
 import com.sohu.tv.mq.cloud.common.util.WebUtil;
 import com.sohu.tv.mq.cloud.service.UserService;
+import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper;
 import com.sohu.tv.mq.cloud.util.Result;
 import com.sohu.tv.mq.cloud.util.Status;
 
@@ -33,10 +34,14 @@ public class LoginController extends ViewController {
 
     @Autowired
     private CipherHelper cipherHelper;
+    
+    @Autowired
+    private MQCloudConfigHelper mqCloudConfigHelper;
 
     @RequestMapping
     public String index(Map<String, Object> map) {
         setView(map, "index");
+        setResult(map,mqCloudConfigHelper.getIsOpenRegister());      
         return view();
     }
 

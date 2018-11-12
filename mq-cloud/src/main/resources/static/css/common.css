@@ -122,3 +122,14 @@ span.bell-dot{
 .show {
 	display: block;
 }
+
+
+
+fieldset{padding:.35em .625em .75em;margin:0 2px;border:1px solid silver;border-radius:8px}
+legend{padding:.5em;border:0;width:auto;margin-bottom:10px}
+
+.tableUpdate > thead > tr > td, 
+.tableUpdate > tbody > tr > td, 
+.tableUpdate > tfoot > tr > td {
+	padding : 4px;
+}

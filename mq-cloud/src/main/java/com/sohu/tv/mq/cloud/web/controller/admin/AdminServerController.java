@@ -3,13 +3,16 @@ package com.sohu.tv.mq.cloud.web.controller.admin;
 import java.math.BigDecimal;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
+import javax.validation.Valid;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -18,15 +21,20 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.alibaba.fastjson.JSON;
+import com.sohu.tv.mq.cloud.bo.ServerAlarmConfig;
 import com.sohu.tv.mq.cloud.bo.ServerInfo;
 import com.sohu.tv.mq.cloud.bo.ServerInfoExt;
 import com.sohu.tv.mq.cloud.bo.ServerStatus;
 import com.sohu.tv.mq.cloud.service.SSHTemplate;
+import com.sohu.tv.mq.cloud.service.ServerAlarmConfigService;
 import com.sohu.tv.mq.cloud.service.ServerDataService;
 import com.sohu.tv.mq.cloud.util.DateUtil;
 import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper;
+import com.sohu.tv.mq.cloud.util.MachineType;
 import com.sohu.tv.mq.cloud.util.Result;
 import com.sohu.tv.mq.cloud.util.Status;
+import com.sohu.tv.mq.cloud.web.controller.param.ServerAlarmConfigParam;
+import com.sohu.tv.mq.cloud.web.vo.MachineTypeVO;
 
 /**
  * 服务器
@@ -47,6 +55,9 @@ public class AdminServerController extends AdminViewController {
     @Autowired
     private MQCloudConfigHelper mqCloudConfigHelper;
     
+    @Autowired
+    private ServerAlarmConfigService serverAlarmConfigService;
+    
     /**
      * 新增
      * @param map
@@ -54,14 +65,14 @@ public class AdminServerController extends AdminViewController {
      */
     @ResponseBody
     @RequestMapping(value="/add", method=RequestMethod.POST)
-    public Result<?> add(@RequestParam("ip") String ip, Map<String, Object> map) {
+    public Result<?> add(@RequestParam("ip") String ip, @RequestParam("type") int type, Map<String, Object> map) {
         try {
             sshTemplate.validate(ip);
         } catch (Exception e) {
             logger.error("validate:{}", ip, e);
             return Result.getResult(Status.NOT_INIT_IP);
         }
-        serverDataService.saveServerInfo(ip, "init");
+        serverDataService.saveServerInfo(ip, "init", type);
         return Result.getOKResult();
     }
     
@@ -99,13 +110,86 @@ public class AdminServerController extends AdminViewController {
      * @return
      */
     @ResponseBody
-    @RequestMapping(value = "/delete", method = RequestMethod.POST)
+    @RequestMapping(value = "/delete", method = RequestMethod.GET)
     public Result<?> delete(@RequestParam(name = "ip", required = false) String ip) {
         if ("".equals(ip)) {
             return Result.getResult(Status.PARAM_ERROR);
         }
         Result<Integer> deleteResult = serverDataService.deleteServer(ip);
         return deleteResult;
+    }
+    
+    /**
+     * 修改
+     * 
+     * @param ip
+     * @return
+     */
+    @ResponseBody
+    @RequestMapping(value = "/update", method = RequestMethod.POST)
+    public Result<?> update(@RequestParam(name = "ip") String ip,
+            @RequestParam(name = "type") int type) {
+        if ("".equals(ip) || type < 0) {
+            return Result.getResult(Status.PARAM_ERROR);
+        }
+        Result<Integer> updateResult = serverDataService.updateServer(ip, type);
+        return updateResult;
+    }
+    
+    /**
+     * 获取机器的详细报警配置
+     * 
+     * @param ip
+     * @return
+     */
+    @ResponseBody
+    @RequestMapping(value = "/alarm/config/detail", method = RequestMethod.GET)
+    public Result<?> alarmConfigDetail(@RequestParam(name = "ip") String ip) {
+        if (ip == "") {
+            return Result.getResult(Status.PARAM_ERROR);
+        }
+        Result<ServerAlarmConfig> configResult = serverAlarmConfigService.query(ip);
+        return configResult;
+    }
+    
+    /**
+     * 修改报警配置
+     * 
+     * @param serverAlarmConfigParam
+     * @return
+     */
+    @ResponseBody
+    @RequestMapping(value = "/alarm/config/update", method = RequestMethod.POST)
+    public Result<?> alarmConfigUpdate(@Valid ServerAlarmConfigParam serverAlarmConfigParam) {
+        ServerAlarmConfig serverAlarmConfig = new ServerAlarmConfig();
+        BeanUtils.copyProperties(serverAlarmConfigParam, serverAlarmConfig);
+        String[] ipArr = serverAlarmConfigParam.getIpList().replace(" ", "").split(",");
+        Result<Integer> updateResult = serverAlarmConfigService.update(serverAlarmConfig,Arrays.asList(ipArr));
+        return updateResult;
+    }
+    
+    /**
+     * 获取机器类型
+     * 
+     * @return
+     */
+    @ResponseBody
+    @RequestMapping(value = "/type", method = RequestMethod.GET)
+    public Result<?> type() {
+        return Result.getResult(getMachineTypeVO());
+    }
+
+    /**
+     * 将enum转VO
+     * 
+     * @return
+     */
+    private List<MachineTypeVO> getMachineTypeVO() {
+        List<MachineTypeVO> result = new ArrayList<MachineTypeVO>(MachineType.values().length);
+        for (MachineType mt : MachineType.values()) {
+            result.add(new MachineTypeVO(mt));
+        }
+        return result;
     }
     
     /**

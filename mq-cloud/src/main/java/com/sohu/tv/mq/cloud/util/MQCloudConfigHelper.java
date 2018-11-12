@@ -104,6 +104,8 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware {
     private String mailPassword;
     // ms
     private int mailTimeout;
+    // 是否开启注册
+    private Integer isOpenRegister;
     
     @Autowired
     private CommonConfigService commonConfigService;
@@ -197,6 +199,10 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware {
         return getPrefix() + "admin/audit/list";
     }
 
+    public String getServerLink() {
+        return getPrefix() + "admin/server/list";
+    }
+    
     private String getPrefix() {
         return HTTP_SCHEMA + getDomain() + getContextPath();
     }
@@ -253,6 +259,10 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware {
         return nexusDomain;
     }
 
+    public Integer getIsOpenRegister() {
+        return isOpenRegister;
+    }
+    
     public void setNexusDomain(String nexusDomain) {
         this.nexusDomain = nexusDomain;
     }
@@ -331,7 +341,7 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware {
                 + ", mapWithByteList=" + mapWithByteList + ", clientArtifactId=" + clientArtifactId + ", producerClass="
                 + producerClass + ", consumerClass=" + consumerClass + ", mailHost=" + mailHost + ", mailPort="
                 + mailPort + ", mailProtocol=" + mailProtocol + ", mailUsername=" + mailUsername + ", mailPassword="
-                + mailPassword + ", mailTimeout=" + mailTimeout + "]";
+                + mailPassword + ", mailTimeout=" + mailTimeout + ", isOpenRegister=" + isOpenRegister + "]";
     }
 
     @Override
