@@ -35,6 +35,7 @@ public class RegisterController extends ViewController {
     @RequestMapping
     public String index(Map<String, Object> map) {
         setView(map, "index");
+        setResult(map,mqCloudConfigHelper.getIsOpenRegister());
         return view();
     }
 

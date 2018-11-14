@@ -5,9 +5,8 @@
 			<div class="modal-header">
 				<h4 class="modal-title">您好，欢迎使用MQCloud</h4>
 			</div>
-
-
-			<div class="modal-body">
+			<#if response.result?? && response.result == 1>
+				<div class="modal-body">
 				<!-- 用户信息补全 -->
 				<form class="form-horizontal form-bordered form-row-stripped" id="registerForm">
 					<div class="row">
@@ -61,6 +60,9 @@
 					<button type="button" class="btn btn-primary" onclick="register()">注册</button>
 				</div>
 			</form>
+			 <#else>
+			 <div class="modal-body" style="text-align:center">注册功能已关闭！</div>
+			</#if>
 		</div>
 	</div>
 </div>
