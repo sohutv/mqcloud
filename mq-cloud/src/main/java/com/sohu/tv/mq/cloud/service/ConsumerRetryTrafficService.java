@@ -81,10 +81,8 @@ public class ConsumerRetryTrafficService extends TrafficService<Traffic> {
                             if (alarmConfigBridingService.needWarn("consumerFail", topicConsumer.getTopic(), topicConsumer.getConsumer())) {
                                 alertService.sendWanMail(email, "消费失败",
                                         "topic:<b>" + topicConsumer.getTopic() + "</b> 消费者:<b>"
-                                                + topicConsumer.getConsumer()
-                                                + "</b> 消费失败量:" + topicTraffic.getCount() + ",<a href='"
-                                                + mqCloudConfigHelper.getTopicConsumeLink(topicConsumer.getTid())
-                                                + "'>查看</a>");
+                                                + mqCloudConfigHelper.getTopicConsumeLink(topicConsumer.getTid(), topicConsumer.getConsumer())
+                                                + "</b> 消费失败量:" + topicTraffic.getCount());
                             }         
                         }
                         // 打印报警信息

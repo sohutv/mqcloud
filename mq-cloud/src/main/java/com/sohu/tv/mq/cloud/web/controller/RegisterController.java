@@ -1,6 +1,7 @@
 package com.sohu.tv.mq.cloud.web.controller;
 
 import java.util.Map;
+
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;

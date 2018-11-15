@@ -153,9 +153,7 @@ public class ProducerStatsTask {
                     // producer
                     sb.append("<td rowspan="+rowSpan+">");
                     if(tid > 0) {
-                        sb.append("<a href='");
-                        sb.append(mqCloudConfigHelper.getTopicLink(tid));
-                        sb.append("'>"+k+"</a>");
+                        sb.append(mqCloudConfigHelper.getTopicLink(tid, k));
                     } else {
                         sb.append(k);
                     }

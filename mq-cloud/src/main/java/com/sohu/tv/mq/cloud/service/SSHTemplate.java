@@ -112,8 +112,8 @@ public class SSHTemplate {
         conn.connect(null, mqCloudConfigHelper.getServerConnectTimeout(), mqCloudConfigHelper.getServerConnectTimeout());
         boolean isAuthenticated = conn.authenticateWithPassword(username, password);
         if (isAuthenticated == false) {
-            throw new Exception("SSH authentication failed with [ userName: " +
-                    username + ", password: " + password + "]");
+            throw new Exception("SSH authentication failed with [userName:" +
+                    username + ", password:" + password + "]");
         }
         return conn;
     }

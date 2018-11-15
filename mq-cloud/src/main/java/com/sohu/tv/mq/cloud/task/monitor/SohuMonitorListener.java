@@ -250,16 +250,14 @@ public class SohuMonitorListener implements MonitorListener {
         content.append("topic：<b>");
         content.append(topic.getName());
         content.append("</b> 的消费者：<b>");
-        content.append(undoneMsgs.getConsumerGroup());
+        content.append(mqCloudConfigHelper.getTopicConsumeLink(topic.getId(), undoneMsgs.getConsumerGroup()));
         content.append("</b> 检测到堆积，总堆积消息量：");
         content.append(undoneMsgs.getUndoneMsgsTotal());
         content.append("，单个队列最大堆积消息量：");
         content.append(undoneMsgs.getUndoneMsgsSingleMQ());
         content.append("，消费滞后时间(相对于broker最新消息时间)：");
         content.append(undoneMsgs.getUndoneMsgsDelayTimeMills() / 1000f);
-        content.append("秒。<a href='");
-        content.append(mqCloudConfigHelper.getTopicConsumeLink(topic.getId()));
-        content.append("'>查看</a>");
+        content.append("秒");
         return content.toString();
     }
 
@@ -310,7 +308,7 @@ public class SohuMonitorListener implements MonitorListener {
         }
         StringBuilder content = new StringBuilder("详细如下:<br><br>");
         content.append("消费者：<b>");
-        content.append(event.getConsumerGroup());
+        content.append(mqCloudConfigHelper.getTopicConsumeLink(topicExt.getTopic().getId(), event.getConsumerGroup()));
         content.append("</b> 偏移量错误，broker时间：<b>");
         content.append(DateUtil.getFormat(DateUtil.YMD_DASH_BLANK_HMS_COLON).format(
                 new Date(deleteMsgsEvent.getEventTimestamp())));
@@ -462,11 +460,8 @@ public class SohuMonitorListener implements MonitorListener {
             StringBuilder content = new StringBuilder("详细如下:<br><br>");
             content.append("topic: <b>");
             content.append(tc.getTopic());
-            content.append("</b> 的消费者：<a href='");
-            content.append(mqCloudConfigHelper.getTopicConsumeLink(topicResult.getResult().getId()));
-            content.append("'>");
-            content.append(tc.getConsumer());
-            content.append("</a>");
+            content.append("</b> 的消费者：");
+            content.append(mqCloudConfigHelper.getTopicConsumeLink(topicResult.getResult().getId(), tc.getConsumer()));
             content.append(" 检测到阻塞: <br>");
             content.append("<table border=1>");
             content.append("<thead>");

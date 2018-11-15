@@ -190,9 +190,21 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware {
     public String getTopicLink(long topicId) {
         return getPrefix() + "user/topic/" + topicId + "/detail";
     }
+    
+    public String getTopicLink(long topicId, String linkText) {
+        return getHrefLink(getTopicLink(topicId), linkText);
+    }
 
     public String getTopicConsumeLink(long topicId) {
         return getTopicLink(topicId) + "?tab=consume";
+    }
+    
+    public String getTopicConsumeLink(long topicId, String linkText) {
+        return getHrefLink(getTopicConsumeLink(topicId), linkText);
+    }
+    
+    private String getHrefLink(String link, String linkText) {
+        return "<a href='" + link + "'>" + linkText + "</a>";
     }
 
     public String getAuditLink() {
