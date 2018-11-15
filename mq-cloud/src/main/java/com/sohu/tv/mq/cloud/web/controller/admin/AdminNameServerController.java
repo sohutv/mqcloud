@@ -112,6 +112,22 @@ public class AdminNameServerController extends AdminViewController {
         }
         return result;
     }
+    
+    /**
+     * 删除
+     * 
+     * @param cid
+     * @param broker
+     * @return
+     */
+    @ResponseBody
+    @RequestMapping(value = "/delete", method = RequestMethod.POST)
+    public Result<?> delete(UserInfo ui, @RequestParam(name = "addr") String addr,
+            @RequestParam(name = "cid") int cid) {
+        logger.warn("offline:{}, user:{}", addr, ui);
+        Result<?> result = nameServerService.delete(cid, addr);
+        return Result.getWebResult(result);
+    }
 
     /**
      * 启动

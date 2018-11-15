@@ -8,28 +8,28 @@ import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
 
-import com.sohu.tv.mq.cloud.bo.NameServer;
+import com.sohu.tv.mq.cloud.bo.Broker;
 /**
- * NameServerDao
+ * BrokerDao
  * 
  * @author yongfeigao
- * @date 2018年10月23日
+ * @date 2018年11月14日
  */
-public interface NameServerDao {
+public interface BrokerDao {
     /**
      * 查询
      * 
      * @return
      */
-    @Select("select * from name_server where cid = #{cid}")
-    public List<NameServer> selectByClusterId(@Param("cid") int cid);
+    @Select("select * from broker where cid = #{cid}")
+    public List<Broker> selectByClusterId(@Param("cid") int cid);
 
     /**
      * 插入
      * 
      * @param notice
      */
-    @Insert("insert into name_server(cid,addr) values(#{cid},#{addr})")
+    @Insert("insert into broker(cid,addr) values(#{cid},#{addr})")
     public Integer insert(@Param("cid") int cid, @Param("addr") String addr);
     
     /**
@@ -37,7 +37,7 @@ public interface NameServerDao {
      * 
      * @param notice
      */
-    @Update("update name_server set check_status = #{checkStatus}, check_time = now()  where cid = #{cid} and addr = #{addr}")
+    @Update("update broker set check_status = #{checkStatus}, check_time = now() where cid = #{cid} and addr = #{addr}")
     public Integer update(@Param("cid") int cid, @Param("addr") String addr, @Param("checkStatus") int checkStatus);
     
     /**
@@ -45,6 +45,6 @@ public interface NameServerDao {
      * 
      * @param notice
      */
-    @Delete("delete from name_server where cid=#{cid} and addr=#{addr}")
-    public Integer delete(@Param("cid") int cid, @Param("addr") String addr);
+    @Delete("delete from broker where cid=#{cid}")
+    public Integer delete(@Param("cid") int cid);
 }

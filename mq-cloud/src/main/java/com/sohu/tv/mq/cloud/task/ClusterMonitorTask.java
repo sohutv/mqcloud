@@ -1,24 +1,30 @@
 package com.sohu.tv.mq.cloud.task;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import org.apache.rocketmq.common.protocol.body.ClusterInfo;
+
 import org.apache.rocketmq.common.protocol.body.KVTable;
-import org.apache.rocketmq.common.protocol.route.BrokerData;
 import org.apache.rocketmq.tools.admin.MQAdminExt;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 
+import com.sohu.tv.mq.cloud.bo.Broker;
+import com.sohu.tv.mq.cloud.bo.CheckStatusEnum;
 import com.sohu.tv.mq.cloud.bo.Cluster;
+import com.sohu.tv.mq.cloud.bo.NameServer;
+import com.sohu.tv.mq.cloud.mq.DefaultCallback;
 import com.sohu.tv.mq.cloud.mq.MQAdminCallback;
 import com.sohu.tv.mq.cloud.mq.MQAdminTemplate;
 import com.sohu.tv.mq.cloud.service.AlertService;
+import com.sohu.tv.mq.cloud.service.BrokerService;
 import com.sohu.tv.mq.cloud.service.ClusterService;
+import com.sohu.tv.mq.cloud.service.NameServerService;
+import com.sohu.tv.mq.cloud.util.Result;
+
 import net.javacrumbs.shedlock.core.SchedulerLock;
 
 /**
@@ -44,6 +50,12 @@ public class ClusterMonitorTask {
     @Autowired
     private ClusterService clusterService;
 
+    @Autowired
+    private NameServerService nameServerService;
+
+    @Autowired
+    private BrokerService brokerService;
+
     /**
      * 每6分钟监控一次
      */
@@ -55,7 +67,7 @@ public class ClusterMonitorTask {
         // 缓存报警信息
         List<String> alarmList = new ArrayList<String>();
         for (Cluster mqCluster : clusterService.getAllMQCluster()) {
-            getStatsFromNameServer(mqCluster, alarmList);
+            monitorNameServer(mqCluster, alarmList);
         }
         if (!alarmList.isEmpty()) {
             handleAlarmMessage(alarmList, NS_ERROR_TITLE);
@@ -74,7 +86,7 @@ public class ClusterMonitorTask {
         // 缓存报警信息
         List<String> alarmList = new ArrayList<String>();
         for (Cluster mqCluster : clusterService.getAllMQCluster()) {
-            getBrokerStats(mqCluster, alarmList);
+            monitorBroker(mqCluster, alarmList);
         }
         if (!alarmList.isEmpty()) {
             handleAlarmMessage(alarmList, BROKER_ERROR_TITLE);
@@ -87,34 +99,36 @@ public class ClusterMonitorTask {
      * 
      * @param mqCluster
      */
-    private void getStatsFromNameServer(Cluster mqCluster, List<String> alarmList) {
+    private void monitorNameServer(Cluster mqCluster, List<String> alarmList) {
+        Result<List<NameServer>> nameServerListResult = nameServerService.query(mqCluster.getId());
+        if (nameServerListResult.isEmpty()) {
+            return;
+        }
+        List<String> nameServerAddressList = new ArrayList<String>();
+        for (NameServer ns : nameServerListResult.getResult()) {
+            nameServerAddressList.add(ns.getAddr());
+        }
         mqAdminTemplate.execute(new MQAdminCallback<Void>() {
-
-            @Override
             public Void callback(MQAdminExt mqAdmin) throws Exception {
-                List<String> nameServerAddressList = mqAdmin.getNameServerAddressList();
-                if (nameServerAddressList.isEmpty()) {
-                    alarmList.add("MQCluster:" + mqCluster() + "  the name server address list is empty!");
-                    return null;
-                }
                 Map<String, Properties> nameServerConfig = mqAdmin.getNameServerConfig(nameServerAddressList);
                 for (String nsAddr : nameServerAddressList) {
                     Properties properties = nameServerConfig.get(nsAddr);
                     if (properties == null || properties.isEmpty()) {
                         alarmList.add(
                                 "MQCluster:" + mqCluster() + " nsAddr:" + nsAddr + " the name server config is empty!");
+                        nameServerService.update(mqCluster.getId(), nsAddr, CheckStatusEnum.FAIL);
+                    } else {
+                        nameServerService.update(mqCluster.getId(), nsAddr, CheckStatusEnum.OK);
                     }
                 }
                 return null;
             }
 
-            @Override
             public Void exception(Exception e) throws Exception {
                 alarmList.add("MQCluster:" + mqCluster() + " Exception: " + e);
                 return null;
             }
 
-            @Override
             public Cluster mqCluster() {
                 return mqCluster;
             }
@@ -126,40 +140,33 @@ public class ClusterMonitorTask {
      * 
      * @param mqCluster
      */
-    private void getBrokerStats(Cluster mqCluster, List<String> alarmList) {
-        mqAdminTemplate.execute(new MQAdminCallback<Void>() {
-
-            @Override
+    private void monitorBroker(Cluster mqCluster, List<String> alarmList) {
+        Result<List<Broker>> brokerListResult = brokerService.query(mqCluster.getId());
+        if (brokerListResult.isEmpty()) {
+            return;
+        }
+        mqAdminTemplate.execute(new DefaultCallback<Void>() {
             public Void callback(MQAdminExt mqAdmin) throws Exception {
-                // 获取集群信息
-                ClusterInfo clusterInfo = mqAdmin.examineBrokerClusterInfo();
-                // 获得broker地址map
-                HashMap<String, BrokerData> brokerAddrTable = clusterInfo.getBrokerAddrTable();
-                if (brokerAddrTable.isEmpty()) {
-                    alarmList.add("MQCluster:" + mqCluster() + "  the broker address table is empty!");
-                    return null;
-                }
-                // 遍历集群中所有的broker
-                for (String brokerName : brokerAddrTable.keySet()) {
-                    HashMap<Long, String> brokerAddrs = brokerAddrTable.get(brokerName).getBrokerAddrs();
-                    for (Long brokerId : brokerAddrs.keySet()) {
-                        KVTable brokerRuntimeStats = mqAdmin.fetchBrokerRuntimeStats(brokerAddrs.get(brokerId));
+                List<Broker> brokerList = brokerListResult.getResult();
+                for (Broker broker : brokerList) {
+                    try {
+                        KVTable brokerRuntimeStats = mqAdmin.fetchBrokerRuntimeStats(broker.getAddr());
                         if (brokerRuntimeStats == null || brokerRuntimeStats.getTable().isEmpty()) {
-                            alarmList.add("MQCluster:" + mqCluster() + " broker:" + brokerAddrs.get(brokerId)
+                            alarmList.add("MQCluster:" + mqCluster() + " broker:" + broker.getAddr()
                                     + " the broker KVTable is empty!");
+                            brokerService.update(mqCluster.getId(), broker.getAddr(), CheckStatusEnum.FAIL);
+                        } else {
+                            brokerService.update(mqCluster.getId(), broker.getAddr(), CheckStatusEnum.OK);
                         }
+                    } catch (Exception e) {
+                        nameServerService.update(mqCluster.getId(), broker.getAddr(), CheckStatusEnum.FAIL);
+                        alarmList.add("MQCluster:" + mqCluster() + " broker addr:" + broker.getAddr() + " Exception: "
+                                + e.getMessage()+"<br>");
                     }
                 }
                 return null;
             }
 
-            @Override
-            public Void exception(Exception e) throws Exception {
-                alarmList.add("MQCluster:" + mqCluster() + " Exception: " + e);
-                return null;
-            }
-
-            @Override
             public Cluster mqCluster() {
                 return mqCluster;
             }

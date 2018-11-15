@@ -7,35 +7,35 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.sohu.tv.mq.cloud.bo.Broker;
 import com.sohu.tv.mq.cloud.bo.CheckStatusEnum;
-import com.sohu.tv.mq.cloud.bo.NameServer;
-import com.sohu.tv.mq.cloud.dao.NameServerDao;
+import com.sohu.tv.mq.cloud.dao.BrokerDao;
 import com.sohu.tv.mq.cloud.util.Result;
 
 /**
- * name server
+ * broker
  * 
  * @author yongfeigao
- * @date 2018年10月23日
+ * @date 2018年11月14日
  */
 @Service
-public class NameServerService {
+public class BrokerService {
     
     private Logger logger = LoggerFactory.getLogger(this.getClass());
     
     @Autowired
-    private NameServerDao nameServerDao;
+    private BrokerDao brokerDao;
     
     /**
      * 保存记录
-     * 
-     * @param nameServer
-     * @return 返回Result
+     * @param cid
+     * @param addr
+     * @return
      */
     public Result<?> save(int cid, String addr) {
         Integer result = null;
         try {
-            result = nameServerDao.insert(cid, addr);
+            result = brokerDao.insert(cid, addr);
         } catch (Exception e) {
             logger.error("insert err, cid:{}, addr:{}", cid, addr, e);
             return Result.getDBErrorResult(e);
@@ -44,14 +44,17 @@ public class NameServerService {
     }
     
     /**
-     * 查询集群的name server
+     * 查询集群的broker
      * 
-     * @return Result<List<NameServer>>
+     * @return Result<List<Broker>>
      */
-    public Result<List<NameServer>> query(int cid) {
-        List<NameServer> result = null;
+    public Result<List<Broker>> query(int cid) {
+        List<Broker> result = null;
         try {
-            result = nameServerDao.selectByClusterId(cid);
+            result = brokerDao.selectByClusterId(cid);
+            if(result != null && result.size() == 0) {
+                result = null;
+            }
         } catch (Exception e) {
             logger.error("query cid:{} err", cid, e);
             return Result.getDBErrorResult(e);
@@ -64,17 +67,34 @@ public class NameServerService {
      * 
      * @return 返回Result
      */
-    public Result<?> delete(int cid, String addr) {
+    public Result<?> delete(int cid) {
         Integer result = null;
         try {
-            result = nameServerDao.delete(cid, addr);
+            result = brokerDao.delete(cid);
         } catch (Exception e) {
-            logger.error("delete err, cid:{}, addr:{}", cid, addr, e);
+            logger.error("delete err, cid:{}", cid, e);
             return Result.getDBErrorResult(e);
         }
         return Result.getResult(result);
     }
     
+    /**
+     * 刷新记录
+     * 
+     * @return 返回Result
+     */
+    public Result<?> refresh(int cid, List<String> addrList) {
+        try {
+            brokerDao.delete(cid);
+            for(String addr : addrList) {
+                brokerDao.insert(cid, addr);
+            }
+        } catch (Exception e) {
+            logger.error("refresh err, cid:{}", cid, e);
+            return Result.getDBErrorResult(e);
+        }
+        return Result.getOKResult();
+    }
     
     /**
      * 更新记录
@@ -85,7 +105,7 @@ public class NameServerService {
     public Result<?> update(int cid, String addr, CheckStatusEnum checkStatusEnum) {
         Integer result = null;
         try {
-            result = nameServerDao.update(cid, addr, checkStatusEnum.getStatus());
+            result = brokerDao.update(cid, addr, checkStatusEnum.getStatus());
         } catch (Exception e) {
             logger.error("update err, cid:{}, addr:{}", cid, addr, e);
             return Result.getDBErrorResult(e);

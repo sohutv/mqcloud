@@ -2,13 +2,15 @@ package com.sohu.tv.mq.cloud.bo;
 
 import java.util.Date;
 
+import com.sohu.tv.mq.cloud.util.DateUtil;
+
 /**
- * NameServer
+ * broker
  * 
  * @author yongfeigao
- * @date 2018年10月23日
+ * @date 2018年11月14日
  */
-public class NameServer {
+public class Broker {
     // cluster id
     private int cid;
     // ip:port
@@ -60,6 +62,20 @@ public class NameServer {
         this.checkTime = checkTime;
     }
 
+    public String getCreateTimeFormat() {
+        if(getCreateTime() == null) {
+            return null;
+        }
+        return DateUtil.getFormat(DateUtil.YMD_DASH_BLANK_HMS_COLON).format(getCreateTime());
+    }
+    
+    public String getCheckTimeFormat() {
+        if(getCheckTime() == null) {
+            return "";
+        }
+        return DateUtil.getFormat(DateUtil.YMD_DASH_BLANK_HMS_COLON).format(getCheckTime());
+    }
+    
     public String getCheckStatusDesc() {
         CheckStatusEnum checkStatusEnum = CheckStatusEnum.getCheckStatusEnumByStatus(getCheckStatus());
         if (CheckStatusEnum.FAIL == checkStatusEnum) {

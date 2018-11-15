@@ -510,6 +510,8 @@ CREATE TABLE `name_server` (
   `cid` int(11) NOT NULL COMMENT '集群id',
   `addr` varchar(255) NOT NULL COMMENT 'name server 地址',
   `create_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `check_status` tinyint(4) DEFAULT 0 COMMENT '检测结果:0:未知,1:正常,2:异常',
+  `check_time` datetime COMMENT '检测时间',
   UNIQUE KEY `cid` (`cid`,`addr`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='name server表';
 
@@ -582,3 +584,16 @@ CREATE TABLE `server_warn_config` (
   `io_usage_rate` int(4) NOT NULL DEFAULT '0' COMMENT '磁盘使用率',
   UNIQUE KEY `ip` (`ip`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='服务器预警配置表';
+
+-- ----------------------------
+-- Table structure for `broker`
+-- ----------------------------
+DROP TABLE IF EXISTS `broker`;
+CREATE TABLE `broker` (
+  `cid` int(11) NOT NULL COMMENT '集群id',
+  `addr` varchar(255) NOT NULL COMMENT 'broker 地址',
+  `create_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `check_status` tinyint(4) DEFAULT 0 COMMENT '检测结果:0:未知,1:正常,2:异常',
+  `check_time` datetime COMMENT '检测时间',
+  UNIQUE KEY `cid` (`cid`,`addr`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='broker表';

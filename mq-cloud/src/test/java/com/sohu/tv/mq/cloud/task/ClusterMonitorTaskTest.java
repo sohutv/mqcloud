@@ -27,7 +27,7 @@ public class ClusterMonitorTaskTest {
         }
     }
 
-    //@Test
+    @Test
     public void testBrokerMonitorStatus() {
         for (int i = 0; i < 1; i++) {
             monitorServiceTask.brokerMonitor();
