@@ -31,20 +31,12 @@ public class AlarmConfigTask {
     @Scheduled(cron = "3 */10 * * * *")
     public void refreshAlarmConfig() {
         long start = System.currentTimeMillis();
-        // 获取默认配置
-        Result<List<AlarmConfig>> defaultConfig = alarmConfigService.queryByUid(0);
-        if (defaultConfig.isEmpty()) {
-            logger.error("get default alarm config err:{}", defaultConfig);
-            return;
-        }
-        alarmConfigBridingService.setDefaultConfig(defaultConfig.getResult().get(0));
-        // 获取用户配置
-        Result<List<AlarmConfig>> userAlarmConfigResult = alarmConfigService.queryUserAlarmConfig();
+        Result<List<AlarmConfig>> userAlarmConfigResult = alarmConfigService.queryAll();
         if (userAlarmConfigResult.isNotOK()) {
-            logger.error("get user alarm config err:{}", userAlarmConfigResult);
+            logger.error("refresh user alarm config err:{}", userAlarmConfigResult);
             return;
         }
-        alarmConfigBridingService.setUserConfigTable(userAlarmConfigResult.getResult());
+        alarmConfigBridingService.setConfigTable(userAlarmConfigResult.getResult());
         logger.info("refresh alarm config use: {}ms", (System.currentTimeMillis() - start));
     }
 }

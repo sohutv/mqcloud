@@ -27,7 +27,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import com.sohu.tv.mq.cloud.bo.AlarmConfig;
 import com.sohu.tv.mq.cloud.bo.ConsumerBlock;
 import com.sohu.tv.mq.cloud.bo.ConsumerStat;
 import com.sohu.tv.mq.cloud.bo.Topic;
@@ -82,10 +81,16 @@ public class SohuMonitorListener implements MonitorListener {
 
 	@Override
 	public void reportUndoneMsgs(UndoneMsgs undoneMsgs) {
-        if (undoneMsgs.getUndoneMsgsTotal() < 100) {
-            return;
-        }
         String topic = undoneMsgs.getTopic();
+        // 忽略topic
+        if(mqCloudConfigHelper.getIgnoreTopic() != null) {
+            String[] topics = mqCloudConfigHelper.getIgnoreTopic().split(",");
+            for (int i = 0; i < topics.length; i++) {
+                if (topic.equals(topics[i])) {
+                    return;
+                }
+            }
+        }
         try {
             //保存堆积消息的consumer的状态
             consumerStatDao.saveConsumerStat(undoneMsgs.getConsumerGroup(), topic, 
@@ -95,84 +100,37 @@ public class SohuMonitorListener implements MonitorListener {
         } catch (Exception e) {
             log.error("save {}",undoneMsgs ,e);
         }
-        Set<Long> userID = getUserID(topic, undoneMsgs.getConsumerGroup());
-        veriftAccumulateAlarm(userID,undoneMsgs);     
+        veriftAccumulateAlarm(undoneMsgs);     
 	}
 	
 	/**
 	 * 校验是否发送报警邮件
 	 * @param topic
-	 * @param userID
 	 * @param undoneMsgs
 	 */
-    private void veriftAccumulateAlarm(Set<Long> userID, UndoneMsgs undoneMsgs) {
-        // 判断用户的报警配置
-        AlarmConfig alarmConfig = null;
-        String[] iTopic = null;
-        boolean flag = false;
-        if (userID.size() > 0) {
-            for (long uid : userID) {
-                alarmConfig = alarmConfigBridingService.getAlarmConfig(uid, undoneMsgs.getTopic());
-                if (null == alarmConfig || !alarmConfig.isAlert()) {
-                    userID.remove(uid);
-                    continue;
-                }
-                iTopic = alarmConfig.getIgnoreTopic().split(",");
-                if (iTopic.length > 0) {
-                    for (int i = 0; i < iTopic.length; i++) {
-                        if (undoneMsgs.getTopic().equals(iTopic[i])) {
-                            userID.remove(uid);
-                            break;
-                        }
-                    }
-                }
-                // 发送报警
-                if (undoneMsgs.getUndoneMsgsDelayTimeMills() > alarmConfig.getAccumulateTime()
-                        && undoneMsgs.getUndoneMsgsTotal() > alarmConfig.getAccumulateCount()) {
-                    flag = true;
-                }
-            }
-            // 排除用户报警后，若待报警的用户为空，则不报警
-            if (userID.size() == 0) {
-                return;
-            }
-        } else {
-            alarmConfig = alarmConfigBridingService.getDefaultConfig();
-            if (null == alarmConfig) {
-                alertService.sendMail("数据库异常", "获取warn_config表中的默认报警配置失败！");
-                return;
-            }
-            if (!alarmConfig.isAlert()) {
-                return;
-            }
-            iTopic = alarmConfig.getIgnoreTopic().split(",");
-            if (iTopic.length > 0) {
-                for (int i = 0; i < iTopic.length; i++) {
-                    if (undoneMsgs.getTopic().equals(iTopic[i])) {
-                        return;
-                    }
-                }
-            }
-            // 发送报警
-            if (undoneMsgs.getUndoneMsgsDelayTimeMills() > alarmConfig.getAccumulateTime()
-                    && undoneMsgs.getUndoneMsgsTotal() > alarmConfig.getAccumulateCount()) {
-                flag = true;
-            }
+    private void veriftAccumulateAlarm(UndoneMsgs undoneMsgs) {
+        long accumulateTime = alarmConfigBridingService.getAccumulateTime(undoneMsgs.getConsumerGroup());
+        long accumulateCount = alarmConfigBridingService.getAccumulateCount(undoneMsgs.getConsumerGroup());
+        if (accumulateTime < 0 && accumulateCount < 0) {
+            return;
         }
-        if (flag) {
-            accumulateWarn(undoneMsgs, userID);
+        // 发送报警
+        if (undoneMsgs.getUndoneMsgsDelayTimeMills() > accumulateTime
+                && undoneMsgs.getUndoneMsgsTotal() > accumulateCount) {
+            accumulateWarn(undoneMsgs);
         }
     }
+    
 	/**
 	 * 堆积报警
 	 * @param undoneMsgs
 	 */
-	public void accumulateWarn(UndoneMsgs undoneMsgs, Set<Long> userID) {
+	public void accumulateWarn(UndoneMsgs undoneMsgs) {
 	    // 验证报警频率
         if (!alarmConfigBridingService.needWarn("accumulate", undoneMsgs.getTopic(), undoneMsgs.getConsumerGroup())) {
             return;
         }
-	    TopicExt topicExt = getUserEmail(undoneMsgs.getTopic(), userID);
+	    TopicExt topicExt = getUserEmail(undoneMsgs.getTopic(), undoneMsgs.getConsumerGroup());
 	    if(topicExt == null) {
 	        return;
 	    }
@@ -186,7 +144,7 @@ public class SohuMonitorListener implements MonitorListener {
 	 * @param userID
 	 * @return
 	 */
-	private TopicExt getUserEmail(String topic, Set<Long> userID) {
+	private TopicExt getUserEmail(String topic, String consumerGroup) {
 	    // 获取topic
         Result<Topic> topicResult = topicService.queryTopic(topic);
         if(topicResult.isNotOK()) {
@@ -194,6 +152,8 @@ public class SohuMonitorListener implements MonitorListener {
         }
         TopicExt topicExt = new TopicExt();
         topicExt.setTopic(topicResult.getResult());
+        // 获取用户
+        Set<Long> userID = getUserID(topicResult.getResult().getId(), consumerGroup);
         String receiver = null;
         // 获取用户id
         if(!userID.isEmpty()) {
@@ -221,13 +181,7 @@ public class SohuMonitorListener implements MonitorListener {
      * @param consuemrGroup
      * @return
      */
-    private Set<Long> getUserID(String topic, String consuemrGroup) {
-        // 获取topic
-        Result<Topic> topicResult = topicService.queryTopic(topic);
-        if(topicResult.isNotOK()) {
-            return null;
-        }
-        long tid = topicResult.getResult().getId();
+    private Set<Long> getUserID(long tid, String consuemrGroup) {
         // 获取用户id
         Set<Long> uidList = new HashSet<Long>();
         Result<List<UserConsumer>> udListResult = userConsumerService.queryByNameAndTid(tid, consuemrGroup);
@@ -297,13 +251,13 @@ public class SohuMonitorListener implements MonitorListener {
      */
     public void offsetMoveWarn(DeleteMsgsEvent deleteMsgsEvent) {
         OffsetMovedEvent event = deleteMsgsEvent.getOffsetMovedEvent();
-        Set<Long> userID = getUserID(event.getMessageQueue().getTopic(), event.getConsumerGroup());
-        TopicExt topicExt = getUserEmail(event.getMessageQueue().getTopic(), userID);
+        TopicExt topicExt = getUserEmail(event.getMessageQueue().getTopic(), event.getConsumerGroup());
         if(topicExt == null) {
             return;
         }
         // 验证报警频率
-        if (!alarmConfigBridingService.needWarn("offsetMove", event.getConsumerGroup())) {
+        if (!alarmConfigBridingService.needWarn("offsetMove", event.getMessageQueue().getTopic(),
+                event.getConsumerGroup())) {
             return;
         }
         StringBuilder content = new StringBuilder("详细如下:<br><br>");
@@ -457,6 +411,27 @@ public class SohuMonitorListener implements MonitorListener {
                 continue;
             }
             List<ConsumerBlock> list = map.get(tc);
+            // 获取预警配置
+            long blockTime = alarmConfigBridingService.getBlockTime(tc.getConsumer());
+            if (blockTime < 0) {
+                continue;
+            }
+            // 验证报警频率
+            if (!alarmConfigBridingService.needWarn("clientBlock", tc.getTopic(), tc.getConsumer())) {
+                continue;
+            }
+            // 是否报警
+            Iterator<ConsumerBlock> iterator = list.iterator();
+            while(iterator.hasNext()) {
+                ConsumerBlock consumerBlock = iterator.next();
+                if(consumerBlock.getBlockTime() < blockTime) {
+                    iterator.remove();
+                }
+            }
+            if(list.size() <= 0) {
+                continue;
+            }
+            
             StringBuilder content = new StringBuilder("详细如下:<br><br>");
             content.append("topic: <b>");
             content.append(tc.getTopic());
@@ -473,114 +448,29 @@ public class SohuMonitorListener implements MonitorListener {
             content.append("</tr>");
             content.append("</thead>");
             content.append("<tbody>");
-            // 是否发送报警
-            boolean flag = false;
-            Set<Long> userID = getUserID(tc.getTopic(), tc.getConsumer());
-            if (userID.isEmpty()) {
-                AlarmConfig defaultConfig = alarmConfigBridingService.getDefaultConfig();
-                if (!defaultConfig.isAlert()) {
-                    continue;
-                }
-                connectBlockMessage(content, list, defaultConfig == null ? 10000 : defaultConfig.getBlockTime(),
-                        flag);
-            } else {
-                for (long uid : userID) {
-                    AlarmConfig alarmConfig = alarmConfigBridingService.getAlarmConfig(uid, tc.getTopic());
-                    if (!alarmConfig.isAlert()) {
-                        userID.remove(uid);
-                        continue;
-                    }
-                    long blockTime = alarmConfig == null ? 10000 : alarmConfig.getBlockTime();
-                    // 当前用户是否报警
-                    boolean isCon = false;
-                    for (ConsumerBlock cb : list) {
-                        if (blockTime > cb.getBlockTime()) {
-                            continue;
-                        }
-                        flag = true;
-                        isCon = true;
-                    }
-                    if (!isCon) {
-                        userID.remove(uid);
-                    }
-                }
-                connectBlockMessage(content, list);
+            for (ConsumerBlock cb : list) {
+                content.append("<tr>");
+                content.append("<td>");
+                content.append(cb.getInstance());
+                content.append("</td>");
+                content.append("<td>");
+                content.append(cb.getBroker());
+                content.append("</td>");
+                content.append("<td>");
+                content.append(cb.getQid());
+                content.append("</td>");
+                content.append("<td>");
+                content.append(cb.getBlockTime() / 1000f);
+                content.append("秒</td>");
+                content.append("</tr>");
             }
-            TopicExt topicExt = getUserEmail(tc.getTopic(), userID);
-            if (flag) {
-                // 验证报警频率
-                if (!alarmConfigBridingService.needWarn("clientBlock", tc.getTopic(), tc.getConsumer())) {
-                    continue;
-                }
-                alertService.sendWanMail(topicExt.getReceiver(), "客户端阻塞", content.toString());
-            }
-
+            content.append("</tbody>");
+            content.append("</table>");
+            TopicExt topicExt = getUserEmail(tc.getTopic(), tc.getConsumer());
+            alertService.sendWanMail(topicExt.getReceiver(), "客户端阻塞", content.toString());
         }
     }
 
-    /**
-     * 拼接报警信息
-     * 
-     * @param content
-     * @param list
-     * @param blockTime
-     * @param flag
-     */
-    private void connectBlockMessage(StringBuilder content, List<ConsumerBlock> list, long blockTime,
-            boolean flag) {
-        for (ConsumerBlock cb : list) {
-            if (blockTime > cb.getBlockTime()) {
-                continue;
-            }
-            flag = true;
-            content.append("<tr>");
-            content.append("<td>");
-            content.append(cb.getInstance());
-            content.append("</td>");
-            content.append("<td>");
-            content.append(cb.getBroker());
-            content.append("</td>");
-            content.append("<td>");
-            content.append(cb.getQid());
-            content.append("</td>");
-            content.append("<td>");
-            content.append(cb.getBlockTime() / 1000f);
-            content.append("秒</td>");
-            content.append("</tr>");
-        }
-        content.append("</tbody>");
-        content.append("</table>");
-    }
-
-    /**
-     * 拼接报警信息
-     * 
-     * @param content
-     * @param list
-     * @param blockTime
-     * @param flag
-     */
-    private void connectBlockMessage(StringBuilder content, List<ConsumerBlock> list) {
-        for (ConsumerBlock cb : list) {
-            content.append("<tr>");
-            content.append("<td>");
-            content.append(cb.getInstance());
-            content.append("</td>");
-            content.append("<td>");
-            content.append(cb.getBroker());
-            content.append("</td>");
-            content.append("<td>");
-            content.append(cb.getQid());
-            content.append("</td>");
-            content.append("<td>");
-            content.append(cb.getBlockTime() / 1000f);
-            content.append("秒</td>");
-            content.append("</tr>");
-        }
-        content.append("</tbody>");
-        content.append("</table>");
-    }
-    
 	@Override
 	public void endRound() {
 		long use = System.currentTimeMillis() - time;

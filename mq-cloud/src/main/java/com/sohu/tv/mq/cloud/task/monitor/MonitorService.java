@@ -228,6 +228,9 @@ public class MonitorService {
                     undoneMsgs.setConsumerGroup(consumerGroup);
                     undoneMsgs.setTopic(next.getKey());
                     this.computeUndoneMsgs(undoneMsgs, next.getValue());
+                    if(undoneMsgs.getUndoneMsgsTotal() <= 0 && undoneMsgs.getUndoneMsgsDelayTimeMills() <= 0) {
+                        continue;
+                    }
                     this.monitorListener.reportUndoneMsgs(undoneMsgs);
                 }
             }

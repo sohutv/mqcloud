@@ -29,8 +29,8 @@ public interface BrokerDao {
      * 
      * @param notice
      */
-    @Insert("insert into broker(cid,addr) values(#{cid},#{addr})")
-    public Integer insert(@Param("cid") int cid, @Param("addr") String addr);
+    @Insert("insert into broker(cid,addr,broker_name,broker_id) values(#{bk.cid},#{bk.addr},#{bk.brokerName},#{bk.brokerID})")
+    public Integer insert(@Param("bk") Broker broker);
     
     /**
      * 更新
@@ -43,8 +43,17 @@ public interface BrokerDao {
     /**
      * 删除
      * 
-     * @param notice
+     * @param cid
      */
     @Delete("delete from broker where cid=#{cid}")
     public Integer delete(@Param("cid") int cid);
+    
+    /**
+     * 删除
+     * 
+     * @param cid
+     * @param addr 
+     */
+    @Delete("delete from broker where addr=#{addr}")
+    public Integer deleteByAddr(@Param("addr") String addr);
 }

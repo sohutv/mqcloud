@@ -359,7 +359,7 @@ public class ConsumerController extends ViewController {
     
     
     /**
-     * 跳过堆积
+     * 消费者列表
      * @param topicParam
      * @return
      * @throws Exception
@@ -368,6 +368,19 @@ public class ConsumerController extends ViewController {
     @RequestMapping("/list")
     public Result<?> list(UserInfo userInfo, @RequestParam("tid") int tid) throws Exception {
         Result<List<Consumer>> consumerListResult = consumerService.queryByTid(tid);
+        return Result.getWebResult(consumerListResult);
+    }
+    
+    /**
+     * 消费者列表
+     * @param topicParam
+     * @return
+     * @throws Exception
+     */
+    @ResponseBody
+    @RequestMapping("/list/all")
+    public Result<?> listAll(UserInfo userInfo) throws Exception {
+        Result<List<Consumer>> consumerListResult = consumerService.queryAll();
         return Result.getWebResult(consumerListResult);
     }
     

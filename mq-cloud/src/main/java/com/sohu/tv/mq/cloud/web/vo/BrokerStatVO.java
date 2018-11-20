@@ -1,6 +1,7 @@
 package com.sohu.tv.mq.cloud.web.vo;
 
 import java.util.Map;
+import com.sohu.tv.mq.cloud.bo.CheckStatusEnum;
 
 /**
  * broker状态
@@ -17,15 +18,13 @@ public class BrokerStatVO {
     private String inTps;
     // 消息量
     private String outTps;
-    // 启动时间
-    private String bootTime;
+    // 监控结果 正常-异常
+    private int checkStatus;
+    // 监控时间
+    private String checkTime;
+    
     private Map<String, String> info;
-    public String getBootTime() {
-        return bootTime;
-    }
-    public void setBootTime(String bootTime) {
-        this.bootTime = bootTime;
-    }
+    
     public Map<String, String> getInfo() {
         return info;
     }
@@ -55,5 +54,20 @@ public class BrokerStatVO {
     }
     public void setOutTps(String outTps) {
         this.outTps = outTps;
+    }
+    public int getCheckStatus() {
+        return checkStatus;
+    }
+    public void setCheckStatus(int checkStatus) {
+        this.checkStatus = checkStatus;
+    }
+    public String getCheckTime() {
+        return checkTime;
+    }
+    public void setCheckTime(String checkTime) {
+        this.checkTime = checkTime;
+    }
+    public String getCheckStatusDesc() {
+        return CheckStatusEnum.getCheckStatusEnumByStatus(getCheckStatus()).getDesc();
     }
 }

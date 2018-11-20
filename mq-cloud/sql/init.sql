@@ -489,13 +489,10 @@ CREATE TABLE `user_producer` (
 DROP TABLE IF EXISTS `warn_config`;
 CREATE TABLE `warn_config` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `uid` int(11) DEFAULT '0' COMMENT '用户id，为空时代表默认所有（仅一条默认记录）',
-  `topic` varchar(64) DEFAULT '' COMMENT 'topic名，为空时代表默认所有（仅一条默认记录）',
   `accumulate_time` int(11) DEFAULT '300000' COMMENT '堆积时间',
   `accumulate_count` int(11) DEFAULT '10000' COMMENT '堆积数量',
   `block_time` int(11) DEFAULT '10000' COMMENT '堵塞时间',
   `consumer_fail_count` int(11) DEFAULT '10' COMMENT '消费失败数量',
-  `ignore_topic` varchar(500) DEFAULT '' COMMENT '堆积报警忽略的topic名，逗号分隔',
   `warn_unit_time` int(4) DEFAULT '1' COMMENT '报警频率的单位时间，单位小时',
   `warn_unit_count` int(4) DEFAULT '2' COMMENT '报警频率在单位时间的次数',
   `ignore_warn` int(4) DEFAULT '0' COMMENT '0:接收所有报警,1:不接收所有报警，此字段优先级最高',
@@ -535,7 +532,7 @@ INSERT INTO `common_config` VALUES ('12', 'operatorContact', '[{\"name\":\"admin
 -- ----------------------------
 -- warn_config init
 -- ----------------------------
-INSERT INTO `warn_config` VALUES ('1', '0', '', '300000', '10000', '10000', '10', '', '1', '2', '0');
+INSERT INTO `warn_config`(accumulate_time,accumulate_count,block_time,consumer_fail_count,warn_unit_time,warn_unit_count,ignore_warn) VALUES (300000, 10000, 10000, 10, 1, 1, 0);
 
 -- ----------------------------
 -- notice init
@@ -595,5 +592,14 @@ CREATE TABLE `broker` (
   `create_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `check_status` tinyint(4) DEFAULT 0 COMMENT '检测结果:0:未知,1:正常,2:异常',
   `check_time` datetime COMMENT '检测时间',
+  `broker_name` varchar(64) NOT NULL COMMENT 'broker名字',
+  `broker_id` int(4) NOT NULL COMMENT 'broker ID，0-master，1-slave',
   UNIQUE KEY `cid` (`cid`,`addr`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='broker表';
+-- update for warn_config 
+-- ----------------------------
+alter table `warn_config` add column `consumer` varchar(64) DEFAULT '' COMMENT 'consumer名，为空时代表默认（仅一条默认记录）';
+alter table `warn_config` add unique key (`consumer`);
+alter table `warn_config` drop column `id`;
+
+alter table `need_warn_config` modify column `oKey` varchar(255);

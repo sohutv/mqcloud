@@ -1,10 +1,88 @@
 <div class="main">
-	<form class="form-inline" role="form">
-		<div class="form-group">
-			<label> 监控列表: </label>
-		</div>
-	</form>
-	<hr/>
+	<div style="vertical-align: middle;margin-bottom:10px;">
+	  <span><b>全局阈值:</b></span>
+	</div>
+	<table class="table table-striped table-hover">
+		<thead>
+			<tr class="text-center ">
+				<td>堆积时间</td>
+				<td>堆积数量</td>
+				<td>堵塞时间</td>
+				<td>消费失败数量</td>
+				<td>报警频率限制</td>
+				<td>是否接收报警</td>
+				<td>操作</td>
+			</tr>
+		</thead>
+		<tbody>
+            <#if !response.OK || !response.result.defaultConfig??>
+			     <tr>
+                    <td colspan="8"class="text-center" >
+                    	暂无数据
+                    </td>
+                <tr>
+			<#else>
+			    <#assign defaultConfig = response.result.defaultConfig>
+				<tr class="text-center ">
+					<td>${defaultConfig.accumulateTimeShow}</td>
+					<td>${defaultConfig.accumulateCountShow}</td>
+					<td>${defaultConfig.blockTimeShow}</td>
+					<td>${defaultConfig.consumerFailCountShow}</td>
+					<td>${defaultConfig.spliceWarnFrequency()}</td>
+					<td>${(defaultConfig.ignoreWarn==0)?string('是','否')}</td>
+					<td><button type="button" onclick="updateAlarmConfig('${defaultConfig.consumer}',false)" class="btn btn-success"><span class="glyphicon glyphicon-edit" aria-hidden="true"></span></button></td>
+				</tr>
+			</#if>
+		</tbody>
+	</table>
+	<div style="vertical-align: middle;margin-bottom:10px;">
+	  <span><b>自定义阈值:</b></span>
+	  <button type="button" onclick="addAlarmConfig()" class="btn btn-success"><span class="glyphicon glyphicon-plus" aria-hidden="true">配置</span></button>
+	</div>
+	<table class="table table-striped table-hover">
+		<thead>
+			<tr class="text-center ">
+				<td>序号</td>
+				<td>消费者</td>
+				<td>堆积时间</td>
+				<td>堆积数量</td>
+				<td>堵塞时间</td>
+				<td>消费失败数量</td>
+				<td>报警频率限制</td>
+				<td>是否接收报警</td>
+				<td>操作</td>
+			</tr>
+		</thead>
+		<tbody>
+            <#if !response.OK || !response.result.alarmConfig??>
+			     <tr>
+                    <td colspan="9"class="text-center" >
+                    	暂无数据
+                    </td>
+                <tr>
+			<#else>
+			    <#list response.result.alarmConfig as alarmConfig>
+					<tr class="text-center ">
+						<td>${alarmConfig_index+1}</td>
+						<td>${alarmConfig.consumer}</td>
+						<td>${alarmConfig.accumulateTimeShow}</td>
+						<td>${alarmConfig.accumulateCountShow}</td>
+						<td>${alarmConfig.blockTimeShow}</td>
+						<td>${alarmConfig.consumerFailCountShow}</td>
+						<td>${alarmConfig.spliceWarnFrequency()}</td>
+						<td>${(alarmConfig.ignoreWarn==0)?string('是','否')}</td>
+						<td>
+							<button type="button" onclick="updateAlarmConfig('${alarmConfig.consumer}',true)" class="btn btn-success"><span class="glyphicon glyphicon-edit" aria-hidden="true"></span></button>
+						 	<button type="button" onclick="deleteAlarmConfig('${alarmConfig.consumer}')" class="btn btn-warning"><span class="glyphicon glyphicon-trash" aria-hidden="true"></span></button>
+						</td>
+					</tr>		    		
+				</#list>
+			</#if>
+		</tbody>
+	</table>
+	<div style="vertical-align: middle;margin-bottom:10px;">
+	  <span><b>监控列表:</b></span>
+	</div>
 	<table class="table table-striped table-hover" style="margin-top: 0px;word-break:break-all; word-wrap:break-all;">
     	<thead>  
 			<colgroup>
@@ -29,14 +107,14 @@
             </tr>  
           </thead>  
           <tbody>
-             <#if response.empty>
+             <#if !response.OK || !response.result.consumerStat??>
 			     <tr>
                     <td colspan="8"class="text-center" >
                     	暂无数据
                     </td>
                 <tr>
 			<#else>
-				<#list response.result as consumerStat>
+				<#list response.result.consumerStat as consumerStat>
 				<tr>
 					<td>${consumerStat.consumerGroup}</td>
 					<td><a href="${request.contextPath}/user/topic/${consumerStat.tid}/detail?tab=consume">${consumerStat.topic!}</a></td>
@@ -111,3 +189,244 @@
             </tbody>
       </table>
 </div>
+<!-- 修改配置报警阈值 -->
+<div id="updateAlarmThresholdModal" class="modal fade" tabindex="-1" data-width="400">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+				<h4 class="modal-title">报警阈值配置</h4>
+			</div>
+			<form class="form-horizontal form-bordered form-row-stripped" id="updateAlarmThresholdForm">
+				<div class="modal-body">
+					<div class="row">
+						<div class="col-md-12">
+							<div class="form-body">
+								<div class="form-group" id="consumerInputID">
+									<label class="control-label col-md-4"> 消费者: </label>
+							        <div class="col-md-5">
+										<select id="consumerSearchSelect" class="selectpicker" title="请选择" data-live-search-placeholder="搜索" name="consumer" data-live-search="true"></select>
+									</div>
+								</div>
+								<div class="form-group">
+									<label class="control-label col-md-4"> 接收报警: </label>
+									<div class="col-md-5 checkbox">
+									    <input type="radio" name="ignoreWarn" value="0">
+									    	是
+									    <input type="radio" name="ignoreWarn" value="1">
+									    	<span data-toggle="modal" title="此选项优先级较高，会使下面配置失效，请谨慎使用">否</span>
+									</div>
+								</div>
+								<div class="form-group" id="accumulateTimeID">
+									<label class="control-label col-md-4"> 堆积: </label>
+							        <div class="col-md-5">
+							        	<div class="input-group">
+											<input type="text" id="accumulateTimeInput" name="accumulateTime" 
+											 data-toggle="modal" title="堆积时间 ，建议 300000毫秒" class="form-control" />
+											<span class="input-group-addon">毫秒</span>
+	    								</div>
+									</div>
+								</div>
+								<div class="form-group" id="accumulateCountID">
+										<label class="control-label col-md-4"> </label>
+							        <div class="col-md-5">
+							        	<div class="input-group">
+											<input type="text" id="accumulateCountInput" name="accumulateCount"
+											data-toggle="modal" title="堆积数量，建议 10000条" class="form-control" />
+											<span class="input-group-addon">条</span>
+	    								</div>
+									</div>
+								</div>
+								<div class="form-group" id="blockTimeID">
+									<label class="control-label col-md-4"> 堵塞: </label>
+									<div class="col-md-5">
+										<div class="input-group">
+											<input type="text" id="blockTimeInput" name="blockTime" 
+											data-toggle="modal" title="堵塞时间，建议 10000毫秒" class="form-control" />
+											<span class="input-group-addon">毫秒</span>
+	    								</div>
+									</div>
+								</div>
+								<div class="form-group" id="consumerFailCountrID">
+									<label class="control-label col-md-4"> 消费失败: </label>
+									<div class="col-md-5">
+										<div class="input-group">
+											<input type="text" id="consumerFailCountrInput" name="consumerFailCount" 
+											data-toggle="modal" title="消费失败数量，建议 10 条" class="form-control" />
+											<span class="input-group-addon">条</span>
+	    								</div>	
+									</div>
+								</div>
+								<div class="form-group" id="warnFrequencyID">
+									<label class="control-label col-md-4"> 报警频率限制: </label>
+									<div class="col-md-5">
+										<div class="input-group">
+											<input type="text" id="warnUnitTimeInput" 
+											name="warnUnitTime" class="form-control" />
+											<span class="input-group-addon">小时</span>
+											
+											<input type="text" id="warnUnitCountInput" 
+											name="warnUnitCount" class="form-control" />
+											<span class="input-group-addon">次数</span>
+	    								</div>
+									</div>
+								</div>
+								<input type="hidden" id="isAddAlarmRecord" />
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" data-dismiss="modal" class="btn" >取消</button>
+					<button type="button" class="btn btn-primary" onclick="submitUpdateAlarmThreshold()" id="updateAlarmThresholdBtn">确定</button>
+				</div>
+			</form>
+		</div>
+	</div>
+</div>
+<!-- 删除提示 -->
+<div class="modal fade" id="deleteAlarmModal" aria-hidden="true">  
+  <div class="modal-dialog">  
+    <div class="modal-content message_align">  
+      <div class="modal-header">  
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">×</span></button>  
+        <h4 class="modal-title">确定要删除报警配置吗？</h4>  
+      </div>  
+		<form class="form-horizontal form-bordered form-row-stripped">
+			<div class="modal-body">
+				<div class="row">
+					<!-- 控件开始 -->
+					<div class="col-md-12">
+						<!-- form-body开始 -->
+						<div class="form-body">
+							<div class="form-group">
+								<label class="control-label col-md-3"> 消费者: </label>
+								<div class="col-md-5">
+									<input type="text" id="currentDeleteConsumer" class="form-control" readonly="readonly"/>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" data-dismiss="modal" class="btn" >取消</button>
+				<button type="button" id="deleteAlarmBtn" onclick="submitDeleteAlarm()" class="btn btn-primary">确定</button>
+			</div>
+		
+		</form>
+    </div>
+  </div>
+</div>
+<script>
+$(function () {
+//初始化consumer列表
+$.get('${request.contextPath}/consumer/list/all',
+        function(data){
+            if(data.status == 200){
+            	var content = "";
+            	for(var i in data.result){
+            		var consumer = data.result[i];
+            		content += "<option value='"+consumer.name+"'>"+consumer.name+"</option>";
+            	}
+        		$("#consumerSearchSelect").html(content);
+        		$("#consumerSearchSelect").selectpicker('refresh');
+		    }else{
+		    	toastr.error("数据获取失败！"+data.message);  
+		    }
+    }, 'json');
+});
+// 提交更新或添加请求
+function submitUpdateAlarmThreshold(){
+		if($("#isAddAlarmRecord").val() == 0){
+			if(!$("#consumerSearchSelect").val()){
+				alert("请选择消费者");
+				return;
+			}
+		}
+		if((!$("#warnUnitTimeInput").val() && $("#warnUnitCountInput").val())
+				|| ($("#warnUnitTimeInput").val() && !$("#warnUnitCountInput").val())){
+			alert("报警频率限制中，有一项未填写");
+			return;
+		}
+		if($("#warnUnitTimeInput").val() && $("#warnUnitCountInput").val()){
+			if($("#warnUnitTimeInput").val() <= 0 || $("#warnUnitCountInput").val() <= 0){
+				alert("报警频率限制中，两个选项均要大于0");
+				return;
+			}
+		}
+		disable("updateAlarmThresholdBtn");
+		$.post('${request.contextPath}/admin/alarm/config/add/',
+				$("#updateAlarmThresholdForm").serialize(),
+		        function(data){
+		            if(data.status == 200){
+						toastr.success("操作成功，即将刷新页面");  
+						reload(2000); 
+				    }else{
+				    	toastr.error("操作失败！"+data.message);  
+			            enable("updateAlarmThresholdBtn");
+				    }
+		        }, 'json');
+}
+//修改报警配置
+function updateAlarmConfig(consumer,flag){
+	$.get('${request.contextPath}/admin/alarm/config/detail',
+			{
+				consumer:consumer
+			},
+	        function(data){
+	            if(data.status == 200){
+	            	$("#isAddAlarmRecord").val(1);
+	            	$("input[name='ignoreWarn'][value='"+data.result.ignoreWarn+"']").prop("checked",true);
+	            	$("#accumulateTimeInput").val(data.result.accumulateTime == null ? '':data.result.accumulateTime);
+	            	$("#accumulateCountInput").val(data.result.accumulateCount == null ? '':data.result.accumulateCount);
+	            	$("#blockTimeInput").val(data.result.blockTime == null ? '':data.result.blockTime);
+	            	$("#warnUnitCountInput").val(data.result.warnUnitCount == null ? '':data.result.warnUnitCount);
+	            	$("#warnUnitTimeInput").val(data.result.warnUnitTime == null ? '':data.result.warnUnitTime);
+	            	$("#consumerFailCountrInput").val(data.result.consumerFailCount == null ? '':data.result.consumerFailCount);
+	            	//区分配置和默认配置
+	            	if(flag){
+		            	$("#consumerSearchSelect").val(data.result.consumer).trigger('change');
+	            		$("#consumerInputID").removeClass("hide");
+	            	}else{//默认
+	            		$("#consumerInputID").addClass("hide");
+		            	$("#consumerSearchSelect").selectpicker('refresh');
+	            	}
+			    }else{
+			    	toastr.error("数据获取失败！"+data.message);  
+			    }
+        }, 'json');
+	$("#updateAlarmThresholdModal").modal('show');
+}
+//删除报警配置
+function deleteAlarmConfig(consumer){
+	$("#currentDeleteConsumer").val(consumer);
+	$("#deleteAlarmModal").modal('show');
+}
+//提交删除请求
+function submitDeleteAlarm(){
+	disable("deleteAlarmBtn");
+	$.post('${request.contextPath}/admin/alarm/config/delete',
+			{
+				consumer : $("#currentDeleteConsumer").val()
+			},
+	        function(data){
+	            if(data.status == 200){
+	            	toastr.success("操作成功，即将刷新页面");  
+					reload(3000);    	
+			    }else{
+			    	toastr.error("数据获取失败！"+data.message);  
+	            	enable("deleteAlarmBtn");
+			    }
+        }, 'json');
+}
+//添加报警
+function addAlarmConfig(){
+	$("#isAddAlarmRecord").val(0);//判断当前是添加还是修改，0添加，1修改
+	$("#consumerInputID").removeClass("hide");
+	$("#updateAlarmThresholdForm")[0].reset();
+	$("#consumerSearchSelect").selectpicker('refresh');
+	$("input[name='ignoreWarn'][value=0]").prop("checked",true);
+	$("#updateAlarmThresholdModal").modal('show');
+}
+</script>

@@ -16,6 +16,11 @@ public class Broker {
     // ip:port
     private String addr;
 
+    // broker id
+    private int brokerID;
+    // broker name
+    private String brokerName;
+    
     private Date createTime;
     // 检测状态
     private int checkStatus;
@@ -36,6 +41,22 @@ public class Broker {
 
     public void setAddr(String addr) {
         this.addr = addr;
+    }
+
+    public int getBrokerID() {
+        return brokerID;
+    }
+
+    public void setBrokerID(int brokerID) {
+        this.brokerID = brokerID;
+    }
+
+    public String getBrokerName() {
+        return brokerName;
+    }
+
+    public void setBrokerName(String brokerName) {
+        this.brokerName = brokerName;
     }
 
     public Date getCreateTime() {
@@ -76,11 +97,9 @@ public class Broker {
         return DateUtil.getFormat(DateUtil.YMD_DASH_BLANK_HMS_COLON).format(getCheckTime());
     }
     
-    public String getCheckStatusDesc() {
-        CheckStatusEnum checkStatusEnum = CheckStatusEnum.getCheckStatusEnumByStatus(getCheckStatus());
-        if (CheckStatusEnum.FAIL == checkStatusEnum) {
-            return "<font style='font-weight:bold' color='red'>" + checkStatusEnum.getDesc() + "</font>";
-        }
-        return checkStatusEnum.getDesc();
+    @Override
+    public String toString() {
+        return "Broker [cid=" + cid + ", addr=" + addr + ", brokerID=" + brokerID + ", brokerName=" + brokerName
+                + " createTime=" + createTime + ", checkStatus=" + checkStatus + ", checkTime=" + checkTime + "]";
     }
 }

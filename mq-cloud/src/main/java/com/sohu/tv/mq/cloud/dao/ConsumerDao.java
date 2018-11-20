@@ -40,6 +40,13 @@ public interface ConsumerDao {
      * 查询记录
      * @param consumer
      */
+    @Select("select * from consumer")
+    public List<Consumer> selectAll();
+    
+    /**
+     * 查询记录
+     * @param consumer
+     */
     @Select("select * from consumer where id = #{id}")
     public Consumer selectById(@Param("id") long id);
     

@@ -174,15 +174,15 @@ public class UserConsumerService {
      * @param userConsumer
      * @return
      */
-    public Result<User> queryUserByConsumer(long tid, long cid){
-        User user = null;
+    public Result<List<User>> queryUserByConsumer(long tid, long cid){
+        List<User> userList = null;
         try {
-            user = userConsumerDao.selectUserByConsumer(tid, cid);
+            userList = userConsumerDao.selectUserByConsumer(tid, cid);
         } catch (Exception e) {
             logger.error("user err, tid:{},cid:{}", tid, cid, e);
             return Result.getDBErrorResult(e);
         }
-        return Result.getResult(user);
+        return Result.getResult(userList);
     }
     
     /**

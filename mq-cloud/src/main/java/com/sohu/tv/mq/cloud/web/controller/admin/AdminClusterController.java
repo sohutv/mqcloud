@@ -1,5 +1,6 @@
 package com.sohu.tv.mq.cloud.web.controller.admin;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -21,17 +22,20 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
+import com.sohu.tv.mq.cloud.bo.Broker;
 import com.sohu.tv.mq.cloud.bo.Cluster;
 import com.sohu.tv.mq.cloud.bo.Topic;
 import com.sohu.tv.mq.cloud.mq.DefaultCallback;
 import com.sohu.tv.mq.cloud.mq.MQAdminCallback;
 import com.sohu.tv.mq.cloud.mq.MQAdminTemplate;
+import com.sohu.tv.mq.cloud.service.BrokerService;
 import com.sohu.tv.mq.cloud.service.ClusterService;
 import com.sohu.tv.mq.cloud.service.ConsumerService;
 import com.sohu.tv.mq.cloud.service.TopicService;
 import com.sohu.tv.mq.cloud.util.DateUtil;
 import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper;
 import com.sohu.tv.mq.cloud.util.Result;
+import com.sohu.tv.mq.cloud.util.Status;
 import com.sohu.tv.mq.cloud.web.controller.param.ClusterParam;
 import com.sohu.tv.mq.cloud.web.vo.BrokerStatVO;
 import com.sohu.tv.mq.cloud.web.vo.ClusterInfoVO;
@@ -63,75 +67,35 @@ public class AdminClusterController extends AdminViewController {
     @Autowired
     private MQCloudConfigHelper mqCloudConfigHelper;
     
+    @Autowired
+    private BrokerService brokerService;
+    
     @RequestMapping("/list")
-    public String list(@RequestParam(name="cid", required=false) Integer cid, Map<String, Object> map) {
+    public String list(@RequestParam(name = "cid", required = false) Integer cid, Map<String, Object> map) {
         setView(map, "list");
         Cluster mqCluster = getMQCluster(cid);
-        if(mqCluster == null) {
+        if (mqCluster == null) {
             return view();
         }
-        Map<String, Map<String, BrokerStatVO>> brokerGroup = mqAdminTemplate.execute(new MQAdminCallback<Map<String, Map<String, BrokerStatVO>>>() {
-            public Map<String, Map<String, BrokerStatVO>> callback(MQAdminExt mqAdmin) throws Exception {
-                Map<String, Map<String, BrokerStatVO>> brokerGroup = new TreeMap<String, Map<String, BrokerStatVO>>();
-                // 获取集群信息
-                ClusterInfo clusterInfo = mqAdmin.examineBrokerClusterInfo();
-                // 获得broker地址map
-                HashMap<String, BrokerData> brokerAddrTable = clusterInfo.getBrokerAddrTable();
-                for(String brokerName : brokerAddrTable.keySet()) {
-                    BrokerData brokerData = clusterInfo.getBrokerAddrTable().get(brokerName);
-                    if (brokerData == null) {
-                        continue;
-                    }
-                    
-                    Map<String, BrokerStatVO> brokerStatMap = brokerGroup.get(brokerName);
-                    if(brokerStatMap == null) {
-                        brokerStatMap = new TreeMap<String, BrokerStatVO>();
-                        brokerGroup.put(brokerName, brokerStatMap);
-                    }
-                    
-                    // 获取broker运行时信息
-                    HashMap<Long, String> brokerAddrs = brokerData.getBrokerAddrs();
-                    for(Long brokerId : brokerAddrs.keySet()) {
-                        String brokerAddr = brokerAddrs.get(brokerId);
-                        // 抓取统计指标
-                        KVTable kvTable = mqAdmin.fetchBrokerRuntimeStats(brokerAddr);
-                        HashMap<String, String> stats = kvTable.getTable();
-                        
-                        BrokerStatVO brokerStatVO = new BrokerStatVO();
-                        // 启动时间
-                        String bootTime = getFromMap(stats, "bootTimestamp");
-                        String boot = DateUtil.getFormat(DateUtil.YMD_BLANK_HMS_COLON).format(new Date(NumberUtils.toLong(bootTime)));
-                        brokerStatVO.setBootTime(boot);
-                        // 版本
-                        brokerStatVO.setVersion(getFromMap(stats, "brokerVersionDesc"));
-                        kvTable.getTable().remove("brokerVersion");
-                        // 地址
-                        brokerStatVO.setBrokerAddr(brokerAddr);
-                        // 流量
-                        brokerStatVO.setInTps(formatTraffic(getFromMap(stats, "putTps")));
-                        brokerStatVO.setOutTps(formatTraffic(getFromMap(stats, "getTransferedTps")));
-                        // 其余指标
-                        brokerStatVO.setInfo(new TreeMap<String, String>(stats));
-                        brokerStatMap.put(brokerId.toString(), brokerStatVO);
-                    }
-                }
-                return brokerGroup;
-            }
-            public Cluster mqCluster() {
-                return mqCluster;
-            }
-            public Map<String, Map<String, BrokerStatVO>> exception(Exception e) throws Exception {
-                logger.error("cluster:{} err", mqCluster(), e.getMessage());
-                return null;
-            }
-        });
+        Result<List<Broker>> brokerListResult = null;
+        // 从数据库查询当前集群的broker列表
+        brokerListResult = brokerService.query(mqCluster.getId());
+        // 数据库不存在broker列表时，从nameserver拉取
+        if (brokerListResult.isNotOK()) {
+            brokerListResult = getBrokerListFromNameServer(mqCluster);
+        }
+        Map<String, Map<String, BrokerStatVO>> brokerGroup = null;
+        if (brokerListResult.isOK()) {
+            List<Broker> brokerList = brokerListResult.getResult();
+            brokerGroup = getBrokerGroupTableByRocketApi(brokerList, mqCluster); 
+        }
         // 生成vo
         ClusterInfoVO clusterInfoVO = new ClusterInfoVO();
         // 发生异常
-        if(brokerGroup != null) {
+        if (brokerGroup != null) {
             clusterInfoVO.setHasNameServer(true);
         }
-        if(brokerGroup != null && brokerGroup.size() > 0) {
+        if (brokerGroup != null && brokerGroup.size() > 0) {
             clusterInfoVO.setBrokerGroup(brokerGroup);
         }
         clusterInfoVO.setMqCluster(clusterService.getAllMQCluster());
@@ -235,7 +199,7 @@ public class AdminClusterController extends AdminViewController {
      */
     @ResponseBody
     @RequestMapping(value = "/add", method = RequestMethod.POST)
-    public Result<?> initTopic(UserInfo userInfo, @Valid ClusterParam clusterParam, Map<String, Object> map)
+    public Result<?> addCluster(UserInfo userInfo, @Valid ClusterParam clusterParam, Map<String, Object> map)
             throws Exception {
         Cluster cluster = new Cluster();
         BeanUtils.copyProperties(clusterParam, cluster);
@@ -264,6 +228,125 @@ public class AdminClusterController extends AdminViewController {
             return String.format("%.2f", NumberUtils.toDouble(array[0]));
         }
         return "-";
+    }
+    
+    /**
+     * 从nameserver 拉取当前集群的broker地址
+     * 
+     * @param mqCluster
+     * @return
+     */
+    private Result<List<Broker>> getBrokerListFromNameServer(Cluster mqCluster) {
+        Result<List<Broker>> brokerListResult = mqAdminTemplate.execute(new MQAdminCallback<Result<List<Broker>>>() {
+            public Result<List<Broker>> callback(MQAdminExt mqAdmin) throws Exception {
+                // 获取集群信息
+                ClusterInfo clusterInfo = mqAdmin.examineBrokerClusterInfo();
+                // 获得broker地址map
+                HashMap<String, BrokerData> brokerAddrTable = clusterInfo.getBrokerAddrTable();
+                if (brokerAddrTable.isEmpty()) {
+                    return Result.getResult(Status.NO_RESULT);
+                }
+                List<Broker> list = new ArrayList<Broker>();
+                // 遍历集群中所有的broker
+                for (String brokerName : brokerAddrTable.keySet()) {
+                    HashMap<Long, String> brokerAddrs = brokerAddrTable.get(brokerName).getBrokerAddrs();
+                    for (Long brokerId : brokerAddrs.keySet()) {
+                        Broker broker = new Broker();
+                        broker.setAddr(brokerAddrs.get(brokerId));
+                        broker.setBrokerID(brokerId.intValue());
+                        broker.setBrokerName(brokerName);
+                        // 数据库没有该集群的broker列表，所有的状态设置为未知 0:未知,1:正常,2:异常
+                        broker.setCheckStatus(0);
+                        list.add(broker);
+                    }
+                }
+                return Result.getResult(list);
+            }
+
+            public Cluster mqCluster() {
+                return mqCluster;
+            }
+
+            public Result<List<Broker>> exception(Exception e) throws Exception {
+                logger.error("cluster:{} err", mqCluster(), e.getMessage());
+                return Result.getWebErrorResult(e);
+            }
+        });
+        return brokerListResult;
+    }
+    
+    /**
+     * list接口过长，拆分，获取brokerGroupMap
+     * 
+     * @param brokerList
+     * @param mqCluster
+     * @return
+     */
+    private Map<String, Map<String, BrokerStatVO>> getBrokerGroupTableByRocketApi(List<Broker> brokerList,
+            Cluster mqCluster) {
+        Map<String, Map<String, BrokerStatVO>> brokerGroup = mqAdminTemplate
+                .execute(new MQAdminCallback<Map<String, Map<String, BrokerStatVO>>>() {
+                    public Map<String, Map<String, BrokerStatVO>> callback(MQAdminExt mqAdmin) throws Exception {
+                        Map<String, Map<String, BrokerStatVO>> brokerGroup = new TreeMap<String, Map<String, BrokerStatVO>>();
+                        for (Broker broker : brokerList) {
+                            Map<String, BrokerStatVO> brokerStatMap = brokerGroup.get(broker.getBrokerName());
+                            if (brokerStatMap == null) {
+                                brokerStatMap = new TreeMap<String, BrokerStatVO>();
+                                brokerGroup.put(broker.getBrokerName(), brokerStatMap);
+                            }
+                            // 公共逻辑 拼接BrokerStatVO
+                            BrokerStatVO brokerStatVO = new BrokerStatVO();
+                            brokerStatVO.setBrokerAddr(broker.getAddr());
+                            brokerStatMap.put(String.valueOf(broker.getBrokerID()), brokerStatVO);
+                            // 监控结果
+                            brokerStatVO.setCheckStatus(broker.getCheckStatus());
+                            brokerStatVO.setCheckTime(broker.getCheckTimeFormat());
+                            // 当有broker down时，数据库中的broker 地址已过时，增加异常处理
+                            try {
+                                // 抓取统计指标
+                                KVTable kvTable = mqAdmin.fetchBrokerRuntimeStats(broker.getAddr());
+                                // 处理broker stats 数据
+                                handleBrokerStat(kvTable, brokerStatVO);
+                            } catch (Exception e) {
+                                logger.error("cluster:{} broker:{} err", mqCluster(), broker.getAddr(), e);
+                            }
+                        }
+                        return brokerGroup;
+                    }
+
+                    public Cluster mqCluster() {
+                        return mqCluster;
+                    }
+
+                    public Map<String, Map<String, BrokerStatVO>> exception(Exception e) throws Exception {
+                        logger.error("cluster:{} err", mqCluster(), e.getMessage());
+                        return null;
+                    }
+                });
+        return brokerGroup;
+    }
+    
+    /**
+     * 处理broker stat数据
+     * 
+     * @param brokerStatMap
+     * @param kvTable
+     * @param broker
+     */
+    private void handleBrokerStat(KVTable kvTable, BrokerStatVO brokerStatVO) {
+        HashMap<String, String> stats = kvTable.getTable();
+        // 启动时间 转换 
+        String bootTime = stats.get("bootTimestamp");
+        String boot = DateUtil.getFormat(DateUtil.YMD_BLANK_HMS_COLON).format(new Date(NumberUtils.toLong(bootTime)));
+        stats.put("bootTimestamp", boot);
+        // 版本
+        brokerStatVO.setVersion(getFromMap(stats, "brokerVersionDesc"));
+        kvTable.getTable().remove("brokerVersion");
+        // 流量
+        brokerStatVO.setInTps(formatTraffic(getFromMap(stats, "putTps")));
+        brokerStatVO.setOutTps(formatTraffic(getFromMap(stats, "getTransferedTps")));
+        // 其余指标
+        brokerStatVO.setInfo(new TreeMap<String, String>(stats));
     }
     
     @Override

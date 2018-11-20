@@ -68,6 +68,14 @@ public class BrokerParam {
         }
         return false;
     }
+    
+    public int getBrokerRoleID() {
+        if(SLAVE.equals(getBrokerRole())) {
+            return 1;
+        }
+        return 0;
+    }
+    
     public String getBrokerName() {
         return brokerName;
     }

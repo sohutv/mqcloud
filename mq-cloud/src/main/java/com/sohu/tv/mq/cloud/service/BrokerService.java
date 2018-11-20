@@ -28,16 +28,15 @@ public class BrokerService {
     
     /**
      * 保存记录
-     * @param cid
-     * @param addr
+     * @param broker
      * @return
      */
-    public Result<?> save(int cid, String addr) {
+    public Result<?> save(Broker broker) {
         Integer result = null;
         try {
-            result = brokerDao.insert(cid, addr);
+            result = brokerDao.insert(broker);
         } catch (Exception e) {
-            logger.error("insert err, cid:{}, addr:{}", cid, addr, e);
+            logger.error("insert err, broker:{}", broker, e);
             return Result.getDBErrorResult(e);
         }
         return Result.getResult(result);
@@ -79,15 +78,31 @@ public class BrokerService {
     }
     
     /**
+     * 删除记录
+     * 
+     * @return 返回Result
+     */
+    public Result<?> delete(String addr) {
+        Integer result = null;
+        try {
+            result = brokerDao.deleteByAddr(addr);
+        } catch (Exception e) {
+            logger.error("delete err, addr:{}", addr, e);
+            return Result.getDBErrorResult(e);
+        }
+        return Result.getResult(result);
+    }
+
+    /**
      * 刷新记录
      * 
      * @return 返回Result
      */
-    public Result<?> refresh(int cid, List<String> addrList) {
+    public Result<?> refresh(int cid, List<Broker> brokerList) {
         try {
             brokerDao.delete(cid);
-            for(String addr : addrList) {
-                brokerDao.insert(cid, addr);
+            for (Broker broker : brokerList) {
+                brokerDao.insert(broker);
             }
         } catch (Exception e) {
             logger.error("refresh err, cid:{}", cid, e);

@@ -151,6 +151,22 @@ public class ConsumerService {
     }
     
     /**
+     * 查询全量consumer
+     * 
+     * @param Result<List<Consumer>>
+     */
+    public Result<List<Consumer>> queryAll() {
+        List<Consumer> consumerList = null;
+        try {
+            consumerList = consumerDao.selectAll();
+        } catch (Exception e) {
+            logger.error("queryAll", e);
+            return Result.getDBErrorResult(e);
+        }
+        return Result.getResult(consumerList);
+    }
+    
+    /**
      * 按照tid列表查询consumer
      * 
      * @param Result<List<Consumer>>

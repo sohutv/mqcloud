@@ -10,7 +10,6 @@
       <li id="notice"><a href="${request.contextPath}/admin/notice/list" class="glyphicon glyphicon-bell"> 通知管理</a></li>
       <li id="client"><a href="${request.contextPath}/admin/client/list" class="glyphicon glyphicon-bookmark"> 客户端版本</a></li>
       <li id="feedback"><a href="${request.contextPath}/admin/feedback/list" class="glyphicon glyphicon-comment"> 用户反馈</a></li>
-      <li id="alarm"><a href="${request.contextPath}/admin/alarm/config/list" class="glyphicon glyphicon-warning-sign"> 报警配置</a></li>
       <li id="config"><a href="${request.contextPath}/admin/config/list" class="glyphicon glyphicon-cog"> 通用配置</a></li>
     </ul>
   </div>
@@ -34,8 +33,6 @@
 			$("#client").addClass("active");
 		} else if (uri.indexOf("/admin/feedback/list") != -1){
 			$("#feedback").addClass("active");
-		} else if (uri.indexOf("/admin/alarm/config/list") != -1){
-			$("#alarm").addClass("active");
 		} else if (uri.indexOf("/admin/config/list") != -1){
 			$("#config").addClass("active");
 		} else if (uri.indexOf("/admin/nameserver/list") != -1){

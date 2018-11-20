@@ -9,7 +9,6 @@ import org.springframework.stereotype.Service;
 import com.sohu.tv.mq.cloud.bo.AlarmConfig;
 import com.sohu.tv.mq.cloud.dao.AlarmConfigDao;
 import com.sohu.tv.mq.cloud.util.Result;
-import com.sohu.tv.mq.cloud.util.Status;
 
 /**
  * 预警配置项
@@ -27,14 +26,14 @@ public class AlarmConfigService {
     private AlarmConfigDao alarmConfigDao;
 
     /**
-     * 查询所有用户报警配置
+     * 查询所有报警配置
      * 
      * @return
      */
-    public Result<List<AlarmConfig>> queryUserAlarmConfig() {
+    public Result<List<AlarmConfig>> queryAll() {
         List<AlarmConfig> list = null;
         try {
-            list = alarmConfigDao.selectUserAlarmConfig();
+            list = alarmConfigDao.selectAll();
         } catch (Exception e) {
             logger.error("queryAll", e);
             return Result.getDBErrorResult(e);
@@ -43,74 +42,39 @@ public class AlarmConfigService {
     }
 
     /**
-     * 根据UID查询所有报警配置
+     * 根据consumer查询报警配置
      * 
      * @return
      */
-    public Result<List<AlarmConfig>> queryByUid(long uid) {
-        List<AlarmConfig> result = null;
-        try {
-            result = alarmConfigDao.selectByUid(uid);
-        } catch (Exception e) {
-            logger.error("queryByUID", e);
-            return Result.getDBErrorResult(e);
-        }
-        return Result.getResult(result);
-    }
-
-    /**
-     * 根据ID查询报警配置
-     * 
-     * @return
-     */
-    public Result<AlarmConfig> queryByID(long id) {
+    public Result<AlarmConfig> queryByConsumer(String consumer) {
         AlarmConfig result = null;
         try {
-            result = alarmConfigDao.selectByID(id);
+            result = alarmConfigDao.selectByConsumer(consumer);
         } catch (Exception e) {
-            logger.error("queryByID", e);
+            logger.error("queryByConsumer", e);
             return Result.getDBErrorResult(e);
         }
         return Result.getResult(result);
     }
 
     /**
-     * 根据ID查询修改报警配置
+     * 根据consumer删除报警配置
      * 
      * @return
      */
-    public Result<AlarmConfig> updateByID(AlarmConfig alarmConfig) {
+    public Result<?> deleteByConsumer(String consumer) {
         Integer count = null;
         try {
-            count = alarmConfigDao.update(alarmConfig);
+            count = alarmConfigDao.deleteByConsumer(consumer);
         } catch (Exception e) {
-            logger.error("update err, alarmConfig:{}", alarmConfig, e);
+            logger.error("deleteByConsumer err, consumer:{}", consumer, e);
             return Result.getDBErrorResult(e);
         }
         return Result.getResult(count);
     }
 
     /**
-     * 根据ID删除报警配置
-     * 
-     * @return
-     */
-    public Result<?> deleteByID(long id) {
-        Integer count = null;
-        try {
-            count = alarmConfigDao.deleteByID(id);
-            if (count == null || count != 1) {
-                return Result.getResult(Status.DB_ERROR);
-            }
-        } catch (Exception e) {
-            logger.error("deleteByID err, id:{}", id, e);
-            return Result.getDBErrorResult(e);
-        }
-        return Result.getOKResult();
-    }
-
-    /**
-     * 根据ID删除报警配置
+     * 更新或删除配置
      * 
      * @return
      */
@@ -118,13 +82,10 @@ public class AlarmConfigService {
         Integer count = null;
         try {
             count = alarmConfigDao.insert(alarmConfig);
-            if (count == null || count != 1) {
-                return Result.getResult(Status.DB_ERROR);
-            }
         } catch (Exception e) {
             logger.error("save err, alarmConfig:{}", alarmConfig, e);
             return Result.getDBErrorResult(e);
         }
-        return Result.getOKResult();
+        return Result.getResult(count);
     }
 }

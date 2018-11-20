@@ -106,6 +106,8 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware {
     private int mailTimeout;
     // 是否开启注册
     private Integer isOpenRegister;
+    // 忽略的topic
+    private String ignoreTopic;
     
     @Autowired
     private CommonConfigService commonConfigService;
@@ -343,6 +345,14 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware {
         this.mailTimeout = mailTimeout;
     }
 
+    public String getIgnoreTopic() {
+        return ignoreTopic;
+    }
+
+    public void setIgnoreTopic(String ignoreTopic) {
+        this.ignoreTopic = ignoreTopic;
+    }
+
     @Override
     public String toString() {
         return "MQCloudConfigHelper [contextPath=" + contextPath + ", profile=" + profile + ", domain=" + domain
@@ -353,7 +363,8 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware {
                 + ", mapWithByteList=" + mapWithByteList + ", clientArtifactId=" + clientArtifactId + ", producerClass="
                 + producerClass + ", consumerClass=" + consumerClass + ", mailHost=" + mailHost + ", mailPort="
                 + mailPort + ", mailProtocol=" + mailProtocol + ", mailUsername=" + mailUsername + ", mailPassword="
-                + mailPassword + ", mailTimeout=" + mailTimeout + ", isOpenRegister=" + isOpenRegister + "]";
+                + mailPassword + ", mailTimeout=" + mailTimeout + ", isOpenRegister=" + isOpenRegister 
+                + ", ignoreTopic=" + ignoreTopic + "]";
     }
 
     @Override

@@ -7,10 +7,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import com.sohu.tv.mq.cloud.bo.NeedAlarmConfig;
+
 import com.sohu.tv.mq.cloud.bo.AlarmConfig;
-import com.sohu.tv.mq.cloud.dao.AlarmConfigDao;
+import com.sohu.tv.mq.cloud.bo.NeedAlarmConfig;
 import com.sohu.tv.mq.cloud.dao.NeedAlarmConfigDao;
+import com.sohu.tv.mq.cloud.util.ConsumerWarnEnum;
 
 /**
  * 监控获取报警配置的service
@@ -24,24 +25,17 @@ public class AlarmConfigBridingService {
     private Logger logger = LoggerFactory.getLogger(this.getClass());
 
     private static final long ONE_HOUR = 1 * 60 * 60 * 1000;
-
-    private static final int COUNT = 2;
-
+    
     // 用户报警配置
-    private ConcurrentMap<String/* topic_uid */, AlarmConfig> USER_CONFIG_TABLE = new ConcurrentHashMap<String, AlarmConfig>();
-
-    @Autowired
-    private AlarmConfigDao alarmConfigDao;
+    private ConcurrentMap<String/* consumer */, AlarmConfig> CONFIG_TABLE = new ConcurrentHashMap<String, AlarmConfig>();
 
     @Autowired
     private NeedAlarmConfigDao needAlarmConfigDao;
 
-    private AlarmConfig defaultConfig;
-
     /**
-     * 是否应该报警 此处暂不考虑用户的配置，全部走默认配置
+     * 检测预警频率 参数keys必须满足 以下定义 keys——type,topic,consumer
      * 
-     * @param key
+     * @param keys
      * @return
      */
     public boolean needWarn(String... keys) {
@@ -55,14 +49,17 @@ public class AlarmConfigBridingService {
             needAlarmConfigDao.insert(nwc);
         }
 
-        long defaultTime = getDefaultConfig() == null ? ONE_HOUR
-                : (getDefaultConfig().getWarnUnitTime() * ONE_HOUR);
+        long defaultTime = getAlarmConfig(keys[2], ConsumerWarnEnum.WARN_UNIT_TIME);
+        long defaultCount = getAlarmConfig(keys[2], ConsumerWarnEnum.WARN_UNIT_COUNT);
+        // 均为负数说明 不接受报警
+        if (defaultTime < 0 && defaultCount < 0){
+            return false;
+        }
         // 超过阈值，重置时间及次数
-        if (System.currentTimeMillis() - nwc.getUpdateTime() > defaultTime) {
+        if (System.currentTimeMillis() - nwc.getUpdateTime() > defaultTime * ONE_HOUR) {
             nwc.setTimes(0);
             needAlarmConfigDao.reset(key, System.currentTimeMillis());
         }
-        int defaultCount = getDefaultConfig() == null ? COUNT : getDefaultConfig().getWarnUnitCount();
         // 数据库加一
         needAlarmConfigDao.updateTimes(key);
         // 控制次数
@@ -74,39 +71,65 @@ public class AlarmConfigBridingService {
     }
 
     /**
-     * 获取消费失败的数量
+     * 获取堆积数量
      * 
-     * @param uid
-     * @param topic
+     * @param consumer
      * @return
      */
-    public long getConsumerFailCount(long uid, String topic) {
-        AlarmConfig alarmConfig = getAlarmConfig(uid, topic);
-        if (null == alarmConfig) {
-            return (long) 10;
-        }
-        // 不接受报警返回负数
-        if (!alarmConfig.isAlert()) {
-            return -1;
-        }
-        return alarmConfig.getConsumerFailCount();
+    public long getAccumulateCount(String consumer) {
+        return getAlarmConfig(consumer, ConsumerWarnEnum.ACCUMULATE_COUNT);
     }
 
     /**
-     * 获取用户报警配置
+     * 获取堆积时间
      * 
-     * @param uid
-     * @param topic
+     * @param consumer
      * @return
      */
-    public AlarmConfig getAlarmConfig(long uid, String topic) {
-        String key = topic + "_" + uid;
-        AlarmConfig userAlarmConfig = USER_CONFIG_TABLE.get(key);
-        if (null != userAlarmConfig) {
-            return userAlarmConfig;
+    public long getAccumulateTime(String consumer) {
+        return getAlarmConfig(consumer, ConsumerWarnEnum.ACCUMULATE_TIME);
+    }
+
+    /**
+     * 获取客户端堵塞
+     * 
+     * @param consumer
+     * @return
+     */
+    public long getBlockTime(String consumer) {
+        return getAlarmConfig(consumer, ConsumerWarnEnum.BLOCK_TIME);
+    }
+
+    /**
+     * 获取消费失败的数量
+     * 
+     * @param consumer
+     * @return
+     */
+    public long getConsumerFailCount(String consumer) {
+        return getAlarmConfig(consumer, ConsumerWarnEnum.CONSUMER_FAIL_COUNT);
+    }
+
+    /**
+     * 获取自定义报警配置
+     * 
+     * @param consumer
+     * @return
+     */
+    private Long getAlarmConfig(String consumer, ConsumerWarnEnum type) {
+        AlarmConfig config = CONFIG_TABLE.get(consumer);
+        if (config != null) {
+            Long value = ConsumerWarnEnum.getRealValue(config, type);
+            if(value != null) {
+                return value;
+            }
         }
-        AlarmConfig defaultAlarmConfig = getDefaultConfig();
-        return defaultAlarmConfig;
+        // 用户未配置预警参数，走默认值
+        Long value = getDefaultConfig(type);
+        if(value != null) {
+            return value;
+        }
+        return type.getValue();
     }
 
     /**
@@ -114,32 +137,22 @@ public class AlarmConfigBridingService {
      * 
      * @return
      */
-    public AlarmConfig getDefaultConfig() {
-        if (null == defaultConfig) {
-            List<AlarmConfig> defaultAlarmConfig = alarmConfigDao.selectByUid(0);
-            if (null != defaultAlarmConfig && defaultAlarmConfig.size() > 0) {
-                setDefaultConfig(defaultAlarmConfig.get(0));
-                return defaultAlarmConfig.get(0);
-            } else {
-                logger.error("get no result form warn_config, default alarm config not exist");
-            }
+    private Long getDefaultConfig(ConsumerWarnEnum type) {
+        AlarmConfig defaultConfig = CONFIG_TABLE.get("");
+        if (defaultConfig == null) {
+            return null;
         }
-        return defaultConfig;
-    }
-
-    public void setDefaultConfig(AlarmConfig defaultConfig) {
-        this.defaultConfig = defaultConfig;
+        return ConsumerWarnEnum.getRealValue(defaultConfig, type);
     }
 
     /**
-     * 将定时拉取的用户配置进行缓存
+     * 将定时拉取的配置进行缓存
      * 
      * @param alarmConfigList
      */
-    public void setUserConfigTable(List<AlarmConfig> alarmConfigList) {
+    public void setConfigTable(List<AlarmConfig> alarmConfigList) {
         for (AlarmConfig alarmConfig : alarmConfigList) {
-            String key = alarmConfig.getTopic() + "_" + alarmConfig.getUid();
-            USER_CONFIG_TABLE.put(key, alarmConfig);
+            CONFIG_TABLE.put(alarmConfig.getConsumer(), alarmConfig);
         }
     }
 

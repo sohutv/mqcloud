@@ -1,8 +1,5 @@
 package com.sohu.tv.mq.cloud.service;
 
-import java.util.HashSet;
-import java.util.Set;
-
 import org.apache.rocketmq.tools.monitor.UndoneMsgs;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -28,8 +25,7 @@ public class SohuMonitorListenerTest {
         undoneMsgs.setUndoneMsgsTotal(100000);
         undoneMsgs.setUndoneMsgsSingleMQ(100);
         undoneMsgs.setUndoneMsgsDelayTimeMills(1000000);
-        Set<Long> userID = new HashSet<Long>();
-        sohuMonitorListener.accumulateWarn(undoneMsgs,userID);
+        sohuMonitorListener.accumulateWarn(undoneMsgs);
     }
     
     @Test

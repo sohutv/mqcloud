@@ -3,7 +3,6 @@ package com.sohu.tv.mq.cloud.web.controller.admin;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import org.apache.rocketmq.common.protocol.body.ClusterInfo;
 import org.apache.rocketmq.common.protocol.route.BrokerData;
@@ -48,16 +47,6 @@ public class AdminBrokerController {
     @Autowired
     private MQAdminTemplate mqAdminTemplate;
 
-    @RequestMapping("/list")
-    public Result<?> list(@RequestParam(name = "cid", required = false) Integer cid, Map<String, Object> map) {
-        Cluster mqCluster = getMQCluster(cid);
-        if (mqCluster == null) {
-            return Result.getResult(Status.PARAM_ERROR);
-        }
-        Result<List<Broker>> result = brokerService.query(mqCluster.getId());
-        return Result.getWebResult(result);
-    }
-
     /**
      * 刷新
      * 
@@ -67,8 +56,9 @@ public class AdminBrokerController {
      */
     @RequestMapping(value = "/refresh", method = RequestMethod.POST)
     public Result<?> refresh(UserInfo ui, @RequestParam(name = "cid") int cid) {
-        Result<List<String>> brokerListResult = mqAdminTemplate.execute(new MQAdminCallback<Result<List<String>>>() {
-            public Result<List<String>> callback(MQAdminExt mqAdmin) throws Exception {
+        logger.info("refresh broker info cid =" + cid);
+        Result<List<Broker>> brokerListResult = mqAdminTemplate.execute(new MQAdminCallback<Result<List<Broker>>>() {
+            public Result<List<Broker>> callback(MQAdminExt mqAdmin) throws Exception {
                 // 获取集群信息
                 ClusterInfo clusterInfo = mqAdmin.examineBrokerClusterInfo();
                 // 获得broker地址map
@@ -76,25 +66,32 @@ public class AdminBrokerController {
                 if (brokerAddrTable.isEmpty()) {
                     return Result.getResult(Status.NO_RESULT);
                 }
-                List<String> list = new ArrayList<String>();
+                List<Broker> list = new ArrayList<Broker>();
                 // 遍历集群中所有的broker
                 for (String brokerName : brokerAddrTable.keySet()) {
                     HashMap<Long, String> brokerAddrs = brokerAddrTable.get(brokerName).getBrokerAddrs();
                     for (Long brokerId : brokerAddrs.keySet()) {
-                        list.add(brokerAddrs.get(brokerId));
+                        Broker broker = new Broker();
+                        broker.setBrokerName(brokerName);
+                        broker.setAddr(brokerAddrs.get(brokerId));
+                        broker.setBrokerID(brokerId.intValue());
+                        broker.setCid(cid);
+                        list.add(broker);
                     }
                 }
                 return Result.getResult(list);
             }
-            public Result<List<String>> exception(Exception e) throws Exception {
+
+            public Result<List<Broker>> exception(Exception e) throws Exception {
                 logger.error("examineBroker cid:{}", cid, e);
                 return Result.getWebErrorResult(e);
             }
+
             public Cluster mqCluster() {
                 return getMQCluster(cid);
             }
         });
-        if(brokerListResult.isEmpty()) {
+        if (brokerListResult.isEmpty()) {
             return brokerListResult;
         }
         Result<?> result = brokerService.refresh(cid, brokerListResult.getResult());

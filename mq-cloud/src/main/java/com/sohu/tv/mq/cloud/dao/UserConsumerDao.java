@@ -89,5 +89,5 @@ public interface UserConsumerDao {
      * @return
      */
     @Select("select u.* from user_consumer uc, user u where uc.uid = u.id and uc.tid = #{tid} and uc.consumer_id = #{cid}")
-    public User selectUserByConsumer(@Param("tid") long tid, @Param("cid") long cid);
+    public List<User> selectUserByConsumer(@Param("tid") long tid, @Param("cid") long cid);
 }

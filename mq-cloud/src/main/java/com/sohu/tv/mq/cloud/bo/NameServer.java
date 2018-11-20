@@ -61,10 +61,6 @@ public class NameServer {
     }
 
     public String getCheckStatusDesc() {
-        CheckStatusEnum checkStatusEnum = CheckStatusEnum.getCheckStatusEnumByStatus(getCheckStatus());
-        if (CheckStatusEnum.FAIL == checkStatusEnum) {
-            return "<font style='font-weight:bold' color='red'>" + checkStatusEnum.getDesc() + "</font>";
-        }
-        return checkStatusEnum.getDesc();
+        return CheckStatusEnum.getCheckStatusEnumByStatus(getCheckStatus()).getDesc();
     }
 }

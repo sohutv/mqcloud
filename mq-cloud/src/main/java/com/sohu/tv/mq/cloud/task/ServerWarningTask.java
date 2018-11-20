@@ -88,7 +88,7 @@ public class ServerWarningTask {
         if (!alarmMap.isEmpty()) {
             handleAlarmMessage(alarmMap, fetchDataTime);
         }
-        logger.info("monitorMachineStatus end! use:{}", System.currentTimeMillis() - start);
+        logger.info("monitorMachineStatus end! use:{}ms", System.currentTimeMillis() - start);
     }
 
     /**

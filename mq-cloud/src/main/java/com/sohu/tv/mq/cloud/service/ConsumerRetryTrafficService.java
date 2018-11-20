@@ -68,15 +68,20 @@ public class ConsumerRetryTrafficService extends TrafficService<Traffic> {
                     TopicHourTraffic topicTraffic = new TopicHourTraffic();
                     fetchTraffic(mqAdmin, topicConsumer.getTopic(), statKey, topicTraffic);
                     if(topicTraffic.getCount() > 0) { 
-                        Result<User> userResult = userConsumerService.queryUserByConsumer(topicConsumer.getTid(), 
-                                topicConsumer.getCid());
+                        Result<List<User>> userListResult = userConsumerService.queryUserByConsumer(
+                                topicConsumer.getTid(), topicConsumer.getCid());
                         String email = null;
-                        if(userResult.isOK()) {
-                            email = userResult.getResult().getEmail();
+                        if(userListResult.isNotEmpty()) {
+                            StringBuilder sb = new StringBuilder();
+                            for(User u : userListResult.getResult()) {
+                                sb.append(u.getEmail());
+                                sb.append(",");
+                            }
+                            sb.deleteCharAt(sb.length() - 1);
+                            email = sb.toString();
                         }
-                        long consumerFailCount = alarmConfigBridingService
-                                .getConsumerFailCount(userResult.getResult().getId(), topicConsumer.getTopic());
-                        if (consumerFailCount > 0 && consumerFailCount < topicTraffic.getCount()) {
+                        long consumerFailCount = alarmConfigBridingService.getConsumerFailCount(topicConsumer.getConsumer());
+                        if (consumerFailCount >= 0 && consumerFailCount < topicTraffic.getCount()) {
                             // 验证报警频率
                             if (alarmConfigBridingService.needWarn("consumerFail", topicConsumer.getTopic(), topicConsumer.getConsumer())) {
                                 alertService.sendWanMail(email, "消费失败",
