@@ -76,22 +76,6 @@ public class BrokerService {
         }
         return Result.getResult(result);
     }
-    
-    /**
-     * 删除记录
-     * 
-     * @return 返回Result
-     */
-    public Result<?> delete(String addr) {
-        Integer result = null;
-        try {
-            result = brokerDao.deleteByAddr(addr);
-        } catch (Exception e) {
-            logger.error("delete err, addr:{}", addr, e);
-            return Result.getDBErrorResult(e);
-        }
-        return Result.getResult(result);
-    }
 
     /**
      * 刷新记录

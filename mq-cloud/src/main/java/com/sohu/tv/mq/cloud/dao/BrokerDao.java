@@ -47,13 +47,4 @@ public interface BrokerDao {
      */
     @Delete("delete from broker where cid=#{cid}")
     public Integer delete(@Param("cid") int cid);
-    
-    /**
-     * 删除
-     * 
-     * @param cid
-     * @param addr 
-     */
-    @Delete("delete from broker where addr=#{addr}")
-    public Integer deleteByAddr(@Param("addr") String addr);
 }
