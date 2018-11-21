@@ -66,6 +66,9 @@ public class ClusterMonitorTask {
         long start = System.currentTimeMillis();
         // 缓存报警信息
         List<String> alarmList = new ArrayList<String>();
+        if(clusterService.getAllMQCluster() == null) {
+            return;
+        }
         for (Cluster mqCluster : clusterService.getAllMQCluster()) {
             monitorNameServer(mqCluster, alarmList);
         }
@@ -85,6 +88,9 @@ public class ClusterMonitorTask {
         long start = System.currentTimeMillis();
         // 缓存报警信息
         List<String> alarmList = new ArrayList<String>();
+        if(clusterService.getAllMQCluster() == null) {
+            return;
+        }
         for (Cluster mqCluster : clusterService.getAllMQCluster()) {
             monitorBroker(mqCluster, alarmList);
         }

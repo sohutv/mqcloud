@@ -60,6 +60,9 @@ public class TrafficTask {
                 logger.info("fetch topic traffic start");
                 long start = System.currentTimeMillis();
                 int size = 0;
+                if(clusterService.getAllMQCluster() == null) {
+                    return;
+                }
                 for (Cluster mqCluster : clusterService.getAllMQCluster()) {
                     size += topicTrafficService.collectTraffic(mqCluster);
                 }
@@ -79,6 +82,9 @@ public class TrafficTask {
                 logger.info("fetch consumer traffic start");
                 long start = System.currentTimeMillis();
                 int size = 0;
+                if(clusterService.getAllMQCluster() == null) {
+                    return;
+                }
                 for (Cluster mqCluster : clusterService.getAllMQCluster()) {
                     size += consumerTrafficService.collectTraffic(mqCluster);
                 }

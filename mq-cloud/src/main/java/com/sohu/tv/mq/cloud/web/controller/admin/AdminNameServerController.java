@@ -151,8 +151,7 @@ public class AdminNameServerController extends AdminViewController {
         if (cid != null) {
             mqCluster = clusterService.getMQClusterById(cid);
         }
-        if (mqCluster == null && clusterService.getAllMQCluster() != null 
-                && clusterService.getAllMQCluster().length > 0) {
+        if (mqCluster == null && clusterService.getAllMQCluster() != null) {
             mqCluster = clusterService.getAllMQCluster()[0];
         }
         return mqCluster;
