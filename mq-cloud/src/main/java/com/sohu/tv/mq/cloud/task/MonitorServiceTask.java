@@ -33,6 +33,9 @@ public class MonitorServiceTask {
     public void monitor() {
         taskExecutor.execute(new Runnable() {
             public void run() {
+                if(sohuMonitorServiceList == null) {
+                    return;
+                }
                 logger.info("monitor start");
                 long start = System.currentTimeMillis();
                 for(MonitorService monitorService : sohuMonitorServiceList) {
