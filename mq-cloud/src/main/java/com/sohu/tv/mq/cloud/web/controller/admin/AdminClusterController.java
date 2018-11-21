@@ -35,7 +35,6 @@ import com.sohu.tv.mq.cloud.service.TopicService;
 import com.sohu.tv.mq.cloud.util.DateUtil;
 import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper;
 import com.sohu.tv.mq.cloud.util.Result;
-import com.sohu.tv.mq.cloud.util.Status;
 import com.sohu.tv.mq.cloud.web.controller.param.ClusterParam;
 import com.sohu.tv.mq.cloud.web.vo.BrokerStatVO;
 import com.sohu.tv.mq.cloud.web.vo.ClusterInfoVO;
@@ -87,7 +86,7 @@ public class AdminClusterController extends AdminViewController {
         Map<String, Map<String, BrokerStatVO>> brokerGroup = null;
         if (brokerListResult.isOK()) {
             List<Broker> brokerList = brokerListResult.getResult();
-            brokerGroup = getBrokerGroupTableByRocketApi(brokerList, mqCluster); 
+            brokerGroup = fetchBrokerRuntimeStats(brokerList, mqCluster); 
         }
         // 生成vo
         ClusterInfoVO clusterInfoVO = new ClusterInfoVO();
@@ -243,9 +242,6 @@ public class AdminClusterController extends AdminViewController {
                 ClusterInfo clusterInfo = mqAdmin.examineBrokerClusterInfo();
                 // 获得broker地址map
                 HashMap<String, BrokerData> brokerAddrTable = clusterInfo.getBrokerAddrTable();
-                if (brokerAddrTable.isEmpty()) {
-                    return Result.getResult(Status.NO_RESULT);
-                }
                 List<Broker> list = new ArrayList<Broker>();
                 // 遍历集群中所有的broker
                 for (String brokerName : brokerAddrTable.keySet()) {
@@ -255,8 +251,6 @@ public class AdminClusterController extends AdminViewController {
                         broker.setAddr(brokerAddrs.get(brokerId));
                         broker.setBrokerID(brokerId.intValue());
                         broker.setBrokerName(brokerName);
-                        // 数据库没有该集群的broker列表，所有的状态设置为未知 0:未知,1:正常,2:异常
-                        broker.setCheckStatus(0);
                         list.add(broker);
                     }
                 }
@@ -282,7 +276,7 @@ public class AdminClusterController extends AdminViewController {
      * @param mqCluster
      * @return
      */
-    private Map<String, Map<String, BrokerStatVO>> getBrokerGroupTableByRocketApi(List<Broker> brokerList,
+    private Map<String, Map<String, BrokerStatVO>> fetchBrokerRuntimeStats(List<Broker> brokerList,
             Cluster mqCluster) {
         Map<String, Map<String, BrokerStatVO>> brokerGroup = mqAdminTemplate
                 .execute(new MQAdminCallback<Map<String, Map<String, BrokerStatVO>>>() {
