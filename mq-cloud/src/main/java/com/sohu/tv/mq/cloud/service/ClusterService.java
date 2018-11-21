@@ -28,7 +28,7 @@ public class ClusterService {
     private ClusterDao clusterDao;
     
     // cluster持有，初始化后即缓存到内存
-    private Cluster[] mqClusterArray;
+    private Cluster[] mqClusterArray = new Cluster[0];
     
     @PostConstruct
     public void init() {
