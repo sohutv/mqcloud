@@ -137,7 +137,9 @@ public class UserService {
         Integer count = null;
         try {
             count = userDao.update(user);
-            userLocalCache.cleanUp(user.getEmail());
+            if(user.getEmail() != null) {
+                userLocalCache.cleanUp(user.getEmail());
+            }
         } catch (Exception e) {
             logger.error("update err, user:{}", user, e);
             return Result.getDBErrorResult(e);
