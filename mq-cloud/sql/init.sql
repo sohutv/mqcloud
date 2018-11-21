@@ -273,7 +273,7 @@ CREATE TABLE `feedback` (
 -- ----------------------------
 DROP TABLE IF EXISTS `need_warn_config`;
 CREATE TABLE `need_warn_config` (
-  `oKey` varchar(64) NOT NULL COMMENT '报警频率的key（type_topic_group）',
+  `oKey` varchar(255) NOT NULL COMMENT '报警频率的key（type_topic_group）',
   `times` int(11) NOT NULL COMMENT '次数',
   `update_time` bigint(13) NOT NULL COMMENT '计时起始时间时间',
   UNIQUE KEY `key` (`oKey`)
@@ -331,6 +331,7 @@ CREATE TABLE `producer_total_stat` (
 DROP TABLE IF EXISTS `server`;
 CREATE TABLE `server` (
   `ip` varchar(16) NOT NULL COMMENT 'ip',
+  `machine_type` int(4) DEFAULT NULL COMMENT '机器类型：0-未知，1-物理机，2-虚拟机，3-docker',
   `host` varchar(255) DEFAULT NULL COMMENT 'host',
   `nmon` varchar(255) DEFAULT NULL COMMENT 'nmon version',
   `cpus` tinyint(4) DEFAULT NULL COMMENT 'logic cpu num',
@@ -436,7 +437,7 @@ CREATE TABLE `user` (
   `create_date` date NOT NULL,
   `update_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   `receive_notice` int(4) NOT NULL DEFAULT '0' COMMENT '是否接收各种通知,0:不接收,1:接收',
-  `password` char(41) DEFAULT NULL COMMENT '登录方式采用用户名密码验证时使用',
+  `password` varchar(256) COMMENT '登录方式采用用户名密码验证时使用',
   PRIMARY KEY (`id`),
   UNIQUE KEY `email` (`email`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='用户表';
@@ -488,7 +489,7 @@ CREATE TABLE `user_producer` (
 -- ----------------------------
 DROP TABLE IF EXISTS `warn_config`;
 CREATE TABLE `warn_config` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `consumer` varchar(64) DEFAULT '' COMMENT 'consumer名，为空时代表默认（仅一条默认记录）',
   `accumulate_time` int(11) DEFAULT '300000' COMMENT '堆积时间',
   `accumulate_count` int(11) DEFAULT '10000' COMMENT '堆积数量',
   `block_time` int(11) DEFAULT '10000' COMMENT '堵塞时间',
@@ -496,7 +497,7 @@ CREATE TABLE `warn_config` (
   `warn_unit_time` int(4) DEFAULT '1' COMMENT '报警频率的单位时间，单位小时',
   `warn_unit_count` int(4) DEFAULT '2' COMMENT '报警频率在单位时间的次数',
   `ignore_warn` int(4) DEFAULT '0' COMMENT '0:接收所有报警,1:不接收所有报警，此字段优先级最高',
-  PRIMARY KEY (`id`)
+  unique key (`consumer`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='报警阈值配置表';
 
 -- ----------------------------
@@ -511,57 +512,6 @@ CREATE TABLE `name_server` (
   `check_time` datetime COMMENT '检测时间',
   UNIQUE KEY `cid` (`cid`,`addr`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='name server表';
-
--- ----------------------------
--- user init
--- ----------------------------
-INSERT INTO `user` VALUES ('1', 'admin', 'admin@admin.com', '18688888888', '1', '2018-10-01', '2018-10-01 09:49:00', '1', password('admin'));
-
--- ----------------------------
--- common_config init
--- ----------------------------
-INSERT INTO `common_config` VALUES ('1', 'domain', '127.0.0.1:8080', 'mqcloud的域名');
-INSERT INTO `common_config` VALUES ('5', 'serverUser', 'mqcloud', '服务器 ssh 用户');
-INSERT INTO `common_config` VALUES ('6', 'serverPassword', '9j7t4SDJOIusddca+Mzd6Q==', '服务器 ssh 密码');
-INSERT INTO `common_config` VALUES ('7', 'serverPort', '22', '服务器 ssh 端口');
-INSERT INTO `common_config` VALUES ('8', 'serverConnectTimeout', '6000', '服务器 ssh 链接建立超时时间');
-INSERT INTO `common_config` VALUES ('9', 'serverOPTimeout', '12000', '服务器 ssh 操作超时时间');
-INSERT INTO `common_config` VALUES ('10', 'ciperKey', 'DJs32jslkdghDSDf', '密码助手的key,长度需为8的倍数');
-INSERT INTO `common_config` VALUES ('12', 'operatorContact', '[{\"name\":\"admin\",\"phone\":\"010-1234\",\"mobile\":\"18688888888\",\"qq\":\"88888888\",\"email\":\"admin@admin.com\"}]', '运维人员json');
-
--- ----------------------------
--- warn_config init
--- ----------------------------
-INSERT INTO `warn_config`(accumulate_time,accumulate_count,block_time,consumer_fail_count,warn_unit_time,warn_unit_count,ignore_warn) VALUES (300000, 10000, 10000, 10, 1, 1, 0);
-
--- ----------------------------
--- notice init
--- ----------------------------
-INSERT INTO `notice` (`content`, `status`, `create_date`) VALUES ('欢迎您使用MQCloud，为了更好为您的服务，请花一分钟时间看下快速指南，如果有任何问题，欢迎联系我们^_^', 1, now());
-
--- ----------------------------
--- user message init
--- ----------------------------
-INSERT INTO `user_message` (`uid`, `message`, `status`, `create_date`) VALUES (1, 'Hello！Welcome to MQCloud！', 0, now());
-
--- ----------------------------
--- update for user password init for 1.1.RELEASE
--- ----------------------------
-alter table user modify column `password` varchar(256) COMMENT '登录方式采用用户名密码验证时使用';
-update user set `password` = '21232f297a57a5a743894a0e4a801fc3' where email = 'admin@admin.com';
-delete from `common_config` where `key` in ('nexusDomain','alertClass','loginClass','ticketKey','clientArtifactId','producerClass','consumerClass');
-
--- ----------------------------
--- update for email server init for 1.2.RELEASE
--- ----------------------------
-INSERT INTO `common_config`(`key`, `value`, `comment`) VALUES ('mailHost', 'smtp.qq.com', '邮件服务器域名');
-INSERT INTO `common_config`(`key`, `value`, `comment`) VALUES ('mailUsername', 'xxx@qq.com', '邮件服务器用户');
-INSERT INTO `common_config`(`key`, `value`, `comment`) VALUES ('mailPassword', 'qq邮箱授权码', '邮件服务器用户密码');
-INSERT INTO `common_config`(`key`, `value`, `comment`) VALUES ('mailPort', '25', '邮件服务器端口');
-INSERT INTO `common_config`(`key`, `value`, `comment`) VALUES ('mailProtocol', 'smtp', '邮件服务器通信协议');
-INSERT INTO `common_config`(`key`, `value`, `comment`) VALUES ('mailTimeout', '5000', '邮件服务器超时时间');
-INSERT INTO `common_config`(`key`, `value`, `comment`) VALUES ('isOpenRegister', '1', '是否开启注册功能：0-不开启，1-开启');
-alter table server add `machine_type` int(4) DEFAULT NULL COMMENT '机器类型：0-未知，1-物理机，2-虚拟机，3-docker';
 
 -- ----------------------------
 -- Table structure for `server_warn_config`
@@ -589,17 +539,49 @@ DROP TABLE IF EXISTS `broker`;
 CREATE TABLE `broker` (
   `cid` int(11) NOT NULL COMMENT '集群id',
   `addr` varchar(255) NOT NULL COMMENT 'broker 地址',
+  `broker_name` varchar(64) NOT NULL COMMENT 'broker名字',
+  `broker_id` int(4) NOT NULL COMMENT 'broker ID，0-master，1-slave',
   `create_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `check_status` tinyint(4) DEFAULT 0 COMMENT '检测结果:0:未知,1:正常,2:异常',
   `check_time` datetime COMMENT '检测时间',
-  `broker_name` varchar(64) NOT NULL COMMENT 'broker名字',
-  `broker_id` int(4) NOT NULL COMMENT 'broker ID，0-master，1-slave',
   UNIQUE KEY `cid` (`cid`,`addr`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='broker表';
--- update for warn_config 
--- ----------------------------
-alter table `warn_config` add column `consumer` varchar(64) DEFAULT '' COMMENT 'consumer名，为空时代表默认（仅一条默认记录）';
-alter table `warn_config` add unique key (`consumer`);
-alter table `warn_config` drop column `id`;
 
-alter table `need_warn_config` modify column `oKey` varchar(255);
+-- ----------------------------
+-- user init
+-- ----------------------------
+INSERT INTO `user` VALUES ('1', 'admin', 'admin@admin.com', '18688888888', '1', '2018-10-01', '2018-10-01 09:49:00', '1', '21232f297a57a5a743894a0e4a801fc3');
+
+-- ----------------------------
+-- common_config init
+-- ----------------------------
+INSERT INTO `common_config` VALUES ('1', 'domain', '127.0.0.1:8080', 'mqcloud的域名');
+INSERT INTO `common_config` VALUES ('5', 'serverUser', 'mqcloud', '服务器 ssh 用户');
+INSERT INTO `common_config` VALUES ('6', 'serverPassword', '9j7t4SDJOIusddca+Mzd6Q==', '服务器 ssh 密码');
+INSERT INTO `common_config` VALUES ('7', 'serverPort', '22', '服务器 ssh 端口');
+INSERT INTO `common_config` VALUES ('8', 'serverConnectTimeout', '6000', '服务器 ssh 链接建立超时时间');
+INSERT INTO `common_config` VALUES ('9', 'serverOPTimeout', '12000', '服务器 ssh 操作超时时间');
+INSERT INTO `common_config` VALUES ('10', 'ciperKey', 'DJs32jslkdghDSDf', '密码助手的key,长度需为8的倍数');
+INSERT INTO `common_config` VALUES ('12', 'operatorContact', '[{\"name\":\"admin\",\"phone\":\"010-1234\",\"mobile\":\"18688888888\",\"qq\":\"88888888\",\"email\":\"admin@admin.com\"}]', '运维人员json');
+INSERT INTO `common_config`(`key`, `value`, `comment`) VALUES ('mailHost', 'smtp.xx.com', '邮件服务器域名');
+INSERT INTO `common_config`(`key`, `value`, `comment`) VALUES ('mailUsername', 'xxx@xx.com', '邮件服务器用户');
+INSERT INTO `common_config`(`key`, `value`, `comment`) VALUES ('mailPassword', '密码或授权码', '邮件服务器用户密码');
+INSERT INTO `common_config`(`key`, `value`, `comment`) VALUES ('mailPort', '25', '邮件服务器端口');
+INSERT INTO `common_config`(`key`, `value`, `comment`) VALUES ('mailProtocol', 'smtp', '邮件服务器通信协议');
+INSERT INTO `common_config`(`key`, `value`, `comment`) VALUES ('mailTimeout', '5000', '邮件服务器超时时间');
+INSERT INTO `common_config`(`key`, `value`, `comment`) VALUES ('isOpenRegister', '1', '是否开启注册功能：0-不开启，1-开启');
+
+-- ----------------------------
+-- warn_config init
+-- ----------------------------
+INSERT INTO `warn_config`(accumulate_time,accumulate_count,block_time,consumer_fail_count,warn_unit_time,warn_unit_count,ignore_warn) VALUES (300000, 10000, 10000, 10, 1, 1, 0);
+
+-- ----------------------------
+-- notice init
+-- ----------------------------
+INSERT INTO `notice` (`content`, `status`, `create_date`) VALUES ('欢迎您使用MQCloud，为了更好为您的服务，请花一分钟时间看下快速指南，如果有任何问题，欢迎联系我们^_^', 1, now());
+
+-- ----------------------------
+-- user message init
+-- ----------------------------
+INSERT INTO `user_message` (`uid`, `message`, `status`, `create_date`) VALUES (1, 'Hello！Welcome to MQCloud！', 0, now());
