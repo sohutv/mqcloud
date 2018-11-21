@@ -9,15 +9,15 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import com.sohu.tv.mq.cloud.Application;
-import com.sohu.tv.mq.cloud.mq.MQAdminTemplate;
 import com.sohu.tv.mq.cloud.service.ClusterService;
+import com.sohu.tv.mq.cloud.service.NameServerService;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = Application.class)
 public class MonitorServiceTest {
 
     @Autowired
-    private MQAdminTemplate mqAdminTemplate;
+    private NameServerService nameServerService;
     
     @Autowired
     private SohuMonitorListener sohuMonitorListener;
@@ -27,7 +27,7 @@ public class MonitorServiceTest {
     
     @Test
     public void test() throws MQClientException, RemotingException, InterruptedException {
-        MonitorService monitorService = new MonitorService(mqAdminTemplate, clusterService.getMQClusterById(1), sohuMonitorListener);
+        MonitorService monitorService = new MonitorService(nameServerService, clusterService.getMQClusterById(1), sohuMonitorListener);
         monitorService.doMonitorWork();
     }
 

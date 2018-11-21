@@ -33,7 +33,6 @@ import org.apache.rocketmq.common.protocol.topic.OffsetMovedEvent;
 import org.apache.rocketmq.remoting.RPCHook;
 import org.apache.rocketmq.remoting.exception.RemotingException;
 import org.apache.rocketmq.tools.admin.DefaultMQAdminExt;
-import org.apache.rocketmq.tools.admin.MQAdminExt;
 import org.apache.rocketmq.tools.monitor.DeleteMsgsEvent;
 import org.apache.rocketmq.tools.monitor.MonitorListener;
 import org.apache.rocketmq.tools.monitor.UndoneMsgs;
@@ -41,8 +40,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.sohu.tv.mq.cloud.bo.Cluster;
-import com.sohu.tv.mq.cloud.mq.DefaultCallback;
-import com.sohu.tv.mq.cloud.mq.MQAdminTemplate;
+import com.sohu.tv.mq.cloud.bo.NameServer;
+import com.sohu.tv.mq.cloud.service.NameServerService;
+import com.sohu.tv.mq.cloud.util.Result;
 
 /**
  * copy from org.apache.rocketmq.tools.monitor.MonitorService
@@ -65,23 +65,15 @@ public class MonitorService {
     
     private String nsAddr;
 
-    public MonitorService(MQAdminTemplate mqAdminTemplate, Cluster mqCluster, MonitorListener monitorListener) {
-        // 解析ns
-        List<String> nsList = mqAdminTemplate.execute(new DefaultCallback<List<String>>() {
-            public Cluster mqCluster() {
-                return mqCluster;
-            }
-            public List<String> callback(MQAdminExt mqAdmin) throws Exception {
-                return mqAdmin.getNameServerAddressList();
-            }
-        });
-        if(nsList == null) {
+    public MonitorService(NameServerService nameServerService, Cluster mqCluster, MonitorListener monitorListener) {
+        Result<List<NameServer>> nameServerListResult = nameServerService.query(mqCluster.getId());
+        if(nameServerListResult.isEmpty()) {
             logger.error("monitor cluster:{} init err!", mqCluster);
             return;
         }
         StringBuilder sb = new StringBuilder();
-        for(String str : nsList) {
-            sb.append(str);
+        for(NameServer ns : nameServerListResult.getResult()) {
+            sb.append(ns.getAddr());
             sb.append(";");
         }
         sb.deleteCharAt(sb.length() - 1);

@@ -12,15 +12,15 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 
 import com.sohu.tv.mq.cloud.bo.Cluster;
-import com.sohu.tv.mq.cloud.mq.MQAdminTemplate;
 import com.sohu.tv.mq.cloud.service.ClusterService;
+import com.sohu.tv.mq.cloud.service.NameServerService;
 import com.sohu.tv.mq.cloud.task.AlarmConfigTask;
-import com.sohu.tv.mq.cloud.task.ConsumeFailTask;
 import com.sohu.tv.mq.cloud.task.ClusterMonitorTask;
+import com.sohu.tv.mq.cloud.task.ConsumeFailTask;
 import com.sohu.tv.mq.cloud.task.MonitorServiceTask;
 import com.sohu.tv.mq.cloud.task.ProducerStatsTask;
-import com.sohu.tv.mq.cloud.task.ServerWarningTask;
 import com.sohu.tv.mq.cloud.task.ServerStatusTask;
+import com.sohu.tv.mq.cloud.task.ServerWarningTask;
 import com.sohu.tv.mq.cloud.task.TrafficTask;
 import com.sohu.tv.mq.cloud.task.monitor.MonitorService;
 import com.sohu.tv.mq.cloud.task.monitor.SohuMonitorListener;
@@ -97,19 +97,19 @@ public class TaskConfiguration {
     
     @Bean
     @Profile({"online", "online-sohu"})
-    public List<MonitorService> onlineMonitorServiceList(MQAdminTemplate mqAdminTemplate, 
+    public List<MonitorService> onlineMonitorServiceList(NameServerService nameServerService, 
             SohuMonitorListener sohuMonitorListener){
-        return monitorServiceList(true, mqAdminTemplate, sohuMonitorListener);
+        return monitorServiceList(true, nameServerService, sohuMonitorListener);
     }
     
     @Bean
     @Profile({"local", "test-sohu", "local-sohu"})
-    public List<MonitorService> testMonitorServiceList(MQAdminTemplate mqAdminTemplate, 
+    public List<MonitorService> testMonitorServiceList(NameServerService nameServerService, 
             SohuMonitorListener sohuMonitorListener){
-        return monitorServiceList(false, mqAdminTemplate, sohuMonitorListener);
+        return monitorServiceList(false, nameServerService, sohuMonitorListener);
     }
     
-    private List<MonitorService> monitorServiceList(boolean online, MQAdminTemplate mqAdminTemplate, 
+    private List<MonitorService> monitorServiceList(boolean online, NameServerService nameServerService, 
             SohuMonitorListener sohuMonitorListener){
         List<MonitorService> list = new ArrayList<MonitorService>();
         if(clusterService.getAllMQCluster() == null) {
@@ -117,7 +117,7 @@ public class TaskConfiguration {
         }
         for(Cluster mqCluster : clusterService.getAllMQCluster()) {
             if(online == mqCluster.online()) {
-                MonitorService monitorService = new MonitorService(mqAdminTemplate, mqCluster, sohuMonitorListener);
+                MonitorService monitorService = new MonitorService(nameServerService, mqCluster, sohuMonitorListener);
                 list.add(monitorService);
             }
         }
