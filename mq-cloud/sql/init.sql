@@ -568,7 +568,7 @@ INSERT INTO `common_config`(`key`, `value`, `comment`) VALUES ('mailUsername', '
 INSERT INTO `common_config`(`key`, `value`, `comment`) VALUES ('mailPassword', '密码或授权码', '邮件服务器用户密码');
 INSERT INTO `common_config`(`key`, `value`, `comment`) VALUES ('mailPort', '25', '邮件服务器端口');
 INSERT INTO `common_config`(`key`, `value`, `comment`) VALUES ('mailProtocol', 'smtp', '邮件服务器通信协议');
-INSERT INTO `common_config`(`key`, `value`, `comment`) VALUES ('mailTimeout', '5000', '邮件服务器超时时间');
+INSERT INTO `common_config`(`key`, `value`, `comment`) VALUES ('mailTimeout', '10000', '邮件服务器超时时间');
 INSERT INTO `common_config`(`key`, `value`, `comment`) VALUES ('isOpenRegister', '1', '是否开启注册功能：0-不开启，1-开启');
 
 -- ----------------------------
