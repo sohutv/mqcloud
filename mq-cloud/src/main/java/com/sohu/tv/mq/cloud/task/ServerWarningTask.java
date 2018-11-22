@@ -59,8 +59,8 @@ public class ServerWarningTask {
     public void serverMachineMonitor() {
         long start = System.currentTimeMillis();
         Map<String, ServerAlarmConfig> configMap = getWarnConfigMap();
-        if (configMap.isEmpty()) {
-            logger.warn("get no result from server_alarm_config!");
+        if (configMap == null || configMap.isEmpty()) {
+            logger.warn("get no result from server_alarm_config or server info!");
             return;
         }
         String fetchDataTime = "";
@@ -100,6 +100,7 @@ public class ServerWarningTask {
         List<ServerInfo> serverList = serverDataService.queryAllServerInfo();
         if (serverList.isEmpty()) {
             logger.warn("server info list is empty!");
+            return null;
         }
         // 保存ip与配置信息的映射关系
         Map<String, ServerAlarmConfig> configMap = new HashMap<String, ServerAlarmConfig>();
