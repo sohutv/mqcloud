@@ -57,12 +57,13 @@ public class TrafficTask {
     public void collectTopicTraffic() {
         taskExecutor.execute(new Runnable() {
             public void run() {
+                if(clusterService.getAllMQCluster() == null) {
+                    logger.warn("collectTopicTraffic mqcluster is null");
+                    return;
+                }
                 logger.info("fetch topic traffic start");
                 long start = System.currentTimeMillis();
                 int size = 0;
-                if(clusterService.getAllMQCluster() == null) {
-                    return;
-                }
                 for (Cluster mqCluster : clusterService.getAllMQCluster()) {
                     size += topicTrafficService.collectTraffic(mqCluster);
                 }
@@ -79,12 +80,13 @@ public class TrafficTask {
     public void collectConsumerTraffic() {
         taskExecutor.execute(new Runnable() {
             public void run() {
+                if(clusterService.getAllMQCluster() == null) {
+                    logger.warn("collectConsumerTraffic mqcluster is null");
+                    return;
+                }
                 logger.info("fetch consumer traffic start");
                 long start = System.currentTimeMillis();
                 int size = 0;
-                if(clusterService.getAllMQCluster() == null) {
-                    return;
-                }
                 for (Cluster mqCluster : clusterService.getAllMQCluster()) {
                     size += consumerTrafficService.collectTraffic(mqCluster);
                 }

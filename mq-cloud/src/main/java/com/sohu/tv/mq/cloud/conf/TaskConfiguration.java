@@ -6,6 +6,8 @@ import java.util.List;
 
 import javax.sql.DataSource;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -38,6 +40,8 @@ import net.javacrumbs.shedlock.spring.ScheduledLockConfigurationBuilder;
  */
 @Configuration
 public class TaskConfiguration {
+    
+    private final Logger logger = LoggerFactory.getLogger(this.getClass());
     
     @Autowired
     private ClusterService clusterService;
@@ -111,10 +115,11 @@ public class TaskConfiguration {
     
     private List<MonitorService> monitorServiceList(boolean online, NameServerService nameServerService, 
             SohuMonitorListener sohuMonitorListener){
-        List<MonitorService> list = new ArrayList<MonitorService>();
         if(clusterService.getAllMQCluster() == null) {
+            logger.warn("monitorServiceList mqcluster is null");
             return null;
         }
+        List<MonitorService> list = new ArrayList<MonitorService>();
         for(Cluster mqCluster : clusterService.getAllMQCluster()) {
             if(online == mqCluster.online()) {
                 MonitorService monitorService = new MonitorService(nameServerService, mqCluster, sohuMonitorListener);

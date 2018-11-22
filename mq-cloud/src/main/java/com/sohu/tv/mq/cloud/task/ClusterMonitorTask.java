@@ -62,13 +62,14 @@ public class ClusterMonitorTask {
     @Scheduled(cron = "45 */6 * * * *")
     @SchedulerLock(name = "nameServerMonitor", lockAtMostFor = 345000, lockAtLeastFor = 345000)
     public void nameServerMonitor() {
+        if(clusterService.getAllMQCluster() == null) {
+            logger.warn("nameServerMonitor mqcluster is null");
+            return;
+        }
         logger.info("monitor NameServer start");
         long start = System.currentTimeMillis();
         // 缓存报警信息
         List<String> alarmList = new ArrayList<String>();
-        if(clusterService.getAllMQCluster() == null) {
-            return;
-        }
         for (Cluster mqCluster : clusterService.getAllMQCluster()) {
             monitorNameServer(mqCluster, alarmList);
         }
@@ -84,13 +85,14 @@ public class ClusterMonitorTask {
     @Scheduled(cron = "50 */7 * * * *")
     @SchedulerLock(name = "brokerMonitor", lockAtMostFor = 345000, lockAtLeastFor = 345000)
     public void brokerMonitor() {
+        if(clusterService.getAllMQCluster() == null) {
+            logger.warn("brokerMonitor mqcluster is null");
+            return;
+        }
         logger.info("monitor broker start");
         long start = System.currentTimeMillis();
         // 缓存报警信息
         List<String> alarmList = new ArrayList<String>();
-        if(clusterService.getAllMQCluster() == null) {
-            return;
-        }
         for (Cluster mqCluster : clusterService.getAllMQCluster()) {
             monitorBroker(mqCluster, alarmList);
         }

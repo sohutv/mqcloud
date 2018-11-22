@@ -34,6 +34,7 @@ public class MonitorServiceTask {
         taskExecutor.execute(new Runnable() {
             public void run() {
                 if(sohuMonitorServiceList == null) {
+                    logger.warn("monitor sohuMonitorServiceList is null");
                     return;
                 }
                 logger.info("monitor start");
