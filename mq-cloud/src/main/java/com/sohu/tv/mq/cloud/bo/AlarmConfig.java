@@ -10,6 +10,7 @@ package com.sohu.tv.mq.cloud.bo;
 public class AlarmConfig {
     // 报警
     public static int ALERT = 0;
+
     // consumer名称，为空行为默认配置
     private String consumer;
     // 堆积时间

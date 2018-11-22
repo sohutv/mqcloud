@@ -1,6 +1,7 @@
 package com.sohu.tv.mq.cloud.web.vo;
 
 import java.util.Map;
+
 import com.sohu.tv.mq.cloud.bo.CheckStatusEnum;
 
 /**

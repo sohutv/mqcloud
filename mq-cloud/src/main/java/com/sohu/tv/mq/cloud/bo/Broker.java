@@ -11,6 +11,7 @@ import com.sohu.tv.mq.cloud.util.DateUtil;
  * @date 2018年11月14日
  */
 public class Broker {
+    
     // cluster id
     private int cid;
     // ip:port
