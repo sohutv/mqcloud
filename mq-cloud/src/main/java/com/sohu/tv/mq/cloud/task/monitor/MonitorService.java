@@ -64,6 +64,8 @@ public class MonitorService {
     private String clusterName;
     
     private String nsAddr;
+    
+    private boolean initialized;
 
     public MonitorService(NameServerService nameServerService, Cluster mqCluster, MonitorListener monitorListener) {
         Result<List<NameServer>> nameServerListResult = nameServerService.query(mqCluster.getId());
@@ -123,6 +125,7 @@ public class MonitorService {
         }
         try {
             start();
+            initialized = true;
         } catch (MQClientException e) {
             logger.error("start err", e);
             throw new RuntimeException(e);
@@ -147,6 +150,10 @@ public class MonitorService {
     }
 
     public void doMonitorWork() throws RemotingException, MQClientException, InterruptedException {
+        if(!initialized) {
+            logger.warn("doMonitorWork not initialized!");
+            return;
+        }
         long beginTime = System.currentTimeMillis();
         this.monitorListener.beginRound();
 
