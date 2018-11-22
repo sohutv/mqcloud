@@ -196,7 +196,7 @@ if (!UtilAll.isBlank(this.unitName)) {
 			</div>
 			<div class="modal-body">
 				<div>
-					<p>部分邮件的监控报警数据来自这里，这里只保存最新的监控数据。</p>
+					<p>配置及展示默认监控指标阈值及自定义消费者监控指标阈值，部分邮件的监控报警数据来自这里，这里只保存最新的监控数据。</p>
 					<img src="${request.contextPath}/img/admin/intro/monitor.png" style="width:1050px" class="img-rounded" alt="选择topic">
 				</div>
 			</div>
@@ -225,7 +225,7 @@ if (!UtilAll.isBlank(this.unitName)) {
 
 <!-- 预警介绍 -->
 <div id="machineModal" class="modal fade" tabindex="-1" data-width="400">
-	<div class="modal-dialog" style="width:900px">
+	<div class="modal-dialog" style="width:1110px">
 		<div class="modal-content">
 			<div class="modal-header">
 				<button type="button" class="close" data-dismiss="modal"
@@ -242,7 +242,7 @@ if (!UtilAll.isBlank(this.unitName)) {
 					</ol>
 					<div class="text-center">
 						<p>MQCloud集群所有的机器可以在这里查看。</p>
-						<img src="${request.contextPath}/img/admin/intro/machine.png" style="width:800px;" class="img-rounded" alt="选择topic">
+						<img src="${request.contextPath}/img/admin/intro/machine.png" style="width:1050px;" class="img-rounded" alt="选择topic">
 					</div>
 					<div>
 						<p>添加机器前，需要按照初始化脚本，进行初始化。</p>
@@ -253,7 +253,8 @@ if (!UtilAll.isBlank(this.unitName)) {
 						<img src="${request.contextPath}/img/admin/intro/monitor_machine.png" style="width:830px;" class="img-rounded" alt="选择生产者">
 					</div>
 					<div>
-						<p>正在开发中。。。</p>
+						<p>配置机器的预警参数，不填则不预警</p>
+						<img src="${request.contextPath}/img/admin/intro/monitor_machine_config.png" class="img-rounded" alt="选择生产者">
 					</div>
 				</div>
 			</div>
