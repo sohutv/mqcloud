@@ -43,9 +43,17 @@
 
   ![msgconsume](mq-cloud/src/main/resources/static/img/intro/msgTrack.png)
 
-* 运维后台
+* 集群发现
 
-  ![admin](mq-cloud/src/main/resources/static/img/intro/admin.png)
+  ![admin](mq-cloud/src/main/resources/static/img/intro/nameServer.png)
+
+* 集群管理
+
+  ![admin](mq-cloud/src/main/resources/static/img/intro/cluster.png)
+
+* 集群流量
+
+  ![admin](mq-cloud/src/main/resources/static/img/intro/clusterTraffic.png)
 
 * 创建broker
 
