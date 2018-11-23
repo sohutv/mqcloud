@@ -60,46 +60,19 @@
 						<li>+broker</li>
 						<li>停写</li>
 						<li>下线</li>
-						<li>集群发现</li>
 					</ol>
 					<div>
 						<p>1.主要用于NameServer的发现和运维：</p>
-						<img src="${request.contextPath}/img/admin/intro/cluster_found.png" class="img-rounded">
+						<div class="text-center">
+							<img src="${request.contextPath}/img/admin/intro/cluster_found.png" class="img-rounded">
+						</div>
 						<p>2. +集群记录：用于往cluster表新增一条记录：</p>
-						<img src="${request.contextPath}/img/admin/intro/cluster_add.png" class="img-rounded">
-					</div>
-					<div>
-						<p>用于部署name server，并且会建立cluster表和name_server表的关联：</p>
-						<p>1.“一键安装”将会分步骤进行，任何一个步骤失败自动暂停，解决问题后，点击“继续”执行。</p>
-						<p>2. 安装成功后将会在“进程信息”处列出启动的NameServer进程。</p>
-						<img src="${request.contextPath}/img/admin/intro/add_namesrv.png" style="width:900px;" class="img-rounded">
-					</div>
-					<div>
-						<p>主要展示集群的状况，在此可以进行broker的运维：</p>
-						<img src="${request.contextPath}/img/admin/intro/cluster_broker.png" style="width:900px;" class="img-rounded">		
-						<p><b class="warn">注意:</b>broker上下线需要点击刷新broker按钮，手动刷新broker列表，从而将有变动的broker加入到监控列表</p>
-					</div>
-					<div>
-						<p>1. “一键安装”将会分步骤进行，任何一个步骤失败自动暂停，解决问题后，点击“继续”执行。</p>
-						<p>2. 安装成功后将会在“进程信息”处列出启动的broker进程。</p>
-						<p>3. 关键步骤解释：</p>
-						<ul>
-							<li>“生成配置文件”中的“topic配置”是指将尝试从集群中已存在的节点同步其topic配置，master启动时自动加载集群中已有的topic。</li>
-							<li>“初始化配置”中如果成功执行os.sh将会生成/opt/mqcloud/.mq_cloud_inited，防止os.sh执行多次。</li>
-							<li>“启动”阶段将会进行询问“是否自动启动？”，选择“否”，可以到服务器查看或更改配置后，再“继续”启动。</li>
-						</ul>
-						<img src="${request.contextPath}/img/admin/intro/add_master.png" style="width:900px;" class="img-rounded">
-					</div>
-					<div>
-						<p>在“master”下线前，执行停写操作，可以暂时擦除broker的写权限，客户端将不再往此broker发送消息。</p>
-						<img src="${request.contextPath}/img/admin/intro/no_write.png" style="width:900px;" class="img-rounded">
-					</div>
-					<div>
-						<p>“下线”即关闭，对应linux的kill，slave可以直接下线，master需要先停写，再下线。</p>
-						<img src="${request.contextPath}/img/admin/intro/offline.png" style="width:900px;" class="img-rounded">
-					</div>
-					<div>
-						<p>所谓集群发现是指客户端通过域名的方式发现Name Server集群，继而发现broker集群。或者broker通过域名的方式发现Name Server。</p>
+						<div class="text-center">
+							<img  class="text-center" src="${request.contextPath}/img/admin/intro/cluster_add.png" class="img-rounded">
+						</div>
+						<br>
+						<div>
+						<p>3. 所谓集群发现是指<b>客户端通过域名的方式发现Name Server集群，继而发现broker集群。或者broker通过域名的方式发现Name Server。</b></p>
 						<p>1. 客户端：</p>
 						<p>&nbsp;&nbsp;&nbsp;&nbsp;客户端通过编码+属性设置的方式来实现，关键代码如下：</p>
 						<pre class="prettyprint">
@@ -134,6 +107,37 @@ if (!UtilAll.isBlank(this.unitName)) {
     url = url + "-" + this.unitName + "?nofix=1";
 }					
 </pre>	
+					</div>
+					</div>
+					<div>
+						<p>用于部署name server，并且会建立cluster表和name_server表的关联：</p>
+						<p>1.“一键安装”将会分步骤进行，任何一个步骤失败自动暂停，解决问题后，点击“继续”执行。</p>
+						<p>2. 安装成功后将会在“进程信息”处列出启动的NameServer进程。</p>
+						<img src="${request.contextPath}/img/admin/intro/add_namesrv.png" style="width:900px;" class="img-rounded">
+					</div>
+					<div>
+						<p>主要展示集群的状况，在此可以进行broker的运维：</p>
+						<img src="${request.contextPath}/img/admin/intro/cluster_broker.png" style="width:900px;" class="img-rounded">		
+						<p><b class="warn">注意:</b>broker上下线需要点击“刷新broker”按钮，手动刷新broker列表，从而更新监控列表。</p>
+					</div>
+					<div>
+						<p>1. “一键安装”将会分步骤进行，任何一个步骤失败自动暂停，解决问题后，点击“继续”执行。</p>
+						<p>2. 安装成功后将会在“进程信息”处列出启动的broker进程。</p>
+						<p>3. 关键步骤解释：</p>
+						<ul>
+							<li>“生成配置文件”中的“topic配置”是指将尝试从集群中已存在的节点同步其topic配置，master启动时自动加载集群中已有的topic。</li>
+							<li>“初始化配置”中如果成功执行os.sh将会生成/opt/mqcloud/.mq_cloud_inited，防止os.sh执行多次。</li>
+							<li>“启动”阶段将会进行询问“是否自动启动？”，选择“否”，可以到服务器查看或更改配置后，再“继续”启动。</li>
+						</ul>
+						<img src="${request.contextPath}/img/admin/intro/add_master.png" style="width:900px;" class="img-rounded">
+					</div>
+					<div>
+						<p>在“master”下线前，执行停写操作，可以暂时擦除broker的写权限，客户端将不再往此broker发送消息。</p>
+						<img src="${request.contextPath}/img/admin/intro/no_write.png" style="width:900px;" class="img-rounded">
+					</div>
+					<div>
+						<p>“下线”即关闭，对应linux的kill，slave可以直接下线，master需要先停写，再下线。</p>
+						<img src="${request.contextPath}/img/admin/intro/offline.png" style="width:900px;" class="img-rounded">
 					</div>
 				</div>
 			</div>
@@ -225,7 +229,7 @@ if (!UtilAll.isBlank(this.unitName)) {
 
 <!-- 预警介绍 -->
 <div id="machineModal" class="modal fade" tabindex="-1" data-width="400">
-	<div class="modal-dialog" style="width:1110px">
+	<div class="modal-dialog" style="width:900px">
 		<div class="modal-content">
 			<div class="modal-header">
 				<button type="button" class="close" data-dismiss="modal"
@@ -242,7 +246,7 @@ if (!UtilAll.isBlank(this.unitName)) {
 					</ol>
 					<div class="text-center">
 						<p>MQCloud集群所有的机器可以在这里查看。</p>
-						<img src="${request.contextPath}/img/admin/intro/machine.png" style="width:1050px;" class="img-rounded" alt="选择topic">
+						<img src="${request.contextPath}/img/admin/intro/machine.png" style="width:820px;" class="img-rounded" alt="选择topic">
 					</div>
 					<div>
 						<p>添加机器前，需要按照初始化脚本，进行初始化。</p>
@@ -252,7 +256,7 @@ if (!UtilAll.isBlank(this.unitName)) {
 						<p>点击ip会弹出监控页面，包含了load，内存，硬盘，网络等等指标。</p>
 						<img src="${request.contextPath}/img/admin/intro/monitor_machine.png" style="width:830px;" class="img-rounded" alt="选择生产者">
 					</div>
-					<div>
+					<div class="text-center">
 						<p>配置机器的预警参数，不填则不预警</p>
 						<img src="${request.contextPath}/img/admin/intro/monitor_machine_config.png" class="img-rounded" alt="选择生产者">
 					</div>
