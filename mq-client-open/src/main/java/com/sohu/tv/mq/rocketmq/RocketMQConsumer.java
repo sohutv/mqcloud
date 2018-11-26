@@ -115,7 +115,7 @@ public class RocketMQConsumer extends AbstractConfig {
                                 msgList.add((Map<String, Object>) getMessageSerializer().deserialize(bytes));
                             }
                         } catch (Exception e) {
-                            logger.error(e.getMessage(), e);
+                            logger.error("msgId:" + me.getMsgId() + " bornTimestamp:" + me.getBornTimestamp(), e);
                             if (reconsume) {
                                 return ConsumeConcurrentlyStatus.RECONSUME_LATER;
                             }
