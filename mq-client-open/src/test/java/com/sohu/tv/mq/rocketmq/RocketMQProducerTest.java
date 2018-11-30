@@ -10,7 +10,6 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.sohu.index.tv.mq.common.Result;
-import com.sohu.tv.mq.util.SerializerTest;
 
 public class RocketMQProducerTest {
 
@@ -27,7 +26,7 @@ public class RocketMQProducerTest {
         Map<String, Object> map = new HashMap<String, Object>();
         map.put("a", "b");
         map.put("c", "d");
-        map.put("o", SerializerTest.generateTestObject());
+        map.put("o", "c");
         Result<SendResult> sendResult = producer.publish(map);
         Assert.assertTrue(sendResult.isSuccess());
     }
@@ -36,7 +35,7 @@ public class RocketMQProducerTest {
     public void produce100() throws InterruptedException {
         Map<String, Object> map = new HashMap<String, Object>();
         map.put("c", "d");
-        map.put("o", SerializerTest.generateTestObject());
+        map.put("o", "c");
         for (int i = 0; i < 1000; i++) {
             map.put("a", i);
             Result<SendResult> sendResult = producer.publish(map);
@@ -50,7 +49,7 @@ public class RocketMQProducerTest {
         Map<String, Object> map = new HashMap<String, Object>();
         map.put("a", "b");
         map.put("c", "d");
-        map.put("o", SerializerTest.generateTestObject());
+        map.put("o", "c");
         Result<SendResult> sendResult = producer.publish(map.toString().getBytes());
         Assert.assertTrue(sendResult.isSuccess());
     }

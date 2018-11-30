@@ -133,3 +133,8 @@ legend{padding:.5em;border:0;width:auto;margin-bottom:10px}
 .tableUpdate > tfoot > tr > td {
 	padding : 4px;
 }
+
+
+.tooltip{
+  z-index: 1151 !important;
+}

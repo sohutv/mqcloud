@@ -403,6 +403,7 @@ public class ConsumerService {
                 return Result.getResult(consumerConnection);
             }
             public Result<ConsumerConnection> exception(Exception e) throws Exception {
+                logger.error("cluster:{} consumerGroup:{} error", mqCluster, consumerGroup, e);
                 return Result.getDBErrorResult(e);
             }
             public Cluster mqCluster() {

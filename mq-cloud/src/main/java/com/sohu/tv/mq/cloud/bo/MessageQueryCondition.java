@@ -16,7 +16,6 @@ import com.sohu.tv.mq.cloud.util.CompressUtil;
 public class MessageQueryCondition {
     public static final int MESSAGE_SIZE = 30;
     public static final int MAX_MESSAGE_SIZE = 5000;
-    public static final int TIME_SPAN = 60 * 1000;
     private List<MQOffset> mqOffsetList;
     // topic
     private String topic;
@@ -24,8 +23,6 @@ public class MessageQueryCondition {
     private int cid;
     // 关键字
     private String key;
-    // 查询时间
-    private long time;
     // 查询时间
     private long start;
     // 查询时间
@@ -163,14 +160,6 @@ public class MessageQueryCondition {
 
     public String serialize() throws IOException {
         return CompressUtil.compress(JSON.toJSONString(this));
-    }
-
-    public long getTime() {
-        return time;
-    }
-
-    public void setTime(long time) {
-        this.time = time;
     }
 
     public void setStart(long start) {

@@ -262,7 +262,7 @@ public class AdminClusterController extends AdminViewController {
             }
 
             public Result<List<Broker>> exception(Exception e) throws Exception {
-                logger.error("cluster:{} err", mqCluster(), e.getMessage());
+                logger.error("cluster:{} err", mqCluster(), e);
                 return Result.getWebErrorResult(e);
             }
         });
@@ -313,7 +313,7 @@ public class AdminClusterController extends AdminViewController {
                     }
 
                     public Map<String, Map<String, BrokerStatVO>> exception(Exception e) throws Exception {
-                        logger.error("cluster:{} err", mqCluster(), e.getMessage());
+                        logger.error("cluster:{} err", mqCluster(), e);
                         return null;
                     }
                 });

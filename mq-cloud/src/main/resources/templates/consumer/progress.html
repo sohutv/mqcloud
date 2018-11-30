@@ -81,14 +81,97 @@
 		                    		<#if consumerProgressVO.offsetMap??>
 		                    		<!-- 详情 -->
 		                    		<div id="consumeDetailModel${consumerProgressVO_index}" class="modal fade" tabindex="-1" aria-hidden="true">
-										<div class="modal-dialog">
+										<div class="modal-dialog" style="width:700px">
 											<div class="modal-content">
 												<div class="modal-header">
 													<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
 													<h4 class="modal-title"><b>${consumerProgressVO.consumer.name}</b> 消费详情</h4>
 												</div>
 												<table class="table table-striped table-hover" style="margin-top: 0px">
+													<#if consumerProgressVO.dlqTopic?? && consumerProgressVO.dlqOffsetMap??>
+														<thead>
+															<tr>
+																<td class="warning" colspan=6>死消息Topic：<b style="color:red">${consumerProgressVO.dlqTopic}</b>
+																	&nbsp;&nbsp;&nbsp;<span title="搜索死消息" class="glyphicon glyphicon-search" style="cursor:pointer;" onclick="initDeadMsgModal('${consumerProgressVO.dlqTopic}')" data-target="#deadMsgSearchModal" data-toggle="modal"></span>
+																</td>
+															</tr>
+															<tr>
+																<td>broker</td>
+																<td>队列</td>
+																<td>最小偏移量</td>
+																<td>最大偏移量</td>
+																<td>消息量</td>
+																<td>更新时间</td>
+															</tr>
+														</thead>
+														<tbody>
+															<#list consumerProgressVO.dlqOffsetMap as k, v>
+																<tr>
+																	<td>${k.brokerName}</td>
+																	<td>${k.queueId}</td>
+																	<td>
+																		${v.minOffset}
+																	</td>
+																	<td>
+																		${v.maxOffset}
+																	</td>
+																	<td>
+																		${v.maxOffset - v.minOffset}
+																	</td>
+																	<#if v.lastUpdateTimestamp== 0>
+										                    			<td>暂无</td>
+										                    		<#else>
+																		<td>
+																			${v.lastUpdateTimestamp?number_to_datetime?string("yyyy-MM-dd HH:mm:ss")}
+																		</td>
+																	</#if>
+																</tr>
+															</#list>
+														</tbody>
+													</#if>
+													<#if consumerProgressVO.retryTopic?? && consumerProgressVO.retryOffsetMap??>
+														<thead>
+															<tr>
+																<td class="warning" colspan=6>重试Topic：<b>${consumerProgressVO.retryTopic}</td>
+															</tr>
+															<tr>
+																<td>broker</td>
+																<td>队列</td>
+																<td>broker偏移量</td>
+																<td>消费者偏移量</td>
+																<td>堆积量</td>
+																<td>消费到</td>
+															</tr>
+														</thead>
+														<tbody>
+															<#list consumerProgressVO.retryOffsetMap as k, v>
+																<tr>
+																	<td>${k.brokerName}</td>
+																	<td>${k.queueId}</td>
+																	<td>
+																		${v.brokerOffset}
+																	</td>
+																	<td>
+																		${v.consumerOffset}
+																	</td>
+																	<td>
+																		${v.brokerOffset - v.consumerOffset}
+																	</td>
+																	<#if v.lastTimestamp == 0>
+										                    			<td>暂无</td>
+										                    		<#else>
+																		<td>
+																			${v.lastTimestamp?number_to_datetime?string("yyyy-MM-dd HH:mm:ss")}
+																		</td>
+																	</#if>
+																</tr>
+															</#list>
+														</tbody>
+													</#if>
 													<thead>
+														<tr>
+															<td class="warning" colspan=6>正常Topic：<b>${consumerProgressVO.topic}</td>
+														</tr>
 														<tr>
 															<td>broker</td>
 															<td>队列</td>
@@ -99,36 +182,6 @@
 														</tr>
 													</thead>
 													<tbody>
-													    <#if consumerProgressVO.retryTopic?? && consumerProgressVO.retryOffsetMap??>
-														<tr>
-															<td class="warning" colspan="6">重试Topic：<b>${consumerProgressVO.retryTopic}</b></td>
-														</tr>
-														<#list consumerProgressVO.retryOffsetMap as k, v>
-															<tr>
-																<td>${k.brokerName}</td>
-																<td>${k.queueId}</td>
-																<td>
-																	${v.brokerOffset}
-																</td>
-																<td>
-																	${v.consumerOffset}
-																</td>
-																<td>
-																	${v.brokerOffset - v.consumerOffset}
-																</td>
-																<#if v.lastTimestamp == 0>
-									                    			<td>暂无</td>
-									                    		<#else>
-																	<td>
-																		${v.lastTimestamp?number_to_datetime?string("yyyy-MM-dd HH:mm:ss")}
-																	</td>
-																</#if>
-															</tr>
-														</#list>
-														</#if>
-														<tr>
-															<td class="warning" colspan="6">正常Topic：<b>${consumerProgressVO.topic}</b></td>
-														</tr>
 														<#list consumerProgressVO.offsetMap as k, v>
 															<tr>
 																<td>${k.brokerName}</td>
@@ -320,7 +373,7 @@
 		                    		<#if consumerProgressVO.offsetMap??>
 		                    		<!-- 详情 -->
 		                    		<div id="consumeDetailModel${consumerProgressVO_index}b" class="modal fade" tabindex="-1" aria-hidden="true">
-										<div class="modal-dialog">
+										<div class="modal-dialog" style="width:700px">
 											<div class="modal-content">
 												<div class="modal-header">
 													<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
@@ -573,7 +626,7 @@
 		</div>
 	</div>
 </div>
-<!-- 	准备搜索部分 -->
+<!-- 准备搜索部分 -->
 <div class="row">
 <div class="col-md-12">
 	<div class="border-top"></div>
@@ -581,8 +634,68 @@
 	<div id="consume_search" style="float:right;margin:10px 0px;"></div>
 </div>
 </div>
-<!-- 	准备曲线图 -->
+<!-- 准备曲线图 -->
 <div id="consume_lineChart"><center>暂无数据</center></div>
+
+<!-- 死消息搜索 -->
+<div id="deadMsgSearchModal" class="modal fade" tabindex="-1" style="z-index:2000;">
+	<div class="modal-dialog" style="width:600px">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" onclick="hideDeadMsgSearchModal()" aria-hidden="true">&times;</button>
+				<h4 class="modal-title">死消息查询</h4>
+			</div>
+			<div class="modal-body">
+				<div style="float:right;margin:0px 0px 10px 0px;">
+				<form class="form-inline" id="deadMsgSearchForm">
+					<!-- 时间段查询 -->
+					<div class="form-group time">
+						<label for="deadStartTimePicker"> 开始时间: </label>
+						<input id="deadStartTimePicker" type="text" class="Wdate form-control" onclick="WdatePicker({ dateFmt: 'yyyy-MM-dd HH:mm:ss',maxDate:'%y-%M-%d',minDate:'%y-%M-{%d-6}',onpicked:function(){deadTimeChange('deadStartTime')}})" style="width:180px;height:34px;cursor:pointer;" readonly="readonly"
+			  								value="${.now?string("yyyy-MM-dd HH:mm:ss")}">
+			  			<input type="hidden" name="deadStartTime" id="deadStartTime" value="">
+			  			<label for="deadEndTimePicker"> 结束时间: </label>
+						<input id="deadEndTimePicker" type="text" class="Wdate form-control" onclick="WdatePicker({ dateFmt: 'yyyy-MM-dd HH:mm:ss',maxDate:'%y-%M-%d',minDate:'%y-%M-{%d-6}',onpicked:function(){deadTimeChange('deadEndTime')}})" style="width:180px;height:34px;cursor:pointer;" readonly="readonly"
+			  								value="${.now?string("yyyy-MM-dd HH:mm:ss")}">
+			  			<input type="hidden" name="deadEndTime" id="deadEndTime" value="">
+					</div>
+					<input type="hidden" id="deadCid" name="deadCid" value="${topic.clusterId}">
+  	    			<input type="hidden" id="deadTopic" name="deadTopic" value="">
+  	    			<input type="hidden" id="deadMessageParam" name="deadMessageParam">
+  	    			<input type="hidden" id="deadAppend" name="deadAppend" value="false">
+					<!-- 时间段查询参数 -->
+					<button type="button" onclick="searchDeadMessage(false)" class="btn btn-search time"><span class="glyphicon glyphicon-search" aria-hidden="true"></span></button>
+				</form>
+				</div>
+				<table id="deadDataTable" class="table table-striped table-hover" style="margin-top: 0px;word-break:break-all; word-wrap:break-all;">
+					<colgroup>
+						<col width="50px">
+						<col width="130px">
+						<col width="155px">
+						<col>
+					</colgroup>
+					<thead>
+						<tr>
+							<td>序号</td>
+							<td>客户端</td>
+							<td>发送时间</td>
+							<td>消息</td>
+						</tr>
+					</thead>
+					<tbody>
+						<tr class="no_more_data"><td colspan=4 class="text-center">暂无数据</td></tr>
+					</tbody>
+				</table>
+				<ul class="pager" id="deadPager" style="display:none;">
+					<li id="deadPrevious" class="previous" onclick="deadPrevious()"><a href="javascript:void(0)">&larr; 上一页</a></li>
+					<li><a href="#">第<b id="deadPageNum"></b>页，命中数：<b id="deadSizeNum"></b>，检索数：<b id="deadSearchNum"></b>，预估剩余数：<b id="deadLeftNum"></b></a></li>
+					<li id="deadNext" class="next" onclick="deadNext()"><a href="javascript:void(0)">下一页 &rarr;</a></li>
+				</ul>
+			</div>
+		</div>
+	</div>
+</div>
+
 <script>
 <#if response.OK>
 $(function() {
@@ -747,5 +860,81 @@ function addUserCounsumerRelationship(){
 			    	enable("associateUserConsumerBtn");
 			    }
 	    }, 'json');
+}
+
+function hideDeadMsgSearchModal(){
+	$('#deadMsgSearchModal').modal('hide');
+}
+
+function initDeadMsgModal(deadTopic){
+	// 清空数据
+	$("#deadDataTable tbody").html("<tr class='no_more_data'><td colspan=4 class='text-center'>暂无数据</td></tr>");
+	$("#deadDataTable input").remove();
+	$("#deadTopic").val(deadTopic);
+}
+
+//死消息搜索
+function searchDeadMessage(append){
+	$("#deadAppend").val(append);
+	post('${request.contextPath}/msg/dead/search', $("#deadMsgSearchForm").serialize(), function(data){
+		if(!append){
+			$("#deadDataTable tbody").remove();
+			$("#deadDataTable input").remove();
+		}
+       	$("#deadDataTable").append(data);
+    });
+}
+
+function deadTimeChange(id){
+	var dt = $("#" + id + "Picker").val();
+	var tm = parseDate(dt);
+	$("#" + id).val(tm);
+}
+
+deadTimeChange('deadStartTime');
+deadTimeChange('deadEndTime');
+
+
+var deadPageNum = 0;
+//显示分页
+function showDeadPage(num){
+	deadPageNum = num;
+	var comp = $("#deadData_"+num);
+	var size = comp.attr("data_size");
+	var search = comp.attr("data_search");
+	var left = comp.attr("data_left");
+	$("#deadPageNum").html(num);
+	$("#deadSizeNum").html(size);
+	$("#deadSearchNum").html(search);
+	$("#deadLeftNum").html(left);
+	$("#deadPager").show();
+	if(num == 1){
+		$("#deadPrevious").addClass("disabled");
+	} else {
+		$("#deadPrevious").removeClass("disabled");
+	}
+	if(left > 0){
+		$("#deadNext").removeClass("disabled");
+	} else {
+		$("#deadNext").addClass("disabled");
+	}
+	// 展示数据
+	$("#deadPage_"+deadPageNum).show().siblings("tbody").hide();
+}
+//上一页
+function deadPrevious(){
+	if(!$("#deadPrevious").hasClass("disabled")){
+		showDeadPage(deadPageNum - 1);
+	}
+}
+//下一页
+function deadNext(){
+	if(!$("#deadNext").hasClass("disabled")){
+		if($("#deadData_"+(deadPageNum+1)).length > 0){
+			showDeadPage(deadPageNum+1);
+		} else {
+			searchDeadMessage(true);
+		}
+	}
 }
 </script>

@@ -86,8 +86,8 @@ public class RocketMQConsumer extends AbstractConfig {
                     }
                     List<Map<String, Object>> msgList = null;
                     for (MessageExt me : msgs) {
+                        byte[] bytes = me.getBody();
                         try {
-                            byte[] bytes = me.getBody();
                             if (bytes == null || bytes.length == 0) {
                                 logger.warn("MessageExt={},MessageBody is null", me);
                                 continue;
@@ -115,7 +115,8 @@ public class RocketMQConsumer extends AbstractConfig {
                                 msgList.add((Map<String, Object>) getMessageSerializer().deserialize(bytes));
                             }
                         } catch (Exception e) {
-                            logger.error("msgId:" + me.getMsgId() + " bornTimestamp:" + me.getBornTimestamp(), e);
+                            logger.error("topic:{} consumer:{} msg:{} msgId:{} bornTimestamp:{}", getTopic(), 
+                                    getConsumer(), new String(bytes), me.getMsgId(), me.getBornTimestamp(), e);
                             if (reconsume) {
                                 return ConsumeConcurrentlyStatus.RECONSUME_LATER;
                             }

@@ -18,6 +18,7 @@ import org.apache.rocketmq.client.consumer.PullStatus;
 import org.apache.rocketmq.client.exception.MQBrokerException;
 import org.apache.rocketmq.client.exception.MQClientException;
 import org.apache.rocketmq.common.MixAll;
+import org.apache.rocketmq.common.TopicConfig;
 import org.apache.rocketmq.common.admin.ConsumeStats;
 import org.apache.rocketmq.common.admin.OffsetWrapper;
 import org.apache.rocketmq.common.message.MessageExt;
@@ -28,6 +29,8 @@ import org.apache.rocketmq.common.protocol.body.Connection;
 import org.apache.rocketmq.common.protocol.body.ConsumerConnection;
 import org.apache.rocketmq.common.protocol.heartbeat.SubscriptionData;
 import org.apache.rocketmq.common.protocol.route.BrokerData;
+import org.apache.rocketmq.common.protocol.route.QueueData;
+import org.apache.rocketmq.common.protocol.route.TopicRouteData;
 import org.apache.rocketmq.remoting.common.RemotingHelper;
 import org.apache.rocketmq.tools.admin.MQAdminExt;
 import org.apache.rocketmq.tools.admin.api.MessageTrack;
@@ -88,6 +91,9 @@ public class MessageService {
     
     private MessageSerializer<Object> messageSerializer = new DefaultMessageSerializer<Object>();
     
+    @Autowired
+    private TopicService topicService;
+    
     /**
      * 根据key查询消息
      * @param cluster
@@ -130,7 +136,13 @@ public class MessageService {
                 return Result.getResult(messageList);
             }
             public Result<List<DecodedMessage>> exception(Exception e) throws Exception {
-                logger.error("queryMessage cluster:{} topic:{} key:{}", cluster, topic, key, e);
+                logger.error("queryMessage cluster:{} topic:{} key:{}, err:{}", cluster, topic, key, e.getMessage());
+                // 此异常代表查无数据，不进行异常提示
+                if(e instanceof MQClientException) {
+                    if(((MQClientException) e).getResponseCode() == ResponseCode.NO_MESSAGE) {
+                        return Result.getOKResult();
+                    }
+                }
                 return Result.getWebErrorResult(e);
             }
             public Cluster mqCluster() {
@@ -188,7 +200,7 @@ public class MessageService {
             consumer = getConsumer(cluster);
             // 初始化参数
             if (messageQueryCondition.getMqOffsetList() == null) {
-                List<MQOffset> mqOffsetList = getMQOffsetList(consumer, messageQueryCondition);
+                List<MQOffset> mqOffsetList = getMQOffsetList(cluster, consumer, messageQueryCondition, true);
                 if (mqOffsetList == null) {
                     return Result.getResult(Status.NO_RESULT);
                 }
@@ -335,7 +347,8 @@ public class MessageService {
      * @return
      * @throws MQClientException
      */
-    private List<MQOffset> getMQOffsetList(MQPullConsumer consumer, MessageQueryCondition messageQueryCondition) {
+    private List<MQOffset> getMQOffsetList(Cluster cluster, MQPullConsumer consumer, 
+            MessageQueryCondition messageQueryCondition, boolean retryWithErr) {
         List<MQOffset> offsetList = null;
         try {
             Set<MessageQueue> mqs = consumer.fetchSubscribeMessageQueues(messageQueryCondition.getTopic());
@@ -360,7 +373,29 @@ public class MessageService {
                 mqOffset.setOffset(minOffset);
                 offsetList.add(mqOffset);
             }
-        } catch (MQClientException e) {
+        } catch (Exception e) {
+            if(retryWithErr 
+                    && e instanceof MQClientException 
+                    && messageQueryCondition.getTopic().startsWith(MixAll.DLQ_GROUP_TOPIC_PREFIX)
+                    && e.getMessage().contains("Can not find Message Queue for this topic")) {
+                TopicRouteData topicRouteData = topicService.route(cluster, messageQueryCondition.getTopic());
+                if(topicRouteData != null) {
+                    List<QueueData> queueDatas = topicRouteData.getQueueDatas();
+                    QueueData queueData = queueDatas.get(0);
+                    TopicConfig topicConfig = new TopicConfig();
+                    topicConfig.setTopicName(messageQueryCondition.getTopic());
+                    topicConfig.setWriteQueueNums(queueData.getWriteQueueNums());
+                    topicConfig.setReadQueueNums(queueData.getReadQueueNums());
+                    topicConfig.setTopicSysFlag(queueData.getTopicSynFlag());
+                    Result<?> result = topicService.createAndUpdateTopicOnCluster(cluster, topicConfig);
+                    if(result.isNotOK()) {
+                        logger.warn("change topic:{} perm failed, {}", topicConfig.getTopicName(), result);
+                    } else {
+                        // 尝试一次
+                        return getMQOffsetList(cluster, consumer, messageQueryCondition, false);
+                    }
+                }
+            }
             logger.error("getMQOffsetList", e);
         }
         return offsetList;
@@ -442,6 +477,7 @@ public class MessageService {
             }
 
             public Result<?> exception(Exception e) throws Exception {
+                logger.error("cluster:{} topic:{} error", mqCluster, mp.getTopic(), e);
                 return Result.getWebErrorResult(e);
             }
 

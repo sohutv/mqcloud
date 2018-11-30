@@ -1,8 +1,6 @@
 package com.sohu.tv.mq.cloud.web.controller;
 
 import java.io.IOException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -31,7 +29,6 @@ import com.sohu.tv.mq.cloud.service.ClusterService;
 import com.sohu.tv.mq.cloud.service.MessageService;
 import com.sohu.tv.mq.cloud.service.TopicService;
 import com.sohu.tv.mq.cloud.util.CompressUtil;
-import com.sohu.tv.mq.cloud.util.DateUtil;
 import com.sohu.tv.mq.cloud.util.FreemarkerUtil;
 import com.sohu.tv.mq.cloud.util.Result;
 import com.sohu.tv.mq.cloud.util.SplitUtil;
@@ -48,6 +45,8 @@ import com.sohu.tv.mq.cloud.web.vo.UserInfo;
 @Controller
 @RequestMapping("/msg")
 public class TopicMessageController extends ViewController {
+    
+    public static final int TIME_SPAN = 5 * 60 * 1000;
     
     @Autowired
     private MessageService messageService;
@@ -82,7 +81,10 @@ public class TopicMessageController extends ViewController {
         messageQueryCondition.setCid((int)topic.getClusterId());
         messageQueryCondition.setTopic(topic.getName());
         // 舍掉毫秒
-        calculateTime(messageQueryCondition, (System.currentTimeMillis() - MessageQueryCondition.TIME_SPAN) / 1000 * 1000);
+        long now = System.currentTimeMillis() / 1000 * 1000;
+        long startTime = now - TIME_SPAN;
+        messageQueryCondition.setStart(startTime);
+        messageQueryCondition.setEnd(now);
         setResult(map, messageQueryCondition);
         
         // 获取集群信息
@@ -108,7 +110,8 @@ public class TopicMessageController extends ViewController {
     public String search(UserInfo userInfo, 
             HttpServletRequest request, 
             HttpServletResponse response, 
-            @RequestParam("time") String time,
+            @RequestParam("startTime") Long startTime,
+            @RequestParam("endTime") Long endTime,
             @RequestParam("append") boolean append,
             @RequestParam(name="key", required=false) String key,
             @RequestParam(name="messageParam") String messageParam,
@@ -118,7 +121,7 @@ public class TopicMessageController extends ViewController {
         if(StringUtils.isEmpty(key)) {
             key = null;
         }
-        MessageQueryCondition messageQueryCondition = parseParam(time, key, messageParam, append);
+        MessageQueryCondition messageQueryCondition = parseParam(startTime, endTime, key, messageParam, append);
         if(messageQueryCondition == null) {
             setResult(map, Result.getResult(Status.PARAM_ERROR));
             return view;
@@ -160,16 +163,14 @@ public class TopicMessageController extends ViewController {
             HttpServletRequest request, 
             HttpServletResponse response, 
             @RequestParam("topic") String topic,
-            @RequestParam("start") String start,
-            @RequestParam("end") String end,
+            @RequestParam("keyStartTime") Long beginTime,
+            @RequestParam("keyEndTime") Long endTime,
             @RequestParam("cid") int cid,
             @RequestParam(name="msgKey") String msgKey,
             Map<String, Object> map) throws Exception {
         String view = viewModule() + "/keySearch";
         Cluster cluster = clusterService.getMQClusterById(cid);
         // 时间点
-        long beginTime = toLong(start);
-        long endTime = toLong(end);
         if(beginTime == 0 || endTime == 0 || beginTime > endTime) {
             setResult(map, Result.getResult(Status.PARAM_ERROR));
         } else {
@@ -178,17 +179,6 @@ public class TopicMessageController extends ViewController {
             setResult(map, result);
         }
         return view;
-    }
-    
-    private long toLong(String dt) {
-        SimpleDateFormat simpleDateFormat = DateUtil.getFormat(DateUtil.YMD_DASH_BLANK_HMS_COLON);
-        try {
-            Date startDate = simpleDateFormat.parse(dt);
-            return startDate.getTime();
-        } catch (Exception e) {
-            logger.error("parse dt:{}", dt, e);
-        }
-        return 0;
     }
     
     /**
@@ -200,8 +190,11 @@ public class TopicMessageController extends ViewController {
      * @return
      * @throws IOException 
      */
-    private MessageQueryCondition parseParam(String time, String key, String messageParam, boolean append) 
-            throws IOException {
+    private MessageQueryCondition parseParam(Long startTime, Long endTime, String key, String messageParam, 
+            boolean append) throws IOException {
+        if(endTime < startTime || startTime <= 0 || endTime <= 0) {
+            return null;
+        }
         // 解析对象
         String json = CompressUtil.uncompress(messageParam);
         MessageQueryCondition messageQueryCondition = JSON.parseObject(json, MessageQueryCondition.class);
@@ -209,39 +202,13 @@ public class TopicMessageController extends ViewController {
             messageQueryCondition.prepareForSearch();
             return messageQueryCondition;
         }
-        // 解析查询的时间
-        long queryTime = 0;
-        try {
-            queryTime = DateUtil.getFormat(DateUtil.YMD_DASH_BLANK_HMS_COLON).parse(time).getTime();
-        } catch (Exception e) {
-            logger.error("time parse err:{}", time, e);
-        }
-        if(queryTime == 0) {
-            return null;
-        }
         messageQueryCondition.reset();
-        calculateTime(messageQueryCondition, queryTime);
+        messageQueryCondition.setStart(startTime);
+        messageQueryCondition.setEnd(endTime);
         if(StringUtils.isNotEmpty(key)) {
             messageQueryCondition.setKey(key);
         }
         return messageQueryCondition;
-    }
-    
-    /**
-     * 计算时间
-     * @param messageQueryCondition
-     * @param time
-     */
-    private void calculateTime(MessageQueryCondition messageQueryCondition, long time) {
-        messageQueryCondition.setTime(time);
-        messageQueryCondition.setStart(time - MessageQueryCondition.TIME_SPAN);
-        long end = time + MessageQueryCondition.TIME_SPAN;
-        // 舍掉毫秒
-        long now = System.currentTimeMillis() / 1000 * 1000;
-        if(end > now) {
-            end = now;
-        }
-        messageQueryCondition.setEnd(end);
     }
     
     /**
@@ -256,6 +223,48 @@ public class TopicMessageController extends ViewController {
         Result<?> trackResult = messageService.track(messageParam);
         setResult(map, trackResult);
         FreemarkerUtil.set("splitUtil", SplitUtil.class, map);
+        return view;
+    }
+    
+    /**
+     * 死消息搜索
+     * @return
+     * @throws Exception
+     */
+    @RequestMapping("/dead/search")
+    public String deadSearch(UserInfo userInfo, 
+            HttpServletRequest request, 
+            HttpServletResponse response, 
+            @RequestParam("deadStartTime") Long startTime,
+            @RequestParam("deadEndTime") Long endTime,
+            @RequestParam("deadCid") int cid,
+            @RequestParam("deadTopic") String topic,
+            @RequestParam("deadAppend") boolean append,
+            @RequestParam(name="deadMessageParam", required=false) String messageParam,
+            Map<String, Object> map) throws Exception {
+        String view = viewModule() + "/deadSearch";
+        if(endTime < startTime || startTime <= 0 || endTime <= 0) {
+            return null;
+        }
+        MessageQueryCondition messageQueryCondition = null;
+        if(StringUtils.isEmpty(messageParam)) {
+            messageQueryCondition = new MessageQueryCondition();
+            messageQueryCondition.setCid(cid);
+            messageQueryCondition.setTopic(topic);
+            messageQueryCondition.setStart(startTime);
+            messageQueryCondition.setEnd(endTime);
+            messageQueryCondition.reset();
+        } else {
+            messageQueryCondition = parseParam(startTime, endTime, null, messageParam, append);
+        }
+        if(messageQueryCondition == null) {
+            setResult(map, Result.getResult(Status.PARAM_ERROR));
+            return view;
+        }
+        
+        // 消息查询
+        Result<MessageData> result = messageService.queryMessage(messageQueryCondition);
+        setResult(map, result);
         return view;
     }
     

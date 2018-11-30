@@ -349,6 +349,7 @@ public class MQDeployer {
         if (brokerParam.isSlave()) {
             return Result.getResult(Status.NO_RESULT);
         }
+        Cluster cluster = clusterService.getMQClusterById(brokerParam.getMqClusterId());
         // 获取topic配置
         return mqAdminTemplate.execute(new MQAdminCallback<Result<String>>() {
             public Result<String> callback(MQAdminExt mqAdmin) throws Exception {
@@ -379,11 +380,12 @@ public class MQDeployer {
             }
 
             public Result<String> exception(Exception e) throws Exception {
+                logger.error("cluster:{} error", cluster, e);
                 return Result.getDBErrorResult(e);
             }
 
             public Cluster mqCluster() {
-                return clusterService.getMQClusterById(brokerParam.getMqClusterId());
+                return cluster;
             }
         });
     }
