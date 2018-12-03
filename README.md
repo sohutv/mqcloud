@@ -35,6 +35,10 @@
 
   ![消费详情](mq-cloud/src/main/resources/static/img/intro/consumeDetail2.png)
 
+* 某个消费者具体的消费详情-可以查询重试消息和死消息
+
+  ![消费详情](mq-cloud/src/main/resources/static/img/intro/consumeRetry.png)
+
 * 消息
 
   ![消息](mq-cloud/src/main/resources/static/img/intro/msgSearch.png)
