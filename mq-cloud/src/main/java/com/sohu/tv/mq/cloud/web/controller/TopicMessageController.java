@@ -9,6 +9,8 @@ import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.rocketmq.common.admin.TopicOffset;
+import org.apache.rocketmq.common.admin.TopicStatsTable;
 import org.apache.rocketmq.common.protocol.body.ClusterInfo;
 import org.apache.rocketmq.tools.admin.MQAdminExt;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -88,16 +90,29 @@ public class TopicMessageController extends ViewController {
         setResult(map, messageQueryCondition);
         
         // 获取集群信息
+        Cluster cluster = clusterService.getMQClusterById(topic.getClusterId());
         ClusterInfo clusterInfo = mqAdminTemplate.execute(new DefaultCallback<ClusterInfo>() {
             public ClusterInfo callback(MQAdminExt mqAdmin) throws Exception {
                 return mqAdmin.examineBrokerClusterInfo();
             }
             public Cluster mqCluster() {
-                return clusterService.getMQClusterById(topic.getClusterId());
+                return cluster;
             }
         });
         int brokerSize = clusterInfo.getBrokerAddrTable().size();
         setResult(map, "brokerSize", brokerSize);
+        
+        // 获取topic最大偏移量
+        TopicStatsTable topicStatsTable = topicService.stats(cluster, topic.getName());
+        if(topicStatsTable != null) {
+            long maxOffset = 0;
+            for(TopicOffset topicOffset : topicStatsTable.getOffsetTable().values()) {
+                if(maxOffset < topicOffset.getMaxOffset()) {
+                    maxOffset = topicOffset.getMaxOffset();
+                }
+            }
+            messageQueryCondition.setMaxOffset(maxOffset);
+        }
         return view;
     }
     
@@ -120,6 +135,8 @@ public class TopicMessageController extends ViewController {
         // 解析参数对象
         if(StringUtils.isEmpty(key)) {
             key = null;
+        } else {
+            key = key.trim();
         }
         MessageQueryCondition messageQueryCondition = parseParam(startTime, endTime, key, messageParam, append);
         if(messageQueryCondition == null) {
@@ -127,7 +144,7 @@ public class TopicMessageController extends ViewController {
             return view;
         }
         // 消息查询
-        Result<MessageData> result = messageService.queryMessage(messageQueryCondition);
+        Result<MessageData> result = messageService.queryMessage(messageQueryCondition, false);
         setResult(map, result);
         return view;
     }
@@ -147,6 +164,7 @@ public class TopicMessageController extends ViewController {
             Map<String, Object> map) throws Exception {
         String view = viewModule() + "/idSearch";
         Cluster cluster = clusterService.getMQClusterById(cid);
+        msgId = msgId.trim();
         // 消息查询
         Result<?> result = messageService.queryMessage(cluster, topic, msgId);
         setResult(map, result);
@@ -174,6 +192,7 @@ public class TopicMessageController extends ViewController {
         if(beginTime == 0 || endTime == 0 || beginTime > endTime) {
             setResult(map, Result.getResult(Status.PARAM_ERROR));
         } else {
+            msgKey = msgKey.trim();
             // 消息查询
             Result<List<DecodedMessage>> result = messageService.queryMessageByKey(cluster, topic, msgKey, beginTime, endTime);
             setResult(map, result);
@@ -192,7 +211,7 @@ public class TopicMessageController extends ViewController {
      */
     private MessageQueryCondition parseParam(Long startTime, Long endTime, String key, String messageParam, 
             boolean append) throws IOException {
-        if(endTime < startTime || startTime <= 0 || endTime <= 0) {
+        if(endTime < startTime) {
             return null;
         }
         // 解析对象
@@ -227,43 +246,75 @@ public class TopicMessageController extends ViewController {
     }
     
     /**
-     * 死消息搜索
+     * 根据偏移量搜索
      * @return
      * @throws Exception
      */
-    @RequestMapping("/dead/search")
-    public String deadSearch(UserInfo userInfo, 
+    @RequestMapping("/offset/search")
+    public String offsetSearch(UserInfo userInfo, 
             HttpServletRequest request, 
             HttpServletResponse response, 
-            @RequestParam("deadStartTime") Long startTime,
-            @RequestParam("deadEndTime") Long endTime,
-            @RequestParam("deadCid") int cid,
-            @RequestParam("deadTopic") String topic,
-            @RequestParam("deadAppend") boolean append,
-            @RequestParam(name="deadMessageParam", required=false) String messageParam,
+            @RequestParam("offsetStart") Long offsetStart,
+            @RequestParam("offsetEnd") Long offsetEnd,
+            @RequestParam(name="offsetKey", required=false) String key,
+            @RequestParam("append") boolean append,
+            @RequestParam(name="messageParam", required=false) String messageParam,
             Map<String, Object> map) throws Exception {
-        String view = viewModule() + "/deadSearch";
-        if(endTime < startTime || startTime <= 0 || endTime <= 0) {
-            return null;
-        }
-        MessageQueryCondition messageQueryCondition = null;
-        if(StringUtils.isEmpty(messageParam)) {
-            messageQueryCondition = new MessageQueryCondition();
-            messageQueryCondition.setCid(cid);
-            messageQueryCondition.setTopic(topic);
-            messageQueryCondition.setStart(startTime);
-            messageQueryCondition.setEnd(endTime);
-            messageQueryCondition.reset();
+        String view = viewModule() + "/offsetSearch";
+        // 解析参数对象
+        if(StringUtils.isEmpty(key)) {
+            key = null;
         } else {
-            messageQueryCondition = parseParam(startTime, endTime, null, messageParam, append);
+            key = key.trim();
         }
+        MessageQueryCondition messageQueryCondition = parseParam(offsetStart, offsetEnd, key, messageParam, append);
         if(messageQueryCondition == null) {
             setResult(map, Result.getResult(Status.PARAM_ERROR));
             return view;
         }
         
         // 消息查询
-        Result<MessageData> result = messageService.queryMessage(messageQueryCondition);
+        Result<MessageData> result = messageService.queryMessage(messageQueryCondition, true);
+        setResult(map, result);
+        return view;
+    }
+    
+    /**
+     * 根据偏移量搜索某个topic
+     * @return
+     * @throws Exception
+     */
+    @RequestMapping("/topic/offset/search")
+    public String topicOffsetSearch(UserInfo userInfo, 
+            HttpServletRequest request, 
+            HttpServletResponse response, 
+            @RequestParam("toCid") int cid,
+            @RequestParam("toTopic") String topic,
+            @RequestParam("toStart") Long offsetStart,
+            @RequestParam("toEnd") Long offsetEnd,
+            @RequestParam("toAppend") boolean append,
+            @RequestParam(name="toMessageParam", required=false) String messageParam,
+            Map<String, Object> map) throws Exception {
+        String view = viewModule() + "/topicOffsetSearch";
+        MessageQueryCondition messageQueryCondition = null;
+        if(StringUtils.isEmpty(messageParam)) {
+            messageQueryCondition = new MessageQueryCondition();
+            messageQueryCondition.setCid(cid);
+            messageQueryCondition.setTopic(topic);
+            messageQueryCondition.setStart(offsetStart);
+            messageQueryCondition.setEnd(offsetEnd);
+            messageQueryCondition.reset();
+        } else {
+            messageQueryCondition = parseParam(offsetStart, offsetEnd, null, messageParam, append);
+        }
+        if(messageQueryCondition == null) {
+            setResult(map, Result.getResult(Status.PARAM_ERROR));
+            return view;
+        }
+        messageQueryCondition.setTopic(topic);
+        
+        // 消息查询
+        Result<MessageData> result = messageService.queryMessage(messageQueryCondition, true);
         setResult(map, result);
         return view;
     }

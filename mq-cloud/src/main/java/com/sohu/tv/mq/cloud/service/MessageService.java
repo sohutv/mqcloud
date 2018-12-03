@@ -191,7 +191,7 @@ public class MessageService {
      * @return
      * @throws MQClientException
      */
-    public Result<MessageData> queryMessage(MessageQueryCondition messageQueryCondition) {
+    public Result<MessageData> queryMessage(MessageQueryCondition messageQueryCondition, boolean offsetSearch) {
         List<DecodedMessage> messageList = null;
         MQPullConsumer consumer = null;
         try {
@@ -200,7 +200,7 @@ public class MessageService {
             consumer = getConsumer(cluster);
             // 初始化参数
             if (messageQueryCondition.getMqOffsetList() == null) {
-                List<MQOffset> mqOffsetList = getMQOffsetList(cluster, consumer, messageQueryCondition, true);
+                List<MQOffset> mqOffsetList = getMQOffsetList(cluster, consumer, messageQueryCondition, true, offsetSearch);
                 if (mqOffsetList == null) {
                     return Result.getResult(Status.NO_RESULT);
                 }
@@ -217,7 +217,7 @@ public class MessageService {
                 if (!mqOffset.hasMessage()) {
                     continue;
                 }
-                fetchMessage(consumer, messageQueryCondition, mqOffset, messageList);
+                fetchMessage(consumer, messageQueryCondition, mqOffset, messageList, offsetSearch);
                 if (!messageQueryCondition.needSearch()) {
                     break;
                 }
@@ -254,7 +254,7 @@ public class MessageService {
      * @throws Exception
      */
     private void fetchMessage(MQPullConsumer consumer, MessageQueryCondition messageQueryCondition, MQOffset mqOffset,
-            List<DecodedMessage> messageList) throws Exception {
+            List<DecodedMessage> messageList, boolean offsetSearch) throws Exception {
         while (mqOffset.hasMessage() && messageQueryCondition.needSearch()) {
             try {
                 // 拉取消息
@@ -268,7 +268,7 @@ public class MessageService {
                         + pullResult.getMsgFoundList().size());
                 for (MessageExt msg : pullResult.getMsgFoundList()) {
                     // 过滤不在时间范围的消息
-                    if (!messageQueryCondition.valid(msg.getStoreTimestamp())) {
+                    if (!offsetSearch && !messageQueryCondition.valid(msg.getStoreTimestamp())) {
                         continue;
                     }
                     byte[] bytes = msg.getBody();
@@ -348,7 +348,7 @@ public class MessageService {
      * @throws MQClientException
      */
     private List<MQOffset> getMQOffsetList(Cluster cluster, MQPullConsumer consumer, 
-            MessageQueryCondition messageQueryCondition, boolean retryWithErr) {
+            MessageQueryCondition messageQueryCondition, boolean retryWithErr, boolean offsetSearch) {
         List<MQOffset> offsetList = null;
         try {
             Set<MessageQueue> mqs = consumer.fetchSubscribeMessageQueues(messageQueryCondition.getTopic());
@@ -357,8 +357,21 @@ public class MessageService {
                 long minOffset = 0;
                 long maxOffset = 0;
                 try {
-                    minOffset = consumer.searchOffset(mq, messageQueryCondition.getStart());
-                    maxOffset = consumer.searchOffset(mq, messageQueryCondition.getEnd());
+                    if(!offsetSearch) {
+                        minOffset = consumer.searchOffset(mq, messageQueryCondition.getStart());
+                        maxOffset = consumer.searchOffset(mq, messageQueryCondition.getEnd());
+                    } else {
+                        maxOffset = messageQueryCondition.getEnd();
+                        minOffset = messageQueryCondition.getStart();
+                        long tmpMaxOffset = consumer.maxOffset(mq);
+                        if(maxOffset > tmpMaxOffset) {
+                            maxOffset = tmpMaxOffset;
+                        }
+                        long tmpMinOffset = consumer.minOffset(mq);
+                        if(minOffset < tmpMinOffset) {
+                            minOffset = tmpMinOffset;
+                        }
+                    }
                 } catch (Exception e) {
                     logger.warn("mq:{} start:{} end:{} offset err:{}", mq, messageQueryCondition.getStart(),
                             messageQueryCondition.getEnd(),
@@ -392,7 +405,7 @@ public class MessageService {
                         logger.warn("change topic:{} perm failed, {}", topicConfig.getTopicName(), result);
                     } else {
                         // 尝试一次
-                        return getMQOffsetList(cluster, consumer, messageQueryCondition, false);
+                        return getMQOffsetList(cluster, consumer, messageQueryCondition, false, offsetSearch);
                     }
                 }
             }
@@ -400,7 +413,7 @@ public class MessageService {
         }
         return offsetList;
     }
-
+    
     /**
      * 获取消费者
      * 

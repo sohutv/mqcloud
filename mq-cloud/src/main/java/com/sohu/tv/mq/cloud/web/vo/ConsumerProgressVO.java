@@ -65,6 +65,10 @@ public class ConsumerProgressVO {
     }
 
     public Map<MessageQueue, OffsetWrapper> getRetryOffsetMap() {
+        // retry无数据不返回
+        if(getRetryMaxOffset() == 0) {
+            return null;
+        }
         return retryOffsetMap;
     }
 
@@ -136,6 +140,34 @@ public class ConsumerProgressVO {
             lastTimestamp = minReportTime;
         }
         return diffTotal;
+    }
+    
+    public long getMaxOffset() {
+        return getMaxOffset(offsetMap);
+    }
+    
+    public long getRetryMaxOffset() {
+        return getMaxOffset(retryOffsetMap);
+    }
+    
+    private long getMaxOffset(Map<MessageQueue, OffsetWrapper> offsetMap) {
+        long maxOffset = 0;
+        for(OffsetWrapper offsetWrapper : offsetMap.values()) {
+            if(maxOffset < offsetWrapper.getBrokerOffset()) {
+                maxOffset  = offsetWrapper.getBrokerOffset();
+            }
+        }
+        return maxOffset;
+    }
+    
+    public long getDlqMaxOffset() {
+        long maxOffset = 0;
+        for(TopicOffset topicOffset : dlqOffsetMap.values()) {
+            if(maxOffset < topicOffset.getMaxOffset()) {
+                maxOffset  = topicOffset.getMaxOffset();
+            }
+        }
+        return maxOffset;
     }
 
     public List<ConsumeStatsExt> getConsumeStatsList() {

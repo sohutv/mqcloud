@@ -48,4 +48,10 @@ public class DecodedMessage extends MessageExt {
         sb.append(inetSocketAddress.getPort());
         return sb.toString();
     }
+
+    @Override
+    public String toString() {
+        return super.toString();
+    }
+    
 }

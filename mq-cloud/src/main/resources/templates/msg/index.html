@@ -8,22 +8,37 @@
 	<form class="form-inline">
 		<div class="form-group">
 			<label for="type">查询方式: </label>
-			<label class="radio-inline" data-toggle='tooltip' title="按照时间段查询消息">
-			    <input type="radio" name="searchType" onclick="changeSearchType('time')" checked="checked">时间段
+		    <label class="radio-inline" data-toggle='tooltip' title="按照偏移量查询消息,最多检索5000条">
+			    <input type="radio" name="searchType" onclick="changeSearchType('offset')" checked="checked">偏移量
+			</label>
+		    <label class="radio-inline" data-toggle='tooltip' title="按照key查询消息，最多可查时间段内的${brokerSize*64}条">
+		    	<input type="radio" name="searchType" onclick="changeSearchType('key')">key
+		    </label>
+			<label class="radio-inline" data-toggle='tooltip' title="按照时间段查询消息,最多检索5000条">
+			    <input type="radio" name="searchType" onclick="changeSearchType('time')">时间段
 			</label>
 			<label class="radio-inline" data-toggle='tooltip' title="按照消息id查询">
 		    	<input type="radio" name="searchType" onclick="changeSearchType('msgId')">消息id
-		    </label>
-		    <label class="radio-inline" data-toggle='tooltip' title="按照key查询消息，最多可查时间段内的${brokerSize*64}条">
-		    	<input type="radio" name="searchType" onclick="changeSearchType('key')">key
 		    </label>
 		</div>
 	</form>
 	</div>
 	<div style="float:right;margin:10px 0px;">
 	<form class="form-inline" id="msgSearchForm">
+		<!-- 偏移量查询 -->
+		<div class="form-group offset">
+			<label for="offsetStart" data-toggle='tooltip' title="参考生产详情里的最小偏移量"> 起始偏移量: </label>
+			<input id="offsetStart" name="offsetStart" type="text" class="form-control" style="width:120px;" value="${response.result.minOffset?c}">
+		</div>
+		<div class="form-group offset">
+  			<label for="offsetEnd" data-toggle='tooltip' title="参考生产详情里的最大偏移量"> 结束偏移量: </label>
+			<input id="offsetEnd" name="offsetEnd" type="text" class="form-control" style="width:120px;" value="${response.result.maxOffset?c}">
+		</div>
+		<div class="form-group offset">
+    	    <input type="text" class="form-control" id="offsetKey" name="offsetKey" value="${response.result.key!}" placeholder="关键字，支持模糊匹配">
+  	    </div>
 		<!-- 时间段查询 -->
-		<div class="form-group time">
+		<div class="form-group time" style="display:none;">
 			<label for="startTimePicker"> 开始时间: </label>
 			<input id="startTimePicker" type="text" class="Wdate form-control" onclick="WdatePicker({ dateFmt: 'yyyy-MM-dd HH:mm:ss',maxDate:'%y-%M-%d',minDate:'%y-%M-{%d-5}',onpicked:function(){timeChange('startTime')}})" style="width:180px;height:34px;cursor:pointer;" readonly="readonly"
   								value="${response.result.start?number_to_datetime?string("yyyy-MM-dd HH:mm:ss")}">
@@ -33,7 +48,7 @@
   								value="${response.result.end?number_to_datetime?string("yyyy-MM-dd HH:mm:ss")}">
   			<input type="hidden" name="endTime" id="endTime" value="${response.result.end?c}">
 		</div>
-		<div class="form-group time">
+		<div class="form-group time" style="display:none;">
     	    <input type="text" class="form-control" id="key" name="key" value="${response.result.key!}" placeholder="关键字，支持模糊匹配">
   	    </div>
 		<!-- 消息查询 -->
@@ -54,16 +69,19 @@
   	    <div class="form-group key" style="display:none;">
     	    <input type="text" class="form-control" id="msgKey" name="msgKey" placeholder="消息key">
 		</div>
+  	    
 		<!-- 时间段查询参数 -->
   	    <input type="hidden" id="cid" name="cid" value="${response.result.cid}">
   	    <input type="hidden" id="topicDiv" name="topic" value="${response.result.topic}">
   	    <input type="hidden" id="append" name="append" value="false">
   	    <input type="hidden" id="messageParam" name="messageParam" value="${response.result.serialize()}">
-		<button type="button" onclick="searchMessage(false)" class="btn btn-search time"><span class="glyphicon glyphicon-search" aria-hidden="true"></span></button>
+		<button type="button" data-toggle='tooltip' title="如果查不到数据请使用偏移量查询" onclick="searchMessage(false)" class="btn btn-search time" style="display:none;"><span class="glyphicon glyphicon-search" aria-hidden="true"></span></button>
 		<!-- 消息查询 -->
 		<button type="button" onclick="viewMessage()" class="btn btn-search msgId" style="display:none;"><span class="glyphicon glyphicon-search" aria-hidden="true"></span></button>
 		<!-- key查询 -->
 		<button type="button" onclick="searchKeyMessage()" class="btn btn-search key" style="display:none;"><span class="glyphicon glyphicon-search" aria-hidden="true"></span></button>
+		<!-- 偏移量查询 -->
+		<button type="button" onclick="searchOffsetMessage(false)" class="btn btn-search offset"><span class="glyphicon glyphicon-search" aria-hidden="true"></span></button>
 	</form>
 	</div>
 	<table id="dataTable" class="table table-striped table-hover" style="margin-top: 0px;word-break:break-all; word-wrap:break-all;">
@@ -152,7 +170,11 @@ function next(){
 		if($("#data_"+(pageNum+1)).length > 0){
 			showPage(pageNum+1);
 		} else {
-			searchMessage(true);
+			if($("#offsetStart").is(":visible")){
+				searchOffsetMessage(true);
+			} else {
+				searchMessage(true);
+			}
 		}
 	}
 }
@@ -160,6 +182,25 @@ function next(){
 function searchMessage(append){
 	$("#append").val(append);
 	post('${request.contextPath}/msg/search', $("#msgSearchForm").serialize(), function(data){
+		if(!append){
+			$("#dataTable tbody").remove();
+			$("#dataTable input").remove();
+		}
+       	$("#dataTable").append(data);
+    });
+}
+//偏移量消息搜索
+function searchOffsetMessage(append){
+	if(!$("#offsetStart").val()){
+		alert("起始偏移量不能为空");
+		return;
+	}
+	if(!$("#offsetEnd").val()){
+		alert("结束偏移量不能为空");
+		return;
+	}
+	$("#append").val(append);
+	post('${request.contextPath}/msg/offset/search', $("#msgSearchForm").serialize(), function(data){
 		if(!append){
 			$("#dataTable tbody").remove();
 			$("#dataTable input").remove();
@@ -437,7 +478,7 @@ function setTrackOption(msg){
 	};
 }
 
-var prevSearchType = "time";
+var prevSearchType = "offset";
 function changeSearchType(type){
 	// 无改变
 	if(prevSearchType == type){

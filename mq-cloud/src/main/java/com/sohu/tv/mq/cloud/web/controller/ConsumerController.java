@@ -172,7 +172,7 @@ public class ConsumerController extends ViewController {
                 // 获取死topic状况
                 String dlqTopic = MixAll.getDLQTopic(consumer.getName());
                 consumerProgressVO.setDlqTopic(dlqTopic);
-                TopicStatsTable topicStatsTable = topicService.stats(topic.getClusterId(), dlqTopic);
+                TopicStatsTable topicStatsTable = topicService.stats(cluster, dlqTopic);
                 if(topicStatsTable != null) {
                     consumerProgressVO.setDlqOffsetMap(new TreeMap<MessageQueue, TopicOffset>(topicStatsTable.getOffsetTable()));
                 }

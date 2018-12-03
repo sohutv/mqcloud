@@ -285,18 +285,28 @@ public class TopicService {
      * @param topic
      */
     public TopicStatsTable stats(long clusterId, String topic) {
+        return stats(clusterService.getMQClusterById(clusterId), topic);
+    }
+    
+    /**
+     * 获取topic各个队列状态数据
+     * 
+     * @param mqCluster
+     * @param topic
+     */
+    public TopicStatsTable stats(Cluster cluster, String topic) {
         return mqAdminTemplate.execute(new MQAdminCallback<TopicStatsTable>() {
             public TopicStatsTable callback(MQAdminExt mqAdmin) throws Exception {
                 return mqAdmin.examineTopicStats(topic);
             }
 
             public Cluster mqCluster() {
-                return clusterService.getMQClusterById(clusterId);
+                return cluster;
             }
 
             @Override
             public TopicStatsTable exception(Exception e) throws Exception {
-                logger.warn("clusterId:{}, topic:{}, err:{}", clusterId, topic, e.getMessage());
+                logger.warn("cluster:{}, topic:{}, err:{}", cluster, topic, e.getMessage());
                 return null;
             }
         });

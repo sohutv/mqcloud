@@ -37,7 +37,7 @@ public class MessageServiceTest {
         messageParam.setEnd(end);
         messageParam.setCid(clusterService.getMQClusterById(2).getId());
         messageParam.setTopic("vrs-topic");
-        Result<MessageData> rst =  messageService.queryMessage(messageParam);
+        Result<MessageData> rst =  messageService.queryMessage(messageParam, false);
         Assert.assertNotNull(rst);
     }
 
@@ -56,7 +56,7 @@ public class MessageServiceTest {
 
         do {
             messageParam.prepareForSearch();
-            Result<MessageData> rst = messageService.queryMessage(messageParam);
+            Result<MessageData> rst = messageService.queryMessage(messageParam, false);
             MessageData messageData = rst.getResult();
             messageParam = messageData.getMqc();
             System.out.println("times:" + messageParam.getTimes() + " curSize:" + messageParam.getCurSize()

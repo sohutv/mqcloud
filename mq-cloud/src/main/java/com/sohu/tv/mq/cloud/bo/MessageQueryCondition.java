@@ -37,6 +37,8 @@ public class MessageQueryCondition {
     private long curSize;
     // 查询的次数
     private long times;
+    // 最大偏移量
+    private long maxOffset;
 
     public List<MQOffset> getMqOffsetList() {
         return mqOffsetList;
@@ -200,5 +202,18 @@ public class MessageQueryCondition {
         setCurSize(0);
         setPrevSize(0);
         setKey(null);
+    }
+
+    public long getMaxOffset() {
+        return maxOffset;
+    }
+
+    public void setMaxOffset(long maxOffset) {
+        this.maxOffset = maxOffset;
+    }
+    
+    public long getMinOffset() {
+        long minOffset = maxOffset - 100;
+        return minOffset < 0 ? 0 : minOffset;
     }
 }

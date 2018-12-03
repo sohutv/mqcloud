@@ -1,0 +1,30 @@
+<#if response.OK>
+	<#if response.result.msgList?? && response.result.msgList?size gt 0>
+		<tbody id="page_${response.result.mqc.times}">
+			<#list response.result.msgList as msg>
+				<tr>
+					<td title="${msg.msgId}">${msg_index + 1 + response.result.mqc.prevSize}</td>
+					<td>${msg.bornHostString}</td>
+					<td>${msg.bornTimestamp?number_to_datetime?string("yyyy-MM-dd HH:mm:ss")}</td>
+					<td>${msg.decodedBody}</td>
+					<td>${msg.keys!}</td>
+					<td>${msg.tags!}</td>
+					<td class="text-center"><span class="glyphicon glyphicon-eye-open" style="cursor:pointer;" onclick=track(${msg.toJson()}) data-target="#trackModal" data-toggle="modal"></span></td>
+				</tr>
+			</#list>
+		</tbody>
+	<#else>
+		<tbody id="page_${response.result.mqc.times}">
+			<tr><td colspan=7 class="text-center">本次查无数据</td></tr>
+		</tbody>
+	</#if>
+	<input type="hidden" id="data_${response.result.mqc.times}" data_size="${response.result.msgList?size}"  data_search="${response.result.mqc.searchedSize?c}" data_left="${response.result.mqc.leftSize?c}">
+	<script>
+		showPage(${response.result.mqc.times});
+		$("#messageParam").val('${response.result.mqc.serialize()}');
+	</script>
+<#else>
+	<tbody>
+		<tr><td colspan=7 class="text-center">查询异常！${response.message}</td></tr>
+	</tbody>
+</#if>
