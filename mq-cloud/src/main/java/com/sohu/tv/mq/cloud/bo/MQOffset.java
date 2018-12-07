@@ -37,7 +37,7 @@ public class MQOffset {
         this.offset = offset;
     }
     public boolean hasMessage() {
-        return offset <= maxOffset && maxOffset > 0;
+        return offset < maxOffset && maxOffset > 0;
     }
     @Override
     public String toString() {

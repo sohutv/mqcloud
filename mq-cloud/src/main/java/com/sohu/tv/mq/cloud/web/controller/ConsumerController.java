@@ -14,6 +14,8 @@ import javax.validation.Valid;
 import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.admin.ConsumeStats;
 import org.apache.rocketmq.common.admin.OffsetWrapper;
+import org.apache.rocketmq.common.admin.TopicOffset;
+import org.apache.rocketmq.common.admin.TopicStatsTable;
 import org.apache.rocketmq.common.message.MessageQueue;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -53,7 +55,7 @@ import com.sohu.tv.mq.cloud.web.controller.param.UserConsumerParam;
 import com.sohu.tv.mq.cloud.web.vo.ConsumerProgressVO;
 import com.sohu.tv.mq.cloud.web.vo.UserInfo;
 /**
- * topic接口
+ * 消费者接口
  * @Description: 
  * @author yongfeigao
  * @date 2018年6月12日
@@ -120,9 +122,10 @@ public class ConsumerController extends ViewController {
         Map<Long, List<User>> consumerMap = getConsumerMap(tid, cidList);
         
         List<ConsumerProgressVO> list = new ArrayList<ConsumerProgressVO>();
+        Topic topic = topicTopology.getTopic();
         if(!clusteringConsumerList.isEmpty()) {
             // 抓取集群消费模式下消费者状态
-            Cluster cluster = clusterService.getMQClusterById(topicTopology.getTopic().getClusterId());
+            Cluster cluster = clusterService.getMQClusterById(topic.getClusterId());
             Map<Long, ConsumeStats> consumeStatsMap = consumerService.fetchClusteringConsumeProgress(cluster, 
                     clusteringConsumerList);
             
@@ -130,7 +133,7 @@ public class ConsumerController extends ViewController {
             for(Consumer consumer : clusteringConsumerList) {
                 ConsumerProgressVO consumerProgressVO = new ConsumerProgressVO();
                 consumerProgressVO.setConsumer(consumer);
-                consumerProgressVO.setTopic(topicTopology.getTopic().getName());
+                consumerProgressVO.setTopic(topic.getName());
                 consumerProgressVO.setOwnerList(consumerMap.get(consumer.getId()));
                 if(consumeStatsMap == null) {
                     list.add(consumerProgressVO);
@@ -165,6 +168,15 @@ public class ConsumerController extends ViewController {
                         }
                     }
                 }
+                
+                // 获取死topic状况
+                String dlqTopic = MixAll.getDLQTopic(consumer.getName());
+                consumerProgressVO.setDlqTopic(dlqTopic);
+                TopicStatsTable topicStatsTable = topicService.stats(cluster, dlqTopic);
+                if(topicStatsTable != null) {
+                    consumerProgressVO.setDlqOffsetMap(new TreeMap<MessageQueue, TopicOffset>(topicStatsTable.getOffsetTable()));
+                }
+                
                 consumerProgressVO.setOffsetMap(offsetMap);
                 consumerProgressVO.setRetryOffsetMap(retryOffsetMap);
                 list.add(consumerProgressVO);
@@ -176,12 +188,12 @@ public class ConsumerController extends ViewController {
         if(!broadcastConsumerList.isEmpty()) {
             // 抓取广播消费模式下消费者状态
             Map<Long, List<ConsumeStatsExt>> consumeStatsMap = consumerService.fetchBroadcastConsumeProgress(
-                    topicTopology.getTopic(), broadcastConsumerList);
+                    topic, broadcastConsumerList);
             // 组装广播消费模式vo
             for(Consumer consumer : broadcastConsumerList) {
                 ConsumerProgressVO consumerProgressVO = new ConsumerProgressVO();
                 consumerProgressVO.setConsumer(consumer);
-                consumerProgressVO.setTopic(topicTopology.getTopic().getName());
+                consumerProgressVO.setTopic(topic.getName());
                 consumerProgressVO.setOwnerList(consumerMap.get(consumer.getId()));
                 if(consumeStatsMap == null) {
                     listExt.add(consumerProgressVO);
@@ -213,7 +225,7 @@ public class ConsumerController extends ViewController {
             }
         }
         setResult(map, "resultExt", Result.getResult(listExt));
-        setResult(map, "topic", topicTopology.getTopic());
+        setResult(map, "topic", topic);
         FreemarkerUtil.set("long", Long.class, map);
         return view;
     }

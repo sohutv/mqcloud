@@ -81,13 +81,24 @@ public class TopicService {
      * @return TopicRouteData
      */
     public TopicRouteData route(Topic topic) {
+        return route(clusterService.getMQClusterById(topic.getClusterId()), topic.getName());
+    }
+    
+    /**
+     * 获取topic路由数据
+     * 
+     * @param mqCluster
+     * @param topic
+     * @return TopicRouteData
+     */
+    public TopicRouteData route(Cluster cluster, String topic) {
         return mqAdminTemplate.execute(new DefaultCallback<TopicRouteData>() {
             public TopicRouteData callback(MQAdminExt mqAdmin) throws Exception {
-                return route(mqAdmin, topic.getName());
+                return route(mqAdmin, topic);
             }
 
             public Cluster mqCluster() {
-                return clusterService.getMQClusterById(topic.getClusterId());
+                return cluster;
             }
         });
     }
@@ -264,13 +275,39 @@ public class TopicService {
      * @param topic
      */
     public TopicStatsTable stats(Topic topic) {
-        return mqAdminTemplate.execute(new DefaultCallback<TopicStatsTable>() {
+        return stats(topic.getClusterId(), topic.getName());
+    }
+    
+    /**
+     * 获取topic各个队列状态数据
+     * 
+     * @param mqCluster
+     * @param topic
+     */
+    public TopicStatsTable stats(long clusterId, String topic) {
+        return stats(clusterService.getMQClusterById(clusterId), topic);
+    }
+    
+    /**
+     * 获取topic各个队列状态数据
+     * 
+     * @param mqCluster
+     * @param topic
+     */
+    public TopicStatsTable stats(Cluster cluster, String topic) {
+        return mqAdminTemplate.execute(new MQAdminCallback<TopicStatsTable>() {
             public TopicStatsTable callback(MQAdminExt mqAdmin) throws Exception {
-                return mqAdmin.examineTopicStats(topic.getName());
+                return mqAdmin.examineTopicStats(topic);
             }
 
             public Cluster mqCluster() {
-                return clusterService.getMQClusterById(topic.getClusterId());
+                return cluster;
+            }
+
+            @Override
+            public TopicStatsTable exception(Exception e) throws Exception {
+                logger.warn("cluster:{}, topic:{}, err:{}", cluster, topic, e.getMessage());
+                return null;
             }
         });
     }
@@ -335,27 +372,36 @@ public class TopicService {
      * @param auditTopic
      */
     public Result<?> createAndUpdateTopicOnCluster(Cluster mqCluster, AuditTopic auditTopic) {
+        TopicConfig topicConfig = new TopicConfig();
+        topicConfig.setReadQueueNums(auditTopic.getQueueNum());
+        topicConfig.setWriteQueueNums(auditTopic.getQueueNum());
+        topicConfig.setTopicName(auditTopic.getName());
+        if(auditTopic.getOrdered() == AuditTopic.HAS_ORDER) {
+            topicConfig.setOrder(true);
+        }
+        return createAndUpdateTopicOnCluster(mqCluster, topicConfig);
+    }
+    
+    /**
+     * 创建topic
+     * @param mqCluster
+     * @param auditTopic
+     */
+    public Result<?> createAndUpdateTopicOnCluster(Cluster mqCluster, TopicConfig topicConfig) {
         return mqAdminTemplate.execute(new MQAdminCallback<Result<?>>() {
             public Result<?> callback(MQAdminExt mqAdmin) throws Exception {
-                TopicConfig topicConfig = new TopicConfig();
-                topicConfig.setReadQueueNums(auditTopic.getQueueNum());
-                topicConfig.setWriteQueueNums(auditTopic.getQueueNum());
-                topicConfig.setTopicName(auditTopic.getName());
-                if(auditTopic.getOrdered() == AuditTopic.HAS_ORDER) {
-                    topicConfig.setOrder(true);
-                }
                 long start = System.currentTimeMillis();
                 Set<String> masterSet = CommandUtil.fetchMasterAddrByClusterName(mqAdmin, mqCluster.getName());
                 for (String addr : masterSet) {
                     mqAdmin.createAndUpdateTopicConfig(addr, topicConfig);
                 }
                 long end = System.currentTimeMillis();
-                logger.info("create topic use:{}ms,topic:{}", (end- start), auditTopic.getName());
+                logger.info("create or update topic use:{}ms,topic:{}", (end- start), topicConfig.getTopicName());
                 return Result.getOKResult();
             }
             @Override
             public Result<?> exception(Exception e) throws Exception {
-                logger.error("create topic:{} err:{}", auditTopic.getName(), e.getMessage());
+                logger.error("create or update topic:{} err:{}", topicConfig.getTopicName(), e.getMessage());
                 return Result.getWebErrorResult(e);
             }
             public Cluster mqCluster() {
@@ -546,6 +592,7 @@ public class TopicService {
             }
             @Override
             public Result<?> exception(Exception e) throws Exception {
+                logger.error("cluster:{} error", cluster, e);
                 return Result.getWebErrorResult(e).setException(e);
             }
         });

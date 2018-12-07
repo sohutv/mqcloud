@@ -40,8 +40,6 @@ public class MQAdminTemplate {
 			T t = callback.callback(mqAdmin);
 			return t;
 		} catch (Exception e) {
-		    // 异常记录日志
-		    logger.error("cluster:{} error", callback.mqCluster(), e);
 		    try {
 		        // 触发异常情况回调
                 return callback.exception(e);

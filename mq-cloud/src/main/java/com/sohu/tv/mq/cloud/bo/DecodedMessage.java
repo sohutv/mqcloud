@@ -2,7 +2,9 @@ package com.sohu.tv.mq.cloud.bo;
 
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
+import java.nio.ByteBuffer;
 
+import org.apache.rocketmq.common.message.MessageDecoder;
 import org.apache.rocketmq.common.message.MessageExt;
 
 import com.alibaba.fastjson.JSONObject;
@@ -48,4 +50,19 @@ public class DecodedMessage extends MessageExt {
         sb.append(inetSocketAddress.getPort());
         return sb.toString();
     }
+    
+    /**
+     * 获取offsetMsgId
+     * @return
+     */
+    public String getOffsetMsgId() {
+        ByteBuffer byteBufferMsgId = ByteBuffer.allocate(MessageDecoder.MSG_ID_LENGTH);
+        return MessageDecoder.createMessageId(byteBufferMsgId, getStoreHostBytes(), getCommitLogOffset());
+    }
+
+    @Override
+    public String toString() {
+        return super.toString();
+    }
+    
 }

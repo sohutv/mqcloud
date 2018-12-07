@@ -1,0 +1,164 @@
+<#if response.notOK>
+<div class="modal-body">
+	<div class="form-body">
+		<div class="form-group">
+			<div>异常数据</div>
+		</div>
+	</div>
+</div>
+<#else>
+<div class="modal-body">
+	<div class="form-body">
+		<div class="form-group">
+			<label class="control-label col-md-2"> Topic: </label>
+	        <div class="col-md-10">
+				<input type="text" value="${response.result.topic}" readonly="readonly" class="form-control" />
+			</div>
+		</div>
+		<div class="form-group">
+			<label class="control-label col-md-2"> 消息: </label>
+	        <div class="col-md-10">
+				<table id="dataTable" class="table table-striped table-hover" style="margin-top: 0px;word-break:break-all; word-wrap:break-all;">
+					<colgroup>
+						<col width="50px">
+						<col width="100px">
+						<col width="160px">
+						<col width="50px">
+						<col width="80px">
+						<col width="50px">
+					</colgroup>
+					<thead>
+						<tr>
+							<td>序号</td>
+							<td>msgId</td>
+							<td>重发时间</td>
+							<td data-toggle='tooltip' title="重发次数">次数</td>
+							<td>状态</td>
+							<td>操作</td>
+						</tr>
+					</thead>
+					<tbody>
+						<#list response.result.msgList as msg>
+							<tr>
+								<td>${msg_index + 1}</td>
+								<td>${msg.msgId}</td>
+								<td id="${msg.msgId}_time">
+									<#if msg.sendTime??>
+										${msg.sendTime?string("yyyyMMdd HH:mm:ss")}
+									</#if>
+								</td>
+								<td id="${msg.msgId}_times">${msg.times}</td>
+								<td id="${msg.msgId}_status">${msg.statusDesc}</td>
+								<td><span onclick=resendOneMessage('${msg.msgId}') data-toggle='tooltip' title="重发此消息" class="pointer glyphicon glyphicon-send"></span></td>
+							</tr>
+						</#list>
+					</tbody>
+				</table>
+			</div>
+		</div>
+		<div class="form-group">
+			<label class="control-label col-md-2"> 拒绝理由: </label>
+			<div class="col-md-10">
+				<textarea type="text" id="resendMessageRefuseReason" rows="3" class="form-control" placeholder="请填写"></textarea>
+			</div>
+		</div>
+	</div>
+</div>
+<div class="modal-footer">
+	<button type="button" data-dismiss="modal" class="btn" >取消</button>
+	<button type="button" class="btn btn-warning" id="disAgreeResendMessageBtn" onclick="disAgreeResendMessage()">拒绝</button>
+	<button type="button" class="btn btn-primary" data-toggle='tooltip' title="发送全部的消息(不包括已经已经发送成功的)" id="resendMessageBtn" onclick="resendMessage()">全部发送</button>
+	<button type="button" class="btn btn-primary" data-toggle='tooltip' title="全部发送成功才可以同意" id="agreeResendMessageBtn" onclick="agreeResendMessage()">同意</button>
+</div>
+
+<script>
+function agreeResendMessage(){
+	disable("agreeResendMessageBtn");
+	$.post('${request.contextPath}/admin/audit/resend/message',
+		{
+			aid: ${RequestParameters.aid}
+		},
+        function(data){
+            if(data.status == 200){
+            	toastr.success("审核成功, 系统将自动刷新");
+            	reload(3000);
+		    }else{
+		    	toastr.error("审核失败！"+data.message);
+		    	enable("agreeResendMessageBtn");
+		    }
+       }, 'json');
+}
+function disAgreeResendMessage(){
+	var refuseReason = $("#resendMessageRefuseReason").val();
+	if(!refuseReason){
+		alert("请填写拒绝理由");
+		return;
+	}
+	disable("disAgreeResendMessageBtn");
+	$.post('${request.contextPath}/admin/audit/refuse',
+		{
+			aid: ${RequestParameters.aid},
+			refuseReason: refuseReason
+		},
+        function(data){
+            if(data.status == 200){
+            	toastr.success("拒绝成功, 系统将自动刷新");
+            	reload(3000);
+		    }else{
+		    	toastr.error("拒绝失败！"+data.message);
+		    	enable("disAgreeResendMessageBtn");
+		    }
+       }, 'json');
+}
+/**
+ * 重发消息
+ */
+function resendMessage(){
+	disable("resendMessageBtn");
+	$.post('${request.contextPath}/admin/message/resend',
+		{
+			aid: ${RequestParameters.aid}
+		},
+        function(data){
+	    	enable("resendMessageBtn");
+	    	dealReturnData(data);
+       }, 'json');
+}
+
+/**
+ * 重发一条消息
+ */
+function resendOneMessage(msgId){
+	post('${request.contextPath}/admin/message/resend/one',
+		{
+			aid: ${RequestParameters.aid},
+			msgId : msgId
+		},
+        function(data){
+			dealReturnData(data);
+       }, 'json');
+}
+
+function dealReturnData(data){
+    if(data.status == 200){
+    	toastr.success("发送成功");
+    } else {
+    	toastr.error("发送失败！消息总量:"+data.result.total 
+    			+" 成功:"+data.result.success
+    			+" 失败:"+data.result.failed
+    			+" 状态更新失败:"+data.result.statusUpdatedFailed, 
+    			"", {timeOut: 20000});
+    }
+    if(!data.result.msgList){
+    	return;
+    }
+    for(var i in data.result.msgList){
+    	var msg = data.result.msgList[i];
+    	$("#"+msg.msgId+"_time").html(msg.sendTimeFormat);
+    	$("#"+msg.msgId+"_times").html(msg.times);
+    	$("#"+msg.msgId+"_status").html(msg.statusDesc);
+    }
+}
+$("[data-toggle='tooltip']").tooltip({container: 'body'});
+</script>
+</#if>

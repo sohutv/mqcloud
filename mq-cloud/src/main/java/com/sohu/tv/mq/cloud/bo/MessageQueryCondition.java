@@ -16,7 +16,6 @@ import com.sohu.tv.mq.cloud.util.CompressUtil;
 public class MessageQueryCondition {
     public static final int MESSAGE_SIZE = 30;
     public static final int MAX_MESSAGE_SIZE = 5000;
-    public static final int TIME_SPAN = 60 * 1000;
     private List<MQOffset> mqOffsetList;
     // topic
     private String topic;
@@ -24,8 +23,6 @@ public class MessageQueryCondition {
     private int cid;
     // 关键字
     private String key;
-    // 查询时间
-    private long time;
     // 查询时间
     private long start;
     // 查询时间
@@ -40,6 +37,8 @@ public class MessageQueryCondition {
     private long curSize;
     // 查询的次数
     private long times;
+    // 最大偏移量
+    private long maxOffset;
 
     public List<MQOffset> getMqOffsetList() {
         return mqOffsetList;
@@ -165,14 +164,6 @@ public class MessageQueryCondition {
         return CompressUtil.compress(JSON.toJSONString(this));
     }
 
-    public long getTime() {
-        return time;
-    }
-
-    public void setTime(long time) {
-        this.time = time;
-    }
-
     public void setStart(long start) {
         this.start = start;
     }
@@ -211,5 +202,18 @@ public class MessageQueryCondition {
         setCurSize(0);
         setPrevSize(0);
         setKey(null);
+    }
+
+    public long getMaxOffset() {
+        return maxOffset;
+    }
+
+    public void setMaxOffset(long maxOffset) {
+        this.maxOffset = maxOffset;
+    }
+    
+    public long getMinOffset() {
+        long minOffset = maxOffset - 100;
+        return minOffset < 0 ? 0 : minOffset;
     }
 }

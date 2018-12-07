@@ -3,9 +3,11 @@ package com.sohu.tv.mq.cloud.task;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.commons.lang3.math.NumberUtils;
 import org.slf4j.Logger;
@@ -15,11 +17,13 @@ import org.springframework.scheduling.annotation.Scheduled;
 
 import com.sohu.tv.mq.cloud.bo.ProducerStat;
 import com.sohu.tv.mq.cloud.bo.ProducerTotalStat;
+import com.sohu.tv.mq.cloud.bo.User;
 import com.sohu.tv.mq.cloud.bo.UserProducer;
 import com.sohu.tv.mq.cloud.service.AlertService;
 import com.sohu.tv.mq.cloud.service.ProducerStatService;
 import com.sohu.tv.mq.cloud.service.ProducerTotalStatService;
 import com.sohu.tv.mq.cloud.service.UserProducerService;
+import com.sohu.tv.mq.cloud.service.UserService;
 import com.sohu.tv.mq.cloud.util.DateUtil;
 import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper;
 import com.sohu.tv.mq.cloud.util.Result;
@@ -53,6 +57,9 @@ public class ProducerStatsTask {
     
     @Autowired
     private MQCloudConfigHelper mqCloudConfigHelper;
+    
+    @Autowired
+    private UserService userService;
     
     /**
      * 删除统计表数据
@@ -97,45 +104,31 @@ public class ProducerStatsTask {
     public void exceptionProducerStats() {
         taskExecutor.execute(new Runnable() {
             public void run() {
-                producerExcetpion();
+                Date date = new Date();
+                int dt = NumberUtils.toInt(DateUtil.formatYMD(date));
+                String time = DateUtil.getFormat(DateUtil.HHMM).format(new Date(date.getTime() - 5 * 60 * 1000));
+                producerExcetpion(dt, time);
             }
         });
     }
     
-    private void producerExcetpion() {
-        Date date = new Date();
-        int dt = NumberUtils.toInt(DateUtil.formatYMD(date));
-        String time = DateUtil.getFormat(DateUtil.HHMM).format(new Date(date.getTime() - 5 * 60 * 1000));
+    protected void producerExcetpion(int dt, String time) {
+        long start = System.currentTimeMillis();
         int size = 0;
         Result<List<ProducerTotalStat>> listResult = producerTotalStatService.queryExceptionList(dt, time);
         if(listResult.isNotEmpty()) {
-            StringBuilder sb = new StringBuilder();
-            sb.append("<table border=1>");
-            sb.append("<thead>");
-            sb.append("<tr>");
-            sb.append("<td>");
-            sb.append("producer");
-            sb.append("</td>");
-            sb.append("<td>");
-            sb.append("时间");
-            sb.append("</td>");
-            sb.append("<td>");
-            sb.append("client");
-            sb.append("</td>");
-            sb.append("<td>");
-            sb.append("broker");
-            sb.append("</td>");
-            sb.append("<td>");
-            sb.append("异常");
-            sb.append("</td>");
-            sb.append("</tr>");
-            sb.append("</thead>");
-            sb.append("<tbody>");
             List<ProducerTotalStat> list = listResult.getResult();
             size = list.size();
             Map<String, List<ProducerTotalStat>> groupedMap = group(list);
             for(String k : groupedMap.keySet()) {
-                long tid = getTid(k);
+                StringBuilder sb = new StringBuilder();
+                sb.append("<table border=1>");
+                sb.append("<thead><tr><td>producer</td><td>时间</td><td>client</td><td>broker</td><td>异常</td></tr></thead>");
+                sb.append("<tbody>");
+                // 获取发送者列表
+                List<UserProducer> userProducerList = getUserProducer(k);
+                
+                long tid = userProducerList == null ? 0 : userProducerList.get(0).getTid();
                 List<ProducerTotalStat> totalList = groupedMap.get(k);
                 for(ProducerTotalStat producerTotalStat : totalList) {
                     Result<List<ProducerStat>> producerStatResult = producerStatService.query(producerTotalStat.getId());
@@ -184,13 +177,16 @@ public class ProducerStatsTask {
                     }
                     sb.append("</tr>");
                 }
+                
+                sb.append("</tbody>");
+                sb.append("</table>");
+                
+                String userMail = getUserMail(userProducerList);
+                alertService.sendWanMail(userMail, "客户端异常", sb.toString());
             }
-            sb.append("</tbody>");
-            sb.append("</table>");
-            alertService.sendMail("MQCloud客户端异常", sb.toString());
         }
         logger.info("exceptionProducerStats dt:{} time:{} size:{} use:{}ms", dt, time, size, 
-                (System.currentTimeMillis() - date.getTime()));
+                (System.currentTimeMillis() - start));
     }
     
     private void removeBlankException(List<ProducerStat> producerStatList) {
@@ -208,13 +204,45 @@ public class ProducerStatsTask {
      * @param producer
      * @return
      */
-    private long getTid(String producer) {
+    private List<UserProducer> getUserProducer(String producer) {
         Result<List<UserProducer>> userProducerResult = userProducerService.queryUserProducer(producer);
         if(userProducerResult.isNotEmpty()) {
-            UserProducer userProducer = userProducerResult.getResult().get(0);
-            return userProducer.getTid();
+            return userProducerResult.getResult();
         }
-        return 0;
+        return null;
+    }
+    
+    /**
+     * 获取topic id
+     * @param producer
+     * @return
+     */
+    private String getUserMail(List<UserProducer> userProducerList) {
+        if(userProducerList == null) {
+            return null;
+        }
+        Set<Long> userIDSet = new HashSet<Long>();
+        for(UserProducer userProducer : userProducerList) {
+            userIDSet.add(userProducer.getUid());
+        }
+        String receiver = null;
+        // 获取用户id
+        if(!userIDSet.isEmpty()) {
+            // 获取用户信息
+            Result<List<User>> userListResult = userService.query(userIDSet);
+            StringBuilder sb = new StringBuilder();
+            if(userListResult.isNotEmpty()) {
+                for(User u : userListResult.getResult()) {
+                    sb.append(u.getEmail());
+                    sb.append(",");
+                }
+            }
+            if(sb.length() > 0) {
+                sb.deleteCharAt(sb.length() - 1);
+                receiver = sb.toString();
+            }
+        }
+        return receiver;
     }
     
     /**

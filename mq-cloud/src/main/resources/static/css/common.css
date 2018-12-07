@@ -133,3 +133,26 @@ legend{padding:.5em;border:0;width:auto;margin-bottom:10px}
 .tableUpdate > tfoot > tr > td {
 	padding : 4px;
 }
+
+
+.tooltip{
+  z-index: 1151 !important;
+}
+
+.selected{
+    background-color: #d9edf7;
+}
+
+.table-striped > tbody > tr.selected:nth-child(odd) > td,
+.table-striped > tbody > tr.selected:nth-child(odd) > th {
+  background-color: #d9edf7;
+}
+
+.table-hover > tbody > tr.selected:hover > td,
+.table-hover > tbody > tr.selected:hover > th {
+  background-color: #d9edf7;
+}
+
+table.tr-pointer > tbody > tr:not(.no_more_data){
+	cursor:pointer;
+}

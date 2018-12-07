@@ -16,6 +16,7 @@ import com.sohu.tv.mq.cloud.bo.Audit.TypeEnum;
 import com.sohu.tv.mq.cloud.bo.AuditAssociateConsumer;
 import com.sohu.tv.mq.cloud.bo.AuditAssociateProducer;
 import com.sohu.tv.mq.cloud.bo.AuditConsumer;
+import com.sohu.tv.mq.cloud.bo.AuditResendMessage;
 import com.sohu.tv.mq.cloud.bo.AuditResetOffset;
 import com.sohu.tv.mq.cloud.bo.AuditTopic;
 import com.sohu.tv.mq.cloud.bo.AuditTopicUpdate;
@@ -73,6 +74,9 @@ public class AuditService {
     
     @Autowired
     private AuditUserConsumerDeleteDao auditUserConsumerDeleteDao;
+    
+    @Autowired
+    private AuditResendMessageService auditResendMessageService;
 
     /**
      * 查询列表
@@ -397,6 +401,32 @@ public class AuditService {
             count = auditDao.insert(audit);
             if (count != null && count > 0) {
                 auditUserConsumerDeleteDao.insert(audit.getId(), ucid, consumer, topic, uid);
+            }
+        } catch (Exception e) {
+            logger.error("insert err, audit:{}", audit, e);
+            TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+            return Result.getDBErrorResult(e);
+        }
+        return Result.getResult(audit);
+    }
+    
+    /**
+     * 保存审核以及重发消息信息
+     * @param audit
+     * @param auditResendMessageList
+     * @return
+     */
+    @Transactional
+    public Result<?> saveAuditAndAuditResendMessage(Audit audit, List<AuditResendMessage> auditResendMessageList){
+        Long count = null;
+        try {
+            count = auditDao.insert(audit);
+            //如果保存成功，保存auditResendMessageList
+            if(count != null && count > 0) {
+                for(AuditResendMessage msg : auditResendMessageList) {
+                    msg.setAid(audit.getId());
+                }
+                auditResendMessageService.save(auditResendMessageList);
             }
         } catch (Exception e) {
             logger.error("insert err, audit:{}", audit, e);

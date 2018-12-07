@@ -47,6 +47,8 @@ public enum Status {
     EMAIL_SEND_ERR(512, "数据操作成功，发送审核邮件失败"),
     DB_UPDATE_ERR_DELETE_USERCONSUMER_OK(513, "userConsumer删除成功,但是审核记录更新失败"),
     AUDIT_RECORD_REPEAT(514, "已提交该审核记录，不可重复提交，请耐心等待"),
+    AUDIT_MESSAGE_CANNOT_AUTID_WHEN_NOT_SEND_OK(515, "消息还未全部发送成功，不可审批"),
+    AUDIT_MESSAGE_NOT_SEND_OK(516, "消息未发送成功"),
     // 6xx代表web请求异常
     WEB_ERROR(600, "请求错误"),
     WEB_ERROR_PAGE(601, "出错了，请联系管理员"),

@@ -133,3 +133,50 @@ function grafanaClick(chart){
 		return false;
 	}
 }
+
+/**
+ * 格式化时间戳
+ * @param longDate
+ * @returns
+ */
+function formatDateYMDHM(longDate) {
+	if (!longDate) {
+		return "";
+	}
+	var d = new Date(parseInt(longDate));
+	var m = parseInt(d.getMonth(), 10) + 1;
+	var da = parseInt(d.getDate(), 10);
+	var hour = parseInt(d.getHours(), 10);
+	var min = parseInt(d.getMinutes(), 10);
+	var sec = parseInt(d.getSeconds(), 10);
+	if (m < 10) {
+		m = "0" + m;
+	}
+	if (da < 10) {
+		da = "0" + da;
+	}
+	if (hour < 10) {
+		hour = "0" + hour;
+	}
+	if (min < 10) {
+		min = "0" + min;
+	}
+	if (sec < 10) {
+		sec = "0" + sec;
+	}
+	return d.getFullYear() + "-" + m + "-" + da + " " + hour + ":" + min + ":" + sec;
+}
+
+
+/**
+ * 解析格式化字符串到时间戳
+ * @param formatDate yyyy-MM-dd HH:mm:ss
+ * @returns
+ */
+function parseDate(formatDate) {
+	if (!formatDate) {
+		return "";
+	}
+	var date = Date.parse(formatDate.replace(/-/g,'/'));
+	return date;
+}

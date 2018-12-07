@@ -1,5 +1,6 @@
 package com.sohu.tv.mq.cloud.mq;
 
+import org.apache.rocketmq.common.admin.TopicStatsTable;
 import org.apache.rocketmq.common.protocol.body.ClusterInfo;
 import org.apache.rocketmq.tools.admin.MQAdminExt;
 import org.junit.Assert;
@@ -20,9 +21,11 @@ public class MQAdminTemplateTest {
     @Autowired
     private ClusterService clusterService;
     
+    @Autowired
+    private MQAdminTemplate mqAdminTemplate;
+    
     @Test
     public void test() {
-        MQAdminTemplate mqAdminTemplate = new MQAdminTemplate();
         ClusterInfo clusterInfo = mqAdminTemplate.execute(new DefaultCallback<ClusterInfo>() {
             public ClusterInfo callback(MQAdminExt mqAdmin) throws Exception {
                 ClusterInfo clusterInfo = mqAdmin.examineBrokerClusterInfo();
@@ -37,7 +40,6 @@ public class MQAdminTemplateTest {
     
     @Test
     public void testException() {
-        MQAdminTemplate mqAdminTemplate = new MQAdminTemplate();
         ClusterInfo clusterInfo = mqAdminTemplate.execute(new MQAdminCallback<ClusterInfo>() {
             public ClusterInfo callback(MQAdminExt mqAdmin) throws Exception {
                 throw new RuntimeException("only for test");
@@ -52,6 +54,20 @@ public class MQAdminTemplateTest {
         });
         Assert.assertNotNull(clusterInfo);
         System.out.println(clusterInfo);
+    }
+    
+    @Test
+    public void testExamineTopicStats() {
+        TopicStatsTable topicStatsTable = mqAdminTemplate.execute(new DefaultCallback<TopicStatsTable>() {
+            public TopicStatsTable callback(MQAdminExt mqAdmin) throws Exception {
+                TopicStatsTable topicStatsTable = mqAdmin.examineTopicStats("%DLQ%ugc-consumer-56-app-data-sync-group");
+                return topicStatsTable;
+            }
+            public Cluster mqCluster() {
+                return clusterService.getMQClusterById(1);
+            }
+        });
+        Assert.assertNotNull(topicStatsTable);
     }
 
 }

@@ -25,7 +25,8 @@ public class DateUtil {
     public static final String YMDHM_DASH = "yyyy-MM-dd-HH-mm";
     public static final String YMD_DASH_DOT_H = "yyyy-MM-dd.HH";
     public static final String YMDHMS_DOT_SSS = "yyyyMMddHHmmss.SSS";
-    public static final String YMD_BLANK_HMS_COLON = "yyyyMMdd HH:mm";
+    public static final String YMD_BLANK_HM_COLON = "yyyyMMdd HH:mm";
+    public static final String YMD_BLANK_HMS_COLON = "yyyyMMdd HH:mm:ss";
     public static final String YMD_DASH_BLANK_HMS_COLON = "yyyy-MM-dd HH:mm:ss";
     public static final String YMD_BLANK_HMS_COLON_DOT_SSS = "yyyyMMdd HH:mm:ss.SSS";
 
