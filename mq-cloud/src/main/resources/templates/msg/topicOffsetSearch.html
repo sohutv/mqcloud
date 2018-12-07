@@ -2,11 +2,11 @@
 	<#if response.result.msgList?? && response.result.msgList?size gt 0>
 		<tbody id="offsetPage_${response.result.mqc.times}">
 			<#list response.result.msgList as msg>
-				<tr>
+				<tr data="${msg.offsetMsgId}" dataIdx="${msg_index + 1 + response.result.mqc.prevSize}">
 					<td title="${msg.msgId}">${msg_index + 1 + response.result.mqc.prevSize}</td>
 					<td>${msg.bornHostString}</td>
-					<td>${msg.bornTimestamp?number_to_datetime?string("yyyy-MM-dd HH:mm:ss")}</td>
-					<td title='${msg.storeTimestamp?number_to_datetime?string("yyyy-MM-dd HH:mm:ss")}'>${msg.reconsumeTimes}</td>
+					<td title='${msg.storeTimestamp?number_to_datetime?string("yyyy-MM-dd HH:mm:ss")}'>${msg.bornTimestamp?number_to_datetime?string("yyyy-MM-dd HH:mm:ss")}</td>
+					<td>${msg.reconsumeTimes}</td>
 					<td>${msg.decodedBody}</td>
 				</tr>
 			</#list>

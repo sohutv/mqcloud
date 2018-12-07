@@ -17,10 +17,12 @@ import org.apache.rocketmq.client.consumer.PullResult;
 import org.apache.rocketmq.client.consumer.PullStatus;
 import org.apache.rocketmq.client.exception.MQBrokerException;
 import org.apache.rocketmq.client.exception.MQClientException;
+import org.apache.rocketmq.client.producer.SendResult;
 import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.TopicConfig;
 import org.apache.rocketmq.common.admin.ConsumeStats;
 import org.apache.rocketmq.common.admin.OffsetWrapper;
+import org.apache.rocketmq.common.message.Message;
 import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.common.message.MessageQueue;
 import org.apache.rocketmq.common.protocol.ResponseCode;
@@ -40,6 +42,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.web.util.HtmlUtils;
 
 import com.alibaba.fastjson.JSON;
 import com.sohu.tv.mq.cloud.bo.Cluster;
@@ -52,6 +55,7 @@ import com.sohu.tv.mq.cloud.bo.MessageTrackExt;
 import com.sohu.tv.mq.cloud.mq.DefaultCallback;
 import com.sohu.tv.mq.cloud.mq.MQAdminCallback;
 import com.sohu.tv.mq.cloud.mq.MQAdminTemplate;
+import com.sohu.tv.mq.cloud.mq.SohuMQAdmin;
 import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper;
 import com.sohu.tv.mq.cloud.util.MessageTypeLoader;
 import com.sohu.tv.mq.cloud.util.Result;
@@ -327,7 +331,7 @@ public class MessageService {
         if (decodedBody instanceof byte[]) {
             m.setDecodedBody(new String((byte[]) decodedBody));
         } else if (decodedBody instanceof String) {
-            m.setDecodedBody((String) decodedBody);
+            m.setDecodedBody(HtmlUtils.htmlEscape((String)decodedBody));
         } else if (decodedBody instanceof Map && 
                 mqCloudConfigHelper.getMapWithByteList() != null &&
                 !mqCloudConfigHelper.getMapWithByteList().contains(msg.getTopic())) {
@@ -664,5 +668,33 @@ public class MessageService {
             }
         }
         return false;
+    }
+    
+    /**
+     * 重发消息
+     * @param cluster
+     * @param topic
+     * @param msgId
+     * @return Result<SendResult>
+     */
+    public Result<SendResult> resend(Cluster cluster, String topic, String msgId) {
+        return mqAdminTemplate.execute(new MQAdminCallback<Result<SendResult>>() {
+            public Result<SendResult> callback(MQAdminExt mqAdmin) throws Exception {
+                MessageExt messageExt = mqAdmin.viewMessage(topic, msgId);
+                SohuMQAdmin sohuMQAdmin = (SohuMQAdmin) mqAdmin;
+                Message message = new Message(topic, messageExt.getTags(), messageExt.getKeys(), messageExt.getBody());
+                SendResult sr = sohuMQAdmin.sendMessage(message);
+                return Result.getResult(sr);
+            }
+
+            public Result<SendResult> exception(Exception e) throws Exception {
+                logger.error("cluster:{} topic:{} msgId:{}, send msg err", cluster, topic, msgId, e);
+                return Result.getDBErrorResult(e);
+            }
+
+            public Cluster mqCluster() {
+                return cluster;
+            }
+        });
     }
 }

@@ -82,13 +82,17 @@
 		<button type="button" onclick="searchKeyMessage()" class="btn btn-search key" style="display:none;"><span class="glyphicon glyphicon-search" aria-hidden="true"></span></button>
 		<!-- 偏移量查询 -->
 		<button type="button" onclick="searchOffsetMessage(false)" class="btn btn-search offset"><span class="glyphicon glyphicon-search" aria-hidden="true"></span></button>
+		<!-- 消息重发 -->
+		<#if owner == 1>
+			<button type="button"  data-toggle='tooltip' title="重发消息" onclick="resendMessageTip()" class="btn"><span class="glyphicon glyphicon-send"></span></button>
+		</#if>
 	</form>
 	</div>
-	<table id="dataTable" class="table table-striped table-hover" style="margin-top: 0px;word-break:break-all; word-wrap:break-all;">
+	<table id="dataTable" class="table table-striped table-hover <#if owner == 1>tr-pointer</#if>" style="margin-top: 0px;word-break:break-all; word-wrap:break-all;">
 		<colgroup>
 			<col width="50px">
 			<col width="130px">
-			<col width="155px">
+			<col width="160px">
 			<col>
 			<col width="120px">
 			<col width="80px">
@@ -126,6 +130,24 @@
 			</div>
 			<div class="modal-body">
 				<div id="trackDiv"> </div>
+			</div>
+		</div>
+	</div>
+</div>
+<!-- 消息重发确认 -->
+<div id="resendMsgModal" class="modal fade" tabindex="-1" data-width="400">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+				<h4 class="modal-title">消息重发</h4>
+			</div>
+			<div class="modal-body text-center" style="word-break:break-all">
+				重新发送序号为<b id="dataIdx"></b>的消息?
+			</div>
+			<div class="modal-footer">
+				<button type="button" data-dismiss="modal" class="btn" >取消</button>
+				<button type="button" class="btn btn-primary" id="resendMessageBtn" onclick="resendMessage()">确定</button>
 			</div>
 		</div>
 	</div>
@@ -491,7 +513,8 @@ function changeSearchType(type){
 	prevSearchType = type;
 	
 	// 清空数据
-	$("#dataTable tbody").html("<tr class='no_more_data'><td colspan=7 class='text-center'>暂无数据</td></tr>");
+	$("#dataTable tbody").remove();
+	$("#dataTable").append("<tbody><tr class='no_more_data'><td colspan=7 class='text-center'>暂无数据</td></tr></tbody>");
 	$("#dataTable input").remove();
 	$("#pager").hide();
 }
@@ -503,4 +526,52 @@ function timeChange(id){
 }
 // 初始化key查询方式的时间
 timeChange('keyStartTime');
+
+// 初始化多选
+function initMultiSelect(bodyId){
+	<#if owner == 1>
+		$('#dataTable ' + bodyId).multiSelect();
+	</#if>
+}
+
+// 重发消息 提示
+function resendMessageTip(){
+	var dataIdxArray = new Array();
+	$('#dataTable tbody tr.selected').each(function(){
+		dataIdxArray.push($(this).attr("dataIdx"));
+	});
+	if(dataIdxArray.length == 0) {
+		alert("请先选择消息(支持shift和ctrl)");
+		return;
+	}
+	$("#dataIdx").html(dataIdxArray.toString());
+	$('#resendMsgModal').modal('show');
+}
+
+//重发消息 
+function resendMessage(){
+	var dataArray = new Array();
+	$('#dataTable tbody tr.selected').each(function(){
+		dataArray.push($(this).attr("data"));
+	});
+	if(dataArray.length == 0) {
+		alert("请先选择消息(支持shift和ctrl)");
+		return;
+	}
+	disable("resendMessageBtn");
+	$.post('${request.contextPath}/msg/resend',
+		{
+			msgIds: dataArray.toString(),
+			tid: ${RequestParameters.tid}
+		},
+        function(data){
+			enable("resendMessageBtn");
+            if(data.status == 200){
+            	toastr.success("申请成功！请耐心等待！");  	            	
+            	$('#resendMsgModal').modal('hide');       	
+		    }else{
+		    	toastr.error("申请失败！"+data.message);  
+		    }
+    }, 'json');
+}
 </script>

@@ -657,12 +657,15 @@
 					<!-- 偏移量查询 -->
 					<div class="form-group">
 						<label for="toStart"> 起始偏移量: </label>
-						<input id="toStart" name="toStart" type="text" class="form-control" style="width:150px;" placeholder="broker最小偏移量">
+						<input id="toStart" name="toStart" type="text" class="form-control" style="width:120px;" placeholder="broker最小偏移量">
 					</div>
 					<div class="form-group">
 			  			<label for="toEnd"> 结束偏移量: </label>
-						<input id="toEnd" name="toEnd" type="text" class="form-control" style="width:150px;" placeholder="broker最大偏移量">
+						<input id="toEnd" name="toEnd" type="text" class="form-control" style="width:120px;" placeholder="broker最大偏移量">
 					</div>
+					<div class="form-group">
+			    	    <input type="text" class="form-control" id="toKey" name="toKey" style="width:150px;" placeholder="关键字">
+			  	    </div>
 					<input type="hidden" id="toCid" name="toCid" value="${topic.clusterId}">
   	    			<input type="hidden" id="toTopic" name="toTopic" value="">
   	    			<input type="hidden" id="toMessageParam" name="toMessageParam">
@@ -885,6 +888,7 @@ function initOffsetMsgModal(topic, maxOffset){
 	}
 	$("#toStart").val(start);
 	$("#toEnd").val(maxOffset);
+	$("#toKey").val("");
 }
 
 //偏移量消息搜索

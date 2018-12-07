@@ -1,6 +1,6 @@
 <#if response.OK>
 	<tbody>
-		<tr>
+		<tr data="${response.result.offsetMsgId}" dataIdx="1">
 			<td title="${response.result.msgId}">1</td>
 			<td>${response.result.bornHostString}</td>
 			<td>${response.result.bornTimestamp?number_to_datetime?string("yyyy-MM-dd HH:mm:ss")}</td>
@@ -10,9 +10,12 @@
 			<td class="text-center"><span class="glyphicon glyphicon-eye-open" style="cursor:pointer;" onclick=track(${response.result.toJson()}) data-target="#trackModal" data-toggle="modal"></span></td>
 		</tr>
 	</tbody>
+	<script>
+		initMultiSelect("tbody");
+	</script>
 <#else>
 	<tbody>
-		<tr><td colspan=7 class="text-center">查询异常！${response.message}</td></tr>
+		<tr class="no_more_data"><td colspan=7 class="text-center">查询异常！${response.message}</td></tr>
 	</tbody>
 </#if>
 <script>

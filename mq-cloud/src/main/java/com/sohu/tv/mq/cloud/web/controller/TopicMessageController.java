@@ -1,6 +1,7 @@
 package com.sohu.tv.mq.cloud.web.controller;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -18,18 +19,26 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.alibaba.fastjson.JSON;
+import com.sohu.tv.mq.cloud.bo.Audit;
+import com.sohu.tv.mq.cloud.bo.Audit.TypeEnum;
+import com.sohu.tv.mq.cloud.bo.AuditResendMessage;
 import com.sohu.tv.mq.cloud.bo.Cluster;
 import com.sohu.tv.mq.cloud.bo.DecodedMessage;
 import com.sohu.tv.mq.cloud.bo.MessageData;
 import com.sohu.tv.mq.cloud.bo.MessageQueryCondition;
 import com.sohu.tv.mq.cloud.bo.Topic;
+import com.sohu.tv.mq.cloud.bo.UserProducer;
 import com.sohu.tv.mq.cloud.mq.DefaultCallback;
 import com.sohu.tv.mq.cloud.mq.MQAdminTemplate;
+import com.sohu.tv.mq.cloud.service.AlertService;
+import com.sohu.tv.mq.cloud.service.AuditService;
 import com.sohu.tv.mq.cloud.service.ClusterService;
 import com.sohu.tv.mq.cloud.service.MessageService;
 import com.sohu.tv.mq.cloud.service.TopicService;
+import com.sohu.tv.mq.cloud.service.UserProducerService;
 import com.sohu.tv.mq.cloud.util.CompressUtil;
 import com.sohu.tv.mq.cloud.util.FreemarkerUtil;
 import com.sohu.tv.mq.cloud.util.Result;
@@ -61,6 +70,15 @@ public class TopicMessageController extends ViewController {
     
     @Autowired
     private MQAdminTemplate mqAdminTemplate;
+    
+    @Autowired
+    private UserProducerService userProducerService;
+    
+    @Autowired
+    private AuditService auditService;
+    
+    @Autowired
+    private AlertService alertService;
     
     /**
      * 首页
@@ -113,6 +131,9 @@ public class TopicMessageController extends ViewController {
             }
             messageQueryCondition.setMaxOffset(maxOffset);
         }
+        
+        // 设置是否是拥有者
+        setOwner(userInfo, map, tid);
         return view;
     }
     
@@ -292,6 +313,7 @@ public class TopicMessageController extends ViewController {
             @RequestParam("toTopic") String topic,
             @RequestParam("toStart") Long offsetStart,
             @RequestParam("toEnd") Long offsetEnd,
+            @RequestParam(name="toKey", required=false) String key,
             @RequestParam("toAppend") boolean append,
             @RequestParam(name="toMessageParam", required=false) String messageParam,
             Map<String, Object> map) throws Exception {
@@ -303,9 +325,12 @@ public class TopicMessageController extends ViewController {
             messageQueryCondition.setTopic(topic);
             messageQueryCondition.setStart(offsetStart);
             messageQueryCondition.setEnd(offsetEnd);
+            if(StringUtils.isNotEmpty(key)) {
+                messageQueryCondition.setKey(key);
+            }
             messageQueryCondition.reset();
         } else {
-            messageQueryCondition = parseParam(offsetStart, offsetEnd, null, messageParam, append);
+            messageQueryCondition = parseParam(offsetStart, offsetEnd, key, messageParam, append);
         }
         if(messageQueryCondition == null) {
             setResult(map, Result.getResult(Status.PARAM_ERROR));
@@ -317,6 +342,81 @@ public class TopicMessageController extends ViewController {
         Result<MessageData> result = messageService.queryMessage(messageQueryCondition, true);
         setResult(map, result);
         return view;
+    }
+    
+    
+    /**
+     * 消息重发审核
+     * @param userInfo
+     * @param tid
+     * @param msgIds
+     * @return
+     * @throws Exception
+     */
+    @ResponseBody
+    @RequestMapping("/resend")
+    public Result<?> resend(UserInfo userInfo, 
+            @RequestParam("tid") int tid,
+            @RequestParam("msgIds") String msgIds) throws Exception {
+        // 检测
+        String[] msgIdArray = msgIds.split(",");
+        if(msgIdArray.length == 0) {
+            return Result.getResult(Status.PARAM_ERROR);
+        }
+        if(!isOwner(userInfo, tid)) {
+            return Result.getResult(Status.PERMISSION_DENIED_ERROR);
+        }
+        // 构造审核记录
+        Audit audit = new Audit();
+        audit.setType(TypeEnum.RESEND_MESSAGE.getType());
+        audit.setUid(userInfo.getUser().getId());
+        // 构造消息记录
+        List<AuditResendMessage> auditResendMessageList = new ArrayList<AuditResendMessage>();
+        for(String msgId : msgIdArray) {
+            AuditResendMessage auditResendMessage = new AuditResendMessage();
+            auditResendMessage.setMsgId(msgId);
+            auditResendMessage.setTid(tid);
+            auditResendMessageList.add(auditResendMessage);
+        }
+        
+        // 保存记录
+        Result<?> result = auditService.saveAuditAndAuditResendMessage(audit, auditResendMessageList);
+        // 发送提醒邮件
+        if(result.isOK()) {
+            Result<Topic> topicResult = topicService.queryTopic(tid);
+            if(topicResult.isOK()) {
+                String tip = " topic:<b>" + topicResult.getResult().getName() + "</b> 消息量:" + msgIdArray.length;
+                alertService.sendAuditMail(userInfo.getUser(), TypeEnum.RESEND_MESSAGE, tip);
+            }
+        }
+        return Result.getWebResult(result);
+    }
+    
+    /**
+     * 设置是否是拥有者
+     * @param userInfo
+     * @param map
+     * @param tid
+     */
+    private void setOwner(UserInfo userInfo, Map<String, Object> map, int tid) {
+        setResult(map, "owner", getOwner(userInfo, tid));
+    }
+    
+    private boolean isOwner(UserInfo userInfo, int tid) {
+        return 1 == getOwner(userInfo, tid);
+    }
+    
+    private int getOwner(UserInfo userInfo, int tid) {
+        int owner = 0;
+        if(userInfo.getUser().isAdmin()) {
+            owner = 1;
+        } else {
+            Result<List<UserProducer>> result = userProducerService.queryUserProducer(userInfo.getUser().getId(), tid);
+            if(result.isOK()) {
+                owner = 1;
+            }
+        }
+        return owner;
     }
     
     @Override

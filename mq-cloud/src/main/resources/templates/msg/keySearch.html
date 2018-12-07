@@ -2,7 +2,7 @@
 	<#if response.result?? && response.result?size gt 0>
 		<tbody>
 			<#list response.result as msg>
-				<tr>
+				<tr data="${msg.offsetMsgId}" dataIdx="${msg_index + 1}">
 					<td title="${msg.msgId}">${msg_index + 1}</td>
 					<td>${msg.bornHostString}</td>
 					<td>${msg.bornTimestamp?number_to_datetime?string("yyyy-MM-dd HH:mm:ss")}</td>
@@ -13,16 +13,17 @@
 				</tr>
 			</#list>
 		</tbody>
+		<script>
+			initMultiSelect("tbody");
+		</script>
 	<#else>
 		<tbody>
-			<tr><td colspan=7 class="text-center">查无数据</td></tr>
+			<tr class="no_more_data"><td colspan=7 class="text-center">查无数据</td></tr>
 		</tbody>
 	</#if>
-	<script>
-	</script>
 <#else>
 	<tbody>
-		<tr><td colspan=7 class="text-center">查询异常！${response.message}</td></tr>
+		<tr class="no_more_data"><td colspan=7 class="text-center">查询异常！${response.message}</td></tr>
 	</tbody>
 </#if>
 <script>

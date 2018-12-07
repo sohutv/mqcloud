@@ -25,6 +25,7 @@ import com.sohu.tv.mq.cloud.bo.AuditAssociateConsumer;
 import com.sohu.tv.mq.cloud.bo.AuditAssociateProducer;
 import com.sohu.tv.mq.cloud.bo.AuditConsumer;
 import com.sohu.tv.mq.cloud.bo.AuditConsumerDelete;
+import com.sohu.tv.mq.cloud.bo.AuditResendMessage;
 import com.sohu.tv.mq.cloud.bo.AuditResetOffset;
 import com.sohu.tv.mq.cloud.bo.AuditTopic;
 import com.sohu.tv.mq.cloud.bo.AuditTopicDelete;
@@ -42,6 +43,7 @@ import com.sohu.tv.mq.cloud.service.AssociateConsumerService;
 import com.sohu.tv.mq.cloud.service.AssociateProducerService;
 import com.sohu.tv.mq.cloud.service.AuditConsumerDeleteService;
 import com.sohu.tv.mq.cloud.service.AuditConsumerService;
+import com.sohu.tv.mq.cloud.service.AuditResendMessageService;
 import com.sohu.tv.mq.cloud.service.AuditResetOffsetService;
 import com.sohu.tv.mq.cloud.service.AuditService;
 import com.sohu.tv.mq.cloud.service.AuditTopicDeleteService;
@@ -63,6 +65,7 @@ import com.sohu.tv.mq.cloud.web.vo.AuditAssociateConsumerVO;
 import com.sohu.tv.mq.cloud.web.vo.AuditAssociateProducerVO;
 import com.sohu.tv.mq.cloud.web.vo.AuditConsumerDeleteVO;
 import com.sohu.tv.mq.cloud.web.vo.AuditConsumerVO;
+import com.sohu.tv.mq.cloud.web.vo.AuditResendMessageVO;
 import com.sohu.tv.mq.cloud.web.vo.AuditResetOffsetVO;
 import com.sohu.tv.mq.cloud.web.vo.AuditTopicDeleteVO;
 import com.sohu.tv.mq.cloud.web.vo.AuditTopicUpdateVO;
@@ -136,6 +139,9 @@ public class AuditController extends AdminViewController {
     
     @Autowired
     private ClusterService clusterService;
+    
+    @Autowired
+    private AuditResendMessageService auditResendMessageService;
 
     /**
      * 审核主列表
@@ -247,6 +253,10 @@ public class AuditController extends AdminViewController {
             case DELETE_USERCONSUMER:
                 view = "deleteUserConsumer";
                 result = getDeleteUserConsumerResult(aid);
+                break;
+            case RESEND_MESSAGE:
+                view = "resendMessage";
+                result = getResendMessageResult(aid);
                 break;
         }
         setResult(map, result);
@@ -479,8 +489,16 @@ public class AuditController extends AdminViewController {
                 case DELETE_USERCONSUMER:
                     msg = getDeleteUserConsumerTipMessage(aid);
                     break;
+                case RESEND_MESSAGE:
+                    msg = null;
+                    break;
             }
-            StringBuilder sb = new StringBuilder("您申请的");
+            StringBuilder sb = new StringBuilder("您");
+            if(audit.getCreateTime() != null) {
+                String createTime = DateUtil.getFormat(DateUtil.YMD_DASH_BLANK_HMS_COLON).format(audit.getCreateTime());
+                sb.append(createTime);
+            }
+            sb.append("申请的");
             sb.append(typeEnum.getName());
             if (msg != null) {
                 sb.append("[");
@@ -1275,7 +1293,12 @@ public class AuditController extends AdminViewController {
         if (updateResult.isOK()) {
             UserMessage userMessage = new UserMessage();
             TypeEnum typeEnum = TypeEnum.getEnumByType(audit.getType());
-            StringBuilder sb = new StringBuilder("您申请的");
+            StringBuilder sb = new StringBuilder("您");
+            if(audit.getCreateTime() != null) {
+                String createTime = DateUtil.getFormat(DateUtil.YMD_DASH_BLANK_HMS_COLON).format(audit.getCreateTime());
+                sb.append(createTime);
+            }
+            sb.append("申请的");
             sb.append(typeEnum.getName());
             if (tip != null) {
                 sb.append("[");
@@ -1641,6 +1664,75 @@ public class AuditController extends AdminViewController {
         auditUserConsumerDeleteVO.setCommit(false);
         return Result.getResult(auditUserConsumerDeleteVO);
     }
+    
+    private Result<?> getResendMessageResult(long aid) {
+        // 查询audit
+        Result<Audit> auditResult = auditService.queryAudit(aid);
+        if (auditResult.isNotOK()) {
+            return auditResult;
+        }
+        // 查询AuditResendMessage
+        Audit audit = auditResult.getResult();
+        Result<List<AuditResendMessage>> auditResendMessageListResult = auditResendMessageService.query(audit.getId());
+        if(auditResendMessageListResult.isEmpty()) {
+            return auditResendMessageListResult;
+        }
+        
+        // 查询topic
+        List<AuditResendMessage> auditResendMessageList = auditResendMessageListResult.getResult();
+        Result<Topic> topicResult = topicService.queryTopic(auditResendMessageList.get(0).getTid());
+        if(topicResult.isNotOK()) {
+            return topicResult;
+        }
+        
+        // 拼装vo
+        AuditResendMessageVO auditResendMessageVO = new AuditResendMessageVO();
+        auditResendMessageVO.setTopic(topicResult.getResult().getName());
+        auditResendMessageVO.setMsgList(auditResendMessageList);
+        return Result.getResult(auditResendMessageVO);
+    }
+    
+    /**
+     * resendMessage
+     * 
+     * @param aid
+     * @param map
+     * @return
+     */
+    @ResponseBody
+    @RequestMapping(value = "/resend/message", method = RequestMethod.POST)
+    public Result<?> resendMessage(UserInfo userInfo, @RequestParam("aid") long aid) {
+        // 获取audit
+        Result<Audit> auditResult = auditService.queryAudit(aid);
+        if (auditResult.isNotOK()) {
+            return auditResult;
+        }
+        // 校验状态是否合法
+        Audit audit = auditResult.getResult();
+        if (StatusEnum.INIT.getStatus() != audit.getStatus()) {
+            return Result.getResult(Status.PARAM_ERROR);
+        }
+        
+        // 查询审核记录
+        Result<List<AuditResendMessage>> listResult = auditResendMessageService.query(aid);
+        if (listResult.isNotOK()) {
+            return listResult;
+        }
+        // 未全部重发成功不可审核
+        List<AuditResendMessage> auditResendMessageList = listResult.getResult();
+        for(AuditResendMessage msg : auditResendMessageList) {
+            if(AuditResendMessage.StatusEnum.SUCCESS.getStatus() != msg.getStatus()) {
+                return Result.getResult(Status.AUDIT_MESSAGE_CANNOT_AUTID_WHEN_NOT_SEND_OK);
+            }
+        }
+        // 更新申请状态
+        boolean updateOK = agreeAndTip(audit, userInfo.getUser().getEmail(), null);
+        if (updateOK) {
+            return Result.getOKResult();
+        }
+        return Result.getResult(Status.DB_UPDATE_ERR_DELETE_RESET_OFFSET_OK);
+    }
+    
     /**
      * vo赋值
      * 

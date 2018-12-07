@@ -65,6 +65,7 @@ public class RocketMQConsumer extends AbstractConfig {
     public RocketMQConsumer(String consumerGroup, String topic) {
         super(consumerGroup, topic);
         consumer = new DefaultMQPushConsumer(consumerGroup);
+        consumer.setConsumeTimeout(2 * 60);
     }
     
     public void start() {

@@ -159,6 +159,7 @@ public class Audit {
         BECOME_ADMIN(9, "成为管理员"),
         DELETE_USERPRODUCER(10, "删除生产者"),
         DELETE_USERCONSUMER(11, "删除消费用户"),
+        RESEND_MESSAGE(12, "重发消息"),
         ;
 
         private Integer type;
