@@ -10,6 +10,7 @@ import org.apache.commons.lang3.math.NumberUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Component;
 
@@ -46,7 +47,8 @@ public class ClientStatsConsumer implements MemoryMQConsumer<ClientStats> {
         if(id == 0) {
             // 有异常
             if(result.getException() != null) {
-                if(!(result.getException() instanceof DuplicateKeyException)) {
+                if(!(result.getException() instanceof DuplicateKeyException)
+                        && !(result.getException() instanceof DataIntegrityViolationException)) {
                     // 数据库错误，可以进行重试
                     throw result.getException();
                 }

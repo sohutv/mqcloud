@@ -217,6 +217,14 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware {
         return getPrefix() + "admin/server/list";
     }
     
+    public String getNameServerMonitorLink(int cid) {
+        return getPrefix() + "admin/nameserver/list?cid=" + cid;
+    }
+    
+    public String getBrokerMonitorLink(int cid) {
+        return getPrefix() + "admin/cluster/list?cid=" + cid;
+    }
+    
     private String getPrefix() {
         return HTTP_SCHEMA + getDomain() + getContextPath();
     }

@@ -393,6 +393,38 @@ public class TopicController extends ViewController {
     }
     
     /**
+     * 根据topic查询broker信息
+     * 
+     * @return
+     * @throws Exception
+     */
+    @ResponseBody
+    @RequestMapping(value = "/brokerName/list", method = RequestMethod.GET)
+    public Result<?> getQueueList(@RequestParam("topic") String topic,
+            @RequestParam("clusterId") long clusterId) throws Exception {
+        if (topic == "") {
+            return Result.getResult(Status.PARAM_ERROR);
+        }
+        Cluster cluster = clusterService.getMQClusterById(clusterId);
+        if (cluster == null) {
+            return Result.getResult(cluster);
+        }
+        TopicStatsTable topicStatsTable = topicService.stats(cluster, topic);
+        if (topicStatsTable == null) {
+            return Result.getResult(topicStatsTable);
+        }
+        Map<String, Long> brokerNameMap = new TreeMap<String,Long>();
+        for (MessageQueue mq : topicStatsTable.getOffsetTable().keySet()) {
+            String brokerName = mq.getBrokerName();
+            TopicOffset topicOffset = topicStatsTable.getOffsetTable().get(mq);
+            if (!brokerNameMap.containsKey(brokerName) || brokerNameMap.get(brokerName) < topicOffset.getMaxOffset()) {
+                brokerNameMap.put(brokerName, topicOffset.getMaxOffset());
+            }
+        }
+        return Result.getResult(brokerNameMap);
+    }
+    
+    /**
      * 获取topic的提示信息
      * @param tid
      * @return

@@ -17,6 +17,7 @@ import org.apache.rocketmq.common.admin.OffsetWrapper;
 import org.apache.rocketmq.common.admin.TopicOffset;
 import org.apache.rocketmq.common.admin.TopicStatsTable;
 import org.apache.rocketmq.common.message.MessageQueue;
+import org.apache.rocketmq.common.protocol.body.ConsumerRunningInfo;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -53,6 +54,7 @@ import com.sohu.tv.mq.cloud.web.controller.param.AssociateConsumerParam;
 import com.sohu.tv.mq.cloud.web.controller.param.ConsumerParam;
 import com.sohu.tv.mq.cloud.web.controller.param.UserConsumerParam;
 import com.sohu.tv.mq.cloud.web.vo.ConsumerProgressVO;
+import com.sohu.tv.mq.cloud.web.vo.QueueOwnerVO;
 import com.sohu.tv.mq.cloud.web.vo.UserInfo;
 /**
  * 消费者接口
@@ -168,7 +170,6 @@ public class ConsumerController extends ViewController {
                         }
                     }
                 }
-                
                 // 获取死topic状况
                 String dlqTopic = MixAll.getDLQTopic(consumer.getName());
                 consumerProgressVO.setDlqTopic(dlqTopic);
@@ -179,6 +180,7 @@ public class ConsumerController extends ViewController {
                 
                 consumerProgressVO.setOffsetMap(offsetMap);
                 consumerProgressVO.setRetryOffsetMap(retryOffsetMap);
+                consumerProgressVO.computeTotalDiff();
                 list.add(consumerProgressVO);
             }
         }
@@ -508,6 +510,40 @@ public class ConsumerController extends ViewController {
     }
     
     /**
+     * 根据broker查询队列信息
+     * 
+     * @return
+     * @throws Exception
+     */
+    @ResponseBody
+    @RequestMapping(value = "/broker/queue", method = RequestMethod.GET)
+    public Result<?> getQueueList(@RequestParam("topic") String topic,
+            @RequestParam("brokerName") String brokerName, 
+            @RequestParam("clusterId") long clusterId) throws Exception {
+        if (topic == "" || brokerName == "") {
+            return Result.getResult(Status.PARAM_ERROR);
+        }
+        Cluster cluster = clusterService.getMQClusterById(clusterId);
+        if (cluster == null) {
+            return Result.getResult(cluster);
+        }
+        TopicStatsTable topicStatsTable = topicService.stats(cluster, topic);
+        if (topicStatsTable == null) {
+            return Result.getResult(topicStatsTable);
+        }
+        Map<Integer, Long> queueOffsetMap = new TreeMap<Integer, Long>();
+        for (MessageQueue mq : topicStatsTable.getOffsetTable().keySet()) {
+            if (mq.getBrokerName().equals(brokerName)) {
+                long maxOffset = topicStatsTable.getOffsetTable().get(mq).getMaxOffset();
+                if (!queueOffsetMap.containsKey(mq.getQueueId()) || queueOffsetMap.get(mq.getQueueId()) < maxOffset) {
+                    queueOffsetMap.put(mq.getQueueId(), maxOffset);
+                }
+            } 
+        }
+        return Result.getResult(queueOffsetMap);
+    }
+    
+    /**
      * 获取topic和consumer的提示信息
      * @param tid
      * @param cid
@@ -544,6 +580,46 @@ public class ConsumerController extends ViewController {
             sb.append("</b>");
         }
         return sb.toString();
+    }
+    
+    /**
+     * 获取queue的拥有者
+     * @param userInfo
+     * @param cid
+     * @param consumer
+     * @return
+     * @throws Exception
+     */
+    @ResponseBody
+    @RequestMapping("/queue/owner")
+    public Result<?> queueRoute(UserInfo userInfo, @RequestParam("cid") int cid,
+            @RequestParam("consumer") String consumer) throws Exception {
+        Cluster cluster = clusterService.getMQClusterById(cid);
+        // 获取消费者运行时信息
+        Map<String, ConsumerRunningInfo> map = consumerService.getConsumerRunningInfo(cluster, consumer);
+        if(map == null) {
+            return Result.getResult(Status.NO_RESULT);
+        }
+        // 组装vo
+        List<QueueOwnerVO> queueConsumerVOList = new ArrayList<QueueOwnerVO>();
+        for(String clientId : map.keySet()) {
+            String ip = clientId.substring(0, clientId.indexOf("@"));
+            ConsumerRunningInfo consumerRunningInfo = map.get(clientId);
+            for(MessageQueue messageQueue : consumerRunningInfo.getMqTable().keySet()) {
+                if(messageQueue.getTopic().startsWith(MixAll.RETRY_GROUP_TOPIC_PREFIX)) {
+                    continue;
+                }
+                if(messageQueue.getTopic().startsWith(MixAll.DLQ_GROUP_TOPIC_PREFIX)) {
+                    continue;
+                }
+                QueueOwnerVO queueOwnerVO = new QueueOwnerVO();
+                queueOwnerVO.setBrokerName(messageQueue.getBrokerName());
+                queueOwnerVO.setClientId(ip);
+                queueOwnerVO.setQueueId(messageQueue.getQueueId());
+                queueConsumerVOList.add(queueOwnerVO);
+            }
+        }
+        return Result.getResult(queueConsumerVOList);
     }
     
     @Override

@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.rocketmq.client.QueryResult;
 import org.apache.rocketmq.client.consumer.DefaultMQPullConsumer;
 import org.apache.rocketmq.client.consumer.MQPullConsumer;
@@ -275,6 +276,10 @@ public class MessageService {
                     if (!offsetSearch && !messageQueryCondition.valid(msg.getStoreTimestamp())) {
                         continue;
                     }
+                    // 过滤不在当前offset查询条件内的消息
+                    if (msg.getQueueOffset() > mqOffset.getMaxOffset()) {
+                        continue;
+                    }
                     byte[] bytes = msg.getBody();
                     if (bytes == null || bytes.length == 0) {
                         logger.warn("MessageExt={}, MessageBody is null", msg);
@@ -323,6 +328,10 @@ public class MessageService {
         Object decodedBody = bytes;
         try {
             decodedBody = messageSerializer.deserialize(bytes);
+            // 兼容rocketmq原生客户端未序列化消息
+            if (decodedBody == null) {
+                decodedBody = bytes; 
+            }
         } catch (Exception e) {
             logger.debug("deserialize topic:{} message err:{}", msg.getTopic(), e.getMessage());
             decodedBody = bytes;
@@ -358,6 +367,10 @@ public class MessageService {
             Set<MessageQueue> mqs = consumer.fetchSubscribeMessageQueues(messageQueryCondition.getTopic());
             offsetList = new ArrayList<MQOffset>();
             for (MessageQueue mq : mqs) {
+                // 判断当前消息队列是否符合条件
+                if (!isContainsBrokerOrQueue(mq, messageQueryCondition.getBrokerName(), messageQueryCondition.getQueueId())) {
+                    continue;
+                }
                 long minOffset = 0;
                 long maxOffset = 0;
                 try {
@@ -696,5 +709,23 @@ public class MessageService {
                 return cluster;
             }
         });
+    }
+    
+    /**
+     * 根据参数brokerName和queueId过滤要拉取消息的MessageQueue
+     * 
+     * @param mqOffsetList
+     * @param brokerName
+     * @param queueId
+     */
+    private boolean isContainsBrokerOrQueue(MessageQueue mq, String brokerName, Integer queueId) {
+        // brokerName为空时说明不指定broker进行查询
+        if (StringUtils.isBlank(brokerName)) {
+            return true;
+        }
+        if (mq.getBrokerName().equals(brokerName) && (queueId == null || (queueId !=null && mq.getQueueId() == queueId))) {
+            return true;
+        }
+        return false;
     }
 }
