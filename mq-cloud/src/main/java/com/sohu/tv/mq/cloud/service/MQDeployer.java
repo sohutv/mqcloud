@@ -429,11 +429,11 @@ public class MQDeployer {
         if(sshResult == null) {
             return Result.getResult(Status.NO_RESULT);
         }
-        if(!sshResult.isSuccess()) {
-            return Result.getResult(Status.PARAM_ERROR).setMessage(sshResult.getResult());
-        }
         if(sshResult.getExcetion() != null) {
             return Result.getWebErrorResult(sshResult.getExcetion());
+        }
+        if(!sshResult.isSuccess()) {
+            return Result.getResult(Status.PARAM_ERROR).setMessage(sshResult.getResult());
         }
         if(sshResult.isSuccess() && sshResult.getResult() != null) {
             return Result.getResult(sshResult.getResult());
