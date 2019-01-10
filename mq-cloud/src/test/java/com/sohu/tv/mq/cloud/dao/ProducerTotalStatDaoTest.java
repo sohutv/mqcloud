@@ -26,7 +26,7 @@ public class ProducerTotalStatDaoTest {
     public void testInsert() {
         ProducerTotalStat producerTotalStat = new ProducerTotalStat();
         producerTotalStat.setAvg(228.3);
-        producerTotalStat.setClient("123.182.238.123");
+        producerTotalStat.setClient("test.mqcloud.com");
         producerTotalStat.setCount(1232);
         Date now = new Date();
         producerTotalStat.setCreateDate(NumberUtils.toInt(DateUtil.formatYMD(now)));

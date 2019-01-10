@@ -340,6 +340,17 @@ public class SSHTemplate {
         public SSHResult scpToDir(String localFile, String remoteTargetDirectory, String mode) {
             return scp(new String[] {localFile}, null, remoteTargetDirectory, mode);
         }
+        
+        public SSHResult scpToDir(byte[] data, String remoteFileName, String remoteTargetDirectory) {
+            try {
+                SCPClient client = conn.createSCPClient();
+                client.put(data, remoteFileName, remoteTargetDirectory);
+                return new SSHResult(true);
+            } catch (Exception e) {
+                logger.error("scp byte to " + remoteTargetDirectory + " remote=" + remoteFileName + " err", e);
+                return new SSHResult(e);
+            }
+        }
 
         public SSHResult scpToDir(String[] localFile, String remoteTargetDirectory) {
             return scp(localFile, null, remoteTargetDirectory, "0744");

@@ -269,7 +269,7 @@
 	                  <div class="bs-wizard-info text-center">检查安装目录是否被占用</div>
 	                </div>
 	                
-	                <div id="brokerWget" class="col-xs-1 bs-wizard-step disabled">
+	                <div id="brokerScp" class="col-xs-1 bs-wizard-step disabled">
 	                  <div class="text-center bs-wizard-stepnum">下载安装包</div>
 	                  <div class="progress"><div class="progress-bar"></div></div>
 	                  <a href="#" class="bs-wizard-dot"></a>
@@ -525,7 +525,7 @@ function checkDir(){
             if(data.status == 200){
             	complete(wizardId);
             	// 下载文件
-        		setTimeout('wget()', 1000);
+        		setTimeout('scp()', 1000);
 		    } else {
 		    	toastr.error("校验失败！"+data.message);  
 		    	warn(wizardId);
@@ -534,12 +534,12 @@ function checkDir(){
        }, 'json');
 }
 /**
- * wget
+ * scp
  */
-function wget(){
-	var wizardId = installId+"Wget";
+function scp(){
+	var wizardId = installId+"Scp";
 	active(wizardId);
-	$.post('${request.contextPath}/admin/deploy/wget',
+	$.post('${request.contextPath}/admin/deploy/scp',
 		$("#"+installId).serialize(),
         function(data){
             if(data.status == 200){
@@ -549,7 +549,7 @@ function wget(){
 		    } else {
 		    	toastr.error("下载失败！"+data.message);  
 		    	warn(wizardId);
-		    	goOn("wget");
+		    	goOn("scp");
 		    }
        }, 'json');
 }

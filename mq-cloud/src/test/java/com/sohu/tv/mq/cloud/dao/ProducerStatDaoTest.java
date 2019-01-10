@@ -27,7 +27,7 @@ public class ProducerStatDaoTest {
         ProducerStat producerStat = new ProducerStat();
         producerStat.setTotalId(3);
         producerStat.setAvg(1.2);
-        producerStat.setBroker("213.0123.12:32");
+        producerStat.setBroker("test.mqcloud.com");
         producerStat.setCount(1);
         producerStat.setMax(2);
         List<ProducerStat> list = new ArrayList<>();

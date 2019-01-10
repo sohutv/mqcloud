@@ -89,14 +89,14 @@ public class AdminDeployController extends AdminViewController {
     }
     
     /**
-     * 拉取文件
+     * 拷贝
      * @return
      */
-    @RequestMapping(value="/wget", method=RequestMethod.POST)
-    public Result<?> wget(UserInfo ui, @RequestParam(name="ip") String ip) {
-        logger.warn("wget:{}, user:{}", ip, ui);
-        // 拉取文件
-        Result<?> wgetResult = mqDeployer.wget(ip);
+    @RequestMapping(value="/scp", method=RequestMethod.POST)
+    public Result<?> scp(UserInfo ui, @RequestParam(name="ip") String ip) {
+        logger.warn("scp:{}, user:{}", ip, ui);
+        // 远程拷贝文件
+        Result<?> wgetResult = mqDeployer.scp(ip);
         if(wgetResult.isNotOK()) {
             return wgetResult;
         }
