@@ -25,67 +25,78 @@
 	</div>
 	<div style="float:right;margin:10px 0px;">
 	<form class="form-inline" id="msgSearchForm">
-		<!-- 偏移量查询 -->
-		<div class="form-group offset">
-			<label for="offsetStart" data-toggle='tooltip' title="参考生产详情里的最小偏移量"> 起始偏移量: </label>
-			<input id="offsetStart" name="offsetStart" type="text" class="form-control" style="width:120px;" value="${response.result.minOffset?c}">
+		<div>
+			<!-- 偏移量查询 -->
+			<div class="form-group offset">
+				<label for="offsetStart" data-toggle='tooltip' title="参考生产详情里的最小偏移量"> 起始偏移量: </label>
+				<input id="offsetStart" name="offsetStart" type="text" class="form-control" style="width:120px;" value="${response.result.minOffset?c}">
+			</div>
+			<div class="form-group offset">
+	  			<label for="offsetEnd" data-toggle='tooltip' title="参考生产详情里的最大偏移量"> 结束偏移量: </label>
+				<input id="offsetEnd" name="offsetEnd" type="text" class="form-control" style="width:120px;" value="${response.result.maxOffset?c}">
+			</div>
+			<div class="form-group offset">
+	    	    <input type="text" class="form-control" id="offsetKey" name="offsetKey" value="${response.result.key!}" placeholder="关键字，支持模糊匹配">
+	  	    </div>
+			<!-- 时间段查询 -->
+			<div class="form-group time" style="display:none;">
+				<label for="startTimePicker"> 开始时间: </label>
+				<input id="startTimePicker" type="text" class="Wdate form-control" onclick="WdatePicker({ dateFmt: 'yyyy-MM-dd HH:mm:ss',maxDate:'%y-%M-%d',minDate:'%y-%M-{%d-5}',onpicked:function(){timeChange('startTime')}})" style="width:180px;height:34px;cursor:pointer;" readonly="readonly"
+	  								value="${response.result.start?number_to_datetime?string("yyyy-MM-dd HH:mm:ss")}">
+	  			<input type="hidden" name="startTime" id="startTime" value="${response.result.start?c}">
+	  			<label for="endTimePicker"> 结束时间: </label>
+				<input id="endTimePicker" type="text" class="Wdate form-control" onclick="WdatePicker({ dateFmt: 'yyyy-MM-dd HH:mm:ss',maxDate:'%y-%M-%d',minDate:'%y-%M-{%d-5}',onpicked:function(){timeChange('endTime')}})" style="width:180px;height:34px;cursor:pointer;" readonly="readonly"
+	  								value="${response.result.end?number_to_datetime?string("yyyy-MM-dd HH:mm:ss")}">
+	  			<input type="hidden" name="endTime" id="endTime" value="${response.result.end?c}">
+			</div>
+			<div class="form-group time" style="display:none;">
+	    	    <input type="text" class="form-control" id="key" name="key" value="${response.result.key!}" placeholder="关键字，支持模糊匹配">
+	  	    </div>
+			<!-- 消息查询 -->
+	  	    <div class="form-group msgId" style="display:none;">
+	    	    <input type="text" class="form-control" id="msgId" name="msgId" value="${response.result.msgId!}" placeholder="消息id">
+	  	    </div>
+	  	    <!-- key查询 -->
+	  	    <div class="form-group key" style="display:none;">
+				<label for="keyStartTimePicker"> 开始时间: </label>
+				<input id="keyStartTimePicker" type="text" class="Wdate form-control" onclick="WdatePicker({ dateFmt: 'yyyy-MM-dd HH:mm:ss',maxDate:'%y-%M-%d',minDate:'%y-%M-{%d-6}',onpicked:function(){timeChange('keyStartTime')}})" style="width:180px;height:34px;cursor:pointer;" readonly="readonly"
+	  								value="${response.result.start?number_to_datetime?string("yyyy-MM-dd 00:00:00")}">
+	  			<input type="hidden" name="keyStartTime" id="keyStartTime">
+	  			<label for="keyEndTimePicker"> 结束时间: </label>
+				<input id="keyEndTimePicker" type="text" class="Wdate form-control" onclick="WdatePicker({ dateFmt: 'yyyy-MM-dd HH:mm:ss',maxDate:'%y-%M-%d',minDate:'%y-%M-{%d-6}',onpicked:function(){timeChange('keyEndTime')}})" style="width:180px;height:34px;cursor:pointer;" readonly="readonly"
+	  								value="${.now?string("yyyy-MM-dd HH:mm:ss")}">
+	  			<input type="hidden" name="keyEndTime" id="keyEndTime" value="${response.result.end?c}">
+			</div>
+	  	    <div class="form-group key" style="display:none;">
+	    	    <input type="text" class="form-control" id="msgKey" name="msgKey" placeholder="消息key">
+			</div>
+	  	    
+			<!-- 时间段查询参数 -->
+	  	    <input type="hidden" id="cid" name="cid" value="${response.result.cid}">
+	  	    <input type="hidden" id="topicDiv" name="topic" value="${response.result.topic}">
+	  	    <input type="hidden" id="append" name="append" value="false">
+	  	    <input type="hidden" id="messageParam" name="messageParam" value="${response.result.serialize()}">
+			<button type="button" data-toggle='tooltip' title="如果查不到数据请使用偏移量查询" onclick="searchMessage(false)" class="btn btn-search time" style="display:none;"><span class="glyphicon glyphicon-search" aria-hidden="true"></span></button>
+			<!-- 消息查询 -->
+			<button type="button" onclick="viewMessage()" class="btn btn-search msgId" style="display:none;"><span class="glyphicon glyphicon-search" aria-hidden="true"></span></button>
+			<!-- key查询 -->
+			<button type="button" onclick="searchKeyMessage()" class="btn btn-search key" style="display:none;"><span class="glyphicon glyphicon-search" aria-hidden="true"></span></button>
+			<!-- 偏移量查询 -->
+			<button type="button" onclick="showMoreSearchCondition()" class="btn offset" data-toggle="tooltip" title="单击展开更多搜索项"><span class="glyphicon glyphicon-filter" aria-hidden="true"></span></button>
+			<button type="button" onclick="searchOffsetMessage(false)" class="btn btn-search offset"><span class="glyphicon glyphicon-search" aria-hidden="true"></span></button>
+			<!-- 消息重发 -->
+			<#if owner == 1>
+				<button type="button"  data-toggle='tooltip' title="重发消息" onclick="resendMessageTip()" class="btn"><span class="glyphicon glyphicon-send"></span></button>
+			</#if>
 		</div>
-		<div class="form-group offset">
-  			<label for="offsetEnd" data-toggle='tooltip' title="参考生产详情里的最大偏移量"> 结束偏移量: </label>
-			<input id="offsetEnd" name="offsetEnd" type="text" class="form-control" style="width:120px;" value="${response.result.maxOffset?c}">
+		<div class="form-group hide" id ="moreSearchCondition" style="margin-top:10px">
+			<label style="margin-left:23px"> broker: </label>
+			<select id="brokerNameSearchSelect" class="selectpicker" name="toBrokerName" onchange="brokerNameSelectChange(this)"></select>
+			<label style="margin-left:27px"> queue: </label>
+			<select id="queueSearchSelect" class="selectpicker" name="toQueue" onchange="queueSelectChange(this)">
+			<option value="-1">全部</option>
+			</select>
 		</div>
-		<div class="form-group offset">
-    	    <input type="text" class="form-control" id="offsetKey" name="offsetKey" value="${response.result.key!}" placeholder="关键字，支持模糊匹配">
-  	    </div>
-		<!-- 时间段查询 -->
-		<div class="form-group time" style="display:none;">
-			<label for="startTimePicker"> 开始时间: </label>
-			<input id="startTimePicker" type="text" class="Wdate form-control" onclick="WdatePicker({ dateFmt: 'yyyy-MM-dd HH:mm:ss',maxDate:'%y-%M-%d',minDate:'%y-%M-{%d-5}',onpicked:function(){timeChange('startTime')}})" style="width:180px;height:34px;cursor:pointer;" readonly="readonly"
-  								value="${response.result.start?number_to_datetime?string("yyyy-MM-dd HH:mm:ss")}">
-  			<input type="hidden" name="startTime" id="startTime" value="${response.result.start?c}">
-  			<label for="endTimePicker"> 结束时间: </label>
-			<input id="endTimePicker" type="text" class="Wdate form-control" onclick="WdatePicker({ dateFmt: 'yyyy-MM-dd HH:mm:ss',maxDate:'%y-%M-%d',minDate:'%y-%M-{%d-5}',onpicked:function(){timeChange('endTime')}})" style="width:180px;height:34px;cursor:pointer;" readonly="readonly"
-  								value="${response.result.end?number_to_datetime?string("yyyy-MM-dd HH:mm:ss")}">
-  			<input type="hidden" name="endTime" id="endTime" value="${response.result.end?c}">
-		</div>
-		<div class="form-group time" style="display:none;">
-    	    <input type="text" class="form-control" id="key" name="key" value="${response.result.key!}" placeholder="关键字，支持模糊匹配">
-  	    </div>
-		<!-- 消息查询 -->
-  	    <div class="form-group msgId" style="display:none;">
-    	    <input type="text" class="form-control" id="msgId" name="msgId" value="${response.result.msgId!}" placeholder="消息id">
-  	    </div>
-  	    <!-- key查询 -->
-  	    <div class="form-group key" style="display:none;">
-			<label for="keyStartTimePicker"> 开始时间: </label>
-			<input id="keyStartTimePicker" type="text" class="Wdate form-control" onclick="WdatePicker({ dateFmt: 'yyyy-MM-dd HH:mm:ss',maxDate:'%y-%M-%d',minDate:'%y-%M-{%d-6}',onpicked:function(){timeChange('keyStartTime')}})" style="width:180px;height:34px;cursor:pointer;" readonly="readonly"
-  								value="${response.result.start?number_to_datetime?string("yyyy-MM-dd 00:00:00")}">
-  			<input type="hidden" name="keyStartTime" id="keyStartTime">
-  			<label for="keyEndTimePicker"> 结束时间: </label>
-			<input id="keyEndTimePicker" type="text" class="Wdate form-control" onclick="WdatePicker({ dateFmt: 'yyyy-MM-dd HH:mm:ss',maxDate:'%y-%M-%d',minDate:'%y-%M-{%d-6}',onpicked:function(){timeChange('keyEndTime')}})" style="width:180px;height:34px;cursor:pointer;" readonly="readonly"
-  								value="${.now?string("yyyy-MM-dd HH:mm:ss")}">
-  			<input type="hidden" name="keyEndTime" id="keyEndTime" value="${response.result.end?c}">
-		</div>
-  	    <div class="form-group key" style="display:none;">
-    	    <input type="text" class="form-control" id="msgKey" name="msgKey" placeholder="消息key">
-		</div>
-  	    
-		<!-- 时间段查询参数 -->
-  	    <input type="hidden" id="cid" name="cid" value="${response.result.cid}">
-  	    <input type="hidden" id="topicDiv" name="topic" value="${response.result.topic}">
-  	    <input type="hidden" id="append" name="append" value="false">
-  	    <input type="hidden" id="messageParam" name="messageParam" value="${response.result.serialize()}">
-		<button type="button" data-toggle='tooltip' title="如果查不到数据请使用偏移量查询" onclick="searchMessage(false)" class="btn btn-search time" style="display:none;"><span class="glyphicon glyphicon-search" aria-hidden="true"></span></button>
-		<!-- 消息查询 -->
-		<button type="button" onclick="viewMessage()" class="btn btn-search msgId" style="display:none;"><span class="glyphicon glyphicon-search" aria-hidden="true"></span></button>
-		<!-- key查询 -->
-		<button type="button" onclick="searchKeyMessage()" class="btn btn-search key" style="display:none;"><span class="glyphicon glyphicon-search" aria-hidden="true"></span></button>
-		<!-- 偏移量查询 -->
-		<button type="button" onclick="searchOffsetMessage(false)" class="btn btn-search offset"><span class="glyphicon glyphicon-search" aria-hidden="true"></span></button>
-		<!-- 消息重发 -->
-		<#if owner == 1>
-			<button type="button"  data-toggle='tooltip' title="重发消息" onclick="resendMessageTip()" class="btn"><span class="glyphicon glyphicon-send"></span></button>
-		</#if>
 	</form>
 	</div>
 	<table id="dataTable" class="table table-striped table-hover <#if owner == 1>tr-pointer</#if>" style="margin-top: 0px;word-break:break-all; word-wrap:break-all;">
@@ -369,6 +380,12 @@ function drawTrackTopology(){
 }
 $(function(){
 	$("[data-toggle='tooltip']").tooltip({container: 'body'});
+	//初始化broker列表
+ 	initBrokerList('brokerNameSearchSelect');
+ 	$(".selectpicker").selectpicker({
+		width : 120
+ 	});
+ 	$("#queueSearchSelect").selectpicker('refresh');
 });
 function setTrackOption(msg){
 	trackOption = {
@@ -517,6 +534,7 @@ function changeSearchType(type){
 	$("#dataTable").append("<tbody><tr class='no_more_data'><td colspan=7 class='text-center'>暂无数据</td></tr></tbody>");
 	$("#dataTable input").remove();
 	$("#pager").hide();
+	hideAndResetBrokerSelect();
 }
 
 function timeChange(id){
@@ -573,5 +591,106 @@ function resendMessage(){
 		    	toastr.error("申请失败！"+data.message);  
 		    }
     }, 'json');
+}
+
+//显示搜索条件broker和队列
+function showMoreSearchCondition(){
+	if ($("#moreSearchCondition").hasClass('hide')){
+		$("#moreSearchCondition").removeClass('hide');
+	} else {
+		hideAndResetBrokerSelect();
+	}
+}
+
+function hideAndResetBrokerSelect(){
+	$("#moreSearchCondition").addClass('hide');
+	//重置broker下拉框状态
+	document.getElementById("brokerNameSearchSelect").options.selectedIndex = 0; //回到初始状态
+    $("#brokerNameSearchSelect").selectpicker('refresh');
+}
+/**
+ * 初始化broker下拉列表
+ */
+var brokerNameMap = null;
+function initBrokerList(componentId){
+	$.get('${request.contextPath}/topic/brokerName/list',
+			{
+				topic: $("#topicDiv").val(),
+				clusterId : $("#cid").val()
+			},
+	        function(data){
+	            if(data.status == 200){
+	            	brokerNameMap = data.result;
+	            	var content = "<option value='all'>全部</option>";
+	            	for (var key in brokerNameMap){
+	            		content += "<option value='"+key+"'>"+key+"</option>";
+	            	}
+	        		$("#"+componentId).html(content);
+	        		$("#"+componentId).selectpicker('refresh');
+			    }else{
+			    	toastr.error("数据获取失败！"+data.message);  
+			    }
+        }, 'json');
+}
+var maxAllOffset = ${response.result.maxOffset?c};
+var minAllOffset = ${response.result.minOffset?c};
+var queueOffsetMap = null;
+function brokerNameSelectChange(obj){
+	var value = obj.options[obj.selectedIndex].value;
+	if (value == "all"){
+		$("#queueSearchSelect").html("<option value='-1'>全部</option>");
+		$("#queueSearchSelect").selectpicker('refresh');
+		$("#offsetStart").val(minAllOffset);
+		$("#offsetEnd").val(maxAllOffset);
+		return;
+	}
+	resetMaxOffsetByBrokerName(value);
+	$.get('${request.contextPath}/consumer/broker/queue',
+			{
+				topic: $("#topicDiv").val(),
+				brokerName: value,
+				clusterId : $("#cid").val()
+			},
+	        function(data){
+	            if(data.status == 200){
+	            	queueOffsetMap = data.result;
+	            	var content = "<option value='-1'>全部</option>";
+	            	for (var  key in queueOffsetMap){
+	            		content += "<option value='"+key+"'>"+key+"</option>";
+	            	}
+	            	$("#queueSearchSelect").html(content);
+	            	$("#queueSearchSelect").selectpicker('refresh');
+			    }
+	    }, 'json');
+}
+function queueSelectChange(obj){
+	var value = obj.options[obj.selectedIndex].value;
+	var queue = parseInt(value);
+	if (queue == -1){
+		resetMaxOffsetByBrokerName($("#brokerNameSearchSelect").val());
+		return;
+	}
+	resetMaxOffset(queue, 'queue');
+}
+//重置偏移量
+function resetMaxOffsetByBrokerName(key){
+	if (brokerNameMap != null){
+		resetMaxOffset(key,'broker');
+	}
+}
+function resetMaxOffset(key,type){
+	var max = null;
+	if (type == 'broker'){
+		max = brokerNameMap[key];
+	}else{
+		max = queueOffsetMap[key];
+	}
+	
+	var min = max - 100;
+	if (min < 0){
+		min = 0;
+	}
+	$("#offsetStart").val(min);
+	$("#offsetEnd").val(max);
 }
 </script>

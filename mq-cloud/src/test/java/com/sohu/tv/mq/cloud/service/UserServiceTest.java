@@ -26,7 +26,7 @@ public class UserServiceTest {
         User user = new User();
         user.setName("yongfeigao");
         user.setEmail("yongfeigao@xxx.com");
-        user.setMobile("18618269999");
+        user.setMobile("18611111111");
         user.setType(User.ADMIN);
         Result<User> result = userService.save(user);
         Assert.assertEquals(Status.DB_DUPLICATE_KEY.getKey(), result.getStatus());

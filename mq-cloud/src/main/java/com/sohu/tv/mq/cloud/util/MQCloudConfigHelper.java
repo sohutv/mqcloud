@@ -109,6 +109,9 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware {
     // 忽略的topic
     private String ignoreTopic;
     
+    // rocketmq安装文件路径
+    private String rocketmqFilePath;
+    
     @Autowired
     private CommonConfigService commonConfigService;
     
@@ -215,6 +218,14 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware {
 
     public String getServerLink() {
         return getPrefix() + "admin/server/list";
+    }
+    
+    public String getNameServerMonitorLink(int cid) {
+        return getPrefix() + "admin/nameserver/list?cid=" + cid;
+    }
+    
+    public String getBrokerMonitorLink(int cid) {
+        return getPrefix() + "admin/cluster/list?cid=" + cid;
     }
     
     private String getPrefix() {
@@ -353,6 +364,14 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware {
         this.ignoreTopic = ignoreTopic;
     }
 
+    public String getRocketmqFilePath() {
+        return rocketmqFilePath;
+    }
+
+    public void setRocketmqFilePath(String rocketmqFilePath) {
+        this.rocketmqFilePath = rocketmqFilePath;
+    }
+    
     @Override
     public String toString() {
         return "MQCloudConfigHelper [contextPath=" + contextPath + ", profile=" + profile + ", domain=" + domain
@@ -364,14 +383,14 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware {
                 + producerClass + ", consumerClass=" + consumerClass + ", mailHost=" + mailHost + ", mailPort="
                 + mailPort + ", mailProtocol=" + mailProtocol + ", mailUsername=" + mailUsername + ", mailPassword="
                 + mailPassword + ", mailTimeout=" + mailTimeout + ", isOpenRegister=" + isOpenRegister 
-                + ", ignoreTopic=" + ignoreTopic + "]";
+                + ", ignoreTopic=" + ignoreTopic + ", rocketmqFilePath=" + rocketmqFilePath + "]";
     }
 
     @Override
     public void setApplicationEventPublisher(ApplicationEventPublisher applicationEventPublisher) {
         publisher = applicationEventPublisher;
     }
-    
+
     /**
      * 配置事件
      */

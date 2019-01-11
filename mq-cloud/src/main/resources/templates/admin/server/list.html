@@ -589,6 +589,8 @@ function initMachineTypeList(){
 	            	}
 	        		$("#machineTypeSelect").html(content);
 	        		$("#machineTypeSearchSelect").html(content);
+	        		$("#machineTypeSelect").selectpicker('refresh');
+	        		$("#machineTypeSearchSelect").selectpicker('refresh');
 			    }else{
 			    	toastr.error("数据获取失败！"+data.message);  
 			    }

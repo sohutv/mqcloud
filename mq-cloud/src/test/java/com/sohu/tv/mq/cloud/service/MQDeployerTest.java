@@ -23,4 +23,9 @@ public class MQDeployerTest {
         Assert.assertEquals(true, rst.isOK());
     }
 
+    @Test
+    public void testScp() {
+        Result<?> rst = mqDeployer.scp("test.mqcloud.com");
+        Assert.assertEquals(true, rst.isOK());
+    }
 }

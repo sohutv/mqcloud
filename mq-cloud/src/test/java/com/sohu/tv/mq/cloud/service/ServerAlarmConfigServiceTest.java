@@ -30,9 +30,9 @@ public class ServerAlarmConfigServiceTest {
         config.setMemoryUsageRate(1);
         config.setIops(45);
         List<String> ipList = new ArrayList<>();
-        ipList.add("10.10.52.25");
-        ipList.add("10.10.25.52");
-        ipList.add("10.10.25.51");
+        ipList.add("test.mqcloud.com");
+        ipList.add("test1.mqcloud.com");
+        ipList.add("test2.mqcloud.com");
         Result<Integer> update = serverAlarmConfigService.update(config, ipList);
         System.out.println(update);
     }

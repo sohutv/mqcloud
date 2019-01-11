@@ -35,7 +35,7 @@
 						<#list response.result as consumerProgressVO>
 							<tr>
 								<td>${consumerProgressVO_index + 1}</td>
-		                    	<td><a style="cursor:pointer" title="查看消费详情" data-target="#consumeDetailModel${consumerProgressVO_index}" data-toggle="modal">${consumerProgressVO.consumer.name}</a></td>
+		                    	<td><a style="cursor:pointer" title="查看消费详情" data-target="#consumeDetailModel${consumerProgressVO_index}" data-toggle="modal" <#if consumerProgressVO.minLastTimestamp gt 0 && consumerProgressVO.minLastTimestamp lt long.MAX_VALUE>onclick="getQueueOwner('${consumerProgressVO.consumer.name}', '${consumerProgressVO.consumer.id}')"</#if>>${consumerProgressVO.consumer.name}</a></td>
 		                    	<#if consumerProgressVO.ownerList??>
 		                    		<td>
 			                    		<#if consumerProgressVO.ownerList?seq_contains(userInfo.user) || userInfo.user.type == 1>
@@ -87,14 +87,14 @@
 													<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
 													<h4 class="modal-title"><b>${consumerProgressVO.consumer.name}</b> 消费详情</h4>
 												</div>
-												<table class="table table-striped table-hover" style="margin-top: 0px">
-													<#if consumerProgressVO.dlqTopic?? && consumerProgressVO.dlqOffsetMap??>
+												<#if consumerProgressVO.dlqTopic?? && consumerProgressVO.dlqOffsetMap??>
+													<table class="table table-striped table-hover" style="margin-top: 0px">
 														<thead>
 															<tr>
-																<td class="warning" colspan=6>死消息Topic：<b style="color:red" data-toggle="tooltip" 
+																<td class="warning" colspan=7>死消息Topic：<b style="color:red" data-toggle="tooltip" 
 																title="消费失败达到最大重试次数(16)后，将会进入此topic，不再重试">${consumerProgressVO.dlqTopic}</b>
 																	&nbsp;&nbsp;&nbsp;<span title="搜索死消息" class="glyphicon glyphicon-search" style="cursor:pointer;" 
-																	onclick="initOffsetMsgModal('${consumerProgressVO.dlqTopic}','${consumerProgressVO.dlqMaxOffset?c}')" data-target="#offsetMsgSearchModal" data-toggle="modal"></span>
+																	onclick="initOffsetMsgModal('dlq', ${consumerProgressVO_index}, '${consumerProgressVO.dlqTopic}','${consumerProgressVO.dlqMaxOffset?c}')" data-target="#offsetMsgSearchModal" data-toggle="modal"></span>
 																</td>
 															</tr>
 															<tr>
@@ -130,14 +130,16 @@
 																</tr>
 															</#list>
 														</tbody>
-													</#if>
-													<#if consumerProgressVO.retryTopic?? && consumerProgressVO.retryOffsetMap??>
+													</table>
+												</#if>
+												<#if consumerProgressVO.retryTopic?? && consumerProgressVO.retryOffsetMap??>
+													<table class="table table-striped table-hover" style="margin-top: 0px">
 														<thead>
 															<tr>
-																<td class="warning" colspan=6>重试Topic：<b style="color:red" data-toggle="tooltip" 
+																<td class="warning" colspan=7>重试Topic：<b style="color:red" data-toggle="tooltip" 
 																title="消费失败的消息，会重新发回到此topic，以便重试消费">${consumerProgressVO.retryTopic}</b>
 																&nbsp;&nbsp;&nbsp;<span title="搜索重试消息" class="glyphicon glyphicon-search" style="cursor:pointer;" 
-																onclick="initOffsetMsgModal('${consumerProgressVO.retryTopic}','${consumerProgressVO.retryMaxOffset?c}')" data-target="#offsetMsgSearchModal" data-toggle="modal"></span>
+																onclick="initOffsetMsgModal('retry', ${consumerProgressVO_index}, '${consumerProgressVO.retryTopic}','${consumerProgressVO.retryMaxOffset?c}')" data-target="#offsetMsgSearchModal" data-toggle="modal"></span>
 																</td>
 															</tr>
 															<tr>
@@ -173,12 +175,15 @@
 																</tr>
 															</#list>
 														</tbody>
-													</#if>
+													</table>
+												</#if>
+												<table class="table table-striped table-hover" style="margin-top: 0px">
 													<thead>
 														<tr>
-															<td class="warning" colspan=6>Topic：<b>${consumerProgressVO.topic}</td>
+															<td class="warning" colspan=7>Topic：<b>${consumerProgressVO.topic}</td>
 														</tr>
 														<tr>
+															<td>客户端</td>
 															<td>broker</td>
 															<td>队列</td>
 															<td>broker偏移量</td>
@@ -190,6 +195,7 @@
 													<tbody>
 														<#list consumerProgressVO.offsetMap as k, v>
 															<tr>
+																<td id="${consumerProgressVO.consumer.id}_${k.brokerName}_${k.queueId}"></td>
 																<td>${k.brokerName}</td>
 																<td>${k.queueId}</td>
 																<td>
@@ -644,7 +650,7 @@
 <div id="consume_lineChart"><center>暂无数据</center></div>
 
 <!-- 偏移量消息搜索 -->
-<div id="offsetMsgSearchModal" class="modal fade" tabindex="-1" style="z-index:2000;">
+<div id="offsetMsgSearchModal" class="modal fade" tabindex="-1">
 	<div class="modal-dialog" style="width:700px">
 		<div class="modal-content">
 			<div class="modal-header">
@@ -653,25 +659,36 @@
 			</div>
 			<div class="modal-body">
 				<div style="float:right;margin:0px 0px 10px 0px;">
-				<form class="form-inline" id="offsetMsgSearchForm">
-					<!-- 偏移量查询 -->
-					<div class="form-group">
-						<label for="toStart"> 起始偏移量: </label>
-						<input id="toStart" name="toStart" type="text" class="form-control" style="width:120px;" placeholder="broker最小偏移量">
-					</div>
-					<div class="form-group">
-			  			<label for="toEnd"> 结束偏移量: </label>
-						<input id="toEnd" name="toEnd" type="text" class="form-control" style="width:120px;" placeholder="broker最大偏移量">
-					</div>
-					<div class="form-group">
-			    	    <input type="text" class="form-control" id="toKey" name="toKey" style="width:150px;" placeholder="关键字">
-			  	    </div>
-					<input type="hidden" id="toCid" name="toCid" value="${topic.clusterId}">
-  	    			<input type="hidden" id="toTopic" name="toTopic" value="">
-  	    			<input type="hidden" id="toMessageParam" name="toMessageParam">
-  	    			<input type="hidden" id="toAppend" name="toAppend" value="false">
-					<button type="button" onclick="searchOffsetMessage(false)" class="btn btn-search time"><span class="glyphicon glyphicon-search" aria-hidden="true"></span></button>
-				</form>
+					<form class="form-inline" id="offsetMsgSearchForm">
+						<div>
+							<!-- 偏移量查询 -->
+							<div class="form-group">
+								<label for="toStart"> 起始偏移量: </label>
+								<input id="toStart" name="toStart" type="text" class="form-control" style="width:120px;" placeholder="broker最小偏移量">
+							</div>
+							<div class="form-group">
+					  			<label for="toEnd"> 结束偏移量: </label>
+								<input id="toEnd" name="toEnd" type="text" class="form-control" style="width:120px;" placeholder="broker最大偏移量">
+							</div>
+							<div class="form-group">
+					    	    <input type="text" class="form-control" id="toKey" name="toKey" style="width:150px;" placeholder="关键字">
+					  	    </div>
+							<input type="hidden" id="toCid" name="toCid" value="${topic.clusterId}">
+		  	    			<input type="hidden" id="toTopic" name="toTopic" value="">
+		  	    			<input type="hidden" id="toMessageParam" name="toMessageParam">
+		  	    			<input type="hidden" id="toAppend" name="toAppend" value="false">
+		  	    			<button type="button" onclick="showMoreSearchCondition()" class="btn" data-toggle="tooltip" title="单击展开更多搜索项"><span class="glyphicon glyphicon-filter" aria-hidden="true"></span></button>
+							<button type="button" onclick="searchOffsetMessage(false)" class="btn btn-search time"><span class="glyphicon glyphicon-search" aria-hidden="true"></span></button>
+						</div>
+						<div class="form-group hide" id ="moreSearchCondition" style="margin-top:10px">
+							<label style="margin-left:23px"> broker: </label>
+							<select id="brokerNameSearchSelect" class="selectpicker" name="toBrokerName" onchange="brokerNameSelectChange(this)"></select>
+							<label style="margin-left:27px"> queue: </label>
+							<select id="queueSearchSelect" class="selectpicker" name="toQueue" onchange="queueSelectChange(this)">
+							<option value="-1">全部</option>
+							</select>
+						</div>	
+					</form>
 				</div>
 				<table id="offsetDataTable" class="table table-striped table-hover" style="margin-top: 0px;word-break:break-all; word-wrap:break-all;">
 					<colgroup>
@@ -725,7 +742,7 @@ function skipAccumulation(tid, cid, btn){
 		consumerId: cid
 	},function(data){
         if(data.status == 200){
-			toastr.success("跳过堆积申请成功");  
+			toastr.success("跳过堆积申请成功！请耐心等待！");  
 			modalHide(3000);
 	    }else{
 	    	toastr.error("操作失败！"+data.message);  
@@ -749,7 +766,7 @@ function resetOffset(idx, tid, cid, btn){
 		offset: resetOffsetTo
 	},function(data){
         if(data.status == 200){
-			toastr.success("消息回溯申请成功");  
+			toastr.success("消息回溯申请成功！请耐心等待！");  
 			modalHide(3000);
 	    }else{
 	    	toastr.error("操作失败！"+data.message);  
@@ -788,6 +805,9 @@ $(function(){
     });
  	// 初始化user列表
 	initUserList('user_search_select');
+	$(".selectpicker").selectpicker({
+		width : 120
+ 	});
 });
 //准备删除
 function prepareDeleteUserConsumer(uid,userName,consumerID){
@@ -873,8 +893,40 @@ function addUserCounsumerRelationship(){
 function hideOffsetMsgSearchModal(){
 	$('#offsetMsgSearchModal').modal('hide');
 }
-
-function initOffsetMsgModal(topic, maxOffset){
+//当前消息搜索时的topic
+var currentSelectTopic = '';
+var queueOffsetMap = null;
+function brokerNameSelectChange(obj){
+	var value = obj.options[obj.selectedIndex].value;
+	if (value == "all"){
+		$("#queueSearchSelect").html("<option value='-1'>全部</option>");
+		$("#queueSearchSelect").selectpicker('refresh');
+		$("#toStart").val(minAllOffset);
+		$("#toEnd").val(maxAllOffset);
+		return;
+	}
+	resetMaxOffsetByBrokerName(value);
+	$.get('${request.contextPath}/consumer/broker/queue',
+			{
+				topic: currentSelectTopic,
+				brokerName: value,
+				clusterId : $("#toCid").val()
+			},
+	        function(data){
+	            if(data.status == 200){
+	            	queueOffsetMap = data.result;
+	            	var content = "<option value='-1'>全部</option>";
+	            	for (var  key in queueOffsetMap){
+	            		content += "<option value='"+key+"'>"+key+"</option>";
+	            	}
+	            	$("#queueSearchSelect").html(content);
+	            	$("#queueSearchSelect").selectpicker('refresh');
+			    }
+	    }, 'json');
+}
+var maxAllOffset = '';
+var minAllOffset = '';
+function initOffsetMsgModal(type, index, topic, maxOffset){
 	// 清空数据
 	$("#offsetDataTable tbody").html("<tr class='no_more_data'><td colspan=5 class='text-center'>暂无数据</td></tr>");
 	$("#offsetDataTable input").remove();
@@ -886,11 +938,27 @@ function initOffsetMsgModal(topic, maxOffset){
 	if(start < 0){
 		start = 0;
 	}
+	maxAllOffset = maxOffset;
+	minAllOffset = start;
+	currentSelectTopic = topic;
 	$("#toStart").val(start);
 	$("#toEnd").val(maxOffset);
 	$("#toKey").val("");
+	//初始化broker列表
+ 	initBrokerList('brokerNameSearchSelect');
+ 	$("#queueSearchSelect").selectpicker('refresh');
 }
-
+//显示搜索条件broker和队列
+function showMoreSearchCondition(){
+	if ($("#moreSearchCondition").hasClass('hide')){
+		$("#moreSearchCondition").removeClass('hide');
+	} else {
+		$("#moreSearchCondition").addClass('hide');
+		//重置broker下拉框状态
+		document.getElementById("brokerNameSearchSelect").options.selectedIndex = 0; //回到初始状态
+	    $("#brokerNameSearchSelect").selectpicker('refresh');
+	}
+}
 //偏移量消息搜索
 function searchOffsetMessage(append){
 	$("#toAppend").val(append);
@@ -944,5 +1012,85 @@ function offsetNext(){
 			searchOffsetMessage(true);
 		}
 	}
+}
+/**
+ * 初始化broker下拉列表
+ */
+var brokerNameMap = null;
+function initBrokerList(componentId){
+	$.get('${request.contextPath}/topic/brokerName/list',
+			{
+				topic: currentSelectTopic,
+				clusterId : $("#toCid").val()
+			},
+	        function(data){
+	            if(data.status == 200){
+	            	brokerNameMap = data.result;
+	            	var content = "<option value='all'>全部</option>";
+	            	for (var key in brokerNameMap){
+	            		content += "<option value='"+key+"'>"+key+"</option>";
+	            	}
+	        		$("#"+componentId).html(content);
+	        		$("#"+componentId).selectpicker('refresh');
+			    }else{
+			    	toastr.error("数据获取失败！"+data.message);  
+			    }
+        }, 'json');
+}
+function queueSelectChange(obj){
+	var value = obj.options[obj.selectedIndex].value;
+	var queue = parseInt(value);
+	if (queue == -1){
+		resetMaxOffsetByBrokerName($("#brokerNameSearchSelect").val());
+		return;
+	}
+	resetMaxOffset(queue, 'queue');
+}
+//重置偏移量
+function resetMaxOffsetByBrokerName(key){
+	if (brokerNameMap != null){
+		resetMaxOffset(key,'broker');
+	}
+}
+function resetMaxOffset(key,type){
+	var max = null;
+	if (type == 'broker'){
+		max = brokerNameMap[key];
+	}else{
+		max = queueOffsetMap[key];
+	}
+	
+	var min = max - 100;
+	if (min < 0){
+		min = 0;
+	}
+	$("#toStart").val(min);
+	$("#toEnd").val(max);
+}
+
+// 获取队列客户端ip
+var queueOwnerInitArray = new Array();
+function getQueueOwner(consumer, consumerId){
+	if(queueOwnerInitArray[consumerId]){
+		return;
+	}
+	$.get('${request.contextPath}/consumer/queue/owner',{
+		cid: $("#toCid").val(),
+		consumer: consumer
+	},function(data){
+        if(data.status == 200){
+        	for(var i in data.result){
+        		var id = "#" + consumerId + "_" + data.result[i].brokerName + "_" + data.result[i].queueId;
+        		var prevContent = $(id).html();
+        		if(prevContent){
+        			prevContent += ","
+        		}
+	        	$(id).html(prevContent + data.result[i].clientId);
+        	}
+	    }else{
+	    	toastr.error("获取客户端失败！"+data.message);  
+	    }
+        queueOwnerInitArray[consumerId] = true;
+    }, 'json');
 }
 </script>

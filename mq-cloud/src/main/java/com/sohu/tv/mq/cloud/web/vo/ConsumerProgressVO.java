@@ -39,6 +39,8 @@ public class ConsumerProgressVO {
     private long lastTimestamp = Long.MAX_VALUE;
     private List<ConsumeStatsExt> consumeStatsList;
     private List<User> ownerList;
+    // 总偏移量
+    private long diffTotal;
 
     public Consumer getConsumer() {
         return consumer;
@@ -105,7 +107,11 @@ public class ConsumerProgressVO {
     }
 
     public long getDiff() {
-        long diffTotal = computeTotalDiff(offsetMap, false);
+        return diffTotal;
+    }
+    
+    public long computeTotalDiff() {
+        diffTotal = computeTotalDiff(offsetMap, false);
         diffTotal += computeTotalDiff(retryOffsetMap, true);
         if (diffTotal < 0) {
             diffTotal = 0;

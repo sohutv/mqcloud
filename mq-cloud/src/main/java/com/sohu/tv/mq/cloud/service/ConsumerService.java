@@ -10,6 +10,7 @@ import java.util.Set;
 import java.util.TreeMap;
 
 import org.apache.rocketmq.client.exception.MQBrokerException;
+import org.apache.rocketmq.common.MQVersion;
 import org.apache.rocketmq.common.admin.ConsumeStats;
 import org.apache.rocketmq.common.admin.OffsetWrapper;
 import org.apache.rocketmq.common.admin.TopicOffset;
@@ -17,6 +18,7 @@ import org.apache.rocketmq.common.admin.TopicStatsTable;
 import org.apache.rocketmq.common.message.MessageQueue;
 import org.apache.rocketmq.common.protocol.body.Connection;
 import org.apache.rocketmq.common.protocol.body.ConsumerConnection;
+import org.apache.rocketmq.common.protocol.body.ConsumerRunningInfo;
 import org.apache.rocketmq.common.protocol.body.GroupList;
 import org.apache.rocketmq.common.protocol.heartbeat.MessageModel;
 import org.apache.rocketmq.tools.admin.MQAdminExt;
@@ -483,6 +485,42 @@ public class ConsumerService {
             resultMap.put(topic, resultList);
         }
         resultList.add(result);
+    }
+    
+    /**
+     * 获取consumer运行时信息
+     * @param cluster
+     * @param consumerGroup
+     * @return
+     */
+    public Map<String, ConsumerRunningInfo> getConsumerRunningInfo(Cluster cluster, String consumerGroup) {
+        return mqAdminTemplate.execute(new MQAdminCallback<Map<String, ConsumerRunningInfo>>() {
+            public Map<String, ConsumerRunningInfo> callback(MQAdminExt mqAdmin) throws Exception {
+                Map<String, ConsumerRunningInfo> infoMap = new HashMap<String, ConsumerRunningInfo>();
+                // 获取consumer链接
+                ConsumerConnection consumerConnection = mqAdmin.examineConsumerConnectionInfo(consumerGroup);
+                // 获取运行时信息
+                for (Connection connection : consumerConnection.getConnectionSet()) {
+                    if (connection.getVersion() < MQVersion.Version.V3_1_8_SNAPSHOT.ordinal()) {
+                        continue;
+                    }
+                    String clientId = connection.getClientId();
+                    ConsumerRunningInfo consumerRunningInfo = mqAdmin.getConsumerRunningInfo(consumerGroup, clientId, false);
+                    if(consumerRunningInfo != null) {
+                        infoMap.put(clientId, consumerRunningInfo);
+                    }
+                }
+                return infoMap;
+            }
+            public Map<String, ConsumerRunningInfo> exception(Exception e) throws Exception {
+                logger.warn("cluster:{}, consumer:{}, err:{}", cluster, consumerGroup, e.getMessage());
+                return null;
+            }
+            @Override
+            public Cluster mqCluster() {
+                return cluster;
+            }
+        });
     }
 }
 

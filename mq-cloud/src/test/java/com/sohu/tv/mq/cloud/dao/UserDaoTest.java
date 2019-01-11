@@ -22,7 +22,7 @@ public class UserDaoTest {
         User user = new User();
         user.setName("yongfeigao");
         user.setEmail("yongfeigao@xxx.com");
-        user.setMobile("18618267490");
+        user.setMobile("18611111111");
         user.setType(User.ADMIN);
         userDao.insert(user);
         Assert.assertTrue(user.getId() > 0);

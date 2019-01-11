@@ -279,6 +279,8 @@ public class TopicMessageController extends ViewController {
             @RequestParam("offsetEnd") Long offsetEnd,
             @RequestParam(name="offsetKey", required=false) String key,
             @RequestParam("append") boolean append,
+            @RequestParam("toBrokerName") String toBrokerName,
+            @RequestParam("toQueue") int toQueue,
             @RequestParam(name="messageParam", required=false) String messageParam,
             Map<String, Object> map) throws Exception {
         String view = viewModule() + "/offsetSearch";
@@ -293,7 +295,7 @@ public class TopicMessageController extends ViewController {
             setResult(map, Result.getResult(Status.PARAM_ERROR));
             return view;
         }
-        
+        resetBrokerAndQueueCondition(toBrokerName, toQueue, messageQueryCondition);
         // 消息查询
         Result<MessageData> result = messageService.queryMessage(messageQueryCondition, true);
         setResult(map, result);
@@ -315,6 +317,8 @@ public class TopicMessageController extends ViewController {
             @RequestParam("toEnd") Long offsetEnd,
             @RequestParam(name="toKey", required=false) String key,
             @RequestParam("toAppend") boolean append,
+            @RequestParam("toBrokerName") String toBrokerName,
+            @RequestParam("toQueue") int toQueue,
             @RequestParam(name="toMessageParam", required=false) String messageParam,
             Map<String, Object> map) throws Exception {
         String view = viewModule() + "/topicOffsetSearch";
@@ -336,6 +340,7 @@ public class TopicMessageController extends ViewController {
             setResult(map, Result.getResult(Status.PARAM_ERROR));
             return view;
         }
+        resetBrokerAndQueueCondition(toBrokerName, toQueue, messageQueryCondition);
         messageQueryCondition.setTopic(topic);
         
         // 消息查询
@@ -344,6 +349,23 @@ public class TopicMessageController extends ViewController {
         return view;
     }
     
+    /**
+     * 重置broker搜索条件
+     * 
+     * @param brokerName
+     * @param queueId
+     * @param messageQueryCondition
+     */
+    private void resetBrokerAndQueueCondition(String brokerName, int queueId,
+            MessageQueryCondition messageQueryCondition) {
+        // broker和队列有可能每次都变，所以每次都需要重新赋值
+        if (!brokerName.equals("all")) {
+            messageQueryCondition.setBrokerName(brokerName);
+        }
+        if (queueId != -1 && queueId >= 0) {
+            messageQueryCondition.setQueueId(queueId);
+        }
+    }
     
     /**
      * 消息重发审核

@@ -681,7 +681,7 @@ $(function() {
 				$("#updateTopicRouteForm").serialize(),
 		        function(data){
 		            if(data.status == 200){
-						toastr.success("申请成功");  
+						toastr.success("申请成功！请耐心等待！");  
 						modalHide(3000, function(){
 							$("#updateTopicRouteForm").data('bootstrapValidator').resetForm();
 						});

@@ -39,6 +39,10 @@ public class MessageQueryCondition {
     private long times;
     // 最大偏移量
     private long maxOffset;
+    // brokerName
+    private String brokerName;
+    // 队列id
+    private Integer queueId;
 
     public List<MQOffset> getMqOffsetList() {
         return mqOffsetList;
@@ -202,6 +206,8 @@ public class MessageQueryCondition {
         setCurSize(0);
         setPrevSize(0);
         setKey(null);
+        setBrokerName(null);
+        setQueueId(null);
     }
 
     public long getMaxOffset() {
@@ -216,4 +222,22 @@ public class MessageQueryCondition {
         long minOffset = maxOffset - 100;
         return minOffset < 0 ? 0 : minOffset;
     }
+
+    public String getBrokerName() {
+        return brokerName;
+    }
+
+    public void setBrokerName(String brokerName) {
+        this.brokerName = brokerName;
+    }
+
+    public Integer getQueueId() {
+        return queueId;
+    }
+
+    public void setQueueId(Integer queueId) {
+        this.queueId = queueId;
+    }
+    
+    
 }

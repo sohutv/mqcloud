@@ -759,7 +759,7 @@ public class AuditController extends AdminViewController {
     }
 
     /**
-     * 创建topic
+     * 创建消费者
      * 
      * @param aid
      * @param map
@@ -786,6 +786,17 @@ public class AuditController extends AdminViewController {
             return auditConsumerResult;
         }
         AuditConsumer auditConsumer = auditConsumerResult.getResult();
+        
+        // 查询cluster
+        Result<Topic> topicResult = topicService.queryTopic(auditConsumer.getTid());
+        if (topicResult.isNotOK()) {
+            return topicResult;
+        }
+        // 查询cluster
+        Cluster cluster = clusterService.getMQClusterById(topicResult.getResult().getClusterId());
+        if(cluster == null) {
+            return Result.getResult(Status.PARAM_ERROR);
+        }
 
         // 构建userConsumer
         UserConsumer userConsumer = new UserConsumer();
@@ -797,9 +808,10 @@ public class AuditController extends AdminViewController {
         consumer.setTid(auditConsumer.getTid());
         consumer.setName(auditConsumer.getConsumer());
         consumer.setConsumeWay(auditConsumer.getConsumeWay());
+        
 
         // 保存数据
-        Result<?> saveResult = userConsumerService.saveUserConsumer(userConsumer, consumer);
+        Result<?> saveResult = userConsumerService.saveUserConsumer(cluster, userConsumer, consumer);
         if (saveResult.isNotOK()) {
             return saveResult;
         }

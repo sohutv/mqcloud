@@ -69,6 +69,9 @@ public class MQDeployer {
     @Autowired
     private ClusterService clusterService;
     
+    @Autowired
+    private RocketMQFileService rocketMQFileService;
+    
     /**
      * 获取jdk版本
      * @param ip
@@ -166,39 +169,23 @@ public class MQDeployer {
     }
     
     /**
-     * wget
+     * 上传rocketmq.zip文件
      * @param ip
      * @return
      */
-    public Result<?> wget(String ip){
-        return wget(ip, mqCloudConfigHelper.getRocketMQURL());
-    }
-    
-    /**
-     * wget
-     * @param ip
-     * @return
-     */
-    public Result<?> wget(String ip, String url){
-        return wget(ip, TMP_DIR, url);
-    }
-    
-    /**
-     * wget
-     * @param ip
-     * @return
-     */
-    public Result<?> wget(String ip, String destDir, String url){
+    public Result<?> scp(String ip){
         SSHResult sshResult = null;
         try {
             sshResult = sshTemplate.execute(ip, new SSHCallback() {
                 public SSHResult call(SSHSession session) {
-                    SSHResult sshResult = session.executeCommand("wget -qP " + destDir + " \"" + url + "\"");
+                    byte[] rocketmqFile = rocketMQFileService.getRocketmqFile();
+                    SSHResult sshResult = session.scpToDir(rocketmqFile, MQCloudConfigHelper.ROCKETMQ_FILE, TMP_DIR);
+                    rocketmqFile = null;
                     return sshResult;
                 }
             });
         } catch (SSHException e) {
-            logger.error("wget:{}, url:{}", ip, url, e);
+            logger.error("scp:{}, ", ip, e);
             return Result.getWebErrorResult(e);
         }
         return wrapSSHResult(sshResult);
@@ -442,11 +429,11 @@ public class MQDeployer {
         if(sshResult == null) {
             return Result.getResult(Status.NO_RESULT);
         }
-        if(!sshResult.isSuccess()) {
-            return Result.getResult(Status.PARAM_ERROR).setMessage(sshResult.getResult());
-        }
         if(sshResult.getExcetion() != null) {
             return Result.getWebErrorResult(sshResult.getExcetion());
+        }
+        if(!sshResult.isSuccess()) {
+            return Result.getResult(Status.PARAM_ERROR).setMessage(sshResult.getResult());
         }
         if(sshResult.isSuccess() && sshResult.getResult() != null) {
             return Result.getResult(sshResult.getResult());
