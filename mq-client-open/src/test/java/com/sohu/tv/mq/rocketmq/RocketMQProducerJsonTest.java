@@ -34,6 +34,21 @@ public class RocketMQProducerJsonTest {
         Assert.assertTrue(sendResult.isSuccess());
     }
     
+    @Test
+    public void produceMulti() throws Exception {
+        for(int i = 0; i < 10000; ++i) {
+            Map<String, Object> map = new HashMap<String, Object>();
+            map.put("a", "a"+i);
+            map.put("c", "d"+i);
+            map.put("o", "c"+i);
+            String str = JSON.toJSONString(map);
+            Result<SendResult> sendResult = producer.publish(str, "data"+i);
+            System.out.println(sendResult);
+            Assert.assertTrue(sendResult.isSuccess());
+            Thread.sleep(1000);
+        }
+    }
+    
     @After
     public void clean() {
         producer.shutdown();

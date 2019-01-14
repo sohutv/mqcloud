@@ -4,6 +4,7 @@ import java.util.HashMap;
 
 import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.protocol.body.ClusterInfo;
+import org.apache.rocketmq.common.protocol.body.SubscriptionGroupWrapper;
 import org.apache.rocketmq.common.protocol.body.TopicConfigSerializeWrapper;
 import org.apache.rocketmq.common.protocol.route.BrokerData;
 import org.apache.rocketmq.tools.admin.MQAdminExt;
@@ -278,30 +279,57 @@ public class MQDeployer {
         if(configResult.isNotOK()) {
             return configResult;
         }
+        // slave直接返回
+        if(brokerParam.isSlave()) {
+            return Result.getOKResult();
+        }
+        // 获取master地址
+        Result<String> masterAddressResult = fetchMasterAddress(cluster);
+        if(!masterAddressResult.isOK()) {
+            return masterAddressResult;
+        }
+        String masterAddress = masterAddressResult.getResult();
         // 抓取topic配置
-        Result<String> result = fetchTopicConfig(brokerParam);
+        Result<String> result = fetchTopicConfig(cluster, masterAddress);
         if(Status.DB_ERROR.getKey() == result.getStatus()) {
             return result;
         }
-        if(Status.NO_RESULT.getKey() == result.getStatus()) {
-            return Result.getOKResult();
+        
+        // 保存topic配置
+        Result<?> topicSSHResult = saveConfig(brokerParam.getIp(), result.getResult(), absoluteDir, "topics.json");
+        if(!topicSSHResult.isOK()) {
+            return topicSSHResult;
         }
-        SSHResult topicSSHResult = null;
+        
+        // 抓取consumer配置
+        Result<String> consumerResult = fetchConsumerConfig(cluster, masterAddress);
+        if(Status.DB_ERROR.getKey() == consumerResult.getStatus()) {
+            return consumerResult;
+        }
+        
+        // 保存consumer配置
+        Result<?> consumerSSHResult = saveConfig(brokerParam.getIp(), consumerResult.getResult(), absoluteDir, 
+                "subscriptionGroup.json");
+        return consumerSSHResult;
+    }
+    
+    private Result<?> saveConfig(String ip, String content, String absoluteDir, String fileName) {
+        SSHResult sshResult = null;
         try {
             // save config to /tmp
-            MixAll.string2File(result.getResult(), "/tmp/topics.json");
+            MixAll.string2File(content, "/tmp/" + fileName);
             
-            topicSSHResult = sshTemplate.execute(brokerParam.getIp(), new SSHCallback() {
+            sshResult = sshTemplate.execute(ip, new SSHCallback() {
                 public SSHResult call(SSHSession session) {
-                    SSHResult sshResult = session.scpToDir("/tmp/topics.json", absoluteDir+"/data/config/");
+                    SSHResult sshResult = session.scpToDir("/tmp/" + fileName, absoluteDir+"/data/config/");
                     return sshResult;
                 }
             });
         } catch (Exception e) {
-            logger.error("configBroker topic, ip:{},comm:{}", brokerParam.getIp(), result.getResult(), e);
+            logger.error("configBroker {}, ip:{}, content:{}", fileName, ip, content, e);
             return Result.getWebErrorResult(e);
         }
-        return wrapSSHResult(topicSSHResult);
+        return wrapSSHResult(sshResult);
     }
     
     /**
@@ -328,15 +356,11 @@ public class MQDeployer {
     }
     
     /**
-     * 获取topic的配置
+     * 获取master地址
      * @param brokerRole
      * @return
      */
-    private Result<String> fetchTopicConfig(BrokerParam brokerParam){
-        if (brokerParam.isSlave()) {
-            return Result.getResult(Status.NO_RESULT);
-        }
-        Cluster cluster = clusterService.getMQClusterById(brokerParam.getMqClusterId());
+    private Result<String> fetchMasterAddress(Cluster cluster){
         // 获取topic配置
         return mqAdminTemplate.execute(new MQAdminCallback<Result<String>>() {
             public Result<String> callback(MQAdminExt mqAdmin) throws Exception {
@@ -355,11 +379,30 @@ public class MQDeployer {
                     return Result.getResult(Status.NO_RESULT);
                 }
                 String masterAddr = brokerAddrs.get(MixAll.MASTER_ID);
-                if(masterAddr == null) {
-                    return Result.getResult(Status.NO_RESULT);
-                }
+                return Result.getResult(masterAddr);
+            }
+
+            public Result<String> exception(Exception e) throws Exception {
+                logger.error("fetchMasterAddress:{} error", cluster, e);
+                return Result.getDBErrorResult(e);
+            }
+            public Cluster mqCluster() {
+                return cluster;
+            }
+        });
+    }
+    
+    /**
+     * 获取topic的配置
+     * @param brokerRole
+     * @return
+     */
+    private Result<String> fetchTopicConfig(Cluster cluster, String masterAddress){
+        // 获取topic配置
+        return mqAdminTemplate.execute(new MQAdminCallback<Result<String>>() {
+            public Result<String> callback(MQAdminExt mqAdmin) throws Exception {
                 // 获取topic配置
-                TopicConfigSerializeWrapper topicWrapper = mqAdmin.getAllTopicGroup(masterAddr, 10 * 1000);
+                TopicConfigSerializeWrapper topicWrapper = mqAdmin.getAllTopicGroup(masterAddress, 10 * 1000);
                 if(topicWrapper == null) {
                     return Result.getResult(Status.NO_RESULT);
                 }
@@ -367,7 +410,35 @@ public class MQDeployer {
             }
 
             public Result<String> exception(Exception e) throws Exception {
-                logger.error("cluster:{} error", cluster, e);
+                logger.error("fetchTopicConfig:{} error", masterAddress, e);
+                return Result.getDBErrorResult(e);
+            }
+
+            public Cluster mqCluster() {
+                return cluster;
+            }
+        });
+    }
+    
+    /**
+     * 获取consumer的配置
+     * @param brokerRole
+     * @return
+     */
+    private Result<String> fetchConsumerConfig(Cluster cluster, String masterAddress){
+        // 获取topic配置
+        return mqAdminTemplate.execute(new MQAdminCallback<Result<String>>() {
+            public Result<String> callback(MQAdminExt mqAdmin) throws Exception {
+                // 获取topic配置
+                SubscriptionGroupWrapper subscriptionWrapper = mqAdmin.getAllSubscriptionGroup(masterAddress, 10 * 1000);
+                if(subscriptionWrapper == null) {
+                    return Result.getResult(Status.NO_RESULT);
+                }
+                return Result.getResult(JSON.toJSONString(subscriptionWrapper));
+            }
+
+            public Result<String> exception(Exception e) throws Exception {
+                logger.error("fetchConsumerConfig:{} error", masterAddress, e);
                 return Result.getDBErrorResult(e);
             }
 

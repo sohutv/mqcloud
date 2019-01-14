@@ -25,7 +25,7 @@
 		<#if response.result.hasNameServer>
 			<div class="form-group">
 				<button type="button" class="btn btn-success" onclick="addBroker()" data-target="#addBrokerModal" data-toggle="modal"><span class="glyphicon glyphicon-plus" aria-hidden="true"></span>&nbsp;Master</button>
-				<button type="button" class="btn btn-success" title="从Name Server抓取broker列表，刷入数据库中，仅用于监控broker是否存活" onclick="refresh()" data-toggle="modal"><span class="glyphicon glyphicon-refresh" aria-hidden="true"></span>&nbsp;broker</button>
+				<button type="button" class="btn btn-success" title="添加broker节点后，从Name Server抓取broker列表，刷入数据库中，用于broker列表展示及监控" onclick="refresh()" data-toggle="modal"><span class="glyphicon glyphicon-refresh" aria-hidden="true"></span>&nbsp;broker</button>
 			</div>
 		</#if>
 		<#if response.result.brokerGroup??>
