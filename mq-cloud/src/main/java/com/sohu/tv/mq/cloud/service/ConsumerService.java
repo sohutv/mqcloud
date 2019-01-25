@@ -4,11 +4,11 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
 
 import org.apache.rocketmq.client.exception.MQBrokerException;
 import org.apache.rocketmq.common.MQVersion;
@@ -254,7 +254,7 @@ public class ConsumerService {
                     }
                     Set<Connection> connSet = cc.getConnectionSet();
                     // only for fixed order
-                    Set<String> clientIdSet = new HashSet<String>();
+                    Set<String> clientIdSet = new TreeSet<String>();
                     for(Connection conn : connSet) {
                         clientIdSet.add(conn.getClientId());
                     }

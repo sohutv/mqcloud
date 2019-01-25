@@ -9,7 +9,7 @@
 		<#if response.notOK>
 			<tr class='danger'><td colspan=2 class='text-center'>暂无链接</td></tr>
 		<#else>
-			<#list response.result.connectionSet as conn>
+			<#list response.result as conn>
 				<tr>
 					<td>${conn.clientId}</td>
 					<td>${mqVersion.getVersionDesc(conn.version)}</td>
@@ -18,4 +18,4 @@
 		</#if>
 	</tbody>
 </table>
-<input type="hidden" id="ipList" value="<#if response.OK><#list response.result.connectionSet as conn>${conn.clientId?substring(0, conn.clientId?index_of("@"))},</#list></#if>">
+<input type="hidden" id="ipList" value="<#if response.OK><#list response.result as conn>${conn.clientId?substring(0, conn.clientId?index_of("@"))},</#list></#if>">

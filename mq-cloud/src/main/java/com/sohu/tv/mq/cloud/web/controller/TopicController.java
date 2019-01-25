@@ -1,7 +1,10 @@
 package com.sohu.tv.mq.cloud.web.controller;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -12,6 +15,7 @@ import org.apache.rocketmq.common.MQVersion;
 import org.apache.rocketmq.common.admin.TopicOffset;
 import org.apache.rocketmq.common.admin.TopicStatsTable;
 import org.apache.rocketmq.common.message.MessageQueue;
+import org.apache.rocketmq.common.protocol.body.Connection;
 import org.apache.rocketmq.common.protocol.body.ConsumerConnection;
 import org.apache.rocketmq.common.protocol.body.ProducerConnection;
 import org.apache.rocketmq.common.protocol.route.QueueData;
@@ -380,15 +384,31 @@ public class TopicController extends ViewController {
             @RequestParam("group") String group,
             @RequestParam("type") int type, Map<String, Object> map) throws Exception {
         FreemarkerUtil.set("mqVersion", MQVersion.class, map);
+        setResult(map, null);
         String view = viewModule() + "/connection";
         Cluster cluster = clusterService.getMQClusterById(cid);
+        HashSet<Connection> connectionSet = null;
         if(type == 1) {
             Result<ProducerConnection> result = userProducerService.examineProducerConnectionInfo(group, topic, cluster);
-            setResult(map, result);
+            if(result.isOK()) {
+                connectionSet = result.getResult().getConnectionSet();
+            }
         } else {
             Result<ConsumerConnection> result = consumerService.examineConsumerConnectionInfo(group, cluster);
-            setResult(map, result);
+            if(result.isOK()) {
+                connectionSet = result.getResult().getConnectionSet();
+            }
         }
+        if(connectionSet == null || connectionSet.isEmpty()) {
+            return view;
+        }
+        List<Connection> connList = new ArrayList<Connection>(connectionSet);
+        Collections.sort(connList, new Comparator<Connection>() {
+            public int compare(Connection o1, Connection o2) {
+                return o1.getClientId().compareTo(o2.getClientId());
+            }
+        });
+        setResult(map, connList);
         return view;
     }
     

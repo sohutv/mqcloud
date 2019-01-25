@@ -35,7 +35,7 @@ public class ConsumerProgressVO {
     private String retryTopic;
     // 死消息topic
     private String dlqTopic;
-    
+
     private long lastTimestamp = Long.MAX_VALUE;
     private List<ConsumeStatsExt> consumeStatsList;
     private List<User> ownerList;
@@ -54,6 +54,13 @@ public class ConsumerProgressVO {
         return consumeTps;
     }
 
+    public String getConsumeTpsFormat() {
+        if (consumeTps % 10 == 0) {
+            return String.valueOf((long) consumeTps);
+        }
+        return String.valueOf((long) (consumeTps * 10) / 10d);
+    }
+
     public void setConsumeTps(double consumeTps) {
         this.consumeTps = consumeTps;
     }
@@ -68,7 +75,7 @@ public class ConsumerProgressVO {
 
     public Map<MessageQueue, OffsetWrapper> getRetryOffsetMap() {
         // retry无数据不返回
-        if(getRetryMaxOffset() == 0) {
+        if (getRetryMaxOffset() == 0) {
             return null;
         }
         return retryOffsetMap;
@@ -109,7 +116,7 @@ public class ConsumerProgressVO {
     public long getDiff() {
         return diffTotal;
     }
-    
+
     public long computeTotalDiff() {
         diffTotal = computeTotalDiff(offsetMap, false);
         diffTotal += computeTotalDiff(retryOffsetMap, true);
@@ -147,30 +154,30 @@ public class ConsumerProgressVO {
         }
         return diffTotal;
     }
-    
+
     public long getMaxOffset() {
         return getMaxOffset(offsetMap);
     }
-    
+
     public long getRetryMaxOffset() {
         return getMaxOffset(retryOffsetMap);
     }
-    
+
     private long getMaxOffset(Map<MessageQueue, OffsetWrapper> offsetMap) {
         long maxOffset = 0;
-        for(OffsetWrapper offsetWrapper : offsetMap.values()) {
-            if(maxOffset < offsetWrapper.getBrokerOffset()) {
-                maxOffset  = offsetWrapper.getBrokerOffset();
+        for (OffsetWrapper offsetWrapper : offsetMap.values()) {
+            if (maxOffset < offsetWrapper.getBrokerOffset()) {
+                maxOffset = offsetWrapper.getBrokerOffset();
             }
         }
         return maxOffset;
     }
-    
+
     public long getDlqMaxOffset() {
         long maxOffset = 0;
-        for(TopicOffset topicOffset : dlqOffsetMap.values()) {
-            if(maxOffset < topicOffset.getMaxOffset()) {
-                maxOffset  = topicOffset.getMaxOffset();
+        for (TopicOffset topicOffset : dlqOffsetMap.values()) {
+            if (maxOffset < topicOffset.getMaxOffset()) {
+                maxOffset = topicOffset.getMaxOffset();
             }
         }
         return maxOffset;
