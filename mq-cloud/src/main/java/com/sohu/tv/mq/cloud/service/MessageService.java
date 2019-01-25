@@ -1,5 +1,6 @@
 package com.sohu.tv.mq.cloud.service;
 
+import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -111,6 +112,8 @@ public class MessageService {
     public Result<List<DecodedMessage>> queryMessageByKey(Cluster cluster, String topic, String key, long begin, long end) {
         return mqAdminTemplate.execute(new MQAdminCallback<Result<List<DecodedMessage>>>() {
             public Result<List<DecodedMessage>> callback(MQAdminExt mqAdmin) throws Exception {
+                // 获取broker集群信息
+                ClusterInfo clusterInfo = mqAdmin.examineBrokerClusterInfo();
                 // 其实这里只能查询64条消息，broker端有限制
                 QueryResult queryResult = mqAdmin.queryMessage(topic, key, 100, begin, end);
                 List<MessageExt> messageExtList = queryResult.getMessageList();
@@ -130,7 +133,7 @@ public class MessageService {
                         logger.warn("MessageExt={}, MessageBody is null", msg);
                         continue;
                     }
-                    messageList.add(toDecodedMessage(msg));
+                    messageList.add(toDecodedMessage(msg, clusterInfo));
                 }
                 // 按时间排序
                 Collections.sort(messageList, new Comparator<DecodedMessage>() {
@@ -166,6 +169,9 @@ public class MessageService {
     public Result<DecodedMessage> queryMessage(Cluster cluster, String topic, String msgId) {
         return mqAdminTemplate.execute(new MQAdminCallback<Result<DecodedMessage>>() {
             public Result<DecodedMessage> callback(MQAdminExt mqAdmin) throws Exception {
+                // 获取broker集群信息
+                ClusterInfo clusterInfo = mqAdmin.examineBrokerClusterInfo();
+                // 获取消息
                 MessageExt messageExt = mqAdmin.viewMessage(topic, msgId);
                 byte[] bytes = messageExt.getBody();
                 if (bytes == null || bytes.length == 0) {
@@ -177,7 +183,7 @@ public class MessageService {
                         mqCloudConfigHelper.getClassList().contains(topic)) {
                     Thread.currentThread().setContextClassLoader(messageTypeLoader);
                 }
-                return Result.getResult(toDecodedMessage(messageExt));
+                return Result.getResult(toDecodedMessage(messageExt, clusterInfo));
             }
             public Result<DecodedMessage> exception(Exception e) throws Exception {
                 logger.error("queryMessage cluster:{} topic:{} msgId:{}", cluster, topic, msgId, e);
@@ -285,7 +291,7 @@ public class MessageService {
                         logger.warn("MessageExt={}, MessageBody is null", msg);
                         continue;
                     }
-                    DecodedMessage m = toDecodedMessage(msg);
+                    DecodedMessage m = toDecodedMessage(msg, mqOffset.getMq().getBrokerName());
                     // 判断是否包含关键字
                     if (messageQueryCondition.getKey() == null) {
                         messageList.add(m);
@@ -319,9 +325,34 @@ public class MessageService {
     /**
      * 转换为解码后的消息
      * @param msg
+     * @return clusterInfo
+     */
+    private DecodedMessage toDecodedMessage(MessageExt msg, ClusterInfo clusterInfo) {
+        String broker = null;
+        if(clusterInfo != null) {
+            HashMap<String, BrokerData> brokerAddressMap = clusterInfo.getBrokerAddrTable();
+            InetSocketAddress inetSocketAddress = (InetSocketAddress) msg.getStoreHost();
+            String addr = inetSocketAddress.getAddress().getHostAddress();
+            for(BrokerData brokerData : brokerAddressMap.values()) {
+                String master = brokerData.getBrokerAddrs().get(MixAll.MASTER_ID);
+                if(master != null) {
+                    master = master.split(":")[0];
+                    if(master.equals(addr)) {
+                        broker = brokerData.getBrokerName();
+                        break;
+                    }
+                }
+            }
+        }
+        return toDecodedMessage(msg, broker);
+    }
+    
+    /**
+     * 转换为解码后的消息
+     * @param msg
      * @return DecodedMessage
      */
-    private DecodedMessage toDecodedMessage(MessageExt msg) {
+    private DecodedMessage toDecodedMessage(MessageExt msg, String broker) {
         DecodedMessage m = new DecodedMessage();
         byte[] bytes = msg.getBody();
         msg.setBody(null);
@@ -349,9 +380,10 @@ public class MessageService {
             m.setDecodedBody(JSON.toJSONString(decodedBody));
         }
         BeanUtils.copyProperties(msg, m);
+        m.setBroker(broker);
         return m;
     }
-
+    
     /**
      * 获取mq偏移量数据
      * 

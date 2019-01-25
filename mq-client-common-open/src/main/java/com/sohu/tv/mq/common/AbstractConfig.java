@@ -186,4 +186,8 @@ public abstract class AbstractConfig {
     public void setMessageSerializer(MessageSerializer<Object> messageSerializer) {
         this.messageSerializer = messageSerializer;
     }
+
+    public Logger getLogger() {
+        return logger;
+    }
 }

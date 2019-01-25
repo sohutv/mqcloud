@@ -332,7 +332,29 @@ message.put(&quot;aid&quot;, &quot;789172&quot;);
 Result&lt;SendResult&gt; sendResult = producer.publish(message, "keys：业务id，比如vid");
 if(!sendResult.isSuccess){
     //失败消息处理
-}</pre>					<p>3：发送消息示例【hystrix版：MQ集群如果出现故障，将会拖慢发送方，故提供了hystrix版，以保证即使MQ集群整体不可用，也不会拖死发送方】：</p>
+}</pre>			
+						<p>3：发送有序消息示例：</p>
+							<pre class="prettyprint">
+/**
+ * 相同的id发送到同一个队列
+ * hash方法：id % 队列数
+ */
+class IDHashMessageQueueSelector implements MessageQueueSelector {
+    public MessageQueue select(List&lt;MessageQueue&gt; mqs, Message msg, Object idObject) {
+        long id = (Long) idObject;
+        int size = mqs.size();
+        int index = (int) (id % size);
+        return mqs.get(index);
+    }
+}
+// 设置到producer
+producer.setMessageQueueSelector(new IDHashMessageQueueSelector());
+// 消息发送
+long id = 123L;
+Map&lt;String, Object&gt; map = new HashMap&lt;String, Object&gt;();
+map.put(&quot;id&quot;, id);
+Result&lt;SendResult&gt; sendResult = producer.publishOrder(map, String.valueOf(id), id);</pre>			
+						<p>4：发送消息示例【hystrix版：MQ集群如果出现故障，将会拖慢发送方，故提供了hystrix版，以保证即使MQ集群整体不可用，也不会拖死发送方】：</p>
 							<pre class="prettyprint">
 Map&lt;String, String&gt; map = new HashMap&lt;String, String&gt;();
 map.put(&quot;aid&quot;, &quot;123456&quot;);

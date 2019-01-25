@@ -31,6 +31,11 @@ public class ProducerTotalStat {
     private String createTime;
     
     private List<ProducerStat> statList;
+    
+    // 异常 格式Map<String<->Integer>;
+    private String exception;
+    // broker
+    private String broker;
 
     public long getId() {
         return id;
@@ -120,10 +125,27 @@ public class ProducerTotalStat {
         this.statList = statList;
     }
 
+    public String getException() {
+        return exception;
+    }
+
+    public void setException(String exception) {
+        this.exception = exception;
+    }
+
+    public String getBroker() {
+        return broker;
+    }
+
+    public void setBroker(String broker) {
+        this.broker = broker;
+    }
+
     @Override
     public String toString() {
         return "ProducerTotalStat [id=" + id + ", producer=" + producer + ", client=" + client + ", percent90="
                 + percent90 + ", percent99=" + percent99 + ", avg=" + avg + ", count=" + count + ", statTime="
-                + statTime + ", createDate=" + createDate + ", createTime=" + createTime + "]";
+                + statTime + ", createDate=" + createDate + ", createTime=" + createTime + ", exception="
+                + exception + ", broker=" + broker + "]";
     }
 }

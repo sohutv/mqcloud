@@ -27,6 +27,9 @@ public class RocketMQProducer extends AbstractConfig {
     // 统计助手
     private StatsHelper statsHelper;
     
+    // 发送顺序消息使用
+    private MessageQueueSelector messageQueueSelector;
+    
     /**
      * 同样消息的Producer，归为同一个Group，应用必须设置，并保证命名唯一
      */
@@ -173,59 +176,56 @@ public class RocketMQProducer extends AbstractConfig {
      * 发送有序消息
      *
      * @param messageMap 消息数据
-     * @param selector 队列选择器，发送时会回调
-     * @param order 回调队列选择器时，此参数会传入队列选择方法,提供配需规则
+     * @param keys key
+     * @param arg 回调队列选择器时，此参数会传入队列选择方法
      * @return 发送结果
      */
-    public Result<SendResult> publishOrder(Map<String, Object> messageMap, MessageQueueSelector selector,
-            Object order) {
-        return publishOrder((Object) messageMap, selector, order);
+    public Result<SendResult> publishOrder(Map<String, Object> messageMap, String keys, Object arg) {
+        return publishOrder((Object) messageMap, keys, arg);
     }
 
     /**
      * 发送有序消息
      *
-     * @param messageMap 消息数据
-     * @param selector 队列选择器，发送时会回调
-     * @param order 回调队列选择器时，此参数会传入队列选择方法,提供配需规则
+     * @param messageObject 消息数据
+     * @param keys key
+     * @param arg 回调队列选择器时，此参数会传入队列选择方法
      * @return 发送结果
      */
-    public Result<SendResult> publishOrder(Object messageObject, MessageQueueSelector selector, Object order) {
-        return publishOrder(messageObject, selector, order, null);
+    public Result<SendResult> publishOrder(Object messageObject, String keys, Object arg) {
+        return publishOrder(messageObject, keys, arg, null);
     }
 
     /**
      * 发送有序消息
      *
-     * @param messageMap 消息数据
-     * @param selector 队列选择器，发送时会回调
-     * @param order 回调队列选择器时，此参数会传入队列选择方法,提供配需规则
+     * @param messageObject 消息数据
+     * @param keys key
+     * @param arg 回调队列选择器时，此参数会传入队列选择方法
      * @param delayLevel 发送延时消息 @MessageDelayLevel
      * @return 发送结果
      */
-    public Result<SendResult> publishOrder(Object messageObject, MessageQueueSelector selector, Object order,
-            MessageDelayLevel delayLevel) {
+    public Result<SendResult> publishOrder(Object messageObject, String keys, Object arg, MessageDelayLevel delayLevel) {
         Message message = null;
         try {
-            message = buildMessage(messageObject, null, null, delayLevel);
+            message = buildMessage(messageObject, null, keys, delayLevel);
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
             return new Result<SendResult>(false, e);
         }
-        return publishOrder(message, selector, order);
+        return publishOrder(message, arg);
     }
     
     /**
      * 发送有序消息
      *
      * @param message 消息数据
-     * @param selector 队列选择器，发送时会回调
-     * @param order 回调队列选择器时，此参数会传入队列选择方法,提供配需规则
+     * @param arg 回调队列选择器时，此参数会传入队列选择方法
      * @return 发送结果
      */
-    public Result<SendResult> publishOrder(Message message, MessageQueueSelector selector, Object order) {
+    public Result<SendResult> publishOrder(Message message, Object arg) {
         try {
-            SendResult sendResult = producer.send(message, selector, order);
+            SendResult sendResult = producer.send(message, messageQueueSelector, arg);
             return new Result<SendResult>(true, sendResult);
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
@@ -518,6 +518,14 @@ public class RocketMQProducer extends AbstractConfig {
     
     public StatsHelper getStatsHelper() {
         return statsHelper;
+    }
+
+    public MessageQueueSelector getMessageQueueSelector() {
+        return messageQueueSelector;
+    }
+
+    public void setMessageQueueSelector(MessageQueueSelector messageQueueSelector) {
+        this.messageQueueSelector = messageQueueSelector;
     }
 
     @Override

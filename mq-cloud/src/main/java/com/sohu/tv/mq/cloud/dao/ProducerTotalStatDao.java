@@ -50,7 +50,7 @@ public interface ProducerTotalStatDao {
      * @param createDate
      * @return
      */
-    @Select("select total.* from producer_total_stat total, producer_stat stat "
+    @Select("select * from producer_total_stat total, producer_stat stat "
             + "where total.id = stat.total_id and total.create_date = #{createDate} and total.create_time >= #{createTime} "
             + "and stat.exception is not null")
     public List<ProducerTotalStat> selectExceptionList(@Param("createDate")int createDate, @Param("createTime")String createTime);

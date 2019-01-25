@@ -223,6 +223,7 @@ public class ConsumerController extends ViewController {
                 }
                 consumerProgressVO.setOffsetMap(offsetMap);
                 consumerProgressVO.setConsumeStatsList(consumeStatsList);
+                consumerProgressVO.computeTotalDiff();
                 listExt.add(consumerProgressVO);
             }
         }

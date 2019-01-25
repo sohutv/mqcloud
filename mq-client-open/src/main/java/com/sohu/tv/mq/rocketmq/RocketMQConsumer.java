@@ -1,13 +1,14 @@
 package com.sohu.tv.mq.rocketmq;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import org.apache.rocketmq.client.consumer.DefaultMQPushConsumer;
 import org.apache.rocketmq.client.consumer.listener.ConsumeConcurrentlyContext;
 import org.apache.rocketmq.client.consumer.listener.ConsumeConcurrentlyStatus;
+import org.apache.rocketmq.client.consumer.listener.ConsumeOrderlyContext;
+import org.apache.rocketmq.client.consumer.listener.ConsumeOrderlyStatus;
 import org.apache.rocketmq.client.consumer.listener.MessageListenerConcurrently;
+import org.apache.rocketmq.client.consumer.listener.MessageListenerOrderly;
 import org.apache.rocketmq.client.exception.MQClientException;
 import org.apache.rocketmq.common.consumer.ConsumeFromWhere;
 import org.apache.rocketmq.common.message.MessageExt;
@@ -57,6 +58,9 @@ public class RocketMQConsumer extends AbstractConfig {
     
     // "tag1 || tag2 || tag3"
     private String subExpression = "*";
+    
+    // 是否顺序消费
+    private boolean consumeOrderly = false;
 
     /**
      * 一个应用创建一个Consumer，由应用来维护此对象，可以设置为全局对象或者单例<br>
@@ -77,66 +81,24 @@ public class RocketMQConsumer extends AbstractConfig {
             }
             consumer.setConsumeMessageBatchMaxSize(consumeMessageBatchMaxSize);
             consumer.subscribe(topic, subExpression);
-            consumer.registerMessageListener(new MessageListenerConcurrently() {
-                @SuppressWarnings("unchecked")
-                @Override
-                public ConsumeConcurrentlyStatus consumeMessage(List<MessageExt> msgs,
-                        ConsumeConcurrentlyContext context) {
-                    if (msgs == null || msgs.isEmpty()) {
-                        return ConsumeConcurrentlyStatus.CONSUME_SUCCESS;
+            
+            // 构建消费者对象
+            final MessageConsumer messageConsumer = new MessageConsumer(this);
+            // 注册顺序或并发消费
+            if(consumeOrderly) {
+                consumer.registerMessageListener(new MessageListenerOrderly() {
+                    public ConsumeOrderlyStatus consumeMessage(List<MessageExt> msgs, ConsumeOrderlyContext context) {
+                        return messageConsumer.consumeMessage(msgs, context);
                     }
-                    List<Map<String, Object>> msgList = null;
-                    for (MessageExt me : msgs) {
-                        byte[] bytes = me.getBody();
-                        try {
-                            if (bytes == null || bytes.length == 0) {
-                                logger.warn("MessageExt={},MessageBody is null", me);
-                                continue;
-                            }
-                            if (consumerExecutor != null) {
-                                Map<String, Object> messageMap = (Map<String, Object>) getMessageSerializer().deserialize(bytes);
-                                if (debug) {
-                                    logger.warn("messageMap={}, messageExt={}", messageMap, me);
-                                }
-                                consumerExecutor.execute(messageMap);
-                            } else if (consumerCallback != null) {
-                                if(getMessageSerializer() == null) {
-                                    consumerCallback.call(bytes, me);
-                                } else {
-                                    Object msgObj = getMessageSerializer().deserialize(bytes);
-                                    if (debug) {
-                                        logger.warn("messageObj={}, messageExt={}", msgObj, me);
-                                    }
-                                    consumerCallback.call(msgObj, me);
-                                }
-                            } else {
-                                if (msgList == null) {
-                                    msgList = new ArrayList<Map<String, Object>>(msgs.size());
-                                }
-                                msgList.add((Map<String, Object>) getMessageSerializer().deserialize(bytes));
-                            }
-                        } catch (Exception e) {
-                            logger.error("topic:{} consumer:{} msg:{} msgId:{} bornTimestamp:{}", getTopic(), 
-                                    getConsumer(), new String(bytes), me.getMsgId(), me.getBornTimestamp(), e);
-                            if (reconsume) {
-                                return ConsumeConcurrentlyStatus.RECONSUME_LATER;
-                            }
-                        }
+                });
+            } else {
+                consumer.registerMessageListener(new MessageListenerConcurrently() {
+                    public ConsumeConcurrentlyStatus consumeMessage(List<MessageExt> msgs,
+                            ConsumeConcurrentlyContext context) {
+                        return messageConsumer.consumeMessage(msgs, context);
                     }
-                    // 一批消费
-                    if (batchConsumerExecutor != null) {
-                        try {
-                            batchConsumerExecutor.execute(msgList);
-                        } catch (Exception e) {
-                            logger.error(e.getMessage(), e);
-                            if (reconsume) {
-                                return ConsumeConcurrentlyStatus.RECONSUME_LATER;
-                            }
-                        }
-                    }
-                    return ConsumeConcurrentlyStatus.CONSUME_SUCCESS;
-                }
-            });
+                });
+            }
             consumer.start();
             logger.info("topic:{} group:{} start", topic, group);
         } catch (MQClientException e) {
@@ -269,6 +231,18 @@ public class RocketMQConsumer extends AbstractConfig {
 
     public void setDebug(boolean debug) {
         this.debug = debug;
+    }
+
+    public boolean isDebug() {
+        return debug;
+    }
+
+    public boolean isReconsume() {
+        return reconsume;
+    }
+
+    public void setConsumeOrderly(boolean consumeOrderly) {
+        this.consumeOrderly = consumeOrderly;
     }
 
     @Override

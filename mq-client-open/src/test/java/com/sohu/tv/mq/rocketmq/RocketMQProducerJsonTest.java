@@ -1,9 +1,13 @@
 package com.sohu.tv.mq.rocketmq;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
+import org.apache.rocketmq.client.producer.MessageQueueSelector;
 import org.apache.rocketmq.client.producer.SendResult;
+import org.apache.rocketmq.common.message.Message;
+import org.apache.rocketmq.common.message.MessageQueue;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -47,6 +51,29 @@ public class RocketMQProducerJsonTest {
             Assert.assertTrue(sendResult.isSuccess());
             Thread.sleep(1000);
         }
+    }
+    
+    /**
+     * 相同的id发送到同一个队列
+     * hash方法：id % 队列数
+     */
+    class IDHashMessageQueueSelector implements MessageQueueSelector {
+        public MessageQueue select(List<MessageQueue> mqs, Message msg, Object idObject) {
+            long id = (Long) idObject;
+            int size = mqs.size();
+            int index = (int) (id % size);
+            return mqs.get(index);
+        }
+    }
+    
+    @Test
+    public void produceOrder() {
+        producer.setMessageQueueSelector(new IDHashMessageQueueSelector());
+        long vid = 123L;
+        Map<String, Object> map = new HashMap<String, Object>();
+        map.put("v", vid);
+        Result<SendResult> sendResult = producer.publishOrder(map, String.valueOf(vid), vid);
+        Assert.assertNotNull(sendResult);
     }
     
     @After
