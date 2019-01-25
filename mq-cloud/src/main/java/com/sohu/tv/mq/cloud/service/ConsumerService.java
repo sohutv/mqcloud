@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -252,11 +253,16 @@ public class ConsumerService {
                         continue;
                     }
                     Set<Connection> connSet = cc.getConnectionSet();
-                    List<ConsumeStatsExt> consumeStatsList = new ArrayList<ConsumeStatsExt>();
+                    // only for fixed order
+                    Set<String> clientIdSet = new HashSet<String>();
                     for(Connection conn : connSet) {
+                        clientIdSet.add(conn.getClientId());
+                    }
+                    List<ConsumeStatsExt> consumeStatsList = new ArrayList<ConsumeStatsExt>();
+                    for(String clientId : clientIdSet) {
                         // 抓取状态
                         Map<String, Map<MessageQueue, Long>> consumerStatusTable = 
-                                mqAdmin.getConsumeStatus(topic.getName(), consumer.getName(), conn.getClientId());
+                                mqAdmin.getConsumeStatus(topic.getName(), consumer.getName(), clientId);
                         // 组装数据
                         if(topicStatsTable != null) {
                             Map<MessageQueue, OffsetWrapper> offsetTable = new TreeMap<MessageQueue, OffsetWrapper>();
@@ -274,7 +280,7 @@ public class ConsumerService {
                             }
                             ConsumeStatsExt consumeStats = new ConsumeStatsExt();
                             consumeStats.setOffsetTable(offsetTable);
-                            consumeStats.setClientId(conn.getClientId());
+                            consumeStats.setClientId(clientId);
                             consumeStatsList.add(consumeStats);
                         }
                     }
