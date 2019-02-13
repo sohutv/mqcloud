@@ -353,8 +353,45 @@ producer.setMessageQueueSelector(new IDHashMessageQueueSelector());
 long id = 123L;
 Map&lt;String, Object&gt; map = new HashMap&lt;String, Object&gt;();
 map.put(&quot;id&quot;, id);
-Result&lt;SendResult&gt; sendResult = producer.publishOrder(map, String.valueOf(id), id);</pre>			
-						<p>4：发送消息示例【hystrix版：MQ集群如果出现故障，将会拖慢发送方，故提供了hystrix版，以保证即使MQ集群整体不可用，也不会拖死发送方】：</p>
+Result&lt;SendResult&gt; sendResult = producer.publishOrder(map, String.valueOf(id), id);</pre>
+						<p>4：发送事务消息示例：</p>
+							<pre class="prettyprint">
+// 1.定义实现事务回调接口
+TransactionListener transactionListener = new TransactionListener() {
+    /**
+     * 在此方法执行本地事务
+     */
+    public LocalTransactionState executeLocalTransaction(Message msg, Object arg) {
+        // arg可以传业务id
+        int id = (Integer) arg;
+        // 确定事务状态，未知返回：UNKNOW，回滚返回：ROLLBACK_MESSAGE，成功返回：COMMIT_MESSAGE，抛出异常默认为：UNKNOW
+        return LocalTransactionState.COMMIT_MESSAGE;
+    }
+
+    /**
+     * 如果executeLocalTransaction返回UNKNOW，rocketmq会回调此方法查询事务状态，默认每分钟查一次，最多查询15次，状态还是UNKNOW的话，丢弃消息
+     */
+    public LocalTransactionState checkLocalTransaction(MessageExt msg) {
+        String key = msg.getKeys();
+        int id = Integer.valueOf(key);
+        return LocalTransactionState.COMMIT_MESSAGE;
+    }
+};
+
+// 2.发送事务消息
+// 初始化
+RocketMQProducer producer = new RocketMQProducer(producerGroup, topic, transactionListener);
+// 组装消息
+int id = 123;
+Map&lt;String, Object&gt; map = new HashMap&lt;String, Object&gt;();
+map.put(&quot;id&quot;, id);
+map.put(&quot;msg&quot;, &quot;msg&quot; + id);
+// 发送
+Result&lt;SendResult&gt; sendResult = producer.publishTransaction(JSON.toJSONString(map), String.valueOf(id), id);
+if(!sendResult.isSuccess){
+    //失败消息处理
+}</pre>			
+						<p>5：发送消息示例【hystrix版：MQ集群如果出现故障，将会拖慢发送方，故提供了hystrix版，以保证即使MQ集群整体不可用，也不会拖死发送方】：</p>
 							<pre class="prettyprint">
 Map&lt;String, String&gt; map = new HashMap&lt;String, String&gt;();
 map.put(&quot;aid&quot;, &quot;123456&quot;);

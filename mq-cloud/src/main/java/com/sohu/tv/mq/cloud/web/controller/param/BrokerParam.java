@@ -101,9 +101,9 @@ public class BrokerParam {
                 + "\nrmqAddressServerDomain=" + nameServerDomain
                 + "\nrmqAddressServerSubGroup=" + String.format(MQDeployer.NS_SUB_GROUP, cluster.getId())
                 + "\nfetchNamesrvAddrByAddressServer=true"
-                + "\nautoCreateTopicEnable=true"
+                + "\nautoCreateTopicEnable=false"
                 + "\nclusterTopicEnable=false"
-                + "\nautoCreateSubscriptionGroup=false"
+                + "\nautoCreateSubscriptionGroup=true"
                 + "\nstorePathRootDir=" + MQDeployer.MQ_CLOUD_DIR + getDir() + "/data"
                 + "\nstorePathCommitLog=" + MQDeployer.MQ_CLOUD_DIR + getDir() + "/data/commitlog"
                 + "\nstorePathIndex=" + MQDeployer.MQ_CLOUD_DIR + getDir() + "/data/index"

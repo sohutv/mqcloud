@@ -7,6 +7,8 @@ import org.apache.rocketmq.client.producer.DefaultMQProducer;
 import org.apache.rocketmq.client.producer.MessageQueueSelector;
 import org.apache.rocketmq.client.producer.SendCallback;
 import org.apache.rocketmq.client.producer.SendResult;
+import org.apache.rocketmq.client.producer.TransactionListener;
+import org.apache.rocketmq.client.producer.TransactionMQProducer;
 import org.apache.rocketmq.common.message.Message;
 
 import com.sohu.index.tv.mq.common.Result;
@@ -36,6 +38,15 @@ public class RocketMQProducer extends AbstractConfig {
     public RocketMQProducer(String producerGroup, String topic) {
         super(producerGroup, topic);
         producer = new DefaultMQProducer(producerGroup);
+    }
+    
+    /**
+     * 同样消息的Producer，归为同一个Group，应用必须设置，并保证命名唯一
+     */
+    public RocketMQProducer(String producerGroup, String topic, TransactionListener transactionListener) {
+        super(producerGroup, topic);
+        producer = new TransactionMQProducer(producerGroup);
+        ((TransactionMQProducer) producer).setTransactionListener(transactionListener);
     }
     
     /**
@@ -456,6 +467,99 @@ public class RocketMQProducer extends AbstractConfig {
      */
     public Result<SendResult> publishOneway(Object messageObject, String keys) {
         return publishOneway(messageObject, keys, null);
+    }
+    
+    /**
+     * 发送事务消息
+     *
+     * @param messageMap 消息数据
+     * @param arg 执行本地事务时，回传arg
+     * @return 发送结果
+     */
+    public Result<SendResult> publishTransaction(Map<String, Object> messageMap, Object arg) {
+        return publishTransaction(messageMap, null, arg);
+    }
+    
+    /**
+     * 发送事务消息
+     *
+     * @param messageMap 消息数据
+     * @param keys key
+     * @param arg 执行本地事务时，回传arg
+     * @return 发送结果
+     */
+    public Result<SendResult> publishTransaction(Map<String, Object> messageMap, String keys, Object arg) {
+        return publishTransaction((Object) messageMap, keys, arg);
+    }
+    
+    /**
+     * 发送事务消息
+     *
+     * @param messageMap 消息数据
+     * @param arg 执行本地事务时，回传arg
+     * @return 发送结果
+     */
+    public Result<SendResult> publishTransaction(Object messageObject, Object arg) {
+        return publishTransaction(messageObject, null, arg);
+    }
+    
+    /**
+     * 发送事务消息
+     *
+     * @param messageObject 消息数据
+     * @param keys key
+     * @return 发送结果
+     */
+    public Result<SendResult> publishTransaction(Object messageObject, String keys) {
+        return publishTransaction(messageObject, keys, null);
+    }
+
+    /**
+     * 发送事务消息
+     *
+     * @param messageObject 消息数据
+     * @param keys key
+     * @param arg 执行本地事务时，回传arg
+     * @return 发送结果
+     */
+    public Result<SendResult> publishTransaction(Object messageObject, String keys, Object arg) {
+        return publishTransaction(messageObject, null, keys, arg);
+    }
+    
+    /**
+     * 发送事务消息
+     *
+     * @param messageObject 消息数据
+     * @param keys key
+     * @param arg 执行本地事务时，回传arg
+     * @return 发送结果
+     */
+    public Result<SendResult> publishTransaction(Object messageObject, String tags, String keys, Object arg) {
+        Message message = null;
+        try {
+            message = buildMessage(messageObject, tags, keys, null);
+        } catch (Exception e) {
+            logger.error(e.getMessage(), e);
+            return new Result<SendResult>(false, e);
+        }
+        return publishTransaction(message, arg);
+    }
+    
+    /**
+     * 发送事务消息消息
+     *
+     * @param message 消息
+     * @param arg 执行本地事务时，回传arg
+     * @return 发送结果
+     */
+    public Result<SendResult> publishTransaction(Message message, Object arg) {
+        try {
+            SendResult sendResult = ((TransactionMQProducer) producer).sendMessageInTransaction(message, arg);
+            return new Result<SendResult>(true, sendResult);
+        } catch (Exception e) {
+            logger.error(e.getMessage(), e);
+            return new Result<SendResult>(false, e);
+        }
     }
 
     public void shutdown() {

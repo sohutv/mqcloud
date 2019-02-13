@@ -285,6 +285,10 @@ public class MQDeployer {
         }
         // 获取master地址
         Result<String> masterAddressResult = fetchMasterAddress(cluster);
+        // 集群中无节点时，不进行后续配置
+        if(Status.NO_RESULT.getKey() == masterAddressResult.getStatus()) {
+            return Result.getOKResult();
+        }
         if(!masterAddressResult.isOK()) {
             return masterAddressResult;
         }
