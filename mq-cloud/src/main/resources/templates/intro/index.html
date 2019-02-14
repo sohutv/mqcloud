@@ -380,7 +380,7 @@ TransactionListener transactionListener = new TransactionListener() {
 
 // 2.发送事务消息
 // 初始化
-RocketMQProducer producer = new RocketMQProducer(producerGroup, topic, transactionListener);
+${producerClass?substring(producerClass?last_index_of(".") + 1)} producer = new ${producerClass?substring(producerClass?last_index_of(".") + 1)}(producerGroup, topic, transactionListener);
 // 组装消息
 int id = 123;
 Map&lt;String, Object&gt; map = new HashMap&lt;String, Object&gt;();
