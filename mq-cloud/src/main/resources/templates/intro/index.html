@@ -272,7 +272,7 @@
 
 <!-- 客户端接入 -->
 <div id="clientDemoModal" class="modal fade" tabindex="-1" data-width="400">
-	<div class="modal-dialog" style="width:800px">
+	<div class="modal-dialog" style="width:850px">
 		<div class="modal-content">
 			<div class="modal-header">
 				<button type="button" class="close" data-dismiss="modal"
@@ -301,9 +301,71 @@
     &lt;artifactId&gt;${clientArtifactId}&lt;/artifactId&gt;
     &lt;version&gt;${version}&lt;/version&gt;
 &lt;/dependency&gt;</pre>
-						<p>3：【可选】<a target="_blank" href="${request.contextPath}/file/logback_rocketmq_client.xml">logback日志</a>【下载后放置到classpath下】</p>
-						<p>4：【可选】<a target="_blank" href="${request.contextPath}/file/log4j_rocketmq_client.xml">log4j日志</a>【下载后放置到classpath下】</p>
-						<p>5：【可选】<a target="_blank" href="${request.contextPath}/file/log4j2_rocketmq_client.xml">log4j2日志</a>【下载后放置到classpath下】</p>
+						<p>3：【可选】log4j配置片段</p>
+						<pre class="prettyprint">
+&lt;appender name=&quot;RocketmqClientAppender&quot; class=&quot;org.apache.log4j.DailyRollingFileAppender&quot;&gt;
+    &lt;param name=&quot;File&quot; value=&quot;${r"${日志路径}"}/rocketmq.log&quot; /&gt;
+    &lt;param name=&quot;DatePattern&quot; value=&quot;&#x27;.&#x27;yyyy-MM-dd&quot; /&gt;
+    &lt;layout class=&quot;org.apache.log4j.PatternLayout&quot;&gt;
+        &lt;param name=&quot;ConversionPattern&quot; value=&quot;%d{yyy-MM-dd HH\:mm\:ss,SSS} %p %c{1}(%L) - %m%n&quot;/&gt;
+    &lt;/layout&gt;
+&lt;/appender&gt;
+&lt;logger name=&quot;RocketmqClient&quot; additivity=&quot;false&quot;&gt;
+    &lt;appender-ref ref=&quot;RocketmqClientAppender&quot;/&gt;
+&lt;/logger&gt;
+&lt;logger name=&quot;RocketmqCommon&quot; additivity=&quot;false&quot;&gt;
+    &lt;appender-ref ref=&quot;RocketmqClientAppender&quot;/&gt;
+&lt;/logger&gt;
+&lt;logger name=&quot;RocketmqRemoting&quot; additivity=&quot;false&quot;&gt;
+    &lt;appender-ref ref=&quot;RocketmqClientAppender&quot;/&gt;
+&lt;/logger&gt;</pre>
+						<p>4：【可选】log4j2配置片段</p>
+						<pre class="prettyprint">
+&lt;Appenders&gt;
+    &lt;RollingFile name=&quot;RocketmqClientAppender&quot; fileName=&quot;${r"${sys:client.logRoot}"}/rocketmq_client.log&quot;
+                 filePattern=&quot;${r"${sys:client.logRoot}"}/rocketmq_client-%d{yyyy-MM-dd}-%i.log&quot;&gt;
+        &lt;PatternLayout pattern=&quot;%d{yyy-MM-dd HH\:mm\:ss,SSS} %p %c{1}(%L) - %m%n&quot;/&gt;
+        &lt;Policies&gt;
+            &lt;TimeBasedTriggeringPolicy/&gt;
+            &lt;SizeBasedTriggeringPolicy size=&quot;1 GB&quot;/&gt;
+        &lt;/Policies&gt;
+        &lt;DefaultRolloverStrategy max=&quot;${r"${sys:client.logFileMaxIndex}"}&quot;/&gt;
+    &lt;/RollingFile&gt;
+&lt;/Appenders&gt;
+&lt;Loggers&gt;
+    &lt;logger name=&quot;RocketmqClient&quot; additivity=&quot;false&quot;&gt;
+        &lt;appender-ref ref=&quot;RocketmqClientAppender&quot;/&gt;
+    &lt;/logger&gt;
+    &lt;logger name=&quot;RocketmqCommon&quot; additivity=&quot;false&quot;&gt;
+        &lt;appender-ref ref=&quot;RocketmqClientAppender&quot;/&gt;
+    &lt;/logger&gt;
+    &lt;logger name=&quot;RocketmqRemoting&quot; additivity=&quot;false&quot;&gt;
+        &lt;appender-ref ref=&quot;RocketmqClientAppender&quot;/&gt;
+    &lt;/logger&gt;
+&lt;/Loggers&gt;</pre>
+						<p>5：【可选】logback配置片段</p>
+						<pre class="prettyprint">
+&lt;appender name=&quot;RocketmqClientAppender&quot; class=&quot;ch.qos.logback.core.rolling.RollingFileAppender&quot;&gt;
+    &lt;file&gt;${r"${LOGS_DIR}"}/rocketmq.log&lt;/file&gt;
+    &lt;rollingPolicy class=&quot;ch.qos.logback.core.rolling.TimeBasedRollingPolicy&quot;&gt;
+        &lt;fileNamePattern&gt;${r"${LOGS_DIR}"}/otherdays/rocketmq.log.%d{yyyy-MM-dd}
+        &lt;/fileNamePattern&gt;
+        &lt;maxHistory&gt;40&lt;/maxHistory&gt;
+    &lt;/rollingPolicy&gt;
+    &lt;encoder&gt;
+        &lt;pattern&gt;%d{yyy-MM-dd HH:mm:ss,GMT+8} %p %t - %m%n&lt;/pattern&gt;
+        &lt;charset class=&quot;java.nio.charset.Charset&quot;&gt;UTF-8&lt;/charset&gt;
+    &lt;/encoder&gt;
+&lt;/appender&gt;
+&lt;logger name=&quot;RocketmqCommon&quot; level=&quot;INFO&quot; additivity=&quot;false&quot;&gt;
+    &lt;appender-ref ref=&quot;RocketmqClientAppender&quot;/&gt;
+&lt;/logger&gt;
+&lt;logger name=&quot;RocketmqRemoting&quot; level=&quot;INFO&quot; additivity=&quot;false&quot;&gt;
+    &lt;appender-ref ref=&quot;RocketmqClientAppender&quot;/&gt;
+&lt;/logger&gt;
+&lt;logger name=&quot;RocketmqClient&quot; level=&quot;INFO&quot; additivity=&quot;false&quot;&gt;
+    &lt;appender-ref ref=&quot;RocketmqClientAppender&quot;/&gt;
+&lt;/logger&gt;</pre>
 					</div>
 					<div>
 						<b>老用户请先通过“我是老用户”入口关联生产者</b>

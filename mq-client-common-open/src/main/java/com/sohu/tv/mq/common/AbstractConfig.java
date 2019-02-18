@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.rocketmq.client.ClientConfig;
+import org.apache.rocketmq.client.log.ClientLogger;
 import org.apache.rocketmq.common.utils.HttpTinyClient;
 import org.apache.rocketmq.common.utils.HttpTinyClient.HttpResult;
 import org.slf4j.Logger;
@@ -57,6 +58,8 @@ public abstract class AbstractConfig {
     public AbstractConfig(String group, String topic) {
         this.topic = topic;
         this.group = group;
+        // use slf4j
+        System.setProperty(ClientLogger.CLIENT_LOG_USESLF4J, "true");
     }
 
     public String getTopic() {
