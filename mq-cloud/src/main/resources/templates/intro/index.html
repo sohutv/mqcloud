@@ -322,8 +322,7 @@
 						<p>4：【可选】log4j2配置片段</p>
 						<pre class="prettyprint">
 &lt;Appenders&gt;
-    &lt;RollingFile name=&quot;RocketmqClientAppender&quot; fileName=&quot;${r"${sys:client.logRoot}"}/rocketmq_client.log&quot;
-                 filePattern=&quot;${r"${sys:client.logRoot}"}/rocketmq_client-%d{yyyy-MM-dd}-%i.log&quot;&gt;
+    &lt;RollingFile name=&quot;RocketmqClientAppender&quot; fileName=&quot;${r"${sys:client.logRoot}"}/rocketmq_client.log&quot; filePattern=&quot;${r"${sys:client.logRoot}"}/rocketmq_client-%d{yyyy-MM-dd}-%i.log&quot;&gt;
         &lt;PatternLayout pattern=&quot;%d{yyy-MM-dd HH\:mm\:ss,SSS} %p %c{1}(%L) - %m%n&quot;/&gt;
         &lt;Policies&gt;
             &lt;TimeBasedTriggeringPolicy/&gt;
