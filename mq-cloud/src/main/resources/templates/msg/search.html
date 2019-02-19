@@ -16,7 +16,7 @@
 		</tbody>
 	<#else>
 		<tbody id="page_${response.result.mqc.times}">
-			<tr class="no_more_data"><td colspan=7 class="text-center">本次查无数据</td></tr>
+			<tr class="no_more_data"><td colspan=8 class="text-center">本次查无数据</td></tr>
 		</tbody>
 	</#if>
 	<input type="hidden" id="data_${response.result.mqc.times}" data_size="${response.result.msgList?size}"  data_search="${response.result.mqc.searchedSize?c}" data_left="${response.result.mqc.leftSize?c}">
@@ -27,6 +27,6 @@
 	</script>
 <#else>
 	<tbody>
-		<tr class="no_more_data"><td colspan=7 class="text-center">查询异常！${response.message}</td></tr>
+		<tr class="no_more_data"><td colspan=8 class="text-center">查询异常！${response.message}</td></tr>
 	</tbody>
 </#if>
