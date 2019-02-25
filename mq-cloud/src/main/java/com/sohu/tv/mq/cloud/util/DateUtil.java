@@ -29,6 +29,7 @@ public class DateUtil {
     public static final String YMD_BLANK_HMS_COLON = "yyyyMMdd HH:mm:ss";
     public static final String YMD_DASH_BLANK_HMS_COLON = "yyyy-MM-dd HH:mm:ss";
     public static final String YMD_BLANK_HMS_COLON_DOT_SSS = "yyyyMMdd HH:mm:ss.SSS";
+    public static final String YMD_DASH_HMS_COLON_DOT_SSS = "yyyy-MM-dd HH:mm:ss.SSS";
 
     private static ThreadLocal<Map<String, SimpleDateFormat>> threadLocal = new ThreadLocal<Map<String, SimpleDateFormat>>();
 

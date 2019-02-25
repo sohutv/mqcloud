@@ -10,8 +10,11 @@ public class ClusterInfoDTO {
     private int clusterId;
     // 是否启用vip通道
     private boolean vipChannelEnabled;
-    // 是否广播消费
+    // 是否广播消费，仅用于consumer
     private boolean broadcast;
+    // 是否开启trace，仅用于producer
+    private boolean traceEnabled;
+    
     public int getClusterId() {
         return clusterId;
     }
@@ -29,5 +32,11 @@ public class ClusterInfoDTO {
     }
     public void setBroadcast(boolean broadcast) {
         this.broadcast = broadcast;
+    }
+    public boolean isTraceEnabled() {
+        return traceEnabled;
+    }
+    public void setTraceEnabled(boolean traceEnabled) {
+        this.traceEnabled = traceEnabled;
     }
 }

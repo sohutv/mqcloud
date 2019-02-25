@@ -9,6 +9,8 @@ import org.apache.rocketmq.client.producer.SendCallback;
 import org.apache.rocketmq.client.producer.SendResult;
 import org.apache.rocketmq.client.producer.TransactionListener;
 import org.apache.rocketmq.client.producer.TransactionMQProducer;
+import org.apache.rocketmq.client.trace.AsyncTraceDispatcher;
+import org.apache.rocketmq.client.trace.hook.SendMessageTraceHookImpl;
 import org.apache.rocketmq.common.message.Message;
 
 import com.sohu.index.tv.mq.common.Result;
@@ -635,5 +637,11 @@ public class RocketMQProducer extends AbstractConfig {
     @Override
     protected int role() {
         return PRODUCER;
+    }
+
+    @Override
+    protected void registerTraceDispatcher(AsyncTraceDispatcher traceDispatcher) {
+        producer.getDefaultMQProducerImpl().registerSendMessageHook(
+                new SendMessageTraceHookImpl(traceDispatcher));
     }
 }

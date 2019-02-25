@@ -25,6 +25,10 @@ public class TopicParam {
     @NotBlank
     private String producer;
     
+    // 是否启用trace 0:不启用,1:启用
+    @Range(min = 0, max = 1)
+    private int traceEnabled;
+    
     private long qpd;
     private long qps;
     
@@ -71,6 +75,12 @@ public class TopicParam {
     }
     public void setQps(long qps) {
         this.qps = qps;
+    }
+    public int getTraceEnabled() {
+        return traceEnabled;
+    }
+    public void setTraceEnabled(int traceEnabled) {
+        this.traceEnabled = traceEnabled;
     }
     @Override
     public String toString() {

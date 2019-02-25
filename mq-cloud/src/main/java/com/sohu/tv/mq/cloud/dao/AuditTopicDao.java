@@ -11,9 +11,9 @@ public interface AuditTopicDao {
      * 保存记录
      * @param auditTopic
      */
-    @Insert("insert into audit_topic(aid,name,queue_num,producer,ordered,qpd,qps) values(" +
+    @Insert("insert into audit_topic(aid,name,queue_num,producer,ordered,qpd,qps,trace_enabled) values(" +
             "#{auditTopic.aid},#{auditTopic.name},#{auditTopic.queueNum},#{auditTopic.producer},"
-            + "#{auditTopic.ordered},#{auditTopic.qpd},#{auditTopic.qps})")
+            + "#{auditTopic.ordered},#{auditTopic.qpd},#{auditTopic.qps},#{auditTopic.traceEnabled})")
     public void insert(@Param("auditTopic") AuditTopic auditTopic);
 
     /**

@@ -19,6 +19,8 @@ public class AuditTopic {
     private long qpd;
     // 每秒消息量
     private long qps;
+    // 是否开启trace
+    private int traceEnabled;
 
     public long getAid() {
         return aid;
@@ -74,6 +76,18 @@ public class AuditTopic {
 
     public void setQps(long qps) {
         this.qps = qps;
+    }
+    
+    public boolean traceEnabled() {
+        return traceEnabled == 1;
+    }
+    
+    public int getTraceEnabled() {
+        return traceEnabled;
+    }
+
+    public void setTraceEnabled(int traceEnabled) {
+        this.traceEnabled = traceEnabled;
     }
 
     @Override

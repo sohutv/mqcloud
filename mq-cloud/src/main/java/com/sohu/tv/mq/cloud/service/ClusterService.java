@@ -1,5 +1,6 @@
 package com.sohu.tv.mq.cloud.service;
 
+import java.util.Arrays;
 import java.util.List;
 
 import javax.annotation.PostConstruct;
@@ -28,17 +29,20 @@ public class ClusterService {
     private ClusterDao clusterDao;
     
     // cluster持有，初始化后即缓存到内存
-    private Cluster[] mqClusterArray;
+    private volatile Cluster[] mqClusterArray;
     
     @PostConstruct
-    public void init() {
+    public void refresh() {
         Result<List<Cluster>> clusterListResult = queryAll();
         if(clusterListResult.isEmpty()) {
             logger.error("no cluster data found!");
             return;
         }
         List<Cluster> list = clusterListResult.getResult();
-        mqClusterArray = clusterListResult.getResult().toArray(new Cluster[list.size()]);
+        if(mqClusterArray == null || mqClusterArray.length != list.size()) {
+            logger.info("cluster config refreshed, old:{} new:{}", Arrays.toString(mqClusterArray), list);
+            mqClusterArray = clusterListResult.getResult().toArray(new Cluster[list.size()]);
+        }
     }
     
     /**
@@ -82,7 +86,7 @@ public class ClusterService {
         Integer result = null;
         try {
             result = clusterDao.insert(cluster);
-            init();
+            refresh();
         } catch (Exception e) {
             logger.error("save:{}", cluster, e);
             return Result.getDBErrorResult(e);

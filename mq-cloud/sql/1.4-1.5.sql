@@ -1,0 +1,2 @@
+alter table `audit_topic` add column `trace_enabled` int(4) NOT NULL DEFAULT '0' COMMENT '0:不开启trece,1:开启trace';
+alter table `topic` add column `trace_enabled` int(4) NOT NULL DEFAULT '0' COMMENT '0:不开启trece,1:开启trace';

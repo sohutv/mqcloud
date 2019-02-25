@@ -80,6 +80,7 @@ public class ClusterController {
         Cluster mqCluster = clusterService.getMQClusterById(topic.getClusterId());
         clusterInfoDTO.setClusterId(mqCluster.getId());
         clusterInfoDTO.setVipChannelEnabled(mqCluster.isEnableVipChannel());
+        clusterInfoDTO.setTraceEnabled(topic.traceEnabled());
         
         // 校验生产者
         if(topicUserParam.isProducer()) {

@@ -28,8 +28,8 @@ public interface TopicDao {
      * @param topic
      */
     @Options(useGeneratedKeys = true, keyProperty = "topic.id")
-    @Insert("insert into topic(cluster_id, name, queue_num, ordered, create_date) values("
-            + "#{topic.clusterId},#{topic.name},#{topic.queueNum},#{topic.ordered},now())")
+    @Insert("insert into topic(cluster_id, name, queue_num, ordered, create_date, trace_enabled) values("
+            + "#{topic.clusterId},#{topic.name},#{topic.queueNum},#{topic.ordered},now(),#{topic.traceEnabled})")
     public Integer insert(@Param("topic") Topic topic);
     
     /**

@@ -4,8 +4,11 @@ import java.net.HttpURLConnection;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.commons.lang.NotImplementedException;
 import org.apache.rocketmq.client.ClientConfig;
 import org.apache.rocketmq.client.log.ClientLogger;
+import org.apache.rocketmq.client.trace.AsyncTraceDispatcher;
+import org.apache.rocketmq.common.UtilAll;
 import org.apache.rocketmq.common.utils.HttpTinyClient;
 import org.apache.rocketmq.common.utils.HttpTinyClient.HttpResult;
 import org.slf4j.Logger;
@@ -15,6 +18,9 @@ import com.alibaba.fastjson.JSON;
 import com.sohu.tv.mq.dto.ClusterInfoDTO;
 import com.sohu.tv.mq.dto.ClusterInfoDTOResult;
 import com.sohu.tv.mq.serializable.MessageSerializer;
+import com.sohu.tv.mq.trace.SohuAsyncTraceDispatcher;
+import com.sohu.tv.mq.trace.TraceRocketMQProducer;
+import com.sohu.tv.mq.util.CommonUtil;
 import com.sohu.tv.mq.util.Constant;
 import com.sohu.tv.mq.util.Version;
 
@@ -54,6 +60,12 @@ public abstract class AbstractConfig {
     
     // 消息序列化工具
     private MessageSerializer<Object> messageSerializer;
+
+    // 是否开启trace
+    protected boolean traceEnabled;
+
+    // 是否设置了instanceName
+    protected String instanceName;
 
     public AbstractConfig(String group, String topic) {
         this.topic = topic;
@@ -157,6 +169,49 @@ public abstract class AbstractConfig {
         clientConfig.setVipChannelEnabled(clusterInfoDTO.isVipChannelEnabled());
         // 通过unitName发现不同的集群
         clientConfig.setUnitName(String.valueOf(clusterInfoDTO.getClusterId()));
+        // 生产者自动设置是否trace
+        if (PRODUCER == role()) {
+            traceEnabled = clusterInfoDTO.isTraceEnabled();
+        }
+        // 设置instanceName
+        if(getInstanceName() != null) {
+            clientConfig.setInstanceName(getInstanceName());
+        }
+        // trace 初始化
+        initTrace();
+    }
+
+    /**
+     * 初始化trace;
+     */
+    protected void initTrace() {
+        if (!isTraceEnabled()) {
+            return;
+        }
+        try {
+            // 构建trace专用topic
+            String traceTopic = CommonUtil.buildTraceTopic(topic);
+            // 构建单独的trace producer
+            TraceRocketMQProducer traceRocketMQProducer = new TraceRocketMQProducer(
+                    CommonUtil.buildTraceTopicProducer(traceTopic), traceTopic);
+            // 初始化TraceDispatcher
+            SohuAsyncTraceDispatcher traceDispatcher = new SohuAsyncTraceDispatcher(traceTopic);
+            // 设置producer属性
+            traceRocketMQProducer.getProducer().setSendMsgTimeout(5000);
+            traceRocketMQProducer.getProducer().setMaxMessageSize(traceDispatcher.getMaxMsgSize() - 10 * 1000);
+            traceRocketMQProducer.setMqCloudDomain(mqCloudDomain);
+            traceRocketMQProducer.setInstanceName(String.valueOf(role()));
+            // 启动trace producer
+            traceRocketMQProducer.start();
+            // 赋给TraceDispatcher
+            traceDispatcher.setTraceProducer(traceRocketMQProducer.getProducer());
+            // 启动
+            traceDispatcher.start();
+            // 注册
+            registerTraceDispatcher(traceDispatcher);
+        } catch (Exception e) {
+            logger.error("SohuAsyncTraceDispatcher init err", e);
+        }
     }
 
     /**
@@ -166,12 +221,25 @@ public abstract class AbstractConfig {
      */
     protected abstract int role();
 
+    /**
+     * 注册trace hook
+     * 
+     * @param traceDispatcher
+     */
+    protected void registerTraceDispatcher(AsyncTraceDispatcher traceDispatcher) {
+        throw new NotImplementedException();
+    }
+
     public boolean isSampleEnabled() {
         return sampleEnabled;
     }
 
     public void setSampleEnabled(boolean sampleEnabled) {
         this.sampleEnabled = sampleEnabled;
+    }
+
+    public boolean isTraceEnabled() {
+        return traceEnabled;
     }
 
     public String getMqCloudDomain() {
@@ -192,5 +260,24 @@ public abstract class AbstractConfig {
 
     public Logger getLogger() {
         return logger;
+    }
+
+    /**
+     * 当存在同一JVM内需要向多个RocketMQ集群生产消息时, 需要设置InstanceName作区分，否则默认发往第一个初始化的集群。
+     * 注：之所以追加pid是因为如果集群消费方式的consumer设置了相同的instanceName，会导致消费不均
+     * 参考：https://blog.csdn.net/a417930422/article/details/50663629
+     * 
+     * @param instanceName
+     */
+    public void setInstanceName(String instanceName) {
+        StringBuilder buffer = new StringBuilder();
+        buffer.append(UtilAll.getPid());
+        buffer.append("@");
+        buffer.append(instanceName);
+        this.instanceName = buffer.toString();
+    }
+
+    public String getInstanceName() {
+        return instanceName;
     }
 }

@@ -1,0 +1,31 @@
+<#if response.OK>
+	<#if response.result?? && response.result?size gt 0>
+		<tbody>
+			<#list response.result as msg>
+				<tr data="${msg.offsetMsgId}" dataIdx="${msg_index + 1}">
+					<td title="${msg.msgId}">${msg_index + 1}</td>
+					<td>${msg.bornHostString}</td>
+					<td title="${msg.storeTimestamp?number_to_datetime?string("yyyy-MM-dd HH:mm:ss.SSS")}">${msg.bornTimestamp?number_to_datetime?string("yyyy-MM-dd HH:mm:ss.SSS")}</td>
+					<td title="${msg.queueOffset}">${msg.broker!}:${msg.queueId}</td>
+					<td id="jsonview${msg_index + 1}"></td>
+				</tr>
+			</#list>
+		</tbody>
+		<script>
+			<#list response.result as msg>
+				$("#jsonview" + ${msg_index + 1}).JSONView(${msg.decodedBody});
+			</#list>
+		</script>
+	<#else>
+		<tbody>
+			<tr class="no_more_data"><td colspan=5 class="text-center">查无数据</td></tr>
+		</tbody>
+	</#if>
+<#else>
+	<tbody>
+		<tr class="no_more_data"><td colspan=5 class="text-center">查询异常！${response.message}</td></tr>
+	</tbody>
+</#if>
+<script>
+	$("#pager").hide();
+</script>

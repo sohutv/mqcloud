@@ -10,6 +10,8 @@ import org.apache.rocketmq.client.consumer.listener.ConsumeOrderlyStatus;
 import org.apache.rocketmq.client.consumer.listener.MessageListenerConcurrently;
 import org.apache.rocketmq.client.consumer.listener.MessageListenerOrderly;
 import org.apache.rocketmq.client.exception.MQClientException;
+import org.apache.rocketmq.client.trace.AsyncTraceDispatcher;
+import org.apache.rocketmq.client.trace.hook.ConsumeMessageTraceHookImpl;
 import org.apache.rocketmq.common.consumer.ConsumeFromWhere;
 import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.common.protocol.heartbeat.MessageModel;
@@ -248,5 +250,15 @@ public class RocketMQConsumer extends AbstractConfig {
     @Override
     protected int role() {
         return CONSUMER;
+    }
+
+    @Override
+    protected void registerTraceDispatcher(AsyncTraceDispatcher traceDispatcher) {
+        consumer.getDefaultMQPushConsumerImpl().registerConsumeMessageHook(
+                new ConsumeMessageTraceHookImpl(traceDispatcher));        
+    }
+    
+    public void setTraceEnabled(boolean traceEnabled) {
+        this.traceEnabled = traceEnabled;
     }
 }

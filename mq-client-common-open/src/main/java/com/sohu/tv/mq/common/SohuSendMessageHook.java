@@ -3,6 +3,7 @@ package com.sohu.tv.mq.common;
 import org.apache.rocketmq.client.hook.SendMessageContext;
 import org.apache.rocketmq.client.hook.SendMessageHook;
 import org.apache.rocketmq.client.producer.DefaultMQProducer;
+import org.apache.rocketmq.client.trace.TraceContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,18 +37,29 @@ public class SohuSendMessageHook implements SendMessageHook {
 
     @Override
     public void sendMessageBefore(SendMessageContext context) {
-        context.setMqTraceContext(System.currentTimeMillis());
+        if (context.getMqTraceContext() == null) {
+            context.setMqTraceContext(System.currentTimeMillis());
+        }
     }
 
     @Override
     public void sendMessageAfter(SendMessageContext context) {
         Object obj = context.getMqTraceContext();
-        if(obj == null) {
+        if (obj == null) {
             return;
         }
-        long cost = System.currentTimeMillis() - (long) obj;
+        long start = 0;
+        // 兼容4.4的trace对象
+        if (obj instanceof TraceContext) {
+            start = ((TraceContext) obj).getTimeStamp();
+        } else if (obj instanceof Long) {
+            start = (Long) obj;
+        } else {
+            return;
+        }
+        long cost = System.currentTimeMillis() - start;
         try {
-            statsHelper.increment(context.getBrokerAddr(), (int)cost, context.getException());
+            statsHelper.increment(context.getBrokerAddr(), (int) cost, context.getException());
         } catch (Throwable e) {
             logger.warn("stats err", e);
         }
