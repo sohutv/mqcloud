@@ -1,5 +1,7 @@
 package com.sohu.tv.mq.rocketmq;
 
+import org.apache.rocketmq.client.producer.TransactionListener;
+
 import com.sohu.tv.mq.common.AbstractConfig;
 import com.sohu.tv.mq.serializable.DefaultMessageSerializer;
 
@@ -13,6 +15,12 @@ public class TestUtil {
     
     public static RocketMQProducer buildProducer(String producerGroup, String topic) {
         RocketMQProducer producer = new RocketMQProducer(producerGroup, topic);
+        setDomain(producer);
+        return producer;
+    }
+    
+    public static RocketMQProducer buildProducer(String producerGroup, String topic, TransactionListener transactionListener) {
+        RocketMQProducer producer = new RocketMQProducer(producerGroup, topic, transactionListener);
         setDomain(producer);
         return producer;
     }

@@ -31,6 +31,7 @@
 			                    		<#assign totalOffset=0>
 			                    		<#assign minOffset = offset.minOffset>
 			                    		<#assign maxOffset=0>
+			                    		<#assign maxLastUpdateTimestamp=0>
 			                    		<#list v as mqInner, offsetInner>
 			                    			<#if minOffset gt offsetInner.minOffset>
 			                    				<#assign minOffset = offsetInner.minOffset>
@@ -39,15 +40,18 @@
 			                    				<#assign maxOffset = offsetInner.maxOffset>
 			                    			</#if>
 			                    			<#assign totalOffset += offsetInner.maxOffset - offsetInner.minOffset>
+			                    			<#if maxLastUpdateTimestamp lt offsetInner.lastUpdateTimestamp>
+			                    				<#assign maxLastUpdateTimestamp = offsetInner.lastUpdateTimestamp>
+			                    			</#if>
 			                    		</#list>
 										<td>${minOffset}</td>
 			                    		<td>${maxOffset}</td>
 			                    		<td>${totalOffset}</td>
 			                    		<td>
-				                    		<#if offset.lastUpdateTimestamp == 0>
+				                    		<#if maxLastUpdateTimestamp <= 0>
 				                    			暂无
 				                    		<#else>
-					                    		${offset.lastUpdateTimestamp?number_to_datetime?string("yyyy-MM-dd HH:mm:ss")}
+					                    		${maxLastUpdateTimestamp?number_to_datetime?string("yyyy-MM-dd HH:mm:ss")}
 				                    		</#if>
 			                    		</td>
 			                    		</tr>
@@ -58,7 +62,7 @@
 				                    	<td>${offset.maxOffset}</td>
 				                    	<td>${offset.maxOffset - offset.minOffset}</td>
 				                    	<td>
-				                    		<#if offset.lastUpdateTimestamp == 0>
+				                    		<#if offset.lastUpdateTimestamp <= 0>
 				                    			暂无
 				                    		<#else>
 					                    		${offset.lastUpdateTimestamp?number_to_datetime?string("yyyy-MM-dd HH:mm:ss")}

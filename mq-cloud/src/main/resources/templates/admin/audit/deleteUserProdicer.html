@@ -72,7 +72,7 @@ function agreeDeleteUserProducer(){
 	disable("agreeDeleteUserProducerBtn");
 	$.post('${request.contextPath}/admin/audit/userProducer/delete',
 		{
-			aid: ${response.result.aid}
+			aid: ${response.result.aid?c}
 		},
         function(data){
             if(data.status == 200){
@@ -93,7 +93,7 @@ function disAgreeDeleteUserProducer(){
 	disable("disAgreeDeleteUserProducerBtn");
 	$.post('${request.contextPath}/admin/audit/refuse',
 		{
-			aid: ${response.result.aid},
+			aid: ${response.result.aid?c},
 			refuseReason: refuseReason
 		},
         function(data){

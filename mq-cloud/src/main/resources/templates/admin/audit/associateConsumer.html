@@ -50,7 +50,7 @@ function agreeAssociateConsumer(){
 	disable("agreeAssociateConsumerBtn");
 	$.post('${request.contextPath}/admin/audit/consumer/associate',
 		{
-			aid: ${response.result.aid}
+			aid: ${response.result.aid?c}
 		},
         function(data){
             if(data.status == 200){
@@ -71,7 +71,7 @@ function disAgreeAssociateConsumer(){
 	disable("disAgreeAssociateConsumerBtn");
 	$.post('${request.contextPath}/admin/audit/refuse',
 		{
-			aid: ${response.result.aid},
+			aid: ${response.result.aid?c},
 			refuseReason: refuseReason
 		},
         function(data){

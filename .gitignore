@@ -22,4 +22,5 @@ pom.xml.versionsBackup
 # ignore sohu module
 mq-client
 mq-cloud-common-sohu
+mq-compatible-test
 *-sohu.yml

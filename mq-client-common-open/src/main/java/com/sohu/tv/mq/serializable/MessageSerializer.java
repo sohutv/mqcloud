@@ -8,14 +8,14 @@ package com.sohu.tv.mq.serializable;
  * @param <T>
  */
 public interface MessageSerializer<T> {
-    
+
     /**
      * 序列化
      * 
      * @param source
      * @return
      */
-    public byte[] serialize(T source);
+    public byte[] serialize(T source) throws Exception;
 
     /**
      * 反序列化
@@ -23,5 +23,5 @@ public interface MessageSerializer<T> {
      * @param bytes
      * @return
      */
-    public T deserialize(byte[] bytes);
+    public T deserialize(byte[] bytes) throws Exception;
 }

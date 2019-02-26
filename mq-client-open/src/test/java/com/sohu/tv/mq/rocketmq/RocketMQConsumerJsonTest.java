@@ -24,7 +24,9 @@ public class RocketMQConsumerJsonTest {
     public void test() throws InterruptedException {
         consumer.setConsumerCallback(new ConsumerCallback<String, MessageExt>() {
             public void call(String t, MessageExt k) throws Exception {
-                System.out.println(t);
+                if (counter.incrementAndGet() % 10 == 0) {
+                    System.out.println(t);
+                }
             }
         });
         consumer.start();

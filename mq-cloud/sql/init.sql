@@ -102,6 +102,8 @@ CREATE TABLE `audit_topic` (
   `queue_num` int(11) NOT NULL COMMENT '队列长度',
   `producer` varchar(64) NOT NULL COMMENT '生产者名字',
   `ordered` int(4) NOT NULL DEFAULT '0' COMMENT '0:无序,1:有序',
+  `trace_enabled` int(4) NOT NULL DEFAULT '0' COMMENT '0:不开启trace,1:开启trace',
+  `transaction_enabled` int(4) NOT NULL DEFAULT '0' COMMENT '0:不开启事务,1:开启事务',
   `qps` int(11) DEFAULT NULL COMMENT '消息量qps预估',
   `qpd` int(11) DEFAULT NULL COMMENT '一天消息量预估',
   UNIQUE KEY `name` (`name`)
@@ -417,6 +419,7 @@ CREATE TABLE `topic` (
   `queue_num` int(11) NOT NULL COMMENT '队列长度',
   `ordered` int(4) NOT NULL DEFAULT '0' COMMENT '0:无序,1:有序',
   `count` int(11) DEFAULT NULL COMMENT 'topic put times',
+  `trace_enabled` int(4) NOT NULL DEFAULT '0' COMMENT '0:不开启trace,1:开启trace',
   `create_date` date NOT NULL,
   `update_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   PRIMARY KEY (`id`),

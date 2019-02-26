@@ -35,6 +35,9 @@ public class Topic {
     
     // 消息发送量
     private long count;
+    
+    // 是否开启trace
+    private int traceEnabled;
 
     public long getId() {
         return id;
@@ -106,6 +109,18 @@ public class Topic {
 
     public void setClusterName(String clusterName) {
         this.clusterName = clusterName;
+    }
+
+    public boolean traceEnabled() {
+        return traceEnabled == 1;
+    }
+    
+    public int getTraceEnabled() {
+        return traceEnabled;
+    }
+
+    public void setTraceEnabled(int traceEnabled) {
+        this.traceEnabled = traceEnabled;
     }
 
     @Override

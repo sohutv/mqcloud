@@ -3,9 +3,10 @@
 		<tbody id="page_${response.result.mqc.times}">
 			<#list response.result.msgList as msg>
 				<tr data="${msg.offsetMsgId}" dataIdx="${msg_index + 1 + response.result.mqc.prevSize}">
-					<td title="${msg.msgId}">${msg_index + 1 + response.result.mqc.prevSize}</td>
+					<td title="查看${msg.msgId}的trace信息"><#if traceEnabled><a href="#" onclick="trace('${msg.msgId}')"></#if>${msg_index + 1 + response.result.mqc.prevSize}<#if traceEnabled></a></#if></td>
 					<td>${msg.bornHostString}</td>
-					<td>${msg.bornTimestamp?number_to_datetime?string("yyyy-MM-dd HH:mm:ss")}</td>
+					<td title="${msg.storeTimestamp?number_to_datetime?string("yyyy-MM-dd HH:mm:ss.SSS")}">${msg.bornTimestamp?number_to_datetime?string("yyyy-MM-dd HH:mm:ss.SSS")}</td>
+					<td title="${msg.queueOffset}">${msg.broker!}:${msg.queueId}</td>
 					<td>${msg.decodedBody}</td>
 					<td>${msg.keys!}</td>
 					<td>${msg.tags!}</td>
@@ -15,7 +16,7 @@
 		</tbody>
 	<#else>
 		<tbody id="page_${response.result.mqc.times}">
-			<tr class="no_more_data"><td colspan=7 class="text-center">本次查无数据</td></tr>
+			<tr class="no_more_data"><td colspan=8 class="text-center">本次查无数据</td></tr>
 		</tbody>
 	</#if>
 	<input type="hidden" id="data_${response.result.mqc.times}" data_size="${response.result.msgList?size}"  data_search="${response.result.mqc.searchedSize?c}" data_left="${response.result.mqc.leftSize?c}">
@@ -26,6 +27,6 @@
 	</script>
 <#else>
 	<tbody>
-		<tr class="no_more_data"><td colspan=7 class="text-center">查询异常！${response.message}</td></tr>
+		<tr class="no_more_data"><td colspan=8 class="text-center">查询异常！${response.message}</td></tr>
 	</tbody>
 </#if>

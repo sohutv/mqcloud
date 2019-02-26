@@ -21,7 +21,7 @@ public class DefaultMessageSerializer<T> implements MessageSerializer<T> {
      * @param source
      * @return
      */
-    public byte[] serialize(T source) {
+    public byte[] serialize(T source) throws Exception {
         VO<T> vo = new VO<T>(source);
         LinkedBuffer buffer = LinkedBuffer.allocate(LinkedBuffer.DEFAULT_BUFFER_SIZE);
         try {
@@ -38,7 +38,7 @@ public class DefaultMessageSerializer<T> implements MessageSerializer<T> {
      * @param bytes
      * @return
      */
-    public T deserialize(final byte[] bytes) {
+    public T deserialize(final byte[] bytes) throws Exception {
         try {
             Schema<VO> schema = RuntimeSchema.getSchema(VO.class);
             VO vo = schema.newMessage();

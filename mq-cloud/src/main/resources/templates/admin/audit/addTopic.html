@@ -37,6 +37,20 @@
 					</div>
 				</div>
 				<div class="form-group">
+					<label class="control-label col-md-3"> 开启trace: </label>
+					<div class="col-md-5 checkbox">
+					    <input type="radio" name="traceEnabled" value="0" disabled="disabled" <#if !response.result.traceEnabled()>checked</#if>>否
+					    <input type="radio" name="traceEnabled" value="1" disabled="disabled" <#if response.result.traceEnabled()>checked</#if>>是
+					</div>
+				</div>
+				<div class="form-group">
+					<label class="control-label col-md-3"> 开启事务: </label>
+					<div class="col-md-5 checkbox">
+					    <input type="radio" name="transactionEnabled" value="0" disabled="disabled" <#if !response.result.transactionEnabled()>checked</#if>>否
+					    <input type="radio" name="transactionEnabled" value="1" disabled="disabled" <#if response.result.transactionEnabled()>checked</#if>>是
+					</div>
+				</div>
+				<div class="form-group">
 					<label class="control-label col-md-3"> 消息量: </label>
 					<div class="col-md-5">
 						<div class="input-group">
@@ -106,7 +120,7 @@ function auditAddTopic(){
 		disable("auditAddTopicBtn");
 		$.post('${request.contextPath}/admin/audit/topic/create',
 			{
-				aid: ${response.result.aid},
+				aid: ${response.result.aid?c},
 				cid: cid
 			},
 	        function(data){
@@ -127,7 +141,7 @@ function auditAddTopic(){
 		disable("auditAddTopicBtn");
 		$.post('${request.contextPath}/admin/audit/refuse',
 			{
-				aid: ${response.result.aid},
+				aid: ${response.result.aid?c},
 				refuseReason: refuseReason
 			},
 	        function(data){
@@ -140,7 +154,7 @@ function auditAddTopic(){
 			    }
         }, 'json');
 	} else {
-		alert("获取是否同意错误！");
+		alert("请先选择是否同意！");
 	}
 }
 function hideAudit(){

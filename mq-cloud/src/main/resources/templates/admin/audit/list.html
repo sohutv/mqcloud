@@ -88,10 +88,10 @@
 						<td>${audit.auditor!}</td>
 						<td>
 							<#if audit.statusEnum.getStatus() == 0>
-							<button type="button" class="btn btn-success" onclick="auditDetail('<#if audit.user??>${audit.user.name!audit.user.emailName}<#else>${audit.uid}</#if>', '${audit.typeEnum.getName()}', '${audit.typeEnum.getType()}', '${audit.id}', '${audit.statusEnum.getStatus()}')" 
+							<button type="button" class="btn btn-success" onclick="auditDetail('<#if audit.user??>${audit.user.name!audit.user.emailName}<#else>${audit.uid}</#if>', '${audit.typeEnum.getName()}', '${audit.typeEnum.getType()}', '${audit.id?c}', '${audit.statusEnum.getStatus()}')" 
 							data-target="#auditDetailModal" data-toggle="modal"><span class="glyphicon glyphicon-pencil" aria-hidden="true">审核</span></button>
 							<#else>
-							<button type="button" class="btn btn-success" onclick="auditDetail('<#if audit.user??>${audit.user.name!audit.user.emailName}<#else>${audit.uid}</#if>', '${audit.typeEnum.getName()}', '${audit.typeEnum.getType()}', '${audit.id}', '${audit.statusEnum.getStatus()}')" 
+							<button type="button" class="btn btn-success" onclick="auditDetail('<#if audit.user??>${audit.user.name!audit.user.emailName}<#else>${audit.uid}</#if>', '${audit.typeEnum.getName()}', '${audit.typeEnum.getType()}', '${audit.id?c}', '${audit.statusEnum.getStatus()}')" 
 							data-target="#auditDetailModal" data-toggle="modal">查看</button>
 							</#if>
 						</td>

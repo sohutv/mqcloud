@@ -166,6 +166,24 @@
 									</div>
 								</div>
 								<div class="form-group">
+									<label class="control-label col-md-3"> 开启trace: </label>
+									<div class="col-md-5 checkbox">
+									    <input type="radio" name="traceEnabled" value="0" checked>
+									    	否
+									    <input type="radio" name="traceEnabled" value="1">
+									    	<span data-toggle="modal" title="开启后，生产者会自动启用trace功能，消费者需要手动启用">是</span>
+									</div>
+								</div>
+								<div class="form-group">
+									<label class="control-label col-md-3"> 支持事务: </label>
+									<div class="col-md-5 checkbox">
+									    <input type="radio" name="transactionEnabled" value="0" checked>
+									    	否
+									    <input type="radio" name="transactionEnabled" value="1">
+									    	<span data-toggle="modal" title="开启后，会在事务集群上创建该topic">是</span>
+									</div>
+								</div>
+								<div class="form-group">
 									<label class="control-label col-md-3"> 消息量: </label>
 									<div class="col-md-5">
 										<div class="input-group">

@@ -18,6 +18,15 @@ import com.alibaba.fastjson.JSONObject;
 public class DecodedMessage extends MessageExt {
     private static final long serialVersionUID = 6615581963568753859L;
     private String decodedBody;
+    private String broker;
+
+    public String getBroker() {
+        return broker;
+    }
+
+    public void setBroker(String broker) {
+        this.broker = broker;
+    }
 
     public String getDecodedBody() {
         return decodedBody;

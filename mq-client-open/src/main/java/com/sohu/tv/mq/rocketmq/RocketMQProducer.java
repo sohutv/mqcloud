@@ -7,6 +7,10 @@ import org.apache.rocketmq.client.producer.DefaultMQProducer;
 import org.apache.rocketmq.client.producer.MessageQueueSelector;
 import org.apache.rocketmq.client.producer.SendCallback;
 import org.apache.rocketmq.client.producer.SendResult;
+import org.apache.rocketmq.client.producer.TransactionListener;
+import org.apache.rocketmq.client.producer.TransactionMQProducer;
+import org.apache.rocketmq.client.trace.AsyncTraceDispatcher;
+import org.apache.rocketmq.client.trace.hook.SendMessageTraceHookImpl;
 import org.apache.rocketmq.common.message.Message;
 
 import com.sohu.index.tv.mq.common.Result;
@@ -27,12 +31,24 @@ public class RocketMQProducer extends AbstractConfig {
     // 统计助手
     private StatsHelper statsHelper;
     
+    // 发送顺序消息使用
+    private MessageQueueSelector messageQueueSelector;
+    
     /**
      * 同样消息的Producer，归为同一个Group，应用必须设置，并保证命名唯一
      */
     public RocketMQProducer(String producerGroup, String topic) {
         super(producerGroup, topic);
         producer = new DefaultMQProducer(producerGroup);
+    }
+    
+    /**
+     * 同样消息的Producer，归为同一个Group，应用必须设置，并保证命名唯一
+     */
+    public RocketMQProducer(String producerGroup, String topic, TransactionListener transactionListener) {
+        super(producerGroup, topic);
+        producer = new TransactionMQProducer(producerGroup);
+        ((TransactionMQProducer) producer).setTransactionListener(transactionListener);
     }
     
     /**
@@ -123,8 +139,10 @@ public class RocketMQProducer extends AbstractConfig {
      * @param keys key
      * @param delayLevel 延时级别
      * @return
+     * @throws Exception 
      */
-    public Message buildMessage(Object messageObject, String tags, String keys, MessageDelayLevel delayLevel) {
+    public Message buildMessage(Object messageObject, String tags, String keys, MessageDelayLevel delayLevel)
+            throws Exception {
         byte[] bytes = getMessageSerializer().serialize(messageObject);
         Message message = new Message(topic, tags, keys, bytes);
         if (delayLevel != null) {
@@ -173,59 +191,56 @@ public class RocketMQProducer extends AbstractConfig {
      * 发送有序消息
      *
      * @param messageMap 消息数据
-     * @param selector 队列选择器，发送时会回调
-     * @param order 回调队列选择器时，此参数会传入队列选择方法,提供配需规则
+     * @param keys key
+     * @param arg 回调队列选择器时，此参数会传入队列选择方法
      * @return 发送结果
      */
-    public Result<SendResult> publishOrder(Map<String, Object> messageMap, MessageQueueSelector selector,
-            Object order) {
-        return publishOrder((Object) messageMap, selector, order);
+    public Result<SendResult> publishOrder(Map<String, Object> messageMap, String keys, Object arg) {
+        return publishOrder((Object) messageMap, keys, arg);
     }
 
     /**
      * 发送有序消息
      *
-     * @param messageMap 消息数据
-     * @param selector 队列选择器，发送时会回调
-     * @param order 回调队列选择器时，此参数会传入队列选择方法,提供配需规则
+     * @param messageObject 消息数据
+     * @param keys key
+     * @param arg 回调队列选择器时，此参数会传入队列选择方法
      * @return 发送结果
      */
-    public Result<SendResult> publishOrder(Object messageObject, MessageQueueSelector selector, Object order) {
-        return publishOrder(messageObject, selector, order, null);
+    public Result<SendResult> publishOrder(Object messageObject, String keys, Object arg) {
+        return publishOrder(messageObject, keys, arg, null);
     }
 
     /**
      * 发送有序消息
      *
-     * @param messageMap 消息数据
-     * @param selector 队列选择器，发送时会回调
-     * @param order 回调队列选择器时，此参数会传入队列选择方法,提供配需规则
+     * @param messageObject 消息数据
+     * @param keys key
+     * @param arg 回调队列选择器时，此参数会传入队列选择方法
      * @param delayLevel 发送延时消息 @MessageDelayLevel
      * @return 发送结果
      */
-    public Result<SendResult> publishOrder(Object messageObject, MessageQueueSelector selector, Object order,
-            MessageDelayLevel delayLevel) {
+    public Result<SendResult> publishOrder(Object messageObject, String keys, Object arg, MessageDelayLevel delayLevel) {
         Message message = null;
         try {
-            message = buildMessage(messageObject, null, null, delayLevel);
+            message = buildMessage(messageObject, null, keys, delayLevel);
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
             return new Result<SendResult>(false, e);
         }
-        return publishOrder(message, selector, order);
+        return publishOrder(message, arg);
     }
     
     /**
      * 发送有序消息
      *
      * @param message 消息数据
-     * @param selector 队列选择器，发送时会回调
-     * @param order 回调队列选择器时，此参数会传入队列选择方法,提供配需规则
+     * @param arg 回调队列选择器时，此参数会传入队列选择方法
      * @return 发送结果
      */
-    public Result<SendResult> publishOrder(Message message, MessageQueueSelector selector, Object order) {
+    public Result<SendResult> publishOrder(Message message, Object arg) {
         try {
-            SendResult sendResult = producer.send(message, selector, order);
+            SendResult sendResult = producer.send(message, messageQueueSelector, arg);
             return new Result<SendResult>(true, sendResult);
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
@@ -457,6 +472,99 @@ public class RocketMQProducer extends AbstractConfig {
     public Result<SendResult> publishOneway(Object messageObject, String keys) {
         return publishOneway(messageObject, keys, null);
     }
+    
+    /**
+     * 发送事务消息
+     *
+     * @param messageMap 消息数据
+     * @param arg 执行本地事务时，回传arg
+     * @return 发送结果
+     */
+    public Result<SendResult> publishTransaction(Map<String, Object> messageMap, Object arg) {
+        return publishTransaction(messageMap, null, arg);
+    }
+    
+    /**
+     * 发送事务消息
+     *
+     * @param messageMap 消息数据
+     * @param keys key
+     * @param arg 执行本地事务时，回传arg
+     * @return 发送结果
+     */
+    public Result<SendResult> publishTransaction(Map<String, Object> messageMap, String keys, Object arg) {
+        return publishTransaction((Object) messageMap, keys, arg);
+    }
+    
+    /**
+     * 发送事务消息
+     *
+     * @param messageMap 消息数据
+     * @param arg 执行本地事务时，回传arg
+     * @return 发送结果
+     */
+    public Result<SendResult> publishTransaction(Object messageObject, Object arg) {
+        return publishTransaction(messageObject, null, arg);
+    }
+    
+    /**
+     * 发送事务消息
+     *
+     * @param messageObject 消息数据
+     * @param keys key
+     * @return 发送结果
+     */
+    public Result<SendResult> publishTransaction(Object messageObject, String keys) {
+        return publishTransaction(messageObject, keys, null);
+    }
+
+    /**
+     * 发送事务消息
+     *
+     * @param messageObject 消息数据
+     * @param keys key
+     * @param arg 执行本地事务时，回传arg
+     * @return 发送结果
+     */
+    public Result<SendResult> publishTransaction(Object messageObject, String keys, Object arg) {
+        return publishTransaction(messageObject, null, keys, arg);
+    }
+    
+    /**
+     * 发送事务消息
+     *
+     * @param messageObject 消息数据
+     * @param keys key
+     * @param arg 执行本地事务时，回传arg
+     * @return 发送结果
+     */
+    public Result<SendResult> publishTransaction(Object messageObject, String tags, String keys, Object arg) {
+        Message message = null;
+        try {
+            message = buildMessage(messageObject, tags, keys, null);
+        } catch (Exception e) {
+            logger.error(e.getMessage(), e);
+            return new Result<SendResult>(false, e);
+        }
+        return publishTransaction(message, arg);
+    }
+    
+    /**
+     * 发送事务消息消息
+     *
+     * @param message 消息
+     * @param arg 执行本地事务时，回传arg
+     * @return 发送结果
+     */
+    public Result<SendResult> publishTransaction(Message message, Object arg) {
+        try {
+            SendResult sendResult = ((TransactionMQProducer) producer).sendMessageInTransaction(message, arg);
+            return new Result<SendResult>(true, sendResult);
+        } catch (Exception e) {
+            logger.error(e.getMessage(), e);
+            return new Result<SendResult>(false, e);
+        }
+    }
 
     public void shutdown() {
         producer.shutdown();
@@ -520,8 +628,22 @@ public class RocketMQProducer extends AbstractConfig {
         return statsHelper;
     }
 
+    public MessageQueueSelector getMessageQueueSelector() {
+        return messageQueueSelector;
+    }
+
+    public void setMessageQueueSelector(MessageQueueSelector messageQueueSelector) {
+        this.messageQueueSelector = messageQueueSelector;
+    }
+
     @Override
     protected int role() {
         return PRODUCER;
+    }
+
+    @Override
+    protected void registerTraceDispatcher(AsyncTraceDispatcher traceDispatcher) {
+        producer.getDefaultMQProducerImpl().registerSendMessageHook(
+                new SendMessageTraceHookImpl(traceDispatcher));
     }
 }

@@ -10,10 +10,14 @@ import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.rocketmq.client.trace.TraceBean;
+import org.apache.rocketmq.client.trace.TraceContext;
+import org.apache.rocketmq.client.trace.TraceType;
 import org.apache.rocketmq.common.admin.TopicOffset;
 import org.apache.rocketmq.common.admin.TopicStatsTable;
 import org.apache.rocketmq.common.protocol.body.ClusterInfo;
 import org.apache.rocketmq.tools.admin.MQAdminExt;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -45,7 +49,9 @@ import com.sohu.tv.mq.cloud.util.Result;
 import com.sohu.tv.mq.cloud.util.SplitUtil;
 import com.sohu.tv.mq.cloud.util.Status;
 import com.sohu.tv.mq.cloud.web.controller.param.MessageParam;
+import com.sohu.tv.mq.cloud.web.vo.TraceViewVO;
 import com.sohu.tv.mq.cloud.web.vo.UserInfo;
+import com.sohu.tv.mq.util.CommonUtil;
 
 /**
  * topic消息
@@ -134,6 +140,7 @@ public class TopicMessageController extends ViewController {
         
         // 设置是否是拥有者
         setOwner(userInfo, map, tid);
+        setTraceEnabled(map, topic.traceEnabled());
         return view;
     }
     
@@ -167,6 +174,7 @@ public class TopicMessageController extends ViewController {
         // 消息查询
         Result<MessageData> result = messageService.queryMessage(messageQueryCondition, false);
         setResult(map, result);
+        setTraceEnabled(map, messageQueryCondition.getTopic());
         return view;
     }
     
@@ -217,6 +225,88 @@ public class TopicMessageController extends ViewController {
             // 消息查询
             Result<List<DecodedMessage>> result = messageService.queryMessageByKey(cluster, topic, msgKey, beginTime, endTime);
             setResult(map, result);
+            setTraceEnabled(map, topic);
+        }
+        return view;
+    }
+    
+    private void setTraceEnabled(Map<String, Object> map, String topic) {
+        setTraceEnabled(map, traceEnabled(topic));
+   }
+    
+    private void setTraceEnabled(Map<String, Object> map, boolean traceEnabled) {
+         setResult(map, "traceEnabled", traceEnabled);
+    }
+    
+    private boolean traceEnabled(String topic) {
+        Result<Topic> topicResult = topicService.queryTopic(topic);
+        return topicResult.isOK() && topicResult.getResult().traceEnabled();
+    }
+    
+    /**
+     * trace搜索
+     * @return
+     * @throws Exception
+     */
+    @RequestMapping("/trace/search")
+    public String traceSearch(UserInfo userInfo, 
+            HttpServletRequest request, 
+            HttpServletResponse response, 
+            @RequestParam("topic") String topic,
+            @RequestParam("traceStartTime") Long beginTime,
+            @RequestParam("traceEndTime") Long endTime,
+            @RequestParam(name="traceKey") String msgKey,
+            Map<String, Object> map) throws Exception {
+        String view = viewModule() + "/traceSearch";
+        // 时间点
+        if(beginTime == 0 || endTime == 0 || beginTime > endTime) {
+            setResult(map, Result.getResult(Status.PARAM_ERROR));
+        } else {
+            msgKey = msgKey.trim();
+            topic = CommonUtil.buildTraceTopic(topic);
+            Result<Topic> topicResult = topicService.queryTopic(topic);
+            if(topicResult.isNotOK()) {
+                setResult(map, topicResult);
+            } else {
+                // 消息查询
+                Cluster cluster = clusterService.getMQClusterById(topicResult.getResult().getClusterId());
+                Result<List<DecodedMessage>> result = messageService.queryMessageByKey(cluster, topic, msgKey, beginTime, endTime);
+                if(result.isNotEmpty()) {
+                    // 解析消息
+                    for(DecodedMessage decodedMessage : result.getResult()) {
+                        String message = decodedMessage.getDecodedBody();
+                        // 转换为trace对象
+                        List<TraceContext> traceContextList = JSON.parseArray(message, TraceContext.class);
+                        List<TraceViewVO> traceViewVOList = new ArrayList<TraceViewVO>();
+                        for(TraceContext traceContext : traceContextList) {
+                            TraceBean traceBean = traceContext.getTraceBeans().get(0);
+                            // 过滤非相关消息
+                            if(!msgKey.equals(traceBean.getMsgId()) && !msgKey.equals(traceBean.getKeys())) {
+                                continue;
+                            }
+                            if(traceContext.getGroupName() != null && traceContext.getGroupName().length() == 0) {
+                                traceContext.setGroupName(null);
+                            }
+                            TraceViewVO traceViewVO = new TraceViewVO();
+                            BeanUtils.copyProperties(traceContext, traceViewVO);
+                            if(traceBean.getTopic() != null && traceBean.getTopic().length() == 0) {
+                                traceBean.setTopic(null);
+                            }
+                            BeanUtils.copyProperties(traceBean, traceViewVO);
+                            if(TraceType.SubBefore == traceContext.getTraceType()) {
+                                traceViewVO.setCostTime(0);
+                            }
+                            if(TraceType.SubAfter == traceContext.getTraceType()) {
+                                traceViewVO.setTimeStamp(0);
+                                traceViewVO.setRetryTimes(0);
+                            }
+                            traceViewVOList.add(traceViewVO);
+                        }
+                        decodedMessage.setDecodedBody(JSON.toJSONString(traceViewVOList));
+                    }
+                }
+                setResult(map, result);
+            }
         }
         return view;
     }

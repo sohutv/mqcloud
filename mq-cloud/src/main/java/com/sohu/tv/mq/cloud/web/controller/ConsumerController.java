@@ -211,18 +211,19 @@ public class ConsumerController extends ViewController {
                     consumerProgressVO.setConsumeTps(consumerProgressVO.getConsumeTps() + consumeStats.getConsumeTps());
                     Map<MessageQueue, OffsetWrapper> offsetTable = consumeStats.getOffsetTable();
                     for(MessageQueue mq : offsetTable.keySet()) {
-                        OffsetWrapper cur = offsetTable.get(mq);
                         OffsetWrapper prev = offsetMap.get(mq);
                         if(prev == null) {
-                            offsetMap.put(mq, cur);
-                        } else {
-                            prev.setBrokerOffset(prev.getBrokerOffset() + cur.getBrokerOffset());
-                            prev.setConsumerOffset(prev.getConsumerOffset() + cur.getConsumerOffset());
+                            prev = new OffsetWrapper();
+                            offsetMap.put(mq, prev);
                         }
+                        OffsetWrapper cur = offsetTable.get(mq);
+                        prev.setBrokerOffset(prev.getBrokerOffset() + cur.getBrokerOffset());
+                        prev.setConsumerOffset(prev.getConsumerOffset() + cur.getConsumerOffset());
                     }
                 }
                 consumerProgressVO.setOffsetMap(offsetMap);
                 consumerProgressVO.setConsumeStatsList(consumeStatsList);
+                consumerProgressVO.computeTotalDiff();
                 listExt.add(consumerProgressVO);
             }
         }

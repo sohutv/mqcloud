@@ -60,7 +60,7 @@
 		                    	</#if>
 	                    		<td>集群消费</td>
 	                    		<td>${consumerProgressVO.diff}</td>
-	                    		<td>${consumerProgressVO.consumeTps}</td>
+	                    		<td>${consumerProgressVO.consumeTpsFormat}</td>
 	                    		<#if consumerProgressVO.minLastTimestamp == 0>
 	                    			<td>暂无</td>
 	                    		<#else>
@@ -372,7 +372,7 @@
 		                    	</#if>
 	                    		<td>广播消费</td>
 	                    		<td>${consumerProgressVO.diff}</td>
-	                    		<td>${consumerProgressVO.consumeTps}</td>
+	                    		<td>${consumerProgressVO.consumeTpsFormat}</td>
 	                    		<td>暂无</td>
 		                    	<td>
 		                    		<#if consumerProgressVO.offsetMap??>
@@ -694,8 +694,8 @@
 					<colgroup>
 						<col width="50px">
 						<col width="110px">
-						<col width="158px">
-						<col width="80px">
+						<col width="190px">
+						<col width="50px">
 						<col>
 					</colgroup>
 					<thead>
@@ -703,7 +703,7 @@
 							<td>序号</td>
 							<td>客户端</td>
 							<td>发送时间</td>
-							<td>重试次数</td>
+							<td data-toggle="tooltip" title="重试次数">重试</td>
 							<td>消息</td>
 						</tr>
 					</thead>

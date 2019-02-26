@@ -74,7 +74,7 @@ function agreeDeleteUserConsumer(){
 	disable("agreeDeleteUserConsumerBtn");
 	$.post('${request.contextPath}/admin/audit/userConsumer/delete',
 		{
-			aid: ${response.result.aid}
+			aid: ${response.result.aid?c}
 		},
         function(data){
             if(data.status == 200){
@@ -95,7 +95,7 @@ function disAgreeDeleteUserConsumer(){
 	disable("disAgreeDeleteUserConsumerBtn");
 	$.post('${request.contextPath}/admin/audit/refuse',
 		{
-			aid: ${response.result.aid},
+			aid: ${response.result.aid?c},
 			refuseReason: refuseReason
 		},
         function(data){
