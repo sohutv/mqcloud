@@ -15,17 +15,19 @@ import com.sohu.tv.mq.cloud.util.DateUtil;
  */
 public class TraceViewVO {
     private TraceType traceType;
-    private long timeStamp;
+    private Long timeStamp;
     private String groupName;
     // 消费时间 ms
-    private int costTime;
-    private boolean isSuccess;
+    private Integer costTime;
+    private Boolean isSuccess;
     private String topic;
     private String msgId;
     private String keys;
     private String clientHost;
-    private int retryTimes;
+    private Integer retryTimes;
     private MessageType msgType;
+    // 唯一id
+    private String requestId;
 
     public TraceType getTraceType() {
         return traceType;
@@ -35,12 +37,12 @@ public class TraceViewVO {
         this.traceType = traceType;
     }
 
-    public long getTimeStamp() {
+    public Long getTimeStamp() {
         return timeStamp;
     }
 
     public String getTimeStampFormat() {
-        if(timeStamp == 0) {
+        if (timeStamp == null || timeStamp == 0) {
             return null;
         }
         return formatTime(timeStamp);
@@ -51,7 +53,11 @@ public class TraceViewVO {
     }
 
     public void setTimeStamp(long timeStamp) {
-        this.timeStamp = timeStamp;
+        if (timeStamp == 0) {
+            this.timeStamp = null;
+        } else {
+            this.timeStamp = timeStamp;
+        }
     }
 
     public String getGroupName() {
@@ -62,15 +68,19 @@ public class TraceViewVO {
         this.groupName = groupName;
     }
 
-    public int getCostTime() {
+    public Integer getCostTime() {
         return costTime;
     }
 
     public void setCostTime(int costTime) {
-        this.costTime = costTime;
+        if (costTime == 0) {
+            this.costTime = null;
+        } else {
+            this.costTime = costTime;
+        }
     }
 
-    public boolean isSuccess() {
+    public Boolean isSuccess() {
         return isSuccess;
     }
 
@@ -110,12 +120,16 @@ public class TraceViewVO {
         this.clientHost = clientHost;
     }
 
-    public int getRetryTimes() {
+    public Integer getRetryTimes() {
         return retryTimes;
     }
 
     public void setRetryTimes(int retryTimes) {
-        this.retryTimes = retryTimes;
+        if (retryTimes == 0) {
+            this.retryTimes = null;
+        } else {
+            this.retryTimes = retryTimes;
+        }
     }
 
     public MessageType getMsgType() {
@@ -124,5 +138,13 @@ public class TraceViewVO {
 
     public void setMsgType(MessageType msgType) {
         this.msgType = msgType;
+    }
+
+    public String getRequestId() {
+        return requestId;
+    }
+
+    public void setRequestId(String requestId) {
+        this.requestId = requestId;
     }
 }

@@ -45,7 +45,6 @@ import com.sohu.tv.mq.cloud.service.TopicService;
 import com.sohu.tv.mq.cloud.service.UserProducerService;
 import com.sohu.tv.mq.cloud.util.CompressUtil;
 import com.sohu.tv.mq.cloud.util.FreemarkerUtil;
-import com.sohu.tv.mq.cloud.util.MsgTraceDecodeUtil;
 import com.sohu.tv.mq.cloud.util.Result;
 import com.sohu.tv.mq.cloud.util.SplitUtil;
 import com.sohu.tv.mq.cloud.util.Status;
@@ -277,7 +276,7 @@ public class TopicMessageController extends ViewController {
                     for(DecodedMessage decodedMessage : result.getResult()) {
                         String message = decodedMessage.getDecodedBody();
                         // 转换为trace对象
-                        List<TraceContext> traceContextList = MsgTraceDecodeUtil.decoderFromTraceDataString(message);
+                        List<TraceContext> traceContextList = JSON.parseArray(message, TraceContext.class);
                         List<TraceViewVO> traceViewVOList = new ArrayList<TraceViewVO>();
                         for(TraceContext traceContext : traceContextList) {
                             TraceBean traceBean = traceContext.getTraceBeans().get(0);
@@ -294,8 +293,12 @@ public class TopicMessageController extends ViewController {
                                 traceBean.setTopic(null);
                             }
                             BeanUtils.copyProperties(traceBean, traceViewVO);
+                            if(TraceType.SubBefore == traceContext.getTraceType()) {
+                                traceViewVO.setCostTime(0);
+                            }
                             if(TraceType.SubAfter == traceContext.getTraceType()) {
                                 traceViewVO.setTimeStamp(0);
+                                traceViewVO.setRetryTimes(0);
                             }
                             traceViewVOList.add(traceViewVO);
                         }

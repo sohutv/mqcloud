@@ -21,6 +21,8 @@ public class AuditTopic {
     private long qps;
     // 是否开启trace
     private int traceEnabled;
+    // 是否开启事务
+    private int transactionEnabled;
 
     public long getAid() {
         return aid;
@@ -90,10 +92,23 @@ public class AuditTopic {
         this.traceEnabled = traceEnabled;
     }
 
+    public boolean transactionEnabled() {
+        return transactionEnabled == 1;
+    }
+    
+    public int getTransactionEnabled() {
+        return transactionEnabled;
+    }
+
+    public void setTransactionEnabled(int transactionEnabled) {
+        this.transactionEnabled = transactionEnabled;
+    }
+
     @Override
     public String toString() {
         return "AuditTopic [aid=" + aid + ", name=" + name + ", queueNum=" + queueNum + ", ordered=" + ordered
-                + ", producer=" + producer + ", qpd=" + qpd + ", qps=" + qps + "]";
+                + ", producer=" + producer + ", qpd=" + qpd + ", qps=" + qps + ", traceEnabled=" + traceEnabled
+                + ", transactionEnabled=" + transactionEnabled + "]";
     }
 
 }

@@ -20,6 +20,7 @@ import org.apache.rocketmq.client.consumer.PullStatus;
 import org.apache.rocketmq.client.exception.MQBrokerException;
 import org.apache.rocketmq.client.exception.MQClientException;
 import org.apache.rocketmq.client.producer.SendResult;
+import org.apache.rocketmq.client.trace.TraceContext;
 import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.TopicConfig;
 import org.apache.rocketmq.common.admin.ConsumeStats;
@@ -60,11 +61,13 @@ import com.sohu.tv.mq.cloud.mq.MQAdminTemplate;
 import com.sohu.tv.mq.cloud.mq.SohuMQAdmin;
 import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper;
 import com.sohu.tv.mq.cloud.util.MessageTypeLoader;
+import com.sohu.tv.mq.cloud.util.MsgTraceDecodeUtil;
 import com.sohu.tv.mq.cloud.util.Result;
 import com.sohu.tv.mq.cloud.util.Status;
 import com.sohu.tv.mq.cloud.web.controller.param.MessageParam;
 import com.sohu.tv.mq.serializable.DefaultMessageSerializer;
 import com.sohu.tv.mq.serializable.MessageSerializer;
+import com.sohu.tv.mq.util.CommonUtil;
 
 /**
  * 消息服务
@@ -369,7 +372,13 @@ public class MessageService {
         }
         // 将主体消息转换为String
         if (decodedBody instanceof byte[]) {
-            m.setDecodedBody(new String((byte[]) decodedBody));
+            if(CommonUtil.isTraceTopic(msg.getTopic())) {
+                List<TraceContext> traceContextList = MsgTraceDecodeUtil
+                        .decoderFromTraceDataString(new String((byte[]) decodedBody));
+                m.setDecodedBody(JSON.toJSONString(traceContextList));
+            } else {
+                m.setDecodedBody(new String((byte[]) decodedBody));
+            }
         } else if (decodedBody instanceof String) {
             m.setDecodedBody(HtmlUtils.htmlEscape((String)decodedBody));
         } else if (decodedBody instanceof Map && 

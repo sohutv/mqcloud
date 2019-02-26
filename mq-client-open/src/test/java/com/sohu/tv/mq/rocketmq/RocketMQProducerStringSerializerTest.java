@@ -11,6 +11,7 @@ import org.junit.Test;
 
 import com.alibaba.fastjson.JSON;
 import com.sohu.index.tv.mq.common.Result;
+import com.sohu.tv.mq.serializable.StringSerializer;
 
 public class RocketMQProducerStringSerializerTest {
 
@@ -18,8 +19,8 @@ public class RocketMQProducerStringSerializerTest {
 
     @Before
     public void init() {
-        producer = new RocketMQProducer("mqcloud-string-serializer-topic-producer", "mqcloud-string-serializer-topic");
-        producer.setMqCloudDomain("mqcloud.com:80");
+        producer = TestUtil.buildProducer("mqcloud-string-serializer-topic-producer", "mqcloud-string-serializer-topic");
+        producer.setMessageSerializer(new StringSerializer<>());
         producer.start();
     }
 

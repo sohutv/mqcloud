@@ -8,9 +8,8 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.sohu.index.tv.mq.common.ConsumerCallback;
-import com.sohu.tv.mq.serializable.StringSerializer;
 
-public class RocketMQConsumerStringSerializerTest {
+public class RocketMQConsumerTransactionTest {
 
     private AtomicLong counter = new AtomicLong();
 
@@ -18,8 +17,7 @@ public class RocketMQConsumerStringSerializerTest {
 
     @Before
     public void init() {
-        consumer = TestUtil.buildConsumer("mqcloud-string-serializer-topic-consumer", "mqcloud-string-serializer-topic");
-        consumer.setMessageSerializer(new StringSerializer<>());
+        consumer = TestUtil.buildConsumer("mqcloud-trans-topic-consumer", "mqcloud-trans-topic");
     }
 
     @Test

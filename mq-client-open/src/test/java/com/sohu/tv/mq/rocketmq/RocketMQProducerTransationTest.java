@@ -56,13 +56,13 @@ public class RocketMQProducerTransationTest {
                 return LocalTransactionState.COMMIT_MESSAGE;
             }
         };
-        producer = TestUtil.buildProducer("mqcloud-test-topic-trans-producer", "mqcloud-test-topic", transactionListener);
+        producer = TestUtil.buildProducer("mqcloud-trans-topic-producer", "mqcloud-trans-topic", transactionListener);
         producer.start();
     }
 
     @Test
     public void produce() throws InterruptedException {
-        for(int i = 1; i < 10; ++i) {
+        for(int i = 1; i < 11; ++i) {
             Map<String, Object> map = new HashMap<String, Object>();
             map.put("id", i);
             map.put("msg", "msg" +i);
