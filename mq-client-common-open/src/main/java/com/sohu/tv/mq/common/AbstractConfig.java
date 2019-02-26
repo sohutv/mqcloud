@@ -18,6 +18,7 @@ import com.alibaba.fastjson.JSON;
 import com.sohu.tv.mq.dto.ClusterInfoDTO;
 import com.sohu.tv.mq.dto.ClusterInfoDTOResult;
 import com.sohu.tv.mq.serializable.MessageSerializer;
+import com.sohu.tv.mq.serializable.StringSerializer;
 import com.sohu.tv.mq.trace.SohuAsyncTraceDispatcher;
 import com.sohu.tv.mq.trace.TraceRocketMQProducer;
 import com.sohu.tv.mq.util.CommonUtil;
@@ -59,7 +60,7 @@ public abstract class AbstractConfig {
     private String mqCloudDomain;
     
     // 消息序列化工具
-    private MessageSerializer<Object> messageSerializer;
+    private MessageSerializer<Object> messageSerializer = new StringSerializer<Object>();
 
     // 是否开启trace
     protected boolean traceEnabled;

@@ -139,8 +139,10 @@ public class RocketMQProducer extends AbstractConfig {
      * @param keys key
      * @param delayLevel 延时级别
      * @return
+     * @throws Exception 
      */
-    public Message buildMessage(Object messageObject, String tags, String keys, MessageDelayLevel delayLevel) {
+    public Message buildMessage(Object messageObject, String tags, String keys, MessageDelayLevel delayLevel)
+            throws Exception {
         byte[] bytes = getMessageSerializer().serialize(messageObject);
         Message message = new Message(topic, tags, keys, bytes);
         if (delayLevel != null) {
