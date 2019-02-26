@@ -37,6 +37,10 @@ public class RocketMQProducerTransationTest {
                     System.out.println("executeLocalTransaction id:" + id + " ROLLBACK_MESSAGE");
                     return LocalTransactionState.ROLLBACK_MESSAGE;
                 }
+                if(id == 4) {
+                    System.out.println("executeLocalTransaction id:" + id + " UNKNOW");
+                    return LocalTransactionState.UNKNOW;
+                }
                 return LocalTransactionState.COMMIT_MESSAGE;
             }
 
