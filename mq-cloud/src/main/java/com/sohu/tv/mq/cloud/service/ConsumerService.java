@@ -10,6 +10,7 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.rocketmq.client.exception.MQBrokerException;
 import org.apache.rocketmq.common.MQVersion;
 import org.apache.rocketmq.common.admin.ConsumeStats;
@@ -352,6 +353,38 @@ public class ConsumerService {
                 return mqCluster;
             }
         });
+    }
+    
+    /**
+     * 重置offset
+     * 
+     * @param clusterId
+     * @param topic
+     * @param consumer
+     * @param time
+     * @return
+     */
+    public Result<?> resetOffset(long clusterId, String topic, String consumer, String time) {
+        // 解析重置的时间
+        long resetTo = -1;
+        if (StringUtils.isNotBlank(time)) {
+            try {
+                Date date = DateUtil.getFormat(DateUtil.YMD_DASH_BLANK_HMS_COLON).parse(time);
+                resetTo = date.getTime();
+            } catch (Exception e) {
+                logger.error("resetOffsetTo param err:{}", time, e);
+                return Result.getResult(Status.PARAM_ERROR);
+            }
+        } else {
+            // 跳过堆积：重置到一分钟之前
+            resetTo = System.currentTimeMillis() - 60000;
+        }
+        if (resetTo == -1) {
+            return Result.getResult(Status.PARAM_ERROR);
+        }
+        Cluster cluster = clusterService.getMQClusterById(clusterId);
+        Result<?> resetResult = resetOffset(cluster, topic, consumer, resetTo);
+        return resetResult;
     }
     
     /**

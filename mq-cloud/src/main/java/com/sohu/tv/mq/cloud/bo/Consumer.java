@@ -34,6 +34,8 @@ public class Consumer {
     // 额外字段，consumer流量
     private Traffic consumerTraffic;
     
+    private int traceEnabled;
+    
     public long getId() {
         return id;
     }
@@ -106,9 +108,21 @@ public class Consumer {
         this.consumerTraffic = consumerTraffic;
     }
 
+    public int getTraceEnabled() {
+        return traceEnabled;
+    }
+
+    public void setTraceEnabled(int traceEnabled) {
+        this.traceEnabled = traceEnabled;
+    }
+
+    public boolean traceEnabled() {
+        return traceEnabled == 1;
+    }
+    
     @Override
     public String toString() {
         return "Consumer [id=" + id + ", tid=" + tid + ", name=" + name + ", consumeWay=" + consumeWay + ", createDate="
-                + createDate + ", updateTime=" + updateTime + "]";
+                + createDate + ", updateTime=" + updateTime + ", traceEnabled=" + traceEnabled + "]";
     }
 }

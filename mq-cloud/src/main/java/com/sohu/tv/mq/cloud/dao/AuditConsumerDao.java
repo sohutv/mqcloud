@@ -17,7 +17,8 @@ public interface AuditConsumerDao {
      * @param auditConsumer
      * @return
      */
-    @Insert("insert into audit_consumer(aid,tid,consumer,consume_way) values(#{ac.aid},#{ac.tid},#{ac.consumer},#{ac.consumeWay})")
+    @Insert("insert into audit_consumer(aid,tid,consumer,consume_way,trace_enabled) "
+            + "values(#{ac.aid},#{ac.tid},#{ac.consumer},#{ac.consumeWay},#{ac.traceEnabled})")
     public Integer insert(@Param("ac") AuditConsumer auditConsumer);
 
     /**

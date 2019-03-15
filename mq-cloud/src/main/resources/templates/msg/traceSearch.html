@@ -1,31 +1,106 @@
 <#if response.OK>
 	<#if response.result?? && response.result?size gt 0>
-		<tbody>
-			<#list response.result as msg>
-				<tr data="${msg.offsetMsgId}" dataIdx="${msg_index + 1}">
-					<td title="${msg.msgId}">${msg_index + 1}</td>
-					<td>${msg.bornHostString}</td>
-					<td title="${msg.storeTimestamp?number_to_datetime?string("yyyy-MM-dd HH:mm:ss.SSS")}">${msg.bornTimestamp?number_to_datetime?string("yyyy-MM-dd HH:mm:ss.SSS")}</td>
-					<td title="${msg.queueOffset}">${msg.broker!}:${msg.queueId}</td>
-					<td id="jsonview${msg_index + 1}"></td>
+		<tbody class="text-center">
+			<#list response.result?values as trace>
+				<tr>
+					<td>${trace_index + 1}</td>
+					<#if trace.producer??>
+						<td data-toggle="tooltip" title="${trace.producer.addr}">${trace.producer.group}</td>
+						<td>${trace.producer.time}</td>
+						<td>${trace.producer.status()}</td>
+					<#else>
+						<td class="text-center" colspan=3 data-toggle="tooltip" title="客户端上报时间有可能不在当前时间段内，试着调整开始时间">暂无</td>
+					 </#if>
+					 <#if trace.broker??>
+						<td>${trace.broker}</td>
+					<#else>
+						<td class="text-center">暂无</td>
+					 </#if>
+					<#if trace.consumer??>
+					<td style="padding:0px" colspan=3>
+						<table style="width:100%">
+							<#list trace.consumer?values as traceConsumer>
+								<tr>
+							 		<td style="width:210px" data-toggle="tooltip" title="${traceConsumer.addr}">${traceConsumer.group}</td>
+									<td style="width:185px">${traceConsumer.time}</td>
+									<td style="width:55px" <#if traceConsumer.status() == "未知">data-toggle="tooltip" title="有可能还未收到客户端上报状态，试着调整结束时间" </#if>>${traceConsumer.status()}</td>
+							 	</tr>
+							</#list>
+						</table>
+					  </td>
+					 <#else>
+							<td colspan=3 data-toggle="tooltip" title="该消息有可能未被消费，试着调整结束时间">暂无</td>
+					 </#if>
+					<td><span class="glyphicon glyphicon-eye-open" style="cursor:pointer;" onclick="showTraceDetail(${trace_index})" data-toggle="tooltip" title="查看详细信息"></span>
+					<div id="traceDetailModel${trace_index}" class="modal fade" tabindex="-1" data-width="400"  aria-hidden="true">
+						<div class="modal-dialog" style="width:1000px;text-align:left">
+							<div class="modal-content">
+								<div class="modal-header">
+									<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+									<h4 class="modal-title">Trace详情</h4>
+								</div>
+								<div class="modal-body">
+								<p><b>注意：</b> 消费成功的时间 = 消费开始的是时间 + 耗时(costTime)</p>
+									<table class="table table-striped table-hover" style="margin-top: 0px">
+										<thead>
+											<colgroup>
+											  <col width="500px"></col>
+											  <col width="500px"></col>
+											</colgroup>
+											<tr>
+												<td>生产详情</td>
+												<td>消费详情</td>
+											</tr>
+										</thead>
+										<tbody>
+											<tr>
+											<#if trace.producer??>
+												<td id="jsonviewProducer${trace_index + 1}"></td>
+											<#else>
+												<td class="text-center">暂无生产信息</td>
+											 </#if>
+											 <#if trace.consumer??>
+												<td id="jsonviewConsumer${trace_index + 1}"></td>
+											<#else>
+												<td class="text-center">暂无消费信息</td>
+											 </#if>
+											</tr>
+										</tbody>
+										<script>
+											<#if trace.producer??>
+												$("#jsonviewProducer" + ${trace_index + 1}).JSONView(${trace.producerToJsonString()});
+											</#if>
+											<#if trace.consumer??>
+												$("#jsonviewConsumer" + ${trace_index + 1}).JSONView(${trace.consumerToJsonString()});
+											</#if>
+										</script>
+									</table>
+								</div>
+							</div>
+						</div>
+					</div>
+					</td>
 				</tr>
 			</#list>
 		</tbody>
-		<script>
-			<#list response.result as msg>
-				$("#jsonview" + ${msg_index + 1}).JSONView(${msg.decodedBody});
-			</#list>
-		</script>
 	<#else>
 		<tbody>
-			<tr class="no_more_data"><td colspan=5 class="text-center">查无数据</td></tr>
+			<tr class="no_more_data"><td colspan=9 class="text-center">查无数据</td></tr>
 		</tbody>
 	</#if>
 <#else>
 	<tbody>
-		<tr class="no_more_data"><td colspan=5 class="text-center">查询异常！${response.message}</td></tr>
+		<tr class="no_more_data"><td colspan=9 class="text-center">查询异常！${response.message}</td></tr>
 	</tbody>
 </#if>
 <script>
-	$("#pager").hide();
+$("#pager").hide();
+
+$(function(){
+	$("[data-toggle='tooltip']").tooltip({container: 'body'});
+})
+
+function showTraceDetail(index){
+	$("#traceDetailModel" + index).modal('show');
+}
 </script>

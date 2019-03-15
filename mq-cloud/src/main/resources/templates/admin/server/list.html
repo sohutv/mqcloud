@@ -74,15 +74,15 @@
 		        				</div>
 							</#if>
 						</td>
-						<td>${server.cload1!}</td>
-						<td>${server.dread!}</td>
-						<td>${server.dwrite!}</td>
-						<td>${server.diops!}</td>
-						<td>${server.dbusy!}%</td>
-						<td>${server.nin!}</td>
-						<td>${server.nout!}</td>
-						<td>${server.tuse!}</td>
-						<td>${server.twait!}</td>
+						<td>${server.cload1?string(",###.##")}</td>
+						<td>${server.dread?string(",###.##")}</td>
+						<td>${server.dwrite?string(",###.##")}</td>
+						<td>${server.diops?string(",###.##")}</td>
+						<td>${server.dbusy?string("##.##")}%</td>
+						<td>${server.nin?string(",###.#")}</td>
+						<td>${server.nout?string(",###.#")}</td>
+						<td>${server.tuse?string(",###")}</td>
+						<td>${server.twait?string(",###")}</td>
 						<td>
 							<#if server.machineType??>
 								${server.machineTypeName}

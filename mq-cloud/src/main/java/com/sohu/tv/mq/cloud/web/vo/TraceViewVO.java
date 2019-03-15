@@ -1,10 +1,13 @@
 package com.sohu.tv.mq.cloud.web.vo;
 
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
-import org.apache.rocketmq.client.trace.TraceType;
-import org.apache.rocketmq.common.message.MessageType;
-
+import com.alibaba.fastjson.JSON;
+import com.sohu.tv.mq.cloud.bo.TraceMessageDetail;
 import com.sohu.tv.mq.cloud.util.DateUtil;
 
 /**
@@ -14,137 +17,197 @@ import com.sohu.tv.mq.cloud.util.DateUtil;
  * @date 2019年2月25日
  */
 public class TraceViewVO {
-    private TraceType traceType;
-    private Long timeStamp;
-    private String groupName;
-    // 消费时间 ms
-    private Integer costTime;
-    private Boolean isSuccess;
-    private String topic;
-    private String msgId;
-    private String keys;
-    private String clientHost;
-    private Integer retryTimes;
-    private MessageType msgType;
-    // 唯一id
-    private String requestId;
+    // 表示肯定
+    public static int YES = 1;
 
-    public TraceType getTraceType() {
-        return traceType;
-    }
+    private ViewVO producer;
 
-    public void setTraceType(TraceType traceType) {
-        this.traceType = traceType;
-    }
+    private String broker;
 
-    public Long getTimeStamp() {
-        return timeStamp;
-    }
+    // consumer 可能会有多个, 同一个consumer的requestId相同
+    private Map<String/* requestId */, ViewVO> consumer;
 
-    public String getTimeStampFormat() {
-        if (timeStamp == null || timeStamp == 0) {
-            return null;
+    public static class ViewVO {
+
+        private String addr;
+
+        private Boolean success;
+
+        private String time;
+
+        private List<TraceMessageDetail> detail;
+
+        private String group;
+
+        public String getAddr() {
+            return addr;
         }
-        return formatTime(timeStamp);
-    }
 
-    private String formatTime(long time) {
-        return DateUtil.getFormat(DateUtil.YMD_DASH_HMS_COLON_DOT_SSS).format(new Date(time));
-    }
-
-    public void setTimeStamp(long timeStamp) {
-        if (timeStamp == 0) {
-            this.timeStamp = null;
-        } else {
-            this.timeStamp = timeStamp;
+        public void setAddr(String addr) {
+            this.addr = addr;
         }
-    }
 
-    public String getGroupName() {
-        return groupName;
-    }
-
-    public void setGroupName(String groupName) {
-        this.groupName = groupName;
-    }
-
-    public Integer getCostTime() {
-        return costTime;
-    }
-
-    public void setCostTime(int costTime) {
-        if (costTime == 0) {
-            this.costTime = null;
-        } else {
-            this.costTime = costTime;
+        public Boolean getSuccess() {
+            return success;
         }
-    }
 
-    public Boolean isSuccess() {
-        return isSuccess;
-    }
+        public void setSuccess(Boolean success) {
+            this.success = success;
+        }
 
-    public void setSuccess(boolean isSuccess) {
-        this.isSuccess = isSuccess;
-    }
+        public String getTime() {
+            return time;
+        }
 
-    public String getTopic() {
-        return topic;
-    }
+        public void setTime(String time) {
+            this.time = time;
+        }
 
-    public void setTopic(String topic) {
-        this.topic = topic;
-    }
+        public List<TraceMessageDetail> getDetail() {
+            return detail;
+        }
 
-    public String getMsgId() {
-        return msgId;
-    }
+        public void setDetail(List<TraceMessageDetail> detail) {
+            this.detail = detail;
+        }
 
-    public void setMsgId(String msgId) {
-        this.msgId = msgId;
-    }
+        public String getGroup() {
+            return group;
+        }
 
-    public String getKeys() {
-        return keys;
-    }
+        public void setGroup(String group) {
+            this.group = group;
+        }
 
-    public void setKeys(String keys) {
-        this.keys = keys;
-    }
+        public String status() {
+            if (success == null) {
+                return "未知";
+            }
+            return success ? "成功" : "失败";
+        }
 
-    public String getClientHost() {
-        return clientHost;
-    }
-
-    public void setClientHost(String clientHost) {
-        this.clientHost = clientHost;
-    }
-
-    public Integer getRetryTimes() {
-        return retryTimes;
-    }
-
-    public void setRetryTimes(int retryTimes) {
-        if (retryTimes == 0) {
-            this.retryTimes = null;
-        } else {
-            this.retryTimes = retryTimes;
+        @Override
+        public String toString() {
+            return "ViewVO [addr=" + addr + ", success=" + success + ", time=" + time + ", group=" + group + "]";
         }
     }
 
-    public MessageType getMsgType() {
-        return msgType;
+    public ViewVO getProducer() {
+        return producer;
     }
 
-    public void setMsgType(MessageType msgType) {
-        this.msgType = msgType;
+    public void setProducer(ViewVO producer) {
+        this.producer = producer;
     }
 
-    public String getRequestId() {
-        return requestId;
+    public String getBroker() {
+        return broker;
     }
 
-    public void setRequestId(String requestId) {
-        this.requestId = requestId;
+    public void setBroker(String broker) {
+        this.broker = broker;
+    }
+
+    public Map<String, ViewVO> getConsumer() {
+        return consumer;
+    }
+
+    public void setConsumer(Map<String, ViewVO> consumer) {
+        this.consumer = consumer;
+    }
+
+    /**
+     * 生产者详情转json
+     * 
+     * @return
+     */
+    public String producerToJsonString() {
+        if (getProducer() == null || getProducer().getDetail() == null) {
+            return "{}";
+        }
+        return JSON.toJSONString(getProducer().getDetail());
+    }
+
+    /**
+     * 消费者详情转json
+     * 
+     * @return
+     */
+    public String consumerToJsonString() {
+        if (getConsumer() == null || getConsumer().isEmpty()) {
+            return "{}";
+        }
+        List<List<TraceMessageDetail>> messageList = new ArrayList<List<TraceMessageDetail>>();
+        for (ViewVO ConsumerViewVO : getConsumer().values()) {
+            if (ConsumerViewVO.getDetail() != null) {
+                messageList.add(ConsumerViewVO.getDetail());
+            }
+        }
+        return JSON.toJSONString(messageList);
+    }
+
+    public void buildProducer(String addr, Boolean isSuccess, long time, TraceMessageDetail detail,
+            String producerGroup) {
+        ViewVO viewVo = new ViewVO();
+        buildViewVo(viewVo, addr, isSuccess, time, detail, producerGroup);
+        setProducer(viewVo);
+    }
+
+    /**
+     * 构建消费者
+     * 
+     * @param addr
+     * @param isSuccess
+     * @param time
+     * @param consumerStatus
+     * @param detail
+     */
+    public void buildConsumer(String addr, Boolean isSuccess, long time,
+            TraceMessageDetail detail, String requestId, String consumerGroup) {
+        Map<String, ViewVO> consumer = getConsumer();
+        if (consumer == null) {
+            consumer = new HashMap<String, ViewVO>();
+            setConsumer(consumer);
+        }
+        ViewVO viewVo = consumer.get(requestId);
+        if (viewVo == null) {
+            viewVo = new ViewVO();
+            consumer.put(requestId, viewVo);
+        }
+        buildViewVo(viewVo, addr, isSuccess, detail, consumerGroup);
+        if (time > 0) {
+            viewVo.setTime(DateUtil.getFormat(DateUtil.YMD_DASH_HMS_COLON_DOT_SSS).format(new Date(time)));
+        }
+    }
+
+    private void buildViewVo(ViewVO viewVo, String addr, Boolean isSuccess, TraceMessageDetail detail, String group) {
+        if (viewVo.getAddr() == null) {
+            viewVo.setAddr(addr);
+        }
+        if (viewVo.getGroup() == null || "".equals(viewVo.getGroup())) {
+            viewVo.setGroup(group);
+        }
+        if (viewVo.getSuccess() == null) {
+            viewVo.setSuccess(isSuccess);
+        }
+        List<TraceMessageDetail> traceMessageDetailList = viewVo.getDetail();
+        if (traceMessageDetailList == null) {
+            traceMessageDetailList = new ArrayList<TraceMessageDetail>();
+        }
+        traceMessageDetailList.add(detail);
+        viewVo.setDetail(traceMessageDetailList);
+    }
+
+    private void buildViewVo(ViewVO viewVo, String addr, Boolean isSuccess, long time, TraceMessageDetail detail,
+            String group) {
+        buildViewVo(viewVo, addr, isSuccess, detail, group);
+        if (viewVo.getTime() == null) {
+            viewVo.setTime(DateUtil.getFormat(DateUtil.YMD_DASH_HMS_COLON_DOT_SSS).format(new Date(time)));
+        }
+    }
+
+    @Override
+    public String toString() {
+        return "TraceViewVO [producer=" + producer + ", broker=" + broker + ", consumer=" + consumer + "]";
     }
 }

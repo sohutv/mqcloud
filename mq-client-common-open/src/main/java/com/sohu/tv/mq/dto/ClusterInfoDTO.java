@@ -12,7 +12,7 @@ public class ClusterInfoDTO {
     private boolean vipChannelEnabled;
     // 是否广播消费
     private boolean broadcast;
-    // 是否开启trace，仅用于producer
+    // 是否开启trace
     private boolean traceEnabled;
     
     public int getClusterId() {

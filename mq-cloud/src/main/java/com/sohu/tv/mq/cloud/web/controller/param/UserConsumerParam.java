@@ -10,6 +10,8 @@ public class UserConsumerParam {
     
     private String offset;
 
+    private long cid;
+
     public long getTid() {
         return tid;
     }
@@ -34,8 +36,17 @@ public class UserConsumerParam {
         this.offset = offset;
     }
 
+    public long getCid() {
+        return cid;
+    }
+
+    public void setCid(long cid) {
+        this.cid = cid;
+    }
+
     @Override
     public String toString() {
-        return "UserConsumerParam [tid=" + tid + ", consumerId=" + consumerId + ", offset=" + offset + "]";
+        return "UserConsumerParam [tid=" + tid + ", consumerId=" + consumerId
+                + ", offset=" + offset + ", cid=" + cid + "]";
     }
 }

@@ -35,6 +35,8 @@ spring:
     expose-request-attributes: true
     request-context-attribute: request
     suffix: .html
+    settings:
+      number_format: computer
   jackson: 
     default-property-inclusion: non-null
   datasource: 
@@ -57,3 +59,4 @@ mqcloud:
   producerClass:  com.sohu.tv.mq.rocketmq.RocketMQProducer
   consumerClass: com.sohu.tv.mq.rocketmq.RocketMQConsumer
   ticketKey: ticket #cas登录返回后的key，用户名密码可以忽略
+  

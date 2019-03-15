@@ -76,7 +76,7 @@ function agreeResendMessage(){
 	disable("agreeResendMessageBtn");
 	$.post('${request.contextPath}/admin/audit/resend/message',
 		{
-			aid: ${RequestParameters.aid?c}
+			aid: ${RequestParameters.aid}
 		},
         function(data){
             if(data.status == 200){
@@ -97,7 +97,7 @@ function disAgreeResendMessage(){
 	disable("disAgreeResendMessageBtn");
 	$.post('${request.contextPath}/admin/audit/refuse',
 		{
-			aid: ${RequestParameters.aid?c},
+			aid: ${RequestParameters.aid},
 			refuseReason: refuseReason
 		},
         function(data){
@@ -117,7 +117,7 @@ function resendMessage(){
 	disable("resendMessageBtn");
 	$.post('${request.contextPath}/admin/message/resend',
 		{
-			aid: ${RequestParameters.aid?c}
+			aid: ${RequestParameters.aid}
 		},
         function(data){
 	    	enable("resendMessageBtn");
@@ -131,7 +131,7 @@ function resendMessage(){
 function resendOneMessage(msgId){
 	post('${request.contextPath}/admin/message/resend/one',
 		{
-			aid: ${RequestParameters.aid?c},
+			aid: ${RequestParameters.aid},
 			msgId : msgId
 		},
         function(data){

@@ -61,11 +61,9 @@ $(function() {
 			            		s += "<td>" + stat.avg + "ms</td>";
 			            		s += "</tr>";
 			            		if(stat.exceptionJson){
-			            			s += "<tr>";
 									for(var k in stat.exceptionJson){
-										s += "<td style='text-align:center;color:red;' colspan=4>" + k +":"+ stat.exceptionJson[k] + "</td>";
+										s += "<tr><td style='text-align:center;color:red;' colspan=4>" + k +":"+ stat.exceptionJson[k] + "</td></tr>";
 									}
-									s += "</tr>";
 								}
 							}
 							s += "</table>";

@@ -79,8 +79,28 @@
 					<label class="control-label col-md-3"> 在哪个集群创建: </label>
 					<div class="col-md-5">
 						<select name="type" id="clusterSelect" class="form-control select2_category">
+						<#if response.result.transactionEnabled()>
+							<#list clusters as cluster>
+								<#if cluster.isEnableTransaction()>
+									<option value="${cluster.getId()}">${cluster.getName()}</option>
+								</#if>
+							</#list>
+						<#else>
 							<#list clusters as cluster>
 								<option value="${cluster.getId()}">${cluster.getName()}</option>
+							</#list>
+						</#if>
+						</select>
+					</div>
+				</div>
+				<div class="form-group" style="display:none;" id="traceDiv" >
+					<label class="control-label col-md-3"> 创建trace topic: </label>
+					<div class="col-md-5">
+						<select name="type" id="traceClusterSelect" class="form-control select2_category">
+							<#list clusters as cluster>
+								<#if cluster.isEnableTrace()>
+									<option value="${cluster.getId()}">${cluster.getName()}</option>
+								</#if>
 							</#list>
 						</select>
 					</div>
@@ -102,8 +122,23 @@
 
 <script>
 function agree(){
+	if ($("input[name='transactionEnabled']:checked").val() == 1){
+		if($("#clusterSelect").find("option").length == 0){
+			alert("暂无支持事务的集群，请添加新集群，或修改已有集群支持事务");
+			$("#auditAddTopicBtn").hide();
+			return;
+		}
+	}
 	$("#clusterDiv").show();
 	$("#refuseReasonDiv").hide();
+	if ($("input[name='traceEnabled']:checked").val() == 1){
+		if($("#traceClusterSelect").find("option").length == 0){
+			alert("暂无支持Trace的集群，请添加新集群，或修改已有集群支持Trace");
+			$("#auditAddTopicBtn").hide();
+			return;
+		}
+		$("#traceDiv").show();
+	}
 }
 function disAgree(){
 	$("#refuseReasonDiv").show();
@@ -117,11 +152,16 @@ function auditAddTopic(){
 			alert("请选择在哪个集群创建");
 			return;
 		}
+		if ($("input[name='traceEnabled']:checked").val() == 1 && !$("#traceClusterSelect").val()){
+			alert("请选择Trace集群");
+			return;
+		}
 		disable("auditAddTopicBtn");
 		$.post('${request.contextPath}/admin/audit/topic/create',
 			{
 				aid: ${response.result.aid?c},
-				cid: cid
+				cid: cid,
+				traceClusterId: $("#traceClusterSelect").val()
 			},
 	        function(data){
 	            if(data.status == 200){

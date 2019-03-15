@@ -146,8 +146,8 @@ public class CommonConfiguration {
         genericKeyedObjectPoolConfig.setMaxTotalPerKey(1);
         genericKeyedObjectPoolConfig.setMaxIdlePerKey(1);
         genericKeyedObjectPoolConfig.setMinIdlePerKey(1);
-        genericKeyedObjectPoolConfig.setMaxWaitMillis(3000);
-        genericKeyedObjectPoolConfig.setTimeBetweenEvictionRunsMillis(5000);
+        genericKeyedObjectPoolConfig.setMaxWaitMillis(10000);
+        genericKeyedObjectPoolConfig.setTimeBetweenEvictionRunsMillis(20000);
         MQAdminPooledObjectFactory mqAdminPooledObjectFactory = new MQAdminPooledObjectFactory();
         mqAdminPooledObjectFactory.setMqCloudConfigHelper(mqCloudConfigHelper);
         GenericKeyedObjectPool<Cluster, MQAdminExt> genericKeyedObjectPool = new GenericKeyedObjectPool<Cluster, MQAdminExt>(

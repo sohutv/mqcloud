@@ -258,7 +258,11 @@ public class RocketMQConsumer extends AbstractConfig {
                 new ConsumeMessageTraceHookImpl(traceDispatcher));        
     }
     
+    /**
+     * traceEnabled is controlled by MQCloud 
+     * @param traceEnabled
+     */
+    @Deprecated
     public void setTraceEnabled(boolean traceEnabled) {
-        this.traceEnabled = traceEnabled;
     }
 }

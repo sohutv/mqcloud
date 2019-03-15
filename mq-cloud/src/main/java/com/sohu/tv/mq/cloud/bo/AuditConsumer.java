@@ -9,6 +9,8 @@ public class AuditConsumer {
     private String consumer;
     //0:集群消费,1:广播消费
     private int consumeWay;
+    
+    private int traceEnabled;
 
     public long getAid() {
         return aid;
@@ -42,9 +44,21 @@ public class AuditConsumer {
         this.consumeWay = consumeWay;
     }
 
+    public int getTraceEnabled() {
+        return traceEnabled;
+    }
+
+    public void setTraceEnabled(int traceEnabled) {
+        this.traceEnabled = traceEnabled;
+    }
+    
+    public String getName() {
+        return consumer;
+    }
+    
     @Override
     public String toString() {
         return "AuditConsumer [aid=" + aid + ", tid=" + tid + ", consumer=" + consumer + ", consumeWay=" + consumeWay
-                + "]";
+                + ", traceEnabled=" + traceEnabled + "]";
     }
 }

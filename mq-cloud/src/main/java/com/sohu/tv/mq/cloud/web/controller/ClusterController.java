@@ -100,7 +100,11 @@ public class ClusterController {
             logger.warn("ip:{} user consumer not exist:{}", ip, topicUserParam);
             return Result.getWebResult(consumerResult);
         }
-        clusterInfoDTO.setBroadcast(consumerResult.getResult().isBroadcast());
+        Consumer consumer = consumerResult.getResult();
+        clusterInfoDTO.setBroadcast(consumer.isBroadcast());
+        if (topic.traceEnabled()) {
+            clusterInfoDTO.setTraceEnabled(consumer.traceEnabled());
+        }
         saveClientVersion(topicUserParam);
         return Result.getResult(clusterInfoDTO);
     }

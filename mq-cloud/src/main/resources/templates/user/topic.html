@@ -264,10 +264,19 @@
 								<div class="form-group">
 									<label class="control-label col-md-3"> 消费方式: </label>
 									<div class="col-md-6 checkbox">
-									    <input type="radio" name="consumeWay" value="0" checked> 
+									    <input onclick="consumerWayChange(0)" type="radio" name="consumeWay" value="0" checked> 
 									    	<span data-toggle="modal" title="所有的消费者均分消息进行消费">集群消费</span>
-									    <input type="radio" name="consumeWay" value="1">
+									    <input onclick="consumerWayChange(1)" type="radio" name="consumeWay" value="1">
 									    	<span data-toggle="modal" title="每个消费者会消费所有消息">广播消费</span>
+									</div>
+								</div>
+								<div class="form-group hide" id="traceDiv">
+									<label class="control-label col-md-3"> 开启Trace: </label>
+									<div class="col-md-6 checkbox">
+										<input type="radio" name="traceEnable" value="0" checked> 
+									    	<span data-toggle="modal" title="广播模式下不建议开启Trace">否</span>
+									    <input type="radio" name="traceEnable" value="1">
+									    	<span>是</span>
 									</div>
 								</div>
 								<div class="form-group">
@@ -459,6 +468,17 @@
 				refreshConsumerSelect($(this).val());
 			}
 		});
+		// 下拉框change事件
+		$('#topicSelectForConsumer').on('changed.bs.select',function(e, clickedIndex, newValue, oldValue){
+			if (topicMap[$(this).val()] == 0){
+				$("#traceDiv").addClass('hide');
+				$("input[name='traceEnable'][value='0']").prop("checked",true);
+				$("input[name='traceEnable'][value='1']").prop("checked",false);
+			} else {
+				$("#traceDiv").removeClass('hide');
+			}
+			
+		});
 		
 		
 		// 用户topic表单校验
@@ -648,6 +668,8 @@
 	/**
 	 * 初始化topic下拉列表
 	 */
+	 // 保存topic是否支持trace
+	var topicMap = {};
 	function initTopicList(componentId, needName){
 		$.get('${request.contextPath}/topic/list',
 		        function(data){
@@ -659,6 +681,9 @@
 		            			content += "<option value='"+topic.name+"'>"+topic.name+"</option>";
 		            		} else {
 			            		content += "<option value='"+topic.id+"'>"+topic.name+"</option>";
+			            		if (componentId == "topicSelectForConsumer"){
+			            			topicMap[topic.id] = topic.traceEnabled;
+		            			}
 		            		}
 		            	}
 		        		$("#"+componentId).html(content);
@@ -816,4 +841,14 @@
 	}
 	//长轮询，30秒发送一次ajax请求
 	window.setInterval(fetchMessage, 30000);
+	
+function consumerWayChange(type){
+	if (type == 1){
+		$("input[name='traceEnable'][value='1']").prop("checked",false);
+		$("input[name='traceEnable'][value='0']").prop("checked",true);
+		$("input[name='traceEnable']").prop("disabled",true);
+	} else if (type == 0){
+		$("input[name='traceEnable']").prop("disabled",false);
+	}
+}
 </script>

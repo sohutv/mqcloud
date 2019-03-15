@@ -23,6 +23,7 @@ public interface ClusterDao {
     /**
      * 保存数据
      */
-    @Insert("insert into cluster values(#{cluster.id}, #{cluster.name}, #{cluster.vipChannelEnabled}, #{cluster.online})")
+    @Insert("insert into cluster values(#{cluster.id}, #{cluster.name}, #{cluster.vipChannelEnabled}, #{cluster.online}"
+            + ", #{cluster.transactionEnabled}, #{cluster.traceEnabled})")
     public Integer insert(@Param("cluster")Cluster cluster);
 }

@@ -10,7 +10,12 @@ public class CommonUtil {
      * @return
      */
     public static String buildTraceTopic(String topic) {
-        return topic.substring(0, topic.lastIndexOf("-")) + TRACE_TOPIC_SUFFIX;
+        int idx = topic.lastIndexOf("-");
+        if(idx == -1) {
+            // 不符合规范的直接追加 TRACE_TOPIC_SUFFIX
+            return topic + TRACE_TOPIC_SUFFIX;
+        }
+        return topic.substring(0, idx) + TRACE_TOPIC_SUFFIX;
     }
 
     public static String buildTraceTopicProducer(String traceTopic) {

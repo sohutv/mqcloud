@@ -15,6 +15,9 @@ public class AuditConsumerVO {
     //0:集群消费,1:广播消费
     private int consumeWay;
     private String topic;
+    
+    private int traceEnabled;
+    
     public long getAid() {
         return aid;
     }
@@ -44,5 +47,11 @@ public class AuditConsumerVO {
     }
     public void setTopic(String topic) {
         this.topic = topic;
+    }
+    public int getTraceEnabled() {
+        return traceEnabled;
+    }
+    public void setTraceEnabled(int traceEnabled) {
+        this.traceEnabled = traceEnabled;
     }
 }

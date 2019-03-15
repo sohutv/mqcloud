@@ -25,12 +25,12 @@ public interface UserDao {
      */
     @Options(useGeneratedKeys = true, keyProperty = "user.id")
     @Insert("<script>insert into user(email, create_date, type"
-            + "<if test=\"user.name != null\">,name</if>"
+            + "<if test=\"user.name != null and user.name != ''\">,name</if>"
             + "<if test=\"user.mobile != null\">,mobile</if>"
             + "<if test=\"user.password != null\">,password</if>"
             + ") values("
             + "#{user.email},now(),#{user.type}"
-            + "<if test=\"user.name != null\">,#{user.name}</if>"
+            + "<if test=\"user.name != null and user.name != ''\">,#{user.name}</if>"
             + "<if test=\"user.mobile != null\">,#{user.mobile}</if>"
             + "<if test=\"user.password != null\">,#{user.password}</if>"
             + ")</script>")
