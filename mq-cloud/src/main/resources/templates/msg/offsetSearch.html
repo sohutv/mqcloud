@@ -2,8 +2,9 @@
 	<#if response.result.msgList?? && response.result.msgList?size gt 0>
 		<tbody id="page_${response.result.mqc.times}">
 			<#list response.result.msgList as msg>
-				<tr data="${msg.offsetMsgId}" dataIdx="${msg_index + 1 + response.result.mqc.prevSize}">
-					<td title="${msg.msgId}">${msg_index + 1 + response.result.mqc.prevSize}</td>
+
+				<tr data="${msg.offsetMsgId}" id="${msg.msgId}" date-data="${msg.storeTimestamp?c}" dataIdx="${msg_index + 1 + response.result.mqc.prevSize}">
+					<td title="查看${msg.msgId}的trace信息"><#if traceEnabled><a href="#" onclick="traceNoTime('${msg.msgId}')"></#if>${msg_index + 1 + response.result.mqc.prevSize}<#if traceEnabled></a></#if></td>
 					<td>${msg.bornHostString}</td>
 					<td title="${msg.storeTimestamp?number_to_datetime?string("yyyy-MM-dd HH:mm:ss.SSS")}">${msg.bornTimestamp?number_to_datetime?string("yyyy-MM-dd HH:mm:ss.SSS")}</td>
 					<td title="${msg.queueOffset}">${msg.broker!}:${msg.queueId}</td>

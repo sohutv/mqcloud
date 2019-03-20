@@ -169,10 +169,8 @@ public abstract class AbstractConfig {
         clientConfig.setVipChannelEnabled(clusterInfoDTO.isVipChannelEnabled());
         // 通过unitName发现不同的集群
         clientConfig.setUnitName(String.valueOf(clusterInfoDTO.getClusterId()));
-        // 生产者自动设置是否trace
-        if (PRODUCER == role()) {
-            traceEnabled = clusterInfoDTO.isTraceEnabled();
-        }
+        // 自动设置是否trace
+        traceEnabled = clusterInfoDTO.isTraceEnabled();
         // 设置instanceName
         if(getInstanceName() != null) {
             clientConfig.setInstanceName(getInstanceName());

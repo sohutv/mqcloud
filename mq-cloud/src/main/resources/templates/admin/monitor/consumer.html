@@ -119,13 +119,21 @@
 					<td>${consumerStat.consumerGroup}</td>
 					<td><a href="${request.contextPath}/user/topic/${consumerStat.tid}/detail?tab=consume">${consumerStat.topic!}</a></td>
 					<td>${consumerStat.updatetime?string("yyyy-MM-dd HH:mm:ss")}</td>
-					<td>${consumerStat.undoneMsgCount!}</td>
-					<td>${consumerStat.undone1qMsgCount!}</td>
+					<td>
+						<#if consumerStat.undoneMsgCount??>
+							${consumerStat.undoneMsgCount?number?string(",###")}
+						</#if>
+					</td>
+					<td>
+						<#if consumerStat.undone1qMsgCount??> 
+							${consumerStat.undone1qMsgCount?number?string(",###")}
+						</#if>
+					</td>
 					<td>
 						<#if consumerStat.undoneDelay gt 1000>
-							${consumerStat.undoneDelay/1000}秒
+							${(consumerStat.undoneDelay/1000)?string(",###.###")}秒
 						<#elseif consumerStat.undoneDelay gt 0>
-							${consumerStat.undoneDelay}毫秒
+							${consumerStat.undoneDelay?string(",###.###")}毫秒
 						<#else>
 							无滞后
 						</#if>

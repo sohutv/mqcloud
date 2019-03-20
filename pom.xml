@@ -6,7 +6,7 @@
 	<artifactId>mq</artifactId>
 	<packaging>pom</packaging>
 	<name>mq</name>
-	<version>1.5</version>
+	<version>1.6</version>
 
 	<modules>
 		<module>mq-client-common-open</module>
@@ -132,6 +132,22 @@
 				<configuration>
 					<skipTests>true</skipTests>
 				</configuration>
+			</plugin>
+			<!-- generate sources -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-source-plugin</artifactId>
+				<configuration>
+					<attach>true</attach>
+				</configuration>
+				<executions>
+					<execution>
+						<phase>compile</phase>
+						<goals>
+							<goal>jar</goal>
+						</goals>
+					</execution>
+				</executions>
 			</plugin>
 		</plugins>
 	</build>

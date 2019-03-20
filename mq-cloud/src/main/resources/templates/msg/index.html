@@ -87,16 +87,16 @@
 	  	    <input type="hidden" id="topicDiv" name="topic" value="${response.result.topic}">
 	  	    <input type="hidden" id="append" name="append" value="false">
 	  	    <input type="hidden" id="messageParam" name="messageParam" value="${response.result.serialize()}">
-			<button type="button" data-toggle='tooltip' title="如果查不到数据请使用偏移量查询" onclick="searchMessage(false)" class="btn btn-search time" style="display:none;"><span class="glyphicon glyphicon-search" aria-hidden="true"></span></button>
+			<button type="button" data-toggle='tooltip' title="按时间段查询${response.result.topic}" onclick="searchMessage(false)" class="btn btn-search time" style="display:none;"><span class="glyphicon glyphicon-search" aria-hidden="true"></span></button>
 			<!-- 消息查询 -->
-			<button type="button" onclick="viewMessage()" class="btn btn-search msgId" style="display:none;"><span class="glyphicon glyphicon-search" aria-hidden="true"></span></button>
+			<button type="button" data-toggle='tooltip' title="按消息id查询${response.result.topic}" onclick="viewMessage()" class="btn btn-search msgId" style="display:none;"><span class="glyphicon glyphicon-search" aria-hidden="true"></span></button>
 			<!-- key查询 -->
-			<button type="button" onclick="searchKeyMessage()" class="btn btn-search key" style="display:none;"><span class="glyphicon glyphicon-search" aria-hidden="true"></span></button>
+			<button type="button" data-toggle='tooltip' title="按key查询${response.result.topic}" onclick="searchKeyMessage()" class="btn btn-search key" style="display:none;"><span class="glyphicon glyphicon-search" aria-hidden="true"></span></button>
 			<!-- 偏移量查询 -->
 			<button type="button" onclick="showMoreSearchCondition()" class="btn offset" data-toggle="tooltip" title="单击展开更多搜索项"><span class="glyphicon glyphicon-filter" aria-hidden="true"></span></button>
-			<button type="button" onclick="searchOffsetMessage(false)" class="btn btn-search offset"><span class="glyphicon glyphicon-search" aria-hidden="true"></span></button>
+			<button type="button" data-toggle='tooltip' title="按偏移量查询${response.result.topic}" onclick="searchOffsetMessage(false)" class="btn btn-search offset"><span class="glyphicon glyphicon-search" aria-hidden="true"></span></button>
 			<!-- trace查询 -->
-			<button type="button" onclick="searchTraceMessage()" class="btn btn-search trace" style="display:none;"><span class="glyphicon glyphicon-search" aria-hidden="true"></span></button>
+			<button type="button" data-toggle='tooltip' title="按trace查询${response.result.topic}" onclick="searchTraceMessage()" class="btn btn-search trace" style="display:none;"><span class="glyphicon glyphicon-search" aria-hidden="true"></span></button>
 			
 			<!-- 消息重发 -->
 			<#if owner == 1>
@@ -138,6 +138,43 @@
 		</thead>
 		<tbody>
 			<tr class="no_more_data"><td colspan=8 class="text-center">暂无数据</td></tr>
+		</tbody>
+	</table>
+		<!-- trace 消息显示 -->
+	<table id="traceDataTable" class="table table-striped table-hover hide" style="margin-top: 0px;word-break:break-all; word-wrap:break-all;">
+		<colgroup>
+			<col width="50px">
+			<col width="210px">
+			<col width="185px">
+			<col width="55px">
+			<col width="140px">
+			<col width="210px">
+			<col width="185px">
+			<col width="55px">
+			<col width="50px">
+		</colgroup>
+		<thead class="text-center">
+			<tr>
+				<td rowspan=2 style="padding-top:25px">序号</td>
+				<td class="text-center" colspan=3>
+					生产者
+				</td>
+				<td class="text-center">broker</td>
+				<td class="text-center" colspan=3>消费者</td>
+				<td rowspan=2 style="padding-top:25px">详情</td>
+			</tr>
+			<tr>
+				<td>生产组</td>
+				<td>发送时间</td>
+				<td>状态</td>
+				<td>地址</td>
+				<td>消费组</td>
+				<td>消费时间</td>
+				<td>状态</td>
+			</tr>
+		</thead>
+		<tbody>
+			<tr class="no_more_data"><td colspan=9 class="text-center">暂无数据</td></tr>
 		</tbody>
 	</table>
 	<ul class="pager" id="pager" style="display:none;">
@@ -288,9 +325,9 @@ function searchTraceMessage() {
 		return;
 	}
 	post('${request.contextPath}/msg/trace/search', $("#msgSearchForm").serialize(), function(data){
-		$("#dataTable tbody").remove();
-		$("#dataTable tbody input").remove();
-       	$("#dataTable").append(data);
+		$("#traceDataTable tbody").remove();
+		$("#traceDataTable input").remove();
+       	$("#traceDataTable").append(data);
     });
 }
 // 轨迹
@@ -571,24 +608,24 @@ function changeSearchType(type){
 	}
 	prevSearchType = type;
 	
-	// 清空数据
-	$("#dataTable tbody").remove();
-	$("#dataTable").append("<tbody><tr class='no_more_data'><td colspan=8 class='text-center'>暂无数据</td></tr></tbody>");
-	$("#dataTable input").remove();
 	$("#pager").hide();
 	hideAndResetBrokerSelect();
 	if("trace" == type){
+		// 清空数据
+		$("#traceDataTable tbody").remove();
+		$("#traceDataTable").append("<tbody><tr class='no_more_data'><td colspan=9 class='text-center'>暂无数据</td></tr></tbody>");
+		$("#traceDataTable input").remove();
 		$("#resendMessageBtn").addClass("disabled");
-		$("#tagsTD").hide();
-		$("#detailTD").hide();
-		$("#keysTD").hide();
-		$("tr.no_more_data td").attr("colspan", 5);
+		$("#dataTable").addClass("hide");
+		$("#traceDataTable").removeClass("hide");
 	} else {
+		// 清空数据
+		$("#dataTable tbody").remove();
+		$("#dataTable").append("<tbody><tr class='no_more_data'><td colspan=8 class='text-center'>暂无数据</td></tr></tbody>");
+		$("#dataTable input").remove();
+		$("#dataTable").removeClass("hide");
+		$("#traceDataTable").addClass("hide");
 		$("#resendMessageBtn").removeClass("disabled");
-		$("#tagsTD").show();
-		$("#detailTD").show();
-		$("#keysTD").show();
-		$("tr.no_more_data td").attr("colspan", 8);
 	}
 }
 
@@ -751,10 +788,31 @@ function resetMaxOffset(key,type){
 	$("#offsetEnd").val(max);
 }
 
-function trace(msgId){
+function traceHasTime(msgId){
+	trace(msgId, true);
+}
+
+function traceNoTime(msgId){
+	trace(msgId, false);
+}
+
+function trace(msgId, hasTime){
 	var searchType = $('#searchCondition option:selected').val();
-	var start = $("#" + searchType + "StartTimePicker").val();
-	var end = $("#" + searchType + "EndTimePicker").val();
+	var start;
+	var end;
+	if(hasTime){
+		start = $("#" + searchType + "StartTimePicker").val();
+		end = $("#" + searchType + "EndTimePicker").val();
+	} else {
+		start = $("#" + msgId).attr("date-data") - 60 * 60 * 1000;
+		end = Number($("#" + msgId).attr("date-data")) + 60 * 60 * 1000;
+		var now = new Date().getTime();
+		if(end > now){
+			end = now;
+		}
+		start = formatDateYMDHM(start);
+		end = formatDateYMDHM(end);
+	}
 	// 将时间范围修改成key查询的范围
 	$("#traceStartTimePicker").val(start);
 	$("#traceEndTimePicker").val(end);

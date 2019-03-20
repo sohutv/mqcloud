@@ -9,8 +9,8 @@ package com.sohu.tv.mq.cloud.bo;
 public class Cluster {
     
     public static final int ONLINE = 1;
-    
-    public static final int VIP_CHANNELE_NABLE = 1;
+    // 表示肯定
+    public static final int YES = 1;
     
     // 集群id
     private int id;
@@ -20,6 +20,10 @@ public class Cluster {
     private int vipChannelEnabled;
     // 是否为线上集群
     private int online;
+    
+    private int transactionEnabled;
+    
+    private int traceEnabled;
 
     public int getId() {
         return id;
@@ -57,8 +61,32 @@ public class Cluster {
         return ONLINE == online;
     }
     
+    public int getTransactionEnabled() {
+        return transactionEnabled;
+    }
+
+    public void setTransactionEnabled(int transactionEnabled) {
+        this.transactionEnabled = transactionEnabled;
+    }
+
+    public int getTraceEnabled() {
+        return traceEnabled;
+    }
+
+    public void setTraceEnabled(int traceEnabled) {
+        this.traceEnabled = traceEnabled;
+    }
+
     public boolean isEnableVipChannel() {
-        return VIP_CHANNELE_NABLE == vipChannelEnabled;
+        return YES == vipChannelEnabled;
+    }
+    
+    public boolean isEnableTrace() {
+        return YES == traceEnabled;
+    }
+    
+    public boolean isEnableTransaction() {
+        return YES == transactionEnabled;
     }
 
     @Override

@@ -112,10 +112,10 @@
 																	<td>${k.brokerName}</td>
 																	<td>${k.queueId}</td>
 																	<td>
-																		${v.minOffset}
+																		${v.minOffset?string(",###")}
 																	</td>
 																	<td>
-																		${v.maxOffset}
+																		${v.maxOffset?string(",###")}
 																	</td>
 																	<td>
 																		${v.maxOffset - v.minOffset}
@@ -157,10 +157,10 @@
 																	<td>${k.brokerName}</td>
 																	<td>${k.queueId}</td>
 																	<td>
-																		${v.brokerOffset}
+																		${v.brokerOffset?string(",###")}
 																	</td>
 																	<td>
-																		${v.consumerOffset}
+																		${v.consumerOffset?string(",###")}
 																	</td>
 																	<td>
 																		${v.brokerOffset - v.consumerOffset}
@@ -199,10 +199,10 @@
 																<td>${k.brokerName}</td>
 																<td>${k.queueId}</td>
 																<td>
-																	${v.brokerOffset}
+																	${v.brokerOffset?string(",###")}
 																</td>
 																<td>
-																	${v.consumerOffset}
+																	${v.consumerOffset?string(",###")}
 																</td>
 																<td>
 																	${v.brokerOffset - v.consumerOffset}
@@ -412,10 +412,10 @@
 																<td>${mq.brokerName}</td>
 																<td>${mq.queueId}</td>
 																<td>
-																	${offset.brokerOffset}
+																	${offset.brokerOffset?string(",###")}
 																</td>
 																<td>
-																	${offset.consumerOffset}
+																	${offset.consumerOffset?string(",###")}
 																</td>
 																<td>
 																	${offset.brokerOffset - offset.consumerOffset}
@@ -739,10 +739,11 @@ function skipAccumulation(tid, cid, btn){
 	disable(btn);
 	$.get('${request.contextPath}/consumer/reset/offset',{
 		tid: tid,
-		consumerId: cid
+		consumerId: cid,
+		cid: $("#toCid").val()
 	},function(data){
         if(data.status == 200){
-			toastr.success("跳过堆积申请成功！请耐心等待！");  
+			toastr.success(data.message);  
 			modalHide(3000);
 	    }else{
 	    	toastr.error("操作失败！"+data.message);  
@@ -763,10 +764,11 @@ function resetOffset(idx, tid, cid, btn){
 	$.get('${request.contextPath}/consumer/reset/offset',{
 		tid: tid,
 		consumerId: cid,
-		offset: resetOffsetTo
+		offset: resetOffsetTo,
+		cid: $("#toCid").val()
 	},function(data){
         if(data.status == 200){
-			toastr.success("消息回溯申请成功！请耐心等待！");  
+			toastr.success(data.message);  
 			modalHide(3000);
 	    }else{
 	    	toastr.error("操作失败！"+data.message);  

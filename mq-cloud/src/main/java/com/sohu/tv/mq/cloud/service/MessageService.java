@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.TreeMap;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.rocketmq.client.QueryResult;
@@ -20,7 +21,9 @@ import org.apache.rocketmq.client.consumer.PullStatus;
 import org.apache.rocketmq.client.exception.MQBrokerException;
 import org.apache.rocketmq.client.exception.MQClientException;
 import org.apache.rocketmq.client.producer.SendResult;
+import org.apache.rocketmq.client.trace.TraceBean;
 import org.apache.rocketmq.client.trace.TraceContext;
+import org.apache.rocketmq.client.trace.TraceType;
 import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.TopicConfig;
 import org.apache.rocketmq.common.admin.ConsumeStats;
@@ -55,6 +58,7 @@ import com.sohu.tv.mq.cloud.bo.MQOffset;
 import com.sohu.tv.mq.cloud.bo.MessageData;
 import com.sohu.tv.mq.cloud.bo.MessageQueryCondition;
 import com.sohu.tv.mq.cloud.bo.MessageTrackExt;
+import com.sohu.tv.mq.cloud.bo.TraceMessageDetail;
 import com.sohu.tv.mq.cloud.mq.DefaultCallback;
 import com.sohu.tv.mq.cloud.mq.MQAdminCallback;
 import com.sohu.tv.mq.cloud.mq.MQAdminTemplate;
@@ -65,6 +69,7 @@ import com.sohu.tv.mq.cloud.util.MsgTraceDecodeUtil;
 import com.sohu.tv.mq.cloud.util.Result;
 import com.sohu.tv.mq.cloud.util.Status;
 import com.sohu.tv.mq.cloud.web.controller.param.MessageParam;
+import com.sohu.tv.mq.cloud.web.vo.TraceViewVO;
 import com.sohu.tv.mq.serializable.DefaultMessageSerializer;
 import com.sohu.tv.mq.serializable.MessageSerializer;
 import com.sohu.tv.mq.util.CommonUtil;
@@ -768,5 +773,65 @@ public class MessageService {
             return true;
         }
         return false;
+    }
+    
+    /**
+     * 对trace消息进行分组,并过滤不符合要求的消息
+     * 
+     * @param decodedMessageList
+     * @return
+     */
+    public Map<String, TraceViewVO> groupTraceMessage(List<DecodedMessage> decodedMessageList, String msgKey) {
+        if (decodedMessageList == null) {
+            return null;
+        }
+        // 保存分组结果
+        Map<String, TraceViewVO> viewMap = new TreeMap<String, TraceViewVO>();
+        // 解析消息
+        for (DecodedMessage decodedMessage : decodedMessageList) {
+            String message = decodedMessage.getDecodedBody();
+            // 转换为trace对象
+            List<TraceContext> traceContextList = JSON.parseArray(message, TraceContext.class);
+            for (TraceContext traceContext : traceContextList) {
+                TraceBean traceBean = traceContext.getTraceBeans().get(0);
+                // 过滤非相关消息
+                if (!msgKey.equals(traceBean.getMsgId()) && !msgKey.equals(traceBean.getKeys())) {
+                    continue;
+                }
+                TraceViewVO traceViewVO = viewMap.get(traceBean.getMsgId());
+                if (traceViewVO == null) {
+                    traceViewVO = new TraceViewVO();
+                    viewMap.put(traceBean.getMsgId(), traceViewVO);
+                }
+                // 构建消息详情
+                TraceMessageDetail traceMessageDetail = new TraceMessageDetail();
+                BeanUtils.copyProperties(traceContext, traceMessageDetail);
+                BeanUtils.copyProperties(traceBean, traceMessageDetail);
+                // ClientHost统一使用消息中的bornHost
+                traceMessageDetail.setClientHost(decodedMessage.getBornHostString());
+                // 发送消息部分
+                if (TraceType.Pub == traceContext.getTraceType()) {
+                    traceViewVO.buildProducer(decodedMessage.getBornHostString(), traceContext.isSuccess(),
+                            traceContext.getTimeStamp(), traceMessageDetail, traceContext.getGroupName());
+                    // broker上的信息根据生产者构建，
+                    traceViewVO.setBroker(traceBean.getStoreHost().split(":")[0]);
+                } else { // 消费消息部分
+                    // 不显示空字符串
+                    if (traceMessageDetail.getTopic().isEmpty()) {
+                        traceMessageDetail.setTopic(null);
+                    }
+                    if (TraceType.SubBefore == traceContext.getTraceType()) { // 实际消费动作前
+                        traceMessageDetail.setSuccess(null);
+                        traceViewVO.buildConsumer(decodedMessage.getBornHostString(), null, traceContext.getTimeStamp(),
+                                traceMessageDetail, traceContext.getRequestId(), traceContext.getGroupName());
+                    } else if (TraceType.SubAfter == traceContext.getTraceType()) { // 消费结束
+                        traceMessageDetail.setTimeStamp(0);
+                        traceViewVO.buildConsumer(decodedMessage.getBornHostString(), traceContext.isSuccess(), 0L,
+                                traceMessageDetail, traceContext.getRequestId(), traceContext.getGroupName());
+                    }
+                }
+            }
+        }
+        return viewMap;
     }
 }

@@ -54,6 +54,7 @@ CREATE TABLE `audit_consumer` (
   `tid` int(11) NOT NULL COMMENT 'topic id',
   `consumer` varchar(64) NOT NULL COMMENT '消费者名字',
   `consume_way` int(4) NOT NULL DEFAULT '0' COMMENT '0:集群消费,1:广播消费',
+  `trace_enabled` int(4) NOT NULL DEFAULT '0' COMMENT '0:不开启trace,1:开启trace',
   UNIQUE KEY `tid` (`tid`,`consumer`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='审核消费者相关表';
 
@@ -163,10 +164,10 @@ CREATE TABLE `broker_traffic` (
   `create_date` date NOT NULL COMMENT '数据收集天',
   `create_time` char(4) NOT NULL COMMENT '数据收集小时分钟,格式:HHMM',
   `cluster_id` int(11) NOT NULL COMMENT 'cluster_id',
-  `put_count` int(11) NOT NULL DEFAULT '0' COMMENT '生产消息量',
-  `put_size` int(11) NOT NULL DEFAULT '0' COMMENT '生产消息大小',
-  `get_count` int(11) NOT NULL DEFAULT '0' COMMENT '消费消息量',
-  `get_size` int(11) NOT NULL DEFAULT '0' COMMENT '消费消息大小',
+  `put_count` bigint(20) NOT NULL DEFAULT '0' COMMENT '生产消息量',
+  `put_size` bigint(20) NOT NULL DEFAULT '0' COMMENT '生产消息大小',
+  `get_count` bigint(20) NOT NULL DEFAULT '0' COMMENT '消费消息量',
+  `get_size` bigint(20) NOT NULL DEFAULT '0' COMMENT '消费消息大小',
   PRIMARY KEY (`ip`,`create_date`,`create_time`),
   KEY `time` (`create_date`,`cluster_id`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='broker流量表';
@@ -194,6 +195,8 @@ CREATE TABLE `cluster` (
   `name` varchar(64) NOT NULL COMMENT '集群名',
   `vip_channel_enabled` tinyint(4) NOT NULL DEFAULT '0' COMMENT '是否开启vip通道, 1:开启, 0:关闭, rocketmq 4.x版本默认开启',
   `online` tinyint(4) NOT NULL DEFAULT '0' COMMENT '是否为线上集群, 1:是, 0:否, 线上集群会开启流量抓取',
+  `transaction_enabled` int(4) NOT NULL DEFAULT '0' COMMENT '0:不支持事务,1:支持事务',
+  `trace_enabled` int(4) NOT NULL DEFAULT '0' COMMENT '0:不支持trace,1:支持trace',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='集群表';
 
@@ -220,6 +223,7 @@ CREATE TABLE `consumer` (
   `consume_way` int(4) NOT NULL DEFAULT '0' COMMENT '0:集群消费,1:广播消费',
   `create_date` date NOT NULL,
   `update_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `trace_enabled` int(4) NOT NULL DEFAULT '0' COMMENT '0:不开启trace,1:开启trace',
   PRIMARY KEY (`id`),
   UNIQUE KEY `name` (`name`),
   KEY `tid` (`tid`)
@@ -250,8 +254,8 @@ CREATE TABLE `consumer_stat` (
   `consumer_group` varchar(255) DEFAULT NULL COMMENT 'consumer group',
   `topic` varchar(255) DEFAULT NULL COMMENT 'host',
   `updatetime` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  `undone_msg_count` int(11) DEFAULT NULL COMMENT '未消费的消息量',
-  `undone_1q_msg_count` int(11) DEFAULT NULL COMMENT '单队列未消费的最大消息量',
+  `undone_msg_count` bigint(20) DEFAULT NULL COMMENT '未消费的消息量',
+  `undone_1q_msg_count`bigint(20) DEFAULT NULL COMMENT '单队列未消费的最大消息量',
   `undone_delay` bigint(20) DEFAULT NULL COMMENT '毫秒=broker最新消息存储时间-最新消费时间',
   `sbscription` varchar(255) DEFAULT NULL COMMENT '订阅关系,如果一个group订阅不同的topic,在这里会有体现',
   PRIMARY KEY (`id`),
@@ -266,8 +270,8 @@ CREATE TABLE `consumer_traffic` (
   `consumer_id` int(11) NOT NULL DEFAULT '0' COMMENT 'consumer id',
   `create_date` date NOT NULL COMMENT '数据收集天',
   `create_time` char(4) NOT NULL COMMENT '数据收集小时分钟,格式:HHMM',
-  `count` int(11) DEFAULT NULL COMMENT 'topic put times',
-  `size` int(11) DEFAULT NULL COMMENT 'topic put size',
+  `count` bigint(20) DEFAULT NULL COMMENT 'consumer pull times',
+  `size` bigint(20) DEFAULT NULL COMMENT 'consumer pull size',
   PRIMARY KEY (`consumer_id`,`create_date`,`create_time`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='消费者流量表';
 
@@ -434,8 +438,8 @@ CREATE TABLE `topic_traffic` (
   `tid` int(11) NOT NULL COMMENT 'topic id',
   `create_date` date NOT NULL COMMENT '数据收集天',
   `create_time` char(4) NOT NULL COMMENT '数据收集小时分钟,格式:HHMM',
-  `count` int(11) DEFAULT NULL COMMENT 'topic put times',
-  `size` int(11) DEFAULT NULL COMMENT 'topic put size',
+  `count` bigint(20) DEFAULT NULL COMMENT 'topic put times',
+  `size` bigint(20) DEFAULT NULL COMMENT 'topic put size',
   PRIMARY KEY (`tid`,`create_date`,`create_time`),
   KEY `time` (`create_date`,`create_time`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='topic流量表';

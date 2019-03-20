@@ -22,6 +22,10 @@ public class ConsumerParam {
     //描述
     private String info;
     
+    // 是否trace 0:否,1:是
+    @Range(min = 0, max = 1)
+    private int traceEnable;
+    
     public long getTid() {
         return tid;
     }
@@ -47,8 +51,20 @@ public class ConsumerParam {
     public void setInfo(String info) {
         this.info = info;
     }
+    public int getTraceEnable() {
+        return traceEnable;
+    }
+    public void setTraceEnable(int traceEnable) {
+        this.traceEnable = traceEnable;
+    }
+    // 保持数据库字段统一
+    public int getTraceEnabled() {
+        return traceEnable;
+    }
+    
     @Override
     public String toString() {
-        return "ConsumerParam [tid=" + tid + ", consumer=" + consumer + ", consumeWay=" + consumeWay + "]";
+        return "ConsumerParam [tid=" + tid + ", consumer=" + consumer + ", consumeWay=" + consumeWay 
+                + ", traceEnable=" + traceEnable + "]";
     }
 }

@@ -56,6 +56,12 @@ public enum Status {
     TOPIC_REPEAT(700, "与其他topic名称重复"),
     PRODUCER_REPEAT(701, "与其他生产者名称重复"),
     CONSUMER_REPEAT(702, "与其他消费者名称重复"),
+    
+    // 8XX用于创建Trace topic时详细描述异常信息
+    TRACE_CLUSTER_ID_IS_NULL(800, "Trace集群ID为空"),
+    TRACE_CLUSTER_IS_NULL(801, "获取Trace集群失败"),
+    TRACE_TOPIC_CREATE_ERROR(802, "创建Trace topic失败"),
+    TOPIC_CREATE_OK_BUT_TRACE_TOPIC_CREATE_ERROR(803, "topic创建成功，但是Trace topic创建失败"),
     ;
 
     private int key;

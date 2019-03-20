@@ -44,9 +44,9 @@
 			                    				<#assign maxLastUpdateTimestamp = offsetInner.lastUpdateTimestamp>
 			                    			</#if>
 			                    		</#list>
-										<td>${minOffset}</td>
-			                    		<td>${maxOffset}</td>
-			                    		<td>${totalOffset}</td>
+										<td>${minOffset?string(",###")}</td>
+			                    		<td>${maxOffset?string(",###")}</td>
+			                    		<td>${totalOffset?string(",###")}</td>
 			                    		<td>
 				                    		<#if maxLastUpdateTimestamp <= 0>
 				                    			暂无

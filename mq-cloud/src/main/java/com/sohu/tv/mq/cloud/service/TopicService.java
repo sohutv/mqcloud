@@ -33,7 +33,6 @@ import com.sohu.tv.mq.cloud.bo.TopicConsumer;
 import com.sohu.tv.mq.cloud.bo.TopicTraffic;
 import com.sohu.tv.mq.cloud.bo.User;
 import com.sohu.tv.mq.cloud.bo.UserProducer;
-import com.sohu.tv.mq.cloud.cache.LocalCache;
 import com.sohu.tv.mq.cloud.dao.TopicDao;
 import com.sohu.tv.mq.cloud.mq.DefaultCallback;
 import com.sohu.tv.mq.cloud.mq.MQAdminCallback;
@@ -61,9 +60,6 @@ public class TopicService {
     @Autowired
     private TopicDao topicDao;
 
-    @Autowired
-    private LocalCache<Object> mqLocalCache;
-    
     @Autowired
     private UserProducerService userProducerService;
     
@@ -115,17 +111,7 @@ public class TopicService {
      */
     public TopicRouteData route(MQAdminExt mqAdmin, String topic)
             throws RemotingException, MQClientException, InterruptedException {
-        TopicRouteData topicRouteData = (TopicRouteData) mqLocalCache.get(topic);
-        if (topicRouteData == null) {
-            topicRouteData = mqAdmin.examineTopicRouteInfo(topic);
-            if (logger.isDebugEnabled()) {
-                logger.debug("load topic:{} from MQ!", topic);
-            }
-            if (topicRouteData != null) {
-                mqLocalCache.put(topic, topicRouteData);
-            }
-        }
-        return topicRouteData;
+        return mqAdmin.examineTopicRouteInfo(topic);
     }
 
     /**

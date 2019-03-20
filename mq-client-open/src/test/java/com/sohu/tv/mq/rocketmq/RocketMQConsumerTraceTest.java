@@ -19,7 +19,6 @@ public class RocketMQConsumerTraceTest {
     @Before
     public void init() {
         consumer = TestUtil.buildConsumer("basic-apitest-topic-consumer", "basic-apitest-topic");
-        consumer.setTraceEnabled(true);
     }
 
     @Test

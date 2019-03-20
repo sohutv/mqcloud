@@ -22,8 +22,8 @@ public class SohuSendMessageHook implements SendMessageHook {
     
     public SohuSendMessageHook(DefaultMQProducer producer) {
         statsHelper = new StatsHelper();
-        // 最大耗时，延后300毫秒
-        statsHelper.init(producer.getSendMsgTimeout() + 300);
+        // 最大耗时，延后500毫秒
+        statsHelper.init(producer.getSendMsgTimeout() + 500);
         // 客户端ip
         statsHelper.setClientHost(producer.getClientIP());
         // 获取生产者group

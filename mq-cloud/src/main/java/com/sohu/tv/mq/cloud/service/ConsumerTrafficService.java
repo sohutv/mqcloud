@@ -171,6 +171,9 @@ public class ConsumerTrafficService extends TrafficService<ConsumerTraffic> {
 
     @Override
     public Result<List<ConsumerTraffic>> query(List<Long> idList, String date, String time) {
+        if (idList == null || idList.size() == 0) {
+            return Result.getResult(Status.NO_RESULT);
+        }
         List<ConsumerTraffic> list = null;
         try {
             list = consumerTrafficDao.selectByIdListDateTime(idList, date, time);

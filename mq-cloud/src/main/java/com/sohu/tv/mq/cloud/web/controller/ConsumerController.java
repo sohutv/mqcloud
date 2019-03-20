@@ -273,7 +273,7 @@ public class ConsumerController extends ViewController {
 
     /**
      * 重置偏移量
-     * @param topicParam
+     * @param userConsumerParam
      * @return
      * @throws Exception
      */
@@ -291,7 +291,27 @@ public class ConsumerController extends ViewController {
             logger.warn("not unique result, param:{}, result size:{}", userConsumerParam, list.size());
             return Result.getResult(Status.NO_RESULT);
         }
-        
+        // 非线上集群，免审
+        Cluster cluster = clusterService.getMQClusterById(userConsumerParam.getCid());
+        if (cluster != null && !cluster.online()) {
+            // 查询consumer信息
+            Result<Consumer> consumerResult = consumerService.queryById(userConsumerParam.getConsumerId());
+            if (consumerResult.isNotOK()) {
+                return consumerResult;
+            }
+            // 查询topic记录
+            Result<Topic> topicResult = topicService.queryTopic(userConsumerParam.getTid());
+            if (topicResult.isNotOK()) {
+                return topicResult;
+            }
+             Result<?> resetOffsetResult = consumerService.resetOffset(userConsumerParam.getCid(), topicResult.getResult().getName(),
+                     consumerResult.getResult().getName(), userConsumerParam.getOffset());
+             // 操作成功，自定义返回文案
+             if (resetOffsetResult.isOK()) {
+                 return resetOffsetResult.setMessage("操作成功！");
+             }
+             return resetOffsetResult;
+        }
         Date resetOffsetTo = null;
         try {
             if(userConsumerParam.getOffset() != null) {
@@ -304,10 +324,14 @@ public class ConsumerController extends ViewController {
         
         // 构造审核记录
         Audit audit = new Audit();
+        // 重新定义操作成功返回的文案
+        String message = "";
         if(resetOffsetTo == null) {
             audit.setType(TypeEnum.RESET_OFFSET_TO_MAX.getType());
+            message = "跳过堆积申请成功！请耐心等待！";
         } else {
             audit.setType(TypeEnum.RESET_OFFSET.getType());
+            message = "消息回溯申请成功！请耐心等待！";
         }
         audit.setUid(userInfo.getUser().getId());
         // 构造重置对象
@@ -318,6 +342,8 @@ public class ConsumerController extends ViewController {
         if(result.isOK()) {
             String tip = getTopicConsumerTip(userConsumerParam.getTid(), userConsumerParam.getConsumerId());
             alertService.sendAuditMail(userInfo.getUser(), TypeEnum.getEnumByType(audit.getType()), tip);
+            // 重新定义返回文案
+            result.setMessage(message);
         }
         return Result.getWebResult(result);
     }

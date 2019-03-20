@@ -49,6 +49,13 @@ public class TimeSectionStats {
      */
     public void increment(int timeInMillis) {
         int index = index(timeInMillis);
+        // 增加兼容性逻辑
+        if(index < 0) {
+            index = 0;
+        }
+        if(index >= timeSectionCounter.length) {
+            index = timeSectionCounter.length - 1;
+        }
         long rst = timeSectionCounter[index].incrementAndGet();
         // 溢出后重新计数
         if(rst < 0) {

@@ -40,6 +40,8 @@ public class RocketMQProducer extends AbstractConfig {
     public RocketMQProducer(String producerGroup, String topic) {
         super(producerGroup, topic);
         producer = new DefaultMQProducer(producerGroup);
+        // 默认启用延迟容错，通过统计每个队列的发送耗时情况来计算broker是否可用
+        producer.setSendLatencyFaultEnable(true);
     }
     
     /**
@@ -48,6 +50,8 @@ public class RocketMQProducer extends AbstractConfig {
     public RocketMQProducer(String producerGroup, String topic, TransactionListener transactionListener) {
         super(producerGroup, topic);
         producer = new TransactionMQProducer(producerGroup);
+        // 默认启用延迟容错，通过统计每个队列的发送耗时情况来计算broker是否可用
+        producer.setSendLatencyFaultEnable(true);
         ((TransactionMQProducer) producer).setTransactionListener(transactionListener);
     }
     

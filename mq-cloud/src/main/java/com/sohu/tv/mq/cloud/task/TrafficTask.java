@@ -39,16 +39,16 @@ public class TrafficTask {
 
     @Autowired
     private ConsumerTrafficService consumerTrafficService;
-    
+
     @Autowired
     private TaskExecutor taskExecutor;
 
     @Autowired
     private ClusterService clusterService;
-    
+
     @Autowired
     private TopicService topicService;
-    
+
     /**
      * topic流量收集
      */
@@ -57,17 +57,16 @@ public class TrafficTask {
     public void collectTopicTraffic() {
         taskExecutor.execute(new Runnable() {
             public void run() {
-                if(clusterService.getAllMQCluster() == null) {
+                if (clusterService.getAllMQCluster() == null) {
                     logger.warn("collectTopicTraffic mqcluster is null");
                     return;
                 }
-                logger.info("fetch topic traffic start");
-                long start = System.currentTimeMillis();
-                int size = 0;
                 for (Cluster mqCluster : clusterService.getAllMQCluster()) {
-                    size += topicTrafficService.collectTraffic(mqCluster);
+                    long start = System.currentTimeMillis();
+                    int size = topicTrafficService.collectTraffic(mqCluster);
+                    logger.info("fetch cluster:{} topic traffic, size:{}, use:{}ms", mqCluster, size,
+                            System.currentTimeMillis() - start);
                 }
-                logger.info("fetch topic traffic, size:{}, use:{}ms", size, System.currentTimeMillis() - start);
             }
         });
     }
@@ -80,21 +79,20 @@ public class TrafficTask {
     public void collectConsumerTraffic() {
         taskExecutor.execute(new Runnable() {
             public void run() {
-                if(clusterService.getAllMQCluster() == null) {
+                if (clusterService.getAllMQCluster() == null) {
                     logger.warn("collectConsumerTraffic mqcluster is null");
                     return;
                 }
-                logger.info("fetch consumer traffic start");
-                long start = System.currentTimeMillis();
-                int size = 0;
                 for (Cluster mqCluster : clusterService.getAllMQCluster()) {
-                    size += consumerTrafficService.collectTraffic(mqCluster);
+                    long start = System.currentTimeMillis();
+                    int size = consumerTrafficService.collectTraffic(mqCluster);
+                    logger.info("fetch cluster:{} consumer traffic, size:{}, use:{}ms", mqCluster, size,
+                            System.currentTimeMillis() - start);
                 }
-                logger.info("fetch consumer traffic, size:{}, use:{}ms", size, System.currentTimeMillis() - start);
             }
         });
     }
-    
+
     /**
      * 聚合topic 10分钟流量
      */
@@ -108,29 +106,29 @@ public class TrafficTask {
                 // 计算10分钟间隔
                 List<String> timeList = new ArrayList<String>();
                 Date begin = new Date(now.getTime() - 10 * ONE_MIN + 30);
-                while(begin.before(now)) {
+                while (begin.before(now)) {
                     String time = DateUtil.getFormat(DateUtil.HHMM).format(begin);
                     timeList.add(time);
                     begin.setTime(begin.getTime() + ONE_MIN);
                 }
-                
+
                 int size = 0;
                 int update = 0;
                 Result<List<TopicTraffic>> result = topicTrafficService.query(DateUtil.formatYMD(now), timeList);
-                if(result.isNotEmpty()) {
+                if (result.isNotEmpty()) {
                     List<TopicTraffic> topicTrafficList = result.getResult();
                     size = topicTrafficList.size();
                     Result<Integer> rst = topicService.updateCount(topicTrafficList);
-                    if(rst.isOK()) {
+                    if (rst.isOK()) {
                         update = rst.getResult();
                     }
                 }
-                logger.info("aggregate topic traffic, size:{}, update:{} use:{}ms", size, update, 
+                logger.info("aggregate topic traffic, size:{}, update:{} use:{}ms", size, update,
                         System.currentTimeMillis() - now.getTime());
             }
         });
     }
-    
+
     /**
      * 删除统计表数据
      */
@@ -143,6 +141,7 @@ public class TrafficTask {
 
     /**
      * 删除数据
+     * 
      * @param trafficService
      */
     private void delete(TrafficService<?> trafficService) {
