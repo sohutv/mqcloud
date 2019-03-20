@@ -270,8 +270,8 @@ CREATE TABLE `consumer_traffic` (
   `consumer_id` int(11) NOT NULL DEFAULT '0' COMMENT 'consumer id',
   `create_date` date NOT NULL COMMENT '数据收集天',
   `create_time` char(4) NOT NULL COMMENT '数据收集小时分钟,格式:HHMM',
-  `count` bigint(20) DEFAULT NULL COMMENT 'topic put times',
-  `size` bigint(20) DEFAULT NULL COMMENT 'topic put size',
+  `count` bigint(20) DEFAULT NULL COMMENT 'consumer pull times',
+  `size` bigint(20) DEFAULT NULL COMMENT 'consumer pull size',
   PRIMARY KEY (`consumer_id`,`create_date`,`create_time`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='消费者流量表';
 

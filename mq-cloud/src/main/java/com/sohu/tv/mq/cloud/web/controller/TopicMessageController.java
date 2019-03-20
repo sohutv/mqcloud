@@ -387,10 +387,10 @@ public class TopicMessageController extends ViewController {
             messageQueryCondition.setTopic(topic);
             messageQueryCondition.setStart(offsetStart);
             messageQueryCondition.setEnd(offsetEnd);
+            messageQueryCondition.reset();
             if(StringUtils.isNotEmpty(key)) {
                 messageQueryCondition.setKey(key);
             }
-            messageQueryCondition.reset();
         } else {
             messageQueryCondition = parseParam(offsetStart, offsetEnd, key, messageParam, append);
         }
