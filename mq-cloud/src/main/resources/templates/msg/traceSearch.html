@@ -8,28 +8,25 @@
 						<td data-toggle="tooltip" title="${trace.producer.addr}">${trace.producer.group}</td>
 						<td>${trace.producer.time}</td>
 						<td>${trace.producer.status()}</td>
+						<td>${trace.producer.costTimes()}</td>
 					<#else>
-						<td class="text-center" colspan=3 data-toggle="tooltip" title="客户端上报时间有可能不在当前时间段内，试着调整开始时间">暂无</td>
-					 </#if>
-					 <#if trace.broker??>
-						<td>${trace.broker}</td>
-					<#else>
-						<td class="text-center">暂无</td>
+						<td class="text-center" colspan=4 data-toggle="tooltip" title="客户端上报时间有可能不在当前时间段内，试着调整开始时间">暂无</td>
 					 </#if>
 					<#if trace.consumer??>
-					<td style="padding:0px" colspan=3>
+					<td style="padding:0px" colspan=4>
 						<table style="width:100%">
 							<#list trace.consumer?values as traceConsumer>
 								<tr>
 							 		<td style="width:210px" data-toggle="tooltip" title="${traceConsumer.addr}">${traceConsumer.group}</td>
 									<td style="width:185px">${traceConsumer.time}</td>
 									<td style="width:55px" <#if traceConsumer.status() == "未知">data-toggle="tooltip" title="有可能还未收到客户端上报状态，试着调整结束时间" </#if>>${traceConsumer.status()}</td>
+							 		<td style="width:70px">${traceConsumer.costTimes()}</td>
 							 	</tr>
 							</#list>
 						</table>
 					  </td>
 					 <#else>
-							<td colspan=3 data-toggle="tooltip" title="该消息有可能未被消费，试着调整结束时间">暂无</td>
+							<td colspan=4 data-toggle="tooltip" title="该消息有可能未被消费，试着调整结束时间">暂无</td>
 					 </#if>
 					<td><span class="glyphicon glyphicon-eye-open" style="cursor:pointer;" onclick="showTraceDetail(${trace_index})" data-toggle="tooltip" title="查看详细信息"></span>
 					<div id="traceDetailModel${trace_index}" class="modal fade" tabindex="-1" data-width="400"  aria-hidden="true">
@@ -85,12 +82,12 @@
 		</tbody>
 	<#else>
 		<tbody>
-			<tr class="no_more_data"><td colspan=9 class="text-center">查无数据</td></tr>
+			<tr class="no_more_data"><td colspan=10 class="text-center">查无数据</td></tr>
 		</tbody>
 	</#if>
 <#else>
 	<tbody>
-		<tr class="no_more_data"><td colspan=9 class="text-center">查询异常！${response.message}</td></tr>
+		<tr class="no_more_data"><td colspan=10 class="text-center">查询异常！${response.message}</td></tr>
 	</tbody>
 </#if>
 <script>

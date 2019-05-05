@@ -30,6 +30,9 @@ public class TraceMessageDetail {
     // 唯一id
     private String requestId;
     
+    // broker address
+    private String broker;
+    
     public TraceType getTraceType() {
         return traceType;
     }
@@ -73,12 +76,8 @@ public class TraceMessageDetail {
         return costTime;
     }
 
-    public void setCostTime(int costTime) {
-        if (costTime == 0) {
-            this.costTime = null;
-        } else {
-            this.costTime = costTime;
-        }
+    public void setCostTime(Integer costTime) {
+        this.costTime = costTime;
     }
 
     public Boolean isSuccess() {
@@ -147,6 +146,19 @@ public class TraceMessageDetail {
 
     public void setRequestId(String requestId) {
         this.requestId = requestId;
+    }
+    
+    public String getBroker() {
+        return broker;
+    }
+
+    public void setBroker(String broker) {
+        this.broker = broker;
+    }
+
+    public void setStoreHost(String storeHost) {
+        // 只取ip
+        setBroker(storeHost.split(":")[0]);
     }
 
 }

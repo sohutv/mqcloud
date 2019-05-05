@@ -224,7 +224,7 @@ public class CommonConfiguration {
      * @throws Exception
      */
     @Bean
-    @Profile({"local-sohu", "test-sohu", "online-sohu"})
+    @Profile({"local-sohu", "test-sohu", "test-online-sohu", "online-sohu"})
     public LoginService sohuLoginService() throws Exception {
         Class<?> clz = Class.forName("com.sohu.tv.mq.cloud.common.service.impl.SohuLoginService");
         AbstractLoginService loginService = (AbstractLoginService) clz.newInstance();

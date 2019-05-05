@@ -35,6 +35,14 @@ public class TopicParam {
     private long qpd;
     private long qps;
     
+    // 是否测试topic
+    @Range(min = 0, max = 1)
+    private int testEnabled;
+    
+    // 是否消息延迟
+    @Range(min = 0, max = 1)
+    private int delayEnabled;
+    
     public String getProducer() {
         return producer;
     }
@@ -91,10 +99,23 @@ public class TopicParam {
     public void setTransactionEnabled(int transactionEnabled) {
         this.transactionEnabled = transactionEnabled;
     }
+    public int getTestEnabled() {
+        return testEnabled;
+    }
+    public void setTestEnabled(int testEnabled) {
+        this.testEnabled = testEnabled;
+    }
+    public int getDelayEnabled() {
+        return delayEnabled;
+    }
+    public void setDelayEnabled(int delayEnabled) {
+        this.delayEnabled = delayEnabled;
+    }
     @Override
     public String toString() {
         return "TopicParam [name=" + name + ", queueNum=" + queueNum + ", ordered=" + ordered + ", info=" + info
                 + ", producer=" + producer + ", traceEnabled=" + traceEnabled + ", transactionEnabled="
-                + transactionEnabled + ", qpd=" + qpd + ", qps=" + qps + "]";
+                + transactionEnabled + ", qpd=" + qpd + ", qps=" + qps + ", testEnabled=" + testEnabled
+                + ", delayEnabled=" + delayEnabled + "]";
     }
 }

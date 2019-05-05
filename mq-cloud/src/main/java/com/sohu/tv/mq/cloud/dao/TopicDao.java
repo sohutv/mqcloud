@@ -28,8 +28,9 @@ public interface TopicDao {
      * @param topic
      */
     @Options(useGeneratedKeys = true, keyProperty = "topic.id")
-    @Insert("insert into topic(cluster_id, name, queue_num, ordered, create_date, trace_enabled) values("
-            + "#{topic.clusterId},#{topic.name},#{topic.queueNum},#{topic.ordered},now(),#{topic.traceEnabled})")
+    @Insert("insert into topic(cluster_id, name, queue_num, ordered, create_date, trace_enabled, info, delay_enabled) values("
+            + "#{topic.clusterId},#{topic.name},#{topic.queueNum},#{topic.ordered},now(),#{topic.traceEnabled},"
+            + "#{topic.info}, #{topic.delayEnabled})")
     public Integer insert(@Param("topic") Topic topic);
     
     /**
@@ -132,4 +133,13 @@ public interface TopicDao {
     @Select("SELECT c.id cid,c.name consumer,t.id tid,t.name topic,t.cluster_id FROM consumer c, topic t "
             + "where c.tid = t.id and c.consume_way = 0")
     public List<TopicConsumer> selectTopicConsumer();
+    
+    /**
+     * 更新记录
+     * 
+     * @param tid
+     * @param info
+     */
+    @Update("update topic set info=#{info} where id=#{tid}")
+    public Integer updateTopicInfo(@Param("tid") long tid, @Param("info") String info);
 } 

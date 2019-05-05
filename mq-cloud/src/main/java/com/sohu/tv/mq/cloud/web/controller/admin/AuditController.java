@@ -38,6 +38,7 @@ import com.sohu.tv.mq.cloud.bo.User;
 import com.sohu.tv.mq.cloud.bo.UserConsumer;
 import com.sohu.tv.mq.cloud.bo.UserMessage;
 import com.sohu.tv.mq.cloud.bo.UserProducer;
+import com.sohu.tv.mq.cloud.service.AlertService;
 import com.sohu.tv.mq.cloud.service.AssociateConsumerService;
 import com.sohu.tv.mq.cloud.service.AssociateProducerService;
 import com.sohu.tv.mq.cloud.service.AuditConsumerDeleteService;
@@ -142,6 +143,9 @@ public class AuditController extends AdminViewController {
     
     @Autowired
     private AuditResendMessageService auditResendMessageService;
+    
+    @Autowired
+    private AlertService alertService;
 
     /**
      * 审核主列表
@@ -511,6 +515,7 @@ public class AuditController extends AdminViewController {
             userMessage.setMessage(sb.toString());
             userMessage.setUid(audit.getUid());
             userMessageService.save(userMessage);
+            sendEmailMessage(audit.getUid(), sb.toString());
             return updateResult;
         }
         return Result.getResult(Status.PARAM_ERROR);
@@ -1304,6 +1309,7 @@ public class AuditController extends AdminViewController {
             userMessage.setMessage(sb.toString());
             userMessage.setUid(audit.getUid());
             userMessageService.save(userMessage);
+            sendEmailMessage(audit.getUid(), sb.toString());
             return true;
         }
         return false;
@@ -1775,6 +1781,33 @@ public class AuditController extends AdminViewController {
         return Result.getOKResult();
     }
     
+    /**
+     * 为用户发送审核结果
+     * 
+     * @param uid
+     * @param content
+     */
+    private void sendEmailMessage(long uid, String content) {
+        Result<User> userResult = userService.query(uid);
+        if (userResult.isNotOK()) {
+            logger.warn("select user is not ok! uid:{}", uid);
+            return;
+        }
+        sendEmailMessage(userResult.getResult().getEmail(), content);
+    }
+
+    /**
+     * 为用户发送审核结果
+     * 
+     * @param email
+     * @param content
+     */
+    private void sendEmailMessage(String email, String content) {
+        if (!alertService.sendMail("MQCloud:审核结果", content, email)) {
+            logger.warn("send audit result fail!  email:{}, content:{}", email, content);
+        }
+    }
+
     @Override
     public String viewModule() {
         return "audit";

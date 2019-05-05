@@ -11,8 +11,11 @@ import org.apache.commons.lang3.math.NumberUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import com.sohu.tv.mq.cloud.bo.Topic;
 import com.sohu.tv.mq.cloud.bo.TopicTraffic;
 import com.sohu.tv.mq.cloud.bo.Traffic;
+import com.sohu.tv.mq.cloud.service.DelayMessageService;
+import com.sohu.tv.mq.cloud.service.TopicService;
 import com.sohu.tv.mq.cloud.service.TopicTrafficService;
 import com.sohu.tv.mq.cloud.util.DateUtil;
 import com.sohu.tv.mq.cloud.util.Result;
@@ -51,7 +54,13 @@ public class ProduceTrafficLineChartData implements LineChartData {
 
     @Autowired
     private TopicTrafficService topicTrafficService;
+    
+    @Autowired
+    private DelayMessageService delayMessageService;
 
+    @Autowired
+    private TopicService topicService;
+    
     public ProduceTrafficLineChartData() {
         initSearchHeader();
     }
@@ -112,15 +121,19 @@ public class ProduceTrafficLineChartData implements LineChartData {
         if (tid == null || tid <= 0) {
             return lineChartList;
         }
+        Result<Topic> topicResult = topicService.queryTopic(tid);
+        if (topicResult.isNotOK()) {
+            return lineChartList;
+        }
         //获取topic流量
-        Result<List<TopicTraffic>> result = topicTrafficService.query(tid, dateStr);
+        Result<List<TopicTraffic>> result = getTopicTraffic(topicResult.getResult(), dateStr);
         if (!result.isOK()) {
             return lineChartList;
         }
 
         Date dayBefore = new Date(date.getTime() - 24*60*60*1000);
         //获取前一天topic流量
-        Result<List<TopicTraffic>> resultDayBefore = topicTrafficService.query(tid, DateUtil.formatYMD(dayBefore));
+        Result<List<TopicTraffic>> resultDayBefore = getTopicTraffic(topicResult.getResult(), DateUtil.formatYMD(dayBefore));
         
         // 构造曲线图对象
         LineChart lineChart = new LineChart();
@@ -306,6 +319,23 @@ public class ProduceTrafficLineChartData implements LineChartData {
             map.put(traffic.getCreateTime(), traffic);
         }
         return map;
+    }
+    
+    /**
+     * 获取topic流量
+     * 
+     * @param topic
+     * @param dateStr
+     * @return
+     */
+    private Result<List<TopicTraffic>> getTopicTraffic(Topic topic, String dateStr) {
+        Result<List<TopicTraffic>> result = null;
+        if (topic.delayEnabled()) {
+            result = delayMessageService.selectDelayMessageTraffic(topic.getId(), Integer.parseInt(dateStr));
+        } else {
+            result = topicTrafficService.query(topic.getId(), dateStr);
+        }
+        return result;
     }
     
     /**

@@ -23,6 +23,10 @@ public class AuditTopic {
     private int traceEnabled;
     // 是否开启事务
     private int transactionEnabled;
+    
+    private int testEnabled;
+    
+    private int delayEnabled;
 
     public long getAid() {
         return aid;
@@ -104,11 +108,31 @@ public class AuditTopic {
         this.transactionEnabled = transactionEnabled;
     }
 
+    public int getTestEnabled() {
+        return testEnabled;
+    }
+
+    public void setTestEnabled(int testEnabled) {
+        this.testEnabled = testEnabled;
+    }
+
+    public boolean testEnabled() {
+        return testEnabled == 1;
+    }
+
+    public int getDelayEnabled() {
+        return delayEnabled;
+    }
+
+    public void setDelayEnabled(int delayEnabled) {
+        this.delayEnabled = delayEnabled;
+    }
+
     @Override
     public String toString() {
         return "AuditTopic [aid=" + aid + ", name=" + name + ", queueNum=" + queueNum + ", ordered=" + ordered
                 + ", producer=" + producer + ", qpd=" + qpd + ", qps=" + qps + ", traceEnabled=" + traceEnabled
-                + ", transactionEnabled=" + transactionEnabled + "]";
+                + ", transactionEnabled=" + transactionEnabled + ", testEnabled=" + testEnabled + "]";
     }
 
 }

@@ -30,7 +30,7 @@
 	
 	function initReadChart(){
 		var options = getOptions("read", "containerRead");
-		options.subtitle.text = "max:${read.max}k/s avg:${read.avg}k/s";
+		options.subtitle.text = "max:${read.max?string('#.##')}k/s avg:${read.avg}k/s";
 		<#list read.series as item>
 			options.series.push(${item.toJson()});
 		</#list>
@@ -38,7 +38,7 @@
 	}
 	function initWriteChart(){
 		var options = getOptions("write", "containerWrite");
-		options.subtitle.text = "max:${write.max}k/s avg:${write.avg}k/s";
+		options.subtitle.text = "max:${write.max?string('#.##')}k/s avg:${write.avg}k/s";
 		<#list write.series as item>
 			options.series.push(${item.toJson()});
 		</#list>
@@ -46,7 +46,7 @@
 	}
 	function initBusyChart(){
 		var options = getOptions("busy", "containerBusy");
-		options.subtitle.text = "max:${busy.max}% avg:${busy.avg}%";
+		options.subtitle.text = "max:${busy.max?string('#.##')}% avg:${busy.avg}%";
 		<#list busy.series as item>
 			options.series.push(${item.toJson()});
 		</#list>
@@ -54,7 +54,7 @@
 	}
 	function initIopsChart(){
 		var options = getOptions("iops", "containerIops");
-		options.subtitle.text = "max:${iops.max}次/s avg:${iops.avg}次/s";
+		options.subtitle.text = "max:${iops.max?string('#.##')}次/s avg:${iops.avg}次/s";
 		<#list iops.series as item>
 			options.series.push(${item.toJson()});
 		</#list>

@@ -66,6 +66,20 @@ public class AlertService {
     }
     
     /**
+     * 发送邮件(同时抄送管理员)
+     * @param title 标题
+     * @param content 内容
+     * @param email 收件人
+     * @return 成功返回true，否则返回false
+     */
+    public boolean sendMail(String title, String content, String email) {
+        if(alertMessageSender == null) {
+            return false;
+        }
+        return alertMessageSender.sendMail(title, content, email, getDevelopers(), 0);
+    }
+    
+    /**
      * 发送手机报警
      * 
      * @param message 报警信息

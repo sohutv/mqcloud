@@ -7,7 +7,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * 调用统计
@@ -161,7 +160,7 @@ public class InvokeStats {
      */
     public class TimeStats {
         // 最大耗时
-        private AtomicReference<Long> maxTimeReference = new AtomicReference<Long>(0L);
+        private AtomicLong maxTimeReference = new AtomicLong(0L);
         // 调用次数统计
         private AtomicLong count = new AtomicLong();
         // 调用时间统计
@@ -182,18 +181,18 @@ public class InvokeStats {
             // 记录耗时
             time.addAndGet(timeInMillis);
             // 记录最大耗时
-            while (true) {
+            for(int i = 0; i < 10; ++i) {
                 long maxTime = maxTimeReference.get();
                 if (maxTime >= timeInMillis) {
                     return;
                 }
                 if (maxTimeReference.compareAndSet(maxTime, timeInMillis)) {
-                    break;
+                    return;
                 }
             }
         }
 
-        public AtomicReference<Long> getMaxTimeReference() {
+        public AtomicLong getMaxTimeReference() {
             return maxTimeReference;
         }
 
@@ -240,7 +239,7 @@ public class InvokeStats {
         private Map<String, Integer> exceptionMap;
 
         public void init(TimeStats timeStats) {
-            setMaxTime(timeStats.getMaxTimeReference().get().intValue());
+            setMaxTime((int)timeStats.getMaxTimeReference().get());
             double time = timeStats.getTime().get();
             long count = timeStats.getCount().get();
             // 保留一位小数

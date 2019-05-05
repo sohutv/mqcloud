@@ -40,7 +40,7 @@
 		</root>
 	</springProfile>
 
-	<springProfile name="local,test-sohu,local-sohu">
+	<springProfile name="local,test-sohu,local-sohu,test-online-sohu">
 		<appender name="stdout" class="ch.qos.logback.core.ConsoleAppender">
 			<encoder>
 				<pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} {%thread} %-5level %logger{50}-%L - %msg%n</pattern>

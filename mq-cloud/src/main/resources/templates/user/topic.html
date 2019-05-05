@@ -29,6 +29,16 @@
 	<br/>
 	<div class="col-md-12">
         <table class="table table-striped table-hover" style="margin-top: 0px">
+		        <colgroup>
+					<col width="50px">
+					<col>
+					<col width="100px">
+					<col width="100px">
+					<col width="100px">
+					<col width="100px">
+					<col width="300px">
+					<col width="60px">
+				</colgroup>
                 <thead>
 	                <tr>
 	                	<td>序号</td>
@@ -37,6 +47,7 @@
 	                    <td data-toggle="tooltip" title="每分钟消费的消息数量">消费量</td>
 	                    <td data-toggle="tooltip" title="每分钟生产的消息大小">生产大小</td>
 	                    <td data-toggle="tooltip" title="每分钟消费的消息大小">消费大小</td>
+	                    <td>用途</td>
 	                    <td>操作</td>
 	                </tr>
                 </thead>
@@ -72,6 +83,9 @@
 		                    	<#else>
 		                    		<td>0</td>
 								</#if>
+								<td>
+									${topicTrafficVO.info!}
+								</td>
 								<td>
 									<#if topicTrafficVO.own>
 										<button type="button" class="btn btn-warning" data-target="#deleteTopicModal${topicTrafficVO_index}" data-toggle="modal"><span class="glyphicon glyphicon-trash" aria-hidden="true"></span></button>
@@ -157,33 +171,6 @@
 									</div>
 								</div>
 								<div class="form-group">
-									<label class="control-label col-md-3"> 消息顺序: </label>
-									<div class="col-md-5 checkbox">
-									    <input type="radio" name="ordered" value="0" checked>
-									    	局部有序
-									    <input type="radio" name="ordered" value="1">
-									    	<span data-toggle="modal" title="在分布式系统中保持全局消息有序有性能损耗，请谨慎使用">全局有序</span>
-									</div>
-								</div>
-								<div class="form-group">
-									<label class="control-label col-md-3"> 开启trace: </label>
-									<div class="col-md-5 checkbox">
-									    <input type="radio" name="traceEnabled" value="0" checked>
-									    	否
-									    <input type="radio" name="traceEnabled" value="1">
-									    	<span data-toggle="modal" title="开启后，生产者会自动启用trace功能">是</span>
-									</div>
-								</div>
-								<div class="form-group">
-									<label class="control-label col-md-3"> 支持事务: </label>
-									<div class="col-md-5 checkbox">
-									    <input type="radio" name="transactionEnabled" value="0" checked>
-									    	否
-									    <input type="radio" name="transactionEnabled" value="1">
-									    	<span data-toggle="modal" title="开启后，会在事务集群上创建该topic">是</span>
-									</div>
-								</div>
-								<div class="form-group">
 									<label class="control-label col-md-3"> 消息量: </label>
 									<div class="col-md-5">
 										<div class="input-group">
@@ -216,9 +203,63 @@
 									</div>
 								</div>
 								<div class="form-group">
-									<label class="control-label col-md-3"> 申请原因: </label>
+									<label class="control-label col-md-3"> 使用环境: </label>
+									<div class="col-md-5 checkbox">
+									    <input type="radio" name="testEnabled" value="0" checked>
+									    	<span data-toggle="modal" title="开启后，会在线上集群上创建该topic">线上</span>
+									    <input type="radio" name="testEnabled" value="1">
+									    	<span data-toggle="modal" title="开启后，会在测试集群上创建该topic">测试</span>
+									</div>
+								</div>
+								<div class="form-group">
+									<label class="control-label col-md-3"> 申请用途: </label>
 									<div class="col-md-5">
 										<textarea type="text" name="info" rows="3" class="form-control" placeholder="请填写"></textarea>
+									</div>
+								</div>
+								<div class="form-group">
+									<label class="control-label col-md-3">更多设置</label>
+									<div class="col-md-5 checkbox">
+									<span onclick="showExtendConfig(this)" class="pointer glyphicon glyphicon-chevron-down" aria-hidden="true"></span>
+									</div>
+								</div>
+								<!-- 以下选项默认隐藏 -->
+								<div id="extendConfig" class="hide">
+									<div class="form-group">
+										<label class="control-label col-md-3"> 消息顺序: </label>
+										<div class="col-md-5 checkbox">
+										    <input type="radio" name="ordered" value="0" checked>
+										    	局部有序
+										    <input type="radio" name="ordered" value="1">
+										    	<span data-toggle="modal" title="在分布式系统中保持全局消息有序有性能损耗，请谨慎使用">全局有序</span>
+										</div>
+									</div>
+									<div class="form-group">
+										<label class="control-label col-md-3"> 开启trace: </label>
+										<div class="col-md-5 checkbox">
+										    <input type="radio" name="traceEnabled" value="0" checked>
+										    	否
+										    <input type="radio" name="traceEnabled" value="1">
+										    	<span data-toggle="modal" title="开启后，生产者会自动启用trace功能">是</span>
+										</div>
+									</div>
+									<div class="form-group">
+										<label class="control-label col-md-3"> 支持事务: </label>
+										<div class="col-md-5 checkbox">
+										    <input type="radio" name="transactionEnabled" value="0" checked>
+										    	否
+										    <input type="radio" name="transactionEnabled" value="1">
+										    	<span data-toggle="modal" title="开启后，会在事务集群上创建该topic">是</span>
+										</div>
+									</div>
+									<div class="form-group">
+										<label class="control-label col-md-3"> 消息延迟: </label>
+										<div class="col-md-5 checkbox">
+										    <input type="radio" name="delayEnabled" value="0" checked>
+										    	<span data-toggle="modal" title="该topic内不会发送延迟消息">否</span>
+										    <input type="radio" name="delayEnabled" value="1">
+										    	<span data-toggle="modal" title="该topic内会发送延迟消息">是</span>
+										</div>
 									</div>
 								</div>
 							</div>
@@ -849,6 +890,25 @@ function consumerWayChange(type){
 		$("input[name='traceEnable']").prop("disabled",true);
 	} else if (type == 0){
 		$("input[name='traceEnable']").prop("disabled",false);
+	}
+}
+
+function showExtendConfig(obj){
+	if ($(obj).hasClass("glyphicon-chevron-down")){
+		$("#extendConfig").removeClass('hide');
+		$(obj).removeClass("glyphicon-chevron-down").addClass("glyphicon-chevron-up");
+	} else {
+		$("#extendConfig").addClass('hide');
+		$(obj).removeClass("glyphicon-chevron-up").addClass("glyphicon-chevron-down");
+		// 重置默认
+		$("input[name='traceEnabled'][value='1']").prop("checked",false);
+		$("input[name='traceEnabled'][value='0']").prop("checked",true);
+		$("input[name='transactionEnabled'][value='1']").prop("checked",false);
+		$("input[name='transactionEnabled'][value='0']").prop("checked",true);
+		$("input[name='delayEnabled'][value='1']").prop("checked",false);
+		$("input[name='delayEnabled'][value='0']").prop("checked",true);
+		$("input[name='ordered'][value='1']").prop("checked",false);
+		$("input[name='ordered'][value='0']").prop("checked",true);
 	}
 }
 </script>

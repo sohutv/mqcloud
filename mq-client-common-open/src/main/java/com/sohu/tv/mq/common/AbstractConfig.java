@@ -4,7 +4,7 @@ import java.net.HttpURLConnection;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.commons.lang.NotImplementedException;
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.rocketmq.client.ClientConfig;
 import org.apache.rocketmq.client.log.ClientLogger;
 import org.apache.rocketmq.client.trace.AsyncTraceDispatcher;
@@ -225,7 +225,7 @@ public abstract class AbstractConfig {
      * @param traceDispatcher
      */
     protected void registerTraceDispatcher(AsyncTraceDispatcher traceDispatcher) {
-        throw new NotImplementedException();
+        throw new NotImplementedException("not impl!");
     }
 
     public boolean isSampleEnabled() {

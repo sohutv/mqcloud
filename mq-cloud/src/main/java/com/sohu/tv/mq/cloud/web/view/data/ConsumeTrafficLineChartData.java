@@ -16,10 +16,12 @@ import org.springframework.stereotype.Component;
 
 import com.sohu.tv.mq.cloud.bo.Consumer;
 import com.sohu.tv.mq.cloud.bo.ConsumerTraffic;
+import com.sohu.tv.mq.cloud.bo.Topic;
 import com.sohu.tv.mq.cloud.bo.TopicTopology;
 import com.sohu.tv.mq.cloud.bo.TopicTraffic;
 import com.sohu.tv.mq.cloud.bo.Traffic;
 import com.sohu.tv.mq.cloud.service.ConsumerTrafficService;
+import com.sohu.tv.mq.cloud.service.DelayMessageService;
 import com.sohu.tv.mq.cloud.service.TopicTrafficService;
 import com.sohu.tv.mq.cloud.service.UserService;
 import com.sohu.tv.mq.cloud.util.DateUtil;
@@ -61,6 +63,9 @@ public class ConsumeTrafficLineChartData implements LineChartData {
     
     @Autowired
     private UserService userService;
+    
+    @Autowired
+    private DelayMessageService delayMessageService;
 
     public ConsumeTrafficLineChartData() {
         initSearchHeader();
@@ -119,9 +124,9 @@ public class ConsumeTrafficLineChartData implements LineChartData {
         
         if (tid == null || tid <= 0) {
             return lineChartList;
-        }
+        } 
         //获取topic流量
-        Result<List<TopicTraffic>> result = topicTrafficService.query(tid, dateStr);
+        Result<List<TopicTraffic>> result = getTopicTraffic(topicTopology.getTopic(), dateStr);
         if (!result.isOK()) {
             return lineChartList;
         }
@@ -288,6 +293,23 @@ public class ConsumeTrafficLineChartData implements LineChartData {
         return new Date();
     }
 
+    /**
+     * 获取topic流量
+     * 
+     * @param topic
+     * @param dateStr
+     * @return
+     */
+    private Result<List<TopicTraffic>> getTopicTraffic(Topic topic, String dateStr) {
+        Result<List<TopicTraffic>> result = null;
+        if (topic.delayEnabled()) {
+            result = delayMessageService.selectDelayMessageTraffic(topic.getId(), Integer.parseInt(dateStr));
+        } else {
+            result = topicTrafficService.query(topic.getId(), dateStr);
+        }
+        return result;
+    }
+    
     @Override
     public SearchHeader getSearchHeader() {
         return searchHeader;
