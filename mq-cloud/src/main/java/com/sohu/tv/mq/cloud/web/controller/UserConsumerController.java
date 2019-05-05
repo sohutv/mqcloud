@@ -97,7 +97,7 @@ public class UserConsumerController {
                 topicResult.getResult().getName(), uid);
         if (result.isOK()) {
             alertService.sendAuditMail(userInfo.getUser(), TypeEnum.DELETE_USERCONSUMER,
-                    userResult.getResult().getName() + "与" + consumerResult.getResult().getName() + "的关联关系");
+                    userResult.getResult().notBlankName() + "与" + consumerResult.getResult().getName() + "的关联关系");
         }
         return Result.getWebResult(result);
 

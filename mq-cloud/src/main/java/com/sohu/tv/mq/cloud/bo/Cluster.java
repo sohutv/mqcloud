@@ -89,6 +89,10 @@ public class Cluster {
         return YES == transactionEnabled;
     }
 
+    public boolean test() {
+        return !online();
+    }
+    
     @Override
     public int hashCode() {
         final int prime = 31;

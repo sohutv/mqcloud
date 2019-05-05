@@ -104,6 +104,7 @@ public class BrokerParam {
                 + "\nautoCreateTopicEnable=false"
                 + "\nclusterTopicEnable=false"
                 + "\nautoCreateSubscriptionGroup=true"
+                + "\nslaveReadEnable=true"
                 + "\nstorePathRootDir=" + MQDeployer.MQ_CLOUD_DIR + getDir() + "/data"
                 + "\nstorePathCommitLog=" + MQDeployer.MQ_CLOUD_DIR + getDir() + "/data/commitlog"
                 + "\nstorePathIndex=" + MQDeployer.MQ_CLOUD_DIR + getDir() + "/data/index"

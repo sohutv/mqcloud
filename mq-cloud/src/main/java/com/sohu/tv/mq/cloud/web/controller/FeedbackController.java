@@ -6,6 +6,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.util.HtmlUtils;
 
 import com.sohu.tv.mq.cloud.bo.Feedback;
 import com.sohu.tv.mq.cloud.service.AlertService;
@@ -22,6 +23,8 @@ import com.sohu.tv.mq.cloud.web.vo.UserInfo;
 @RequestMapping("/feedback")
 public class FeedbackController {
 
+    private static String FEED_BACK_TITLE = "MQCloud用户反馈";
+    
     @Autowired
     private FeedbackService feedbackService;
     
@@ -37,13 +40,13 @@ public class FeedbackController {
     @ResponseBody
     @RequestMapping(value = "/add", method = RequestMethod.POST)
     public Result<?> add(UserInfo userInfo, @RequestParam("content") String content) throws Exception {
+        content = HtmlUtils.htmlEscape(content, "UTF-8");
         Feedback feedback = new Feedback();
         feedback.setContent(content);
         feedback.setUid(userInfo.getUser().getId());
         Result<?> result = feedbackService.save(feedback);
-        alertService.sendMail("MQCloud用户反馈", 
-                "用户: <b>" + userInfo.getUser().getEmail() + "</b><br>" +
-                "反馈: " + feedback);
+        alertService.sendMail(FEED_BACK_TITLE, "您好!<br> 我们已收到您的反馈，感谢您为MQCloud做出的贡献 !<br>反馈内容如下:<br>" + content,
+                userInfo.getUser().getEmail());
         return Result.getWebResult(result);
     }
 }

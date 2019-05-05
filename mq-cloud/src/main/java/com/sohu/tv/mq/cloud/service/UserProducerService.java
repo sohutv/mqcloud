@@ -228,4 +228,18 @@ public class UserProducerService {
         }
         return Result.getResult(userProducerList);
     }
+    
+    /**
+     * 按照uid和tid查询UserProducer
+     */
+    public Result<UserProducer> findUserProducer(long uid, long tid) {
+        UserProducer userProducer = null;
+        try {
+            userProducer = userProducerDao.selectByTidAndUid(uid, tid);
+        } catch (Exception e) {
+            logger.error("findUserProducer err, pid:{}, tid:{}", uid, tid, e);
+            return Result.getDBErrorResult(e);
+        }
+        return Result.getResult(userProducer);
+    }
 }

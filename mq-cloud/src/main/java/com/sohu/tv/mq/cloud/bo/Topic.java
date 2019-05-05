@@ -38,6 +38,12 @@ public class Topic {
     
     // 是否开启trace
     private int traceEnabled;
+    
+    // topic描述
+    private String info;
+    
+    // 是否延迟消息
+    private int delayEnabled;
 
     public long getId() {
         return id;
@@ -123,6 +129,26 @@ public class Topic {
         this.traceEnabled = traceEnabled;
     }
 
+    public String getInfo() {
+        return info;
+    }
+
+    public void setInfo(String info) {
+        this.info = info;
+    }
+
+    public int getDelayEnabled() {
+        return delayEnabled;
+    }
+
+    public void setDelayEnabled(int delayEnabled) {
+        this.delayEnabled = delayEnabled;
+    }
+
+    public boolean delayEnabled() {
+        return delayEnabled == 1;
+    }
+    
     @Override
     public String toString() {
         return "Topic [id=" + id + ", clusterId=" + clusterId + ", name=" + name + ", queueNum=" + queueNum

@@ -112,7 +112,7 @@
 	});
 	
 	function initLoadChart(){
-		var title = "1-min-max:${maxLoad1} 1-min-avg:${avgLoad1}";
+		var title = "1-min-max:${maxLoad1?string('#.##')} 1-min-avg:${avgLoad1}";
 		var options = getOptions(title, "containerLoad");
 		push(options.series, ${load1});
 		push(options.series, ${load5});
@@ -121,7 +121,7 @@
 	}
 	
 	function initCpuChart(){
-		var title = "max user:${maxUser}% sys:${maxSys}% wa:${maxWa}%";
+		var title = "max user:${maxUser?string('#.##')}% sys:${maxSys?string('#.##')}% wa:${maxWa?string('#.##')}%";
 		var options = getOptions(title, "containerCpu");
 		push(options.series, ${user});
 		push(options.series, ${sys});
@@ -165,7 +165,7 @@
 	}
 	
 	function initDiskChart(){
-		var title = "max read:${maxRead}M/s write:${maxWrite}M/s busy:${maxBusy}% iops:${maxIops}次/s";
+		var title = "max read:${maxRead}M/s write:${maxWrite}M/s busy:${maxBusy?string('#.##')}% iops:${maxIops?string('#.##')}次/s";
 		var options = getOptions(title, "containerDisk");
 		options.yAxis = [{title:{text:""}},{opposite: true},{opposite: true}];
 		var dread = eval(${dread});

@@ -21,6 +21,9 @@ public class TopicTrafficVO {
     
     private boolean own;
 
+    // topic描述
+    private String info;
+    
     public long getId() {
         return id;
     }
@@ -61,9 +64,17 @@ public class TopicTrafficVO {
         this.own = own;
     }
 
+    public String getInfo() {
+        return info;
+    }
+
+    public void setInfo(String info) {
+        this.info = info;
+    }
+
     @Override
     public String toString() {
         return "TopicTrafficVO [id=" + id + ", name=" + name + ", topicTraffic=" + topicTraffic + ", consumerTraffic="
-                + consumerTraffic + "]";
+                + consumerTraffic + ", info=" + info + "]";
     }
 }

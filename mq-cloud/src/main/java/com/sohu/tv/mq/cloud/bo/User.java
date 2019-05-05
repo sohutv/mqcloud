@@ -2,6 +2,7 @@ package com.sohu.tv.mq.cloud.bo;
 
 import java.util.Date;
 
+import org.apache.commons.lang3.StringUtils;
 import org.hibernate.validator.constraints.Email;
 import org.hibernate.validator.constraints.Range;
 
@@ -121,6 +122,13 @@ public class User {
         this.password = password;
     }
 
+    public String notBlankName(){
+        if (StringUtils.isBlank(getName())) {
+            return getEmailName();
+        }
+       return getName();
+    }
+    
     @Override
     public String toString() {
         return "User [id=" + id + ", name=" + name + ", email=" + email + ", mobile=" + mobile + ", type=" + type

@@ -38,6 +38,7 @@ import com.sohu.tv.mq.cloud.mq.MQAdminTemplate;
 import com.sohu.tv.mq.cloud.service.ClusterService;
 import com.sohu.tv.mq.cloud.service.ConsumerService;
 import com.sohu.tv.mq.cloud.service.ConsumerTrafficService;
+import com.sohu.tv.mq.cloud.service.DelayMessageService;
 import com.sohu.tv.mq.cloud.service.ProducerTotalStatService;
 import com.sohu.tv.mq.cloud.service.TopicService;
 import com.sohu.tv.mq.cloud.service.TopicTrafficService;
@@ -91,6 +92,9 @@ public class UserController extends ViewController {
     
     @Autowired
     private ClusterService clusterService;
+    
+    @Autowired
+    private DelayMessageService delayMessageService;
 
     /**
      * 退出登录
@@ -219,15 +223,32 @@ public class UserController extends ViewController {
         List<Topic> topicList = result.getResult();
         // 组装topic id 列表
         List<Long> tidList = new ArrayList<Long>(topicList.size());
+        List<Long> delayTidList = new ArrayList<Long>();
         for (Topic topic : topicList) {
-            tidList.add(topic.getId());
+            if (topic.delayEnabled()) {
+                delayTidList.add(topic.getId());
+            } else {
+                tidList.add(topic.getId());
+            } 
         }
         // 获取一分钟之前的topic流量数据
         Date oneMinuteAgo = new Date(System.currentTimeMillis() - 60000);
         String time = DateUtil.getFormat(DateUtil.HHMM).format(oneMinuteAgo);
         String date = DateUtil.formatYMD(oneMinuteAgo);
-        Result<List<TopicTraffic>> topicTrafficListResult = topicTrafficService.query(tidList, date, time);
-
+        Result<List<TopicTraffic>> topicTrafficListResult = Result.getResult(new ArrayList<TopicTraffic>(topicList.size()));
+        if (!tidList.isEmpty()) {
+            Result<List<TopicTraffic>> trafficListResult = topicTrafficService.query(tidList, date, time);
+            if (trafficListResult.isNotEmpty()) {
+                topicTrafficListResult.getResult().addAll(trafficListResult.getResult());
+            }
+        }
+        if (!delayTidList.isEmpty()) {
+            Result<List<TopicTraffic>> delayTrafficListResult = delayMessageService.query(delayTidList, Integer.parseInt(date), time);
+            if (delayTrafficListResult.isNotEmpty()) {
+                topicTrafficListResult.getResult().addAll(delayTrafficListResult.getResult());
+            }
+        }
+        tidList.addAll(delayTidList);
         // 查询consumer列表
         Result<List<Consumer>> consumerListResult = consumerService.queryByTidList(tidList);
         Map<Long, List<Long>> consumerMap = null;
@@ -369,7 +390,13 @@ public class UserController extends ViewController {
             String date = DateUtil.formatYMD(oneMinuteAgo);
             List<Long> tidList = new ArrayList<Long>(1);
             tidList.add(topic.getId());
-            Result<List<TopicTraffic>> topicTrafficListResult = topicTrafficService.query(tidList, date, time);
+            Result<List<TopicTraffic>> topicTrafficListResult = null;
+            if (topic.delayEnabled()) {
+                topicTrafficListResult = delayMessageService.query(tidList, Integer.parseInt(date), time);
+            } else {
+                topicTrafficListResult = topicTrafficService.query(tidList, date, time);
+            }
+            
             if (topicTrafficListResult.isNotEmpty()) {
                 result.getResult().setTopicTraffic(topicTrafficListResult.getResult().get(0));
             }
@@ -432,7 +459,12 @@ public class UserController extends ViewController {
             }
 
             // 获取总流量
-            Result<TopicTraffic> topicTrafficResult = topicTrafficService.queryTotalTraffic(topic.getId(), date);
+            Result<TopicTraffic> topicTrafficResult = null;
+            if (topic.delayEnabled()) {
+                topicTrafficResult = delayMessageService.query(topic.getId(), Integer.parseInt(date));
+            } else {
+                topicTrafficResult = topicTrafficService.queryTotalTraffic(topic.getId(), date);
+            }
             if (topicTrafficResult.isOK()) {
                 result.getResult().setTotalTopicTraffic(topicTrafficResult.getResult());
             }

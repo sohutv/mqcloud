@@ -11,6 +11,7 @@ import java.util.TreeMap;
 
 import javax.validation.Valid;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.rocketmq.common.MQVersion;
 import org.apache.rocketmq.common.admin.TopicOffset;
 import org.apache.rocketmq.common.admin.TopicStatsTable;
@@ -28,6 +29,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.util.HtmlUtils;
 
 import com.sohu.tv.mq.cloud.bo.Audit;
 import com.sohu.tv.mq.cloud.bo.Audit.TypeEnum;
@@ -225,7 +227,7 @@ public class TopicController extends ViewController {
         audit.setType(TypeEnum.NEW_TOPIC.getType());
         audit.setStatus(Audit.StatusEnum.INIT.getStatus());
         audit.setUid(userInfo.getUser().getId());
-        audit.setInfo(topicParam.getInfo());
+        audit.setInfo(HtmlUtils.htmlEscape(topicParam.getInfo(), "UTF-8"));
         // 构造topic审核记录
         AuditTopic auditTopic = new AuditTopic();
         BeanUtils.copyProperties(topicParam, auditTopic);
@@ -319,9 +321,7 @@ public class TopicController extends ViewController {
                 Result<User> userResult = userService.query(uid);
                 if (userResult.isOK()) {
                     tip = getTopicTip(tid) + " producer:<b>" + producer + "</b>  user:<b>"
-                            + (userResult.getResult().getName() == null ? userResult.getResult().getEmailName()
-                                    : userResult.getResult().getName())
-                            + "</b>";
+                            + userResult.getResult().notBlankName()+ "</b>";
                 }
             }
             if (tip == null) {
@@ -458,6 +458,33 @@ public class TopicController extends ViewController {
             sb.append("</b>");
         }
         return sb.toString();
+    }
+    
+    /**
+     * 更新Topic描述
+     * 
+     * @return
+     * @throws Exception
+     */
+    @ResponseBody
+    @RequestMapping(value = "/update/info", method = RequestMethod.POST)
+    public Result<?> updateTopicInfo(UserInfo userInfo, @RequestParam("tid") int tid,
+            @RequestParam("info") String info) throws Exception {
+        // 校验当前用户是否拥有权限
+        Result<UserProducer> userProducerResult = userProducerService.findUserProducer(userInfo.getUser().getId(), tid);
+        if (userProducerResult.isNotOK() && !userInfo.getUser().isAdmin()) {
+            return Result.getResult(Status.NOT_ALLOWED);
+        }
+        Result<Topic> topicResult = topicService.queryTopic(tid);
+        if (topicResult.isNotOK()) {
+            return topicResult;
+        }
+        if (StringUtils.isBlank(info)) {
+            return Result.getResult(Status.PARAM_ERROR);
+        }
+        Result<Integer> result = topicService.updateTopicInfo(tid, HtmlUtils.htmlEscape(info.trim(), "UTF-8"));
+        logger.info(userInfo.getUser().getName() + " update topic info , tid:{}, info:{}, status:{}", tid, info, result.isOK());
+        return Result.getWebResult(result);
     }
     
     @Override

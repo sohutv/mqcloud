@@ -393,7 +393,7 @@ message.put(&quot;vid&quot;, &quot;123456&quot;);
 message.put(&quot;aid&quot;, &quot;789172&quot;);
 //这里message推荐使用map，当然也可以使用json
 //建议设置keys(多个key用空格分隔)参数(也可以忽略该参数)，比如keys指定为vid，那么就可以根据vid查询消息
-Result&lt;SendResult&gt; sendResult = producer.publish(message, "keys：业务id，比如vid");
+Result&lt;SendResult&gt; sendResult = producer.publish(message, "keys");
 if(!sendResult.isSuccess){
     //失败消息处理
 }</pre>			

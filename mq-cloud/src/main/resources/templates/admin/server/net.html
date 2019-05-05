@@ -16,7 +16,7 @@
 	function initSubNetChart(){
 		<#list net as item>
 			var options = getOptions("${item.name}", "container${item.name}");
-			options.subtitle.text = "max in:${item.maxIn}k/s out:${item.maxOut}k/s avg in:${item.avgIn}k/s out:${item.avgOut}k/s";
+			options.subtitle.text = "max in:${item.maxIn?string('#.##')}k/s out:${item.maxOut?string('#.##')}k/s avg in:${item.avgIn}k/s out:${item.avgOut}k/s";
 			options.series.push(${item.inSeries.toJson()});
 			options.series.push(${item.outSeries.toJson()});
 		    new Highcharts.Chart(options); 

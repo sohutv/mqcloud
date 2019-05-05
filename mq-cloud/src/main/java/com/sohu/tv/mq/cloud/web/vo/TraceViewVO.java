@@ -1,5 +1,6 @@
 package com.sohu.tv.mq.cloud.web.vo;
 
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -19,10 +20,16 @@ import com.sohu.tv.mq.cloud.util.DateUtil;
 public class TraceViewVO {
     // 表示肯定
     public static int YES = 1;
+    // 耗时计算保留两位
+    public static DecimalFormat df = new DecimalFormat("0.00");
+    // 一秒
+    public static int ONE_SECOND = 1000;
+    // 一分钟
+    public static int ONE_MINUTE = 60 * ONE_SECOND;
+    // 一小时
+    public static int ONE_HOUR = 60 * ONE_MINUTE;
 
     private ViewVO producer;
-
-    private String broker;
 
     // consumer 可能会有多个, 同一个consumer的requestId相同
     private Map<String/* requestId */, ViewVO> consumer;
@@ -38,6 +45,9 @@ public class TraceViewVO {
         private List<TraceMessageDetail> detail;
 
         private String group;
+        
+        // 耗时 ms
+        private Integer costTime;
 
         public String getAddr() {
             return addr;
@@ -79,13 +89,38 @@ public class TraceViewVO {
             this.group = group;
         }
 
+        public Integer getCostTime() {
+            return costTime;
+        }
+
+        public void setCostTime(Integer costTime) {
+            this.costTime = costTime;
+        }
+
         public String status() {
             if (success == null) {
                 return "未知";
             }
             return success ? "成功" : "失败";
         }
-
+        /**
+         * 简单计算耗时，只保留两位小数
+         */
+        public String costTimes() {
+            if (costTime == null) {
+                return "未知";
+            }
+            if (costTime < ONE_SECOND) {
+                return costTime + "ms";
+            } else if (costTime < ONE_MINUTE) {
+                return df.format((float)costTime/ONE_SECOND) + "s";
+            } else if (costTime < ONE_HOUR) {
+                return df.format((float)costTime/ONE_MINUTE) + "m";
+            } else {
+                return df.format((float)costTime/ONE_HOUR) + "h";
+            }
+        }
+        
         @Override
         public String toString() {
             return "ViewVO [addr=" + addr + ", success=" + success + ", time=" + time + ", group=" + group + "]";
@@ -98,14 +133,6 @@ public class TraceViewVO {
 
     public void setProducer(ViewVO producer) {
         this.producer = producer;
-    }
-
-    public String getBroker() {
-        return broker;
-    }
-
-    public void setBroker(String broker) {
-        this.broker = broker;
     }
 
     public Map<String, ViewVO> getConsumer() {
@@ -147,9 +174,9 @@ public class TraceViewVO {
     }
 
     public void buildProducer(String addr, Boolean isSuccess, long time, TraceMessageDetail detail,
-            String producerGroup) {
+            String producerGroup, int costTime) {
         ViewVO viewVo = new ViewVO();
-        buildViewVo(viewVo, addr, isSuccess, time, detail, producerGroup);
+        buildViewVo(viewVo, addr, isSuccess, time, detail, producerGroup, costTime);
         setProducer(viewVo);
     }
 
@@ -162,8 +189,8 @@ public class TraceViewVO {
      * @param consumerStatus
      * @param detail
      */
-    public void buildConsumer(String addr, Boolean isSuccess, long time,
-            TraceMessageDetail detail, String requestId, String consumerGroup) {
+    public void buildConsumer(String addr, Boolean isSuccess, long time, TraceMessageDetail detail, 
+            String requestId, String consumerGroup, Integer costTime) {
         Map<String, ViewVO> consumer = getConsumer();
         if (consumer == null) {
             consumer = new HashMap<String, ViewVO>();
@@ -174,13 +201,13 @@ public class TraceViewVO {
             viewVo = new ViewVO();
             consumer.put(requestId, viewVo);
         }
-        buildViewVo(viewVo, addr, isSuccess, detail, consumerGroup);
+        buildViewVo(viewVo, addr, isSuccess, detail, consumerGroup, costTime);
         if (time > 0) {
             viewVo.setTime(DateUtil.getFormat(DateUtil.YMD_DASH_HMS_COLON_DOT_SSS).format(new Date(time)));
         }
     }
 
-    private void buildViewVo(ViewVO viewVo, String addr, Boolean isSuccess, TraceMessageDetail detail, String group) {
+    private void buildViewVo(ViewVO viewVo, String addr, Boolean isSuccess, TraceMessageDetail detail, String group, Integer costTime) {
         if (viewVo.getAddr() == null) {
             viewVo.setAddr(addr);
         }
@@ -196,11 +223,15 @@ public class TraceViewVO {
         }
         traceMessageDetailList.add(detail);
         viewVo.setDetail(traceMessageDetailList);
+        
+        if (viewVo.getCostTime() == null) {
+            viewVo.setCostTime(costTime);
+        }
     }
 
     private void buildViewVo(ViewVO viewVo, String addr, Boolean isSuccess, long time, TraceMessageDetail detail,
-            String group) {
-        buildViewVo(viewVo, addr, isSuccess, detail, group);
+            String group, int costTime) {
+        buildViewVo(viewVo, addr, isSuccess, detail, group, costTime);
         if (viewVo.getTime() == null) {
             viewVo.setTime(DateUtil.getFormat(DateUtil.YMD_DASH_HMS_COLON_DOT_SSS).format(new Date(time)));
         }
@@ -208,6 +239,6 @@ public class TraceViewVO {
 
     @Override
     public String toString() {
-        return "TraceViewVO [producer=" + producer + ", broker=" + broker + ", consumer=" + consumer + "]";
+        return "TraceViewVO [producer=" + producer + ", consumer=" + consumer + "]";
     }
 }

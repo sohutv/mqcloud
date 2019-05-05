@@ -83,7 +83,7 @@ public class UserProducerController {
                 currentUserProducer.getResult().getUid());
         if (result.isOK()) {
             alertService.sendAuditMail(userInfo.getUser(), TypeEnum.DELETE_USERPRODUCER,
-                    userResult.getResult().getName() + "与" + currentUserProducer.getResult().getProducer() + "的关联关系");
+                    userResult.getResult().notBlankName() + "与" + currentUserProducer.getResult().getProducer() + "的关联关系");
         }
         return Result.getWebResult(result);
 

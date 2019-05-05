@@ -812,22 +812,23 @@ public class MessageService {
                 // 发送消息部分
                 if (TraceType.Pub == traceContext.getTraceType()) {
                     traceViewVO.buildProducer(decodedMessage.getBornHostString(), traceContext.isSuccess(),
-                            traceContext.getTimeStamp(), traceMessageDetail, traceContext.getGroupName());
-                    // broker上的信息根据生产者构建，
-                    traceViewVO.setBroker(traceBean.getStoreHost().split(":")[0]);
+                            traceContext.getTimeStamp(), traceMessageDetail, traceContext.getGroupName(), traceContext.getCostTime());
                 } else { // 消费消息部分
                     // 不显示空字符串
                     if (traceMessageDetail.getTopic().isEmpty()) {
                         traceMessageDetail.setTopic(null);
                     }
+                    // 消费者不显示broker信息
+                    traceMessageDetail.setBroker(null);
                     if (TraceType.SubBefore == traceContext.getTraceType()) { // 实际消费动作前
                         traceMessageDetail.setSuccess(null);
+                        traceMessageDetail.setCostTime(null);
                         traceViewVO.buildConsumer(decodedMessage.getBornHostString(), null, traceContext.getTimeStamp(),
-                                traceMessageDetail, traceContext.getRequestId(), traceContext.getGroupName());
+                                traceMessageDetail, traceContext.getRequestId(), traceContext.getGroupName(), null);
                     } else if (TraceType.SubAfter == traceContext.getTraceType()) { // 消费结束
                         traceMessageDetail.setTimeStamp(0);
                         traceViewVO.buildConsumer(decodedMessage.getBornHostString(), traceContext.isSuccess(), 0L,
-                                traceMessageDetail, traceContext.getRequestId(), traceContext.getGroupName());
+                                traceMessageDetail, traceContext.getRequestId(), traceContext.getGroupName(), traceContext.getCostTime());
                     }
                 }
             }

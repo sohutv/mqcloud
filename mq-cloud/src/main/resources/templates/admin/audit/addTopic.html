@@ -51,6 +51,13 @@
 					</div>
 				</div>
 				<div class="form-group">
+					<label class="control-label col-md-3"> 使用环境: </label>
+					<div class="col-md-5 checkbox">
+					    <input type="radio" name="testEnabled" value="0" disabled="disabled" <#if !response.result.testEnabled()>checked</#if>>线上
+					    <input type="radio" name="testEnabled" value="1" disabled="disabled" <#if response.result.testEnabled()>checked</#if>>测试
+					</div>
+				</div>
+				<div class="form-group">
 					<label class="control-label col-md-3"> 消息量: </label>
 					<div class="col-md-5">
 						<div class="input-group">
@@ -79,16 +86,33 @@
 					<label class="control-label col-md-3"> 在哪个集群创建: </label>
 					<div class="col-md-5">
 						<select name="type" id="clusterSelect" class="form-control select2_category">
-						<#if response.result.transactionEnabled()>
+						<#--事务及测试同时满足-->
+						<#if response.result.transactionEnabled() && response.result.testEnabled()>
+							<#list clusters as cluster>
+								<#if cluster.isEnableTransaction() && cluster.test()>
+									<option value="${cluster.getId()}">${cluster.getName()}</option>
+								</#if>
+							</#list>
+							<input name="flag" type="hidden" value="1"/>
+						<#elseif response.result.transactionEnabled()> <#--事务-->
 							<#list clusters as cluster>
 								<#if cluster.isEnableTransaction()>
 									<option value="${cluster.getId()}">${cluster.getName()}</option>
 								</#if>
 							</#list>
-						<#else>
+							<input name="flag" type="hidden" value="2"/>
+						<#elseif response.result.testEnabled()> <#--测试-->
+							<#list clusters as cluster>
+								<#if cluster.test()>
+									<option value="${cluster.getId()}">${cluster.getName()}</option>
+								</#if>
+							</#list>
+							<input name="flag" type="hidden" value="3"/>
+						<#else> <#--all-->
 							<#list clusters as cluster>
 								<option value="${cluster.getId()}">${cluster.getName()}</option>
 							</#list>
+							<input name="flag" type="hidden" value="4"/>
 						</#if>
 						</select>
 					</div>
@@ -122,12 +146,18 @@
 
 <script>
 function agree(){
-	if ($("input[name='transactionEnabled']:checked").val() == 1){
-		if($("#clusterSelect").find("option").length == 0){
-			alert("暂无支持事务的集群，请添加新集群，或修改已有集群支持事务");
-			$("#auditAddTopicBtn").hide();
-			return;
+	if($("#clusterSelect").find("option").length == 0){
+		if ($("input[name='flag']").val() == 1){
+			alert("暂无测试集群支持事务功能，请添加新集群，或修改已有测试集群支持事务功能");
+		} else if ($("input[name='flag']").val() == 2){
+			alert("暂无支持事务功能的集群，请添加新集群，或修改已有集群支持事务功能");
+		} else if ($("input[name='flag']").val() == 3){
+			alert("暂无测试集群，请添加新集群，或修改已有集群为测试集群");
+		} else {
+			alert("暂无集群，请添加集群后重试");
 		}
+		$("#auditAddTopicBtn").hide();
+		return;
 	}
 	$("#clusterDiv").show();
 	$("#refuseReasonDiv").hide();

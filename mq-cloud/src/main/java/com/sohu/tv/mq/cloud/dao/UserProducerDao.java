@@ -90,4 +90,12 @@ public interface UserProducerDao {
      */
     @Select("select * from user_producer where producer = #{producer} and uid = #{uid}")
     public List<UserProducer> selectByProducerAndUid(@Param("producer") String producer, @Param("uid") long uid);
+    
+    /**
+     * 查询记录
+     * @param tid
+     * @param uid
+     */
+    @Select("select * from user_producer where tid = #{tid} and uid = #{uid} limit 1")
+    public UserProducer selectByTidAndUid(@Param("tid") long tid, @Param("uid") long uid);
 }

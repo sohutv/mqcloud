@@ -15,7 +15,7 @@
 	function initSubCpuChart(){
 		<#list cpu as item>
 			var options = getOptions("${item.name}", "container${item.name}");
-			options.subtitle.text = "max user:${item.maxUser}% sys:${item.maxSys}% wa:${item.maxWa}% avg user:${item.avgUser}% sys:${item.avgSys}% wa:${item.avgWa}%";
+			options.subtitle.text = "max user:${item.maxUser?string('#.##')}% sys:${item.maxSys?string('#.##')}% wa:${item.maxWa?string('#.##')}% avg user:${item.avgUser}% sys:${item.avgSys}% wa:${item.avgWa}%";
 			options.series.push(${item.userSeries.toJson()});
 			options.series.push(${item.sysSeries.toJson()});
 			options.series.push(${item.waSeries.toJson()});

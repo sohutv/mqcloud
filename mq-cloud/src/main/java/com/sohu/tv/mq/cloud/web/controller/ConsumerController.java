@@ -493,9 +493,7 @@ public class ConsumerController extends ViewController {
                 if (userResult.isNotOK()) {
                     return Result.getResult(Status.EMAIL_SEND_ERR);
                 }
-                tip = tip + " user:<b>" + (userResult.getResult().getName() == null
-                        ? userResult.getResult().getEmailName()
-                        : userResult.getResult().getName()) + "</b>";
+                tip = tip + " user:<b>" + userResult.getResult().notBlankName() + "</b>";
             }
             alertService.sendAuditMail(userInfo.getUser(), TypeEnum.ASSOCIATE_CONSUMER, tip);
         }

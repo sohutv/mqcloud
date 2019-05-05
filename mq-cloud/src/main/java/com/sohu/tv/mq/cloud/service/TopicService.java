@@ -326,6 +326,7 @@ public class TopicService {
             Topic topic = new Topic();
             BeanUtils.copyProperties(auditTopic, topic);
             topic.setClusterId(mqCluster.getId());
+            topic.setInfo(audit.getInfo());
             Integer count = save(topic);
             if(count == null) {
                 return Result.getResult(Status.DB_ERROR);
@@ -597,6 +598,22 @@ public class TopicService {
             result = topicDao.updateCount(topicTrafficList);
         } catch (Exception e) {
             logger.error("updateCount err, topicTrafficList:{}", topicTrafficList, e);
+            return Result.getDBErrorResult(e);
+        }
+        return Result.getResult(result);
+    }
+    
+    /**
+     * 更新topic描述
+     * @param topicTrafficList
+     * @return
+     */
+    public Result<Integer> updateTopicInfo(long tid, String info) {
+        Integer result = null;
+        try {
+            result = topicDao.updateTopicInfo(tid, info);
+        } catch (Exception e) {
+            logger.error("updateTopicInfo err, tid:{}, info:{}", tid, info, e);
             return Result.getDBErrorResult(e);
         }
         return Result.getResult(result);

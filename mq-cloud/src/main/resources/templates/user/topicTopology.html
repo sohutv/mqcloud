@@ -8,7 +8,7 @@
 <div class="row border-bottom">
 	<div class="col-md-6 border-right">
 		<h3 class="text-center">topic信息</h3>
-		<table class="table table-striped table-hover" style="margin-top: 0px">
+		<table class="table table-striped table-hover" style="margin-top: 0px;word-break:break-all; word-wrap:break-all;">
 			<thead>
 				<colgroup>
 					<col width="40%"></col>
@@ -44,6 +44,21 @@
 						<#else>
 							全局有序
 						</#if>
+					</td>
+				</tr>
+				<tr>
+					<td>用途:</td>
+					<td>
+						${response.result.topic.info!}
+						<#if response.result.own>
+            				<button type="submit" class="btn btn-success btn-sm" data-target="#updateTopicInfoModal" data-toggle="modal" >
+            					<#if response.result.topic.info?? && response.result.topic.info !=''> 
+            						修改
+            					<#else>
+            						添加
+            					</#if>
+            				</button>
+            			</#if>
 					</td>
 				</tr>
 				<tr>
@@ -637,7 +652,37 @@ $(function() {
 		</div>
 	</div>
 </div> 
-
+<#--修改topic描述-->
+<div id="updateTopicInfoModal" class="modal fade" tabindex="-1" data-width="400">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+				<h4 class="modal-title"><b>${response.result.topic.name}</b>描述更新</h4>
+			</div>
+			<form class="form-horizontal form-bordered form-row-stripped" id="addUserProducerModalForm">
+				<div class="modal-body">
+					<div class="row">
+						<div class="col-md-12">
+							<div class="form-body">
+								<div class="form-group">
+									<label class="control-label col-md-3"> 用途: </label>
+									<div class="col-md-8">
+										<textarea id="topicInfo" rows="5" class="form-control">${response.result.topic.info!}</textarea>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" data-dismiss="modal" class="btn" >取消</button>
+					<button type="button" class="btn btn-primary" id="updateTopicInfoBtn" onclick="updateTopicInfo()">确定</button>
+				</div>
+			</form>
+		</div>
+	</div>
+</div> 
 <!-- 客户端统计 -->
 <div id="producerStatsModal" class="modal fade" tabindex="-1" data-width="400">
 	<div class="modal-dialog" style="width:1100px;">
@@ -795,5 +840,27 @@ function producerStats(){
         function(data){
             $("#producerStatsChart").html(data);
     });	
+}
+
+function updateTopicInfo(){
+	if(!$("#topicInfo").val()){
+		alert("请输入用途");
+		return;
+	}
+	disable("updateTopicInfoBtn");
+	$.post('${request.contextPath}/topic/update/info',
+			{
+				info: $("#topicInfo").val(),
+				tid: $("#currentTopicID").val()
+			},
+	        function(data){
+	            if(data.status == 200){
+	            	toastr.success("操作成功！即将刷新页面！");  	            	
+	            	reload(2000);            	
+			    }else{
+			    	toastr.error("操作失败！"+data.message);  
+			    	enable("updateTopicInfoBtn");
+			    }
+	    }, 'json');
 }
 </script>
