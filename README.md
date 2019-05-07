@@ -1,6 +1,4 @@
-## MQCloud - [RocketMQ](https://github.com/apache/rocketmq)的企业级运维平台
-[Maven Central](https://issues.sonatype.org/browse/OSSRH-48392)
-
+## MQCloud - 集客户端SDK，运维，监控，预警等功能的[RocketMQ](https://github.com/apache/rocketmq)企业级一站式服务平台
 **它具备以下特性：**
 
 * 跨集群：可以同时管理多个集群，对使用者透明。
