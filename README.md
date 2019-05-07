@@ -1,5 +1,5 @@
 ## MQCloud - [RocketMQ](https://github.com/apache/rocketmq)的企业级运维平台
-[Maven Central](https://mvnrepository.com/artifact/com.sohu.tv)
+[Maven Central](https://issues.sonatype.org/browse/OSSRH-48392)
 
 **它具备以下特性：**
 
