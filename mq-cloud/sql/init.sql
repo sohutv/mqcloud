@@ -426,6 +426,7 @@ CREATE TABLE `topic` (
   `queue_num` int(11) NOT NULL COMMENT '队列长度',
   `ordered` int(4) NOT NULL DEFAULT '0' COMMENT '0:无序,1:有序',
   `count` int(11) DEFAULT NULL COMMENT 'topic put times',
+  `info` varchar(360) DEFAULT NULL COMMENT 'topic描述',
   `trace_enabled` int(4) NOT NULL DEFAULT '0' COMMENT '0:不开启trace,1:开启trace',
   `delay_enabled` int(4) NOT NULL DEFAULT '0' COMMENT '0:不发送延迟消息,1:发送延迟消息。注：此字段不强制该topic的消息类型',
   `create_date` date NOT NULL,
