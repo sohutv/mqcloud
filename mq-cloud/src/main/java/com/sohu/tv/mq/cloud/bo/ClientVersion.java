@@ -1,6 +1,8 @@
 package com.sohu.tv.mq.cloud.bo;
 
 import java.util.Date;
+import java.util.HashSet;
+import java.util.Set;
 /**
  * 客户端版本
  * @Description: 
@@ -8,6 +10,8 @@ import java.util.Date;
  * @date 2018年8月31日
  */
 public class ClientVersion {
+    public static final int PRODUCER = 1;
+    public static final int CONSUMER = 2;
     // topic name
     private String topic;
     // producer or consumer
@@ -18,6 +22,8 @@ public class ClientVersion {
     private String version;
     private Date createDate;
     private Date updateTime;
+    // 客户端归属的用户
+    private Set<User> owners;
     public String getTopic() {
         return topic;
     }
@@ -59,6 +65,32 @@ public class ClientVersion {
     }
     public void setUpdateTime(Date updateTime) {
         this.updateTime = updateTime;
+    }
+    public String getOwnersString() {
+        if(owners == null) {
+            return "";
+        }
+        StringBuilder sb = new StringBuilder();
+        for(User u : owners) {
+            sb.append(u.notBlankName());
+            sb.append(",");
+        }
+        if(sb.length() > 0) {
+            sb.deleteCharAt(sb.length() - 1);
+        }
+        return sb.toString();
+    }
+    public boolean addOwner(User owner) {
+        if(owners == null) {
+            owners = new HashSet<>();
+        }
+        return owners.add(owner);
+    }
+    public Set<User> getOwners() {
+        return owners;
+    }
+    public void setOwners(Set<User> owners) {
+        this.owners = owners;
     }
     @Override
     public String toString() {

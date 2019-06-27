@@ -5,7 +5,7 @@
 	<parent>
 		<groupId>com.sohu.tv</groupId>
 		<artifactId>mq</artifactId>
-		<version>1.7</version>
+		<version>1.8</version>
 	</parent>
 
 	<artifactId>mq-cloud</artifactId>
@@ -121,6 +121,14 @@
 			<artifactId>junit</artifactId>
 			<scope>test</scope>
 		</dependency>
+		
+		<!--markdown to html-->
+		<dependency>
+		    <groupId>com.vladsch.flexmark</groupId>
+		    <artifactId>flexmark</artifactId>
+		    <version>0.42.12</version>
+		</dependency>
+		<!--markdown to html end-->
 	</dependencies>
 
 	<build>

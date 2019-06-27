@@ -13,7 +13,7 @@
 
 * 下图简单描述了MQCloud大概的功能：
 
-  ![mqcloud](mq-cloud/src/main/resources/static/img/intro/mqcloud.png)
+  ![mqcloud](mq-cloud/src/main/resources/static/wiki/intro/img/mqcloud.png)
 
 
 ----------
@@ -21,47 +21,47 @@
 ## 特性概览
 * 用户topic列表-不同用户看到不同的topic，管理员可以管理所有topic
 
-  ![用户topic列表](mq-cloud/src/main/resources/static/img/intro/index.png)
+  ![用户topic列表](mq-cloud/src/main/resources/static/wiki/intro/img/index.png)
 
 * topic详情-分三块 基本信息，今日流程，拓扑
 
-  ![topic详情](mq-cloud/src/main/resources/static/img/intro/topicDetail.png)
+  ![topic详情](mq-cloud/src/main/resources/static/wiki/intro/img/topicDetail.png)
 
 * 生产详情
 
-  ![生产详情](mq-cloud/src/main/resources/static/img/intro/produceDetail2.png)
+  ![生产详情](mq-cloud/src/main/resources/static/wiki/intro/img/produceDetail2.png)
 
 * 消费详情
 
-  ![消费详情](mq-cloud/src/main/resources/static/img/intro/consumeDetail2.png)
+  ![消费详情](mq-cloud/src/main/resources/static/wiki/intro/img/consumeDetail2.png)
 
 * 某个消费者具体的消费详情-可以查询重试消息和死消息
 
-  ![消费详情](mq-cloud/src/main/resources/static/img/intro/consumeRetry.png)
+  ![消费详情](mq-cloud/src/main/resources/static/wiki/intro/img/consumeRetry.png)
 
 * 消息
 
-  ![消息](mq-cloud/src/main/resources/static/img/intro/msgSearch.png)
+  ![消息](mq-cloud/src/main/resources/static/wiki/intro/img/msgSearch.png)
 
 * 消息消费情况
 
-  ![msgconsume](mq-cloud/src/main/resources/static/img/intro/msgTrack.png)
+  ![msgconsume](mq-cloud/src/main/resources/static/wiki/intro/img/msgTrack.png)
 
 * 集群发现
 
-  ![admin](mq-cloud/src/main/resources/static/img/intro/nameServer.png)
+  ![admin](mq-cloud/src/main/resources/static/wiki/intro/img/nameServer.png)
 
 * 集群管理
 
-  ![admin](mq-cloud/src/main/resources/static/img/intro/cluster.png)
+  ![admin](mq-cloud/src/main/resources/static/wiki/intro/img/cluster.png)
 
 * 集群流量
 
-  ![admin](mq-cloud/src/main/resources/static/img/intro/clusterTraffic.png)
+  ![admin](mq-cloud/src/main/resources/static/wiki/intro/img/clusterTraffic.png)
 
 * 创建broker
 
-  ![addBroker](mq-cloud/src/main/resources/static/img/intro/addBroker.png)
+  ![addBroker](mq-cloud/src/main/resources/static/wiki/intro/img/addBroker.png)
 
 ----------
 
