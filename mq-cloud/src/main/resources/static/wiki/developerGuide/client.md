@@ -107,7 +107,7 @@ protostuff其内部是protobuf，而protobuf源自于google，其压缩能力和
 
 3. 耗时异常统计
 
-   详细参考<a href="statMonitorAndWarn">统计监控预警</a>中的介绍。
+   详细参考<a href="statMonitorWarning">统计监控预警</a>中的介绍。
 
 4. 熔断机制
 
