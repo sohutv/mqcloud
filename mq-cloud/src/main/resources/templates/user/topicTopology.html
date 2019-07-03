@@ -748,6 +748,8 @@ $(function() {
         $('#producerStatsModal').on('shown.bs.modal', function() {
         	producerStats();
         });
+        
+        setTimeout("$('body').getNiceScroll().resize()", 500);
 	});
 	
 	// 准备删除生产者

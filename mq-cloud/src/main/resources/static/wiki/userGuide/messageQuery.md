@@ -32,7 +32,7 @@
 
 ## 三、<span id="key">按照key查询</span>
 
-*适用于生产消息时发送了<a href="client#produceMessage">keys</a>字段的topic*
+*适用于生产消息时发送了<a href="clientProducer#produceMessage">keys</a>字段的topic*
 
 ![](img/4.1.png)
 
