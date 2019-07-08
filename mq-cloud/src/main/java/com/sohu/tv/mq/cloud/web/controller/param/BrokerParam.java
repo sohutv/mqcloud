@@ -103,7 +103,7 @@ public class BrokerParam {
                 + "\nfetchNamesrvAddrByAddressServer=true"
                 + "\nautoCreateTopicEnable=false"
                 + "\nclusterTopicEnable=false"
-                + "\nautoCreateSubscriptionGroup=true"
+                + "\nautoCreateSubscriptionGroup=false"
                 + "\nslaveReadEnable=true"
                 + "\nstorePathRootDir=" + MQDeployer.MQ_CLOUD_DIR + getDir() + "/data"
                 + "\nstorePathCommitLog=" + MQDeployer.MQ_CLOUD_DIR + getDir() + "/data/commitlog"

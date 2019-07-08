@@ -56,7 +56,7 @@ spring:
 mqcloud: 
   nexusDomain: mqcloud.com
   clientArtifactId: mq-client-open
-  producerClass:  com.sohu.tv.mq.rocketmq.RocketMQProducer
-  consumerClass: com.sohu.tv.mq.rocketmq.RocketMQConsumer
+  producerClass:  RocketMQProducer
+  consumerClass: RocketMQConsumer
   ticketKey: ticket #cas登录返回后的key，用户名密码可以忽略
   

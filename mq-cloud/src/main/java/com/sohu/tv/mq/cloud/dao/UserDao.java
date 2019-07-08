@@ -111,4 +111,26 @@ public interface UserDao {
      */
     @Update("update user set password=#{password} where id = #{uid}")
     public Integer resetPassword(@Param("uid") long uid, @Param("password") String password);
+    
+    /**
+     * 根据producer批量查询用户
+     * @param producerList
+     * @return List<User>
+     */
+    @Select("<script>select u.name, u.email, up.producer password from user u, user_producer up "
+            + "where u.id = up.uid and up.producer in "
+            + "<foreach collection=\"producerList\" item=\"p\" separator=\",\" open=\"(\" close=\")\">#{p}</foreach>"
+            + "</script>")
+    public List<User> selectByProducerList(@Param("producerList") Collection<String> producerList);
+    
+    /**
+     * 根据consumer批量查询用户
+     * @param producerList
+     * @return List<User>
+     */
+    @Select("<script>select u.name, u.email, c.name password from user u, consumer c, user_consumer uc "
+            + "where u.id = uc.uid and uc.consumer_id = c.id and c.name in "
+            + "<foreach collection=\"consumerList\" item=\"c\" separator=\",\" open=\"(\" close=\")\">#{c}</foreach>"
+            + "</script>")
+    public List<User> selectByConsumerList(@Param("consumerList") Collection<String> consumerList);
 }

@@ -162,16 +162,29 @@ public class MonitorService {
             if (topic.startsWith(MixAll.RETRY_GROUP_TOPIC_PREFIX)) {
                 String consumerGroup = topic.substring(MixAll.RETRY_GROUP_TOPIC_PREFIX.length());
 
+                // 链接在线检测
+                ConsumerConnection cc = null;
                 try {
-                    this.reportUndoneMsgs(consumerGroup);
+                    cc = defaultMQAdminExt.examineConsumerConnectionInfo(consumerGroup);
                 } catch (Exception e) {
-                    // log.error("reportUndoneMsgs Exception", e);
+                    if(logger.isDebugEnabled()) {
+                        logger.debug("examineConsumerConnectionInfo consumerGroup:{}, err:{}", consumerGroup, e.getMessage());
+                    }
+                }
+                if(cc == null) {
+                    return;
+                }
+                
+                try {
+                    this.reportUndoneMsgs(consumerGroup, cc);
+                } catch (Exception e) {
+                    logger.warn("reportUndoneMsgs Exception", e);
                 }
 
                 try {
-                    this.reportConsumerRunningInfo(consumerGroup);
+                    this.reportConsumerRunningInfo(consumerGroup, cc);
                 } catch (Exception e) {
-                    // log.error("reportConsumerRunningInfo Exception", e);
+                    logger.warn("reportConsumerRunningInfo Exception", e);
                 }
             }
         }
@@ -180,19 +193,7 @@ public class MonitorService {
         logger.info("{} monitor use: {}ms", clusterName, spentTimeMills);
     }
 
-    private void reportUndoneMsgs(final String consumerGroup) {
-        ConsumerConnection cc = null;
-        try {
-            cc = defaultMQAdminExt.examineConsumerConnectionInfo(consumerGroup);
-        } catch (Exception e) {
-            if(logger.isDebugEnabled()) {
-                logger.debug("examineConsumerConnectionInfo consumerGroup:{}, err:{}", consumerGroup, e.getMessage());
-            }
-            return;
-        }
-        if(cc == null) {
-            return;
-        }
+    private void reportUndoneMsgs(String consumerGroup, ConsumerConnection cc) {
         if(cc.getMessageModel() == MessageModel.CLUSTERING) {
             ConsumeStats cs = null;
             try {
@@ -276,9 +277,8 @@ public class MonitorService {
         }
     }
 
-    public void reportConsumerRunningInfo(final String consumerGroup) throws InterruptedException,
+    public void reportConsumerRunningInfo(String consumerGroup, ConsumerConnection cc) throws InterruptedException,
             MQBrokerException, RemotingException, MQClientException {
-        ConsumerConnection cc = defaultMQAdminExt.examineConsumerConnectionInfo(consumerGroup);
         TreeMap<String, ConsumerRunningInfo> infoMap = new TreeMap<String, ConsumerRunningInfo>();
         for (Connection c : cc.getConnectionSet()) {
             String clientId = c.getClientId();

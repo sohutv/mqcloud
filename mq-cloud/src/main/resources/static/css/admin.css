@@ -85,10 +85,13 @@ body {
 /*
  * Main content
  */
-
+.admin-row{
+    margin: 0px;
+}
 .main {
-  padding: 20px;
-  padding-left: 180px;
+  padding-top: 20px;
+  padding-left: 161px;
+  padding-right: 2px;
 }
 
 .main .page-header {

@@ -244,6 +244,7 @@ function showPage(num){
 	}
 	// 展示数据
 	$("#page_"+pageNum).show().siblings("tbody").hide();
+	$("body").getNiceScroll().resize();
 }
 // 上一页
 function previous(){

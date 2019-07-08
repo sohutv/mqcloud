@@ -44,7 +44,10 @@ function drawLineChart(lineName){
     	}
     	divComponent.empty();
 		for(var i = 0; i < data.result.length; ++i){
-			var chart = data.result[i]
+			var chart = data.result[i];
+			if ("pstats" == lineName){
+				delete chart.subtitle["useHTML"];
+			}
 			if(chart.url){
 				url = chart.url;
 				chart.plotOptions = {};
@@ -100,6 +103,8 @@ function drawLineChart(lineName){
 				divComponent.append(div);
 			}
 			new Highcharts.Chart(chart);
+			// 兼容滚动插件
+			$("body").getNiceScroll().resize();
 		}
 	}, 'json');
 }

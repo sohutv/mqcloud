@@ -108,6 +108,8 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware {
     private Integer isOpenRegister;
     // 忽略的topic
     private String ignoreTopic;
+    // 忽略的topic
+    private String[] ignoreTopicArray;
     
     // rocketmq安装文件路径
     private String rocketmqFilePath;
@@ -359,9 +361,22 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware {
     public String getIgnoreTopic() {
         return ignoreTopic;
     }
+    
+    public boolean isIgnoreTopic(String topic) {
+        if(ignoreTopicArray == null) {
+            return false;
+        }
+        for (int i = 0; i < ignoreTopicArray.length; i++) {
+            if (topic.equals(ignoreTopicArray[i])) {
+                return true;
+            }
+        }
+        return false;
+    }
 
     public void setIgnoreTopic(String ignoreTopic) {
         this.ignoreTopic = ignoreTopic;
+        this.ignoreTopicArray = ignoreTopic.split(",");
     }
 
     public String getRocketmqFilePath() {

@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+  	<#include "inc/include.html">
+  	<link href="${request.contextPath}/resources/prettify/prettify.css" rel="stylesheet">
+  	<link href="${request.contextPath}/css/githubmd.css" rel="stylesheet">
+	<script type="text/javascript" src="${request.contextPath}/resources/prettify/prettify.js"></script>
+  	<title>MQCloud</title>
+  </head>
+  <body role="document">
+ 	<#include "inc/nav.html">
+    <div class="container">
+		<div class="row">
+			<div class="col-md-2">
+				<#include "inc/wikiLeft.html">
+			</div>
+			<div class="col-md-10 markdown-body">
+				${response.result}
+			</div>
+		</div>
+    </div>
+	<div class="right-side-bar">${toc!}</div>
+  </body>
+  <#include "inc/foot.html">
+  <script>
+	$(function(){
+		$('pre').each(function(i, pre) {
+            $(pre).addClass("prettyprint");
+        });
+		PR.prettyPrint();
+		if(window.location.hash && $(window.location.hash).offset()){
+			$("html,body").animate({scrollTop: $(window.location.hash).offset().top - 52}, 500);
+		}
+	});
+  </script>
+</html>

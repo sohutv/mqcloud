@@ -83,13 +83,8 @@ public class SohuMonitorListener implements MonitorListener {
 	public void reportUndoneMsgs(UndoneMsgs undoneMsgs) {
         String topic = undoneMsgs.getTopic();
         // 忽略topic
-        if(mqCloudConfigHelper.getIgnoreTopic() != null) {
-            String[] topics = mqCloudConfigHelper.getIgnoreTopic().split(",");
-            for (int i = 0; i < topics.length; i++) {
-                if (topic.equals(topics[i])) {
-                    return;
-                }
-            }
+        if(mqCloudConfigHelper.isIgnoreTopic(topic)) {
+            return;
         }
         try {
             //保存堆积消息的consumer的状态
