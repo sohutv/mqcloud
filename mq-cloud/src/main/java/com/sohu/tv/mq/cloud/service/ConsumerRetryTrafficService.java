@@ -15,6 +15,7 @@ import com.sohu.tv.mq.cloud.bo.Traffic;
 import com.sohu.tv.mq.cloud.bo.User;
 import com.sohu.tv.mq.cloud.mq.DefaultInvoke;
 import com.sohu.tv.mq.cloud.mq.MQAdminTemplate;
+import com.sohu.tv.mq.cloud.util.Jointer;
 import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper;
 import com.sohu.tv.mq.cloud.util.Result;
 
@@ -72,13 +73,7 @@ public class ConsumerRetryTrafficService extends TrafficService<Traffic> {
                                 topicConsumer.getTid(), topicConsumer.getCid());
                         String email = null;
                         if(userListResult.isNotEmpty()) {
-                            StringBuilder sb = new StringBuilder();
-                            for(User u : userListResult.getResult()) {
-                                sb.append(u.getEmail());
-                                sb.append(",");
-                            }
-                            sb.deleteCharAt(sb.length() - 1);
-                            email = sb.toString();
+                            email = Jointer.BY_COMMA.join(userListResult.getResult(), u -> u.getEmail());
                         }
                         long consumerFailCount = alarmConfigBridingService.getConsumerFailCount(topicConsumer.getConsumer());
                         if (consumerFailCount >= 0 && consumerFailCount < topicTraffic.getCount()) {

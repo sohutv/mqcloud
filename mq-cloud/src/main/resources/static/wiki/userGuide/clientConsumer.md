@@ -6,7 +6,7 @@
 @Configuration
 public class MQConfiguration {
 
-    @Value("${flushCache.consumer}")
+    @Value("${flushCache.consumerGroup}")
     private String flushCacheConsumer;
 
     @Value("${flushCache.topic}")

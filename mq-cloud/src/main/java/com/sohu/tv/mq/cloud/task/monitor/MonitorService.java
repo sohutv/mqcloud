@@ -42,6 +42,7 @@ import org.slf4j.LoggerFactory;
 import com.sohu.tv.mq.cloud.bo.Cluster;
 import com.sohu.tv.mq.cloud.bo.NameServer;
 import com.sohu.tv.mq.cloud.service.NameServerService;
+import com.sohu.tv.mq.cloud.util.Jointer;
 import com.sohu.tv.mq.cloud.util.Result;
 
 /**
@@ -73,13 +74,7 @@ public class MonitorService {
             logger.error("monitor cluster:{} init err!", mqCluster);
             return;
         }
-        StringBuilder sb = new StringBuilder();
-        for(NameServer ns : nameServerListResult.getResult()) {
-            sb.append(ns.getAddr());
-            sb.append(";");
-        }
-        sb.deleteCharAt(sb.length() - 1);
-        this.nsAddr = sb.toString();
+        this.nsAddr = Jointer.BY_SEMICOLON.join(nameServerListResult.getResult(), ns -> ns.getAddr());
         this.clusterName = mqCluster.getName();
         this.monitorListener = monitorListener;
         

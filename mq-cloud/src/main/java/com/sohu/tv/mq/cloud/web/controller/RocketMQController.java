@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.sohu.tv.mq.cloud.bo.NameServer;
 import com.sohu.tv.mq.cloud.service.NameServerService;
+import com.sohu.tv.mq.cloud.util.Jointer;
 import com.sohu.tv.mq.cloud.util.Result;
 
 /**
@@ -34,14 +35,6 @@ public class RocketMQController {
     @RequestMapping("/nsaddr-{clusterId}")
     public String nsaddr(@PathVariable int clusterId) throws Exception {
         Result<List<NameServer>> result = nameServerService.query(clusterId);
-        if(result.isNotEmpty()) {
-            StringBuilder sb = new StringBuilder();
-            for(NameServer nameServer : result.getResult()) {
-                sb.append(nameServer.getAddr());
-                sb.append(";");
-            }
-            return sb.toString();
-        }
-        return "";
+        return Jointer.BY_SEMICOLON.join(result.getResult(), ns -> ns.getAddr());
     }
 }

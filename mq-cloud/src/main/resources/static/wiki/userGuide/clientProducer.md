@@ -5,7 +5,7 @@
 ```
 @Configuration
 public class MQConfiguration {
-    @Value("${flushCache.producer}")
+    @Value("${flushCache.producerGroup}")
     private String flushCacheProducer;
 
     @Value("${flushCache.topic}")
@@ -17,6 +17,8 @@ public class MQConfiguration {
     }
 }
 ```
+
+producerGroup和topic具体的值，请参考[topic详情页](topic#detail)，然后配置到yml或properties里。
 
 ## 二、<span id="spring-xml">初始化之spring xml方式</span>
 

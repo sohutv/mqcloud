@@ -3,6 +3,8 @@ package com.sohu.tv.mq.cloud.bo;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
+
+import com.sohu.tv.mq.cloud.util.Jointer;
 /**
  * 客户端版本
  * @Description: 
@@ -67,18 +69,7 @@ public class ClientVersion {
         this.updateTime = updateTime;
     }
     public String getOwnersString() {
-        if(owners == null) {
-            return "";
-        }
-        StringBuilder sb = new StringBuilder();
-        for(User u : owners) {
-            sb.append(u.notBlankName());
-            sb.append(",");
-        }
-        if(sb.length() > 0) {
-            sb.deleteCharAt(sb.length() - 1);
-        }
-        return sb.toString();
+        return Jointer.BY_COMMA.join(owners, v -> v.notBlankName());
     }
     public boolean addOwner(User owner) {
         if(owners == null) {

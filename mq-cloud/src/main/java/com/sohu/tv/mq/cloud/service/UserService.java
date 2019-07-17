@@ -22,6 +22,7 @@ import com.sohu.tv.mq.cloud.bo.UserProducer;
 import com.sohu.tv.mq.cloud.cache.LocalCache;
 import com.sohu.tv.mq.cloud.dao.ConsumerDao;
 import com.sohu.tv.mq.cloud.dao.UserDao;
+import com.sohu.tv.mq.cloud.util.Jointer;
 import com.sohu.tv.mq.cloud.util.Result;
 import com.sohu.tv.mq.cloud.util.Status;
 
@@ -281,15 +282,7 @@ public class UserService {
                 logger.error("queryMonitor err", e);
             }
             if (userList != null && userList.size() > 0) {
-                StringBuilder sb = new StringBuilder();
-                for (User u : userList) {
-                    sb.append(u.getEmail());
-                    sb.append(",");
-                }
-                if (sb.length() > 0) {
-                    sb.deleteCharAt(sb.length() - 1);
-                }
-                email = sb;
+                email = Jointer.BY_COMMA.join(userList, u -> u.getEmail());
                 mqLocalCache.put("monitor", email);
             }
         }

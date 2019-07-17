@@ -385,6 +385,7 @@ public class TopicController extends ViewController {
             @RequestParam("type") int type, Map<String, Object> map) throws Exception {
         FreemarkerUtil.set("mqVersion", MQVersion.class, map);
         setResult(map, null);
+        setResult(map, "client", group);
         String view = viewModule() + "/connection";
         Cluster cluster = clusterService.getMQClusterById(cid);
         HashSet<Connection> connectionSet = null;

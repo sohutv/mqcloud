@@ -152,6 +152,7 @@ $(function() {
 		    		if(params.data._type){
 		    			if(ipCache[params.data._group]){
 		    				if(ipCache[params.data._group] != 1 && ipCache[params.data._group] != 2){
+		    					setTimeout("$('body').getNiceScroll().resize()", 500);
 			    				return ipCache[params.data._group];
 		    				}
 		    			} else {
@@ -165,6 +166,7 @@ $(function() {
 				    	    	ipCache[params.data._group] = content;
 				    	    	callback(ticket, content);
 				    	    	console.log($("#ipList").val());
+				    	    	$('body').getNiceScroll().resize();
 				    	    });
 		    			}
 		    		} else {
