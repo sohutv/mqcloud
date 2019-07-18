@@ -59,7 +59,7 @@ public abstract class TrafficService<T extends Traffic> {
             if (masterAddr == null) {
                 continue;
             }
-            String key = masterAddr + "_" + statKey;
+            String key = masterAddr + "_" + statKey + "_" + getCountKey();
             String value = fetchLocalCache.get(key);
             if (value != null && ERROR.equals(value)) {
                 if (logger.isDebugEnabled()) {
