@@ -51,6 +51,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.util.HtmlUtils;
 
 import com.alibaba.fastjson.JSON;
+import com.google.common.base.Joiner;
 import com.sohu.tv.mq.cloud.bo.Cluster;
 import com.sohu.tv.mq.cloud.bo.Consumer;
 import com.sohu.tv.mq.cloud.bo.DecodedMessage;
@@ -494,14 +495,8 @@ public class MessageService {
                 return mqAdmin.getNameServerAddressList();
             }
         });
-        StringBuilder sb = new StringBuilder();
-        for (String str : nsList) {
-            sb.append(str);
-            sb.append(";");
-        }
-        sb.deleteCharAt(sb.length() - 1);
         DefaultMQPullConsumer consumer = new DefaultMQPullConsumer(MixAll.TOOLS_CONSUMER_GROUP, null);
-        consumer.setNamesrvAddr(sb.toString());
+        consumer.setNamesrvAddr(Joiner.on(";").join(nsList));
         consumer.setVipChannelEnabled(mqCluster.isEnableVipChannel());
         consumer.start();
         return consumer;

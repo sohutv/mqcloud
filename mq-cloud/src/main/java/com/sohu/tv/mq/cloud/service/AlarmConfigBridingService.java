@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.google.common.base.Joiner;
 import com.sohu.tv.mq.cloud.bo.AlarmConfig;
 import com.sohu.tv.mq.cloud.bo.NeedAlarmConfig;
 import com.sohu.tv.mq.cloud.dao.NeedAlarmConfigDao;
@@ -164,16 +165,7 @@ public class AlarmConfigBridingService {
      * @return
      */
     private String getKey(String... keys) {
-        StringBuilder sb = new StringBuilder();
-        for (String k : keys) {
-            sb.append(k);
-            sb.append("_");
-        }
-        if (sb.length() > 0) {
-            sb.deleteCharAt(sb.length() - 1);
-            return sb.toString();
-        }
-        return "";
+        return Joiner.on("_").join(keys);
     }
 
 }

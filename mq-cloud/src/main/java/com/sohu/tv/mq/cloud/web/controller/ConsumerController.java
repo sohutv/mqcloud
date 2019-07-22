@@ -159,14 +159,16 @@ public class ConsumerController extends ViewController {
                         if(consumerProgressVO.getRetryTopic() == null) {
                             consumerProgressVO.setRetryTopic(mq.getTopic());
                         } else if(!mq.getTopic().equals(consumerProgressVO.getRetryTopic())){
-                            logger.error("retry consumer has two diffrent topic, {} != {}", mq.getTopic(), consumerProgressVO.getRetryTopic());
+                            logger.error("retry consumer:{} has two diffrent topic, {} != {}", consumer.getName(), 
+                                    mq.getTopic(), consumerProgressVO.getRetryTopic());
                         }
                     } else {
                         offsetMap.put(mq, offsetTable.get(mq));
                         if(consumerProgressVO.getTopic() == null) {
                             consumerProgressVO.setTopic(mq.getTopic());
                         } else if(!mq.getTopic().equals(consumerProgressVO.getTopic())){
-                            logger.error("consumer has two diffrent topic, {} != {}", mq.getTopic(), consumerProgressVO.getTopic());
+                            logger.error("consumer:{} has two diffrent topic, {} != {}", consumer.getName(), 
+                                    mq.getTopic(), consumerProgressVO.getTopic());
                         }
                     }
                 }
