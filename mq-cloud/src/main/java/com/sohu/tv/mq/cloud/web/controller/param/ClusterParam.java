@@ -20,6 +20,12 @@ public class ClusterParam {
 
     @Range(min = 0, max = 1)
     private int online;
+    
+    @Range(min = 0, max = 1)
+    private int transactionEnabled;
+    
+    @Range(min = 0, max = 1)
+    private int traceEnabled;
 
     public int getId() {
         return id;
@@ -51,5 +57,21 @@ public class ClusterParam {
 
     public void setOnline(int online) {
         this.online = online;
+    }
+
+    public int getTransactionEnabled() {
+        return transactionEnabled;
+    }
+
+    public void setTransactionEnabled(int transactionEnabled) {
+        this.transactionEnabled = transactionEnabled;
+    }
+
+    public int getTraceEnabled() {
+        return traceEnabled;
+    }
+
+    public void setTraceEnabled(int traceEnabled) {
+        this.traceEnabled = traceEnabled;
     }
 }
