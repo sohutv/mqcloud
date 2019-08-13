@@ -21,6 +21,7 @@ import org.apache.rocketmq.common.MQVersion;
 import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.admin.ConsumeStats;
 import org.apache.rocketmq.common.admin.OffsetWrapper;
+import org.apache.rocketmq.common.admin.TopicOffset;
 import org.apache.rocketmq.common.admin.TopicStatsTable;
 import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.common.message.MessageQueue;
@@ -167,7 +168,7 @@ public class MonitorService {
                     }
                 }
                 if(cc == null) {
-                    return;
+                    continue;
                 }
                 
                 try {
@@ -238,7 +239,7 @@ public class MonitorService {
                 logger.warn("examineTopicStats topic:{}, err:{}", topic, e.getMessage());
                 return;
             }
-            if(topicStatsTable == null) {
+            if(topicStatsTable == null || topicStatsTable.getOffsetTable().size() == 0) {
                 return;
             }
             UndoneMsgs undoneMsgs = new UndoneMsgs();
@@ -258,7 +259,14 @@ public class MonitorService {
                 // 组装数据
                 for(Map<MessageQueue, Long> m : consumerStatusTable.values()) {
                     for(MessageQueue mq : m.keySet()) {
-                        long undoneMsgsSingleMQ = topicStatsTable.getOffsetTable().get(mq).getMaxOffset() - m.get(mq);
+                        TopicOffset topicOffset = topicStatsTable.getOffsetTable().get(mq);
+                        // 经过测试，客户端存在broker发生变更，但是消费者状态统计未变更的情况，这样会引起空指针异常
+                        if(topicOffset == null) {
+                            logger.debug("client:{} topic:{} consumerGroup:{} mq:{} not in topicStatsTable", 
+                                    conn.getClientId(), topic, consumerGroup, mq);
+                            continue;
+                        }
+                        long undoneMsgsSingleMQ = topicOffset.getMaxOffset() - m.get(mq);
                         if(undoneMsgsSingleMQ > 0) {
                             undoneMsgs.setUndoneMsgsTotal(undoneMsgs.getUndoneMsgsTotal() + undoneMsgsSingleMQ);
                         }
