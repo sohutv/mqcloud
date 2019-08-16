@@ -153,6 +153,7 @@ public class AlarmConfigBridingService {
      * @param alarmConfigList
      */
     public void setConfigTable(List<AlarmConfig> alarmConfigList) {
+        CONFIG_TABLE.clear();
         for (AlarmConfig alarmConfig : alarmConfigList) {
             CONFIG_TABLE.put(alarmConfig.getConsumer(), alarmConfig);
         }
