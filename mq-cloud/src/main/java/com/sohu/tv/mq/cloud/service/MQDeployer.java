@@ -15,6 +15,7 @@ import org.springframework.stereotype.Component;
 
 import com.alibaba.fastjson.JSON;
 import com.sohu.tv.mq.cloud.bo.Cluster;
+import com.sohu.tv.mq.cloud.bo.SubscriptionGroup;
 import com.sohu.tv.mq.cloud.mq.MQAdminCallback;
 import com.sohu.tv.mq.cloud.mq.MQAdminTemplate;
 import com.sohu.tv.mq.cloud.service.SSHTemplate.SSHCallback;
@@ -55,9 +56,14 @@ public class MQDeployer {
     public static final String CONFIG_FILE = "mq.conf";
     
     public static final String RUN_CONFIG = "echo \"source /etc/profile;nohup sh %s/bin/%s -c %s/" + CONFIG_FILE 
-            + " >> %s/logs/startup.log 2>&1 &\" >> %s/" + RUN_FILE;
+            + " >> %s/logs/startup.log 2>&1 &\" > %s/" + RUN_FILE;
     
     public static final String DATA_LOGS_DIR = "mkdir -p %s/data/config|mkdir -p %s/logs|";
+    
+    // 部署broker时自动创建监控订阅组
+    public static final String SUBSCRIPTIONGROUP_JSON = "echo '"
+            + JSON.toJSONString(SubscriptionGroup.buildMonitorSubscriptionGroup()) 
+            + "' > %s/data/config/subscriptionGroup.json";
    
     protected Logger logger = LoggerFactory.getLogger(this.getClass());
     
@@ -262,7 +268,8 @@ public class MQDeployer {
         String comm = String.format(DATA_LOGS_DIR, absoluteDir, absoluteDir)
                 + "echo -e \""+brokerParam.toConfig(mqCloudConfigHelper.getDomain(), cluster)
                 + "\" > " + absoluteConfig + "|"
-                + String.format(RUN_CONFIG, absoluteDir, "mqbroker", absoluteDir, absoluteDir, absoluteDir);
+                + String.format(RUN_CONFIG, absoluteDir, "mqbroker", absoluteDir, absoluteDir, absoluteDir) + "|"
+                + String.format(SUBSCRIPTIONGROUP_JSON, absoluteDir);
         SSHResult sshResult = null;
         try {
             sshResult = sshTemplate.execute(brokerParam.getIp(), new SSHCallback() {

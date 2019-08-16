@@ -16,7 +16,7 @@ import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper;
  * @author yongfeigao
  * @date 2018年5月28日
  */
-@Service
+@Service("mqcloudAlertService")
 @ConfigurationProperties("eureka.instance.metadataMap")
 public class AlertService {
     
