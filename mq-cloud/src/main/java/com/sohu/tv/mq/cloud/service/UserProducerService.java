@@ -171,14 +171,14 @@ public class UserProducerService {
      * 按照userProducer
      */
     public Result<List<UserProducer>> queryUserProducer(long uid, long tid) {
-        UserProducer userProducer = null;
+        List<UserProducer> userProducerList = null;
         try {
-            userProducer = userProducerDao.selectUserProducer(uid, tid);
+            userProducerList = userProducerDao.selectUserProducer(uid, tid);
         } catch (Exception e) {
             logger.error("queryUserProducer err, uid:{},tid:{}", uid, tid, e);
             return Result.getDBErrorResult(e);
         }
-        return Result.getResult(userProducer);
+        return Result.getResult(userProducerList);
     }
      
     /**

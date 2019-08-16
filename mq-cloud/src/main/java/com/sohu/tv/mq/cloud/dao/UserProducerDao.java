@@ -53,7 +53,7 @@ public interface UserProducerDao {
      * @param consumer
      */
     @Select("select * from user_producer where uid = #{uid} and tid = #{tid}")
-    public UserProducer selectUserProducer(@Param("uid") long uid, @Param("tid") long tid);
+    public List<UserProducer> selectUserProducer(@Param("uid") long uid, @Param("tid") long tid);
     
     /**
      * 查询记录
