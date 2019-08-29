@@ -88,11 +88,11 @@ subscription changed, group: digg-group OLD: SubscriptionData [topic=digg-topic,
 
 奥秘就在于再平衡过程，查看`org.apache.rocketmq.client.impl.consumer.RebalanceService` ，它会将topic的队列分配给对应的`ProcessQueue` 对象，然后封装成PullRequest进行消息拉取，具体如下图：
 
-1. rebalance过程![](https://img-blog.csdn.net/20160919143010798?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQv/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/Center)
+1. rebalance过程![](https://img-blog.csdn.net/20160919143010798)
 
 2. 相关对象结构
 
-   ![](https://img-blog.csdn.net/20160919143024654?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQv/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/Center)
+   ![](https://img-blog.csdn.net/20160919143024654)
 
 对这块有疑问的同学请参考我之前的文章：[8.consumer](https://blog.csdn.net/a417930422/article/details/52585548)。
 
