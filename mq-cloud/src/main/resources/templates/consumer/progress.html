@@ -6,18 +6,20 @@
 					<col width="50px">
 					<col width="300px">
 					<col width="150px">
-					<col width="80px">
-					<col width="60px">
+					<col>
+					<col width="50px">
+					<col width="70px">
 					<col width="50px">
 					<col width="160px">
-					<col>
+					<col width="210px">
 				</colgroup>
                 <thead>
 	                <tr>
 	                	<td>序号</td>
 	                    <td>消费者(consumer group)</td>
 	                    <td data-toggle="tooltip" title="谁持有这个消费者">归属于</td>
-	                    <td data-toggle="tooltip" title="集群模式：所有的消费者均分消息进行消费； 广播模式：每个消费者会消费所有消息">消费模式</td>
+	                    <td>用途</td>
+	                    <td data-toggle="tooltip" title="集群：所有的消费者均分消息进行消费； 广播：每个消费者会消费所有消息">模式</td>
 	                    <td data-toggle="tooltip" title="消费者未消费的消息数量">堆积量</td>
 	                    <td data-toggle="tooltip">TPS</td>
 	                    <td data-toggle="tooltip" title="所有队列中的最小更新时间">更新时间</td>
@@ -27,7 +29,7 @@
                 <tbody>
 	                <#if response.empty && resultExt.empty>
 					     <tr>
-		                    <td colspan=8 align="center">
+		                    <td colspan=9 align="center">
 		                    	暂无数据
 		                    </td>
 		                <tr>
@@ -58,7 +60,12 @@
 		                    	<#else>
 		                    		<td>暂无</td>
 		                    	</#if>
-	                    		<td>集群消费</td>
+								<#if consumerProgressVO.consumer.info?? && consumerProgressVO.consumer.info?length gt 12>
+									<td data-toggle="tooltip" title="${consumerProgressVO.consumer.info}">${consumerProgressVO.consumer.info?substring(0,12)}...</td>
+								<#else>
+									<td>${consumerProgressVO.consumer.info!}</td>
+								</#if>
+	                    		<td>集群</td>
 	                    		<td>${consumerProgressVO.diff}</td>
 	                    		<td>${consumerProgressVO.consumeTpsFormat}</td>
 	                    		<#if consumerProgressVO.minLastTimestamp == 0>
@@ -73,10 +80,10 @@
 		                    	<td>
 		                    		<#if consumerProgressVO.offsetMap??>
 <!-- 		                    		<button type="button" class="btn btn-info" data-target="#consumeDetailModel${consumerProgressVO_index}" data-toggle="modal">详情</button>&nbsp; -->
-		                    		<button title="跳过堆积的消息，直接消费至最新的消息" type="button" class="btn btn-success" data-target="#skipAccumulationModel${consumerProgressVO_index}" data-toggle="modal">跳过堆积</button>&nbsp;
-		                    		<button title="消费过去一段时间至现在的消息" type="button" class="btn btn-success" data-target="#resetOffSetModel${consumerProgressVO_index}" data-toggle="modal">消息回溯</button>&nbsp;
+		                    		<button title="跳过堆积的消息，直接消费至最新的消息" type="button" class="btn-sm btn-success" data-target="#skipAccumulationModel${consumerProgressVO_index}" data-toggle="modal">跳过堆积</button>
+		                    		<button title="消费过去一段时间至现在的消息" type="button" class="btn-sm btn-success" data-target="#resetOffSetModel${consumerProgressVO_index}" data-toggle="modal">消息回溯</button>
 		                    		</#if>
-		                    		<button type="button" class="btn btn-warning" data-target="#deleteConsumerModel${consumerProgressVO_index}" data-toggle="modal"><span class="glyphicon glyphicon-trash" aria-hidden="true"></span></button>&nbsp;
+		                    		<button type="button" class="btn-sm btn-warning" data-target="#deleteConsumerModel${consumerProgressVO_index}" data-toggle="modal"><span class="glyphicon glyphicon-trash" aria-hidden="true"></span></button>
 		                    		
 		                    		<#if consumerProgressVO.offsetMap??>
 		                    		<!-- 详情 -->
@@ -370,17 +377,22 @@
 		                    	<#else>
 		                    		<td>暂无</td>
 		                    	</#if>
-	                    		<td>广播消费</td>
+								<#if consumerProgressVO.consumer.info?? && consumerProgressVO.consumer.info?length gt 12>
+									<td data-toggle="tooltip" title="${consumerProgressVO.consumer.info}">${consumerProgressVO.consumer.info?substring(0,12)}...</td>
+								<#else>
+									<td>${consumerProgressVO.consumer.info!}</td>
+								</#if>
+	                    		<td>广播</td>
 	                    		<td>${consumerProgressVO.diff}</td>
 	                    		<td>${consumerProgressVO.consumeTpsFormat}</td>
 	                    		<td>暂无</td>
 		                    	<td>
 		                    		<#if consumerProgressVO.offsetMap??>
 <!-- 		                    		<button type="button" class="btn btn-info" data-target="#consumeDetailModel${consumerProgressVO_index}b" data-toggle="modal">详情</button>&nbsp; -->
-		                    		<button title="跳过堆积的消息，直接消费至最新的消息" type="button" class="btn btn-success" data-target="#skipAccumulationModel${consumerProgressVO_index}b" data-toggle="modal">跳过堆积</button>&nbsp;
-		                    		<button title="消费过去一段时间至现在的消息" type="button" class="btn btn-success" data-target="#resetOffSetModel${consumerProgressVO_index}b" data-toggle="modal">消息回溯</button>&nbsp;
+		                    		<button title="跳过堆积的消息，直接消费至最新的消息" type="button" class="btn-sm btn-success" data-target="#skipAccumulationModel${consumerProgressVO_index}b" data-toggle="modal">跳过堆积</button>
+		                    		<button title="消费过去一段时间至现在的消息" type="button" class="btn-sm btn-success" data-target="#resetOffSetModel${consumerProgressVO_index}b" data-toggle="modal">消息回溯</button>
 		                    		</#if>
-		                    		<button type="button" class="btn btn-warning" data-target="#deleteConsumerModel${consumerProgressVO_index}b" data-toggle="modal"><span class="glyphicon glyphicon-trash" aria-hidden="true"></span></button>&nbsp;
+		                    		<button type="button" class="btn-sm btn-warning" data-target="#deleteConsumerModel${consumerProgressVO_index}b" data-toggle="modal"><span class="glyphicon glyphicon-trash" aria-hidden="true"></span></button>
 		                    		
 		                    		<#if consumerProgressVO.offsetMap??>
 		                    		<!-- 详情 -->

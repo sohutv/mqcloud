@@ -36,6 +36,9 @@ public class Consumer {
     
     private int traceEnabled;
     
+    // 用途
+    private String info;
+    
     public long getId() {
         return id;
     }
@@ -120,6 +123,14 @@ public class Consumer {
         return traceEnabled == 1;
     }
     
+    public String getInfo() {
+        return info;
+    }
+
+    public void setInfo(String info) {
+        this.info = info;
+    }
+
     @Override
     public String toString() {
         return "Consumer [id=" + id + ", tid=" + tid + ", name=" + name + ", consumeWay=" + consumeWay + ", createDate="
