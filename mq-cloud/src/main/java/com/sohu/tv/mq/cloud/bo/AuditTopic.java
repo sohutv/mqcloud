@@ -1,5 +1,11 @@
 package com.sohu.tv.mq.cloud.bo;
 
+/**
+ * 审核topic
+ * 
+ * @author yongfeigao
+ * @date 2019年8月29日
+ */
 public class AuditTopic {
     // topic有序
     public static int HAS_ORDER = 1;
@@ -28,6 +34,9 @@ public class AuditTopic {
     
     private int delayEnabled;
 
+    // 序列化器
+    private int serializer;
+    
     public long getAid() {
         return aid;
     }
@@ -126,6 +135,14 @@ public class AuditTopic {
 
     public void setDelayEnabled(int delayEnabled) {
         this.delayEnabled = delayEnabled;
+    }
+
+    public int getSerializer() {
+        return serializer;
+    }
+
+    public void setSerializer(int serializer) {
+        this.serializer = serializer;
     }
 
     @Override

@@ -1,0 +1,33 @@
+<#if response.empty>
+	<tr><td colspan=7 class='text-center'>暂无数据</td></tr>
+<#else>
+	<#list response.result as audit>
+		<tr>
+			<td>${audit_index + 1}</td>
+			<td>${audit.typeEnum.getName()}</td>
+			<td>${audit.createTime?string("yyyy-MM-dd HH:mm:ss")}</td>
+			<#if audit.info?? && audit.info?length gt 12>
+				<td data-toggle="tooltip" title="${audit.info}">${audit.info?substring(0,12)}...</td>
+			<#else>
+				<td>${audit.info!}</td>
+			</#if>
+			<td>
+				${audit.statusEnum.getName()}
+				<#if audit.statusEnum.getStatus() == 2>
+					<br>${audit.refuseReason!}
+				</#if>
+			</td>
+			<#if audit.statusEnum.getStatus() == 0>
+				<td></td>
+			<#else>
+				<td>${audit.updateTime?string("yyyy-MM-dd HH:mm:ss")}</td>
+			</#if>
+			<td>
+				<#if audit.typeEnum.getType() != 9>
+					<button type="button" class="btn btn-success" 
+						onclick="auditDetail(${audit.id}, ${audit.typeEnum.getType()}, '${audit.typeEnum.getName()}')">查看</button>
+				</#if>
+			</td>
+		</tr>
+	</#list>
+</#if>

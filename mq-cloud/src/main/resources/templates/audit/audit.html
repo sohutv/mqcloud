@@ -1,0 +1,74 @@
+<div id="auditModal" class="modal fade" tabindex="-1" data-width="400">
+	<div class="modal-dialog" style="width:800px">
+		<div class="modal-content">
+
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+				<h4 class="modal-title">申请记录</h4>
+			</div>
+			<table class="table table-striped table-hover" style="margin: 0px;word-break:break-all; word-wrap:break-all;">
+				<thead>
+				<colgroup>
+					<col width='50px'>
+					<col width='100px'>
+					<col width='160px'>
+					<col>
+					<col width='120px'>
+					<col width='160px'>
+					<col width='70px'>
+				</colgroup>
+				<tr>
+					<td>序号</td>
+					<td>类型</td>
+					<td>申请时间</td>
+					<td>用途</td>
+					<td>审核状态</td>
+					<td>审核时间</td>
+					<td>详情</td>
+				</tr>
+				</thead>
+
+				<tbody id="auditListTbody">
+					<tr>
+						<td colspan=7 class='text-center'>暂无数据</td>
+					</tr>
+				</tbody>
+			</table>
+		</div>
+	</div>
+</div>
+<div id="auditDetailModal" class="modal fade" tabindex="-1" data-width="400" style="z-index:2000;">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+				<h4 class="modal-title"><span id="auditDetailAction"></span></h4>
+			</div>
+			<form class="form-horizontal form-bordered form-row-stripped" id="auditDetailForm">
+			</form>
+		</div>
+	</div>
+</div>
+<script>
+	function showAuditList(){
+		$.get('${request.contextPath}/audit/list',
+	        function(data){
+				$("#auditListTbody").html(data);
+				$("#auditModal").modal('show');
+	       	}
+		);
+	}
+	function auditDetail(aid, type, action){
+		$("#auditDetailAction").html(action);
+		$("#auditDetailForm").html("");
+		$.get('${request.contextPath}/audit/detail',
+			{
+				aid: aid,
+				type: type
+			},function(data){
+				$("#auditDetailForm").html(data);
+				$("#auditDetailModal").modal('show');
+	       	}
+		);
+	}
+</script>

@@ -55,4 +55,12 @@ public interface AuditDao {
             " where id=#{audit.id} " +
             "</script>")
     public Integer update(@Param("audit") Audit audit);
+    
+    /**
+     * 根据uid查询审核记录
+     * @param uid
+     * @return
+     */
+    @Select("select * from audit where uid = #{uid} order by id desc")
+    public List<Audit> selectByUid(@Param("uid") long uid);
 }

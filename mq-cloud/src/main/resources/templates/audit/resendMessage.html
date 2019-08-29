@@ -1,0 +1,58 @@
+<#if response.notOK>
+<div class="modal-body">
+	<div class="form-body">
+		<div class="form-group">
+			<div>异常数据</div>
+		</div>
+	</div>
+</div>
+<#else>
+<div class="modal-body">
+	<div class="form-body">
+		<div class="form-group">
+			<label class="control-label col-md-2"> Topic: </label>
+	        <div class="col-md-10">
+				<input type="text" value="${response.result.topic}" readonly="readonly" class="form-control" />
+			</div>
+		</div>
+		<div class="form-group">
+			<label class="control-label col-md-2"> 消息: </label>
+	        <div class="col-md-10">
+				<table id="dataTable" class="table table-striped table-hover" style="margin-top: 0px;word-break:break-all; word-wrap:break-all;">
+					<colgroup>
+						<col width="50px">
+						<col width="100px">
+						<col width="160px">
+						<col width="50px">
+						<col width="80px">
+					</colgroup>
+					<thead>
+						<tr>
+							<td>序号</td>
+							<td>msgId</td>
+							<td>重发时间</td>
+							<td data-toggle='tooltip' title="重发次数">次数</td>
+							<td>状态</td>
+						</tr>
+					</thead>
+					<tbody>
+						<#list response.result.msgList as msg>
+							<tr>
+								<td>${msg_index + 1}</td>
+								<td>${msg.msgId}</td>
+								<td id="${msg.msgId}_time">
+									<#if msg.sendTime??>
+										${msg.sendTime?string("yyyyMMdd HH:mm:ss")}
+									</#if>
+								</td>
+								<td id="${msg.msgId}_times">${msg.times}</td>
+								<td id="${msg.msgId}_status">${msg.statusDesc}</td>
+							</tr>
+						</#list>
+					</tbody>
+				</table>
+			</div>
+		</div>
+	</div>
+</div>
+</#if>

@@ -147,43 +147,47 @@ public class Audit {
 
     // 类型
     public enum TypeEnum {
-        NEW_TOPIC(0, "新建TOPIC"), 
-        UPDATE_TOPIC(1, "修改TOPIC"), 
-        DELETE_TOPIC(2, "删除TOPIC"), 
-        NEW_CONSUMER(3, "新建消费者"), 
-        DELETE_CONSUMER(4, "删除消费者"), 
-        RESET_OFFSET(5, "重置offset"), 
-        RESET_OFFSET_TO_MAX(6, "跳过堆积"), 
-        ASSOCIATE_PRODUCER(7, "关联生产者"), 
-        ASSOCIATE_CONSUMER(8, "关联消费者"), 
-        BECOME_ADMIN(9, "成为管理员"),
-        DELETE_USERPRODUCER(10, "删除生产者"),
-        DELETE_USERCONSUMER(11, "删除消费用户"),
-        RESEND_MESSAGE(12, "重发消息"),
+        NEW_TOPIC(0, "新建TOPIC", "addTopic"), 
+        UPDATE_TOPIC(1, "修改TOPIC", "updateTopic"), 
+        DELETE_TOPIC(2, "删除TOPIC", "deleteTopic"), 
+        NEW_CONSUMER(3, "新建消费者", "addConsumer"), 
+        DELETE_CONSUMER(4, "删除消费者", "deleteConsumer"), 
+        RESET_OFFSET(5, "重置offset", "resetOffset"), 
+        RESET_OFFSET_TO_MAX(6, "跳过堆积", "resetOffset"), 
+        ASSOCIATE_PRODUCER(7, "关联生产者", "associateProducer"), 
+        ASSOCIATE_CONSUMER(8, "关联消费者", "associateConsumer"), 
+        BECOME_ADMIN(9, "成为管理员", "becomeAdmin"),
+        DELETE_USERPRODUCER(10, "删除生产者", "deleteUserProducer"),
+        DELETE_USERCONSUMER(11, "删除消费用户", "deleteUserConsumer"),
+        RESEND_MESSAGE(12, "重发消息", "resendMessage"),
         ;
 
         private Integer type;
         private String name;
+        
+        private String view;
 
         TypeEnum(Integer type, String name) {
             this.type = type;
             this.name = name;
+        }
+        
+        TypeEnum(Integer type, String name, String view) {
+            this.type = type;
+            this.name = name;
+            this.view = view;
         }
 
         public int getType() {
             return type;
         }
 
-        public void setType(Integer type) {
-            this.type = type;
-        }
-
         public String getName() {
             return name;
         }
 
-        public void setName(String name) {
-            this.name = name;
+        public String getView() {
+            return view;
         }
 
         public static TypeEnum getEnumByType(Integer type) {
