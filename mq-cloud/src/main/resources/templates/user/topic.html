@@ -205,14 +205,27 @@
 								<div class="form-group">
 									<label class="control-label col-md-3"> 使用环境: </label>
 									<div class="col-md-5 checkbox">
-									    <input type="radio" name="testEnabled" value="0" checked>
-									    	<span data-toggle="modal" title="开启后，会在线上集群上创建该topic">线上</span>
-									    <input type="radio" name="testEnabled" value="1">
-									    	<span data-toggle="modal" title="开启后，会在测试集群上创建该topic">测试</span>
+										<label data-toggle="tooltip" title="开启后，会在线上集群上创建该topic">
+										    <input type="radio" name="testEnabled" value="0" checked>线上
+										</label>
+										<label data-toggle="tooltip" title="开启后，会在测试集群上创建该topic">
+										    <input type="radio" name="testEnabled" value="1">测试
+										</label>
 									</div>
 								</div>
 								<div class="form-group">
-									<label class="control-label col-md-3"> 申请用途: </label>
+									<label class="control-label col-md-3" data-toggle="tooltip" title="序列化方式一旦选择，不可更改，请谨慎！"> 序列化方式: </label>
+									<div class="col-md-5 checkbox">
+										<label data-toggle="tooltip" title="优点：大多数情况下压缩比高，性能好。缺点：兼容性差，消费方须用Protobuf反序列化。如果此topic自己使用，建议选择此种方式序列化。">
+									    	<input type="radio" name="serializer" value="0">Protobuf</input>
+									    </label>
+									    <label data-toggle="tooltip" title="优点：可以使用json或xml，跨语言。缺点：性能和压缩比不高。如果此topic别人消费，建议使用此种方式序列化。">
+									    	<input type="radio" name="serializer" value="1">String</input>
+										</label>
+									</div>
+								</div>
+								<div class="form-group">
+									<label class="control-label col-md-3"> 用途: </label>
 									<div class="col-md-5">
 										<textarea type="text" name="info" rows="3" class="form-control" placeholder="请填写"></textarea>
 									</div>
@@ -228,37 +241,45 @@
 									<div class="form-group">
 										<label class="control-label col-md-3"> 消息顺序: </label>
 										<div class="col-md-5 checkbox">
-										    <input type="radio" name="ordered" value="0" checked>
-										    	局部有序
-										    <input type="radio" name="ordered" value="1">
-										    	<span data-toggle="modal" title="在分布式系统中保持全局消息有序有性能损耗，请谨慎使用">全局有序</span>
+											<label>
+											    <input type="radio" name="ordered" value="0" checked>局部有序
+											</label>
+											<label data-toggle="tooltip" title="在分布式系统中保持全局消息有序有性能损耗，请谨慎使用">
+												<input type="radio" name="ordered" value="1">全局有序
+											</label>
 										</div>
 									</div>
 									<div class="form-group">
 										<label class="control-label col-md-3"> 开启trace: </label>
 										<div class="col-md-5 checkbox">
-										    <input type="radio" name="traceEnabled" value="0" checked>
-										    	否
-										    <input type="radio" name="traceEnabled" value="1">
-										    	<span data-toggle="modal" title="开启后，生产者会自动启用trace功能">是</span>
+											<label>
+											    <input type="radio" name="traceEnabled" value="0" checked>否
+											</label>
+											<label data-toggle="tooltip" title="开启后，生产者会自动启用trace功能">
+											    <input type="radio" name="traceEnabled" value="1">是
+											</label>
 										</div>
 									</div>
 									<div class="form-group">
 										<label class="control-label col-md-3"> 支持事务: </label>
 										<div class="col-md-5 checkbox">
-										    <input type="radio" name="transactionEnabled" value="0" checked>
-										    	否
-										    <input type="radio" name="transactionEnabled" value="1">
-										    	<span data-toggle="modal" title="开启后，会在事务集群上创建该topic">是</span>
+											<label>
+											    <input type="radio" name="transactionEnabled" value="0" checked>否
+											</label>
+											<label data-toggle="tooltip" title="开启后，会在事务集群上创建该topic">
+											    <input type="radio" name="transactionEnabled" value="1">是
+											</label>
 										</div>
 									</div>
 									<div class="form-group">
 										<label class="control-label col-md-3"> 消息延迟: </label>
 										<div class="col-md-5 checkbox">
-										    <input type="radio" name="delayEnabled" value="0" checked>
-										    	<span data-toggle="modal" title="该topic内不会发送延迟消息">否</span>
-										    <input type="radio" name="delayEnabled" value="1">
-										    	<span data-toggle="modal" title="该topic内会发送延迟消息">是</span>
+											<label data-toggle="tooltip" title="该topic内不会发送延迟消息">
+											    <input type="radio" name="delayEnabled" value="0" checked>否
+											</label>
+										   	<label data-toggle="tooltip" title="该topic内会发送延迟消息">
+											    <input type="radio" name="delayEnabled" value="1">是
+										   	</label>
 										</div>
 									</div>
 								</div>
@@ -305,23 +326,27 @@
 								<div class="form-group">
 									<label class="control-label col-md-3"> 消费方式: </label>
 									<div class="col-md-6 checkbox">
-									    <input onclick="consumerWayChange(0)" type="radio" name="consumeWay" value="0" checked> 
-									    	<span data-toggle="modal" title="所有的消费者均分消息进行消费">集群消费</span>
-									    <input onclick="consumerWayChange(1)" type="radio" name="consumeWay" value="1">
-									    	<span data-toggle="modal" title="每个消费者会消费所有消息">广播消费</span>
+										<label data-toggle="tooltip" title="所有的消费者均分消息进行消费">
+										    <input onclick="consumerWayChange(0)" type="radio" name="consumeWay" value="0" checked>集群消费
+										</label>
+									    <label data-toggle="tooltip" title="每个消费者会消费所有消息">
+										    <input onclick="consumerWayChange(1)" type="radio" name="consumeWay" value="1">广播消费
+									    </label>
 									</div>
 								</div>
 								<div class="form-group hide" id="traceDiv">
 									<label class="control-label col-md-3"> 开启Trace: </label>
 									<div class="col-md-6 checkbox">
-										<input type="radio" name="traceEnable" value="0" checked> 
-									    	<span data-toggle="modal" title="广播模式下不建议开启Trace">否</span>
-									    <input type="radio" name="traceEnable" value="1">
-									    	<span data-toggle="modal" title="开启后，消费者会自动启用trace功能">是</span>
+										<label data-toggle="tooltip" title="广播模式下不建议开启Trace">
+											<input type="radio" name="traceEnable" value="0" checked>否
+										</label>
+										<label data-toggle="tooltip" title="开启后，消费者会自动启用trace功能">
+										    <input type="radio" name="traceEnable" value="1">是
+										</label>
 									</div>
 								</div>
 								<div class="form-group">
-									<label class="control-label col-md-3"> 申请原因: </label>
+									<label class="control-label col-md-3"> 用途: </label>
 									<div class="col-md-6">
 										<textarea type="text" name="info" rows="3" class="form-control" placeholder="请填写"></textarea>
 									</div>
@@ -362,8 +387,12 @@
 								<div class="form-group">
 									<label class="control-label col-md-3"> 我是: </label>
 									<div class="col-md-5 checkbox">
-									    <input type="radio" name="role" onclick="selectProducer()" value="0">生产者
-									    <input type="radio" name="role" onclick="selectConsumer()" value="1">消费者
+										<label>
+										    <input type="radio" name="role" onclick="selectProducer()" value="0">生产者
+										</label>
+										<label>
+										    <input type="radio" name="role" onclick="selectConsumer()" value="1">消费者
+										</label>
 									</div>
 								</div>
 								<div id="producerGroup" class="form-group" style="display:none;">
@@ -525,11 +554,6 @@
 		// 用户topic表单校验
         $('#addTopicForm').bootstrapValidator({
     　　　　　　	message: 'This value is not valid',
-                　		feedbackIcons: {
-                    　　　　　　　　valid: 'glyphicon glyphicon-ok',
-                    　　　　　　　　invalid: 'glyphicon glyphicon-remove',
-                    　　　　　　　　validating: 'glyphicon glyphicon-refresh'
-                　　　　　　　　   },
                 fields: {
                 	teamName: {
                         validators: {
@@ -563,6 +587,13 @@
     	                         max: 20,
     	                         message: '队列数量需介于1和20之间'
     	                     }
+                        }
+                    },
+                    serializer: {
+                    	validators: {
+                            notEmpty: {
+                                message: '请选择序列化方式'
+                            }
                         }
                     }
                 }

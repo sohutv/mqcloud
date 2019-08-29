@@ -219,10 +219,12 @@
 								<div class="form-group">
 									<label class="control-label col-md-4"> 接收报警: </label>
 									<div class="col-md-5 checkbox">
-									    <input type="radio" name="ignoreWarn" value="0">
-									    	是
-									    <input type="radio" name="ignoreWarn" value="1">
-									    	<span data-toggle="modal" title="此选项优先级较高，会使下面配置失效，请谨慎使用">否</span>
+										<label>
+										    <input type="radio" name="ignoreWarn" value="0">是
+										</label>
+										<label data-toggle="tooltip" title="此选项优先级较高，会使下面配置失效，请谨慎使用">
+										    <input type="radio" name="ignoreWarn" value="1">否
+										</label>
 									</div>
 								</div>
 								<div class="form-group" id="accumulateTimeID">
