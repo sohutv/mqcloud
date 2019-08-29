@@ -43,6 +43,10 @@ public class TopicParam {
     @Range(min = 0, max = 1)
     private int delayEnabled;
     
+    // 序列化器
+    @Range(min = 0, max = 1)
+    private int serializer;
+    
     public String getProducer() {
         return producer;
     }
@@ -111,11 +115,17 @@ public class TopicParam {
     public void setDelayEnabled(int delayEnabled) {
         this.delayEnabled = delayEnabled;
     }
+    public int getSerializer() {
+        return serializer;
+    }
+    public void setSerializer(int serializer) {
+        this.serializer = serializer;
+    }
     @Override
     public String toString() {
         return "TopicParam [name=" + name + ", queueNum=" + queueNum + ", ordered=" + ordered + ", info=" + info
                 + ", producer=" + producer + ", traceEnabled=" + traceEnabled + ", transactionEnabled="
                 + transactionEnabled + ", qpd=" + qpd + ", qps=" + qps + ", testEnabled=" + testEnabled
-                + ", delayEnabled=" + delayEnabled + "]";
+                + ", delayEnabled=" + delayEnabled + ", serializer=" + serializer + "]";
     }
 }

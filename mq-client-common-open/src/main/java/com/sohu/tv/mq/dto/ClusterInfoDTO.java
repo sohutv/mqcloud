@@ -14,6 +14,8 @@ public class ClusterInfoDTO {
     private boolean broadcast;
     // 是否开启trace
     private boolean traceEnabled;
+    // 序列化器
+    private int serializer;
     
     public int getClusterId() {
         return clusterId;
@@ -39,9 +41,15 @@ public class ClusterInfoDTO {
     public void setTraceEnabled(boolean traceEnabled) {
         this.traceEnabled = traceEnabled;
     }
+    public int getSerializer() {
+        return serializer;
+    }
+    public void setSerializer(int serializer) {
+        this.serializer = serializer;
+    }
     @Override
     public String toString() {
         return "ClusterInfoDTO [clusterId=" + clusterId + ", vipChannelEnabled=" + vipChannelEnabled + ", broadcast="
-                + broadcast + ", traceEnabled=" + traceEnabled + "]";
+                + broadcast + ", traceEnabled=" + traceEnabled + ", serializer=" + serializer + "]";
     }
 }

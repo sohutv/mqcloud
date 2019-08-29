@@ -26,7 +26,7 @@ import com.sohu.tv.mq.cloud.service.UserProducerService;
 import com.sohu.tv.mq.cloud.util.Result;
 import com.sohu.tv.mq.cloud.util.WebUtil;
 import com.sohu.tv.mq.cloud.web.controller.param.TopicUserParam;
-import com.sohu.tv.mq.cloud.web.vo.ClusterInfoDTO;
+import com.sohu.tv.mq.dto.ClusterInfoDTO;
 import com.sohu.tv.mq.stats.dto.ClientStats;
 /**
  * 集群信息查询
@@ -81,6 +81,7 @@ public class ClusterController {
         clusterInfoDTO.setClusterId(mqCluster.getId());
         clusterInfoDTO.setVipChannelEnabled(mqCluster.isEnableVipChannel());
         clusterInfoDTO.setTraceEnabled(topic.traceEnabled());
+        clusterInfoDTO.setSerializer(topic.getSerializer());
         
         // 校验生产者
         if(topicUserParam.isProducer()) {

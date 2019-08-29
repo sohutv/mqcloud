@@ -2,6 +2,8 @@ package com.sohu.tv.mq.cloud.bo;
 
 import java.util.Date;
 
+import com.sohu.tv.mq.serializable.MessageSerializerEnum;
+
 /**
  * Topic对象
  * 
@@ -44,6 +46,9 @@ public class Topic {
     
     // 是否延迟消息
     private int delayEnabled;
+    
+    // 序列化器
+    private int serializer;
 
     public long getId() {
         return id;
@@ -149,6 +154,18 @@ public class Topic {
         return delayEnabled == 1;
     }
     
+    public int getSerializer() {
+        return serializer;
+    }
+
+    public void setSerializer(int serializer) {
+        this.serializer = serializer;
+    }
+    
+    public String getSerializerName() {
+        return MessageSerializerEnum.getNameByType(serializer);
+    }
+
     @Override
     public String toString() {
         return "Topic [id=" + id + ", clusterId=" + clusterId + ", name=" + name + ", queueNum=" + queueNum

@@ -7,3 +7,6 @@
 - [五、发送有序消息示例](#produceOrderMessage)
 - [六、发送事务消息示例](#produceTransMessage)
 - [七、隔离发送消息示例](#hystrix)
+- [八、同步发送消息问题](#sync)
+- [九、异步发送消息问题](#async)
+- [十、oneway发送消息问题](#oneway)

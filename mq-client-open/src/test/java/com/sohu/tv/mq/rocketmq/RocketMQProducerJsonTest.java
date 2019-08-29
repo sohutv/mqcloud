@@ -1,8 +1,6 @@
 package com.sohu.tv.mq.rocketmq;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import org.apache.rocketmq.client.producer.MessageQueueSelector;
 import org.apache.rocketmq.client.producer.SendResult;
@@ -22,18 +20,15 @@ public class RocketMQProducerJsonTest {
 
     @Before
     public void init() {
-        producer = TestUtil.buildProducer("mqcloud-test-topic-producer", "mqcloud-test-topic");
+        producer = TestUtil.buildProducer("mqcloud-json-test-topic-producer", "mqcloud-json-test-topic");
         producer.start();
     }
 
     @Test
     public void produce() {
-        Map<String, Object> map = new HashMap<String, Object>();
-        map.put("a", "b");
-        map.put("c", "d");
-        map.put("o", "c");
-        String str = JSON.toJSONString(map);
-        Result<SendResult> sendResult = producer.publish(str, "abc");
+        Video video = new Video(1, "搜狐tv");
+        String str = JSON.toJSONString(video);
+        Result<SendResult> sendResult = producer.publish(str, String.valueOf(1));
         System.out.println(sendResult);
         Assert.assertTrue(sendResult.isSuccess());
     }
@@ -41,12 +36,9 @@ public class RocketMQProducerJsonTest {
     @Test
     public void produceMulti() throws Exception {
         for(int i = 0; i < 10000; ++i) {
-            Map<String, Object> map = new HashMap<String, Object>();
-            map.put("a", "a"+i);
-            map.put("c", "d"+i);
-            map.put("o", "c"+i);
-            String str = JSON.toJSONString(map);
-            Result<SendResult> sendResult = producer.publish(str, "data"+i);
+            Video video = new Video(i, "搜狐tv"+i);
+            String str = JSON.toJSONString(video);
+            Result<SendResult> sendResult = producer.publish(str, String.valueOf(i));
             System.out.println(sendResult);
             Assert.assertTrue(sendResult.isSuccess());
             Thread.sleep(1000);
@@ -69,15 +61,35 @@ public class RocketMQProducerJsonTest {
     @Test
     public void produceOrder() {
         producer.setMessageQueueSelector(new IDHashMessageQueueSelector());
-        long vid = 123L;
-        Map<String, Object> map = new HashMap<String, Object>();
-        map.put("v", vid);
-        Result<SendResult> sendResult = producer.publishOrder(map, String.valueOf(vid), vid);
+        Video video = new Video(123, "搜狐tv");
+        String str = JSON.toJSONString(video);
+        Result<SendResult> sendResult = producer.publishOrder(str, String.valueOf(video.getId()), video.getId());
         Assert.assertNotNull(sendResult);
     }
     
     @After
     public void clean() {
         producer.shutdown();
+    }
+    
+    public static class Video {
+        private int id;
+        private String name;
+        public Video(int id, String name) {
+            this.id = id;
+            this.name = name;
+        }
+        public int getId() {
+            return id;
+        }
+        public void setId(int id) {
+            this.id = id;
+        }
+        public String getName() {
+            return name;
+        }
+        public void setName(String name) {
+            this.name = name;
+        }
     }
 }

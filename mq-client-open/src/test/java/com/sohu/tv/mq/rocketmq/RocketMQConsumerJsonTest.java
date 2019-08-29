@@ -17,7 +17,7 @@ public class RocketMQConsumerJsonTest {
 
     @Before
     public void init() {
-        consumer = TestUtil.buildConsumer("mqcloud-test-topic-consumer", "mqcloud-test-topic");
+        consumer = TestUtil.buildConsumer("mqcloud-json-test-consumer", "mqcloud-json-test-topic");
     }
 
     @Test

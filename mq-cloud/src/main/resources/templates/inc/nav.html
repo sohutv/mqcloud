@@ -55,6 +55,8 @@
 									<i class="fa fa-user glyphicon glyphicon-wrench"></i> 密码重置</a>
 								</li>
 							</#if>
+							<li><a href="#" onclick="showAuditList()"><i class="fa fa-user glyphicon glyphicon-list-alt"></i> 申请记录</a>
+							</li>
 							<li><a href="#" onclick="logout()"><i class="fa fa-user glyphicon glyphicon-off"></i> 注销</a></li>
 						</ul>
 					</#if>
@@ -81,6 +83,7 @@
 <#if userInfo.user??>
 	<#include "../user/update.html">
 	<#include "../feedback/add.html">
+	<#include "../audit/audit.html">
 	<script>
 		function logout(){
 			$.get('${request.contextPath}/user/logout',function(data){

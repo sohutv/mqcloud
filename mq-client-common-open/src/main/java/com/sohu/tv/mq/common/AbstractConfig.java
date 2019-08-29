@@ -18,6 +18,7 @@ import com.alibaba.fastjson.JSON;
 import com.sohu.tv.mq.dto.ClusterInfoDTO;
 import com.sohu.tv.mq.dto.ClusterInfoDTOResult;
 import com.sohu.tv.mq.serializable.MessageSerializer;
+import com.sohu.tv.mq.serializable.MessageSerializerEnum;
 import com.sohu.tv.mq.trace.SohuAsyncTraceDispatcher;
 import com.sohu.tv.mq.trace.TraceRocketMQProducer;
 import com.sohu.tv.mq.util.CommonUtil;
@@ -174,6 +175,12 @@ public abstract class AbstractConfig {
         // 设置instanceName
         if(getInstanceName() != null) {
             clientConfig.setInstanceName(getInstanceName());
+        }
+        // 设置序列化方式
+        messageSerializer = MessageSerializerEnum.getMessageSerializerByType(
+                clusterInfoDTO.getSerializer());
+        if(messageSerializer == null) {
+            logger.error("serializer is null! clusterInfoDTO:{}", clusterInfoDTO.toString());
         }
         // trace 初始化
         initTrace();

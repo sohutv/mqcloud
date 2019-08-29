@@ -35,6 +35,12 @@
 		<logger name="RocketmqClient" level="INFO" additivity="false">
 			<appender-ref ref="RocketmqClientAppender" />
 		</logger>
+		<logger name="com.sohu.tv.index.cloud.metrics" level="warn" additivity="false">
+	        <appender-ref ref="stdout" />
+	    </logger>
+	   	<logger name="com.netflix.util.concurrent.ShutdownEnabledTimer" level="warn" additivity="false">
+	        <appender-ref ref="stdout" />
+	    </logger>
 		<root level="INFO">
 			<appender-ref ref="stdout" />
 		</root>

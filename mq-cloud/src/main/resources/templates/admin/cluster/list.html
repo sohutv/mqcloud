@@ -330,9 +330,9 @@
 						<div class="form-group">
 							<label class="control-label col-md-3"> 角色: </label>
 					        <div class="col-md-8 checkbox">
-							    <span id="brokerRole_async_span"><input type="radio" id="brokerRole_async" name="brokerRole" value="ASYNC_MASTER">异步复制</span>
-							    <span id="brokerRole_sync_span"><input type="radio" id="brokerRole_sync" name="brokerRole" value="SYNC_MASTER">同步双写</span>
-							    <span id="brokerRole_slave_span"><input type="radio" id="brokerRole_slave" name="brokerRole" value="SLAVE">Slave</span>
+							    <label id="brokerRole_async_span"><input type="radio" id="brokerRole_async" name="brokerRole" value="ASYNC_MASTER">异步复制</label>
+							    <label id="brokerRole_sync_span"><input type="radio" id="brokerRole_sync" name="brokerRole" value="SYNC_MASTER">同步双写</label>
+							    <label id="brokerRole_slave_span"><input type="radio" id="brokerRole_slave" name="brokerRole" value="SLAVE">Slave</label>
 							</div>
 						</div>
 						<div class="form-group">
@@ -344,8 +344,12 @@
 						<div class="form-group">
 							<label class="control-label col-md-3"> 刷盘方式: </label>
 					        <div class="col-md-8 checkbox">
-							    <input type="radio" name="flushDiskType" value="ASYNC_FLUSH" checked>异步刷盘
-							    <input type="radio" name="flushDiskType" value="SYNC_FLUSH">同步刷盘
+							    <label>
+							    	<input type="radio" name="flushDiskType" value="ASYNC_FLUSH" checked>异步刷盘
+							    </label>
+							    <label>
+							    	<input type="radio" name="flushDiskType" value="SYNC_FLUSH">同步刷盘
+							    </label>
 							</div>
 						</div>
 						<div class="form-group">
