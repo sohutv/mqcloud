@@ -60,11 +60,19 @@
 		                    	<#else>
 		                    		<td>暂无</td>
 		                    	</#if>
-								<#if consumerProgressVO.consumer.info?? && consumerProgressVO.consumer.info?length gt 12>
-									<td data-toggle="tooltip" title="${consumerProgressVO.consumer.info}">${consumerProgressVO.consumer.info?substring(0,12)}...</td>
-								<#else>
-									<td>${consumerProgressVO.consumer.info!}</td>
-								</#if>
+		                    	<td class="edit-text" <#if consumerProgressVO.consumer.info?? && consumerProgressVO.consumer.info?length gt 12>data-toggle="tooltip" title="${consumerProgressVO.consumer.info}"</#if>>
+									<#if consumerProgressVO.consumer.info?? && consumerProgressVO.consumer.info?length gt 12>
+										<#if consumerProgressVO.ownerList?? && (consumerProgressVO.ownerList?seq_contains(userInfo.user) || userInfo.user.type == 1)><span style="cursor:pointer" onclick="showUpdateInfo(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', '${consumerProgressVO.consumer.info!}')"></#if>${consumerProgressVO.consumer.info?substring(0,12)}...<#if consumerProgressVO.ownerList?? && (consumerProgressVO.ownerList?seq_contains(userInfo.user) || userInfo.user.type == 1)></span></#if>
+									<#else>
+										<#if consumerProgressVO.consumer.info?? && consumerProgressVO.consumer.info !=''>
+											<#if consumerProgressVO.ownerList?? && (consumerProgressVO.ownerList?seq_contains(userInfo.user) || userInfo.user.type == 1)><span style="cursor:pointer" onclick="showUpdateInfo(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', '${consumerProgressVO.consumer.info!}')"></#if>${consumerProgressVO.consumer.info}<#if consumerProgressVO.ownerList?? && (consumerProgressVO.ownerList?seq_contains(userInfo.user) || userInfo.user.type == 1)></span></#if>
+										<#else>
+											<#if consumerProgressVO.ownerList?? && (consumerProgressVO.ownerList?seq_contains(userInfo.user) || userInfo.user.type == 1)>
+												<button type="button" class="btn-sm btn-success" onclick="showUpdateInfo(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', '${consumerProgressVO.consumer.info!}')">添加</button>
+				                    		</#if>
+										</#if>
+									</#if>
+								</td>
 	                    		<td>集群</td>
 	                    		<td>${consumerProgressVO.diff}</td>
 	                    		<td>${consumerProgressVO.consumeTpsFormat}</td>
@@ -377,11 +385,19 @@
 		                    	<#else>
 		                    		<td>暂无</td>
 		                    	</#if>
-								<#if consumerProgressVO.consumer.info?? && consumerProgressVO.consumer.info?length gt 12>
-									<td data-toggle="tooltip" title="${consumerProgressVO.consumer.info}">${consumerProgressVO.consumer.info?substring(0,12)}...</td>
-								<#else>
-									<td>${consumerProgressVO.consumer.info!}</td>
-								</#if>
+								<td class="edit-text" <#if consumerProgressVO.consumer.info?? && consumerProgressVO.consumer.info?length gt 12>data-toggle="tooltip" title="${consumerProgressVO.consumer.info}"</#if>>
+									<#if consumerProgressVO.consumer.info?? && consumerProgressVO.consumer.info?length gt 12>
+										<#if consumerProgressVO.ownerList?? && (consumerProgressVO.ownerList?seq_contains(userInfo.user) || userInfo.user.type == 1)><span style="cursor:pointer" onclick="showUpdateInfo(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', '${consumerProgressVO.consumer.info!}')"></#if>${consumerProgressVO.consumer.info?substring(0,12)}...<#if consumerProgressVO.ownerList?? && (consumerProgressVO.ownerList?seq_contains(userInfo.user) || userInfo.user.type == 1)></span></#if>
+									<#else>
+										<#if consumerProgressVO.consumer.info?? && consumerProgressVO.consumer.info !=''>
+											<#if consumerProgressVO.ownerList?? && (consumerProgressVO.ownerList?seq_contains(userInfo.user) || userInfo.user.type == 1)><span style="cursor:pointer" onclick="showUpdateInfo(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', '${consumerProgressVO.consumer.info!}')"></#if>${consumerProgressVO.consumer.info}<#if consumerProgressVO.ownerList?? && (consumerProgressVO.ownerList?seq_contains(userInfo.user) || userInfo.user.type == 1)></span></#if>
+										<#else>
+											<#if consumerProgressVO.ownerList?? && (consumerProgressVO.ownerList?seq_contains(userInfo.user) || userInfo.user.type == 1)>
+												<button type="button" class="btn-sm btn-success" onclick="showUpdateInfo(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', '${consumerProgressVO.consumer.info!}')">添加</button>
+				                    		</#if>
+										</#if>
+									</#if>
+								</td>
 	                    		<td>广播</td>
 	                    		<td>${consumerProgressVO.diff}</td>
 	                    		<td>${consumerProgressVO.consumeTpsFormat}</td>
@@ -733,6 +749,39 @@
 	</div>
 </div>
 
+<#--修改consumer描述-->
+<div id="updateConsumerInfoModal" class="modal fade" tabindex="-1">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+				<h4 class="modal-title"><b id="consumerTitle"></b>用途更新</h4>
+			</div>
+			<form class="form-horizontal form-bordered form-row-stripped" id="addUserProducerModalForm">
+				<div class="modal-body">
+					<div class="row">
+						<div class="col-md-12">
+							<div class="form-body">
+								<div class="form-group">
+									<label class="control-label col-md-2"> 用途: </label>
+									<div class="col-md-9">
+										<textarea id="consumerInfo" rows="5" class="form-control"></textarea>
+									</div>
+									<input type="hidden" id="currentConsumerID">
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" data-dismiss="modal" class="btn" >取消</button>
+					<button type="button" class="btn btn-primary" id="updateConsumerInfoBtn" onclick="updateConsumerInfo()">确定</button>
+				</div>
+			</form>
+		</div>
+	</div>
+</div> 
+
 <script>
 <#if response.OK>
 $(function() {
@@ -744,6 +793,12 @@ $(function() {
 </script>
 
 <script>
+function showUpdateInfo(cid, consumer, info){
+	$("#currentConsumerID").val(cid);
+	$("#consumerTitle").html(consumer);
+	$("#consumerInfo").val(info);
+	$("#updateConsumerInfoModal").modal('show');
+}
 /**
  * 跳过堆积
  */
@@ -1106,5 +1161,28 @@ function getQueueOwner(consumer, consumerId){
 	    }
         queueOwnerInitArray[consumerId] = true;
     }, 'json');
+}
+
+// 更新consumer用途
+function updateConsumerInfo(){
+	if(!$("#consumerInfo").val()){
+		alert("请输入用途");
+		return;
+	}
+	disable("updateConsumerInfoBtn");
+	$.post('${request.contextPath}/consumer/update/info',
+			{
+				info: $("#consumerInfo").val(),
+				cid: $("#currentConsumerID").val()
+			},
+	        function(data){
+	            if(data.status == 200){
+	            	toastr.success("操作成功！即将刷新页面！");  	            	
+	            	reload(2000);            	
+			    }else{
+			    	toastr.error("操作失败！"+data.message);  
+			    	enable("updateConsumerInfoBtn");
+			    }
+	    }, 'json');
 }
 </script>

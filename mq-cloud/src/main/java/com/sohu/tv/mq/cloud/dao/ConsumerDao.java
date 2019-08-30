@@ -8,6 +8,7 @@ import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Options;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
+import org.apache.ibatis.annotations.Update;
 
 import com.sohu.tv.mq.cloud.bo.Consumer;
 
@@ -96,4 +97,14 @@ public interface ConsumerDao {
     @Select("select c.* from consumer c where c.name = #{name} and c.id in "
             + "(select uc.consumer_id from user_consumer uc where tid = #{tid} and uc.consumer_id = c.id)")
     public Consumer selectTopicConsumerByName(@Param("name") String name, @Param("tid") long tid);
+    
+    
+    /**
+     * 更新记录
+     * 
+     * @param tid
+     * @param info
+     */
+    @Update("update consumer set info=#{info} where id=#{id}")
+    public Integer updateConsumerInfo(@Param("id") long id, @Param("info") String info);
 }

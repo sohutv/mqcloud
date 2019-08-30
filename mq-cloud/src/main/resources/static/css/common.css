@@ -156,3 +156,7 @@ legend{padding:.5em;border:0;width:auto;margin-bottom:10px}
 table.tr-pointer > tbody > tr:not(.no_more_data){
 	cursor:pointer;
 }
+
+.edit-text:hover{
+	text-decoration:underline;	
+}

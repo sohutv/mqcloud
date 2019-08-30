@@ -11,6 +11,7 @@ import java.util.TreeMap;
 
 import javax.validation.Valid;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.admin.ConsumeStats;
 import org.apache.rocketmq.common.admin.OffsetWrapper;
@@ -25,6 +26,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.util.HtmlUtils;
 
 import com.sohu.tv.mq.cloud.bo.Audit;
 import com.sohu.tv.mq.cloud.bo.Audit.TypeEnum;
@@ -647,6 +649,32 @@ public class ConsumerController extends ViewController {
             }
         }
         return Result.getResult(queueConsumerVOList);
+    }
+    
+    /**
+     * 更新描述
+     * 
+     * @return
+     * @throws Exception
+     */
+    @ResponseBody
+    @RequestMapping(value = "/update/info", method = RequestMethod.POST)
+    public Result<?> updateInfo(UserInfo userInfo, @RequestParam("cid") int cid,
+            @RequestParam("info") String info) throws Exception {
+        // 校验当前用户是否拥有权限
+        UserConsumer userConsumer = new UserConsumer();
+        userConsumer.setConsumerId(cid);
+        userConsumer.setUid(userInfo.getUser().getId());
+        Result<List<UserConsumer>> ucListResult = userConsumerService.queryUserConsumer(userConsumer);
+        if (ucListResult.isEmpty() && !userInfo.getUser().isAdmin()) {
+            return Result.getResult(Status.NOT_ALLOWED);
+        }
+        if (StringUtils.isBlank(info)) {
+            return Result.getResult(Status.PARAM_ERROR);
+        }
+        Result<Integer> result = consumerService.updateConsumerInfo(cid, HtmlUtils.htmlEscape(info.trim(), "UTF-8"));
+        logger.info(userInfo.getUser().getName() + " update consumer info , cid:{}, info:{}, status:{}", cid, info, result.isOK());
+        return Result.getWebResult(result);
     }
     
     @Override

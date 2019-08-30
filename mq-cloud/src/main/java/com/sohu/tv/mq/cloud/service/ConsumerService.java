@@ -203,6 +203,21 @@ public class ConsumerService {
     }
     
     /**
+     * 更新consumer描述
+     * @return
+     */
+    public Result<Integer> updateConsumerInfo(long id, String info) {
+        Integer result = null;
+        try {
+            result = consumerDao.updateConsumerInfo(id, info);
+        } catch (Exception e) {
+            logger.error("updateConsumerInfo err, id:{}, info:{}", id, info, e);
+            return Result.getDBErrorResult(e);
+        }
+        return Result.getResult(result);
+    }
+    
+    /**
      * 抓取集群消费方式的消费者进度
      * @param topic
      * @param consumerList
