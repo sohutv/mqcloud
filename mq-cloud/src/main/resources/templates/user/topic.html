@@ -595,6 +595,13 @@
                                 message: '请选择序列化方式'
                             }
                         }
+                    },
+                    info: {
+                    	validators: {
+                            notEmpty: {
+                                message: '请填写用途'
+                            }
+                        }
                     }
                 }
         }).on('success.form.bv', function(e) {
@@ -653,6 +660,13 @@
                         validators: {
                         	notEmpty: {
                                 message: '请选择Topic'
+                            }
+                        }
+                    },
+                    info: {
+                    	validators: {
+                            notEmpty: {
+                                message: '请填写用途'
                             }
                         }
                     }
