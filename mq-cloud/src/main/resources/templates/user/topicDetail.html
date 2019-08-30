@@ -1,10 +1,10 @@
 <script type="text/javascript" src="${request.contextPath}/resources/echarts/echarts.min.js"></script>
 <div class="tabbable-custom">
     <ul class="nav nav-tabs" id="tabs">
-        <li id="topology" class="active"><a href="#topologyTab" data-url="${request.contextPath}/user/topic/${response.result}/topology" data-toggle="tab">详情</a></li>
-        <li id="produce"><a href="#produceTab" data-url="${request.contextPath}/topic/${response.result}/produce/progress" data-toggle="tab">生产详情</a></li>
-        <li id="consume"><a href="#consumeTab" data-url="${request.contextPath}/consumer/progress?tid=${response.result}" data-toggle="tab">消费详情</a></li>
-        <li id="msg"><a href="#msgTab" data-url="${request.contextPath}/msg/index?tid=${response.result}" data-toggle="tab">消息</a></li>
+        <li id="topology" class="active" data-url="${request.contextPath}/user/topic/${response.result}/topology"><a href="?tab=topology">详情</a></li>
+        <li id="produce" data-url="${request.contextPath}/topic/${response.result}/produce/progress"><a href="?tab=produce">生产详情</a></li>
+        <li id="consume" data-url="${request.contextPath}/consumer/progress?tid=${response.result}"><a href="?tab=consume">消费详情</a></li>
+        <li id="msg" data-url="${request.contextPath}/msg/index?tid=${response.result}"><a href="?tab=msg">消息</a></li>
     </ul>
     <div class="tab-content" id="tabContent">
         <div class="tab-pane active" id="topologyTab">
@@ -18,25 +18,20 @@
     </div>
 </div>
 <script type="text/javascript">
-    $('#tabs a').click(function (e) {
-        e.preventDefault();
-        // 清除之前tab下的内容
-        $("#tabContent div.active").empty();
-        var href = this.hash;
-        var url = $(this).attr("data-url");
-        var pane = $(this);
-        $.get(url, function (result) {
-        	$(href).html(result);
-            pane.tab('show');
+    function showTab(tab){
+    	$.get($("#"+tab).attr("data-url"), function (result) {
+        	$("#"+tab+"Tab").html(result);
         });
-    });
+    }
     function refreshActiveTab(){
     	var tab = getQueryString("tab");
     	if(tab){
     		$("#"+tab).addClass("active").siblings().removeClass("active");
     		$("#"+tab+"Tab").addClass("active").siblings().removeClass("active");
+    	} else {
+    		tab = "topology";
     	}
-    	$("#tabs li.active a").click();
+    	showTab(tab);
     	$("#tabs li a").tooltip({placement:"bottom"});
     }
     $(function(){
