@@ -160,3 +160,6 @@ table.tr-pointer > tbody > tr:not(.no_more_data){
 .edit-text:hover{
 	text-decoration:underline;	
 }
+.pointer-cursor{
+	cursor: pointer;
+}
