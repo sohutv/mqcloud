@@ -26,10 +26,8 @@
 				</tr>
 				<tr>
 					<td>每个broker上的队列数:</td>
-					<td>${response.result.topic.queueNum} 
-						<#if response.result.own>
-            			<button type="submit" class="btn btn-success btn-sm" data-target="#updateTopicRouteModal" data-toggle="modal" >修改</button>
-            			</#if>
+					<td <#if response.result.own>class="edit-text"</#if>>
+						<#if response.result.own><span style="cursor:pointer" data-target="#updateTopicRouteModal" data-toggle="modal"></#if>${response.result.topic.queueNum}<#if response.result.own></span></#if> 
             		</td>
 				</tr>
 				<tr>
@@ -52,17 +50,14 @@
 				</tr>
 				<tr>
 					<td>用途:</td>
-					<td>
-						${response.result.topic.info!}
-						<#if response.result.own>
-            				<button type="submit" class="btn btn-success btn-sm" data-target="#updateTopicInfoModal" data-toggle="modal" >
-            					<#if response.result.topic.info?? && response.result.topic.info !=''> 
-            						修改
-            					<#else>
-            						添加
-            					</#if>
-            				</button>
-            			</#if>
+					<td <#if response.result.own>class="edit-text"</#if>>
+          				<#if response.result.topic.info?? && response.result.topic.info !=''> 
+							<#if response.result.own><span style="cursor:pointer" data-target="#updateTopicInfoModal" data-toggle="modal"></#if>${response.result.topic.info!}<#if response.result.own></span></#if>
+           				<#else>
+							<#if response.result.own>
+            					<button type="submit" class="btn btn-success btn-sm" data-target="#updateTopicInfoModal" data-toggle="modal" >添加</button>
+	            			</#if>
+           				</#if>
 					</td>
 				</tr>
 				<tr>
@@ -544,13 +539,13 @@ $(function() {
 							<div class="form-body">
 								<div class="form-group">
 									<label class="control-label col-md-3"> 队列数: </label>
-									<div class="col-md-5">
+									<div class="col-md-8">
 										<input type="text" name="queueNum" value="${response.result.topic.queueNum}" placeholder="队列数" class="form-control" />
 									</div>
 								</div>
 								<div class="form-group">
 									<label class="control-label col-md-3"> 申请原因: </label>
-									<div class="col-md-5">
+									<div class="col-md-8">
 										<textarea type="text" name="info" rows="3" class="form-control" placeholder="请填写"></textarea>
 									</div>
 								</div>
