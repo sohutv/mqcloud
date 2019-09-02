@@ -54,6 +54,7 @@ import com.sohu.tv.mq.cloud.web.controller.param.PaginationParam;
 import com.sohu.tv.mq.cloud.web.vo.TopicTrafficHolderVO;
 import com.sohu.tv.mq.cloud.web.vo.TopicTrafficVO;
 import com.sohu.tv.mq.cloud.web.vo.UserInfo;
+import com.sohu.tv.mq.util.Version;
 
 /**
  * 用户接口
@@ -478,6 +479,7 @@ public class UserController extends ViewController {
 
         setResult(map, result);
         FreemarkerUtil.set("splitUtil", SplitUtil.class, map);
+        setResult(map, "version", Version.get());
         return viewModule() + "/topicTopology";
     }
 

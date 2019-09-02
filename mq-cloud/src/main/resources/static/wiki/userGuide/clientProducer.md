@@ -59,7 +59,7 @@ producer.shutdown();
    }
    ```
 
-2. 发送对象（要保证此topic仅仅自己使用，申请topic时序列化方式选择为*Protobuf*）
+2. <span id="produceObject">发送对象</span>（要保证此topic仅仅自己使用，申请topic时序列化方式选择为*Protobuf*）
 
    ```
    // 构建业务对象

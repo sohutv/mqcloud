@@ -50,7 +50,7 @@ consumer.shutdown();
 
  ## 四、<span id="consumerCallback">消费回调代码</span>
 
-1. json消费回调代码
+1. <span id="consumeJson">json消费回调代码</span>
 
    ```
    ConsumerCallback consumerCallback = new ConsumerCallback<String, MessageExt>() {
@@ -68,7 +68,7 @@ consumer.shutdown();
    }
    ```
 
-2. 对象消费回调代码（假设对象为Video）
+2. <span id="consumeObject">对象消费回调代码（假设对象为Video）</span>
 
    ```
    ConsumerCallback consumerCallback = new ConsumerCallback<Video, MessageExt>() {

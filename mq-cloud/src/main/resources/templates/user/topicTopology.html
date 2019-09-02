@@ -46,7 +46,13 @@
 				</tr>
 				<tr>
 					<td>序列化方式:</td>
-					<td>${response.result.topic.serializerName!}</td>
+					<td>
+						<#if response.result.topic.serializer == 1>
+							<a href="/wiki/userGuide/clientProducer#produceJson" data-toggle="tooltip" title="查看生产JSON样例，客户端务必升级至${version}及以上">${response.result.topic.serializerName!}</a>
+						<#else>
+							<a href="/wiki/userGuide/clientProducer#produceObject" data-toggle="tooltip" title="查看生产对象或Map样例">${response.result.topic.serializerName!}</a>
+						</#if>
+					</td>
 				</tr>
 				<tr>
 					<td>用途:</td>
