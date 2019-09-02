@@ -110,7 +110,7 @@ CREATE TABLE `audit_topic` (
   `info` varchar(360) DEFAULT NULL COMMENT 'topic描述',
   `qps` int(11) DEFAULT NULL COMMENT '消息量qps预估',
   `qpd` int(11) DEFAULT NULL COMMENT '一天消息量预估',
-  `serializer` int(4) NOT NULL DEFAULT '0' COMMENT '序列化器 0:Protostuf,1:String',
+  `serializer` int(4) NOT NULL DEFAULT '0' COMMENT '序列化器 0:Protobuf,1:String',
   UNIQUE KEY `name` (`name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='审核topic相关表';
 
@@ -433,7 +433,7 @@ CREATE TABLE `topic` (
   `delay_enabled` int(4) NOT NULL DEFAULT '0' COMMENT '0:不发送延迟消息,1:发送延迟消息。注：此字段不强制该topic的消息类型',
   `create_date` date NOT NULL,
   `update_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-  `serializer` int(4) NOT NULL DEFAULT '0' COMMENT '序列化器 0:Protostuf,1:String',
+  `serializer` int(4) NOT NULL DEFAULT '0' COMMENT '序列化器 0:Protobuf,1:String',
   PRIMARY KEY (`id`),
   UNIQUE KEY `name` (`name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='topic表';

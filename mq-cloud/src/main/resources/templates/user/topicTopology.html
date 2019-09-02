@@ -95,7 +95,7 @@
 							    	</#list>
 							    </#if>					    	
 						    </td>
-						    <td><a href="${request.contextPath}/user/topic/${response.result.topic.id}/detail?tab=produce">${key.producer}</a></td>
+						    <td><a href="javacript:void();" data-toggle="tooltip" title="查看每个实例的生产状况" onclick="showProducerStats('${key.producer}')">${key.producer}</a></td>
 						</tr>
 					</#list>
 				<#else>
@@ -849,6 +849,12 @@ function producerStats(){
         function(data){
             $("#producerStatsChart").html(data);
     });	
+}
+
+function showProducerStats(producer){
+	curProducer = producer;
+	$("#producerStatsChart").empty();
+	$('#producerStatsModal').modal('show');
 }
 
 function updateTopicInfo(){
