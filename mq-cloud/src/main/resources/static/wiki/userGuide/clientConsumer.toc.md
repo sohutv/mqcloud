@@ -5,4 +5,4 @@
 - [三、初始化之java方式](#java)
 - [四、消费回调代码](#consumerCallback)
 - [五、广播模式消费者需要注意](#offset)
-- [六、Consumer部分参数释义](#explain)
+- [六、消费常见问题](#explain)

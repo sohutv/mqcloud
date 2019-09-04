@@ -114,41 +114,59 @@ consumer.shutdown();
 -Drocketmq.client.localOffsetStoreDir=/data/logs/.rocketmq_offsets
 ```
 
-## 六、<span id="explain">Consumer部分参数释义<span>【如非有特殊需求不必修改】：
+## 六、<span id="explain">消费常见问题<span>：
 
-```
-/**
- * 消费线程数，默认20
- * 
- * @param num
- */
-public void setConsumeThreadMin(int num) {
-    if (num <= 0) {
-        return;
-    }
-    consumer.setConsumeThreadMin(num);
-}
-/**
- * 消费线程数，默认64
- * 
- * @param num
- */
-public void setConsumeThreadMax(int num) {
-    if (num <= 0) {
-        return;
-    }
-    consumer.setConsumeThreadMax(num);
-}
-/**
- * queue中缓存多少个消息时进行流控 ，默认1000
- * 
- * @param size
- */
-public void setPullThresholdForQueue(int size) {
-    if (size < 0) {
-        return;
-    }
-    consumer.setPullThresholdForQueue(size);
-}
-```
+1. 如何控制本地缓存的消息量？
+
+   由于消息是先从broker拉取到本地，然后再进行消费的，那为了防止把本地内存打爆，可以通过如下参数控制：
+
+   1.`pullThresholdForQueue`：每个本地队列缓存的消息数量，默认1000。
+
+   消费者本地缓存的消息数量为：总队列数*`pullThresholdForQueue`
+
+   例如，如下topic总队列数量为：48，那么默认缓存消息数量为48 * 1000 = 4.8万条
+
+   ![](img/cc1.png)
+
+   2.`pullThresholdForTopic`：针对整个topic限制消息数量，默认无限制。
+
+   此参数优先级高于`pullThresholdForQueue`。
+
+   3.对于以上两个参数，有对应的根据消息大小来设置的参数，分别为`pullThresholdSizeForQueue`(默认为100)和`pullThresholdSizeForTopic`(默认无限制)，其单位为M。
+
+   **以上参数仅仅是设置消费者本地缓存的消息量，达到阈值时，会进行限流操作：即不再从broker拉取消息到本地缓存。**
+
+   4.`pullBatchSize`：控制每个队列每次拉取多少条消息，默认最大32条(broker端有限制)。
+
+   5.`pullInterval(默认为0)`：控制每个队列每隔多长时间从broker拉取一次消息，默认不停拉取。
+
+2. 如何控制消费并发量？
+
+   1.可以通过如下参数控制消费的线程数：
+
+   `consumeThreadMin(默认为20)`和`consumeThreadMax(默认为64)`，默认至少有20个消费线程。
+
+   例如，将`consumeThreadMin`和`consumeThreadMax`同时设置为1，这样就变成单线程消费了。
+
+   2.可以通过如下参数控制多少条消息作为一批被某个线程消费：
+
+   `consumeMessageBatchMaxSize(默认为1)`，默认表示每条消息需要一个线程来处理。
+
+3. 每秒消费最多1000条消息，该如何实现？
+
+   假设broker数量为2，每个broker上8个队列，总队列数为16。
+
+   ```
+   pullThresholdForQueue=1000/16≈63
+   pullBatchSize=20
+   pullInterval=300
+   ```
+
+   释义：这样每个队列每秒拉取20*(1000/300)=60条消息，总缓存消息1000条。
+
+   如果不想计算队列数量怎么办？
+
+   可以设置`pullThresholdForTopic=1000`，但是这个不是很准确，因为需要计算队列数，进行均分。
+
+   ​
 

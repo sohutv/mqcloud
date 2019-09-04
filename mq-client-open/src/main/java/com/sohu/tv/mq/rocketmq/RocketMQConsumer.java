@@ -188,6 +188,42 @@ public class RocketMQConsumer extends AbstractConfig {
         }
         consumer.setPullThresholdForQueue(size);
     }
+    
+    /**
+     * queue中缓存多少M消息时进行流控 ，默认100
+     * 
+     * @param size
+     */
+    public void setPullThresholdSizeForQueue(int size) {
+        if (size < 0) {
+            return;
+        }
+        consumer.setPullThresholdSizeForQueue(size);
+    }
+    
+    /**
+     * topic维度缓存多少个消息时进行流控 ，默认-1，不限制
+     * 
+     * @param size
+     */
+    public void setPullThresholdForTopic(int size) {
+        if (size < 0) {
+            return;
+        }
+        consumer.setPullThresholdForTopic(size);
+    }
+    
+    /**
+     * topic维度缓存多少M消息时进行流控 ，默认-1，不限制
+     * 
+     * @param size
+     */
+    public void setPullThresholdSizeForTopic(int size) {
+        if (size < 0) {
+            return;
+        }
+        consumer.setPullThresholdSizeForTopic(size);
+    }
 
     /**
      * 拉取消息的时间间隔，毫秒，默认为0
