@@ -265,11 +265,11 @@ public class MQDeployer {
         String absoluteDir = MQ_CLOUD_DIR + brokerParam.getDir();
         String absoluteConfig = absoluteDir + "/" + CONFIG_FILE;
         Cluster cluster = clusterService.getMQClusterById(brokerParam.getMqClusterId());
+        // 1.基础配置
         String comm = String.format(DATA_LOGS_DIR, absoluteDir, absoluteDir)
                 + "echo -e \""+brokerParam.toConfig(mqCloudConfigHelper.getDomain(), cluster)
                 + "\" > " + absoluteConfig + "|"
-                + String.format(RUN_CONFIG, absoluteDir, "mqbroker", absoluteDir, absoluteDir, absoluteDir) + "|"
-                + String.format(SUBSCRIPTIONGROUP_JSON, absoluteDir);
+                + String.format(RUN_CONFIG, absoluteDir, "mqbroker", absoluteDir, absoluteDir, absoluteDir);
         SSHResult sshResult = null;
         try {
             sshResult = sshTemplate.execute(brokerParam.getIp(), new SSHCallback() {
@@ -286,6 +286,24 @@ public class MQDeployer {
         if(configResult.isNotOK()) {
             return configResult;
         }
+        // 2.初始化监控订阅信息
+        final String subscriptionGroupComm = String.format(SUBSCRIPTIONGROUP_JSON, absoluteDir);
+        try {
+            sshResult = sshTemplate.execute(brokerParam.getIp(), new SSHCallback() {
+                public SSHResult call(SSHSession session) {
+                    SSHResult sshResult = session.executeCommand(subscriptionGroupComm);
+                    return sshResult;
+                }
+            });
+        } catch (SSHException e) {
+            logger.error("init subscriptionGroup, ip:{},comm:{}", brokerParam.getIp(), subscriptionGroupComm, e);
+            return Result.getWebErrorResult(e);
+        }
+        configResult = wrapSSHResult(sshResult);
+        if(configResult.isNotOK()) {
+            return configResult;
+        }
+        
         // slave直接返回
         if(brokerParam.isSlave()) {
             return Result.getOKResult();
@@ -300,25 +318,25 @@ public class MQDeployer {
             return masterAddressResult;
         }
         String masterAddress = masterAddressResult.getResult();
-        // 抓取topic配置
+        // 3.1抓取topic配置
         Result<String> result = fetchTopicConfig(cluster, masterAddress);
         if(Status.DB_ERROR.getKey() == result.getStatus()) {
             return result;
         }
         
-        // 保存topic配置
+        // 3.2保存topic配置
         Result<?> topicSSHResult = saveConfig(brokerParam.getIp(), result.getResult(), absoluteDir, "topics.json");
         if(!topicSSHResult.isOK()) {
             return topicSSHResult;
         }
         
-        // 抓取consumer配置
+        // 4.1抓取consumer配置
         Result<String> consumerResult = fetchConsumerConfig(cluster, masterAddress);
         if(Status.DB_ERROR.getKey() == consumerResult.getStatus()) {
             return consumerResult;
         }
         
-        // 保存consumer配置
+        // 4.2保存consumer配置
         Result<?> consumerSSHResult = saveConfig(brokerParam.getIp(), consumerResult.getResult(), absoluteDir, 
                 "subscriptionGroup.json");
         return consumerSSHResult;
