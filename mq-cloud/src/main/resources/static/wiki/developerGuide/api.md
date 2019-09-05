@@ -86,13 +86,13 @@
 
    **释义**：实时获取broker端的消费者的偏移量（数据来自于消费者的主动上报）。
 
-   **用途**：实时展示消费者的堆积，延迟等指标。
+   **用途**：实时展示集群模式消费者的堆积，延迟等指标。
 
 5. 获取消费者状态：MQAdminExt.getConsumeStatus(String topic, String group, String clientAddr)
 
-   **释义**：broker回调客户端，获取客户端统计的每个队列的消费的偏移量（可以用于广播消费模式，因为广播消费不会上报偏移量到broker，broker端不知道广播模式的消费状况）。
+   **释义**：broker回调客户端，获取客户端统计的每个队列的消费的偏移量。
 
-   **用途**：实时展示消费者的堆积，延迟等指标。
+   **用途**：展示消息是否被消费。
 
 6. <span id="examineConsumerConnectionInfo">获取消费者链接：MQAdminExt.examineConsumerConnectionInfo(String consumerGroup)</span>
 
@@ -121,7 +121,7 @@
    }
    ```
 
-   **用途**：获取消费者的所有实例的链接信息。
+   **用途**：获取消费者的所有实例的链接信息（可以用于广播消费模式，因为广播消费不会上报偏移量到broker，只能通过broker反调的模式）。
 
 7. <span id="getConsumerRunningInfo">获取消费者客户端实例的运行时信息：MQAdminExt.getConsumerRunningInfo(String consumerGroup, String clientId, boolean jstack)</span>
 

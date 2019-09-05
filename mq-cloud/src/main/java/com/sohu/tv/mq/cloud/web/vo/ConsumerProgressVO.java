@@ -55,10 +55,7 @@ public class ConsumerProgressVO {
     }
 
     public String getConsumeTpsFormat() {
-        if (consumeTps % 10 == 0) {
-            return String.valueOf((long) consumeTps);
-        }
-        return String.valueOf((long) (consumeTps * 10) / 10d);
+        return String.valueOf(Math.round(consumeTps));
     }
 
     public void setConsumeTps(double consumeTps) {

@@ -37,7 +37,7 @@ public class ConsumerServiceTest {
         consumer.setName("api-dubbo-consumer");
         consumer.setConsumeWay(Consumer.BROADCAST);
         consumerList.add(consumer);
-        Map<Long, List<ConsumeStatsExt>> map = consumerService.fetchBroadcastConsumeProgress(topic, consumerList);
+        Map<Long, List<ConsumeStatsExt>> map = consumerService.fetchBroadcastingConsumeProgress(clusterService.getMQClusterById(2), topic.getName(), consumerList);
         System.out.println(map);
     }
 

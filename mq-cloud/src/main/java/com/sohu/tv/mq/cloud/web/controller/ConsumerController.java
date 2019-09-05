@@ -99,7 +99,7 @@ public class ConsumerController extends ViewController {
      * @throws Exception
      */
     @RequestMapping("/progress")
-    public String consumeProgress(UserInfo userInfo, @RequestParam("tid") int tid, Map<String, Object> map) throws Exception {
+    public String progress(UserInfo userInfo, @RequestParam("tid") int tid, Map<String, Object> map) throws Exception {
         String view = viewModule() + "/progress";
         // 获取消费者
         Result<TopicTopology> topicTopologyResult = userService.queryTopicTopology(userInfo.getUser(), tid);
@@ -125,116 +125,156 @@ public class ConsumerController extends ViewController {
         // 获取消费者归属者
         Map<Long, List<User>> consumerMap = getConsumerMap(tid, cidList);
         
-        List<ConsumerProgressVO> list = new ArrayList<ConsumerProgressVO>();
         Topic topic = topicTopology.getTopic();
-        if(!clusteringConsumerList.isEmpty()) {
-            // 抓取集群消费模式下消费者状态
-            Cluster cluster = clusterService.getMQClusterById(topic.getClusterId());
-            Map<Long, ConsumeStats> consumeStatsMap = consumerService.fetchClusteringConsumeProgress(cluster, 
-                    clusteringConsumerList);
-            
-            // 组装集群模式vo
-            for(Consumer consumer : clusteringConsumerList) {
-                ConsumerProgressVO consumerProgressVO = new ConsumerProgressVO();
-                consumerProgressVO.setConsumer(consumer);
-                consumerProgressVO.setTopic(topic.getName());
-                consumerProgressVO.setOwnerList(consumerMap.get(consumer.getId()));
-                if(consumeStatsMap == null) {
-                    list.add(consumerProgressVO);
-                    continue;
-                }
-                ConsumeStats consumeStats = consumeStatsMap.get(consumer.getId());
-                if(consumeStats == null) {
-                    list.add(consumerProgressVO);
-                    continue;
-                }
-                consumerProgressVO.setConsumeTps(consumeStats.getConsumeTps());
-                
-                // 拆分正常队列和重试队列
-                HashMap<MessageQueue, OffsetWrapper> offsetTable = consumeStats.getOffsetTable();
-                Map<MessageQueue, OffsetWrapper> offsetMap = new TreeMap<MessageQueue, OffsetWrapper>();
-                Map<MessageQueue, OffsetWrapper> retryOffsetMap = new TreeMap<MessageQueue, OffsetWrapper>();
-                for(MessageQueue mq : offsetTable.keySet()) {
-                    if(mq.getTopic().startsWith(MixAll.RETRY_GROUP_TOPIC_PREFIX)) {
-                        retryOffsetMap.put(mq, offsetTable.get(mq));
-                        // 设置topic名字
-                        if(consumerProgressVO.getRetryTopic() == null) {
-                            consumerProgressVO.setRetryTopic(mq.getTopic());
-                        } else if(!mq.getTopic().equals(consumerProgressVO.getRetryTopic())){
-                            logger.error("retry consumer:{} has two diffrent topic, {} != {}", consumer.getName(), 
-                                    mq.getTopic(), consumerProgressVO.getRetryTopic());
-                        }
-                    } else {
-                        offsetMap.put(mq, offsetTable.get(mq));
-                        if(consumerProgressVO.getTopic() == null) {
-                            consumerProgressVO.setTopic(mq.getTopic());
-                        } else if(!mq.getTopic().equals(consumerProgressVO.getTopic())){
-                            logger.error("consumer:{} has two diffrent topic, {} != {}", consumer.getName(), 
-                                    mq.getTopic(), consumerProgressVO.getTopic());
-                        }
-                    }
-                }
-                // 获取死topic状况
-                String dlqTopic = MixAll.getDLQTopic(consumer.getName());
-                consumerProgressVO.setDlqTopic(dlqTopic);
-                TopicStatsTable topicStatsTable = topicService.stats(cluster, dlqTopic);
-                if(topicStatsTable != null) {
-                    consumerProgressVO.setDlqOffsetMap(new TreeMap<MessageQueue, TopicOffset>(topicStatsTable.getOffsetTable()));
-                }
-                
-                consumerProgressVO.setOffsetMap(offsetMap);
-                consumerProgressVO.setRetryOffsetMap(retryOffsetMap);
-                consumerProgressVO.computeTotalDiff();
-                list.add(consumerProgressVO);
-            }
-        }
-        setResult(map, list);
+        Cluster cluster = clusterService.getMQClusterById(topic.getClusterId());
         
-        List<ConsumerProgressVO> listExt = new ArrayList<ConsumerProgressVO>();
-        if(!broadcastConsumerList.isEmpty()) {
-            // 抓取广播消费模式下消费者状态
-            Map<Long, List<ConsumeStatsExt>> consumeStatsMap = consumerService.fetchBroadcastConsumeProgress(
-                    topic, broadcastConsumerList);
-            // 组装广播消费模式vo
-            for(Consumer consumer : broadcastConsumerList) {
-                ConsumerProgressVO consumerProgressVO = new ConsumerProgressVO();
-                consumerProgressVO.setConsumer(consumer);
-                consumerProgressVO.setTopic(topic.getName());
-                consumerProgressVO.setOwnerList(consumerMap.get(consumer.getId()));
-                if(consumeStatsMap == null) {
-                    listExt.add(consumerProgressVO);
-                    continue;
-                }
-                List<ConsumeStatsExt> consumeStatsList = consumeStatsMap.get(consumer.getId());
-                if(consumeStatsList == null) {
-                    listExt.add(consumerProgressVO);
-                    continue;
-                }
-                Map<MessageQueue, OffsetWrapper> offsetMap = new TreeMap<MessageQueue, OffsetWrapper>();
-                for(ConsumeStatsExt consumeStats : consumeStatsList) {
-                    consumerProgressVO.setConsumeTps(consumerProgressVO.getConsumeTps() + consumeStats.getConsumeTps());
-                    Map<MessageQueue, OffsetWrapper> offsetTable = consumeStats.getOffsetTable();
-                    for(MessageQueue mq : offsetTable.keySet()) {
-                        OffsetWrapper prev = offsetMap.get(mq);
-                        if(prev == null) {
-                            prev = new OffsetWrapper();
-                            offsetMap.put(mq, prev);
-                        }
-                        OffsetWrapper cur = offsetTable.get(mq);
-                        prev.setBrokerOffset(prev.getBrokerOffset() + cur.getBrokerOffset());
-                        prev.setConsumerOffset(prev.getConsumerOffset() + cur.getConsumerOffset());
-                    }
-                }
-                consumerProgressVO.setOffsetMap(offsetMap);
-                consumerProgressVO.setConsumeStatsList(consumeStatsList);
-                consumerProgressVO.computeTotalDiff();
-                listExt.add(consumerProgressVO);
-            }
-        }
-        setResult(map, "resultExt", Result.getResult(listExt));
+        // 组装集群模式消费者信息
+        setResult(map, buildClusteringConsumerProgressVOList(cluster, topic.getName(), clusteringConsumerList, consumerMap));
+        
+        // 组装广播模式消费者信息
+        setResult(map, "resultExt", Result.getResult(buildBroadcastingConsumerProgressVOList(cluster, topic.getName(), 
+                broadcastConsumerList, consumerMap)));
+        
         setResult(map, "topic", topic);
         FreemarkerUtil.set("long", Long.class, map);
         return view;
+    }
+    
+    /**
+     * 构建集群消费模式消费者消费进度
+     * @param cluster
+     * @param topic
+     * @param consumerList
+     * @param consumerMap
+     * @return
+     */
+    private List<ConsumerProgressVO> buildClusteringConsumerProgressVOList(Cluster cluster, String topic, 
+            List<Consumer> consumerList, Map<Long, List<User>> consumerMap){
+        List<ConsumerProgressVO> list = new ArrayList<ConsumerProgressVO>();
+        if(consumerList.isEmpty()) {
+            return list;
+        }
+        Map<Long, ConsumeStats> consumeStatsMap = consumerService.fetchClusteringConsumeProgress(cluster, consumerList);
+        
+        // 组装集群模式vo
+        for(Consumer consumer : consumerList) {
+            ConsumerProgressVO consumerProgressVO = buildConsumerProgressVO(topic, consumerMap, consumer);
+            if(consumeStatsMap == null) {
+                list.add(consumerProgressVO);
+                continue;
+            }
+            ConsumeStats consumeStats = consumeStatsMap.get(consumer.getId());
+            if(consumeStats == null) {
+                list.add(consumerProgressVO);
+                continue;
+            }
+            consumerProgressVO.setConsumeTps(consumeStats.getConsumeTps());
+            
+            // 拆分正常队列和重试队列
+            HashMap<MessageQueue, OffsetWrapper> offsetTable = consumeStats.getOffsetTable();
+            Map<MessageQueue, OffsetWrapper> offsetMap = new TreeMap<MessageQueue, OffsetWrapper>();
+            Map<MessageQueue, OffsetWrapper> retryOffsetMap = new TreeMap<MessageQueue, OffsetWrapper>();
+            for(MessageQueue mq : offsetTable.keySet()) {
+                if(mq.getTopic().startsWith(MixAll.RETRY_GROUP_TOPIC_PREFIX)) {
+                    retryOffsetMap.put(mq, offsetTable.get(mq));
+                    // 设置topic名字
+                    if(consumerProgressVO.getRetryTopic() == null) {
+                        consumerProgressVO.setRetryTopic(mq.getTopic());
+                    } else if(!mq.getTopic().equals(consumerProgressVO.getRetryTopic())){
+                        logger.error("retry consumer:{} has two diffrent topic, {} != {}", consumer.getName(), 
+                                mq.getTopic(), consumerProgressVO.getRetryTopic());
+                    }
+                } else {
+                    offsetMap.put(mq, offsetTable.get(mq));
+                    if(consumerProgressVO.getTopic() == null) {
+                        consumerProgressVO.setTopic(mq.getTopic());
+                    } else if(!mq.getTopic().equals(consumerProgressVO.getTopic())){
+                        logger.error("consumer:{} has two diffrent topic, {} != {}", consumer.getName(), 
+                                mq.getTopic(), consumerProgressVO.getTopic());
+                    }
+                }
+            }
+            // 获取死topic状况
+            String dlqTopic = MixAll.getDLQTopic(consumer.getName());
+            consumerProgressVO.setDlqTopic(dlqTopic);
+            TopicStatsTable topicStatsTable = topicService.stats(cluster, dlqTopic);
+            if(topicStatsTable != null) {
+                consumerProgressVO.setDlqOffsetMap(new TreeMap<MessageQueue, TopicOffset>(topicStatsTable.getOffsetTable()));
+            }
+            
+            consumerProgressVO.setOffsetMap(offsetMap);
+            consumerProgressVO.setRetryOffsetMap(retryOffsetMap);
+            consumerProgressVO.computeTotalDiff();
+            list.add(consumerProgressVO);
+        }
+        return list;
+    }
+    
+    /**
+     * 构建广播消费模式消费者消费进度
+     * @param cluster
+     * @param topic
+     * @param consumerList
+     * @param consumerMap
+     * @return
+     */
+    private List<ConsumerProgressVO> buildBroadcastingConsumerProgressVOList(Cluster cluster, String topic, 
+            List<Consumer> consumerList, Map<Long, List<User>> consumerMap){
+        List<ConsumerProgressVO> list = new ArrayList<ConsumerProgressVO>();
+        if(consumerList.isEmpty()) {
+            return list;
+        }
+        // 抓取广播消费模式下消费者状态
+        Map<Long, List<ConsumeStatsExt>> consumeStatsMap = consumerService.fetchBroadcastingConsumeProgress(cluster, topic, consumerList);
+        // 组装广播消费模式vo
+        for(Consumer consumer : consumerList) {
+            ConsumerProgressVO consumerProgressVO = buildConsumerProgressVO(topic, consumerMap, consumer);
+            if(consumeStatsMap == null) {
+                list.add(consumerProgressVO);
+                continue;
+            }
+            List<ConsumeStatsExt> consumeStatsList = consumeStatsMap.get(consumer.getId());
+            if(consumeStatsList == null) {
+                list.add(consumerProgressVO);
+                continue;
+            }
+            Map<MessageQueue, OffsetWrapper> offsetMap = new TreeMap<MessageQueue, OffsetWrapper>();
+            for(ConsumeStatsExt consumeStats : consumeStatsList) {
+                consumerProgressVO.setConsumeTps(consumerProgressVO.getConsumeTps() + consumeStats.getConsumeTps());
+                Map<MessageQueue, OffsetWrapper> offsetTable = consumeStats.getOffsetTable();
+                for(MessageQueue mq : offsetTable.keySet()) {
+                    OffsetWrapper prev = offsetMap.get(mq);
+                    if(prev == null) {
+                        prev = new OffsetWrapper();
+                        offsetMap.put(mq, prev);
+                    }
+                    OffsetWrapper cur = offsetTable.get(mq);
+                    prev.setBrokerOffset(prev.getBrokerOffset() + cur.getBrokerOffset());
+                    prev.setConsumerOffset(prev.getConsumerOffset() + cur.getConsumerOffset());
+                    // 取最小的更新时间
+                    if(prev.getLastTimestamp() == 0 || prev.getLastTimestamp() > cur.getLastTimestamp()) {
+                        prev.setLastTimestamp(cur.getLastTimestamp());
+                    }
+                }
+            }
+            consumerProgressVO.setOffsetMap(offsetMap);
+            consumerProgressVO.setConsumeStatsList(consumeStatsList);
+            consumerProgressVO.computeTotalDiff();
+            list.add(consumerProgressVO);
+        }
+        return list;
+    }
+    
+    /**
+     * 构建ConsumerProgressVO
+     * @return
+     */
+    public ConsumerProgressVO buildConsumerProgressVO(String topic, Map<Long, List<User>> consumerMap, Consumer consumer) {
+        ConsumerProgressVO consumerProgressVO = new ConsumerProgressVO();
+        consumerProgressVO.setConsumer(consumer);
+        consumerProgressVO.setTopic(topic);
+        consumerProgressVO.setOwnerList(consumerMap.get(consumer.getId()));
+        return consumerProgressVO;
     }
     
     /**

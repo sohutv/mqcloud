@@ -19,9 +19,11 @@ import org.apache.rocketmq.common.admin.TopicOffset;
 import org.apache.rocketmq.common.admin.TopicStatsTable;
 import org.apache.rocketmq.common.message.MessageQueue;
 import org.apache.rocketmq.common.protocol.body.Connection;
+import org.apache.rocketmq.common.protocol.body.ConsumeStatus;
 import org.apache.rocketmq.common.protocol.body.ConsumerConnection;
 import org.apache.rocketmq.common.protocol.body.ConsumerRunningInfo;
 import org.apache.rocketmq.common.protocol.body.GroupList;
+import org.apache.rocketmq.common.protocol.body.ProcessQueueInfo;
 import org.apache.rocketmq.common.protocol.heartbeat.MessageModel;
 import org.apache.rocketmq.tools.admin.MQAdminExt;
 import org.apache.rocketmq.tools.command.CommandUtil;
@@ -252,11 +254,14 @@ public class ConsumerService {
      * @param consumerList
      * @return
      */
-    public Map<Long, List<ConsumeStatsExt>> fetchBroadcastConsumeProgress(Topic topic, List<Consumer> consumerList) {
+    public Map<Long, List<ConsumeStatsExt>> fetchBroadcastingConsumeProgress(Cluster cluster, String topic, List<Consumer> consumerList) {
         return mqAdminTemplate.execute(new DefaultCallback<Map<Long, List<ConsumeStatsExt>>>() {
             public Map<Long, List<ConsumeStatsExt>> callback(MQAdminExt mqAdmin) throws Exception {
                 Map<Long, List<ConsumeStatsExt>> map = new HashMap<Long, List<ConsumeStatsExt>>();
-                TopicStatsTable topicStatsTable = mqAdmin.examineTopicStats(topic.getName());
+                TopicStatsTable topicStatsTable = mqAdmin.examineTopicStats(topic);
+                if(topicStatsTable == null) {
+                    return map;
+                }
                 for(Consumer consumer : consumerList) {
                     if(!consumer.isBroadcast()) {
                         continue;
@@ -272,33 +277,44 @@ public class ConsumerService {
                     // only for fixed order
                     Set<String> clientIdSet = new TreeSet<String>();
                     for(Connection conn : connSet) {
+                        if (conn.getVersion() < MQVersion.Version.V3_1_8_SNAPSHOT.ordinal()) {
+                            continue;
+                        }
                         clientIdSet.add(conn.getClientId());
                     }
                     List<ConsumeStatsExt> consumeStatsList = new ArrayList<ConsumeStatsExt>();
                     for(String clientId : clientIdSet) {
                         // 抓取状态
-                        Map<String, Map<MessageQueue, Long>> consumerStatusTable = 
-                                mqAdmin.getConsumeStatus(topic.getName(), consumer.getName(), clientId);
-                        // 组装数据
-                        if(topicStatsTable != null) {
-                            Map<MessageQueue, OffsetWrapper> offsetTable = new TreeMap<MessageQueue, OffsetWrapper>();
-                            for(Map<MessageQueue, Long> m : consumerStatusTable.values()) {
-                                for(MessageQueue mq : m.keySet()) {
-                                    TopicOffset topicOffset = topicStatsTable.getOffsetTable().get(mq);
-                                    if(topicOffset == null) {
-                                        continue;
-                                    }
-                                    OffsetWrapper offsetWrapper = new OffsetWrapper();
-                                    offsetWrapper.setBrokerOffset(topicOffset.getMaxOffset());
-                                    offsetWrapper.setConsumerOffset(m.get(mq));
-                                    offsetTable.put(mq, offsetWrapper);
-                                }
-                            }
-                            ConsumeStatsExt consumeStats = new ConsumeStatsExt();
-                            consumeStats.setOffsetTable(offsetTable);
-                            consumeStats.setClientId(clientId);
-                            consumeStatsList.add(consumeStats);
+                        ConsumerRunningInfo consumerRunningInfo = mqAdmin.getConsumerRunningInfo(consumer.getName(), clientId, false);
+                        Map<MessageQueue, ProcessQueueInfo> mqProcessMap = consumerRunningInfo.getMqTable();
+                        if(mqProcessMap == null) {
+                            continue;
                         }
+                        // 组装数据
+                        Map<MessageQueue, OffsetWrapper> offsetTable = new TreeMap<MessageQueue, OffsetWrapper>();
+                        for(MessageQueue mq : mqProcessMap.keySet()) {
+                            TopicOffset topicOffset = topicStatsTable.getOffsetTable().get(mq);
+                            if(topicOffset == null) {
+                                continue;
+                            }
+                            OffsetWrapper offsetWrapper = new OffsetWrapper();
+                            offsetWrapper.setBrokerOffset(topicOffset.getMaxOffset());
+                            ProcessQueueInfo processQueueInfo = mqProcessMap.get(mq);
+                            offsetWrapper.setConsumerOffset(processQueueInfo.getCommitOffset());
+                            offsetWrapper.setLastTimestamp(processQueueInfo.getLastConsumeTimestamp());
+                            offsetTable.put(mq, offsetWrapper);
+                        }
+                        ConsumeStatsExt consumeStats = new ConsumeStatsExt();
+                        consumeStats.setOffsetTable(offsetTable);
+                        consumeStats.setClientId(clientId);
+                        // 计算tps
+                        if(consumerRunningInfo.getStatusTable() != null) {
+                            ConsumeStatus consumeStatus = consumerRunningInfo.getStatusTable().get(topic);
+                            if(consumeStatus != null) {
+                                consumeStats.setConsumeTps(consumeStatus.getConsumeOKTPS() + consumeStatus.getConsumeFailedTPS());
+                            }
+                        }
+                        consumeStatsList.add(consumeStats);
                     }
                     map.put(consumer.getId(), consumeStatsList);
                 }
@@ -306,7 +322,7 @@ public class ConsumerService {
             }
             @Override
             public Cluster mqCluster() {
-                return clusterService.getMQClusterById(topic.getClusterId());
+                return cluster;
             }
         });
     }
