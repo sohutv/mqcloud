@@ -163,3 +163,20 @@ table.tr-pointer > tbody > tr:not(.no_more_data){
 .pointer-cursor{
 	cursor: pointer;
 }
+
+.nostyleA a:hover {
+	text-decoration: none;
+	color: #000;
+}
+.nostyleA a:visited {
+	text-decoration: none;
+	color: #000;
+}
+.nostyleA a:link {
+	text-decoration: none;
+	color: #000;
+}
+.nostyleA a:active {
+	text-decoration: none;
+	color: #000;
+}

@@ -71,9 +71,12 @@ public interface TopicTrafficDao {
      * @param createTimeList
      * @return
      */
-    @Select("<script>select tid, sum(count) count from `topic_traffic` where create_date = #{createDate} and create_time in "
+    @Select("<script>select tid, sum(count) count from `topic_traffic` where create_date = #{createDate} "
+            + "and tid in (select id from topic where cluster_id in " 
+            + "<foreach collection=\"clusterIdList\" item=\"cid\" separator=\",\" open=\"(\" close=\")\">#{cid}</foreach>"
+            + ") and create_time in "
             + "<foreach collection=\"createTimeList\" item=\"time\" separator=\",\" open=\"(\" close=\")\">#{time}</foreach>"
             + " group by tid</script>")
     public List<TopicTraffic> selectByDateTime(@Param("createDate") String createDate, 
-            @Param("createTimeList") List<String> createTimeList);
+            @Param("createTimeList") List<String> createTimeList, @Param("clusterIdList") List<Integer> clusterIdList);
 }

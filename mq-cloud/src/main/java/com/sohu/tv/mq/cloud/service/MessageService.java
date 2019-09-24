@@ -55,6 +55,7 @@ import com.google.common.base.Joiner;
 import com.sohu.tv.mq.cloud.bo.Cluster;
 import com.sohu.tv.mq.cloud.bo.Consumer;
 import com.sohu.tv.mq.cloud.bo.DecodedMessage;
+import com.sohu.tv.mq.cloud.bo.DecodedMessage.MessageBodyType;
 import com.sohu.tv.mq.cloud.bo.MQOffset;
 import com.sohu.tv.mq.cloud.bo.MessageData;
 import com.sohu.tv.mq.cloud.bo.MessageQueryCondition;
@@ -73,6 +74,7 @@ import com.sohu.tv.mq.cloud.web.controller.param.MessageParam;
 import com.sohu.tv.mq.cloud.web.vo.TraceViewVO;
 import com.sohu.tv.mq.serializable.DefaultMessageSerializer;
 import com.sohu.tv.mq.serializable.MessageSerializer;
+import com.sohu.tv.mq.serializable.MessageSerializerEnum;
 import com.sohu.tv.mq.util.CommonUtil;
 
 /**
@@ -370,7 +372,9 @@ public class MessageService {
             decodedBody = messageSerializer.deserialize(bytes);
             // 兼容rocketmq原生客户端未序列化消息
             if (decodedBody == null) {
-                decodedBody = bytes; 
+                decodedBody = bytes;
+            } else {
+                m.setMessageBodySerializer(MessageSerializerEnum.PROTOSTUF);
             }
         } catch (Exception e) {
             logger.debug("deserialize topic:{} message err:{}", msg.getTopic(), e.getMessage());
@@ -378,6 +382,7 @@ public class MessageService {
         }
         // 将主体消息转换为String
         if (decodedBody instanceof byte[]) {
+            m.setMessageBodyType(MessageBodyType.BYTE_ARRAY);
             if(CommonUtil.isTraceTopic(msg.getTopic())) {
                 List<TraceContext> traceContextList = MsgTraceDecodeUtil
                         .decoderFromTraceDataString(new String((byte[]) decodedBody));
@@ -386,12 +391,15 @@ public class MessageService {
                 m.setDecodedBody(new String((byte[]) decodedBody));
             }
         } else if (decodedBody instanceof String) {
+            m.setMessageBodyType(MessageBodyType.STRING);
             m.setDecodedBody(HtmlUtils.htmlEscape((String)decodedBody));
         } else if (decodedBody instanceof Map && 
                 mqCloudConfigHelper.getMapWithByteList() != null &&
                 !mqCloudConfigHelper.getMapWithByteList().contains(msg.getTopic())) {
+            m.setMessageBodyType(MessageBodyType.Map);
             m.setDecodedBody(decodedBody.toString());
         } else {
+            m.setMessageBodyType(MessageBodyType.OBJECT);
             m.setDecodedBody(JSON.toJSONString(decodedBody));
         }
         BeanUtils.copyProperties(msg, m);

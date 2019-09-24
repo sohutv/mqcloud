@@ -65,7 +65,7 @@
 										<#if consumerProgressVO.ownerList?? && (consumerProgressVO.ownerList?seq_contains(userInfo.user) || userInfo.user.type == 1)><span style="cursor:pointer" onclick="showUpdateInfo(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', '${consumerProgressVO.consumer.info!}')"></#if>${consumerProgressVO.consumer.info?substring(0,12)}...<#if consumerProgressVO.ownerList?? && (consumerProgressVO.ownerList?seq_contains(userInfo.user) || userInfo.user.type == 1)></span></#if>
 									<#else>
 										<#if consumerProgressVO.consumer.info?? && consumerProgressVO.consumer.info !=''>
-											<#if consumerProgressVO.ownerList?? && (consumerProgressVO.ownerList?seq_contains(userInfo.user) || userInfo.user.type == 1)><span style="cursor:pointer" onclick="showUpdateInfo(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', '${consumerProgressVO.consumer.info!}')"></#if>${consumerProgressVO.consumer.info}<#if consumerProgressVO.ownerList?? && (consumerProgressVO.ownerList?seq_contains(userInfo.user) || userInfo.user.type == 1)></span></#if>
+											<#if consumerProgressVO.ownerList?? && (consumerProgressVO.ownerList?seq_contains(userInfo.user) || userInfo.user.type == 1)><span style="cursor:pointer" data-toggle="tooltip" title="修改用途" onclick="showUpdateInfo(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', '${consumerProgressVO.consumer.info!}')"></#if>${consumerProgressVO.consumer.info}<#if consumerProgressVO.ownerList?? && (consumerProgressVO.ownerList?seq_contains(userInfo.user) || userInfo.user.type == 1)></span></#if>
 										<#else>
 											<#if consumerProgressVO.ownerList?? && (consumerProgressVO.ownerList?seq_contains(userInfo.user) || userInfo.user.type == 1)>
 												<button type="button" class="btn-sm btn-success" onclick="showUpdateInfo(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', '${consumerProgressVO.consumer.info!}')">添加</button>
@@ -158,6 +158,7 @@
 																</td>
 															</tr>
 															<tr>
+																<td>客户端</td>
 																<td>broker</td>
 																<td>队列</td>
 																<td>broker偏移量</td>
@@ -169,6 +170,7 @@
 														<tbody>
 															<#list consumerProgressVO.retryOffsetMap as k, v>
 																<tr>
+																	<td id="1_${consumerProgressVO.consumer.id}_${k.brokerName}_${k.queueId}"></td>
 																	<td>${k.brokerName}</td>
 																	<td>${k.queueId}</td>
 																	<td>
@@ -210,7 +212,7 @@
 													<tbody>
 														<#list consumerProgressVO.offsetMap as k, v>
 															<tr>
-																<td id="${consumerProgressVO.consumer.id}_${k.brokerName}_${k.queueId}"></td>
+																<td id="0_${consumerProgressVO.consumer.id}_${k.brokerName}_${k.queueId}"></td>
 																<td>${k.brokerName}</td>
 																<td>${k.queueId}</td>
 																<td>
@@ -390,7 +392,7 @@
 										<#if consumerProgressVO.ownerList?? && (consumerProgressVO.ownerList?seq_contains(userInfo.user) || userInfo.user.type == 1)><span style="cursor:pointer" onclick="showUpdateInfo(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', '${consumerProgressVO.consumer.info!}')"></#if>${consumerProgressVO.consumer.info?substring(0,12)}...<#if consumerProgressVO.ownerList?? && (consumerProgressVO.ownerList?seq_contains(userInfo.user) || userInfo.user.type == 1)></span></#if>
 									<#else>
 										<#if consumerProgressVO.consumer.info?? && consumerProgressVO.consumer.info !=''>
-											<#if consumerProgressVO.ownerList?? && (consumerProgressVO.ownerList?seq_contains(userInfo.user) || userInfo.user.type == 1)><span style="cursor:pointer" onclick="showUpdateInfo(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', '${consumerProgressVO.consumer.info!}')"></#if>${consumerProgressVO.consumer.info}<#if consumerProgressVO.ownerList?? && (consumerProgressVO.ownerList?seq_contains(userInfo.user) || userInfo.user.type == 1)></span></#if>
+											<#if consumerProgressVO.ownerList?? && (consumerProgressVO.ownerList?seq_contains(userInfo.user) || userInfo.user.type == 1)><span style="cursor:pointer" data-toggle="tooltip" title="修改用途" onclick="showUpdateInfo(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', '${consumerProgressVO.consumer.info!}')"></#if>${consumerProgressVO.consumer.info}<#if consumerProgressVO.ownerList?? && (consumerProgressVO.ownerList?seq_contains(userInfo.user) || userInfo.user.type == 1)></span></#if>
 										<#else>
 											<#if consumerProgressVO.ownerList?? && (consumerProgressVO.ownerList?seq_contains(userInfo.user) || userInfo.user.type == 1)>
 												<button type="button" class="btn-sm btn-success" onclick="showUpdateInfo(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', '${consumerProgressVO.consumer.info!}')">添加</button>
@@ -1039,7 +1041,7 @@ function showMoreSearchCondition(){
 //偏移量消息搜索
 function searchOffsetMessage(append){
 	$("#toAppend").val(append);
-	post('${request.contextPath}/msg/topic/offset/search', $("#offsetMsgSearchForm").serialize(), function(data){
+	post('${request.contextPath}/topic/message/topic/offset/search', $("#offsetMsgSearchForm").serialize(), function(data){
 		if(!append){
 			$("#offsetDataTable tbody").remove();
 			$("#offsetDataTable input").remove();
@@ -1157,7 +1159,7 @@ function getQueueOwner(consumer, consumerId){
 	},function(data){
         if(data.status == 200){
         	for(var i in data.result){
-        		var id = "#" + consumerId + "_" + data.result[i].brokerName + "_" + data.result[i].queueId;
+        		var id = "#" + data.result[i].topicType + "_" + consumerId + "_" + data.result[i].brokerName + "_" + data.result[i].queueId;
         		var prevContent = $(id).html();
         		if(prevContent){
         			prevContent += ","

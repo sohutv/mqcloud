@@ -206,7 +206,11 @@ public class ConsumeTrafficLineChartData implements LineChartData {
         lineChart.setTickInterval(6);
         
         List<String> xList = new ArrayList<String>();
-        for(String time : producerTrafficMap.keySet()) {
+        Map<String, Traffic> producerTrafficMapTmp = producerTrafficMap;
+        if(producerTrafficMap.size() == 0) {
+            producerTrafficMapTmp = list2Map(listResult.getResult());
+        }
+        for(String time : producerTrafficMapTmp.keySet()) {
             xList.add(time.substring(0, 2) + ":" + time.substring(2));
         }
         
@@ -232,7 +236,7 @@ public class ConsumeTrafficLineChartData implements LineChartData {
             Map<String, Traffic> trafficMap = list2Map(list);
             // 填充y轴数据
             List<Number> countList = new ArrayList<Number>();
-            for (String time : producerTrafficMap.keySet()) {
+            for (String time : producerTrafficMapTmp.keySet()) {
                 setCountData(trafficMap.get(time), countList);
             }
             YAxis countYAxis = new YAxis();

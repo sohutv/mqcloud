@@ -8,6 +8,7 @@ import org.apache.rocketmq.common.message.MessageDecoder;
 import org.apache.rocketmq.common.message.MessageExt;
 
 import com.alibaba.fastjson.JSONObject;
+import com.sohu.tv.mq.serializable.MessageSerializerEnum;
 
 /**
  * 解码的消息
@@ -19,6 +20,12 @@ public class DecodedMessage extends MessageExt {
     private static final long serialVersionUID = 6615581963568753859L;
     private String decodedBody;
     private String broker;
+    
+    // 消息体类型
+    private MessageBodyType messageBodyType;
+    
+    // 消息体序列化方式
+    private MessageSerializerEnum messageBodySerializer;
 
     public String getBroker() {
         return broker;
@@ -74,4 +81,57 @@ public class DecodedMessage extends MessageExt {
         return super.toString();
     }
     
+    public MessageBodyType getMessageBodyType() {
+        return messageBodyType;
+    }
+    
+    public String getMessageBodyTypeString() {
+        if(messageBodyType == null) {
+            return null;
+        }
+        return messageBodyType.getName();
+    }
+
+    public void setMessageBodyType(MessageBodyType messageBodyType) {
+        this.messageBodyType = messageBodyType;
+    }
+
+    public MessageSerializerEnum getMessageBodySerializer() {
+        return messageBodySerializer;
+    }
+    
+    public void setMessageBodySerializer(MessageSerializerEnum messageBodySerializer) {
+        this.messageBodySerializer = messageBodySerializer;
+    }
+
+    /**
+     * 消息体类型
+     * 
+     * @author yongfeigao
+     * @date 2019年9月6日
+     */
+    public enum MessageBodyType {
+        STRING(1, "String"),
+        BYTE_ARRAY(2, "byte[]"),
+        Map(3, "Map"),
+        OBJECT(4, "Object"),
+        ;
+        
+        private int type;
+        
+        private String name;
+        
+        private MessageBodyType(int type, String name) {
+            this.type = type;
+            this.name = name;
+        }
+
+        public int getType() {
+            return type;
+        }
+        
+        public String getName() {
+            return name;
+        }
+    }
 }

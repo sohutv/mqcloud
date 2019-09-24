@@ -2,9 +2,12 @@ package com.sohu.tv.mq.cloud.service;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Properties;
 
 import javax.annotation.PostConstruct;
 
+import org.apache.commons.lang3.math.NumberUtils;
+import org.apache.rocketmq.tools.admin.MQAdminExt;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -92,5 +95,28 @@ public class ClusterService {
             return Result.getDBErrorResult(e);
         }
         return Result.getResult(result);
+    }
+    
+    /**
+     * 更新fileReservedTime
+     * @param mqAdmin
+     * @param cid
+     * @param brokerAddr
+     * @throws Exception
+     */
+    public void updateFileReservedTime(MQAdminExt mqAdmin, int cid, String brokerAddr) throws Exception {
+        Properties properties = mqAdmin.getBrokerConfig(brokerAddr);
+        String fileReservedTime = properties.getProperty("fileReservedTime");
+        update(cid, NumberUtils.toInt(fileReservedTime));
+    }
+    
+    public void update(int cid, int fileReservedTime) {
+        Cluster cluster = getMQClusterById(cid);
+        if(cluster == null) {
+            return;
+        }
+        if(fileReservedTime > cluster.getFileReservedTime()) {
+            cluster.setFileReservedTime(fileReservedTime);
+        }
     }
 }

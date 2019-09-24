@@ -39,6 +39,7 @@ public class WikiController {
         html = html.replace("${nexusDomain}", mqCloudConfigHelper.getNexusDomain());
         html = html.replace("${producer}", mqCloudConfigHelper.getProducerClass());
         html = html.replace("${consumer}", mqCloudConfigHelper.getConsumerClass());
+        html = html.replace("${mqcloudDomain}", mqCloudConfigHelper.getDomain());
         Result.setResult(map, html);
         
         // toc

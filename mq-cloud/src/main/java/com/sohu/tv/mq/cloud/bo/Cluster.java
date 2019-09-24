@@ -24,6 +24,9 @@ public class Cluster {
     private int transactionEnabled;
     
     private int traceEnabled;
+    
+    // broker保留的数据时间，单位小时，默认7天
+    private volatile int fileReservedTime = 168;
 
     public int getId() {
         return id;
@@ -87,6 +90,18 @@ public class Cluster {
     
     public boolean isEnableTransaction() {
         return YES == transactionEnabled;
+    }
+
+    public int getFileReservedTime() {
+        return fileReservedTime;
+    }
+    
+    public int getFileReservedDays() {
+        return fileReservedTime / 24;
+    }
+
+    public void setFileReservedTime(int fileReservedTime) {
+        this.fileReservedTime = fileReservedTime;
     }
 
     public boolean test() {

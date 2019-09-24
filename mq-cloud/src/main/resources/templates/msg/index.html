@@ -38,11 +38,11 @@
 			<!-- 时间段查询 -->
 			<div class="form-group time" style="display:none;">
 				<label for="timeStartTimePicker"> 开始时间: </label>
-				<input id="timeStartTimePicker" type="text" class="Wdate form-control" onclick="WdatePicker({ dateFmt: 'yyyy-MM-dd HH:mm:ss',maxDate:'%y-%M-%d',minDate:'%y-%M-{%d-5}',onpicked:function(){timeChange('timeStartTime')}})" style="width:180px;height:34px;cursor:pointer;" readonly="readonly"
+				<input id="timeStartTimePicker" type="text" class="Wdate form-control" onclick="WdatePicker({ dateFmt: 'yyyy-MM-dd HH:mm:ss',maxDate:'%y-%M-%d',minDate:'%y-%M-{%d-${cluster.fileReservedDays}}',onpicked:function(){timeChange('timeStartTime')}})" style="width:180px;height:34px;cursor:pointer;" readonly="readonly"
 	  								value="${response.result.start?number_to_datetime?string("yyyy-MM-dd HH:mm:ss")}">
 	  			<input type="hidden" name="startTime" id="timeStartTime" value="${response.result.start?c}">
 	  			<label for="timeEndTimePicker"> 结束时间: </label>
-				<input id="timeEndTimePicker" type="text" class="Wdate form-control" onclick="WdatePicker({ dateFmt: 'yyyy-MM-dd HH:mm:ss',maxDate:'%y-%M-%d',minDate:'%y-%M-{%d-5}',onpicked:function(){timeChange('timeEndTime')}})" style="width:180px;height:34px;cursor:pointer;" readonly="readonly"
+				<input id="timeEndTimePicker" type="text" class="Wdate form-control" onclick="WdatePicker({ dateFmt: 'yyyy-MM-dd HH:mm:ss',maxDate:'%y-%M-%d',minDate:'%y-%M-{%d-${cluster.fileReservedDays}}',onpicked:function(){timeChange('timeEndTime')}})" style="width:180px;height:34px;cursor:pointer;" readonly="readonly"
 	  								value="${response.result.end?number_to_datetime?string("yyyy-MM-dd HH:mm:ss")}">
 	  			<input type="hidden" name="endTime" id="timeEndTime" value="${response.result.end?c}">
 			</div>
@@ -56,11 +56,11 @@
 	  	    <!-- key查询 -->
 	  	    <div class="form-group key" style="display:none;">
 				<label for="keyStartTimePicker"> 开始时间: </label>
-				<input id="keyStartTimePicker" type="text" class="Wdate form-control" onclick="WdatePicker({ dateFmt: 'yyyy-MM-dd HH:mm:ss',maxDate:'%y-%M-%d',minDate:'%y-%M-{%d-6}',onpicked:function(){timeChange('keyStartTime')}})" style="width:180px;height:34px;cursor:pointer;" readonly="readonly"
+				<input id="keyStartTimePicker" type="text" class="Wdate form-control" onclick="WdatePicker({ dateFmt: 'yyyy-MM-dd HH:mm:ss',maxDate:'%y-%M-%d',minDate:'%y-%M-{%d-${cluster.fileReservedDays}}',onpicked:function(){timeChange('keyStartTime')}})" style="width:180px;height:34px;cursor:pointer;" readonly="readonly"
 	  								value="${response.result.start?number_to_datetime?string("yyyy-MM-dd 00:00:00")}">
 	  			<input type="hidden" name="keyStartTime" id="keyStartTime">
 	  			<label for="keyEndTimePicker"> 结束时间: </label>
-				<input id="keyEndTimePicker" type="text" class="Wdate form-control" onclick="WdatePicker({ dateFmt: 'yyyy-MM-dd HH:mm:ss',maxDate:'%y-%M-%d',minDate:'%y-%M-{%d-6}',onpicked:function(){timeChange('keyEndTime')}})" style="width:180px;height:34px;cursor:pointer;" readonly="readonly"
+				<input id="keyEndTimePicker" type="text" class="Wdate form-control" onclick="WdatePicker({ dateFmt: 'yyyy-MM-dd HH:mm:ss',maxDate:'%y-%M-%d',minDate:'%y-%M-{%d-${cluster.fileReservedDays}}',onpicked:function(){timeChange('keyEndTime')}})" style="width:180px;height:34px;cursor:pointer;" readonly="readonly"
 	  								value="${.now?string("yyyy-MM-dd HH:mm:ss")}">
 	  			<input type="hidden" name="keyEndTime" id="keyEndTime" value="${response.result.end?c}">
 			</div>
@@ -269,7 +269,7 @@ function next(){
 // 消息搜索
 function searchMessage(append){
 	$("#append").val(append);
-	post('${request.contextPath}/msg/search', $("#msgSearchForm").serialize(), function(data){
+	post('${request.contextPath}/topic/message/search', $("#msgSearchForm").serialize(), function(data){
 		if(!append){
 			$("#dataTable tbody").remove();
 			$("#dataTable input").remove();
@@ -288,7 +288,7 @@ function searchOffsetMessage(append){
 		return;
 	}
 	$("#append").val(append);
-	post('${request.contextPath}/msg/offset/search', $("#msgSearchForm").serialize(), function(data){
+	post('${request.contextPath}/topic/message/offset/search', $("#msgSearchForm").serialize(), function(data){
 		if(!append){
 			$("#dataTable tbody").remove();
 			$("#dataTable input").remove();
@@ -302,7 +302,7 @@ function viewMessage(){
 		alert("消息id不能为空");
 		return;
 	}
-	post('${request.contextPath}/msg/id/search', $("#msgSearchForm").serialize(), function(data){
+	post('${request.contextPath}/topic/message/id/search', $("#msgSearchForm").serialize(), function(data){
 		$("#dataTable tbody").remove();
 		$("#dataTable input").remove();
        	$("#dataTable").append(data);
@@ -314,7 +314,7 @@ function searchKeyMessage() {
 		alert("消息key不能为空");
 		return;
 	}
-	post('${request.contextPath}/msg/key/search', $("#msgSearchForm").serialize(), function(data){
+	post('${request.contextPath}/topic/message/key/search', $("#msgSearchForm").serialize(), function(data){
 		$("#dataTable tbody").remove();
 		$("#dataTable input").remove();
        	$("#dataTable").append(data);
@@ -326,7 +326,7 @@ function searchTraceMessage() {
 		alert("trace key不能为空");
 		return;
 	}
-	post('${request.contextPath}/msg/trace/search', $("#msgSearchForm").serialize(), function(data){
+	post('${request.contextPath}/topic/message/trace/search', $("#msgSearchForm").serialize(), function(data){
 		$("#traceDataTable tbody").remove();
 		$("#traceDataTable input").remove();
        	$("#traceDataTable").append(data);
@@ -341,7 +341,7 @@ function track(msg){
 	msg.cid = $("#cid").val();
 	msg.topic = $("#topicDiv").val();
 	msg.tid = ${RequestParameters.tid};
-	post('${request.contextPath}/msg/track',
+	post('${request.contextPath}/topic/message/track',
 		msg,
        	function(data){
 			setTrackOption(msg);
@@ -673,7 +673,7 @@ function resendMessage(){
 		return;
 	}
 	disable("resendMessageBtn");
-	$.post('${request.contextPath}/msg/resend',
+	$.post('${request.contextPath}/topic/message/resend',
 		{
 			msgIds: dataArray.toString(),
 			tid: ${RequestParameters.tid}

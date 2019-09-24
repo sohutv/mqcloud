@@ -3,11 +3,11 @@
 		<tbody id="page_${response.result.mqc.times}">
 			<#list response.result.msgList as msg>
 				<tr data="${msg.offsetMsgId}" dataIdx="${msg_index + 1 + response.result.mqc.prevSize}">
-					<td title="查看${msg.msgId}的trace信息"><#if traceEnabled><a href="#" onclick="traceHasTime('${msg.msgId}')"></#if>${msg_index + 1 + response.result.mqc.prevSize}<#if traceEnabled></a></#if></td>
+					<td <#if traceEnabled>data-tooltip="true" title="查看${msg.msgId}的trace信息"</#if>><#if traceEnabled><a href="#" onclick="traceHasTime('${msg.msgId}')"></#if>${msg_index + 1 + response.result.mqc.prevSize}<#if traceEnabled></a></#if></td>
 					<td>${msg.bornHostString}</td>
-					<td title="${msg.storeTimestamp?number_to_datetime?string("yyyy-MM-dd HH:mm:ss.SSS")}">${msg.bornTimestamp?number_to_datetime?string("yyyy-MM-dd HH:mm:ss.SSS")}</td>
-					<td title="${msg.queueOffset}">${msg.broker!}:${msg.queueId}</td>
-					<td>${msg.decodedBody}</td>
+					<td data-tooltip="true" title="存储时间:${msg.storeTimestamp?number_to_datetime?string("yyyy-MM-dd HH:mm:ss.SSS")}">${msg.bornTimestamp?number_to_datetime?string("yyyy-MM-dd HH:mm:ss.SSS")}</td>
+					<td data-tooltip="true" title="偏移量:${msg.queueOffset}">${msg.broker!}:${msg.queueId}</td>
+					<td data-tooltip="true" title="序列化方式:<#if msg.messageBodySerializer??>${msg.messageBodySerializer.getName()}(${msg.messageBodyTypeString!})<#else>${msg.messageBodyTypeString!}</#if>">${msg.decodedBody}</td>
 					<td>${msg.keys!}</td>
 					<td>${msg.tags!}</td>
 					<td class="text-center"><span class="glyphicon glyphicon-eye-open" style="cursor:pointer;" onclick=track(${msg.toJson()}) data-target="#trackModal" data-toggle="modal"></span></td>
@@ -24,6 +24,11 @@
 		showPage(${response.result.mqc.times});
 		$("#messageParam").val('${response.result.mqc.serialize()}');
 		initMultiSelect("tbody#page_${response.result.mqc.times}");
+		$(function() {
+	        $('[data-tooltip="true"]').tooltip({
+	            container: 'body'
+	        });
+		});
 	</script>
 <#else>
 	<tbody>
