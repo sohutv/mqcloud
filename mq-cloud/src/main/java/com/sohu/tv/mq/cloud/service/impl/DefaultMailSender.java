@@ -14,7 +14,7 @@ import org.springframework.mail.javamail.JavaMailSenderImpl;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Component;
 
-import com.sohu.tv.mq.cloud.common.service.AlertMessageSender;
+import com.sohu.tv.mq.cloud.common.service.MailSender;
 import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper;
 import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper.MQCloudConfigEvent;
 
@@ -25,7 +25,7 @@ import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper.MQCloudConfigEvent;
  * @date 2018年10月10日
  */
 @Component
-public class DefaultAlertMessageSender implements AlertMessageSender {
+public class DefaultMailSender implements MailSender {
 
     private Logger logger = LoggerFactory.getLogger(this.getClass());
 
@@ -92,17 +92,17 @@ public class DefaultAlertMessageSender implements AlertMessageSender {
     }
 
     @Override
-    public boolean sendMail(String title, String content, String email) {
-        return sendMail(title, content, email, null, 0);
+    public boolean send(String title, String content, String email) {
+        return send(title, content, email, null, 0);
     }
 
     @Override
-    public boolean sendMail(String title, String content, String email, int timeout) {
-        return sendMail(title, content, email, null, timeout);
+    public boolean send(String title, String content, String email, int timeout) {
+        return send(title, content, email, null, timeout);
     }
 
     @Override
-    public boolean sendMail(String title, String content, String email, String ccEmail, int timeout) {
+    public boolean send(String title, String content, String email, String ccEmail, int timeout) {
         if (mailSender == null) {
             return true;
         }
@@ -139,16 +139,6 @@ public class DefaultAlertMessageSender implements AlertMessageSender {
             helper.setCc(cc.split(","));
         }
         return mimeMessage;
-    }
-    
-    @Override
-    public boolean sendPhone(String message, String phone) {
-        return true;
-    }
-
-    @Override
-    public boolean sendPhone(String message, String phone, int timeout) {
-        return true;
     }
 
     public void setMqCloudConfigHelper(MQCloudConfigHelper mqCloudConfigHelper) {

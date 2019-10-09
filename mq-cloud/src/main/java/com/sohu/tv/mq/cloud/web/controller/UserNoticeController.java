@@ -19,14 +19,14 @@ import com.sohu.tv.mq.cloud.web.vo.MessageVO;
 import com.sohu.tv.mq.cloud.web.vo.UserInfo;
 
 /**
- * 用户消息
+ * 用户通知
  * @Description: 
  * @author yongfeigao
  * @date 2018年7月16日
  */
 @Controller
-@RequestMapping("/message")
-public class MessageController extends ViewController {
+@RequestMapping("/user/notice")
+public class UserNoticeController extends ViewController {
     
     @Autowired
     private UserMessageService userMessageService;

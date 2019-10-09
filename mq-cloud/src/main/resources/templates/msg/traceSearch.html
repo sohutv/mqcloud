@@ -5,19 +5,19 @@
 				<tr>
 					<td>${trace_index + 1}</td>
 					<#if trace.producer??>
-						<td data-toggle="tooltip" title="${trace.producer.addr}">${trace.producer.group}</td>
+						<td data-toggle="tooltip" title="生产者ip:${trace.producer.addr}">${trace.producer.group}</td>
 						<td>${trace.producer.time}</td>
 						<td>${trace.producer.status()}</td>
 						<td>${trace.producer.costTimes()}</td>
 					<#else>
-						<td class="text-center" colspan=4 data-toggle="tooltip" title="客户端上报时间有可能不在当前时间段内，试着调整开始时间">暂无</td>
+						<td class="text-center" colspan=4 data-toggle="tooltip" title="1.确定客户端开启了trace。2.试着调大时间范围。">暂无</td>
 					 </#if>
 					<#if trace.consumer??>
 					<td style="padding:0px" colspan=4>
 						<table style="width:100%">
 							<#list trace.consumer?values as traceConsumer>
 								<tr>
-							 		<td style="width:210px" data-toggle="tooltip" title="${traceConsumer.addr}">${traceConsumer.group}</td>
+							 		<td style="width:210px" data-toggle="tooltip" title="消费者ip:${traceConsumer.addr}">${traceConsumer.group}</td>
 									<td style="width:185px">${traceConsumer.time}</td>
 									<td style="width:55px" <#if traceConsumer.status() == "未知">data-toggle="tooltip" title="有可能还未收到客户端上报状态，试着调整结束时间" </#if>>${traceConsumer.status()}</td>
 							 		<td style="width:70px">${traceConsumer.costTimes()}</td>

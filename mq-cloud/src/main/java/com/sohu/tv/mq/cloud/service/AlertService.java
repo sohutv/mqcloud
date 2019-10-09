@@ -1,5 +1,8 @@
 package com.sohu.tv.mq.cloud.service;
 
+import java.util.Arrays;
+import java.util.List;
+
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -7,7 +10,8 @@ import org.springframework.stereotype.Service;
 
 import com.sohu.tv.mq.cloud.bo.Audit.TypeEnum;
 import com.sohu.tv.mq.cloud.bo.User;
-import com.sohu.tv.mq.cloud.common.service.AlertMessageSender;
+import com.sohu.tv.mq.cloud.common.service.MailSender;
+import com.sohu.tv.mq.cloud.common.service.SmsSender;
 import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper;
 
 /**
@@ -33,7 +37,10 @@ public class AlertService {
     private MQCloudConfigHelper mqCloudConfigHelper;
     
     @Autowired(required = false)
-    private AlertMessageSender alertMessageSender;
+    private MailSender mailSender;
+    
+    @Autowired(required = false)
+    private SmsSender smsSender;
     
     /**
      * 发送审核邮件
@@ -59,10 +66,10 @@ public class AlertService {
      * @return 成功返回true，否则返回false
      */
     public boolean sendMail(String title, String content) {
-        if(alertMessageSender == null) {
+        if(mailSender == null) {
             return false;
         }
-        return alertMessageSender.sendMail(title, content, getDevelopers());
+        return mailSender.send(title, content, getDevelopers());
     }
     
     /**
@@ -73,10 +80,10 @@ public class AlertService {
      * @return 成功返回true，否则返回false
      */
     public boolean sendMail(String title, String content, String email) {
-        if(alertMessageSender == null) {
+        if(mailSender == null) {
             return false;
         }
-        return alertMessageSender.sendMail(title, content, email, getDevelopers(), 0);
+        return mailSender.send(title, content, email, getDevelopers(), 0);
     }
     
     /**
@@ -85,11 +92,18 @@ public class AlertService {
      * @param message 报警信息
      * @return 成功返回true，否则返回false
      */
-    public boolean sendPhone(String message) {
-        if(alertMessageSender == null) {
+    public boolean sendPhone(String title, String message) {
+        if(smsSender == null) {
             return false;
         }
-        return alertMessageSender.sendPhone(message, getPhones());
+        List<String> ps = getPhones();
+        if(ps == null) {
+            return false;
+        }
+        for(String phone : ps) {
+            smsSender.send(title + "预警]" + message, phone);
+        }
+        return true;
     }
     
     /**
@@ -144,10 +158,10 @@ public class AlertService {
         if(StringUtils.isBlank(email)) {
             return sendMail(title, content);
         } else {
-            if(alertMessageSender == null) {
+            if(mailSender == null) {
                 return false;
             }
-            return alertMessageSender.sendMail(title, content, email, getDevelopers(), 10000);
+            return mailSender.send(title, content, email, getDevelopers(), 10000);
         }
     }
     
@@ -163,8 +177,12 @@ public class AlertService {
         this.developers = developers;
     }
 
-    public String getPhones() {
-        return phones;
+    public List<String> getPhones() {
+        List<String> dbPhones = userService.queryMonitorPhone();
+        if(dbPhones == null) {
+            return Arrays.asList(phones.split(","));
+        }
+        return dbPhones;
     }
 
     public void setPhones(String phones) {

@@ -3,11 +3,11 @@
 		<tbody id="offsetPage_${response.result.mqc.times}">
 			<#list response.result.msgList as msg>
 				<tr data="${msg.offsetMsgId}" dataIdx="${msg_index + 1 + response.result.mqc.prevSize}">
-					<td title="${msg.msgId}">${msg_index + 1 + response.result.mqc.prevSize}</td>
+					<td data-tooltip="true" title="msgId:${msg.msgId}">${msg_index + 1 + response.result.mqc.prevSize}</td>
 					<td>${msg.bornHostString}</td>
-					<td title="${msg.storeTimestamp?number_to_datetime?string("yyyy-MM-dd HH:mm:ss.SSS")}">${msg.bornTimestamp?number_to_datetime?string("yyyy-MM-dd HH:mm:ss.SSS")}</td>
+					<td data-tooltip="true" title="存储时间:${msg.storeTimestamp?number_to_datetime?string("yyyy-MM-dd HH:mm:ss.SSS")}">${msg.bornTimestamp?number_to_datetime?string("yyyy-MM-dd HH:mm:ss.SSS")}</td>
 					<td>${msg.reconsumeTimes}</td>
-					<td>${msg.decodedBody}</td>
+					<td data-tooltip="true" title="序列化方式:<#if msg.messageBodySerializer??>${msg.messageBodySerializer.getName()}(${msg.messageBodyTypeString!})<#else>${msg.messageBodyTypeString!}</#if>">${msg.decodedBody}</td>
 				</tr>
 			</#list>
 		</tbody>
@@ -20,6 +20,11 @@
 	<script>
 		showOffsetPage(${response.result.mqc.times});
 		$("#toMessageParam").val('${response.result.mqc.serialize()}');
+		$(function() {
+	        $('[data-tooltip="true"]').tooltip({
+	            container: 'body'
+	        });
+		});
 	</script>
 <#else>
 	<tbody>

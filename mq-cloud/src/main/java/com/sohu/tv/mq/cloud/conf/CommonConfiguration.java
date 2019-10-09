@@ -35,6 +35,7 @@ import com.sohu.tv.mq.cloud.cache.LocalCacheStats;
 import com.sohu.tv.mq.cloud.common.Destroyable;
 import com.sohu.tv.mq.cloud.common.MemoryMQ;
 import com.sohu.tv.mq.cloud.common.service.LoginService;
+import com.sohu.tv.mq.cloud.common.service.SmsSender;
 import com.sohu.tv.mq.cloud.common.service.impl.AbstractLoginService;
 import com.sohu.tv.mq.cloud.common.util.CipherHelper;
 import com.sohu.tv.mq.cloud.mq.MQAdminPooledObjectFactory;
@@ -233,6 +234,19 @@ public class CommonConfiguration {
         loginService.setOnline(mqCloudConfigHelper.isOnline());
         loginService.init();
         return loginService;
+    }
+    
+    /**
+     * 短消息服务配置
+     * 
+     * @return
+     * @throws Exception
+     */
+    @Bean
+    @Profile({"online-sohu"})
+    public SmsSender smsSender() throws Exception {
+        Class<?> clz = Class.forName("com.sohu.tv.mq.cloud.common.service.impl.DefaultSmsSender");
+        return (SmsSender) clz.newInstance();
     }
 
     /**

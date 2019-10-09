@@ -106,7 +106,7 @@ if (!UtilAll.isBlank(this.unitName)) {
 
 ## <span id="client">四、针对客户端的配置</span>
 
-这里的客户端是指生产者和消费者，MQCloud会自动进行如下设置，[使用参见](https://github.com/sohutv/mqcloud/wiki/4.%E5%AE%A2%E6%88%B7%E7%AB%AF%E7%9A%84%E4%BD%BF%E7%94%A8)：
+这里的客户端是指生产者和消费者，MQCloud会自动进行如下设置，[使用参见](https://github.com/sohutv/mqcloud/wiki/%E5%AE%A2%E6%88%B7%E7%AB%AF%E7%9A%84%E4%BD%BF%E7%94%A8)：
 
 ```
 // 设置Name Server域名
@@ -144,7 +144,7 @@ rmqAddressServerSubGroup=nsaddr-集群id
 fetchNamesrvAddrByAddressServer=true
 ```
 
-如果使用MQCloud部署，这些设置都会是自动的。由此可以看到http方式发现Name Server方式域名的重要性，所以[MQCloud使用](https://github.com/sohutv/mqcloud/wiki/3.%E5%88%9B%E5%BB%BA%E9%9B%86%E7%BE%A4)里，一开始就强调了这项配置：
+如果使用MQCloud部署，这些设置都会是自动的。由此可以看到http方式发现Name Server方式域名的重要性，所以[MQCloud使用](https://github.com/sohutv/mqcloud/wiki/%E5%88%9B%E5%BB%BA%E9%9B%86%E7%BE%A4)里，一开始就强调了这项配置：
 
 ![](img/1.3.png)
 

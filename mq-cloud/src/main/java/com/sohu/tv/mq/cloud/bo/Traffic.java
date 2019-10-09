@@ -21,6 +21,26 @@ public class Traffic {
     
     // 冗余字段
     private int clusterId;
+    
+    // 本次检测获取的量
+    private long curCount;
+    private long curSize;
+
+    public long getCurCount() {
+        return curCount;
+    }
+
+    public void setCurCount(long curCount) {
+        this.curCount = curCount;
+    }
+
+    public long getCurSize() {
+        return curSize;
+    }
+
+    public void setCurSize(long curSize) {
+        this.curSize = curSize;
+    }
 
     public int getClusterId() {
         return clusterId;
@@ -69,6 +89,7 @@ public class Traffic {
     }
     
     public void addCount(long count) {
+        this.curCount = count;
         this.count += count;
     }
 
@@ -102,6 +123,7 @@ public class Traffic {
     }
     
     public void addSize(long size) {
+        this.curSize = size;
         this.size += size;
     }
 

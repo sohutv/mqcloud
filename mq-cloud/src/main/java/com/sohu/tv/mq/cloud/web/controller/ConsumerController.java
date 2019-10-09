@@ -675,16 +675,9 @@ public class ConsumerController extends ViewController {
             String ip = clientId.substring(0, clientId.indexOf("@"));
             ConsumerRunningInfo consumerRunningInfo = map.get(clientId);
             for(MessageQueue messageQueue : consumerRunningInfo.getMqTable().keySet()) {
-                if(messageQueue.getTopic().startsWith(MixAll.RETRY_GROUP_TOPIC_PREFIX)) {
-                    continue;
-                }
-                if(messageQueue.getTopic().startsWith(MixAll.DLQ_GROUP_TOPIC_PREFIX)) {
-                    continue;
-                }
                 QueueOwnerVO queueOwnerVO = new QueueOwnerVO();
-                queueOwnerVO.setBrokerName(messageQueue.getBrokerName());
+                BeanUtils.copyProperties(messageQueue, queueOwnerVO);
                 queueOwnerVO.setClientId(ip);
-                queueOwnerVO.setQueueId(messageQueue.getQueueId());
                 queueConsumerVOList.add(queueOwnerVO);
             }
         }

@@ -56,7 +56,7 @@ import com.sohu.tv.mq.util.CommonUtil;
  * @date 2018年8月21日
  */
 @Controller
-@RequestMapping("/msg")
+@RequestMapping("/topic/message")
 public class TopicMessageController extends ViewController {
     
     public static final int TIME_SPAN = 5 * 60 * 1000;
@@ -137,6 +137,7 @@ public class TopicMessageController extends ViewController {
         // 设置是否是拥有者
         setOwner(userInfo, map, tid);
         setTraceEnabled(map, topic.traceEnabled());
+        setResult(map, "cluster", cluster);
         return view;
     }
     

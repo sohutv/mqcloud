@@ -101,6 +101,20 @@ public class TrafficTask {
     public void collectTopicHourTraffic() {
         taskExecutor.execute(new Runnable() {
             public void run() {
+                Cluster[] clusters = clusterService.getAllMQCluster();
+                if(clusters == null) {
+                    return;
+                }
+                // 获取线上集群
+                List<Integer> onlineClusterList = new ArrayList<Integer>();
+                for(Cluster cluster : clusters) {
+                    if(cluster.online()) {
+                        onlineClusterList.add(cluster.getId());
+                    }
+                }
+                if(onlineClusterList.size() == 0) {
+                    return;
+                }
                 logger.info("aggregate topic traffic start");
                 Date now = new Date();
                 // 计算10分钟间隔
@@ -114,7 +128,7 @@ public class TrafficTask {
 
                 int size = 0;
                 int update = 0;
-                Result<List<TopicTraffic>> result = topicTrafficService.query(DateUtil.formatYMD(now), timeList);
+                Result<List<TopicTraffic>> result = topicTrafficService.query(DateUtil.formatYMD(now), timeList, onlineClusterList);
                 if (result.isNotEmpty()) {
                     List<TopicTraffic> topicTrafficList = result.getResult();
                     size = topicTrafficList.size();

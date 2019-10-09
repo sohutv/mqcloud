@@ -240,12 +240,12 @@
 								<div id="extendConfig" class="hide">
 									<div class="form-group">
 										<label class="control-label col-md-3"> 消息顺序: </label>
-										<div class="col-md-5 checkbox">
-											<label>
-											    <input type="radio" name="ordered" value="0" checked>局部有序
+										<div class="col-md-5 checkbox nostyleA">
+											<label data-toggle="tooltip" title="点击查看释义">
+											    <input type="radio" name="ordered" value="0" checked><a target=_blank href="/wiki/userGuide/clientConsumer#normalOrder">局部有序</a>
 											</label>
-											<label data-toggle="tooltip" title="在分布式系统中保持全局消息有序有性能损耗，请谨慎使用">
-												<input type="radio" name="ordered" value="1">全局有序
+											<label data-toggle="tooltip" title="在分布式系统中保持全局消息有序有性能损耗，请谨慎使用。点击查看释义。">
+												<input type="radio" name="ordered" value="1"><a target=_blank  href="/wiki/userGuide/clientConsumer#strictOrder">全局有序</a>
 											</label>
 										</div>
 									</div>
@@ -482,7 +482,7 @@
    		// 展示铃铛
    		$("#notifyBox").show();
 		// 获取用户未读消息
-		$.get('${request.contextPath}/message',
+		$.get('${request.contextPath}/user/notice',
 	        function(data){
             	$("#notifyBox").parent().css("padding-top", "7px");
 	            if(data.status == 200){
@@ -703,7 +703,7 @@
 	 * 查看所有消息
 	 */
 	function allMessage(){
-		$.get('${request.contextPath}/message/all',
+		$.get('${request.contextPath}/user/notice/all',
 	        function(data){
 				$("#messageBody").html(data);
 				$("#messageModel").modal("show");
@@ -714,7 +714,7 @@
 	 * 全部读取消息
 	 */
 	function readAll(){
-		$.post('${request.contextPath}/message/read/all',
+		$.post('${request.contextPath}/user/notice/read/all',
 	        function(data){
 	            if(data.status == 200){
 	            	for(var i in MessagePlugin.option.msgData){
@@ -731,7 +731,7 @@
 	 * 标记消息已读
 	 */
 	function read(mid){
-		$.post('${request.contextPath}/message/'+mid+'/read',
+		$.post('${request.contextPath}/user/notice/'+mid+'/read',
 	        function(data){
 	            if(data.status == 200){
 	            	var allRead = true;
@@ -897,7 +897,7 @@
 	
 	// 拉取消息
 	function fetchMessage(){
-		$.get('${request.contextPath}/message',
+		$.get('${request.contextPath}/user/notice',
 	        function(data){
 	            if(data.status == 200){
 	            	var refresh = false;

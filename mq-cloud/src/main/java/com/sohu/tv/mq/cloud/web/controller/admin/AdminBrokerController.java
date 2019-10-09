@@ -77,6 +77,8 @@ public class AdminBrokerController {
                         broker.setBrokerID(brokerId.intValue());
                         broker.setCid(cid);
                         list.add(broker);
+                        // 更新集群数据文件保留时间
+                        clusterService.updateFileReservedTime(mqAdmin, cid, broker.getAddr());
                     }
                 }
                 return Result.getResult(list);

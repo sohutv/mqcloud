@@ -172,10 +172,10 @@ public class TopicTrafficService extends TrafficService<TopicTraffic> {
      * @param timeList
      * @return
      */
-    public Result<List<TopicTraffic>> query(String date, List<String> timeList) {
+    public Result<List<TopicTraffic>> query(String date, List<String> timeList, List<Integer> clusterIdList) {
         List<TopicTraffic> list = null;
         try {
-            list = topicTrafficDao.selectByDateTime(date, timeList);
+            list = topicTrafficDao.selectByDateTime(date, timeList, clusterIdList);
         } catch (Exception e) {
             logger.error("query traffic err,date:{},timeList:{}", date, timeList, e);
             return Result.getDBErrorResult(e);
@@ -191,8 +191,8 @@ public class TopicTrafficService extends TrafficService<TopicTraffic> {
         BrokerTraffic brokerTraffic = new BrokerTraffic();
         brokerTraffic.setIp(ip);
         brokerTraffic.setCreateTime(traffic.getCreateTime());
-        brokerTraffic.setPutCount(traffic.getCount());
-        brokerTraffic.setPutSize(traffic.getSize());
+        brokerTraffic.setPutCount(traffic.getCurCount());
+        brokerTraffic.setPutSize(traffic.getCurSize());
         brokerTraffic.setClusterId(traffic.getClusterId());
         brokerTrafficService.aggragateProduceTraffic(brokerTraffic);
     }

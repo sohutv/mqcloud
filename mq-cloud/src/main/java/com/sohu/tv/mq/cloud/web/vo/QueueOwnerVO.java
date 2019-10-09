@@ -1,4 +1,7 @@
 package com.sohu.tv.mq.cloud.web.vo;
+
+import org.apache.rocketmq.common.MixAll;
+
 /**
  * 队列的消费者
  * 
@@ -9,6 +12,7 @@ public class QueueOwnerVO {
     private String brokerName;
     private int queueId;
     private String clientId;
+    private String topic;
     public String getBrokerName() {
         return brokerName;
     }
@@ -26,5 +30,21 @@ public class QueueOwnerVO {
     }
     public void setClientId(String clientId) {
         this.clientId = clientId;
+    }
+    public String getTopic() {
+        return topic;
+    }
+    public void setTopic(String topic) {
+        this.topic = topic;
+    }
+    
+    public int getTopicType() {
+        if(topic.startsWith(MixAll.RETRY_GROUP_TOPIC_PREFIX)) {
+            return 1;
+        }
+        if(topic.startsWith(MixAll.DLQ_GROUP_TOPIC_PREFIX)) {
+            return 2;
+        }
+        return 0;
     }
 }

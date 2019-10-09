@@ -5,7 +5,7 @@ package com.sohu.tv.mq.cloud.common.service;
  * @author yongfeigao
  * @date 2018年10月8日
  */
-public interface AlertMessageSender {
+public interface MailSender {
     /**
      * 发送邮件
      * 
@@ -14,7 +14,7 @@ public interface AlertMessageSender {
      * @param email xx@xxx.com,xx@xxx.com
      * @return 成功返回true，否则返回false
      */
-    public boolean sendMail(String title, String content, String email);
+    public boolean send(String title, String content, String email);
 
     /**
      * 发送邮件
@@ -25,7 +25,7 @@ public interface AlertMessageSender {
      * @param timeout 超时毫秒
      * @return 成功返回true，否则返回false
      */
-    public boolean sendMail(String title, String content, String email, int timeout);
+    public boolean send(String title, String content, String email, int timeout);
 
     /**
      * 发送邮件
@@ -37,24 +37,5 @@ public interface AlertMessageSender {
      * @param timeout 超时毫秒
      * @return 成功返回true，否则返回false
      */
-    public boolean sendMail(String title, String content, String email, String ccEmail, int timeout);
-
-    /**
-     * 发送手机报警
-     * 
-     * @param message 报警信息
-     * @param phone 报警电话
-     * @return 成功返回true，否则返回false
-     */
-    public boolean sendPhone(String message, String phone);
-
-    /**
-     * 发送手机报警
-     * 
-     * @param message 报警信息
-     * @param phone 报警电话
-     * @param timeout 超时毫秒
-     * @return 成功返回true，否则返回false
-     */
-    public boolean sendPhone(String message, String phone, int timeout);
+    public boolean send(String title, String content, String email, String ccEmail, int timeout);
 }

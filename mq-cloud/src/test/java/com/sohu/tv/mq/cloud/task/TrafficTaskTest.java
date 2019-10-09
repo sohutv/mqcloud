@@ -19,5 +19,10 @@ public class TrafficTaskTest {
     public void testDelete() {
         trafficTask.deleteTraffic();
     }
+    
+    @Test
+    public void testCollectTopicHourTraffic() {
+        trafficTask.collectTopicHourTraffic();
+    }
 
 }

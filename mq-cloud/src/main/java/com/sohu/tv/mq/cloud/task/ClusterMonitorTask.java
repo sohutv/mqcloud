@@ -136,7 +136,7 @@ public class ClusterMonitorTask {
                         nameServerService.update(mqCluster.getId(), addr, CheckStatusEnum.OK);
                     } catch (Exception e) {
                         nameServerService.update(mqCluster.getId(), addr, CheckStatusEnum.FAIL);
-                        alarmList.add("ns addr:" + addr + " Exception: " + e.getMessage());
+                        alarmList.add("ns:" + addr + ";Exception: " + e.getMessage());
                     }
                 }
                 
@@ -174,7 +174,7 @@ public class ClusterMonitorTask {
                         brokerService.update(mqCluster.getId(), broker.getAddr(), CheckStatusEnum.OK);
                     } catch (Exception e) {
                         brokerService.update(mqCluster.getId(), broker.getAddr(), CheckStatusEnum.FAIL);
-                        alarmList.add("broker addr:" + broker.getAddr() + " Exception: " + e.getMessage());
+                        alarmList.add("bk:" + broker.getAddr() + ";Exception: " + e.getMessage());
                     }
                 }
                 return null;
@@ -205,6 +205,7 @@ public class ClusterMonitorTask {
         }
         // 是否报警
         boolean flag = false;
+        StringBuilder smsBuilder = new StringBuilder();
         StringBuilder content = new StringBuilder("<table border=1>");
         content.append("<thead>");
         content.append("<tr>");
@@ -232,23 +233,31 @@ public class ClusterMonitorTask {
             } else { //broker
                 content.append(mqCloudConfigHelper.getBrokerMonitorLink(cluster.getId())); 
             }
+            smsBuilder.append("cluster:");
+            smsBuilder.append(cluster.getName());
+            smsBuilder.append(":");
             content.append("'>" + cluster.getName() + "</a>");
             content.append("</td>");
             for (int i = 0; i < alarmList.size(); i++) {
                 if (i > 0) {
                     content.append("<tr>");
+                    smsBuilder.append(",");
                 }
-                content.append("<td>" + alarmList.get(i) + "</td>");
+                String str = alarmList.get(i);
+                content.append("<td>" + str + "</td>");
+                smsBuilder.append(str.split(";")[0]);
                 if (i > 0) {
                     content.append("</tr>");
                 }
             }
+            smsBuilder.append(";");
             content.append("</tr>");
         }
         content.append("</tbody>");
         content.append("</table>");
         if (flag) {
             sendAlertMessage(alarmTitle, content.toString());
+            alertService.sendPhone(alarmTitle, smsBuilder.toString());
         }
     }
 

@@ -27,7 +27,7 @@
 				<tr>
 					<td>每个broker上的队列数:</td>
 					<td <#if response.result.own>class="edit-text"</#if>>
-						<#if response.result.own><span style="cursor:pointer" data-target="#updateTopicRouteModal" data-toggle="modal"></#if>${response.result.topic.queueNum}<#if response.result.own></span></#if> 
+						<#if response.result.own><a href="javascript:void();" data-toggle="tooltip" title="修改队列数" onclick="updateTopicRouteShow()"></#if>${response.result.topic.queueNum}<#if response.result.own></a></#if> 
             		</td>
 				</tr>
 				<tr>
@@ -36,21 +36,21 @@
 				</tr>
 				<tr>
 					<td>消息顺序:</td>
-					<td>
+					<td class="nostyleA">
 						<#if response.result.topic.ordered == 0>
-							局部有序
+							<a data-toggle="tooltip" title="查看释义" target=_blank href="/wiki/userGuide/clientConsumer#normalOrder">局部有序</a>
 						<#else>
-							全局有序
+							<a data-toggle="tooltip" title="查看释义" target=_blank href="/wiki/userGuide/clientConsumer#strictOrder">全局有序</a>
 						</#if>
 					</td>
 				</tr>
 				<tr>
 					<td>序列化方式:</td>
-					<td>
+					<td class="nostyleA">
 						<#if response.result.topic.serializer == 1>
-							<a href="/wiki/userGuide/clientProducer#produceJson" data-toggle="tooltip" title="查看生产JSON样例，客户端务必升级至${version}及以上">${response.result.topic.serializerName!}</a>
+							<a href="/wiki/userGuide/clientProducer#produceJson"target=_blank  data-toggle="tooltip" title="查看生产JSON样例，客户端务必升级至${version}及以上">${response.result.topic.serializerName!}</a>
 						<#else>
-							<a href="/wiki/userGuide/clientProducer#produceObject" data-toggle="tooltip" title="查看生产对象或Map样例">${response.result.topic.serializerName!}</a>
+							<a href="/wiki/userGuide/clientProducer#produceObject" target=_blank data-toggle="tooltip" title="查看生产对象或Map样例">${response.result.topic.serializerName!}</a>
 						</#if>
 					</td>
 				</tr>
@@ -58,7 +58,7 @@
 					<td>用途:</td>
 					<td <#if response.result.own>class="edit-text"</#if>>
           				<#if response.result.topic.info?? && response.result.topic.info !=''> 
-							<#if response.result.own><span style="cursor:pointer" data-target="#updateTopicInfoModal" data-toggle="modal"></#if>${response.result.topic.info!}<#if response.result.own></span></#if>
+							<#if response.result.own><a href="javascript:void();" data-toggle="tooltip" title="修改用途" onclick="updateTopicInfoShow()"></#if>${response.result.topic.info!}<#if response.result.own></a></#if>
            				<#else>
 							<#if response.result.own>
             					<button type="submit" class="btn btn-success btn-sm" data-target="#updateTopicInfoModal" data-toggle="modal" >添加</button>
@@ -877,5 +877,11 @@ function updateTopicInfo(){
 			    	enable("updateTopicInfoBtn");
 			    }
 	    }, 'json');
+}
+function updateTopicRouteShow(){
+	$('#updateTopicRouteModal').modal('show');
+}
+function updateTopicInfoShow(){
+	$('#updateTopicInfoModal').modal('show');
 }
 </script>

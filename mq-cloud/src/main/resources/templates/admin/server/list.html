@@ -63,7 +63,14 @@
 						<td><input class="pointer" type="checkbox" name="monitor" value="${server.ip}" onclick="checkThis(this)" /></td>
 						<td>${server_index+1}</td>
 						<td><a href="#" onclick="setIp('${server.ip}')" data-target="#monitorModal" data-toggle="modal">${server.ip}</a></td>
-						<td>${server.host!}</td>
+						<td>
+							<#if server.host?? && server.host?length gt 8>
+								<span data-toggle="tooltip" title="${server.host}">${server.host?substring(0,9)}...</span>
+							<#else>
+								${server.host!}
+							</#if>
+						</td>
+						
 						<td>${server.cpus!}</td>
 						<td>
 							<#if server.mtotal != 0>

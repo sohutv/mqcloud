@@ -275,12 +275,7 @@ public class UserService {
     public String queryMonitorEmail() {
         Object email = mqLocalCache.get("monitor");
         if (email == null) {
-            List<User> userList = null;
-            try {
-                userList = userDao.selectMonitor();
-            } catch (Exception e) {
-                logger.error("queryMonitor err", e);
-            }
+            List<User> userList = queryMonitorUser();
             if (userList != null && userList.size() > 0) {
                 email = Jointer.BY_COMMA.join(userList, u -> u.getEmail());
                 mqLocalCache.put("monitor", email);
@@ -290,6 +285,41 @@ public class UserService {
             return null;
         }
         return email.toString();
+    }
+    
+    /**
+     * 查询监控的用户手机
+     * 
+     * @param user
+     */
+    @SuppressWarnings("unchecked")
+    public List<String> queryMonitorPhone() {
+        List<String> phoneList = (List<String>) mqLocalCache.get("monitorPhone");
+        if (phoneList == null) {
+            List<User> userList = queryMonitorUser();
+            phoneList = new ArrayList<String>();
+            if (userList != null && userList.size() > 0) {
+                for(User user : userList) {
+                    phoneList.add(user.getMobile());
+                }
+            }
+            mqLocalCache.put("monitorPhone", phoneList);
+        }
+        return phoneList;
+    }
+    
+    /**
+     * 查询监控的用户
+     * 
+     * @param user
+     */
+    public List<User> queryMonitorUser() {
+        try {
+            return userDao.selectMonitor();
+        } catch (Exception e) {
+            logger.error("queryMonitor err", e);
+        }
+        return null;
     }
     
     
