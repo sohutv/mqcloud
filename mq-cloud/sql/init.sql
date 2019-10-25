@@ -344,6 +344,7 @@ CREATE TABLE `producer_total_stat` (
   `create_date` int(11) NOT NULL COMMENT '创建日期',
   `create_time` char(4) NOT NULL COMMENT '创建分钟,格式:HHMM',
   `stat_time` int(11) NOT NULL COMMENT '统计时间',
+  `exception` text COMMENT '异常记录',
   PRIMARY KEY (`id`),
   UNIQUE KEY `producer` (`producer`,`stat_time`,`client`),
   KEY `create_date` (`create_date`,`producer`)

@@ -16,7 +16,7 @@ import org.apache.rocketmq.common.consumer.ConsumeFromWhere;
 import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.common.protocol.heartbeat.MessageModel;
 
-import com.sohu.index.tv.mq.common.BatchConsumerExecutor;
+import com.sohu.index.tv.mq.common.BatchConsumerCallback;
 import com.sohu.index.tv.mq.common.ConsumerCallback;
 import com.sohu.index.tv.mq.common.ConsumerExecutor;
 import com.sohu.tv.mq.common.AbstractConfig;
@@ -33,7 +33,7 @@ public class RocketMQConsumer extends AbstractConfig {
     private ConsumerExecutor consumerExecutor;
 
     // 支持一批消息消费
-    private BatchConsumerExecutor batchConsumerExecutor;
+    private BatchConsumerCallback<?, MessageExt> batchConsumerCallback;
 
     /**
      * 消费者
@@ -47,11 +47,6 @@ public class RocketMQConsumer extends AbstractConfig {
      * 是否重试
      */
     private boolean reconsume = true;
-
-    /**
-     * 消费一批消息，最大数
-     */
-    private int consumeMessageBatchMaxSize = 1;
 
     /**
      * 是否debug
@@ -71,6 +66,7 @@ public class RocketMQConsumer extends AbstractConfig {
     public RocketMQConsumer(String consumerGroup, String topic) {
         super(consumerGroup, topic);
         consumer = new DefaultMQPushConsumer(consumerGroup);
+        // 消费消息超时将会发回重试队列，超时时间由默认的15分钟修改为2小时
         consumer.setConsumeTimeout(2 * 60);
     }
     
@@ -81,7 +77,6 @@ public class RocketMQConsumer extends AbstractConfig {
             if (getClusterInfoDTO().isBroadcast()) {
                 consumer.setMessageModel(MessageModel.BROADCASTING);
             }
-            consumer.setConsumeMessageBatchMaxSize(consumeMessageBatchMaxSize);
             consumer.subscribe(topic, subExpression);
             
             // 构建消费者对象
@@ -112,8 +107,15 @@ public class RocketMQConsumer extends AbstractConfig {
         consumer.shutdown();
     }
 
+    /**
+     * Batch consumption size
+     * @param consumeMessageBatchMaxSize
+     */
     public void setConsumeMessageBatchMaxSize(int consumeMessageBatchMaxSize) {
-        this.consumeMessageBatchMaxSize = consumeMessageBatchMaxSize;
+        if(consumeMessageBatchMaxSize <= 0) {
+            return;
+        }
+        consumer.setConsumeMessageBatchMaxSize(consumeMessageBatchMaxSize);
     }
 
     public void setConsumeFromWhere(ConsumeFromWhere consumeFromWhere) {
@@ -243,14 +245,16 @@ public class RocketMQConsumer extends AbstractConfig {
         return consumerCallback;
     }
 
-    public BatchConsumerExecutor getBatchConsumerExecutor() {
-        return batchConsumerExecutor;
+    @SuppressWarnings("unchecked")
+    public <T> BatchConsumerCallback<T, MessageExt> getBatchConsumerCallback() {
+        return (BatchConsumerCallback<T, MessageExt>) batchConsumerCallback;
     }
 
-    public void setBatchConsumerExecutor(BatchConsumerExecutor batchConsumerExecutor) {
-        this.batchConsumerExecutor = batchConsumerExecutor;
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    public void setBatchConsumerCallback(BatchConsumerCallback batchConsumerCallback) {
+        this.batchConsumerCallback = batchConsumerCallback;
     }
-    
+
     /**
      * 1.8.3之后不用设置broadcast了，可以自动区分
      * @param broadcast
@@ -300,5 +304,23 @@ public class RocketMQConsumer extends AbstractConfig {
      */
     @Deprecated
     public void setTraceEnabled(boolean traceEnabled) {
+    }
+    
+    /**
+     * Maximum amount of time in minutes a message may block the consuming thread.
+     */
+    public void setConsumeTimeout(long consumeTimeout) {
+        if(consumeTimeout <= 0) {
+            return;
+        }
+        consumer.setConsumeTimeout(consumeTimeout); 
+    }
+    
+    /**
+     * 是否开启vip通道
+     * @param vipChannelEnabled
+     */
+    public void setVipChannelEnabled(boolean vipChannelEnabled) {
+        consumer.setVipChannelEnabled(vipChannelEnabled);
     }
 }

@@ -6,7 +6,6 @@ import java.util.List;
 import java.util.Set;
 
 import org.apache.rocketmq.client.exception.MQClientException;
-import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.TopicConfig;
 import org.apache.rocketmq.common.admin.TopicStatsTable;
 import org.apache.rocketmq.common.protocol.body.ClusterInfo;
@@ -41,6 +40,7 @@ import com.sohu.tv.mq.cloud.mq.SohuMQAdmin;
 import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper;
 import com.sohu.tv.mq.cloud.util.Result;
 import com.sohu.tv.mq.cloud.util.Status;
+import com.sohu.tv.mq.util.CommonUtil;
 
 /**
  * topic服务
@@ -546,8 +546,8 @@ public class TopicService {
                 List<Result> resultList = new ArrayList<Result>();
                 for(String topic : topicList.getTopicList()) {
                     // topic过滤
-                    if (topic.startsWith(MixAll.RETRY_GROUP_TOPIC_PREFIX)
-                            || topic.startsWith(MixAll.DLQ_GROUP_TOPIC_PREFIX)
+                    if (CommonUtil.isRetryTopic(topic)
+                            || CommonUtil.isDeadTopic(topic)
                             || systemTopicList.getTopicList().contains(topic)) {
                         resultList.add(Result.getResult(Status.FILTERED_TOPIC).setResult(topic));
                         continue;

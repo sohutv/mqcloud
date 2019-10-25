@@ -4,8 +4,13 @@
   	<#include "inc/include.html">
   	<link href="${request.contextPath}/resources/prettify/prettify.css" rel="stylesheet">
   	<link href="${request.contextPath}/css/githubmd.css" rel="stylesheet">
+  	<!-- 滚动插件 -->
+	<script src="${request.contextPath}/resources/nicescroll/jquery.nicescroll.min.js"></script>
 	<script type="text/javascript" src="${request.contextPath}/resources/prettify/prettify.js"></script>
 	<meta name="referrer" content="no-referrer">
+	<style>
+		th, td{padding:.5em;border:1px solid #000;}
+	</style>
   	<title>MQCloud</title>
   </head>
   <body role="document">
@@ -25,6 +30,12 @@
   <#include "inc/foot.html">
   <script>
 	$(function(){
+		$("body").niceScroll({
+			cursorcolor:"#ddd",
+		  	cursorwidth:"12px",
+			cursorminheight: 64,
+			horizrailenabled : false
+		});
 		$('pre').each(function(i, pre) {
             $(pre).addClass("prettyprint");
         });

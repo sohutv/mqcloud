@@ -104,6 +104,31 @@ consumer.shutdown();
    }
    ```
 
+4. 批量消费
+
+   ```
+   // 设置批量消费最大消息数
+   consumer.setConsumeMessageBatchMaxSize(32);
+   // 设置批量消费BatchConsumerCallback
+   consumer.setBatchConsumerCallback(new BatchConsumerCallback<String, MessageExt>(){
+       public void call(List<MQMessage<String, MessageExt>> batchMessage) throws Exception {
+           MQMessage<String, MessageExt> tmpMessage = null;
+           try {
+               for(MQMessage<String, MessageExt> mqMessage : batchMessage) {
+                   tmpMessage = mqMessage;
+                   // 打印日志
+                   logger.info("msg:{}, msgExt:{}", mqMessage.getMessage(), mqMessage.getMessageExt());
+                   // 消费逻辑
+               }
+           } catch (Exception e) {
+               logger.error("consume err, msgid:{}, msg:{}", tmpMessage.getMessageExt().getMsgId(), tmpMessage.getMessage(), e);
+               // 如果需要重新消费，这里需要把异常抛出。注意：抛出异常后这批消息将重新消费
+               throw e;
+           }
+       }
+   });
+   ```
+
    ​
 
 ## 五、<span id="offset">广播模式消费者需要注意</span>
@@ -151,6 +176,12 @@ consumer.shutdown();
    2.可以通过如下参数控制多少条消息作为一批被某个线程消费：
 
    `consumeMessageBatchMaxSize(默认为1)`，默认表示每条消息需要一个线程来处理。
+
+   **若非有必要不建议修改此值，因为可能产生重复消费。比如修改为3，那么一个线程可以处理3条消息，假如前2条消费成功，第3条消费失败，此时如果抛出异常，将导致这3条再次重新消费。**
+
+   *原因是由于rocketmq针对一批消息使用同一个标识来判断是否消费成功。*
+
+   *当然，如果不依赖rocketmq的消息重试机制可以不用关心这个问题。*
 
 3. 每秒消费最多1000条消息，该如何实现？
 

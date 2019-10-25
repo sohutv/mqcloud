@@ -237,7 +237,7 @@ public class UserProducerService {
         try {
             userProducer = userProducerDao.selectByTidAndUid(uid, tid);
         } catch (Exception e) {
-            logger.error("findUserProducer err, pid:{}, tid:{}", uid, tid, e);
+            logger.error("findUserProducer err, uid:{}, tid:{}", uid, tid, e);
             return Result.getDBErrorResult(e);
         }
         return Result.getResult(userProducer);

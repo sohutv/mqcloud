@@ -27,6 +27,9 @@ public class ClientStats {
     private Map<String, InvokeStatsResult> detailInvoke;
     // 统计时间 需要*60000，才是毫秒
     private int statsTime;
+    
+    // 异常集合
+    private Map<String, Object> exceptionMap;
 
     public String getClient() {
         return client;
@@ -90,6 +93,14 @@ public class ClientStats {
 
     public void setCounts(long counts) {
         this.counts = counts;
+    }
+
+    public Map<String, Object> getExceptionMap() {
+        return exceptionMap;
+    }
+
+    public void setExceptionMap(Map<String, Object> exceptionMap) {
+        this.exceptionMap = exceptionMap;
     }
 
     @Override

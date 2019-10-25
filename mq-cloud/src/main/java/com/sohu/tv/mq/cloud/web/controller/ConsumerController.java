@@ -58,6 +58,7 @@ import com.sohu.tv.mq.cloud.web.controller.param.UserConsumerParam;
 import com.sohu.tv.mq.cloud.web.vo.ConsumerProgressVO;
 import com.sohu.tv.mq.cloud.web.vo.QueueOwnerVO;
 import com.sohu.tv.mq.cloud.web.vo.UserInfo;
+import com.sohu.tv.mq.util.CommonUtil;
 /**
  * 消费者接口
  * @Description: 
@@ -175,7 +176,7 @@ public class ConsumerController extends ViewController {
             Map<MessageQueue, OffsetWrapper> offsetMap = new TreeMap<MessageQueue, OffsetWrapper>();
             Map<MessageQueue, OffsetWrapper> retryOffsetMap = new TreeMap<MessageQueue, OffsetWrapper>();
             for(MessageQueue mq : offsetTable.keySet()) {
-                if(mq.getTopic().startsWith(MixAll.RETRY_GROUP_TOPIC_PREFIX)) {
+                if(CommonUtil.isRetryTopic(mq.getTopic())) {
                     retryOffsetMap.put(mq, offsetTable.get(mq));
                     // 设置topic名字
                     if(consumerProgressVO.getRetryTopic() == null) {

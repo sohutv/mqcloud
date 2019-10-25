@@ -187,6 +187,9 @@ public class RocketMQProducer extends AbstractConfig {
             return new Result<SendResult>(true, sendResult);
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
+            if(statsHelper != null) {
+                statsHelper.recordException(e);
+            }
             return new Result<SendResult>(false, e);
         }
     }
@@ -293,11 +296,28 @@ public class RocketMQProducer extends AbstractConfig {
      * @param message 消息
      * @param sendCallback 回调函数
      */
-    public void publishAsync(Message message, SendCallback sendCallback) {
+    public void publishAsync(Message message, final SendCallback sendCallback) {
         try {
-            producer.send(message, sendCallback);
+            if(statsHelper == null) {
+                producer.send(message, sendCallback);
+            } else {
+                producer.send(message, new SendCallback() {
+                    public void onSuccess(SendResult sendResult) {
+                        sendCallback.onSuccess(sendResult);
+                    }
+                    public void onException(Throwable e) {
+                        if(statsHelper != null) {
+                            statsHelper.recordException(e);
+                        }
+                        sendCallback.onException(e);
+                    }
+                });
+            }
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
+            if(statsHelper != null) {
+                statsHelper.recordException(e);
+            }
             sendCallback.onException(e);
         }
     }
@@ -324,11 +344,12 @@ public class RocketMQProducer extends AbstractConfig {
 
     /**
      * 发送异步消息
-     * 
+     * 异常时将在rocketmq线程进行回调，该方法无法把所有异常抛出，故废弃
      * @param messageMap 消息数据
      * @param messageMap key
      * @param sendCallback 回调函数
      */
+    @Deprecated
     public void publishAsyncWithException(Object messageObject, String keys, SendCallback sendCallback)
             throws Exception {
         publishAsyncWithException(messageObject, "", keys, sendCallback);
@@ -336,12 +357,13 @@ public class RocketMQProducer extends AbstractConfig {
     
     /**
      * 发送异步消息
-     * 
+     * 异常时将在rocketmq线程进行回调，该方法无法把所有异常抛出，故废弃
      * @param messageObject 消息数据
      * @param tags tags
      * @param String keys
      * @param sendCallback 回调函数
      */
+    @Deprecated
     public void publishAsyncWithException(Object messageObject, String tags, String keys, SendCallback sendCallback)
             throws Exception {
         Message message = null;
@@ -357,10 +379,11 @@ public class RocketMQProducer extends AbstractConfig {
     
     /**
      * 发送异步消息
-     * 
+     * 异常时将在rocketmq线程进行回调，该方法无法把所有异常抛出，故废弃
      * @param messageObject 消息数据
      * @param sendCallback 回调函数
      */
+    @Deprecated
     public void publishAsyncWithException(Message message, SendCallback sendCallback)
             throws Exception {
         try {
@@ -649,5 +672,21 @@ public class RocketMQProducer extends AbstractConfig {
     protected void registerTraceDispatcher(AsyncTraceDispatcher traceDispatcher) {
         producer.getDefaultMQProducerImpl().registerSendMessageHook(
                 new SendMessageTraceHookImpl(traceDispatcher));
+    }
+    
+    public int getSendMsgTimeout() {
+        return producer.getSendMsgTimeout();
+    }
+
+    public void setSendMsgTimeout(int sendMsgTimeout) {
+        producer.setSendMsgTimeout(sendMsgTimeout);
+    }
+    
+    public int getRetryTimesWhenSendFailed() {
+        return producer.getRetryTimesWhenSendFailed();
+    }
+
+    public void setRetryTimesWhenSendFailed(int retryTimesWhenSendFailed) {
+        producer.setRetryTimesWhenSendFailed(retryTimesWhenSendFailed);
     }
 }

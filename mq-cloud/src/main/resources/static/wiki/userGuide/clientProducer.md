@@ -135,6 +135,8 @@ map.put("id", id);
 Result<SendResult> sendResult = producer.publishOrder(map, String.valueOf(id), id);
 ```
 
+**注意：此种发送方式不带[重试机制](#retry)。**
+
 ## 六、 <span id="produceTransMessage">发送事务消息示例</span>
 
 ```
@@ -183,17 +185,7 @@ map.put("aid", "123456");
 map.put("vid", "765432");
 // 1.oneway方式 - 此种方式发送效率最高，但是无法获取返回的结果
 new PublishOnewayCommand(producer, map).execute();
-// 2.async方式 - 此种方式发送效率高于普通方式，可以通过异步回调的方式校验返回结果
-SendCallback sendCallback = new SendCallback() {
-            public void onSuccess(SendResult sendResult) {
-                // 成功回调
-            }
-            public void onException(Throwable e) {
-                // 失败回调
-            }
-        };
-new PublishAsyncCommand(producer, map, sendCallback).execute();
-// 3.普通方式 - 此种方式即为普通方式的hystrix封装，与普通发送方式无异
+// 2.普通方式 - 此种方式即为普通方式的hystrix封装，与普通发送方式无异
 Result<SendResult> result = new PublishCommand(producer, map).execute();
 ```
 
@@ -257,13 +249,15 @@ Result<SendResult> result = new PublishCommand(producer, map).execute();
 
 第三，其实耗时基本是在`发送消息并等待响应`。
 
-### 3.默认的消息重试机制是怎样的？
+### <span id="retry">3.</span>默认的消息重试机制是怎样的？
 
 1. 针对发送失败的消息，后续会最多进行2次重试（可以通过设置retryTimesWhenSendFailed修改）
 
 2. 为什么说最多2次重试呢，因为如果发送耗时达到sendMsgTimeout也会中断重试机制。
 
    那如果把sendMsgTimeout设长是否会一定重试2次呢？这个不一定，因为第一次调用有可能一直等sendMsgTimeout的时间，就没有第二次重试的机会了。
+
+   **MQCloud针对此种情况进行了修改，增加了单次请求最大耗时参数的设置，默认总耗时设置为4秒，单次请求最大为3秒，这样至少保证broker无响应时重试一次。**
 
 ### 4.当broker集群中某个节点不可用时，客户端能否自动剔除？
 

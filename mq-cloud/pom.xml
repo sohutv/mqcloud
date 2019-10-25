@@ -31,6 +31,7 @@
 		<commons-validator.version>1.6</commons-validator.version>
 		<ganymed-ssh.version>build210</ganymed-ssh.version>
 		<java.version>1.8</java.version>
+		<flexmark.version>0.42.12</flexmark.version>
 	</properties>
 
 	<dependencies>
@@ -126,7 +127,13 @@
 		<dependency>
 		    <groupId>com.vladsch.flexmark</groupId>
 		    <artifactId>flexmark</artifactId>
-		    <version>0.42.12</version>
+		    <version>${flexmark.version}</version>
+		</dependency>
+		<!--表格渲染插件-->
+		<dependency>
+		    <groupId>com.vladsch.flexmark</groupId>
+		    <artifactId>flexmark-ext-tables</artifactId>
+		    <version>${flexmark.version}</version>
 		</dependency>
 		<!--markdown to html end-->
 	</dependencies>

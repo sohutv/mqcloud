@@ -90,7 +90,10 @@
 	</ul>
 	<li><span>疑难杂症</span></li>
 	<ul class="nav sub-menu">
-		<li id="troubleshooting_broadcastingOffsetMovedEvent"><a href="${request.contextPath}/wiki/troubleshooting/broadcastingOffsetMovedEvent">广播消费模式的消费者OFFSET_MOVED_EVENT预警问题调查</a></li>
+		<li id="troubleshooting_sendMessageRetry"><a href="${request.contextPath}/wiki/troubleshooting/sendMessageRetry">1.broker僵死时客户端发送消息支持重试</a></li>
+		<li id="troubleshooting_brokerOverload"><a href="${request.contextPath}/wiki/troubleshooting/brokerOverload">2.broker负载过高</a></li>
+		<li id="troubleshooting_nameServerUpdateBug"><a href="${request.contextPath}/wiki/troubleshooting/nameServerUpdateBug">3.NameServer更新导致客户端No topic route info in name server for the topic</a></li>
+		<li id="troubleshooting_broadcastingOffsetMovedEvent"><a href="${request.contextPath}/wiki/troubleshooting/broadcastingOffsetMovedEvent">4.广播消费模式的消费者OFFSET_MOVED_EVENT预警问题调查</a></li>
 	</ul>
 </ul>
 <script type="text/javascript">
@@ -128,5 +131,13 @@
 	            }
 	        });
 	    });
+		
+	    var page = window.location.pathname.substr(6);
+	    page = page.replace(/\//g, "_");
+	    if(page && $("#"+page).offset()){
+	    	if($("#"+page).offset().top > 510){
+				$("#leftBox").animate({scrollTop: $("#"+page).offset().top - 81}, 1000);
+	    	}
+		}
 	});
 </script>

@@ -5,10 +5,12 @@ import java.util.Map;
 
 /**
  * 批量处理接口
+ * 此接口只试用与消息类型为Map，提供一个适用性更广泛的
  * @Description: 
  * @author yongfeigao
  * @date 2018年1月19日
  */
+@Deprecated
 public interface BatchConsumerExecutor {
 
     /**

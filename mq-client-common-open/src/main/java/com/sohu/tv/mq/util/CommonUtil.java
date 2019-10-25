@@ -1,5 +1,7 @@
 package com.sohu.tv.mq.util;
 
+import org.apache.rocketmq.common.MixAll;
+
 public class CommonUtil {
 
     public static final String TRACE_TOPIC_SUFFIX = "-trace-topic";
@@ -29,5 +31,20 @@ public class CommonUtil {
      */
     public static boolean isTraceTopic(String topic) {
         return topic.endsWith(TRACE_TOPIC_SUFFIX);
+    }
+    
+    /*
+     * 是否是重试topic
+     */
+    public static boolean isRetryTopic(String topic) {
+        return topic.startsWith(MixAll.RETRY_GROUP_TOPIC_PREFIX);
+    }
+    
+    /**
+     * 是否是死队列
+     * @return
+     */
+    public static boolean isDeadTopic(String topic) {
+        return topic.startsWith(MixAll.DLQ_GROUP_TOPIC_PREFIX);
     }
 }

@@ -45,6 +45,7 @@ import com.sohu.tv.mq.cloud.bo.NameServer;
 import com.sohu.tv.mq.cloud.service.NameServerService;
 import com.sohu.tv.mq.cloud.util.Jointer;
 import com.sohu.tv.mq.cloud.util.Result;
+import com.sohu.tv.mq.util.CommonUtil;
 
 /**
  * copy from org.apache.rocketmq.tools.monitor.MonitorService
@@ -155,7 +156,7 @@ public class MonitorService {
 
         TopicList topicList = defaultMQAdminExt.fetchAllTopicList();
         for (String topic : topicList.getTopicList()) {
-            if (topic.startsWith(MixAll.RETRY_GROUP_TOPIC_PREFIX)) {
+            if (CommonUtil.isRetryTopic(topic)) {
                 String consumerGroup = topic.substring(MixAll.RETRY_GROUP_TOPIC_PREFIX.length());
 
                 // 链接在线检测

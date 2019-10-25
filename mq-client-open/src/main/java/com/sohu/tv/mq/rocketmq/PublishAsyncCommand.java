@@ -10,9 +10,11 @@ import com.sohu.tv.mq.common.DefaultAlerter;
  * Producer PublishAsync 隔离封装
  * 
  * @Description: 提供rocketmq PublishAsync方式，隔离发送
+ * 由于SendCallback在rocketmq线程执行，无法把异常抛出到hystrix线程，故隔离机制失效，此类之后将废弃。
  * @author yongfeigao
  * @date 2018年1月24日
  */
+@Deprecated
 public class PublishAsyncCommand extends AbstractCommand<Void> {
 
     public static final String GROUP_KEY = "producer";

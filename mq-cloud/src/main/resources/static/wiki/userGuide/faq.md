@@ -19,7 +19,7 @@
 1. 如果是通知类型消息，即消息可以丢失，推荐采用oneway方式发送。
 2. 如果需要知道消息是否发送成功，但是不能阻塞主流程，推荐采用async方式发送。
 3. 如果消息必须发送成功，不在乎是否阻塞主流程，推荐采用普通方式发送。
-4. 以上三种方式都有对应的hystrix隔离版，可以在MQ集群故障时保障客户端主流程不阻塞。
+4. oneway和同步发送有对应的hystrix隔离版，可以在MQ集群故障时保障客户端主流程不阻塞。
 
 #### 6. <span id="produceNotice">生产者注意事项：</span>
 
@@ -58,10 +58,16 @@ consumer.setSubExpression("tagA || tagB");
 
 #### 9. <span id="knownIssue">已知问题：</span>
 
-1 org.apache.rocketmq.client.exception.MQBrokerException: CODE: 25 DESC: the consumer's subscription not latest。
+**1** org.apache.rocketmq.client.exception.MQBrokerException: CODE: 25 DESC: the consumer's subscription not latest。
 
 该问题是rocketmq4.2版本的bug，拉取消息流程控制不严格导致，但是并不影响消息消费，在4.2版本出现，在4.3版本修复，[参见](https://github.com/apache/rocketmq/issues/370)。
 
-2 org.apache.rocketmq.client.exception.MQBrokerException: CODE: 2 DESC: [TIMEOUT_CLEAN_QUEUE]broker busy, start flow control for a while
+**2** org.apache.rocketmq.client.exception.MQBrokerException: CODE: 2 DESC: [TIMEOUT_CLEAN_QUEUE]broker busy, start flow control for a while
 
 该问题是由于rocketmq4.1之后broker针对处理发送过来的请求增加了快速失败机制，对于响应超过200ms的请求移除队列。默认broker端采用单线程和spin lock来处理。引起的原因可能是SYN_FLUSH,SYN_MASTER,gc,iops过高等,[参考1](https://stackoverflow.com/questions/43154365/rocketmqmqbrokerexception-code-2-desc-timeout-clean-queue),[参考2](https://issues.apache.org/jira/browse/ROCKETMQ-311)。
+
+**3** 2019-10-16 14:26:52.610  WARN 8 --- [NettyClientWorkerThread_2] RocketmqRemoting: NETTY CLIENT PIPELINE: IDLE exception [10.10.10.10:10913]
+
+该问题是由于netty通道在两分钟内，没有产生读写，会触发idle事件，为了节约资源，会关闭此链接。
+
+一般来说，RocketMQ有心跳检测机制，链接一般不会idle。但是rocketmq客户端默认是开启[vip通道](../developerGuide/client#start)的，而RocketMQ的心跳机制检测的是10915端口，而并非vip通道的端口，所以心跳机制对于此链接无效。

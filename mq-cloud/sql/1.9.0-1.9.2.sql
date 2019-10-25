@@ -1,0 +1,1 @@
+alter table `producer_total_stat` add column `exception` text COMMENT '异常记录';

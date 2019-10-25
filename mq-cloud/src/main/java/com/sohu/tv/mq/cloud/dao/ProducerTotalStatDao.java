@@ -20,10 +20,13 @@ public interface ProducerTotalStatDao {
      * 插入记录
      */
     @Options(useGeneratedKeys = true, keyProperty = "s.id")
-    @Insert("insert into producer_total_stat(producer,client,percent90,percent99,"
-            + "avg,count,stat_time,create_date,create_time) "
-            + "values(#{s.producer},#{s.client},#{s.percent90},#{s.percent99},#{s.avg},#{s.count},#{s.statTime},"
-            + "#{s.createDate},#{s.createTime})")
+    @Insert("<script>insert into producer_total_stat(producer,client,percent90,percent99,"
+            + "avg,count,stat_time,create_date,create_time"
+            + "<if test=\"s.exception != null\">,exception</if>"
+            + ") values(#{s.producer},#{s.client},#{s.percent90},#{s.percent99},#{s.avg},#{s.count},#{s.statTime},"
+            + "#{s.createDate},#{s.createTime}"
+            + "<if test=\"s.exception != null\">,#{s.exception}</if>"
+            + ")</script>")
     public Integer insert(@Param("s")ProducerTotalStat producerTotalStat);
     
     /**
@@ -50,8 +53,10 @@ public interface ProducerTotalStatDao {
      * @param createDate
      * @return
      */
-    @Select("select * from producer_total_stat total, producer_stat stat "
+    @Select("select total.producer producer, total.client client, total.create_date createDate, total.create_time createTime,"
+            + "stat.broker broker, total.exception exception "
+            + "from producer_total_stat total, producer_stat stat "
             + "where total.id = stat.total_id and total.create_date = #{createDate} and total.create_time >= #{createTime} "
-            + "and stat.exception is not null")
+            + "and total.exception is not null")
     public List<ProducerTotalStat> selectExceptionList(@Param("createDate")int createDate, @Param("createTime")String createTime);
 }

@@ -166,8 +166,11 @@ public abstract class AbstractConfig {
      */
     protected void initConfig(ClientConfig clientConfig) {
         init();
-        // 低版本集群不支持vip通道
-        clientConfig.setVipChannelEnabled(clusterInfoDTO.isVipChannelEnabled());
+        // 客户端主动设置为false，不覆盖
+        if(clientConfig.isVipChannelEnabled()) {
+            // 低版本集群不支持vip通道
+            clientConfig.setVipChannelEnabled(clusterInfoDTO.isVipChannelEnabled());
+        }
         // 通过unitName发现不同的集群
         clientConfig.setUnitName(String.valueOf(clusterInfoDTO.getClusterId()));
         // 自动设置是否trace

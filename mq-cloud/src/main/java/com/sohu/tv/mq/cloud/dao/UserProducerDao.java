@@ -97,5 +97,5 @@ public interface UserProducerDao {
      * @param uid
      */
     @Select("select * from user_producer where tid = #{tid} and uid = #{uid} limit 1")
-    public UserProducer selectByTidAndUid(@Param("tid") long tid, @Param("uid") long uid);
+    public UserProducer selectByTidAndUid(@Param("uid") long uid, @Param("tid") long tid);
 }

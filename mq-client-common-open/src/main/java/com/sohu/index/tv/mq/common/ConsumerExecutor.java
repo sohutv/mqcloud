@@ -4,7 +4,9 @@ import java.util.Map;
 
 /**
  * Created by yijunzhang on 14-7-28.
+ * 请使用 @ConsumerCallback
  */
+@Deprecated
 public interface ConsumerExecutor {
 
     /**

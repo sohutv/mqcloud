@@ -41,6 +41,7 @@ import com.sohu.tv.mq.cloud.service.UserService;
 import com.sohu.tv.mq.cloud.util.DateUtil;
 import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper;
 import com.sohu.tv.mq.cloud.util.Result;
+import com.sohu.tv.mq.util.CommonUtil;
 /**
  * 监控搜狐实现
  * @author yongfeigao
@@ -295,7 +296,7 @@ public class SohuMonitorListener implements MonitorListener {
 				StringBuilder sb = new StringBuilder();
 				Set<String> uniqSet = new HashSet<String>();
 				for(SubscriptionData s : set) {
-					if(s.getTopic().startsWith(MixAll.RETRY_GROUP_TOPIC_PREFIX)) {
+					if(CommonUtil.isRetryTopic(s.getTopic())) {
 						continue;
 					}
 					String tmp = s.getTopic()+":"+s.getSubString();
