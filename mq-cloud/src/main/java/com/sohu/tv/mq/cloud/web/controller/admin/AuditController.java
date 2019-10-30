@@ -1,6 +1,8 @@
 package com.sohu.tv.mq.cloud.web.controller.admin;
 
+import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -32,6 +34,7 @@ import com.sohu.tv.mq.cloud.bo.AuditUserConsumerDelete;
 import com.sohu.tv.mq.cloud.bo.AuditUserProducerDelete;
 import com.sohu.tv.mq.cloud.bo.Cluster;
 import com.sohu.tv.mq.cloud.bo.Consumer;
+import com.sohu.tv.mq.cloud.bo.MessageReset;
 import com.sohu.tv.mq.cloud.bo.Topic;
 import com.sohu.tv.mq.cloud.bo.User;
 import com.sohu.tv.mq.cloud.bo.UserConsumer;
@@ -52,6 +55,7 @@ import com.sohu.tv.mq.cloud.service.AuditUserConsumerDeleteService;
 import com.sohu.tv.mq.cloud.service.AuditUserProducerDeleteService;
 import com.sohu.tv.mq.cloud.service.ClusterService;
 import com.sohu.tv.mq.cloud.service.ConsumerService;
+import com.sohu.tv.mq.cloud.service.MessageResetService;
 import com.sohu.tv.mq.cloud.service.TopicService;
 import com.sohu.tv.mq.cloud.service.UserConsumerService;
 import com.sohu.tv.mq.cloud.service.UserMessageService;
@@ -135,6 +139,9 @@ public class AuditController extends AdminViewController {
     
     @Autowired
     private AlertService alertService;
+    
+    @Autowired
+    private MessageResetService messageResetService;
 
     /**
      * 审核主列表
@@ -266,6 +273,7 @@ public class AuditController extends AdminViewController {
                     break;
                 case RESET_OFFSET:
                 case RESET_OFFSET_TO_MAX:
+                case RESET_RETRY_OFFSET:
                     msg = getAuditResetOffsetTipMessage(aid);
                     break;
                 case ASSOCIATE_PRODUCER:
@@ -1020,10 +1028,11 @@ public class AuditController extends AdminViewController {
      * @param aid
      * @param map
      * @return
+     * @throws ParseException 
      */
     @ResponseBody
     @RequestMapping(value = "/reset/offset", method = RequestMethod.POST)
-    public Result<?> resetOffset(UserInfo userInfo, @RequestParam("aid") long aid) {
+    public Result<?> resetOffset(UserInfo userInfo, @RequestParam("aid") long aid) throws ParseException {
         // 获取audit
         Result<Audit> auditResult = auditService.queryAudit(aid);
         if (auditResult.isNotOK()) {
@@ -1047,16 +1056,29 @@ public class AuditController extends AdminViewController {
             return consumerResult;
         }
         Consumer consumer = consumerResult.getResult();
-        // 查询topic记录
-        Result<Topic> topicResult = topicService.queryTopic(auditResetOffset.getTid());
-        if (topicResult.isNotOK()) {
-            return topicResult;
-        }
-        Topic topic = topicResult.getResult();
-        Result<?> resetOffsetResult = consumerService.resetOffset(topic.getClusterId(), topic.getName(),
-                consumer.getName(), auditResetOffset.getOffset());
-        if (resetOffsetResult.isNotOK()) {
-            return resetOffsetResult;
+        
+        // 重试消息重置
+        if(TypeEnum.RESET_RETRY_OFFSET.getType() == audit.getType()) {
+            MessageReset messageReset = new MessageReset();
+            messageReset.setConsumer(consumer.getName());
+            Date resetTo = DateUtil.getFormat(DateUtil.YMD_DASH_BLANK_HMS_COLON).parse(auditResetOffset.getOffset());
+            messageReset.setResetTo(resetTo.getTime());
+            Result<?> result = messageResetService.save(messageReset);
+            if(result.isNotOK()) {
+                return Result.getWebResult(result);
+            }
+        } else {
+            // 查询topic记录
+            Result<Topic> topicResult = topicService.queryTopic(auditResetOffset.getTid());
+            if (topicResult.isNotOK()) {
+                return topicResult;
+            }
+            Topic topic = topicResult.getResult();
+            Result<?> resetOffsetResult = consumerService.resetOffset(topic.getClusterId(), topic.getName(),
+                    consumer.getName(), auditResetOffset.getOffset());
+            if (resetOffsetResult.isNotOK()) {
+                return resetOffsetResult;
+            }
         }
         // 更新申请状态
         boolean updateOK = agreeAndTip(audit, userInfo.getUser().getEmail(), consumer.getName());

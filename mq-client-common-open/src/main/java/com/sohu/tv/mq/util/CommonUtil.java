@@ -30,6 +30,9 @@ public class CommonUtil {
      * @return
      */
     public static boolean isTraceTopic(String topic) {
+        if(topic == null) {
+            return false;
+        }
         return topic.endsWith(TRACE_TOPIC_SUFFIX);
     }
     
@@ -37,6 +40,9 @@ public class CommonUtil {
      * 是否是重试topic
      */
     public static boolean isRetryTopic(String topic) {
+        if(topic == null) {
+            return false;
+        }
         return topic.startsWith(MixAll.RETRY_GROUP_TOPIC_PREFIX);
     }
     
@@ -45,6 +51,9 @@ public class CommonUtil {
      * @return
      */
     public static boolean isDeadTopic(String topic) {
+        if(topic == null) {
+            return false;
+        }
         return topic.startsWith(MixAll.DLQ_GROUP_TOPIC_PREFIX);
     }
 }

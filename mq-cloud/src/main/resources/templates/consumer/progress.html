@@ -155,6 +155,8 @@
 																title="消费失败的消息，会重新发回到此topic，以便重试消费">${consumerProgressVO.retryTopic}</b>
 																&nbsp;&nbsp;&nbsp;<span title="搜索重试消息" class="glyphicon glyphicon-search" style="cursor:pointer;" 
 																onclick="initOffsetMsgModal('retry', ${consumerProgressVO_index}, '${consumerProgressVO.retryTopic}','${consumerProgressVO.retryMaxOffset?c}')" data-target="#offsetMsgSearchModal" data-toggle="modal"></span>
+																&nbsp;&nbsp;&nbsp;<span title="跳过重试消息" class="glyphicon glyphicon-fast-forward" style="cursor:pointer;" 
+																onclick="showResetRetryMessageOffsetModel(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}')" data-toggle="modal"></span>
 																</td>
 															</tr>
 															<tr>
@@ -792,6 +794,45 @@
 	</div>
 </div> 
 
+<!-- 重试消息跳过-->
+<div id="resetRetryMessageOffsetModel" class="modal fade" tabindex="-1" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+				<h4 class="modal-title"><b>跳过重试消息</h4>
+			</div>
+			<form class="form-horizontal form-bordered form-row-stripped">
+				<div class="modal-body">
+					<div class="row">
+						<div class="col-md-12">
+							<div class="form-body">
+								<div class="form-group">
+									<label class="control-label col-md-3"> 消费者: </label>
+									<div class="col-md-7">
+										<input type="text" id="resetRetryMessageOffsetConsumer" name="consumer" readonly="readonly" class="form-control" />
+										<input type="hidden" id="resetRetryMessageOffsetConsumerId">
+									</div>
+								</div>
+								<div class="form-group">
+									<label class="control-label col-md-3"> 跳至: </label>
+									<div class="col-md-7">
+										<input type="text" id="resetRetryMessageOffsetDate" class="Wdate form-control" onclick="WdatePicker({ dateFmt: 'yyyy-MM-dd HH:mm:ss',maxDate:'%y-%M-%d',minDate:'%y-%M-%d'})" style="width:100%;height:34px;cursor:pointer;" readonly="readonly">
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div  class="modal-footer">
+					<button type="button" data-dismiss="modal" class="btn" >取消</button>
+					<button type="button" id="resetRetryMessageOffsetBtn" class="btn btn-primary" onclick="resetRetryOffset('resetRetryMessageOffsetBtn')">确定</button>
+				</div>
+			</form>
+		</div>
+	</div>
+</div><!-- 消息回溯-->
+
 <script>
 <#if response.OK>
 $(function() {
@@ -808,6 +849,37 @@ function showUpdateInfo(cid, consumer, info){
 	$("#consumerTitle").html(consumer);
 	$("#consumerInfo").val(info);
 	$("#updateConsumerInfoModal").modal('show');
+}
+
+function showResetRetryMessageOffsetModel(consumerId, consumer){
+	$("#resetRetryMessageOffsetConsumer").val(consumer);
+	$("#resetRetryMessageOffsetConsumerId").val(consumerId);
+	$("#resetRetryMessageOffsetModel").modal('show');
+}
+/**
+ * 重置重试偏移量
+ */
+function resetRetryOffset(btn){
+	var resetOffsetTo = $("#resetRetryMessageOffsetDate").val();
+	if(!resetOffsetTo){
+		alert("请选择跳到的时间!");
+		return;
+	}
+	disable(btn);
+	$.get('${request.contextPath}/consumer/reset/retry/offset',{
+		tid: ${RequestParameters.tid},
+		consumerId: $("#resetRetryMessageOffsetConsumerId").val(),
+		offset: resetOffsetTo,
+		cid: $("#toCid").val()
+	},function(data){
+        if(data.status == 200){
+			toastr.success(data.message);  
+			modalHide(3000);
+	    }else{
+	    	toastr.error("操作失败！"+data.message);  
+	    	enable(btn);
+	    }
+    }, 'json');
 }
 /**
  * 跳过堆积

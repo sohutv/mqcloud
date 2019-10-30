@@ -8,9 +8,11 @@ import org.apache.rocketmq.client.consumer.listener.ConsumeConcurrentlyContext;
 import org.apache.rocketmq.client.consumer.listener.ConsumeConcurrentlyStatus;
 import org.apache.rocketmq.client.consumer.listener.ConsumeOrderlyContext;
 import org.apache.rocketmq.client.consumer.listener.ConsumeOrderlyStatus;
+import org.apache.rocketmq.common.message.MessageConst;
 import org.apache.rocketmq.common.message.MessageExt;
 
 import com.sohu.index.tv.mq.common.BatchConsumerCallback.MQMessage;
+import com.sohu.tv.mq.util.CommonUtil;
 /**
  * 消息消费公共逻辑抽取
  * 
@@ -101,7 +103,7 @@ public class MessageConsumer {
             for (MQMessage<T, MessageExt> mqMessage : messageList) {
                 try {
                     consume(mqMessage.getMessage(), mqMessage.getMessageExt());
-                } catch (Exception e) {
+                } catch (Throwable e) {
                     rocketMQConsumer.getLogger().error("consume topic:{} consumer:{} msg:{} msgId:{} bornTimestamp:{}",
                             rocketMQConsumer.getTopic(), rocketMQConsumer.getConsumer(), mqMessage.getMessage(),
                             mqMessage.getMessageExt().getMsgId(), mqMessage.getMessageExt().getBornTimestamp(), e);
@@ -129,13 +131,20 @@ public class MessageConsumer {
                         rocketMQConsumer.getLogger().warn("MessageExt={}, body is null", me);
                         continue;
                     }
+                    // 校验是否需要跳过重试消息
+                    if(CommonUtil.isRetryTopic(me.getProperty(MessageConst.PROPERTY_REAL_TOPIC)) && 
+                            me.getBornTimestamp() < rocketMQConsumer.getRetryMessageResetTo()) {
+                        rocketMQConsumer.getLogger().warn("skip topic:{} msgId:{} bornTime:{}", 
+                                rocketMQConsumer.getTopic(), me.getMsgId(), me.getBornTimestamp());
+                        continue;
+                    }
                     if (rocketMQConsumer.getMessageSerializer() == null) {
                         msgList.add((MQMessage<T, MessageExt>) new MQMessage<>(bytes, me));
                     } else {
                         msgList.add((MQMessage<T, MessageExt>) new MQMessage<>(
                                 rocketMQConsumer.getMessageSerializer().deserialize(bytes), me));
                     }
-                } catch (Exception e) {
+                } catch (Throwable e) {
                     // 解析失败打印警告，不再抛出异常重试(即使重试，仍然会失败)
                     rocketMQConsumer.getLogger().error("parse topic:{} consumer:{} msg:{} msgId:{} bornTimestamp:{}", 
                             rocketMQConsumer.getTopic(), rocketMQConsumer.getConsumer(), new String(bytes), me.getMsgId(), 
@@ -232,7 +241,7 @@ public class MessageConsumer {
             }
             try {
                 rocketMQConsumer.getBatchConsumerCallback().call(msgList);
-            } catch (Exception e) {
+            } catch (Throwable e) {
                 rocketMQConsumer.getLogger().error("topic:{} consumer:{} msgSize:{}", 
                         rocketMQConsumer.getTopic(), rocketMQConsumer.getConsumer(), msgList.size(), e);
                 return ConsumeStatus.FAIL;

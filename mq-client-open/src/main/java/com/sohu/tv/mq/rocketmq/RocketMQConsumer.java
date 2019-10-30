@@ -1,6 +1,10 @@
 package com.sohu.tv.mq.rocketmq;
 
+import java.net.HttpURLConnection;
 import java.util.List;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.rocketmq.client.consumer.DefaultMQPushConsumer;
 import org.apache.rocketmq.client.consumer.listener.ConsumeConcurrentlyContext;
@@ -15,11 +19,17 @@ import org.apache.rocketmq.client.trace.hook.ConsumeMessageTraceHookImpl;
 import org.apache.rocketmq.common.consumer.ConsumeFromWhere;
 import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.common.protocol.heartbeat.MessageModel;
+import org.apache.rocketmq.common.utils.HttpTinyClient;
+import org.apache.rocketmq.common.utils.HttpTinyClient.HttpResult;
 
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.TypeReference;
 import com.sohu.index.tv.mq.common.BatchConsumerCallback;
 import com.sohu.index.tv.mq.common.ConsumerCallback;
 import com.sohu.index.tv.mq.common.ConsumerExecutor;
 import com.sohu.tv.mq.common.AbstractConfig;
+import com.sohu.tv.mq.dto.DTOResult;
+import com.sohu.tv.mq.dto.MessageResetDTO;
 
 /**
  * rocketmq 消费者
@@ -52,12 +62,15 @@ public class RocketMQConsumer extends AbstractConfig {
      * 是否debug
      */
     private boolean debug;
-    
+
     // "tag1 || tag2 || tag3"
     private String subExpression = "*";
-    
+
     // 是否顺序消费
     private boolean consumeOrderly = false;
+
+    // 跳过重试消息时间，默认为-1，即不跳过
+    private volatile long retryMessageResetTo = -1;
 
     /**
      * 一个应用创建一个Consumer，由应用来维护此对象，可以设置为全局对象或者单例<br>
@@ -69,7 +82,7 @@ public class RocketMQConsumer extends AbstractConfig {
         // 消费消息超时将会发回重试队列，超时时间由默认的15分钟修改为2小时
         consumer.setConsumeTimeout(2 * 60);
     }
-    
+
     public void start() {
         try {
             // 初始化配置
@@ -78,11 +91,11 @@ public class RocketMQConsumer extends AbstractConfig {
                 consumer.setMessageModel(MessageModel.BROADCASTING);
             }
             consumer.subscribe(topic, subExpression);
-            
+
             // 构建消费者对象
             final MessageConsumer messageConsumer = new MessageConsumer(this);
             // 注册顺序或并发消费
-            if(consumeOrderly) {
+            if (consumeOrderly) {
                 consumer.registerMessageListener(new MessageListenerOrderly() {
                     public ConsumeOrderlyStatus consumeMessage(List<MessageExt> msgs, ConsumeOrderlyContext context) {
                         return messageConsumer.consumeMessage(msgs, context);
@@ -96,11 +109,55 @@ public class RocketMQConsumer extends AbstractConfig {
                     }
                 });
             }
+            // 初始化定时调度任务
+            initScheduleTask();
+            // 消费者启动
             consumer.start();
             logger.info("topic:{} group:{} start", topic, group);
         } catch (MQClientException e) {
             logger.error(e.getMessage(), e);
         }
+    }
+
+    /**
+     * 从mqcloud更新重试消息跳过消息的时间
+     */
+    private void initScheduleTask() {
+        // 数据采样线程
+        Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {
+            @Override
+            public Thread newThread(Runnable r) {
+                return new Thread(r, "skipRetryMessageTimeThread-" + getGroup());
+            }
+        }).scheduleAtFixedRate(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    HttpResult result = HttpTinyClient.httpGet(
+                            "http://" + getMqCloudDomain() + "/consumer/reset/" + getGroup(), null, null, "UTF-8", 5000);
+                    if (HttpURLConnection.HTTP_OK != result.code) {
+                        logger.error("http response err: code:{},info:{}", result.code, result.content);
+                        return;
+                    }
+                    DTOResult<MessageResetDTO> dtoResult = JSON.parseObject(result.content, new TypeReference<DTOResult<MessageResetDTO>>(){});
+                    if (!dtoResult.ok()) {
+                        logger.error("http response ok, but result err:{}", dtoResult.getMessage());
+                        return;
+                    }
+                    MessageResetDTO messageResetDTO = dtoResult.getResult();
+                    if(messageResetDTO == null) {
+                        return;
+                    }
+                    if (messageResetDTO.getResetTo() != retryMessageResetTo) {
+                        logger.info("retryMessage reset from:{} to:{}", retryMessageResetTo,
+                                messageResetDTO.getResetTo());
+                        retryMessageResetTo = messageResetDTO.getResetTo();
+                    }
+                } catch (Throwable ignored) {
+                    logger.warn("skipRetryMessage err:{}", ignored);
+                }
+            }
+        }, 60, 300, TimeUnit.SECONDS);
     }
 
     public void shutdown() {
@@ -109,10 +166,11 @@ public class RocketMQConsumer extends AbstractConfig {
 
     /**
      * Batch consumption size
+     * 
      * @param consumeMessageBatchMaxSize
      */
     public void setConsumeMessageBatchMaxSize(int consumeMessageBatchMaxSize) {
-        if(consumeMessageBatchMaxSize <= 0) {
+        if (consumeMessageBatchMaxSize <= 0) {
             return;
         }
         consumer.setConsumeMessageBatchMaxSize(consumeMessageBatchMaxSize);
@@ -190,7 +248,7 @@ public class RocketMQConsumer extends AbstractConfig {
         }
         consumer.setPullThresholdForQueue(size);
     }
-    
+
     /**
      * queue中缓存多少M消息时进行流控 ，默认100
      * 
@@ -202,7 +260,7 @@ public class RocketMQConsumer extends AbstractConfig {
         }
         consumer.setPullThresholdSizeForQueue(size);
     }
-    
+
     /**
      * topic维度缓存多少个消息时进行流控 ，默认-1，不限制
      * 
@@ -214,7 +272,7 @@ public class RocketMQConsumer extends AbstractConfig {
         }
         consumer.setPullThresholdForTopic(size);
     }
-    
+
     /**
      * topic维度缓存多少M消息时进行流控 ，默认-1，不限制
      * 
@@ -257,6 +315,7 @@ public class RocketMQConsumer extends AbstractConfig {
 
     /**
      * 1.8.3之后不用设置broadcast了，可以自动区分
+     * 
      * @param broadcast
      */
     @Deprecated
@@ -295,32 +354,43 @@ public class RocketMQConsumer extends AbstractConfig {
     @Override
     protected void registerTraceDispatcher(AsyncTraceDispatcher traceDispatcher) {
         consumer.getDefaultMQPushConsumerImpl().registerConsumeMessageHook(
-                new ConsumeMessageTraceHookImpl(traceDispatcher));        
+                new ConsumeMessageTraceHookImpl(traceDispatcher));
     }
-    
+
     /**
-     * traceEnabled is controlled by MQCloud 
+     * traceEnabled is controlled by MQCloud
+     * 
      * @param traceEnabled
      */
     @Deprecated
     public void setTraceEnabled(boolean traceEnabled) {
     }
-    
+
     /**
-     * Maximum amount of time in minutes a message may block the consuming thread.
+     * Maximum amount of time in minutes a message may block the consuming
+     * thread.
      */
     public void setConsumeTimeout(long consumeTimeout) {
-        if(consumeTimeout <= 0) {
+        if (consumeTimeout <= 0) {
             return;
         }
-        consumer.setConsumeTimeout(consumeTimeout); 
+        consumer.setConsumeTimeout(consumeTimeout);
     }
-    
+
     /**
      * 是否开启vip通道
+     * 
      * @param vipChannelEnabled
      */
     public void setVipChannelEnabled(boolean vipChannelEnabled) {
         consumer.setVipChannelEnabled(vipChannelEnabled);
+    }
+
+    public long getRetryMessageResetTo() {
+        return retryMessageResetTo;
+    }
+
+    public void setRetryMessageResetTo(long retryMessageResetTo) {
+        this.retryMessageResetTo = retryMessageResetTo;
     }
 }

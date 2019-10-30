@@ -531,6 +531,7 @@ public class AuditService {
                 return getDeleteConsumerResult(aid);
             case RESET_OFFSET:
             case RESET_OFFSET_TO_MAX:
+            case RESET_RETRY_OFFSET:
                 return getResetOffsetResult(aid);
             case ASSOCIATE_PRODUCER:
                 return getAuditAssociateProducerResult(aid);

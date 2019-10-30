@@ -40,7 +40,7 @@ public class AuthWebMvcConfigurerAdapter extends WebMvcConfigurerAdapter {
     public void addInterceptors(InterceptorRegistry registry) {
         // 用户登录拦截器
         registry.addInterceptor(authInterceptor).excludePathPatterns("/error", "/admin/**", "/user/guide/**",
-                "/cluster/**", "/register/**", "/login/**", "/rocketmq/**");
+                "/cluster/**", "/register/**", "/login/**", "/rocketmq/**", "/consumer/reset/*");
         // 用户引导拦截器
         registry.addInterceptor(userGuideInterceptor).addPathPatterns("/user/guide/**");
         // admin模块拦截器

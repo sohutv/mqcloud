@@ -18,7 +18,7 @@ RocketMQ从4.4.0起提供了消息的trace功能（不支持事务消息），�
 
 ![](img/4.1.png)
 
-用户开启后，将会把用户的业务topic对应的trace topic创建在trace集群上，具体步骤参见：[7.有关Trace消息](https://github.com/sohutv/mqcloud/wiki/7.%E6%9C%89%E5%85%B3Trace%E6%B6%88%E6%81%AF)
+用户开启后，将会把用户的业务topic对应的trace topic创建在trace集群上，具体步骤参见：[有关Trace消息](https://github.com/sohutv/mqcloud/wiki/%E6%9C%89%E5%85%B3Trace%E6%B6%88%E6%81%AF)
 
 同样，消费者消费消息时，也会提供相应是否开启trace的选项：
 

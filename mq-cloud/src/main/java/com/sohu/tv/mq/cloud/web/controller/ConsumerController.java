@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
 
 import org.apache.commons.lang3.StringUtils;
@@ -22,6 +23,7 @@ import org.apache.rocketmq.common.protocol.body.ConsumerRunningInfo;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -36,6 +38,7 @@ import com.sohu.tv.mq.cloud.bo.AuditResetOffset;
 import com.sohu.tv.mq.cloud.bo.Cluster;
 import com.sohu.tv.mq.cloud.bo.ConsumeStatsExt;
 import com.sohu.tv.mq.cloud.bo.Consumer;
+import com.sohu.tv.mq.cloud.bo.MessageReset;
 import com.sohu.tv.mq.cloud.bo.Topic;
 import com.sohu.tv.mq.cloud.bo.TopicTopology;
 import com.sohu.tv.mq.cloud.bo.User;
@@ -44,6 +47,7 @@ import com.sohu.tv.mq.cloud.service.AlertService;
 import com.sohu.tv.mq.cloud.service.AuditService;
 import com.sohu.tv.mq.cloud.service.ClusterService;
 import com.sohu.tv.mq.cloud.service.ConsumerService;
+import com.sohu.tv.mq.cloud.service.MessageResetService;
 import com.sohu.tv.mq.cloud.service.TopicService;
 import com.sohu.tv.mq.cloud.service.UserConsumerService;
 import com.sohu.tv.mq.cloud.service.UserService;
@@ -52,6 +56,7 @@ import com.sohu.tv.mq.cloud.util.DateUtil;
 import com.sohu.tv.mq.cloud.util.FreemarkerUtil;
 import com.sohu.tv.mq.cloud.util.Result;
 import com.sohu.tv.mq.cloud.util.Status;
+import com.sohu.tv.mq.cloud.util.WebUtil;
 import com.sohu.tv.mq.cloud.web.controller.param.AssociateConsumerParam;
 import com.sohu.tv.mq.cloud.web.controller.param.ConsumerParam;
 import com.sohu.tv.mq.cloud.web.controller.param.UserConsumerParam;
@@ -92,6 +97,9 @@ public class ConsumerController extends ViewController {
     
     @Autowired
     private ClusterService clusterService;
+    
+    @Autowired
+    private MessageResetService messageResetService;
     
     /**
      * 消费进度
@@ -325,7 +333,7 @@ public class ConsumerController extends ViewController {
     @ResponseBody
     @RequestMapping("/reset/offset")
     public Result<?> resetOffset(UserInfo userInfo, @Valid UserConsumerParam userConsumerParam) throws Exception {
-        // 校验用户是否能删除，防止调用接口误删
+        // 校验用户是否能重置，防止误调用接口
         Result<List<UserConsumer>> userConsumerListResult = userConsumerService.queryUserConsumer(userInfo.getUser(),
                 userConsumerParam.getTid(), userConsumerParam.getConsumerId());
         if(userConsumerListResult.isNotOK() && !userInfo.getUser().isAdmin()) {
@@ -708,6 +716,70 @@ public class ConsumerController extends ViewController {
         }
         Result<Integer> result = consumerService.updateConsumerInfo(cid, HtmlUtils.htmlEscape(info.trim(), "UTF-8"));
         logger.info(userInfo.getUser().getName() + " update consumer info , cid:{}, info:{}, status:{}", cid, info, result.isOK());
+        return Result.getWebResult(result);
+    }
+    
+    /**
+     * 重置重试消息偏移量
+     * @param userConsumerParam
+     * @return
+     * @throws Exception
+     */
+    @ResponseBody
+    @RequestMapping("/reset/retry/offset")
+    public Result<?> resetRetryOffset(UserInfo userInfo, @Valid UserConsumerParam userConsumerParam) throws Exception {
+        // 校验用户是否能重置，防止误调用接口
+        Result<List<UserConsumer>> userConsumerListResult = userConsumerService.queryUserConsumer(userInfo.getUser(),
+                userConsumerParam.getTid(), userConsumerParam.getConsumerId());
+        if(userConsumerListResult.isNotOK() && !userInfo.getUser().isAdmin()) {
+            return userConsumerListResult;
+        }
+        List<UserConsumer> list = userConsumerListResult.getResult();
+        if(list.size() != 1 && !userInfo.getUser().isAdmin()) {
+            logger.warn("not unique result, param:{}, result size:{}", userConsumerParam, list.size());
+            return Result.getResult(Status.NO_RESULT);
+        }
+        // 校验时间格式
+        try {
+            DateUtil.getFormat(DateUtil.YMD_DASH_BLANK_HMS_COLON).parse(userConsumerParam.getOffset());
+        } catch (Exception e) {
+            logger.error("resetOffsetTo param err:{}", userConsumerParam.getOffset(), e);
+            return Result.getResult(Status.PARAM_ERROR);
+        }
+        
+        // 构造审核记录
+        Audit audit = new Audit();
+        audit.setType(TypeEnum.RESET_RETRY_OFFSET.getType());
+        // 重新定义操作成功返回的文案
+        String message = "重试堆积跳过申请成功！请耐心等待！";
+        audit.setUid(userInfo.getUser().getId());
+        // 构造重置对象
+        AuditResetOffset auditResetOffset = new AuditResetOffset();
+        BeanUtils.copyProperties(userConsumerParam, auditResetOffset);
+        // 保存记录
+        Result<?> result = auditService.saveAuditAndSkipAccumulation(audit, auditResetOffset);
+        if(result.isOK()) {
+            String tip = getTopicConsumerTip(userConsumerParam.getTid(), userConsumerParam.getConsumerId());
+            alertService.sendAuditMail(userInfo.getUser(), TypeEnum.getEnumByType(audit.getType()), tip);
+            // 重新定义返回文案
+            result.setMessage(message);
+        }
+        return Result.getWebResult(result);
+    }
+    
+    /**
+     * 获取重置的时间
+     * 
+     * @return
+     * @throws Exception
+     */
+    @ResponseBody
+    @RequestMapping(value = "/reset/{consumer}")
+    public Result<?> reset(@PathVariable String consumer, HttpServletRequest request) throws Exception {
+        Result<MessageReset> result = messageResetService.query(consumer);
+        if(result.isNotOK()) {
+            logger.warn("ip:{} consumer:{} not ok", WebUtil.getIp(request), consumer);
+        }
         return Result.getWebResult(result);
     }
     
