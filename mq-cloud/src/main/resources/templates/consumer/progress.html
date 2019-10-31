@@ -866,7 +866,7 @@ function resetRetryOffset(btn){
 		return;
 	}
 	disable(btn);
-	$.get('${request.contextPath}/consumer/reset/retry/offset',{
+	$.get('${request.contextPath}/consumer/skip/retryOffset',{
 		tid: ${RequestParameters.tid},
 		consumerId: $("#resetRetryMessageOffsetConsumerId").val(),
 		offset: resetOffsetTo,
@@ -886,7 +886,7 @@ function resetRetryOffset(btn){
  */
 function skipAccumulation(tid, cid, btn){
 	disable(btn);
-	$.get('${request.contextPath}/consumer/reset/offset',{
+	$.get('${request.contextPath}/consumer/resetOffset',{
 		tid: tid,
 		consumerId: cid,
 		cid: $("#toCid").val()
@@ -910,7 +910,7 @@ function resetOffset(idx, tid, cid, btn){
 		return;
 	}
 	disable(btn);
-	$.get('${request.contextPath}/consumer/reset/offset',{
+	$.get('${request.contextPath}/consumer/resetOffset',{
 		tid: tid,
 		consumerId: cid,
 		offset: resetOffsetTo,

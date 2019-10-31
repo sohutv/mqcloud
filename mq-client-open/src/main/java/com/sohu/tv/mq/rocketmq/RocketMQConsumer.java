@@ -140,10 +140,6 @@ public class RocketMQConsumer extends AbstractConfig {
                         return;
                     }
                     DTOResult<MessageResetDTO> dtoResult = JSON.parseObject(result.content, new TypeReference<DTOResult<MessageResetDTO>>(){});
-                    if (!dtoResult.ok()) {
-                        logger.error("http response ok, but result err:{}", dtoResult.getMessage());
-                        return;
-                    }
                     MessageResetDTO messageResetDTO = dtoResult.getResult();
                     if(messageResetDTO == null) {
                         return;

@@ -24,7 +24,7 @@
 
 
     <logger name="RocketmqClient" additivity="false">
-        <level value="${client.logLevel}"/>
+        <level value="warn"/>
         <appender-ref ref="console"/>
     </logger>
     <root level="info">

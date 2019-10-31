@@ -331,7 +331,7 @@ public class ConsumerController extends ViewController {
      * @throws Exception
      */
     @ResponseBody
-    @RequestMapping("/reset/offset")
+    @RequestMapping("/resetOffset")
     public Result<?> resetOffset(UserInfo userInfo, @Valid UserConsumerParam userConsumerParam) throws Exception {
         // 校验用户是否能重置，防止误调用接口
         Result<List<UserConsumer>> userConsumerListResult = userConsumerService.queryUserConsumer(userInfo.getUser(),
@@ -726,7 +726,7 @@ public class ConsumerController extends ViewController {
      * @throws Exception
      */
     @ResponseBody
-    @RequestMapping("/reset/retry/offset")
+    @RequestMapping("/skip/retryOffset")
     public Result<?> resetRetryOffset(UserInfo userInfo, @Valid UserConsumerParam userConsumerParam) throws Exception {
         // 校验用户是否能重置，防止误调用接口
         Result<List<UserConsumer>> userConsumerListResult = userConsumerService.queryUserConsumer(userInfo.getUser(),
@@ -777,7 +777,7 @@ public class ConsumerController extends ViewController {
     @RequestMapping(value = "/reset/{consumer}")
     public Result<?> reset(@PathVariable String consumer, HttpServletRequest request) throws Exception {
         Result<MessageReset> result = messageResetService.query(consumer);
-        if(result.isNotOK()) {
+        if(result.isNotOK() && Status.NO_RESULT.getKey() != result.getStatus()) {
             logger.warn("ip:{} consumer:{} not ok", WebUtil.getIp(request), consumer);
         }
         return Result.getWebResult(result);
