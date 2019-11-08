@@ -277,6 +277,16 @@ public class Result<T> {
         this.exception = exception;
         return this;
     }
+    
+    /**
+     * 转换为json格式数据
+     * 
+     * @param status
+     * @return
+     */
+    public String toJson() {
+        return JSON.toJSONString(this);
+    }
 
     @Override
     public String toString() {

@@ -389,4 +389,13 @@ public class RocketMQConsumer extends AbstractConfig {
     public void setRetryMessageResetTo(long retryMessageResetTo) {
         this.retryMessageResetTo = retryMessageResetTo;
     }
+    
+    /**
+     * 最大重新消费次数
+     * 默认为16次
+     * @param maxReconsumeTimes
+     */
+    public void setMaxReconsumeTimes(int maxReconsumeTimes) {
+        consumer.setMaxReconsumeTimes(maxReconsumeTimes);
+    }
 }

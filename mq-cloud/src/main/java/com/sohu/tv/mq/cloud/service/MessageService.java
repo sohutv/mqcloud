@@ -26,9 +26,12 @@ import org.apache.rocketmq.client.trace.TraceContext;
 import org.apache.rocketmq.client.trace.TraceType;
 import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.TopicConfig;
+import org.apache.rocketmq.common.UtilAll;
 import org.apache.rocketmq.common.admin.ConsumeStats;
 import org.apache.rocketmq.common.admin.OffsetWrapper;
 import org.apache.rocketmq.common.message.Message;
+import org.apache.rocketmq.common.message.MessageAccessor;
+import org.apache.rocketmq.common.message.MessageConst;
 import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.common.message.MessageQueue;
 import org.apache.rocketmq.common.protocol.ResponseCode;
@@ -737,14 +740,24 @@ public class MessageService {
      * @param cluster
      * @param topic
      * @param msgId
+     * @param consumer 消息会发往%RETRY%consumer中
      * @return Result<SendResult>
      */
-    public Result<SendResult> resend(Cluster cluster, String topic, String msgId) {
+    public Result<SendResult> resend(Cluster cluster, String topic, String msgId, String consumer) {
         return mqAdminTemplate.execute(new MQAdminCallback<Result<SendResult>>() {
             public Result<SendResult> callback(MQAdminExt mqAdmin) throws Exception {
                 MessageExt messageExt = mqAdmin.viewMessage(topic, msgId);
                 SohuMQAdmin sohuMQAdmin = (SohuMQAdmin) mqAdmin;
-                Message message = new Message(topic, messageExt.getTags(), messageExt.getKeys(), messageExt.getBody());
+                Message message = new Message(MixAll.getRetryTopic(consumer), messageExt.getTags(),
+                        messageExt.getKeys(), messageExt.getBody());
+                String originMsgId = MessageAccessor.getOriginMessageId(messageExt);
+                MessageAccessor.setOriginMessageId(message, UtilAll.isBlank(originMsgId) ? messageExt.getMsgId() : originMsgId);
+                message.setFlag(messageExt.getFlag());
+                MessageAccessor.setProperties(message, messageExt.getProperties());
+                MessageAccessor.putProperty(message, MessageConst.PROPERTY_RETRY_TOPIC, topic);
+                MessageAccessor.setReconsumeTime(message, "1");
+                MessageAccessor.setMaxReconsumeTimes(message, "3");
+                message.setDelayTimeLevel(1);
                 SendResult sr = sohuMQAdmin.sendMessage(message);
                 return Result.getResult(sr);
             }

@@ -21,6 +21,7 @@ import com.sohu.tv.mq.cloud.bo.AuditAssociateProducer;
 import com.sohu.tv.mq.cloud.bo.AuditConsumer;
 import com.sohu.tv.mq.cloud.bo.AuditConsumerDelete;
 import com.sohu.tv.mq.cloud.bo.AuditResendMessage;
+import com.sohu.tv.mq.cloud.bo.AuditResendMessageConsumer;
 import com.sohu.tv.mq.cloud.bo.AuditResetOffset;
 import com.sohu.tv.mq.cloud.bo.AuditTopic;
 import com.sohu.tv.mq.cloud.bo.AuditTopicDelete;
@@ -473,7 +474,8 @@ public class AuditService {
      * @return
      */
     @Transactional
-    public Result<?> saveAuditAndAuditResendMessage(Audit audit, List<AuditResendMessage> auditResendMessageList){
+    public Result<?> saveAuditAndAuditResendMessage(Audit audit, List<AuditResendMessage> auditResendMessageList, 
+            AuditResendMessageConsumer auditResendMessageConsumer){
         Long count = null;
         try {
             count = auditDao.insert(audit);
@@ -482,7 +484,8 @@ public class AuditService {
                 for(AuditResendMessage msg : auditResendMessageList) {
                     msg.setAid(audit.getId());
                 }
-                auditResendMessageService.save(auditResendMessageList);
+                auditResendMessageConsumer.setAid(audit.getId());
+                auditResendMessageService.save(auditResendMessageList, auditResendMessageConsumer);
             }
         } catch (Exception e) {
             logger.error("insert err, audit:{}", audit, e);
@@ -690,10 +693,19 @@ public class AuditService {
             return topicResult;
         }
         
+        // 查询consumer
+        Result<Consumer> consumerResult = auditResendMessageService.queryConsumer(aid);
+        if(consumerResult.isNotOK() && Status.NO_RESULT.getKey() != consumerResult.getStatus()) {
+            return consumerResult;
+        }
+        
         // 拼装vo
         AuditResendMessageVO auditResendMessageVO = new AuditResendMessageVO();
         auditResendMessageVO.setTopic(topicResult.getResult().getName());
         auditResendMessageVO.setMsgList(auditResendMessageList);
+        if(consumerResult.getResult() != null) {
+            auditResendMessageVO.setConsumer(consumerResult.getResult().getName());
+        }
         return Result.getResult(auditResendMessageVO);
     }
     

@@ -160,6 +160,14 @@ CREATE TABLE `audit_resend_message` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='消息重发审核表';
 
 -- ----------------------------
+-- Table structure for `audit_resend_message_consumer`
+-- ----------------------------
+CREATE TABLE `audit_resend_message_consumer` (
+  `aid` int(11) NOT NULL COMMENT '审核id',
+  `consumer_id` int(11) NOT NULL COMMENT 'consumer id'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='消息重发给消费者审核表';
+
+-- ----------------------------
 -- Table structure for `broker_traffic`
 -- ----------------------------
 DROP TABLE IF EXISTS `broker_traffic`;

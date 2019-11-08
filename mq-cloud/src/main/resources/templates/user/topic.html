@@ -11,12 +11,10 @@
 				    <select id="topicSearchSelect" class="selectpicker" title="请选择" data-live-search-placeholder="搜索" name="topic" data-live-search="true"></select>
 		 	     </div>
 		 	  <#else>
-		  	  	 <#if pagination.result.totalPages gt 1>
-			 	     <div class="form-group">
-			    	    <input type="text" class="form-control" name="topic" value="<#if response.OK>${response.result.queryTopic!}</#if>" placeholder="Topic名字">
-			  	     </div>
-					 <button type="submit" onclick="searchTopic()" class="btn btn-search"><span class="glyphicon glyphicon-search" aria-hidden="true"></span></button>
-		 	     </#if>
+		 	     <div class="form-group">
+		    	    <input type="text" class="form-control" name="topic" value="<#if response.OK>${response.result.queryTopic!}</#if>" placeholder="Topic名字">
+		  	     </div>
+				 <button type="submit" onclick="searchTopic()" class="btn btn-search"><span class="glyphicon glyphicon-search" aria-hidden="true"></span></button>
 		  	  </#if>
 			  <button type="submit" class="btn btn-success" data-target="#addTopicModal" data-toggle="modal">我要生产消息</button>
 			  <button type="submit" class="btn btn-success" onclick="initTopicList('topicSelectForConsumer')" data-target="#addConsumerModal" data-toggle="modal">我要消费消息</button>

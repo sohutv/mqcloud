@@ -91,7 +91,10 @@
 							    	<span class="glyphicon glyphicon-plus-sign pointer" data-toggle="tooltip" title="授权其他用户查看${response.result.topic.name}?" onclick="associateUserProducer('${key.producer}')"></span>
 							    <#else>
 							    	<#list producers as producer>
-							    		<span class="pointer">${producer.username}</span>
+							    		<#if producer_index != 0>
+							    		,
+							    		</#if>
+							    		<span>${producer.username}</span>
 							    	</#list>
 							    </#if>					    	
 						    </td>

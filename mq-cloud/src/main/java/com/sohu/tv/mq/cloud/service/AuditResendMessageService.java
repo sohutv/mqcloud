@@ -9,6 +9,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.sohu.tv.mq.cloud.bo.AuditResendMessage;
+import com.sohu.tv.mq.cloud.bo.AuditResendMessageConsumer;
+import com.sohu.tv.mq.cloud.bo.Consumer;
+import com.sohu.tv.mq.cloud.dao.AuditResendMessageConsumerDao;
 import com.sohu.tv.mq.cloud.dao.AuditResendMessageDao;
 import com.sohu.tv.mq.cloud.util.Result;
 /**
@@ -25,6 +28,9 @@ public class AuditResendMessageService {
     @Autowired
     private AuditResendMessageDao auditResendMessageDao;
     
+    @Autowired
+    private AuditResendMessageConsumerDao auditResendMessageConsumerDao;
+    
     /**
      * 查询
      * @param aid
@@ -39,6 +45,22 @@ public class AuditResendMessageService {
             return Result.getDBErrorResult(e);
         }
         return Result.getResult(list);
+    }
+    
+    /**
+     * 查询消费者
+     * @param aid
+     * @return
+     */
+    public Result<Consumer> queryConsumer(long aid) {
+        Consumer consumer = null;
+        try {
+            consumer = auditResendMessageConsumerDao.selectByAid(aid);
+        } catch (Exception e) {
+            logger.error("queryConsumer err, aid:{}", aid, e);
+            return Result.getDBErrorResult(e);
+        }
+        return Result.getResult(consumer);
     }
     
     /**
@@ -82,10 +104,12 @@ public class AuditResendMessageService {
      * @return
      */
     @Transactional
-    public Result<Integer> save(List<AuditResendMessage> auditResendMessageList) {
+    public Result<Integer> save(List<AuditResendMessage> auditResendMessageList, 
+            AuditResendMessageConsumer auditResendMessageConsumer) {
         Integer updatedRows = null;
         try {
             updatedRows = auditResendMessageDao.insert(auditResendMessageList);
+            auditResendMessageConsumerDao.insert(auditResendMessageConsumer);
         } catch (Exception e) {
             logger.error("insert err, size:{}", auditResendMessageList.size(), e);
             throw e;

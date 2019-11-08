@@ -219,7 +219,7 @@ public class MessageQueryCondition {
     }
     
     public long getMinOffset() {
-        long minOffset = maxOffset - 100;
+        long minOffset = maxOffset - 32;
         return minOffset < 0 ? 0 : minOffset;
     }
 
@@ -238,6 +238,4 @@ public class MessageQueryCondition {
     public void setQueueId(Integer queueId) {
         this.queueId = queueId;
     }
-    
-    
 }

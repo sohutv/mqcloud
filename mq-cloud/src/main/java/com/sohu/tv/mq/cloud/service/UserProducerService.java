@@ -168,20 +168,6 @@ public class UserProducerService {
     }
     
     /**
-     * 按照userProducer
-     */
-    public Result<List<UserProducer>> queryUserProducer(long uid, long tid) {
-        List<UserProducer> userProducerList = null;
-        try {
-            userProducerList = userProducerDao.selectUserProducer(uid, tid);
-        } catch (Exception e) {
-            logger.error("queryUserProducer err, uid:{},tid:{}", uid, tid, e);
-            return Result.getDBErrorResult(e);
-        }
-        return Result.getResult(userProducerList);
-    }
-     
-    /**
      * 删除UserProducer
      * @param userProducer
      * @return

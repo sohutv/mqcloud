@@ -7,7 +7,7 @@
 					<td>${msg.bornHostString}</td>
 					<td data-tooltip="true" title="存储时间:${msg.storeTimestamp?number_to_datetime?string("yyyy-MM-dd HH:mm:ss.SSS")}">${msg.bornTimestamp?number_to_datetime?string("yyyy-MM-dd HH:mm:ss.SSS")}</td>
 					<td>${msg.reconsumeTimes}</td>
-					<td data-tooltip="true" title="序列化方式:<#if msg.messageBodySerializer??>${msg.messageBodySerializer.getName()}(${msg.messageBodyTypeString!})<#else>${msg.messageBodyTypeString!}</#if>">${msg.decodedBody}</td>
+					<td data-tooltip="true" title="序列化方式:<#if msg.messageBodySerializer??>${msg.messageBodySerializer.getName()}(${msg.messageBodyTypeString!})<#else>${msg.messageBodyTypeString!}</#if>"><#if msg.decodedBody?length gt 1000><pre>${msg.decodedBody}</pre><#else>${msg.decodedBody}</#if></td>
 				</tr>
 			</#list>
 		</tbody>
@@ -24,6 +24,9 @@
 	        $('[data-tooltip="true"]').tooltip({
 	            container: 'body'
 	        });
+	        <#if response.result.mqc.topic?index_of("%DLQ%") == 0>
+				$('#offsetDataTable tbody#offsetPage_${response.result.mqc.times}').multiSelect();
+	        </#if>
 		});
 	</script>
 <#else>

@@ -9,6 +9,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
 
 import org.apache.commons.lang3.StringUtils;
@@ -19,8 +21,6 @@ import org.apache.rocketmq.common.message.MessageQueue;
 import org.apache.rocketmq.common.protocol.body.Connection;
 import org.apache.rocketmq.common.protocol.body.ConsumerConnection;
 import org.apache.rocketmq.common.protocol.body.ProducerConnection;
-import org.apache.rocketmq.common.protocol.route.QueueData;
-import org.apache.rocketmq.common.protocol.route.TopicRouteData;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -41,6 +41,7 @@ import com.sohu.tv.mq.cloud.bo.Topic;
 import com.sohu.tv.mq.cloud.bo.User;
 import com.sohu.tv.mq.cloud.bo.UserConsumer;
 import com.sohu.tv.mq.cloud.bo.UserProducer;
+import com.sohu.tv.mq.cloud.common.util.WebUtil;
 import com.sohu.tv.mq.cloud.service.AlertService;
 import com.sohu.tv.mq.cloud.service.AuditService;
 import com.sohu.tv.mq.cloud.service.ClusterService;
@@ -55,8 +56,6 @@ import com.sohu.tv.mq.cloud.util.Result;
 import com.sohu.tv.mq.cloud.util.Status;
 import com.sohu.tv.mq.cloud.web.controller.param.AssociateProducerParam;
 import com.sohu.tv.mq.cloud.web.controller.param.TopicParam;
-import com.sohu.tv.mq.cloud.web.vo.TopicRoute;
-import com.sohu.tv.mq.cloud.web.vo.TopicRouteVO;
 import com.sohu.tv.mq.cloud.web.vo.UserInfo;
 /**
  * topic接口
@@ -134,47 +133,6 @@ public class TopicController extends ViewController {
         }
         
         return Result.getWebResult(result);
-    }
-    
-    /**
-     * 获取topic路由
-     * @return
-     * @throws Exception
-     */
-    @RequestMapping("/{tid}/route")
-    public String route(UserInfo userInfo, @PathVariable long tid, Map<String, Object> map) throws Exception {
-        String view = viewModule() + "/route";
-        Result<Topic> topicResult = topicService.queryTopic(tid);
-        if(topicResult.isNotOK()) {
-            setResult(map, topicResult);
-            return view;
-        }
-        Topic topic = topicResult.getResult();
-        TopicRouteData topicRouteData = topicService.route(topic);
-        List<TopicRoute> list = new ArrayList<TopicRoute>();
-        int queueNum = 0;
-        for(QueueData queueData : topicRouteData.getQueueDatas()) {
-            TopicRoute topicRoute = new TopicRoute();
-            if(queueNum == 0) {
-                queueNum = queueData.getWriteQueueNums();
-            }
-            BeanUtils.copyProperties(queueData, topicRoute);
-            list.add(topicRoute);
-        }
-        TopicRouteVO topicRouteVO = new TopicRouteVO();
-        topicRouteVO.setQueueNum(queueNum);
-        topicRouteVO.setTopic(topic);
-        topicRouteVO.setTopicRouteList(list);
-        if(userInfo.getUser().isAdmin()) {
-            topicRouteVO.setOwn(true);
-        } else {
-            Result<List<UserProducer>> result = userProducerService.queryUserProducer(userInfo.getUser().getId(), tid);
-            if(result.isOK()) {
-                topicRouteVO.setOwn(true);
-            }
-        }
-        setResult(map, topicRouteVO);
-        return view;
     }
     
     /**
@@ -474,7 +432,7 @@ public class TopicController extends ViewController {
         // 校验当前用户是否拥有权限
         Result<UserProducer> userProducerResult = userProducerService.findUserProducer(userInfo.getUser().getId(), tid);
         if (userProducerResult.isNotOK() && !userInfo.getUser().isAdmin()) {
-            return Result.getResult(Status.NOT_ALLOWED);
+            return Result.getResult(Status.PERMISSION_DENIED_ERROR);
         }
         Result<Topic> topicResult = topicService.queryTopic(tid);
         if (topicResult.isNotOK()) {
@@ -486,6 +444,27 @@ public class TopicController extends ViewController {
         Result<Integer> result = topicService.updateTopicInfo(tid, HtmlUtils.htmlEscape(info.trim(), "UTF-8"));
         logger.info(userInfo.getUser().getName() + " update topic info , tid:{}, info:{}, status:{}", tid, info, result.isOK());
         return Result.getWebResult(result);
+    }
+    
+    /**
+     * topic详情 只供管理员使用
+     * 
+     * @return
+     * @throws Exception
+     */
+    @ResponseBody
+    @RequestMapping(value = "/detail")
+    public String updateTopicInfo(HttpServletResponse response, HttpServletRequest request,
+            UserInfo userInfo, @RequestParam("topic") String topic) throws Exception {
+        if (!userInfo.getUser().isAdmin()) {
+            return Result.getResult(Status.PERMISSION_DENIED_ERROR).toJson();
+        }
+        Result<Topic> topicResult = topicService.queryTopic(topic);
+        if (topicResult.isNotOK()) {
+            return Result.getWebResult(topicResult).toJson();
+        }
+        WebUtil.redirect(response, request, "/user/topic/" + topicResult.getResult().getId() + "/detail");
+        return null;
     }
     
     @Override

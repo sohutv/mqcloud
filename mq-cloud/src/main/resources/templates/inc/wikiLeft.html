@@ -124,7 +124,6 @@
 	        //遍历所有的div
 	        $(".markdown-body h2 > span").each(function(index) {
 	            var thisTop = $(this).offset().top;
-// 	            console.log($(this).attr("id")+" "+top+" " + thisTop);
 	            if (top >= thisTop) {
 	                $(".right-side-bar a").removeClass("active");
 	                $(".right-side-bar a[href='#"+$(this).attr("id")+"']").addClass("active");

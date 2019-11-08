@@ -11,7 +11,14 @@ import com.sohu.tv.mq.cloud.bo.AuditResendMessage;
  */
 public class AuditResendMessageVO {
     private String topic;
+    private String consumer;
     private List<AuditResendMessage> msgList;
+    public String getConsumer() {
+        return consumer;
+    }
+    public void setConsumer(String consumer) {
+        this.consumer = consumer;
+    }
     public String getTopic() {
         return topic;
     }

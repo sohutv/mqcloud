@@ -336,13 +336,8 @@ public class ConsumerController extends ViewController {
         // 校验用户是否能重置，防止误调用接口
         Result<List<UserConsumer>> userConsumerListResult = userConsumerService.queryUserConsumer(userInfo.getUser(),
                 userConsumerParam.getTid(), userConsumerParam.getConsumerId());
-        if(userConsumerListResult.isNotOK() && !userInfo.getUser().isAdmin()) {
-            return userConsumerListResult;
-        }
-        List<UserConsumer> list = userConsumerListResult.getResult();
-        if(list.size() != 1 && !userInfo.getUser().isAdmin()) {
-            logger.warn("not unique result, param:{}, result size:{}", userConsumerParam, list.size());
-            return Result.getResult(Status.NO_RESULT);
+        if(userConsumerListResult.isEmpty() && !userInfo.getUser().isAdmin()) {
+            return Result.getResult(Status.PERMISSION_DENIED_ERROR);
         }
         // 非线上集群，免审
         Cluster cluster = clusterService.getMQClusterById(userConsumerParam.getCid());
@@ -418,13 +413,7 @@ public class ConsumerController extends ViewController {
         // 校验用户是否能删除，防止调用接口误删
         Result<List<UserConsumer>> userConsumerListResult = userConsumerService.queryUserConsumer(userInfo.getUser(),
                 userConsumerParam.getTid(), userConsumerParam.getConsumerId());
-        if (userConsumerListResult.isNotOK()) {
-            return userConsumerListResult;
-        }
-        List<UserConsumer> list = userConsumerListResult.getResult();
-        //管理员可删
-        if(list.size() != 1 && !userInfo.getUser().isAdmin()) {
-            logger.warn("not unique result, param:{}, result size:{}", userConsumerParam, list.size());
+        if (userConsumerListResult.isEmpty() && !userInfo.getUser().isAdmin()) {
             return Result.getResult(Status.PERMISSION_DENIED_ERROR);
         }
         
@@ -704,12 +693,9 @@ public class ConsumerController extends ViewController {
     public Result<?> updateInfo(UserInfo userInfo, @RequestParam("cid") int cid,
             @RequestParam("info") String info) throws Exception {
         // 校验当前用户是否拥有权限
-        UserConsumer userConsumer = new UserConsumer();
-        userConsumer.setConsumerId(cid);
-        userConsumer.setUid(userInfo.getUser().getId());
-        Result<List<UserConsumer>> ucListResult = userConsumerService.queryUserConsumer(userConsumer);
+        Result<List<UserConsumer>> ucListResult = userConsumerService.queryUserConsumer(userInfo.getUser().getId(), cid);
         if (ucListResult.isEmpty() && !userInfo.getUser().isAdmin()) {
-            return Result.getResult(Status.NOT_ALLOWED);
+            return Result.getResult(Status.PERMISSION_DENIED_ERROR);
         }
         if (StringUtils.isBlank(info)) {
             return Result.getResult(Status.PARAM_ERROR);
@@ -731,13 +717,8 @@ public class ConsumerController extends ViewController {
         // 校验用户是否能重置，防止误调用接口
         Result<List<UserConsumer>> userConsumerListResult = userConsumerService.queryUserConsumer(userInfo.getUser(),
                 userConsumerParam.getTid(), userConsumerParam.getConsumerId());
-        if(userConsumerListResult.isNotOK() && !userInfo.getUser().isAdmin()) {
-            return userConsumerListResult;
-        }
-        List<UserConsumer> list = userConsumerListResult.getResult();
-        if(list.size() != 1 && !userInfo.getUser().isAdmin()) {
-            logger.warn("not unique result, param:{}, result size:{}", userConsumerParam, list.size());
-            return Result.getResult(Status.NO_RESULT);
+        if(userConsumerListResult.isEmpty() && !userInfo.getUser().isAdmin()) {
+            return Result.getResult(Status.PERMISSION_DENIED_ERROR);
         }
         // 校验时间格式
         try {

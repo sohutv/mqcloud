@@ -1,9 +1,11 @@
 <nav class="navbar navbar-inverse navbar-fixed-top">
     <div class="container">
-        <div class="navbar-header">
-            <a class="navbar-brand glyphicon glyphicon-home" href="${request.contextPath}/user/topic"> MQCloud</a>
-        </div>
         <div class="navbar-collapse collapse">
+            <ul class="nav navbar-nav navbar-left">
+            	<li id="homeLi">
+               		<a class="navbar-brand glyphicon glyphicon-home" href="${request.contextPath}/user/topic"> MQCloud</a>
+                </li>
+            </ul>
         	<ul class="nav navbar-nav navbar-left">
                 <li id="introLi">
                     <a href="${request.contextPath}/wiki/intro/index" class="glyphicon glyphicon-road" style="padding-top:17px;">文档</a>
@@ -12,19 +14,19 @@
             <#if userInfo??>
             <#if userInfo.user??>
             <ul class="nav navbar-nav navbar-left">
-                <li id="introLi">
+                <li>
                     <a href="#" data-target="#feedbackModal" data-toggle="modal" style="padding-top:20px;padding-bottom:0px;"><span class="glyphicon glyphicon-comment"></span>反馈</a>
                 </li>
             </ul>
             <ul class="nav navbar-nav navbar-left">
-                <li id="introLi">
+                <li>
                     <a href="#" onclick="contactUS()" data-target="#contactModal" data-toggle="modal" class="glyphicon glyphicon-user" style="padding-top:17px;">联系我们</a>
                 </li>
             </ul>
             </#if>
             </#if>
             <ul class="nav navbar-nav navbar-left">
-                <li id="introLi">
+                <li>
                     <a href="https://github.com/sohutv/sohu-tv-mq" style="padding-top:17px;padding-bottom:0px;" data-toggle="tooltip" data-placement="bottom" title="查看开源代码"><img src="${request.contextPath}/img/github.png"></a>
                 </li>
             </ul>
