@@ -96,7 +96,7 @@
 	                    			</#if>
 	                    		</#if>
 		                    	<td>
-		                    		<#if consumerProgressVO.ownerList?seq_contains(userInfo.user) || userInfo.user.type == 1>
+		                    		<#if (consumerProgressVO.ownerList?? && consumerProgressVO.ownerList?seq_contains(userInfo.user)) || userInfo.user.type == 1>
 			                    		<#if consumerProgressVO.offsetMap??>
 				                    		<button title="跳过堆积的消息，直接消费至最新的消息" type="button" class="btn-sm btn-success" data-target="#skipAccumulationModel${consumerProgressVO_index}" data-toggle="modal">跳过堆积</button>
 				                    		<button title="消费过去一段时间至现在的消息" type="button" class="btn-sm btn-success" data-target="#resetOffSetModel${consumerProgressVO_index}" data-toggle="modal">消息回溯</button>
