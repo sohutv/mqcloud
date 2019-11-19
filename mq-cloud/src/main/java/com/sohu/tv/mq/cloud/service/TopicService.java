@@ -618,5 +618,21 @@ public class TopicService {
         }
         return Result.getResult(result);
     }
+    
+    /**
+     * 重置topic流量
+     * @param topicTrafficList
+     * @return
+     */
+    public Result<Integer> resetCount(int dayAgo) {
+        Integer result = null;
+        try {
+            result = topicDao.resetCount(dayAgo);
+        } catch (Exception e) {
+            logger.error("resetCount err, dayAgo:{}", dayAgo, e);
+            return Result.getDBErrorResult(e);
+        }
+        return Result.getResult(result);
+    }
 }
 

@@ -175,4 +175,15 @@ public class TrafficTask {
             }
         }
     }
+    
+    /**
+     * 重置2天前的流量为0
+     */
+    @Scheduled(cron = "0 0 6 * * ?")
+    @SchedulerLock(name = "resetTopicTraffic", lockAtMostFor = 10 * ONE_MIN, lockAtLeastFor = 59000)
+    public void resetTopicTraffic() {
+        long start = System.currentTimeMillis();
+        Result<?> rst = topicService.resetCount(2);
+        logger.info("resetTopicTraffic rst:{} use:{}", rst, System.currentTimeMillis() - start);
+    }
 }

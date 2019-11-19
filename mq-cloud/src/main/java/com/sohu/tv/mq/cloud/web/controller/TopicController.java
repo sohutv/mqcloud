@@ -13,6 +13,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
 
+import com.sohu.tv.mq.cloud.service.*;
+import com.sohu.tv.mq.cloud.web.vo.IpSearchResultVO;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.rocketmq.common.MQVersion;
 import org.apache.rocketmq.common.admin.TopicOffset;
@@ -42,15 +44,6 @@ import com.sohu.tv.mq.cloud.bo.User;
 import com.sohu.tv.mq.cloud.bo.UserConsumer;
 import com.sohu.tv.mq.cloud.bo.UserProducer;
 import com.sohu.tv.mq.cloud.common.util.WebUtil;
-import com.sohu.tv.mq.cloud.service.AlertService;
-import com.sohu.tv.mq.cloud.service.AuditService;
-import com.sohu.tv.mq.cloud.service.ClusterService;
-import com.sohu.tv.mq.cloud.service.ConsumerService;
-import com.sohu.tv.mq.cloud.service.TopicService;
-import com.sohu.tv.mq.cloud.service.UserConsumerService;
-import com.sohu.tv.mq.cloud.service.UserProducerService;
-import com.sohu.tv.mq.cloud.service.UserService;
-import com.sohu.tv.mq.cloud.service.VerifyDataService;
 import com.sohu.tv.mq.cloud.util.FreemarkerUtil;
 import com.sohu.tv.mq.cloud.util.Result;
 import com.sohu.tv.mq.cloud.util.Status;
@@ -93,6 +86,12 @@ public class TopicController extends ViewController {
     
     @Autowired
     private ClusterService clusterService;
+
+    @Autowired
+    private ProducerTotalStatService producerTotalStatService;
+
+    @Autowired
+    private ConsumerClientStatService consumerClientStatService;
 
     /**
      * 更新Topic路由
@@ -466,7 +465,73 @@ public class TopicController extends ViewController {
         WebUtil.redirect(response, request, "/user/topic/" + topicResult.getResult().getId() + "/detail");
         return null;
     }
-    
+
+    /**
+     * 根据ip和时间查询topic
+     * @param ip
+     * @param time
+     */
+    @RequestMapping(value="/search/ip")
+    public String searchByIp(UserInfo userInfo,
+                             @RequestParam("ip") String ip,
+                             @RequestParam("time") Long time,
+                             Map<String, Object> map) throws Exception {
+        // 设置返回视图
+        String view = viewModule() + "/ip";
+        // 设置返回结果
+        List<IpSearchResultVO> ipSearchResultVOList = new ArrayList<>();
+        setResult(map, ipSearchResultVOList);
+        // 参数解析
+        if (ip != null) {
+            ip = ip.trim();
+            if (ip.length() == 0) {
+                return view;
+            }
+        }
+        // ip按生产者查询
+        Result<List<String>> producerListResult = producerTotalStatService.queryProducerList(ip, time);
+        if (producerListResult.isOK()) {
+            List<String> producerList = producerListResult.getResult();
+            for (String producer : producerList) {
+                // 根据producer获取用户关联的topicId列表
+                Result<List<Long>> topicIdListResult = userProducerService.findTopicIdList(userInfo.getUser(), producer);
+                saveIpSearchResultVO(ipSearchResultVOList, ip, producer, topicIdListResult, 1);
+            }
+        }
+        // ip按消费者查询
+        Result<List<String>> consumerListResult = consumerClientStatService.selectByDateAndClient(ip, time);
+        if (consumerListResult.isOK()) {
+            List<String> consumerList = consumerListResult.getResult(); // 这里的consumer同样是不重复的
+            for (String consumer : consumerList) {
+                // 根据consumer获取用户关联的topicId列表
+                Result<List<Long>> topicIdListResult = userConsumerService.queryTopicId(userInfo.getUser(), consumer);
+                saveIpSearchResultVO(ipSearchResultVOList, ip, consumer, topicIdListResult, 2);
+            }
+        }
+        return view;
+    }
+
+    public void saveIpSearchResultVO(List<IpSearchResultVO> ipSearchResultVOList, String ip, String group, Result<List<Long>> topicIdListResult, int type) {
+        if (topicIdListResult.isEmpty()) {
+            return;
+        }
+        Result<List<Topic>> topicListResult = topicService.queryTopicList(topicIdListResult.getResult());
+        if (topicListResult.isEmpty()) {
+            return;
+        }
+        for (Topic topic : topicListResult.getResult()) {
+            IpSearchResultVO ipSearchResultVO = null;
+            if (type == 1) {
+                ipSearchResultVO = new IpSearchResultVO(ip, null, group, topic);
+            } else if (type == 2) {
+                ipSearchResultVO = new IpSearchResultVO(ip, group, null, topic);
+            }
+            if (ipSearchResultVO != null) {
+                ipSearchResultVOList.add(ipSearchResultVO);
+            }
+        }
+    }
+
     @Override
     public String viewModule() {
         return "topic";

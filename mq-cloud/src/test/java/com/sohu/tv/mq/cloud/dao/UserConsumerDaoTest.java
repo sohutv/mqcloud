@@ -5,6 +5,7 @@ import static org.junit.Assert.fail;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -61,4 +62,11 @@ public class UserConsumerDaoTest {
         return topic;
     }
 
+    @Test
+    public void testSelectTidByUidAndConsumer() {
+        long uid = 0L;
+        String consumer = "testConsumerGroup";
+        List<Long> result = userConsumerDao.selectTidByUidAndConsumer(uid, consumer);
+        Assert.assertTrue(result.size() > 0);
+    }
 }

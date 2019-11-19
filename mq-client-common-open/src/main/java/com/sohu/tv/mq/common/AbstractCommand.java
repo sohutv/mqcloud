@@ -33,6 +33,7 @@ public abstract class AbstractCommand<T> extends HystrixCommand<T> {
      * @param commandKey
      * @param timeout 超时时间
      */
+    @SuppressWarnings("deprecation")
     public AbstractCommand(String groupKey, String commandKey, int poolSize, int timeout, Alerter alerter) {
         super(Setter.withGroupKey(HystrixCommandGroupKey.Factory.asKey(groupKey + "_" + GROUP_SUFFIX))
                 .andCommandKey(HystrixCommandKey.Factory.asKey(commandKey + "_" + COMMAND_SUFFIX))

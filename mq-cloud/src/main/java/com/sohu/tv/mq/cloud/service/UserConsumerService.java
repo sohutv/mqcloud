@@ -310,4 +310,29 @@ public class UserConsumerService {
         }
         return Result.getResult(count);
     }
+
+    /**
+     * 根据uid和consumer关联的topicId
+     */
+    public Result<List<Long>> queryTopicId(User user, String consumer) {
+        if (user.isAdmin()) {
+            return queryTopicId(0, consumer);
+        } else {
+            return queryTopicId(user.getId(), consumer);
+        }
+    }
+
+    /**
+     * 根据uid和date查询
+     */
+    public Result<List<Long>> queryTopicId(long uid, String consumer) {
+        List<Long> topicId = null;
+        try {
+            topicId = userConsumerDao.selectTidByUidAndConsumer(uid, consumer);
+        } catch (Exception e) {
+            logger.error("queryTopicId err, uid:{}, consumer:{}", uid, consumer, e);
+            return Result.getDBErrorResult(e);
+        }
+        return Result.getResult(topicId);
+    }
 }

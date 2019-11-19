@@ -108,7 +108,9 @@ public class ConsumerController extends ViewController {
      * @throws Exception
      */
     @RequestMapping("/progress")
-    public String progress(UserInfo userInfo, @RequestParam("tid") int tid, Map<String, Object> map) throws Exception {
+    public String progress(UserInfo userInfo, @RequestParam("tid") int tid,
+            @RequestParam(value = "begin", defaultValue = "0") int begin,
+            @RequestParam(value = "end", defaultValue = "10") int end, Map<String, Object> map) throws Exception {
         String view = viewModule() + "/progress";
         // 获取消费者
         Result<TopicTopology> topicTopologyResult = userService.queryTopicTopology(userInfo.getUser(), tid);
@@ -116,13 +118,27 @@ public class ConsumerController extends ViewController {
             setResult(map, topicTopologyResult);
             return view;
         }
+        if(begin != 0) {
+            view = viewModule() + "/progressLeft";
+        }
         // 查询消费进度
         TopicTopology topicTopology = topicTopologyResult.getResult();
         // 拆分不同方式的消费者
         List<Consumer> clusteringConsumerList = new ArrayList<Consumer>();
         List<Consumer> broadcastConsumerList = new ArrayList<Consumer>();
         List<Long> cidList = new ArrayList<Long>();
-        for(Consumer consumer : topicTopology.getConsumerList()) {
+        List<Consumer> consumerList = topicTopology.getConsumerList();
+        if(begin < 0) {
+            begin = 0;
+        }
+        if(begin > consumerList.size()) {
+            begin = consumerList.size();
+        }
+        if(end > consumerList.size()) {
+            end = consumerList.size();
+        }
+        for (; begin < end; ++begin) {
+            Consumer consumer = consumerList.get(begin);
             cidList.add(consumer.getId());
             if(consumer.isClustering()) {
                 clusteringConsumerList.add(consumer);
@@ -145,6 +161,9 @@ public class ConsumerController extends ViewController {
                 broadcastConsumerList, consumerMap)));
         
         setResult(map, "topic", topic);
+        if(consumerList.size() > begin + cidList.size()) {
+            setResult(map, "hasMore", true);
+        }
         FreemarkerUtil.set("long", Long.class, map);
         return view;
     }

@@ -1,0 +1,35 @@
+<#if response.OK>
+    <#if response.result?? && response.result?size gt 0>
+        <tbody>
+        <#list response.result as ipSearchResultVO>
+            <tr>
+                <td>${ipSearchResultVO.ip}</td>
+                <td>
+                    <#if ipSearchResultVO.consumer??>
+                        <a title="查看消费者详情" href="${request.contextPath}/user/topic/${ipSearchResultVO.topic.id}/detail?tab=consume">${ipSearchResultVO.consumer}</a>
+                    <#else>
+                        无
+                    </#if>
+                </td>
+                <td>
+                    <#if ipSearchResultVO.producer??>
+                        <a title="查看生产者详情" href="${request.contextPath}/user/topic/${ipSearchResultVO.topic.id}/detail?tab=produce">${ipSearchResultVO.producer}</a>
+                    <#else>
+                        无
+                    </#if>
+                </td>
+                <td><a title="查看topic详情" href="${request.contextPath}/user/topic/${ipSearchResultVO.topic.id}/detail">${ipSearchResultVO.topic.name}</a></td>
+            </tr>
+        </#list>
+        </tbody>
+    <#else>
+        <tbody>
+        <tr class="no_more_data"><td colspan=8 class="text-center">未查询到数据</td></tr>
+        </tbody>
+    </#if>
+
+<#else>
+    <tbody>
+    <tr class="no_more_data"><td colspan=8 class="text-center">查询异常！${response.message}</td></tr>
+    </tbody>
+</#if>

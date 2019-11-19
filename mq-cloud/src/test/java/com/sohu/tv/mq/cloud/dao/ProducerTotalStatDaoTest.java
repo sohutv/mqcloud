@@ -51,4 +51,13 @@ public class ProducerTotalStatDaoTest {
         Integer count = producerTotalStatDao.delete(NumberUtils.toInt(DateUtil.formatYMDNow()));
         Assert.assertNotNull(count);
     }
+
+    @Test
+    public void testSelectProducerList() {
+        String client = "10.11.12.13";
+        int createDate = 20191106;
+        String createTime = "1933";
+        List<String> list = producerTotalStatDao.selectProducerList(client, createDate, createTime);
+        Assert.assertNotNull(list);
+    }
 }

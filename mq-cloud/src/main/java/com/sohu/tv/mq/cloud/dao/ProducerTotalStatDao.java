@@ -59,4 +59,10 @@ public interface ProducerTotalStatDao {
             + "where total.id = stat.total_id and total.create_date = #{createDate} and total.create_time >= #{createTime} "
             + "and total.exception is not null")
     public List<ProducerTotalStat> selectExceptionList(@Param("createDate")int createDate, @Param("createTime")String createTime);
+
+    /**
+     * 根据时间和client查询
+     */
+    @Select("select distinct producer from producer_total_stat where client = #{client} and create_date = #{createDate} and create_time >= #{createTime}")
+    public List<String> selectProducerList(@Param("client")String client, @Param("createDate")int createDate, @Param("createTime")String createTime);
 }

@@ -2,6 +2,7 @@ package com.sohu.tv.mq.cloud.service;
 
 import java.util.List;
 
+import com.sohu.tv.mq.cloud.bo.User;
 import org.apache.rocketmq.common.protocol.body.ProducerConnection;
 import org.apache.rocketmq.tools.admin.MQAdminExt;
 import org.slf4j.Logger;
@@ -227,5 +228,30 @@ public class UserProducerService {
             return Result.getDBErrorResult(e);
         }
         return Result.getResult(userProducer);
+    }
+
+    /**
+     * 按照uid和producer查询topicId
+     */
+    public Result<List<Long>> findTopicIdList(User user, String producer) {
+        if (user.isAdmin()) {
+            return findTopicIdList(0, producer);
+        } else {
+            return findTopicIdList(user.getId(), producer);
+        }
+    }
+
+    /**
+     * 按照uid和producer查询topicId
+     */
+    public Result<List<Long>> findTopicIdList(long uid, String producer) {
+        List<Long> topicIdList = null;
+        try {
+            topicIdList = userProducerDao.selectTidByProducerAndUid(uid, producer);
+        } catch (Exception e) {
+            logger.error("findTopicIdList err, uid:{}, producer:{}", uid, producer, e);
+            return Result.getDBErrorResult(e);
+        }
+        return Result.getResult(topicIdList);
     }
 }

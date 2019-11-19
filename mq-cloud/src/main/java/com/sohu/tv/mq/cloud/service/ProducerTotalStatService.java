@@ -114,4 +114,23 @@ public class ProducerTotalStatService {
         }
         return Result.getResult(result);
     }
+
+    /**
+     * 根据client和time查询producer
+     * @param client
+     * @param time
+     */
+    public Result<List<String>> queryProducerList(String client, long time) {
+        List<String> result = null;
+        Date date = new Date(time);
+        int createDate = NumberUtils.toInt(DateUtil.formatYMD(date));
+        String createTime = DateUtil.getFormat(DateUtil.HHMM).format(time);
+        try {
+            result = producerTotalStatDao.selectProducerList(client, createDate, createTime);
+        } catch (Exception e) {
+            logger.error("queryProducerList err, client:{}, time:{}", client, time, e);
+            return Result.getDBErrorResult(e);
+        }
+        return Result.getResult(result);
+    }
 }

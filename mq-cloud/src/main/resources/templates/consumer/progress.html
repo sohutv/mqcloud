@@ -46,8 +46,9 @@
 					<#else>
 						<#list response.result as consumerProgressVO>
 							<tr>
-								<td>${consumerProgressVO_index + 1}</td>
-		                    	<td><a style="cursor:pointer" title="查看消费详情" data-target="#consumeDetailModel${consumerProgressVO_index}" data-toggle="modal" <#if consumerProgressVO.minLastTimestamp gt 0 && consumerProgressVO.minLastTimestamp lt long.MAX_VALUE>onclick="getQueueOwner('${consumerProgressVO.consumer.name}', '${consumerProgressVO.consumer.id}')"</#if>>${consumerProgressVO.consumer.name}</a></td>
+								<#assign row = consumerProgressVO_index + 1> 
+								<td>${row}</td>
+		                    	<td><a style="cursor:pointer" title="查看消费详情" data-target="#consumeDetailModel${row}" data-toggle="modal" <#if consumerProgressVO.minLastTimestamp gt 0 && consumerProgressVO.minLastTimestamp lt long.MAX_VALUE>onclick="getQueueOwner('${consumerProgressVO.consumer.name}', '${consumerProgressVO.consumer.id}')"</#if>>${consumerProgressVO.consumer.name}</a></td>
 		                    	<#if consumerProgressVO.ownerList??>
 		                    		<td>
 			                    		<#if consumerProgressVO.ownerList?seq_contains(userInfo.user) || userInfo.user.type == 1>
@@ -98,14 +99,14 @@
 		                    	<td>
 		                    		<#if (consumerProgressVO.ownerList?? && consumerProgressVO.ownerList?seq_contains(userInfo.user)) || userInfo.user.type == 1>
 			                    		<#if consumerProgressVO.offsetMap??>
-				                    		<button title="跳过堆积的消息，直接消费至最新的消息" type="button" class="btn-sm btn-success" data-target="#skipAccumulationModel${consumerProgressVO_index}" data-toggle="modal">跳过堆积</button>
-				                    		<button title="消费过去一段时间至现在的消息" type="button" class="btn-sm btn-success" data-target="#resetOffSetModel${consumerProgressVO_index}" data-toggle="modal">消息回溯</button>
+				                    		<button title="跳过堆积的消息，直接消费至最新的消息" type="button" class="btn-sm btn-success" data-target="#skipAccumulationModel${row}" data-toggle="modal">跳过堆积</button>
+				                    		<button title="消费过去一段时间至现在的消息" type="button" class="btn-sm btn-success" data-target="#resetOffSetModel${row}" data-toggle="modal">消息回溯</button>
 			                    		</#if>
-			                    		<button type="button" class="btn-sm btn-warning" data-target="#deleteConsumerModel${consumerProgressVO_index}" data-toggle="modal"><span class="glyphicon glyphicon-trash" aria-hidden="true"></span></button>
+			                    		<button type="button" class="btn-sm btn-warning" data-target="#deleteConsumerModel${row}" data-toggle="modal"><span class="glyphicon glyphicon-trash" aria-hidden="true"></span></button>
 		                    		</#if>
 		                    		<#if consumerProgressVO.offsetMap??>
 		                    		<!-- 详情 -->
-		                    		<div id="consumeDetailModel${consumerProgressVO_index}" class="modal fade" tabindex="-1" aria-hidden="true">
+		                    		<div id="consumeDetailModel${row}" class="modal fade" tabindex="-1" aria-hidden="true">
 										<div class="modal-dialog" style="width:700px">
 											<div class="modal-content">
 												<div class="modal-header">
@@ -119,7 +120,7 @@
 																<td class="warning" colspan=7>死消息Topic：<b style="color:red" data-toggle="tooltip" 
 																title="消费失败达到最大重试次数(16)后，将会进入此topic，不再重试">${consumerProgressVO.dlqTopic}</b>
 																	&nbsp;&nbsp;&nbsp;<span title="搜索死消息" class="glyphicon glyphicon-search" style="cursor:pointer;" 
-																	onclick="initOffsetMsgModal('dlq', ${consumerProgressVO_index}, '${consumerProgressVO.dlqTopic}','${consumerProgressVO.dlqMaxOffset?c}')" data-target="#offsetMsgSearchModal" data-toggle="modal"></span>
+																	onclick="initOffsetMsgModal('dlq', ${row}, '${consumerProgressVO.dlqTopic}','${consumerProgressVO.dlqMaxOffset?c}')" data-target="#offsetMsgSearchModal" data-toggle="modal"></span>
 																</td>
 															</tr>
 															<tr>
@@ -164,7 +165,7 @@
 																<td class="warning" colspan=7>重试Topic：<b style="color:red" data-toggle="tooltip" 
 																title="消费失败的消息，会重新发回到此topic，以便重试消费">${consumerProgressVO.retryTopic}</b>
 																&nbsp;&nbsp;&nbsp;<span title="搜索重试消息" class="glyphicon glyphicon-search" style="cursor:pointer;" 
-																onclick="initOffsetMsgModal('retry', ${consumerProgressVO_index}, '${consumerProgressVO.retryTopic}','${consumerProgressVO.retryMaxOffset?c}')" data-target="#offsetMsgSearchModal" data-toggle="modal"></span>
+																onclick="initOffsetMsgModal('retry', ${row}, '${consumerProgressVO.retryTopic}','${consumerProgressVO.retryMaxOffset?c}')" data-target="#offsetMsgSearchModal" data-toggle="modal"></span>
 																&nbsp;&nbsp;&nbsp;<span title="跳过重试消息" class="glyphicon glyphicon-fast-forward" style="cursor:pointer;" 
 																onclick="showResetRetryMessageOffsetModel(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}')" data-toggle="modal"></span>
 																</td>
@@ -251,7 +252,7 @@
 										</div>
 									</div> <!-- 详情结束 -->
 									<!-- 跳过堆积 -->
-									<div id="skipAccumulationModel${consumerProgressVO_index}" class="modal fade" tabindex="-1" aria-hidden="true">
+									<div id="skipAccumulationModel${row}" class="modal fade" tabindex="-1" aria-hidden="true">
 										<div class="modal-dialog">
 											<div class="modal-content">
 												<div class="modal-header">
@@ -281,14 +282,14 @@
 													</div>
 													<div  class="modal-footer">
 														<button type="button" data-dismiss="modal" class="btn" >取消</button>
-														<button type="button" id="skipAccumulationBtn${consumerProgressVO_index}" class="btn btn-primary" onclick="skipAccumulation(${consumerProgressVO.consumer.tid},${consumerProgressVO.consumer.id},'skipAccumulationBtn${consumerProgressVO_index}')">确定</button>
+														<button type="button" id="skipAccumulationBtn${row}" class="btn btn-primary" onclick="skipAccumulation(${consumerProgressVO.consumer.tid},${consumerProgressVO.consumer.id},'skipAccumulationBtn${row}')">确定</button>
 													</div>
 												</form>
 											</div>
 										</div>
 									</div><!-- 跳过堆积结束 -->
 									<!-- 消息回溯-->
-									<div id="resetOffSetModel${consumerProgressVO_index}" class="modal fade" tabindex="-1" aria-hidden="true">
+									<div id="resetOffSetModel${row}" class="modal fade" tabindex="-1" aria-hidden="true">
 										<div class="modal-dialog">
 											<div class="modal-content">
 												<div class="modal-header">
@@ -315,7 +316,7 @@
 																	<div class="form-group">
 																		<label class="control-label col-md-3"> 回溯到: </label>
 																		<div class="col-md-5">
-																			<input type="text" id="resetOffsetDate${consumerProgressVO_index}" name="resetOffsetDate" class="Wdate form-control" onclick="WdatePicker({ dateFmt: 'yyyy-MM-dd HH:mm:ss',maxDate:'%y-%M-%d',minDate:'%y-%M-{%d-5}'})" style="width:100%;height:34px;cursor:pointer;" readonly="readonly">
+																			<input type="text" id="resetOffsetDate${row}" name="resetOffsetDate" class="Wdate form-control" onclick="WdatePicker({ dateFmt: 'yyyy-MM-dd HH:mm:ss',maxDate:'%y-%M-%d',minDate:'%y-%M-{%d-5}'})" style="width:100%;height:34px;cursor:pointer;" readonly="readonly">
 																		</div>
 																	</div>
 																</div>
@@ -324,7 +325,7 @@
 													</div>
 													<div  class="modal-footer">
 														<button type="button" data-dismiss="modal" class="btn" >取消</button>
-														<button type="button" id="resetOffsetBtn${consumerProgressVO_index}" class="btn btn-primary" onclick="resetOffset(${consumerProgressVO_index},${consumerProgressVO.consumer.tid},${consumerProgressVO.consumer.id},'resetOffsetBtn${consumerProgressVO_index}')">确定</button>
+														<button type="button" id="resetOffsetBtn${row}" class="btn btn-primary" onclick="resetOffset(${row},${consumerProgressVO.consumer.tid},${consumerProgressVO.consumer.id},'resetOffsetBtn${row}')">确定</button>
 													</div>
 												</form>
 											</div>
@@ -332,7 +333,7 @@
 									</div><!-- 消息回溯-->
 									</#if>
 									<!-- 删除consumer -->
-									<div id="deleteConsumerModel${consumerProgressVO_index}" class="modal fade" tabindex="-1" aria-hidden="true">
+									<div id="deleteConsumerModel${row}" class="modal fade" tabindex="-1" aria-hidden="true">
 										<div class="modal-dialog">
 											<div class="modal-content">
 												<div class="modal-header">
@@ -362,7 +363,7 @@
 													</div>
 													<div  class="modal-footer">
 														<button type="button" data-dismiss="modal" class="btn" >取消</button>
-														<button type="button" id="deleteConsumerBtn${consumerProgressVO_index}" class="btn btn-primary" onclick="deleteConsumer(${consumerProgressVO.consumer.tid},${consumerProgressVO.consumer.id},'deleteConsumerBtn${consumerProgressVO_index}')">确定</button>
+														<button type="button" id="deleteConsumerBtn${row}" class="btn btn-primary" onclick="deleteConsumer(${consumerProgressVO.consumer.tid},${consumerProgressVO.consumer.id},'deleteConsumerBtn${row}')">确定</button>
 													</div>
 												</form>
 											</div>
@@ -375,8 +376,9 @@
 						<!-- 广播模式 -->
 						<#list resultExt.result as consumerProgressVO>
 							<tr>
-								<td>${consumerProgressVO_index + 1 + response.result?size}</td>
-		                    	<td><a style="cursor:pointer" title="查看消费详情" data-target="#consumeDetailModel${consumerProgressVO_index}b" data-toggle="modal">${consumerProgressVO.consumer.name}</a></td>
+								<#assign row = consumerProgressVO_index + 1 + response.result?size> 
+								<td>${row}</td>
+		                    	<td><a style="cursor:pointer" title="查看消费详情" data-target="#consumeDetailModel${row}b" data-toggle="modal">${consumerProgressVO.consumer.name}</a></td>
 		                    	<#if consumerProgressVO.ownerList??>
 			                    	<td>
 			                    		<#if consumerProgressVO.ownerList?seq_contains(userInfo.user) || userInfo.user.type == 1>
@@ -427,14 +429,14 @@
 		                    	<td>
 		                    		<#if (consumerProgressVO.ownerList?? && consumerProgressVO.ownerList?seq_contains(userInfo.user)) || userInfo.user.type == 1>
 			                    		<#if consumerProgressVO.offsetMap??>
-				                    		<button title="跳过堆积的消息，直接消费至最新的消息" type="button" class="btn-sm btn-success" data-target="#skipAccumulationModel${consumerProgressVO_index}b" data-toggle="modal">跳过堆积</button>
-				                    		<button title="消费过去一段时间至现在的消息" type="button" class="btn-sm btn-success" data-target="#resetOffSetModel${consumerProgressVO_index}b" data-toggle="modal">消息回溯</button>
+				                    		<button title="跳过堆积的消息，直接消费至最新的消息" type="button" class="btn-sm btn-success" data-target="#skipAccumulationModel${row}b" data-toggle="modal">跳过堆积</button>
+				                    		<button title="消费过去一段时间至现在的消息" type="button" class="btn-sm btn-success" data-target="#resetOffSetModel${row}b" data-toggle="modal">消息回溯</button>
 			                    		</#if>
-			                    		<button type="button" class="btn-sm btn-warning" data-target="#deleteConsumerModel${consumerProgressVO_index}b" data-toggle="modal"><span class="glyphicon glyphicon-trash" aria-hidden="true"></span></button>
+			                    		<button type="button" class="btn-sm btn-warning" data-target="#deleteConsumerModel${row}b" data-toggle="modal"><span class="glyphicon glyphicon-trash" aria-hidden="true"></span></button>
 		                    		</#if>
 		                    		<#if consumerProgressVO.offsetMap??>
 		                    		<!-- 详情 -->
-		                    		<div id="consumeDetailModel${consumerProgressVO_index}b" class="modal fade" tabindex="-1" aria-hidden="true">
+		                    		<div id="consumeDetailModel${row}b" class="modal fade" tabindex="-1" aria-hidden="true">
 										<div class="modal-dialog" style="width:700px">
 											<div class="modal-content">
 												<div class="modal-header">
@@ -479,7 +481,7 @@
 										</div>
 									</div> <!-- 详情结束 -->
 									<!-- 跳过堆积 -->
-									<div id="skipAccumulationModel${consumerProgressVO_index}b" class="modal fade" tabindex="-1" aria-hidden="true">
+									<div id="skipAccumulationModel${row}b" class="modal fade" tabindex="-1" aria-hidden="true">
 										<div class="modal-dialog">
 											<div class="modal-content">
 												<div class="modal-header">
@@ -509,14 +511,14 @@
 													</div>
 													<div  class="modal-footer">
 														<button type="button" data-dismiss="modal" class="btn" >取消</button>
-														<button type="button" id="skipAccumulationBtn${consumerProgressVO_index}b" class="btn btn-primary" onclick="skipAccumulation(${consumerProgressVO.consumer.tid},${consumerProgressVO.consumer.id},'skipAccumulationBtn${consumerProgressVO_index}b')">确定</button>
+														<button type="button" id="skipAccumulationBtn${row}b" class="btn btn-primary" onclick="skipAccumulation(${consumerProgressVO.consumer.tid},${consumerProgressVO.consumer.id},'skipAccumulationBtn${row}b')">确定</button>
 													</div>
 												</form>
 											</div>
 										</div>
 									</div><!-- 跳过堆积结束 -->
 									<!-- 消息回溯-->
-									<div id="resetOffSetModel${consumerProgressVO_index}b" class="modal fade" tabindex="-1" aria-hidden="true">
+									<div id="resetOffSetModel${row}b" class="modal fade" tabindex="-1" aria-hidden="true">
 										<div class="modal-dialog">
 											<div class="modal-content">
 												<div class="modal-header">
@@ -543,7 +545,7 @@
 																	<div class="form-group">
 																		<label class="control-label col-md-3"> 回溯到: </label>
 																		<div class="col-md-5">
-																			<input type="text" id="resetOffsetDate${consumerProgressVO_index}b" name="resetOffsetDate" class="Wdate form-control" onclick="WdatePicker({ dateFmt: 'yyyy-MM-dd HH:mm:ss',maxDate:'%y-%M-%d',minDate:'%y-%M-{%d-5}'})" style="width:100%;height:34px;cursor:pointer;" readonly="readonly">
+																			<input type="text" id="resetOffsetDate${row}b" name="resetOffsetDate" class="Wdate form-control" onclick="WdatePicker({ dateFmt: 'yyyy-MM-dd HH:mm:ss',maxDate:'%y-%M-%d',minDate:'%y-%M-{%d-5}'})" style="width:100%;height:34px;cursor:pointer;" readonly="readonly">
 																		</div>
 																	</div>
 																</div>
@@ -552,7 +554,7 @@
 													</div>
 													<div  class="modal-footer">
 														<button type="button" data-dismiss="modal" class="btn" >取消</button>
-														<button type="button" id="resetOffsetBtn${consumerProgressVO_index}b" class="btn btn-primary" onclick="resetOffset('${consumerProgressVO_index}b',${consumerProgressVO.consumer.tid},${consumerProgressVO.consumer.id},'resetOffsetBtn${consumerProgressVO_index}b')">确定</button>
+														<button type="button" id="resetOffsetBtn${row}b" class="btn btn-primary" onclick="resetOffset('${row}b',${consumerProgressVO.consumer.tid},${consumerProgressVO.consumer.id},'resetOffsetBtn${row}b')">确定</button>
 													</div>
 												</form>
 											</div>
@@ -560,7 +562,7 @@
 									</div><!-- 消息回溯-->
 									</#if>
 									<!-- 删除consumer -->
-									<div id="deleteConsumerModel${consumerProgressVO_index}b" class="modal fade" tabindex="-1" aria-hidden="true">
+									<div id="deleteConsumerModel${row}b" class="modal fade" tabindex="-1" aria-hidden="true">
 										<div class="modal-dialog">
 											<div class="modal-content">
 												<div class="modal-header">
@@ -590,7 +592,7 @@
 													</div>
 													<div  class="modal-footer">
 														<button type="button" data-dismiss="modal" class="btn" >取消</button>
-														<button type="button" id="deleteConsumerBtn${consumerProgressVO_index}b" class="btn btn-primary" onclick="deleteConsumer(${consumerProgressVO.consumer.tid},${consumerProgressVO.consumer.id},'deleteConsumerBtn${consumerProgressVO_index}b')">确定</button>
+														<button type="button" id="deleteConsumerBtn${row}b" class="btn btn-primary" onclick="deleteConsumer(${consumerProgressVO.consumer.tid},${consumerProgressVO.consumer.id},'deleteConsumerBtn${row}b')">确定</button>
 													</div>
 												</form>
 											</div>
@@ -600,6 +602,11 @@
 		                    	</td>
 		                   	</tr>
 						</#list>
+						<#if hasMore??>
+							<tr id="viewAll">
+		                    	<td colspan=9 align="center" class="pointer" onclick="leftPage()">查看全部</td>
+		                	<tr>
+						</#if>
 					</#if>
                 </tbody>
            </table>
@@ -1394,5 +1401,21 @@ function resendMessage(){
 		    	toastr.error("申请失败！"+data.message);  
 		    }
     }, 'json');
+}
+
+/**
+ * 获取剩余消费者
+ */
+function leftPage(){
+	event.preventDefault();
+	post('${request.contextPath}/consumer/progress?begin=10&end=100',{
+		tid: ${RequestParameters.tid},
+		consumerId: $("#consumerSelect").val()
+	},
+    function(data){
+		$("#viewAll").after(data);
+		$("#viewAll").remove();
+    });
+>>>>>>> refs/remotes/origin/master
 }
 </script>

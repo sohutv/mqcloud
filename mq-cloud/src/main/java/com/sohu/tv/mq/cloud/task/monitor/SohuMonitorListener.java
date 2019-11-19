@@ -11,7 +11,11 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
 
+import com.sohu.tv.mq.cloud.bo.*;
+import com.sohu.tv.mq.cloud.service.*;
 import org.apache.rocketmq.common.message.MessageQueue;
+import org.apache.rocketmq.common.protocol.body.Connection;
+import org.apache.rocketmq.common.protocol.body.ConsumerConnection;
 import org.apache.rocketmq.common.protocol.body.ConsumerRunningInfo;
 import org.apache.rocketmq.common.protocol.body.ProcessQueueInfo;
 import org.apache.rocketmq.common.protocol.heartbeat.ConsumeType;
@@ -26,17 +30,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import com.sohu.tv.mq.cloud.bo.ConsumerBlock;
-import com.sohu.tv.mq.cloud.bo.ConsumerStat;
-import com.sohu.tv.mq.cloud.bo.Topic;
-import com.sohu.tv.mq.cloud.bo.User;
-import com.sohu.tv.mq.cloud.bo.UserConsumer;
 import com.sohu.tv.mq.cloud.dao.ConsumerStatDao;
-import com.sohu.tv.mq.cloud.service.AlarmConfigBridingService;
-import com.sohu.tv.mq.cloud.service.AlertService;
-import com.sohu.tv.mq.cloud.service.TopicService;
-import com.sohu.tv.mq.cloud.service.UserConsumerService;
-import com.sohu.tv.mq.cloud.service.UserService;
 import com.sohu.tv.mq.cloud.util.DateUtil;
 import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper;
 import com.sohu.tv.mq.cloud.util.Result;
@@ -72,6 +66,9 @@ public class SohuMonitorListener implements MonitorListener {
     
     @Autowired
     private MQCloudConfigHelper mqCloudConfigHelper;
+
+    @Autowired
+    private ConsumerClientStatService consumerClientStatService;
     
 	@Override
 	public void beginRound() {
@@ -463,6 +460,31 @@ public class SohuMonitorListener implements MonitorListener {
             content.append("</table>");
             TopicExt topicExt = getUserEmail(tc.getTopic(), tc.getConsumer());
             alertService.sendWanMail(topicExt.getReceiver(), "客户端阻塞", content.toString());
+        }
+    }
+
+    /**
+     * 保存consumer-client信息
+     * @param consumerGroup
+     * @param cc
+     */
+    public void saveConsumerGroupClientInfo(String consumerGroup, ConsumerConnection cc) {
+        for (Connection c : cc.getConnectionSet()) {
+            String clientId = c.getClientId();
+            // 解析出ip
+            if (clientId.contains("@")) {
+                clientId = clientId.split("@")[0];
+                if (clientId.contains("-")) {
+                    String[] s = clientId.split("-");
+                    if (s.length > 1) {
+                        clientId = clientId.substring(s[0].length() + 1);
+                    }
+                }
+            } else {
+                log.warn("consumer clientId is not recognized, clientId:{}", clientId);
+            }
+            ConsumerClientStat consumerClientStat = new ConsumerClientStat(consumerGroup, clientId);
+            consumerClientStatService.save(consumerClientStat);
         }
     }
 

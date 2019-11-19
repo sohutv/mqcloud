@@ -91,4 +91,16 @@ public interface UserProducerDao {
      */
     @Select("select * from user_producer where tid = #{tid} and uid = #{uid} limit 1")
     public UserProducer selectByTidAndUid(@Param("uid") long uid, @Param("tid") long tid);
+
+    /**
+     * 根据uid和producer查询topicId
+     * @param uid
+     * @param producer
+     */
+    @Select("<script> " +
+            "select distinct tid from user_producer where 1=1 " +
+            "<if test=\"uid != 0\"> and uid = #{uid} </if> " +
+            "and producer = #{producer} " +
+            "</script>")
+    public List<Long> selectTidByProducerAndUid(@Param("uid") long uid, @Param("producer") String producer);
 }

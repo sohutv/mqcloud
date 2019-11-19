@@ -355,7 +355,8 @@ CREATE TABLE `producer_total_stat` (
   `exception` text COMMENT '异常记录',
   PRIMARY KEY (`id`),
   UNIQUE KEY `producer` (`producer`,`stat_time`,`client`),
-  KEY `create_date` (`create_date`,`producer`)
+  KEY `create_date` (`create_date`,`producer`),
+  KEY `client` (`client`,`create_date`,`create_time`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='生产者总体统计';
 
 -- ----------------------------
@@ -593,6 +594,17 @@ CREATE TABLE `broker` (
   `check_time` datetime COMMENT '检测时间',
   UNIQUE KEY `cid` (`cid`,`addr`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='broker表';
+
+-- ----------------------------
+-- Table structure for `consumer_client_stat`
+-- ----------------------------
+DROP TABLE IF EXISTS `consumer_client_stat`;
+CREATE TABLE `consumer_client_stat` (
+  `consumer` varchar(255) NOT NULL COMMENT 'consumer',
+  `client` varchar(20) NOT NULL COMMENT 'client',
+  `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  KEY `client` (`create_time`,`client`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='消费者客户端统计表';
 
 -- ----------------------------
 -- user init

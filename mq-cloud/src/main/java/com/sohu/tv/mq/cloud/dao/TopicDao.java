@@ -142,4 +142,12 @@ public interface TopicDao {
      */
     @Update("update topic set info=#{info} where id=#{tid}")
     public Integer updateTopicInfo(@Param("tid") long tid, @Param("info") String info);
+    
+    /**
+     * 重置count
+     * 
+     * @param day
+     */
+    @Update("update topic set count = 0 where count > 0 and update_time < DATE_SUB(CURDATE(),INTERVAL #{dayAgo} DAY)")
+    public Integer resetCount(@Param("dayAgo") int dayAgo);
 } 
