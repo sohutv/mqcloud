@@ -98,7 +98,7 @@
 			                    				<span style="cursor:pointer" class="glyphicon glyphicon-eye-close" data-toggle="tooltip" title="开启trace?" onclick="updateConsumerTraceShow(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', 0)"></span>
 			                    			</#if>
 		                    			<#else>
-		                    				<#if consumerProgressVO.consumer.traceEnabled()><span class="glyphicon glyphicon-eye-open"></span><#else><span class="glyphicon glyphicon-eye-open"></span></#if>
+		                    				<#if consumerProgressVO.consumer.traceEnabled()><span class="glyphicon glyphicon-eye-open"></span><#else><span class="glyphicon glyphicon-eye-close"></span></#if>
 		                    			</#if>
 	                    			<#else>
 	                    				<span class="glyphicon glyphicon-eye-close" data-toggle="tooltip" title="topic未开启trace"></span>

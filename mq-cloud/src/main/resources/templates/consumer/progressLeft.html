@@ -45,12 +45,12 @@
        		<#if topic.traceEnabled()>
 	       		<#if (consumerProgressVO.ownerList?? && consumerProgressVO.ownerList?seq_contains(userInfo.user)) || userInfo.user.type == 1>
 		   			<#if consumerProgressVO.consumer.traceEnabled()>
-		   				<a href="javascript:void();" class="glyphicon glyphicon-eye-open" data-toggle="tooltip" title="关闭trace?" onclick="updateConsumerTraceShow(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', 1)"></a>
+		   				<span style="cursor:pointer" class="glyphicon glyphicon-eye-open" data-toggle="tooltip" title="关闭trace?" onclick="updateConsumerTraceShow(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', 1)"></span>
 		   			<#else>
-		   				<a href="javascript:void();" class="glyphicon glyphicon-eye-close" data-toggle="tooltip" title="开启trace?" onclick="updateConsumerTraceShow(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', 0)"></a>
+		   				<span style="cursor:pointer" class="glyphicon glyphicon-eye-close" data-toggle="tooltip" title="开启trace?" onclick="updateConsumerTraceShow(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', 0)"></span>
 		   			</#if>
 		   		<#else>
-		   			<#if consumerProgressVO.consumer.traceEnabled()>已开启<#else>未开启</#if>
+		   			<#if consumerProgressVO.consumer.traceEnabled()><span class="glyphicon glyphicon-eye-open"></span><#else><span class="glyphicon glyphicon-eye-close"></span></#if>
 	   			</#if>
 	   		<#else>
   				<span class="glyphicon glyphicon-eye-close" data-toggle="tooltip" title="topic未开启trace"></span>

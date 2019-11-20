@@ -839,18 +839,19 @@ public class MessageService {
                     if (TraceType.SubBefore == traceContext.getTraceType()) { // 实际消费动作前
                         traceMessageDetail.setSuccess(null);
                         traceMessageDetail.setCostTime(null);
-                        traceViewVO.buildConsumer(traceMessageDetail, traceContext);
                     } else if (TraceType.SubAfter == traceContext.getTraceType()) { // 消费结束
                         traceMessageDetail.setTimeStamp(0);
-                        traceViewVO.buildConsumer(traceMessageDetail, traceContext);
                     }
+                    traceViewVO.buildConsumer(traceMessageDetail, traceContext);
                 }
             }
         }
         // 排序
         for(TraceViewVO traceViewVO : msgTraceViewMap.values()) {
             List<RequestViewVO> consumerRequestViewList = traceViewVO.getConsumerRequestViewList();
-            Collections.sort(consumerRequestViewList);
+            if(consumerRequestViewList != null) {
+                Collections.sort(consumerRequestViewList);
+            }
         }
         return msgTraceViewMap;
     }
