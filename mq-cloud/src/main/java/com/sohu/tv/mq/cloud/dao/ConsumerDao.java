@@ -107,4 +107,13 @@ public interface ConsumerDao {
      */
     @Update("update consumer set info=#{info} where id=#{id}")
     public Integer updateConsumerInfo(@Param("id") long id, @Param("info") String info);
+    
+    /**
+     * 更新trace
+     * 
+     * @param tid
+     * @param traceEnabled
+     */
+    @Update("update consumer set trace_enabled=#{traceEnabled} where id=#{id}")
+    public Integer updateConsumerTrace(@Param("id") long id, @Param("traceEnabled") int traceEnabled);
 }

@@ -137,8 +137,8 @@ public class ConsumerController extends ViewController {
         if(end > consumerList.size()) {
             end = consumerList.size();
         }
-        for (; begin < end; ++begin) {
-            Consumer consumer = consumerList.get(begin);
+        for (int i = begin; i < end; ++i) {
+            Consumer consumer = consumerList.get(i);
             cidList.add(consumer.getId());
             if(consumer.isClustering()) {
                 clusteringConsumerList.add(consumer);
@@ -163,7 +163,7 @@ public class ConsumerController extends ViewController {
         setResult(map, "topic", topic);
         if(consumerList.size() > begin + cidList.size()) {
             setResult(map, "hasMore", true);
-        }
+        } 
         FreemarkerUtil.set("long", Long.class, map);
         return view;
     }
@@ -721,6 +721,33 @@ public class ConsumerController extends ViewController {
         }
         Result<Integer> result = consumerService.updateConsumerInfo(cid, HtmlUtils.htmlEscape(info.trim(), "UTF-8"));
         logger.info(userInfo.getUser().getName() + " update consumer info , cid:{}, info:{}, status:{}", cid, info, result.isOK());
+        return Result.getWebResult(result);
+    }
+    
+    /**
+     * 更新trace
+     * 
+     * @return
+     * @throws Exception
+     */
+    @ResponseBody
+    @RequestMapping(value = "/update/trace", method = RequestMethod.POST)
+    public Result<?> updateConsumerTrace(UserInfo userInfo, @RequestParam("cid") int cid,
+            @RequestParam("traceEnabled") int traceEnabled) throws Exception {
+        if(!userInfo.getUser().isAdmin()) {
+            // 校验当前用户是否拥有权限
+            Result<List<UserConsumer>> ucListResult = userConsumerService.queryUserConsumer(userInfo.getUser().getId(),
+                    cid);
+            if (ucListResult.isEmpty()) {
+                return Result.getResult(Status.PERMISSION_DENIED_ERROR);
+            }
+        }
+        if (traceEnabled != 1 && traceEnabled != 0) {
+            return Result.getResult(Status.PARAM_ERROR);
+        }
+        Result<Integer> result = consumerService.updateConsumerTrace(cid, traceEnabled);
+        logger.info(userInfo.getUser().notBlankName() + " update consumer trace , cid:{}, traceEnabled:{}, status:{}", cid,
+                traceEnabled, result.isOK());
         return Result.getWebResult(result);
     }
     

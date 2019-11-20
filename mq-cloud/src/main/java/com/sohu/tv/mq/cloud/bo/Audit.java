@@ -161,6 +161,7 @@ public class Audit {
         DELETE_USERCONSUMER(11, "删除消费用户", "deleteUserConsumer"),
         RESEND_MESSAGE(12, "重发消息", "resendMessage"),
         RESET_RETRY_OFFSET(13, "跳过重试消息", "resetOffset"),
+        UPDATE_TOPIC_TRACE(14, "修改Topic追踪", "updateTopicTrace"),
         ;
 
         private Integer type;

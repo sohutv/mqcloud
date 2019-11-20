@@ -236,6 +236,21 @@ public class ConsumerService {
     }
     
     /**
+     * 更新consumer trace
+     * @return
+     */
+    public Result<Integer> updateConsumerTrace(long id, int traceEnabled) {
+        Integer result = null;
+        try {
+            result = consumerDao.updateConsumerTrace(id, traceEnabled);
+        } catch (Exception e) {
+            logger.error("updateConsumerTrace err, id:{}, traceEnabled:{}", id, traceEnabled, e);
+            return Result.getDBErrorResult(e);
+        }
+        return Result.getResult(result);
+    }
+    
+    /**
      * 抓取集群消费方式的消费者进度
      * @param topic
      * @param consumerList

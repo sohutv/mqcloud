@@ -65,7 +65,7 @@ public class UserConsumerDaoTest {
     @Test
     public void testSelectTidByUidAndConsumer() {
         long uid = 0L;
-        String consumer = "testConsumerGroup";
+        String consumer = "ugcVideoCountConsumerGroup";
         List<Long> result = userConsumerDao.selectTidByUidAndConsumer(uid, consumer);
         Assert.assertTrue(result.size() > 0);
     }

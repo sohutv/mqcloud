@@ -25,6 +25,7 @@ import com.sohu.tv.mq.cloud.bo.AuditResendMessageConsumer;
 import com.sohu.tv.mq.cloud.bo.AuditResetOffset;
 import com.sohu.tv.mq.cloud.bo.AuditTopic;
 import com.sohu.tv.mq.cloud.bo.AuditTopicDelete;
+import com.sohu.tv.mq.cloud.bo.AuditTopicTrace;
 import com.sohu.tv.mq.cloud.bo.AuditTopicUpdate;
 import com.sohu.tv.mq.cloud.bo.AuditUserConsumerDelete;
 import com.sohu.tv.mq.cloud.bo.AuditUserProducerDelete;
@@ -37,6 +38,7 @@ import com.sohu.tv.mq.cloud.dao.AuditConsumerDeleteDao;
 import com.sohu.tv.mq.cloud.dao.AuditDao;
 import com.sohu.tv.mq.cloud.dao.AuditResetOffsetDao;
 import com.sohu.tv.mq.cloud.dao.AuditTopicDeleteDao;
+import com.sohu.tv.mq.cloud.dao.AuditTopicTraceDao;
 import com.sohu.tv.mq.cloud.dao.AuditTopicUpdateDao;
 import com.sohu.tv.mq.cloud.dao.AuditUserConsumerDeleteDao;
 import com.sohu.tv.mq.cloud.dao.AuditUserProducerDeleteDao;
@@ -49,6 +51,7 @@ import com.sohu.tv.mq.cloud.web.vo.AuditConsumerVO;
 import com.sohu.tv.mq.cloud.web.vo.AuditResendMessageVO;
 import com.sohu.tv.mq.cloud.web.vo.AuditResetOffsetVO;
 import com.sohu.tv.mq.cloud.web.vo.AuditTopicDeleteVO;
+import com.sohu.tv.mq.cloud.web.vo.AuditTopicTraceVO;
 import com.sohu.tv.mq.cloud.web.vo.AuditTopicUpdateVO;
 import com.sohu.tv.mq.cloud.web.vo.AuditUserConsumerDeleteVO;
 import com.sohu.tv.mq.cloud.web.vo.AuditUserProducerDeleteVO;
@@ -134,6 +137,12 @@ public class AuditService {
 
     @Autowired
     private ConsumerService consumerService;
+    
+    @Autowired
+    private AuditTopicTraceDao auditTopicTraceDao;
+    
+    @Autowired
+    private AuditTopicTraceService auditTopicTraceService;
     
     /**
      * 查询列表
@@ -297,6 +306,30 @@ public class AuditService {
             logger.warn("duplicate key:{}", audit);
             TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
             return Result.getResult(Status.DB_DUPLICATE_KEY).setMessage("删除申请已存在");
+        } catch (Exception e) {
+            logger.error("insert err, audit:{}", audit, e);
+            TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+            return Result.getDBErrorResult(e);
+        }
+        return Result.getResult(audit);
+    }
+    
+    
+    /**
+     * 保存审核以及topic trace信息
+     * @param audit
+     * @param topicParam
+     * @return
+     */
+    @Transactional
+    public Result<?> saveAuditAndTopicTrace(Audit audit, long tid, int traceEnabled){
+        Long count = null;
+        try {
+            count = auditDao.insert(audit);
+            //如果保存成功，保存auditTopic
+            if(count != null && count > 0) {
+                auditTopicTraceDao.insert(audit.getId(), tid, traceEnabled);
+            }
         } catch (Exception e) {
             logger.error("insert err, audit:{}", audit, e);
             TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
@@ -548,6 +581,8 @@ public class AuditService {
                 return getDeleteUserConsumerResult(aid);
             case RESEND_MESSAGE:
                 return getResendMessageResult(aid);
+            case UPDATE_TOPIC_TRACE:
+                return getUpdateTopicTraceResult(aid);
         }
         return null;
     }
@@ -666,6 +701,31 @@ public class AuditService {
         BeanUtils.copyProperties(auditTopicUpdate, auditTopicUpdateVO);
         auditTopicUpdateVO.setTopic(topicResult.getResult());
         return Result.getResult(auditTopicUpdateVO);
+    }
+    
+    /**
+     * 获取 topic更新trace信息
+     * 
+     * @param aid
+     * @return Result
+     */
+    private Result<?> getUpdateTopicTraceResult(long aid) {
+        Result<AuditTopicTrace> auditTopicTraceResult = auditTopicTraceService.queryAuditTopicTrace(aid);
+        if (auditTopicTraceResult.isNotOK()) {
+            return auditTopicTraceResult;
+        }
+        AuditTopicTrace auditTopicTrace = auditTopicTraceResult.getResult();
+        // 查询topic记录
+        Result<Topic> topicResult = topicService.queryTopic(auditTopicTrace.getTid());
+        if (topicResult.isNotOK()) {
+            return topicResult;
+        }
+       
+        // 组装vo
+        AuditTopicTraceVO auditTopicTraceVO = new AuditTopicTraceVO();
+        BeanUtils.copyProperties(auditTopicTrace, auditTopicTraceVO);
+        auditTopicTraceVO.setTopic(topicResult.getResult());
+        return Result.getResult(auditTopicTraceVO);
     }
     
     /**

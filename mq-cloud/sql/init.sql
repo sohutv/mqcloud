@@ -168,6 +168,15 @@ CREATE TABLE `audit_resend_message_consumer` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='消息重发给消费者审核表';
 
 -- ----------------------------
+-- Table structure for `audit_topic_trace`
+-- ----------------------------
+CREATE TABLE `audit_topic_trace` (
+  `aid` int(11) NOT NULL COMMENT '审核id',
+  `tid` int(11) NOT NULL COMMENT 'topic id',
+  `trace_enabled` int(11) NOT NULL COMMENT '0:不开启trece,1:开启trace'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='审核topic trace相关表';
+
+-- ----------------------------
 -- Table structure for `broker_traffic`
 -- ----------------------------
 DROP TABLE IF EXISTS `broker_traffic`;

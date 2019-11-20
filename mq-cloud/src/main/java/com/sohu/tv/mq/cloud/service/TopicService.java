@@ -634,5 +634,69 @@ public class TopicService {
         }
         return Result.getResult(result);
     }
+    
+    /**
+     * 创建 trace topic
+     * 
+     * @param audit
+     * @param auditTopic
+     * @param traceClusterId
+     * @return
+     */
+    public Result<?> createTraceTopic(Audit audit, AuditTopic auditTopic, Integer traceClusterId) {
+        if (traceClusterId == null) {
+            return Result.getResult(Status.TRACE_CLUSTER_ID_IS_NULL);
+        }
+        // 获取集群
+        Cluster mqCluster = clusterService.getMQClusterById(traceClusterId);
+        if (mqCluster == null) {
+            return Result.getResult(Status.TRACE_CLUSTER_IS_NULL);
+        }
+        // 更改topic名称 例如mqcloud-test-topic转化成mqcloud-test-trace-topic
+        auditTopic.setName(CommonUtil.buildTraceTopic(auditTopic.getName()));
+        auditTopic.setProducer(CommonUtil.buildTraceTopicProducer(auditTopic.getName()));
+        auditTopic.setTraceEnabled(0);
+        // 创建topic
+        Result<?> createResult = createTopic(mqCluster, audit, auditTopic);
+        if (createResult.isNotOK()) {
+            logger.error("create trace topic err ! traceTopic:{}", auditTopic.getName());
+            return Result.getResult(Status.TRACE_TOPIC_CREATE_ERROR);
+        }
+        return Result.getOKResult();
+    }
+    
+    /**
+     * 更新topic
+     * @param mqCluster
+     * @param auditTopic
+     */
+    @Transactional
+    public Result<?> updateTopicTrace(Audit audit, Topic topic, int traceClusterId) {
+        try {
+            // 第一步：更新topic记录
+            Integer count = topicDao.updateTopicTrace(topic.getId(), topic.getTraceEnabled());
+            if(count == null || count != 1) {
+                return Result.getResult(Status.DB_ERROR);
+            }
+            if(topic.traceEnabled()) {
+                Result<Topic> topicResult = queryTopic(CommonUtil.buildTraceTopic(topic.getName()));
+                // trace topic已经存在，没必要创建
+                if(topicResult.isOK()) {
+                    return Result.getOKResult();
+                }
+                // 第二步：真实更新topic
+                AuditTopic auditTopic = new AuditTopic();
+                auditTopic.setName(topic.getName());
+                auditTopic.setQueueNum(8);
+                return createTraceTopic(audit, auditTopic, traceClusterId);
+            }
+        } catch (Exception e) {
+            logger.error("updateTopicTrace topic:{}", topic, e);
+            TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+            return Result.getWebErrorResult(e);
+        }
+        return Result.getOKResult();
+    }
+    
 }
 

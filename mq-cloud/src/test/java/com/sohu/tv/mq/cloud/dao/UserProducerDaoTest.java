@@ -53,7 +53,7 @@ public class UserProducerDaoTest {
     @Test
     public void testSelectTidByProducerAndUid() {
         long uid = 0L;
-        String producer = "test-producer-group";
+        String producer = "test-videoservice-message-group";
         List<Long> result = userProducerDao.selectTidByProducerAndUid(uid, producer);
         Assert.assertTrue(result.size() > 0);
     }

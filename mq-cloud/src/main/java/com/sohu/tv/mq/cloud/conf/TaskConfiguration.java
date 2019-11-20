@@ -6,6 +6,7 @@ import java.util.List;
 
 import javax.sql.DataSource;
 
+import com.sohu.tv.mq.cloud.task.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,15 +17,6 @@ import org.springframework.context.annotation.Profile;
 import com.sohu.tv.mq.cloud.bo.Cluster;
 import com.sohu.tv.mq.cloud.service.ClusterService;
 import com.sohu.tv.mq.cloud.service.NameServerService;
-import com.sohu.tv.mq.cloud.task.AlarmConfigTask;
-import com.sohu.tv.mq.cloud.task.ClusterMonitorTask;
-import com.sohu.tv.mq.cloud.task.ConsumeFailTask;
-import com.sohu.tv.mq.cloud.task.ConsumerStatsTask;
-import com.sohu.tv.mq.cloud.task.MonitorServiceTask;
-import com.sohu.tv.mq.cloud.task.ProducerStatsTask;
-import com.sohu.tv.mq.cloud.task.ServerStatusTask;
-import com.sohu.tv.mq.cloud.task.ServerWarningTask;
-import com.sohu.tv.mq.cloud.task.TrafficTask;
 import com.sohu.tv.mq.cloud.task.monitor.MonitorService;
 import com.sohu.tv.mq.cloud.task.monitor.SohuMonitorListener;
 
@@ -70,16 +62,16 @@ public class TaskConfiguration {
     
     @Bean
     @Profile({"online", "online-sohu"})
-    public ProducerStatsTask producerStatsTask() {
-        ProducerStatsTask producerStatsTask = new ProducerStatsTask();
-        return producerStatsTask;
-    }
-    
-    @Bean
-    @Profile({"online", "online-sohu"})
     public ConsumerStatsTask consumerStatsTask() {
         ConsumerStatsTask consumerStatsTask = new ConsumerStatsTask();
         return consumerStatsTask;
+    }
+
+    @Bean
+    @Profile({"online", "online-sohu"})
+    public ProducerStatsTask producerStatsTask() {
+        ProducerStatsTask producerStatsTask = new ProducerStatsTask();
+        return producerStatsTask;
     }
     
     @Bean

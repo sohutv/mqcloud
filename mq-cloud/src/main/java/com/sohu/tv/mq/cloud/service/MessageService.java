@@ -75,6 +75,7 @@ import com.sohu.tv.mq.cloud.util.Result;
 import com.sohu.tv.mq.cloud.util.Status;
 import com.sohu.tv.mq.cloud.web.controller.param.MessageParam;
 import com.sohu.tv.mq.cloud.web.vo.TraceViewVO;
+import com.sohu.tv.mq.cloud.web.vo.TraceViewVO.RequestViewVO;
 import com.sohu.tv.mq.serializable.DefaultMessageSerializer;
 import com.sohu.tv.mq.serializable.MessageSerializer;
 import com.sohu.tv.mq.serializable.MessageSerializerEnum;
@@ -802,7 +803,7 @@ public class MessageService {
             return null;
         }
         // 保存分组结果
-        Map<String, TraceViewVO> viewMap = new TreeMap<String, TraceViewVO>();
+        Map<String, TraceViewVO> msgTraceViewMap = new TreeMap<String, TraceViewVO>();
         // 解析消息
         for (DecodedMessage decodedMessage : decodedMessageList) {
             String message = decodedMessage.getDecodedBody();
@@ -814,10 +815,10 @@ public class MessageService {
                 if (!msgKey.equals(traceBean.getMsgId()) && !msgKey.equals(traceBean.getKeys())) {
                     continue;
                 }
-                TraceViewVO traceViewVO = viewMap.get(traceBean.getMsgId());
+                TraceViewVO traceViewVO = msgTraceViewMap.get(traceBean.getMsgId());
                 if (traceViewVO == null) {
                     traceViewVO = new TraceViewVO();
-                    viewMap.put(traceBean.getMsgId(), traceViewVO);
+                    msgTraceViewMap.put(traceBean.getMsgId(), traceViewVO);
                 }
                 // 构建消息详情
                 TraceMessageDetail traceMessageDetail = new TraceMessageDetail();
@@ -827,8 +828,7 @@ public class MessageService {
                 traceMessageDetail.setClientHost(decodedMessage.getBornHostString());
                 // 发送消息部分
                 if (TraceType.Pub == traceContext.getTraceType()) {
-                    traceViewVO.buildProducer(decodedMessage.getBornHostString(), traceContext.isSuccess(),
-                            traceContext.getTimeStamp(), traceMessageDetail, traceContext.getGroupName(), traceContext.getCostTime());
+                    traceViewVO.buildProducer(traceMessageDetail, traceContext);
                 } else { // 消费消息部分
                     // 不显示空字符串
                     if (traceMessageDetail.getTopic().isEmpty()) {
@@ -839,16 +839,19 @@ public class MessageService {
                     if (TraceType.SubBefore == traceContext.getTraceType()) { // 实际消费动作前
                         traceMessageDetail.setSuccess(null);
                         traceMessageDetail.setCostTime(null);
-                        traceViewVO.buildConsumer(decodedMessage.getBornHostString(), null, traceContext.getTimeStamp(),
-                                traceMessageDetail, traceContext.getRequestId(), traceContext.getGroupName(), null);
+                        traceViewVO.buildConsumer(traceMessageDetail, traceContext);
                     } else if (TraceType.SubAfter == traceContext.getTraceType()) { // 消费结束
                         traceMessageDetail.setTimeStamp(0);
-                        traceViewVO.buildConsumer(decodedMessage.getBornHostString(), traceContext.isSuccess(), 0L,
-                                traceMessageDetail, traceContext.getRequestId(), traceContext.getGroupName(), traceContext.getCostTime());
+                        traceViewVO.buildConsumer(traceMessageDetail, traceContext);
                     }
                 }
             }
         }
-        return viewMap;
+        // 排序
+        for(TraceViewVO traceViewVO : msgTraceViewMap.values()) {
+            List<RequestViewVO> consumerRequestViewList = traceViewVO.getConsumerRequestViewList();
+            Collections.sort(consumerRequestViewList);
+        }
+        return msgTraceViewMap;
     }
 }

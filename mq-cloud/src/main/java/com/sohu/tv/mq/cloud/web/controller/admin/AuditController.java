@@ -29,6 +29,7 @@ import com.sohu.tv.mq.cloud.bo.AuditResendMessage;
 import com.sohu.tv.mq.cloud.bo.AuditResetOffset;
 import com.sohu.tv.mq.cloud.bo.AuditTopic;
 import com.sohu.tv.mq.cloud.bo.AuditTopicDelete;
+import com.sohu.tv.mq.cloud.bo.AuditTopicTrace;
 import com.sohu.tv.mq.cloud.bo.AuditTopicUpdate;
 import com.sohu.tv.mq.cloud.bo.AuditUserConsumerDelete;
 import com.sohu.tv.mq.cloud.bo.AuditUserProducerDelete;
@@ -50,6 +51,7 @@ import com.sohu.tv.mq.cloud.service.AuditResetOffsetService;
 import com.sohu.tv.mq.cloud.service.AuditService;
 import com.sohu.tv.mq.cloud.service.AuditTopicDeleteService;
 import com.sohu.tv.mq.cloud.service.AuditTopicService;
+import com.sohu.tv.mq.cloud.service.AuditTopicTraceService;
 import com.sohu.tv.mq.cloud.service.AuditTopicUpdateService;
 import com.sohu.tv.mq.cloud.service.AuditUserConsumerDeleteService;
 import com.sohu.tv.mq.cloud.service.AuditUserProducerDeleteService;
@@ -67,7 +69,6 @@ import com.sohu.tv.mq.cloud.util.Status;
 import com.sohu.tv.mq.cloud.web.vo.AuditVO;
 import com.sohu.tv.mq.cloud.web.vo.ConnectionVO;
 import com.sohu.tv.mq.cloud.web.vo.UserInfo;
-import com.sohu.tv.mq.util.CommonUtil;
 
 /**
  * 审核
@@ -142,6 +143,9 @@ public class AuditController extends AdminViewController {
     
     @Autowired
     private MessageResetService messageResetService;
+    
+    @Autowired
+    private AuditTopicTraceService auditTopicTraceService;
 
     /**
      * 审核主列表
@@ -206,7 +210,7 @@ public class AuditController extends AdminViewController {
             @RequestParam(value = "aid") long aid, Map<String, Object> map) {
         TypeEnum typeEnum = TypeEnum.getEnumByType(type);
         // 创建topic需要集群信息
-        if(TypeEnum.NEW_TOPIC == typeEnum) {
+        if(TypeEnum.NEW_TOPIC == typeEnum || TypeEnum.UPDATE_TOPIC_TRACE == typeEnum) {
             setResult(map, "clusters", clusterService.getAllMQCluster());
         }
         Result<?> result = auditService.detail(typeEnum, aid);
@@ -293,6 +297,9 @@ public class AuditController extends AdminViewController {
                 case RESEND_MESSAGE:
                     msg = null;
                     break;
+                case UPDATE_TOPIC_TRACE:
+                    msg = getUpdateTopicTraceMessage(aid);
+                    break;
             }
             StringBuilder sb = new StringBuilder("您");
             if(audit.getCreateTime() != null) {
@@ -364,6 +371,25 @@ public class AuditController extends AdminViewController {
         AuditTopicUpdate auditTopicUpdate = auditTopicUpdateResult.getResult();
         // 查询topic记录
         Result<Topic> topicResult = topicService.queryTopic(auditTopicUpdate.getTid());
+        if (topicResult.isNotOK()) {
+            return null;
+        }
+        return topicResult.getResult().getName();
+    }
+    
+    /**
+     * 获取提示消息
+     * @param aid
+     * @return
+     */
+    public String getUpdateTopicTraceMessage(long aid) {
+        Result<AuditTopicTrace> auditTopicTraceResult = auditTopicTraceService.queryAuditTopicTrace(aid);
+        if (auditTopicTraceResult.isNotOK()) {
+            return null;
+        }
+        AuditTopicTrace auditTopicTrace = auditTopicTraceResult.getResult();
+        // 查询topic记录
+        Result<Topic> topicResult = topicService.queryTopic(auditTopicTrace.getTid());
         if (topicResult.isNotOK()) {
             return null;
         }
@@ -557,7 +583,7 @@ public class AuditController extends AdminViewController {
         if (updateOK) {
             // 将trace topic的创建置后，不影响主流程，出错后需要手动创建
             if (auditTopic.traceEnabled()) {
-                Result<?> traceTopicResult = createTraceTopic(audit, auditTopic, traceClusterId);
+                Result<?> traceTopicResult = topicService.createTraceTopic(audit, auditTopic, traceClusterId);
                 if (traceTopicResult.isNotOK()) {
                     return Result.getResult(Status.TOPIC_CREATE_OK_BUT_TRACE_TOPIC_CREATE_ERROR);
                 }
@@ -1186,36 +1212,6 @@ public class AuditController extends AdminViewController {
     }
 
     /**
-     * 创建 trace topic
-     * 
-     * @param audit
-     * @param auditTopic
-     * @param traceClusterId
-     * @return
-     */
-    public Result<?> createTraceTopic(Audit audit, AuditTopic auditTopic, Integer traceClusterId) {
-        if (traceClusterId == null) {
-            return Result.getResult(Status.TRACE_CLUSTER_ID_IS_NULL);
-        }
-        // 获取集群
-        Cluster mqCluster = clusterService.getMQClusterById(traceClusterId);
-        if (mqCluster == null) {
-            return Result.getResult(Status.TRACE_CLUSTER_IS_NULL);
-        }
-        // 更改topic名称 例如mqcloud-test-topic转化成mqcloud-test-trace-topic
-        auditTopic.setName(CommonUtil.buildTraceTopic(auditTopic.getName()));
-        auditTopic.setProducer(CommonUtil.buildTraceTopicProducer(auditTopic.getName()));
-        auditTopic.setTraceEnabled(0);
-        // 创建topic
-        Result<?> createResult = topicService.createTopic(mqCluster, audit, auditTopic);
-        if (createResult.isNotOK()) {
-            logger.error("create trace topic err ! traceTopic:{}", auditTopic.getName());
-            return Result.getResult(Status.TRACE_TOPIC_CREATE_ERROR);
-        }
-        return Result.getOKResult();
-    }
-    
-    /**
      * 为用户发送审核结果
      * 
      * @param uid
@@ -1240,6 +1236,61 @@ public class AuditController extends AdminViewController {
         if (!alertService.sendMail("MQCloud:审核结果", content, email)) {
             logger.warn("send audit result fail!  email:{}, content:{}", email, content);
         }
+    }
+    
+    /**
+     * 更新topic Trace
+     * 
+     * @param aid
+     * @param map
+     * @return
+     */
+    @ResponseBody
+    @RequestMapping(value = "/topic/update/trace", method = RequestMethod.POST)
+    public Result<?> updateTopicTrace(UserInfo userInfo,
+            @RequestParam("aid") long aid,
+            @RequestParam("traceClusterId") int traceClusterId) {
+        // 获取audit
+        Result<Audit> auditResult = auditService.queryAudit(aid);
+        if (auditResult.isNotOK()) {
+            return auditResult;
+        }
+        // 校验状态是否合法
+        Audit audit = auditResult.getResult();
+        if (StatusEnum.INIT.getStatus() != audit.getStatus()) {
+            return Result.getResult(Status.PARAM_ERROR);
+        }
+        
+        // 查询 topic更新审核记录
+        Result<AuditTopicTrace> auditTopicTraceResult = auditTopicTraceService.queryAuditTopicTrace(aid);
+        if (auditTopicTraceResult.isNotOK()) {
+            return auditTopicTraceResult;
+        }
+        AuditTopicTrace auditTopicTrace = auditTopicTraceResult.getResult();
+        // 查询topic记录
+        Result<Topic> topicResult = topicService.queryTopic(auditTopicTrace.getTid());
+        if (topicResult.isNotOK()) {
+            return topicResult;
+        }
+        // 构造更新用的topic
+        Topic topic = topicResult.getResult();
+        // 校验是否需要修改
+        if (topic.getTraceEnabled() == auditTopicTrace.getTraceEnabled()) {
+            return Result.getResult(Status.NO_NEED_MODIFY_ERROR);
+        }
+        topic.setTraceEnabled(auditTopicTrace.getTraceEnabled());
+        // 更新topic
+        Result<?> updateResult = topicService.updateTopicTrace(audit, topic, traceClusterId);
+        if (updateResult.isNotOK()) {
+            return updateResult;
+        }
+
+        // 更新申请状态
+        boolean updateOK = agreeAndTip(audit, userInfo.getUser().getEmail(), topicResult.getResult().getName());
+        if (updateOK) {
+            return Result.getOKResult();
+        }
+        return Result.getResult(Status.DB_UPDATE_ERR_DELETE_TOPIC_UPDATE_OK);
     }
 
     @Override

@@ -20,3 +20,10 @@ CREATE TABLE `consumer_client_stat` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='消费者客户端统计表';
 
 ALTER TABLE producer_total_stat ADD INDEX client(client, create_date, create_time);
+
+
+CREATE TABLE `audit_topic_trace` (
+  `aid` int(11) NOT NULL COMMENT '审核id',
+  `tid` int(11) NOT NULL COMMENT 'topic id',
+  `trace_enabled` int(11) NOT NULL COMMENT '0:不开启trece,1:开启trace'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='审核topic trace相关表';

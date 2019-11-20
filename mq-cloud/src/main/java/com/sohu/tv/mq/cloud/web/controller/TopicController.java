@@ -13,8 +13,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
 
-import com.sohu.tv.mq.cloud.service.*;
-import com.sohu.tv.mq.cloud.web.vo.IpSearchResultVO;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.rocketmq.common.MQVersion;
 import org.apache.rocketmq.common.admin.TopicOffset;
@@ -39,16 +37,29 @@ import com.sohu.tv.mq.cloud.bo.AuditAssociateProducer;
 import com.sohu.tv.mq.cloud.bo.AuditTopic;
 import com.sohu.tv.mq.cloud.bo.AuditTopicUpdate;
 import com.sohu.tv.mq.cloud.bo.Cluster;
+import com.sohu.tv.mq.cloud.bo.Consumer;
 import com.sohu.tv.mq.cloud.bo.Topic;
 import com.sohu.tv.mq.cloud.bo.User;
 import com.sohu.tv.mq.cloud.bo.UserConsumer;
 import com.sohu.tv.mq.cloud.bo.UserProducer;
 import com.sohu.tv.mq.cloud.common.util.WebUtil;
+import com.sohu.tv.mq.cloud.service.AlertService;
+import com.sohu.tv.mq.cloud.service.AuditService;
+import com.sohu.tv.mq.cloud.service.ClusterService;
+import com.sohu.tv.mq.cloud.service.ConsumerClientStatService;
+import com.sohu.tv.mq.cloud.service.ConsumerService;
+import com.sohu.tv.mq.cloud.service.ProducerTotalStatService;
+import com.sohu.tv.mq.cloud.service.TopicService;
+import com.sohu.tv.mq.cloud.service.UserConsumerService;
+import com.sohu.tv.mq.cloud.service.UserProducerService;
+import com.sohu.tv.mq.cloud.service.UserService;
+import com.sohu.tv.mq.cloud.service.VerifyDataService;
 import com.sohu.tv.mq.cloud.util.FreemarkerUtil;
 import com.sohu.tv.mq.cloud.util.Result;
 import com.sohu.tv.mq.cloud.util.Status;
 import com.sohu.tv.mq.cloud.web.controller.param.AssociateProducerParam;
 import com.sohu.tv.mq.cloud.web.controller.param.TopicParam;
+import com.sohu.tv.mq.cloud.web.vo.IpSearchResultVO;
 import com.sohu.tv.mq.cloud.web.vo.UserInfo;
 /**
  * topic接口
@@ -330,6 +341,62 @@ public class TopicController extends ViewController {
         return Result.getWebResult(result);
     }
     
+    /**
+     * 更新topic trace
+     * 
+     * @return
+     * @throws Exception
+     */
+    @ResponseBody
+    @RequestMapping(value = "/update/trace/{tid}", method = RequestMethod.POST)
+    public Result<?> updateTrace(UserInfo userInfo, @PathVariable long tid,
+            @RequestParam("traceEnabled") int traceEnabled) throws Exception {
+        // 校验当前用户是否拥有权限
+        Result<UserProducer> userProducerResult = userProducerService.findUserProducer(userInfo.getUser().getId(), tid);
+        if (userProducerResult.isNotOK() && !userInfo.getUser().isAdmin()) {
+            return Result.getResult(Status.PERMISSION_DENIED_ERROR);
+        }
+        // 校验topic是否存在
+        Result<Topic> topicResult = topicService.queryTopic(tid);
+        if (topicResult.isNotOK()) {
+            return Result.getWebResult(topicResult);
+        }
+        Topic topic = topicResult.getResult();
+        // 校验是否需要修改
+        if (topic.getTraceEnabled() == traceEnabled) {
+            return Result.getResult(Status.NO_NEED_MODIFY_ERROR);
+        }
+        
+        // 校验消费者是否还开启trace了
+        Result<List<Consumer>> consumerList = consumerService.queryByTid(tid);
+        if(consumerList.isNotEmpty()) {
+            for(Consumer consumer : consumerList.getResult()) {
+                if(consumer.traceEnabled()) {
+                    return Result.getResult(Status.CONSUMER_TRACE_OPEN);
+                }
+            }
+        }
+
+        // 构造审核记录
+        Audit audit = new Audit();
+        audit.setType(TypeEnum.UPDATE_TOPIC_TRACE.getType());
+        audit.setUid(userInfo.getUser().getId());
+        // 保存记录
+        Result<?> result = auditService.saveAuditAndTopicTrace(audit, tid, traceEnabled);
+        if (result.isOK()) {
+            String traceTip = "当前状态:" + getTraceTip(topic.getTraceEnabled()) + ",修改为:" + getTraceTip(traceEnabled);
+            alertService.sendAuditMail(userInfo.getUser(), TypeEnum.UPDATE_TOPIC_TRACE, traceTip);
+        }
+        return Result.getWebResult(result);
+    }
+    
+    private String getTraceTip(int traceEnabled) {
+        if(traceEnabled == 1) {
+            return "开启";
+        }
+        return "关闭";
+    }
+
     /**
      * 诊断链接
      * @return

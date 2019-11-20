@@ -54,7 +54,7 @@ public class ProducerTotalStatDaoTest {
 
     @Test
     public void testSelectProducerList() {
-        String client = "10.11.12.13";
+        String client = "127.0.0.1";
         int createDate = 20191106;
         String createTime = "1933";
         List<String> list = producerTotalStatDao.selectProducerList(client, createDate, createTime);

@@ -82,9 +82,17 @@
 		                    	<#else>
 		                    		<td>0</td>
 								</#if>
-								<td>
-									${topicTrafficVO.info!}
-								</td>
+								<#if topicTrafficVO.own>
+									<td class="edit-text">
+										<#if topicTrafficVO.info?? && topicTrafficVO.info !=''> 
+											<span style="cursor:pointer" data-toggle="tooltip" title="修改用途" onclick="updateTopicInfoShow(${topicTrafficVO.id}, '${topicTrafficVO.name}', '${topicTrafficVO.info}')">${topicTrafficVO.info!}</span>
+				           				<#else>
+			            					<button type="submit" class="btn btn-success btn-sm" onclick="updateTopicInfoShow(${topicTrafficVO.id}, '${topicTrafficVO.name}', '${topicTrafficVO.info!}')" >添加</button>
+				           				</#if>
+									</td>
+								<#else>
+									<td>${topicTrafficVO.info!}</td>
+								</#if>
 								<td>
 									<#if topicTrafficVO.own>
 										<button type="button" class="btn btn-warning" data-target="#deleteTopicModal${topicTrafficVO_index}" data-toggle="modal"><span class="glyphicon glyphicon-trash" aria-hidden="true"></span></button>
@@ -504,6 +512,39 @@
 		</div>
 	</div>
 </div> <!-- 历史消息结束 -->
+
+<#--修改topic描述-->
+<div id="updateTopicInfoModal" class="modal fade" tabindex="-1" data-width="400">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+				<h4 class="modal-title"><b id="topicName"></b>描述更新</h4>
+			</div>
+			<form class="form-horizontal form-bordered form-row-stripped" id="addUserProducerModalForm">
+				<div class="modal-body">
+					<div class="row">
+						<div class="col-md-12">
+							<div class="form-body">
+								<div class="form-group">
+									<label class="control-label col-md-3"> 用途: </label>
+									<div class="col-md-8">
+										<input type="hidden" id="topicId">
+										<textarea id="topicInfo" rows="5" class="form-control"></textarea>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" data-dismiss="modal" class="btn" >取消</button>
+					<button type="button" class="btn btn-primary" id="updateTopicInfoBtn" onclick="updateTopicInfo()">确定</button>
+				</div>
+			</form>
+		</div>
+	</div>
+</div> 
 
 <script type="text/javascript">
 	/**
@@ -1028,4 +1069,32 @@ function showExtendConfig(obj){
 	}
 	timeChange('time');
 
+	function updateTopicInfoShow(tid, topicName, info){
+		$("#topicId").val(tid);
+		$("#topicName").html(topicName);
+		$("#topicInfo").val(info);
+		$('#updateTopicInfoModal').modal('show');
+	}
+	
+	function updateTopicInfo(){
+		if(!$("#topicInfo").val()){
+			alert("请输入用途");
+			return;
+		}
+		disable("updateTopicInfoBtn");
+		$.post('${request.contextPath}/topic/update/info',
+				{
+					info: $("#topicInfo").val(),
+					tid: $("#topicId").val()
+				},
+		        function(data){
+		            if(data.status == 200){
+		            	toastr.success("操作成功！即将刷新页面！");  	            	
+		            	reload(2000);            	
+				    }else{
+				    	toastr.error("操作失败！"+data.message);  
+				    	enable("updateTopicInfoBtn");
+				    }
+		    }, 'json');
+	}
 </script>

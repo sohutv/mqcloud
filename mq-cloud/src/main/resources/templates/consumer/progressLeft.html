@@ -41,6 +41,21 @@
         <td>集群</td>
         <td>${consumerProgressVO.diff}</td>
         <td>${consumerProgressVO.consumeTpsFormat}</td>
+       	<td>
+       		<#if topic.traceEnabled()>
+	       		<#if (consumerProgressVO.ownerList?? && consumerProgressVO.ownerList?seq_contains(userInfo.user)) || userInfo.user.type == 1>
+		   			<#if consumerProgressVO.consumer.traceEnabled()>
+		   				<a href="javascript:void();" class="glyphicon glyphicon-eye-open" data-toggle="tooltip" title="关闭trace?" onclick="updateConsumerTraceShow(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', 1)"></a>
+		   			<#else>
+		   				<a href="javascript:void();" class="glyphicon glyphicon-eye-close" data-toggle="tooltip" title="开启trace?" onclick="updateConsumerTraceShow(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', 0)"></a>
+		   			</#if>
+		   		<#else>
+		   			<#if consumerProgressVO.consumer.traceEnabled()>已开启<#else>未开启</#if>
+	   			</#if>
+	   		<#else>
+  				<span class="glyphicon glyphicon-eye-close" data-toggle="tooltip" title="topic未开启trace"></span>
+  			</#if>
+   		</td>
         <#if consumerProgressVO.minLastTimestamp == 0>
             <td>暂无</td>
         <#else>
@@ -371,6 +386,7 @@
         <td>广播</td>
         <td>${consumerProgressVO.diff}</td>
         <td>${consumerProgressVO.consumeTpsFormat}</td>
+        <td><span class="glyphicon glyphicon-eye-close" data-toggle="tooltip" title="广播模式不支持trace"></span></td>
         <#if consumerProgressVO.minLastTimestamp == 0>
             <td>暂无</td>
         <#else>

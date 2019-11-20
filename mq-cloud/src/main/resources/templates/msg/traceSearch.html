@@ -4,30 +4,50 @@
 			<#list response.result?values as trace>
 				<tr>
 					<td>${trace_index + 1}</td>
-					<#if trace.producer??>
-						<td data-toggle="tooltip" title="生产者ip:${trace.producer.addr}">${trace.producer.group}</td>
-						<td>${trace.producer.time}</td>
-						<td>${trace.producer.status()}</td>
-						<td>${trace.producer.costTimes()}</td>
+					<#if trace.producerRequestView??>
+						<td data-toggle="tooltip" title="生产者ip:${trace.producerRequestView.addr}">${trace.producerRequestView.group}</td>
+						<td>${trace.producerRequestView.time}</td>
+						<td>
+							<#if trace.producerRequestView.success??>
+								<#if trace.producerRequestView.success>
+									<span style="color:green;">成功</span>
+								<#else>
+									<span style="color:red;">失败</span>
+								</#if>
+							<#else>
+								未知
+							</#if>
+						</td>
+						<td>${trace.producerRequestView.costTimes()}</td>
 					<#else>
 						<td class="text-center" colspan=4 data-toggle="tooltip" title="1.确定客户端开启了trace。2.试着调大时间范围。">暂无</td>
 					 </#if>
-					<#if trace.consumer??>
-					<td style="padding:0px" colspan=4>
-						<table style="width:100%">
-							<#list trace.consumer?values as traceConsumer>
-								<tr>
-							 		<td style="width:210px" data-toggle="tooltip" title="消费者ip:${traceConsumer.addr}">${traceConsumer.group}</td>
-									<td style="width:185px">${traceConsumer.time}</td>
-									<td style="width:55px" <#if traceConsumer.status() == "未知">data-toggle="tooltip" title="有可能还未收到客户端上报状态，试着调整结束时间" </#if>>${traceConsumer.status()}</td>
-							 		<td style="width:70px">${traceConsumer.costTimes()}</td>
-							 	</tr>
-							</#list>
-						</table>
-					  </td>
-					 <#else>
-							<td colspan=4 data-toggle="tooltip" title="该消息有可能未被消费，试着调整结束时间">暂无</td>
-					 </#if>
+					<#if trace.consumerRequestViewList??>
+						<td style="padding:0px" colspan=4>
+							<table style="width:100%">
+								<#list trace.consumerRequestViewList as traceConsumer>
+									<tr>
+								 		<td style="width:210px" data-toggle="tooltip" title="消费者ip:${traceConsumer.addr}">${traceConsumer.group}</td>
+										<td style="width:185px">${traceConsumer.time}</td>
+										<td style="width:55px" <#if !traceConsumer.success??>data-toggle="tooltip" title="有可能还未收到客户端上报状态，试着调整结束时间"</#if>>
+											<#if traceConsumer.success??>
+												<#if traceConsumer.success>
+													<span style="color:green;">成功</span>
+												<#else>
+													<span style="color:red;">失败</span>
+												</#if>
+											<#else>
+												未知
+											</#if>
+										</td>
+								 		<td style="width:70px">${traceConsumer.costTimes()}</td>
+								 	</tr>
+								</#list>
+							</table>
+						</td>
+					<#else>
+						<td colspan=4 data-toggle="tooltip" title="该消息有可能未被消费，试着调整结束时间">暂无</td>
+					</#if>
 					<td><span class="glyphicon glyphicon-eye-open" style="cursor:pointer;" onclick="showTraceDetail(${trace_index})" data-toggle="tooltip" title="查看详细信息"></span>
 					<div id="traceDetailModel${trace_index}" class="modal fade" tabindex="-1" data-width="400"  aria-hidden="true">
 						<div class="modal-dialog" style="width:1000px;text-align:left">
@@ -36,8 +56,6 @@
 									<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
 									<h4 class="modal-title">Trace详情</h4>
 								</div>
-								<div class="modal-body">
-								<p><b>注意：</b> 消费成功的时间 = 消费开始的是时间 + 耗时(costTime)</p>
 									<table class="table table-striped table-hover" style="margin-top: 0px">
 										<thead>
 											<colgroup>
@@ -51,12 +69,12 @@
 										</thead>
 										<tbody>
 											<tr>
-											<#if trace.producer??>
+											<#if trace.producerRequestView??>
 												<td id="jsonviewProducer${trace_index + 1}"></td>
 											<#else>
 												<td class="text-center">暂无生产信息</td>
 											 </#if>
-											 <#if trace.consumer??>
+											 <#if trace.consumerRequestViewList??>
 												<td id="jsonviewConsumer${trace_index + 1}"></td>
 											<#else>
 												<td class="text-center">暂无消费信息</td>
@@ -64,15 +82,14 @@
 											</tr>
 										</tbody>
 										<script>
-											<#if trace.producer??>
+											<#if trace.producerRequestView??>
 												$("#jsonviewProducer" + ${trace_index + 1}).JSONView(${trace.producerToJsonString()});
 											</#if>
-											<#if trace.consumer??>
+											<#if trace.consumerRequestViewList??>
 												$("#jsonviewConsumer" + ${trace_index + 1}).JSONView(${trace.consumerToJsonString()});
 											</#if>
 										</script>
 									</table>
-								</div>
 							</div>
 						</div>
 					</div>
