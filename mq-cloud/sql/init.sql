@@ -160,6 +160,23 @@ CREATE TABLE `audit_resend_message` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='消息重发审核表';
 
 -- ----------------------------
+-- Table structure for `audit_resend_message_consumer`
+-- ----------------------------
+CREATE TABLE `audit_resend_message_consumer` (
+  `aid` int(11) NOT NULL COMMENT '审核id',
+  `consumer_id` int(11) NOT NULL COMMENT 'consumer id'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='消息重发给消费者审核表';
+
+-- ----------------------------
+-- Table structure for `audit_topic_trace`
+-- ----------------------------
+CREATE TABLE `audit_topic_trace` (
+  `aid` int(11) NOT NULL COMMENT '审核id',
+  `tid` int(11) NOT NULL COMMENT 'topic id',
+  `trace_enabled` int(11) NOT NULL COMMENT '0:不开启trece,1:开启trace'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='审核topic trace相关表';
+
+-- ----------------------------
 -- Table structure for `broker_traffic`
 -- ----------------------------
 DROP TABLE IF EXISTS `broker_traffic`;
@@ -344,9 +361,11 @@ CREATE TABLE `producer_total_stat` (
   `create_date` int(11) NOT NULL COMMENT '创建日期',
   `create_time` char(4) NOT NULL COMMENT '创建分钟,格式:HHMM',
   `stat_time` int(11) NOT NULL COMMENT '统计时间',
+  `exception` text COMMENT '异常记录',
   PRIMARY KEY (`id`),
   UNIQUE KEY `producer` (`producer`,`stat_time`,`client`),
-  KEY `create_date` (`create_date`,`producer`)
+  KEY `create_date` (`create_date`,`producer`),
+  KEY `client` (`client`,`create_date`,`create_time`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='生产者总体统计';
 
 -- ----------------------------
@@ -561,6 +580,16 @@ CREATE TABLE `server_warn_config` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='服务器预警配置表';
 
 -- ----------------------------
+-- Table structure for `message_reset`
+-- ----------------------------
+CREATE TABLE `message_reset` (
+  `consumer` varchar(64) NOT NULL COMMENT 'consumer名',
+  `reset_to` bigint(20) NOT NULL COMMENT '重置至时间戳，小于此时间的都将不再消息',
+  `update_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  UNIQUE KEY `consumer` (`consumer`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='消息重置表';
+
+-- ----------------------------
 -- Table structure for `broker`
 -- ----------------------------
 DROP TABLE IF EXISTS `broker`;
@@ -574,6 +603,17 @@ CREATE TABLE `broker` (
   `check_time` datetime COMMENT '检测时间',
   UNIQUE KEY `cid` (`cid`,`addr`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='broker表';
+
+-- ----------------------------
+-- Table structure for `consumer_client_stat`
+-- ----------------------------
+DROP TABLE IF EXISTS `consumer_client_stat`;
+CREATE TABLE `consumer_client_stat` (
+  `consumer` varchar(255) NOT NULL COMMENT 'consumer',
+  `client` varchar(20) NOT NULL COMMENT 'client',
+  `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  KEY `client` (`create_time`,`client`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='消费者客户端统计表';
 
 -- ----------------------------
 -- user init

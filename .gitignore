@@ -17,6 +17,10 @@ pom.xml.versionsBackup
 .metadata
 .cache
 
+# ignore idea files
+.idea
+*.iml
+
 !**/msg-type/*.class
 
 # ignore sohu module

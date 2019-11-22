@@ -33,7 +33,7 @@ public class Topic {
     private Date updateTime;
     
     // 冗余字段
-    private String clusterName;
+    private Cluster cluster;
     
     // 消息发送量
     private long count;
@@ -114,12 +114,12 @@ public class Topic {
         this.count = count;
     }
 
-    public String getClusterName() {
-        return clusterName;
+    public Cluster getCluster() {
+        return cluster;
     }
 
-    public void setClusterName(String clusterName) {
-        this.clusterName = clusterName;
+    public void setCluster(Cluster cluster) {
+        this.cluster = cluster;
     }
 
     public boolean traceEnabled() {

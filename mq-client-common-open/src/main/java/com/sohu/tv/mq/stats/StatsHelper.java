@@ -23,6 +23,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.alibaba.fastjson.JSON;
+import com.sohu.tv.mq.stats.InvokeStats.ExceptionStats;
 import com.sohu.tv.mq.stats.InvokeStats.InvokeStatsResult;
 import com.sohu.tv.mq.stats.InvokeStats.TimeAndExceptionStats;
 import com.sohu.tv.mq.stats.dto.ClientStats;
@@ -49,6 +50,9 @@ public class StatsHelper implements StatsHelperMBean {
 
     // mqcloud的域名
     private String mqCloudDomain;
+    
+    // 异常统计助手
+    private ExceptionStatsHelper exceptionStatsHelper;
 
     /**
      * 初始化
@@ -61,6 +65,8 @@ public class StatsHelper implements StatsHelperMBean {
         // 初始化上报
         statsReporter = new StatsReporter(this);
         statsReporter.init();
+        // 异常统计助手
+        exceptionStatsHelper = new ExceptionStatsHelper(2);
     }
 
     /**
@@ -96,6 +102,14 @@ public class StatsHelper implements StatsHelperMBean {
         }
         // 统计时间段
         timeSectionStats.increment(timeInMillis);
+    }
+    
+    /**
+     * 记录异常
+     * @param exception
+     */
+    public void recordException(Throwable exception) {
+        exceptionStatsHelper.record(exception);
     }
 
     /**
@@ -185,6 +199,12 @@ public class StatsHelper implements StatsHelperMBean {
             clientStats.setPercent99(statsHelper.timeSectionStats.percentile(0.99));
             clientStats.setPercent90(statsHelper.timeSectionStats.percentile(0.9));
             clientStats.setCounts(statsHelper.timeSectionStats.getTotalCount());
+            
+            // 统计异常
+            Map<String, Object> exceptionMap = statsHelper.exceptionStatsHelper.report();
+            if(exceptionMap.size() > 0) {
+                clientStats.setExceptionMap(exceptionMap);
+            }
 
             // 发送结果
             String stats = JSON.toJSONString(clientStats);
@@ -362,5 +382,47 @@ public class StatsHelper implements StatsHelperMBean {
             invokeMap.put(entry.getKey(), invokeStatsMap);
         }
         return invokeMap;
+    }
+    
+    /**
+     * 异常统计助手
+     * 
+     * @author yongfeigao
+     * @date 2019年10月10日
+     */
+    public class ExceptionStatsHelper {
+        private volatile int indexer = 0;
+        private ExceptionStats[] exceptionStatsArray;
+        
+        public ExceptionStatsHelper(int size) {
+            exceptionStatsArray = new ExceptionStats[size];
+            for(int i = 0; i < size; ++i) {
+                exceptionStatsArray[i] = new ExceptionStats();
+            }
+        }
+        
+        /**
+         * 记录异常
+         * @param exception
+         */
+        public void record(Throwable exception) {
+            exceptionStatsArray[indexer].record(exception);
+        }
+        
+        /**
+         * 获取报告数据
+         * @return
+         */
+        public Map<String, Object> report() {
+            // 记录当前索引
+            int index = indexer;
+            // 当前索引切换
+            indexer = (indexer + 1) % exceptionStatsArray.length;
+            // 获取结果
+            Map<String, Object> result = exceptionStatsArray[index].getMap();
+            // 重置
+            exceptionStatsArray[index].reset();
+            return result;
+        }
     }
 }

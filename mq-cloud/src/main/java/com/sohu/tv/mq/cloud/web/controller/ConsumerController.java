@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
 
 import org.apache.commons.lang3.StringUtils;
@@ -22,6 +23,7 @@ import org.apache.rocketmq.common.protocol.body.ConsumerRunningInfo;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -36,6 +38,7 @@ import com.sohu.tv.mq.cloud.bo.AuditResetOffset;
 import com.sohu.tv.mq.cloud.bo.Cluster;
 import com.sohu.tv.mq.cloud.bo.ConsumeStatsExt;
 import com.sohu.tv.mq.cloud.bo.Consumer;
+import com.sohu.tv.mq.cloud.bo.MessageReset;
 import com.sohu.tv.mq.cloud.bo.Topic;
 import com.sohu.tv.mq.cloud.bo.TopicTopology;
 import com.sohu.tv.mq.cloud.bo.User;
@@ -44,6 +47,7 @@ import com.sohu.tv.mq.cloud.service.AlertService;
 import com.sohu.tv.mq.cloud.service.AuditService;
 import com.sohu.tv.mq.cloud.service.ClusterService;
 import com.sohu.tv.mq.cloud.service.ConsumerService;
+import com.sohu.tv.mq.cloud.service.MessageResetService;
 import com.sohu.tv.mq.cloud.service.TopicService;
 import com.sohu.tv.mq.cloud.service.UserConsumerService;
 import com.sohu.tv.mq.cloud.service.UserService;
@@ -52,12 +56,14 @@ import com.sohu.tv.mq.cloud.util.DateUtil;
 import com.sohu.tv.mq.cloud.util.FreemarkerUtil;
 import com.sohu.tv.mq.cloud.util.Result;
 import com.sohu.tv.mq.cloud.util.Status;
+import com.sohu.tv.mq.cloud.util.WebUtil;
 import com.sohu.tv.mq.cloud.web.controller.param.AssociateConsumerParam;
 import com.sohu.tv.mq.cloud.web.controller.param.ConsumerParam;
 import com.sohu.tv.mq.cloud.web.controller.param.UserConsumerParam;
 import com.sohu.tv.mq.cloud.web.vo.ConsumerProgressVO;
 import com.sohu.tv.mq.cloud.web.vo.QueueOwnerVO;
 import com.sohu.tv.mq.cloud.web.vo.UserInfo;
+import com.sohu.tv.mq.util.CommonUtil;
 /**
  * 消费者接口
  * @Description: 
@@ -92,6 +98,9 @@ public class ConsumerController extends ViewController {
     @Autowired
     private ClusterService clusterService;
     
+    @Autowired
+    private MessageResetService messageResetService;
+    
     /**
      * 消费进度
      * @param topicParam
@@ -99,7 +108,9 @@ public class ConsumerController extends ViewController {
      * @throws Exception
      */
     @RequestMapping("/progress")
-    public String progress(UserInfo userInfo, @RequestParam("tid") int tid, Map<String, Object> map) throws Exception {
+    public String progress(UserInfo userInfo, @RequestParam("tid") int tid,
+            @RequestParam(value = "begin", defaultValue = "0") int begin,
+            @RequestParam(value = "end", defaultValue = "10") int end, Map<String, Object> map) throws Exception {
         String view = viewModule() + "/progress";
         // 获取消费者
         Result<TopicTopology> topicTopologyResult = userService.queryTopicTopology(userInfo.getUser(), tid);
@@ -107,13 +118,27 @@ public class ConsumerController extends ViewController {
             setResult(map, topicTopologyResult);
             return view;
         }
+        if(begin != 0) {
+            view = viewModule() + "/progressLeft";
+        }
         // 查询消费进度
         TopicTopology topicTopology = topicTopologyResult.getResult();
         // 拆分不同方式的消费者
         List<Consumer> clusteringConsumerList = new ArrayList<Consumer>();
         List<Consumer> broadcastConsumerList = new ArrayList<Consumer>();
         List<Long> cidList = new ArrayList<Long>();
-        for(Consumer consumer : topicTopology.getConsumerList()) {
+        List<Consumer> consumerList = topicTopology.getConsumerList();
+        if(begin < 0) {
+            begin = 0;
+        }
+        if(begin > consumerList.size()) {
+            begin = consumerList.size();
+        }
+        if(end > consumerList.size()) {
+            end = consumerList.size();
+        }
+        for (int i = begin; i < end; ++i) {
+            Consumer consumer = consumerList.get(i);
             cidList.add(consumer.getId());
             if(consumer.isClustering()) {
                 clusteringConsumerList.add(consumer);
@@ -136,6 +161,9 @@ public class ConsumerController extends ViewController {
                 broadcastConsumerList, consumerMap)));
         
         setResult(map, "topic", topic);
+        if(consumerList.size() > begin + cidList.size()) {
+            setResult(map, "hasMore", true);
+        } 
         FreemarkerUtil.set("long", Long.class, map);
         return view;
     }
@@ -175,7 +203,7 @@ public class ConsumerController extends ViewController {
             Map<MessageQueue, OffsetWrapper> offsetMap = new TreeMap<MessageQueue, OffsetWrapper>();
             Map<MessageQueue, OffsetWrapper> retryOffsetMap = new TreeMap<MessageQueue, OffsetWrapper>();
             for(MessageQueue mq : offsetTable.keySet()) {
-                if(mq.getTopic().startsWith(MixAll.RETRY_GROUP_TOPIC_PREFIX)) {
+                if(CommonUtil.isRetryTopic(mq.getTopic())) {
                     retryOffsetMap.put(mq, offsetTable.get(mq));
                     // 设置topic名字
                     if(consumerProgressVO.getRetryTopic() == null) {
@@ -322,18 +350,13 @@ public class ConsumerController extends ViewController {
      * @throws Exception
      */
     @ResponseBody
-    @RequestMapping("/reset/offset")
+    @RequestMapping("/resetOffset")
     public Result<?> resetOffset(UserInfo userInfo, @Valid UserConsumerParam userConsumerParam) throws Exception {
-        // 校验用户是否能删除，防止调用接口误删
+        // 校验用户是否能重置，防止误调用接口
         Result<List<UserConsumer>> userConsumerListResult = userConsumerService.queryUserConsumer(userInfo.getUser(),
                 userConsumerParam.getTid(), userConsumerParam.getConsumerId());
-        if(userConsumerListResult.isNotOK() && !userInfo.getUser().isAdmin()) {
-            return userConsumerListResult;
-        }
-        List<UserConsumer> list = userConsumerListResult.getResult();
-        if(list.size() != 1 && !userInfo.getUser().isAdmin()) {
-            logger.warn("not unique result, param:{}, result size:{}", userConsumerParam, list.size());
-            return Result.getResult(Status.NO_RESULT);
+        if(userConsumerListResult.isEmpty() && !userInfo.getUser().isAdmin()) {
+            return Result.getResult(Status.PERMISSION_DENIED_ERROR);
         }
         // 非线上集群，免审
         Cluster cluster = clusterService.getMQClusterById(userConsumerParam.getCid());
@@ -409,13 +432,7 @@ public class ConsumerController extends ViewController {
         // 校验用户是否能删除，防止调用接口误删
         Result<List<UserConsumer>> userConsumerListResult = userConsumerService.queryUserConsumer(userInfo.getUser(),
                 userConsumerParam.getTid(), userConsumerParam.getConsumerId());
-        if (userConsumerListResult.isNotOK()) {
-            return userConsumerListResult;
-        }
-        List<UserConsumer> list = userConsumerListResult.getResult();
-        //管理员可删
-        if(list.size() != 1 && !userInfo.getUser().isAdmin()) {
-            logger.warn("not unique result, param:{}, result size:{}", userConsumerParam, list.size());
+        if (userConsumerListResult.isEmpty() && !userInfo.getUser().isAdmin()) {
             return Result.getResult(Status.PERMISSION_DENIED_ERROR);
         }
         
@@ -695,18 +712,101 @@ public class ConsumerController extends ViewController {
     public Result<?> updateInfo(UserInfo userInfo, @RequestParam("cid") int cid,
             @RequestParam("info") String info) throws Exception {
         // 校验当前用户是否拥有权限
-        UserConsumer userConsumer = new UserConsumer();
-        userConsumer.setConsumerId(cid);
-        userConsumer.setUid(userInfo.getUser().getId());
-        Result<List<UserConsumer>> ucListResult = userConsumerService.queryUserConsumer(userConsumer);
+        Result<List<UserConsumer>> ucListResult = userConsumerService.queryUserConsumer(userInfo.getUser().getId(), cid);
         if (ucListResult.isEmpty() && !userInfo.getUser().isAdmin()) {
-            return Result.getResult(Status.NOT_ALLOWED);
+            return Result.getResult(Status.PERMISSION_DENIED_ERROR);
         }
         if (StringUtils.isBlank(info)) {
             return Result.getResult(Status.PARAM_ERROR);
         }
         Result<Integer> result = consumerService.updateConsumerInfo(cid, HtmlUtils.htmlEscape(info.trim(), "UTF-8"));
         logger.info(userInfo.getUser().getName() + " update consumer info , cid:{}, info:{}, status:{}", cid, info, result.isOK());
+        return Result.getWebResult(result);
+    }
+    
+    /**
+     * 更新trace
+     * 
+     * @return
+     * @throws Exception
+     */
+    @ResponseBody
+    @RequestMapping(value = "/update/trace", method = RequestMethod.POST)
+    public Result<?> updateConsumerTrace(UserInfo userInfo, @RequestParam("cid") int cid,
+            @RequestParam("traceEnabled") int traceEnabled) throws Exception {
+        if(!userInfo.getUser().isAdmin()) {
+            // 校验当前用户是否拥有权限
+            Result<List<UserConsumer>> ucListResult = userConsumerService.queryUserConsumer(userInfo.getUser().getId(),
+                    cid);
+            if (ucListResult.isEmpty()) {
+                return Result.getResult(Status.PERMISSION_DENIED_ERROR);
+            }
+        }
+        if (traceEnabled != 1 && traceEnabled != 0) {
+            return Result.getResult(Status.PARAM_ERROR);
+        }
+        Result<Integer> result = consumerService.updateConsumerTrace(cid, traceEnabled);
+        logger.info(userInfo.getUser().notBlankName() + " update consumer trace , cid:{}, traceEnabled:{}, status:{}", cid,
+                traceEnabled, result.isOK());
+        return Result.getWebResult(result);
+    }
+    
+    /**
+     * 重置重试消息偏移量
+     * @param userConsumerParam
+     * @return
+     * @throws Exception
+     */
+    @ResponseBody
+    @RequestMapping("/skip/retryOffset")
+    public Result<?> resetRetryOffset(UserInfo userInfo, @Valid UserConsumerParam userConsumerParam) throws Exception {
+        // 校验用户是否能重置，防止误调用接口
+        Result<List<UserConsumer>> userConsumerListResult = userConsumerService.queryUserConsumer(userInfo.getUser(),
+                userConsumerParam.getTid(), userConsumerParam.getConsumerId());
+        if(userConsumerListResult.isEmpty() && !userInfo.getUser().isAdmin()) {
+            return Result.getResult(Status.PERMISSION_DENIED_ERROR);
+        }
+        // 校验时间格式
+        try {
+            DateUtil.getFormat(DateUtil.YMD_DASH_BLANK_HMS_COLON).parse(userConsumerParam.getOffset());
+        } catch (Exception e) {
+            logger.error("resetOffsetTo param err:{}", userConsumerParam.getOffset(), e);
+            return Result.getResult(Status.PARAM_ERROR);
+        }
+        
+        // 构造审核记录
+        Audit audit = new Audit();
+        audit.setType(TypeEnum.RESET_RETRY_OFFSET.getType());
+        // 重新定义操作成功返回的文案
+        String message = "重试堆积跳过申请成功！请耐心等待！";
+        audit.setUid(userInfo.getUser().getId());
+        // 构造重置对象
+        AuditResetOffset auditResetOffset = new AuditResetOffset();
+        BeanUtils.copyProperties(userConsumerParam, auditResetOffset);
+        // 保存记录
+        Result<?> result = auditService.saveAuditAndSkipAccumulation(audit, auditResetOffset);
+        if(result.isOK()) {
+            String tip = getTopicConsumerTip(userConsumerParam.getTid(), userConsumerParam.getConsumerId());
+            alertService.sendAuditMail(userInfo.getUser(), TypeEnum.getEnumByType(audit.getType()), tip);
+            // 重新定义返回文案
+            result.setMessage(message);
+        }
+        return Result.getWebResult(result);
+    }
+    
+    /**
+     * 获取重置的时间
+     * 
+     * @return
+     * @throws Exception
+     */
+    @ResponseBody
+    @RequestMapping(value = "/reset/{consumer}")
+    public Result<?> reset(@PathVariable String consumer, HttpServletRequest request) throws Exception {
+        Result<MessageReset> result = messageResetService.query(consumer);
+        if(result.isNotOK() && Status.NO_RESULT.getKey() != result.getStatus()) {
+            logger.warn("ip:{} consumer:{} not ok", WebUtil.getIp(request), consumer);
+        }
         return Result.getWebResult(result);
     }
     

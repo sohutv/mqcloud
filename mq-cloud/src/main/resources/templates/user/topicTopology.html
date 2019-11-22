@@ -22,7 +22,7 @@
 				</tr>
 				<tr>
 					<td>所属集群:</td>
-					<td>${response.result.topic.clusterName}</td>
+					<td>${response.result.topic.cluster.name}</td>
 				</tr>
 				<tr>
 					<td>每个broker上的队列数:</td>
@@ -55,14 +55,20 @@
 					</td>
 				</tr>
 				<tr>
-					<td>用途:</td>
-					<td <#if response.result.own>class="edit-text"</#if>>
-          				<#if response.result.topic.info?? && response.result.topic.info !=''> 
-							<#if response.result.own><a href="javascript:void();" data-toggle="tooltip" title="修改用途" onclick="updateTopicInfoShow()"></#if>${response.result.topic.info!}<#if response.result.own></a></#if>
-           				<#else>
-							<#if response.result.own>
-            					<button type="submit" class="btn btn-success btn-sm" data-target="#updateTopicInfoModal" data-toggle="modal" >添加</button>
-	            			</#if>
+					<td>trace状态</td>
+					<td>
+						<#if response.result.own && !response.result.topic.cluster.isEnableTrace()>
+							<#if response.result.topic.traceEnabled()>
+								<span style="cursor:pointer" class="glyphicon glyphicon-eye-open" data-toggle="tooltip" title="关闭trace?" onclick="updateTopicTraceShow(1)"></span>
+							<#else>
+								<span style="cursor:pointer" class="glyphicon glyphicon-eye-close" data-toggle="tooltip" title="开启trace?" onclick="updateTopicTraceShow(0)"></span>
+							</#if>
+						<#else>
+							<#if response.result.topic.traceEnabled()>
+								已开启
+							<#else>
+								已关闭
+							</#if>
            				</#if>
 					</td>
 				</tr>
@@ -91,7 +97,10 @@
 							    	<span class="glyphicon glyphicon-plus-sign pointer" data-toggle="tooltip" title="授权其他用户查看${response.result.topic.name}?" onclick="associateUserProducer('${key.producer}')"></span>
 							    <#else>
 							    	<#list producers as producer>
-							    		<span class="pointer">${producer.username}</span>
+							    		<#if producer_index != 0>
+							    		,
+							    		</#if>
+							    		<span>${producer.username}</span>
 							    	</#list>
 							    </#if>					    	
 						    </td>
@@ -157,7 +166,6 @@ $(function() {
 		    		if(params.data._type){
 		    			if(ipCache[params.data._group]){
 		    				if(ipCache[params.data._group] != 1 && ipCache[params.data._group] != 2){
-		    					setTimeout("$('body').getNiceScroll().resize()", 500);
 			    				return ipCache[params.data._group];
 		    				}
 		    			} else {
@@ -171,7 +179,6 @@ $(function() {
 				    	    	ipCache[params.data._group] = content;
 				    	    	callback(ticket, content);
 				    	    	console.log($("#ipList").val());
-				    	    	$('body').getNiceScroll().resize();
 				    	    });
 		    			}
 		    		} else {
@@ -659,37 +666,6 @@ $(function() {
 		</div>
 	</div>
 </div> 
-<#--修改topic描述-->
-<div id="updateTopicInfoModal" class="modal fade" tabindex="-1" data-width="400">
-	<div class="modal-dialog">
-		<div class="modal-content">
-			<div class="modal-header">
-				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-				<h4 class="modal-title"><b>${response.result.topic.name}</b>描述更新</h4>
-			</div>
-			<form class="form-horizontal form-bordered form-row-stripped" id="addUserProducerModalForm">
-				<div class="modal-body">
-					<div class="row">
-						<div class="col-md-12">
-							<div class="form-body">
-								<div class="form-group">
-									<label class="control-label col-md-3"> 用途: </label>
-									<div class="col-md-8">
-										<textarea id="topicInfo" rows="5" class="form-control">${response.result.topic.info!}</textarea>
-									</div>
-								</div>
-							</div>
-						</div>
-					</div>
-				</div>
-				<div class="modal-footer">
-					<button type="button" data-dismiss="modal" class="btn" >取消</button>
-					<button type="button" class="btn btn-primary" id="updateTopicInfoBtn" onclick="updateTopicInfo()">确定</button>
-				</div>
-			</form>
-		</div>
-	</div>
-</div> 
 <!-- 客户端统计 -->
 <div id="producerStatsModal" class="modal fade" tabindex="-1" data-width="400">
 	<div class="modal-dialog" style="width:1100px;">
@@ -700,6 +676,42 @@ $(function() {
 		</div>
 	</div>
 </div>
+
+
+<#--修改topic trace-->
+<div id="updateTopicTraceModal" class="modal fade" tabindex="-1" data-width="400">
+	<div class="modal-dialog" style="width:400px;">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+				<h4 class="modal-title">${response.result.topic.name}</h4>
+			</div>
+			<form class="form-horizontal form-bordered form-row-stripped" id="addUserProducerModalForm">
+				<div class="modal-body">
+					<div class="row">
+						<div class="col-md-12">
+							<div class="form-body">
+								<div class="form-group">
+									<div class="col-md-4"></div>
+									<div class="col-md-8">
+										<div class="form-control-static">
+											<b><span id='traceSelect'></span> trace ?</b>
+	    								</div>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" data-dismiss="modal" class="btn" >取消</button>
+					<button type="button" class="btn btn-primary" id="updateTopicTraceBtn" onclick="updateTopicTrace()">确定</button>
+				</div>
+			</form>
+		</div>
+	</div>
+</div> 
+
 <script>
 	$(function () {
 		// 初始化提示组件
@@ -755,8 +767,6 @@ $(function() {
         $('#producerStatsModal').on('shown.bs.modal', function() {
         	producerStats();
         });
-        
-        setTimeout("$('body').getNiceScroll().resize()", 500);
 	});
 	
 	// 准备删除生产者
@@ -857,31 +867,35 @@ function showProducerStats(producer){
 	$('#producerStatsModal').modal('show');
 }
 
-function updateTopicInfo(){
-	if(!$("#topicInfo").val()){
-		alert("请输入用途");
-		return;
-	}
-	disable("updateTopicInfoBtn");
-	$.post('${request.contextPath}/topic/update/info',
-			{
-				info: $("#topicInfo").val(),
-				tid: $("#currentTopicID").val()
-			},
-	        function(data){
-	            if(data.status == 200){
-	            	toastr.success("操作成功！即将刷新页面！");  	            	
-	            	reload(2000);            	
-			    }else{
-			    	toastr.error("操作失败！"+data.message);  
-			    	enable("updateTopicInfoBtn");
-			    }
-	    }, 'json');
-}
 function updateTopicRouteShow(){
 	$('#updateTopicRouteModal').modal('show');
 }
-function updateTopicInfoShow(){
-	$('#updateTopicInfoModal').modal('show');
+
+function updateTopicTraceShow(traceable){
+	if(traceable == 1) {
+		$("#traceSelect").html("关闭");
+		$("#traceSelect").val(0);
+	} else {
+		$("#traceSelect").html("开启");
+		$("#traceSelect").val(1);
+	}
+	$('#updateTopicTraceModal').modal('show');
+}
+
+function updateTopicTrace(){
+	disable("updateTopicTraceBtn");
+	$.post('${request.contextPath}/topic/update/trace/' + $("#currentTopicID").val(),
+			{
+				traceEnabled: $("#traceSelect").val()
+			},
+	        function(data){
+	            if(data.status == 200){
+	            	toastr.success("申请成功！请耐心等待！");  	            	
+	            	reload(2000);            	
+			    }else{
+			    	toastr.error("操作失败！"+data.message);  
+			    	enable("updateTopicTraceBtn");
+			    }
+	    }, 'json');
 }
 </script>

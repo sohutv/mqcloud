@@ -105,7 +105,7 @@ public class ConsumerService {
         try {
             list = consumerDao.selectByClusterId(mqCluster.getId());
         } catch (Exception e) {
-            logger.error("getConsumerList err, mqCluster:{}", mqCluster, e);
+            logger.error("queryConsumerList err, mqCluster:{}", mqCluster, e);
             return Result.getDBErrorResult(e);
         }
         return Result.getResult(list);
@@ -122,7 +122,7 @@ public class ConsumerService {
         try {
             consumer = consumerDao.selectById(id);
         } catch (Exception e) {
-            logger.error("queryConsumerById err:{}", id, e);
+            logger.error("queryById err:{}", id, e);
             return Result.getDBErrorResult(e);
         }
         return Result.getResult(consumer);
@@ -182,7 +182,23 @@ public class ConsumerService {
         try {
             consumerList = consumerDao.selectByTidList(tidCollection);
         } catch (Exception e) {
-            logger.error("selectByTidList err, idCollection:{}", tidCollection, e);
+            logger.error("queryByTidList err, idCollection:{}", tidCollection, e);
+            return Result.getDBErrorResult(e);
+        }
+        return Result.getResult(consumerList);
+    }
+    
+    /**
+     * 查询用户所属topic的消费者
+     * 
+     * @param Result<List<Consumer>>
+     */
+    public Result<List<Consumer>> queryUserTopicConsumer(long uid, long tid) {
+        List<Consumer> consumerList = null;
+        try {
+            consumerList = consumerDao.select(uid, tid);
+        } catch (Exception e) {
+            logger.error("queryUserTopicConsumer err, uid:{}, tid:{}", uid, tid, e);
             return Result.getDBErrorResult(e);
         }
         return Result.getResult(consumerList);
@@ -198,7 +214,7 @@ public class ConsumerService {
         try {
             consumer = consumerDao.selectTopicConsumerByName(consumerName, tid);
         } catch (Exception e) {
-            logger.error("queryByTidList err, tid:{}, consumer:{}", tid, consumerName, e);
+            logger.error("queryTopicConsumerByName err, tid:{}, consumer:{}", tid, consumerName, e);
             return Result.getDBErrorResult(e);
         }
         return Result.getResult(consumer);
@@ -214,6 +230,21 @@ public class ConsumerService {
             result = consumerDao.updateConsumerInfo(id, info);
         } catch (Exception e) {
             logger.error("updateConsumerInfo err, id:{}, info:{}", id, info, e);
+            return Result.getDBErrorResult(e);
+        }
+        return Result.getResult(result);
+    }
+    
+    /**
+     * 更新consumer trace
+     * @return
+     */
+    public Result<Integer> updateConsumerTrace(long id, int traceEnabled) {
+        Integer result = null;
+        try {
+            result = consumerDao.updateConsumerTrace(id, traceEnabled);
+        } catch (Exception e) {
+            logger.error("updateConsumerTrace err, id:{}, traceEnabled:{}", id, traceEnabled, e);
             return Result.getDBErrorResult(e);
         }
         return Result.getResult(result);

@@ -180,3 +180,14 @@ table.tr-pointer > tbody > tr:not(.no_more_data){
 	text-decoration: none;
 	color: #000;
 }
+
+.ipsearch span.glyphicon {
+	background: url(../img/ipsearch.png) no-repeat 0 0/100%
+		100%;
+	width: 1.3em;
+	height: 1.3em;
+	display: inline-block;
+}
+button.btn.btn-search.ipsearch{
+ padding: 5px 10px 3px;
+}

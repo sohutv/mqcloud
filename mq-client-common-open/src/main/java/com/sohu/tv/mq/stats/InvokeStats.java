@@ -108,7 +108,7 @@ public class InvokeStats {
      * @author yongfeigao
      * @date 2018年9月11日
      */
-    public class ExceptionStats {
+    public static class ExceptionStats {
         private ConcurrentMap<String, AtomicInteger> exceptionMap = new ConcurrentHashMap<String, AtomicInteger>();
 
         /**
@@ -116,7 +116,7 @@ public class InvokeStats {
          * 
          * @param exception
          */
-        public void record(Exception exception) {
+        public void record(Throwable exception) {
             if (exception == null) {
                 return;
             }

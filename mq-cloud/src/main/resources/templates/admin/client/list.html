@@ -39,7 +39,7 @@
 				<#list response.result as client>
 					<tr>
 						<td>${client_index+1}</td>
-						<td>${client.topic}</td>
+						<td><a href="/topic/detail?topic=${client.topic}">${client.topic}</a></td>
 						<td>${client.client}</td>
 						<td>${client.roleDesc}</td>
 						<td>${client.version}</td>

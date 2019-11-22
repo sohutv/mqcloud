@@ -15,8 +15,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.TypeReference;
 import com.sohu.tv.mq.dto.ClusterInfoDTO;
-import com.sohu.tv.mq.dto.ClusterInfoDTOResult;
+import com.sohu.tv.mq.dto.DTOResult;
 import com.sohu.tv.mq.serializable.MessageSerializer;
 import com.sohu.tv.mq.serializable.MessageSerializerEnum;
 import com.sohu.tv.mq.trace.SohuAsyncTraceDispatcher;
@@ -103,13 +104,13 @@ public abstract class AbstractConfig {
         // 从MQCLoud拉取配置信息
         long times = 1;
         while (true) {
-            ClusterInfoDTOResult clusterInfoDTOResult = null;
+            DTOResult<ClusterInfoDTO> clusterInfoDTOResult = null;
             try {
                 HttpResult result = HttpTinyClient.httpGet("http://" + mqCloudDomain + "/cluster/info", null,
                         paramValues,
                         "UTF-8", 3000);
                 if (HttpURLConnection.HTTP_OK == result.code) {
-                    clusterInfoDTOResult = JSON.parseObject(result.content, ClusterInfoDTOResult.class);
+                    clusterInfoDTOResult = JSON.parseObject(result.content, new TypeReference<DTOResult<ClusterInfoDTO>>(){});
                     if (clusterInfoDTOResult.ok()) {
                         clusterInfoDTO = clusterInfoDTOResult.getResult();
                     }
@@ -166,8 +167,11 @@ public abstract class AbstractConfig {
      */
     protected void initConfig(ClientConfig clientConfig) {
         init();
-        // 低版本集群不支持vip通道
-        clientConfig.setVipChannelEnabled(clusterInfoDTO.isVipChannelEnabled());
+        // 客户端主动设置为false，不覆盖
+        if(clientConfig.isVipChannelEnabled()) {
+            // 低版本集群不支持vip通道
+            clientConfig.setVipChannelEnabled(clusterInfoDTO.isVipChannelEnabled());
+        }
         // 通过unitName发现不同的集群
         clientConfig.setUnitName(String.valueOf(clusterInfoDTO.getClusterId()));
         // 自动设置是否trace

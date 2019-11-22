@@ -34,7 +34,7 @@
 				<#if !response.result?? || (response.result?? && response.result == 1)>
 					<button type="button" class="btn btn-info" onclick="register()">注册</button>
 				</#if>
-					<button type="button" class="btn btn-primary" onclick="login()">登录</button>
+					<button type="button" class="btn btn-primary" id="loginBtn" onclick="login()">登录</button>
 				</div>
 			</form>
 		</div>
@@ -53,6 +53,7 @@ function login(){
 		alert("密码不能为空");
 		return;
 	}
+	disable("loginBtn");
 	$.post('${request.contextPath}/login/check',
 		$("#loginForm").serialize(),
         function(data){
@@ -61,6 +62,7 @@ function login(){
 				setTimeout("toTopicList()", 2000);
 		    }else{
 		    	toastr.error("登录失败！"+data.message);  
+		    	enable("loginBtn");
 		    }
         }, 'json');
 }

@@ -27,7 +27,7 @@ public enum Status {
     REPEAT_ERROR(305, "关联关系已存在"),
     LONGIN_ERROR(306, "用户名或密码错误"),
     OLD_PASSWORD_ERROR(307, "原始密码输入有误"),
-    NOT_ALLOWED(308, "无权限执行该操作"),
+    NO_NEED_MODIFY_ERROR(308, "无需修改"),
     
     // 4xx代表请求问题
     NOT_FOUND_ERROR(404, "请求不存在"),
@@ -50,6 +50,7 @@ public enum Status {
     AUDIT_RECORD_REPEAT(514, "已提交该审核记录，不可重复提交，请耐心等待"),
     AUDIT_MESSAGE_CANNOT_AUTID_WHEN_NOT_SEND_OK(515, "消息还未全部发送成功，不可审批"),
     AUDIT_MESSAGE_NOT_SEND_OK(516, "消息未发送成功"),
+    
     // 6xx代表web请求异常
     WEB_ERROR(600, "请求错误"),
     WEB_ERROR_PAGE(601, "出错了，请联系管理员"),
@@ -57,6 +58,7 @@ public enum Status {
     TOPIC_REPEAT(700, "与其他topic名称重复"),
     PRODUCER_REPEAT(701, "与其他生产者名称重复"),
     CONSUMER_REPEAT(702, "与其他消费者名称重复"),
+    CONSUMER_TRACE_OPEN(703, "请先关闭消费者的trace"),
     
     // 8XX用于创建Trace topic时详细描述异常信息
     TRACE_CLUSTER_ID_IS_NULL(800, "Trace集群ID为空"),

@@ -3,9 +3,10 @@ package com.sohu.tv.mq.cloud.web.vo;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+
+import org.apache.rocketmq.client.trace.TraceContext;
+import org.apache.rocketmq.client.trace.TraceType;
 
 import com.alibaba.fastjson.JSON;
 import com.sohu.tv.mq.cloud.bo.TraceMessageDetail;
@@ -29,18 +30,17 @@ public class TraceViewVO {
     // 一小时
     public static int ONE_HOUR = 60 * ONE_MINUTE;
 
-    private ViewVO producer;
+    // 生产者请求视图
+    private RequestViewVO producerRequestView;
 
-    // consumer 可能会有多个, 同一个consumer的requestId相同
-    private Map<String/* requestId */, ViewVO> consumer;
+    // 消费者请求视图
+    private List<RequestViewVO> consumerRequestViewList;
 
-    public static class ViewVO {
+    public static class RequestViewVO implements Comparable<RequestViewVO> {
 
         private String addr;
 
         private Boolean success;
-
-        private String time;
 
         private List<TraceMessageDetail> detail;
 
@@ -48,6 +48,23 @@ public class TraceViewVO {
         
         // 耗时 ms
         private Integer costTime;
+        
+        private String requestId;
+        
+        // 请求开始时间
+        private Long requestStartTime;
+
+        public Long getRequestStartTime() {
+            return requestStartTime;
+        }
+
+        public String getRequestId() {
+            return requestId;
+        }
+
+        public void setRequestId(String requestId) {
+            this.requestId = requestId;
+        }
 
         public String getAddr() {
             return addr;
@@ -66,11 +83,10 @@ public class TraceViewVO {
         }
 
         public String getTime() {
-            return time;
-        }
-
-        public void setTime(String time) {
-            this.time = time;
+            if(requestStartTime == null || requestStartTime <= 0) {
+                return "";
+            }
+            return DateUtil.getFormat(DateUtil.YMD_DASH_HMS_COLON_DOT_SSS).format(new Date(requestStartTime));
         }
 
         public List<TraceMessageDetail> getDetail() {
@@ -97,12 +113,10 @@ public class TraceViewVO {
             this.costTime = costTime;
         }
 
-        public String status() {
-            if (success == null) {
-                return "未知";
-            }
-            return success ? "成功" : "失败";
+        public void setRequestStartTime(Long requestStartTime) {
+            this.requestStartTime = requestStartTime;
         }
+
         /**
          * 简单计算耗时，只保留两位小数
          */
@@ -120,27 +134,29 @@ public class TraceViewVO {
                 return df.format((float)costTime/ONE_HOUR) + "h";
             }
         }
-        
+
         @Override
-        public String toString() {
-            return "ViewVO [addr=" + addr + ", success=" + success + ", time=" + time + ", group=" + group + "]";
+        public int compareTo(RequestViewVO o) {
+            int rst = group.compareTo(o.getGroup());
+            if(rst == 0) {
+                if(requestStartTime != null && o.requestStartTime != null) {
+                    return (int)(requestStartTime - o.requestStartTime);
+                }
+            }
+            return rst;
         }
     }
 
-    public ViewVO getProducer() {
-        return producer;
+    public RequestViewVO getProducerRequestView() {
+        return producerRequestView;
     }
 
-    public void setProducer(ViewVO producer) {
-        this.producer = producer;
+    public List<RequestViewVO> getConsumerRequestViewList() {
+        return consumerRequestViewList;
     }
 
-    public Map<String, ViewVO> getConsumer() {
-        return consumer;
-    }
-
-    public void setConsumer(Map<String, ViewVO> consumer) {
-        this.consumer = consumer;
+    public void setConsumerRequestViewList(List<RequestViewVO> consumerRequestViewList) {
+        this.consumerRequestViewList = consumerRequestViewList;
     }
 
     /**
@@ -149,10 +165,10 @@ public class TraceViewVO {
      * @return
      */
     public String producerToJsonString() {
-        if (getProducer() == null || getProducer().getDetail() == null) {
+        if (producerRequestView == null || producerRequestView.getDetail() == null) {
             return "{}";
         }
-        return JSON.toJSONString(getProducer().getDetail());
+        return JSON.toJSONString(producerRequestView.getDetail());
     }
 
     /**
@@ -161,23 +177,25 @@ public class TraceViewVO {
      * @return
      */
     public String consumerToJsonString() {
-        if (getConsumer() == null || getConsumer().isEmpty()) {
+        if (consumerRequestViewList == null || consumerRequestViewList.isEmpty()) {
             return "{}";
         }
         List<List<TraceMessageDetail>> messageList = new ArrayList<List<TraceMessageDetail>>();
-        for (ViewVO ConsumerViewVO : getConsumer().values()) {
-            if (ConsumerViewVO.getDetail() != null) {
-                messageList.add(ConsumerViewVO.getDetail());
+        for (RequestViewVO consumerViewVO : consumerRequestViewList) {
+            if (consumerViewVO.getDetail() != null) {
+                messageList.add(consumerViewVO.getDetail());
             }
         }
         return JSON.toJSONString(messageList);
     }
 
-    public void buildProducer(String addr, Boolean isSuccess, long time, TraceMessageDetail detail,
-            String producerGroup, int costTime) {
-        ViewVO viewVo = new ViewVO();
-        buildViewVo(viewVo, addr, isSuccess, time, detail, producerGroup, costTime);
-        setProducer(viewVo);
+    public void buildProducer(TraceMessageDetail traceMessageDetail, TraceContext traceContext) {
+        producerRequestView = new RequestViewVO();
+        producerRequestView.setAddr(traceMessageDetail.getClientHost());
+        List<TraceMessageDetail> traceMessageDetailList = new ArrayList<>();
+        traceMessageDetailList.add(traceMessageDetail);
+        producerRequestView.setDetail(traceMessageDetailList);
+        buildRequestViewVo(producerRequestView, traceContext);
     }
 
     /**
@@ -189,56 +207,49 @@ public class TraceViewVO {
      * @param consumerStatus
      * @param detail
      */
-    public void buildConsumer(String addr, Boolean isSuccess, long time, TraceMessageDetail detail, 
-            String requestId, String consumerGroup, Integer costTime) {
-        Map<String, ViewVO> consumer = getConsumer();
-        if (consumer == null) {
-            consumer = new HashMap<String, ViewVO>();
-            setConsumer(consumer);
+    public void buildConsumer(TraceMessageDetail traceMessageDetail, TraceContext traceContext) {
+        if(consumerRequestViewList == null) {
+            consumerRequestViewList = new ArrayList<>();
         }
-        ViewVO viewVo = consumer.get(requestId);
-        if (viewVo == null) {
-            viewVo = new ViewVO();
-            consumer.put(requestId, viewVo);
+        RequestViewVO requestViewVO = findRequestViewVO(traceContext.getRequestId());
+        if (requestViewVO == null) {
+            requestViewVO = new RequestViewVO();
+            requestViewVO.setAddr(traceMessageDetail.getClientHost());
+            consumerRequestViewList.add(requestViewVO);
         }
-        buildViewVo(viewVo, addr, isSuccess, detail, consumerGroup, costTime);
-        if (time > 0) {
-            viewVo.setTime(DateUtil.getFormat(DateUtil.YMD_DASH_HMS_COLON_DOT_SSS).format(new Date(time)));
+        if(requestViewVO.getDetail() == null) {
+            List<TraceMessageDetail> traceMessageDetailList = new ArrayList<>();
+            requestViewVO.setDetail(traceMessageDetailList);
         }
-    }
-
-    private void buildViewVo(ViewVO viewVo, String addr, Boolean isSuccess, TraceMessageDetail detail, String group, Integer costTime) {
-        if (viewVo.getAddr() == null) {
-            viewVo.setAddr(addr);
-        }
-        if (viewVo.getGroup() == null || "".equals(viewVo.getGroup())) {
-            viewVo.setGroup(group);
-        }
-        if (viewVo.getSuccess() == null) {
-            viewVo.setSuccess(isSuccess);
-        }
-        List<TraceMessageDetail> traceMessageDetailList = viewVo.getDetail();
-        if (traceMessageDetailList == null) {
-            traceMessageDetailList = new ArrayList<TraceMessageDetail>();
-        }
-        traceMessageDetailList.add(detail);
-        viewVo.setDetail(traceMessageDetailList);
+        requestViewVO.getDetail().add(traceMessageDetail);
         
-        if (viewVo.getCostTime() == null) {
-            viewVo.setCostTime(costTime);
-        }
+        buildRequestViewVo(requestViewVO, traceContext);
     }
-
-    private void buildViewVo(ViewVO viewVo, String addr, Boolean isSuccess, long time, TraceMessageDetail detail,
-            String group, int costTime) {
-        buildViewVo(viewVo, addr, isSuccess, detail, group, costTime);
-        if (viewVo.getTime() == null) {
-            viewVo.setTime(DateUtil.getFormat(DateUtil.YMD_DASH_HMS_COLON_DOT_SSS).format(new Date(time)));
+    
+    private RequestViewVO findRequestViewVO(String requestId) {
+        for(RequestViewVO requestViewVO : consumerRequestViewList) {
+            if(requestViewVO.getRequestId().equals(requestId)) {
+                return requestViewVO;
+            }
         }
+        return null;
     }
-
-    @Override
-    public String toString() {
-        return "TraceViewVO [producer=" + producer + ", consumer=" + consumer + "]";
+    
+    private void buildRequestViewVo(RequestViewVO requestViewVO, TraceContext traceContext) {
+        if (requestViewVO.getGroup() == null || "".equals(requestViewVO.getGroup())) {
+            requestViewVO.setGroup(traceContext.getGroupName());
+        }
+        if (requestViewVO.getSuccess() == null && traceContext.getTraceType() != TraceType.SubBefore) {
+            requestViewVO.setSuccess(traceContext.isSuccess());
+        }
+        if (requestViewVO.getCostTime() == null && traceContext.getTraceType() != TraceType.SubBefore) {
+            requestViewVO.setCostTime(traceContext.getCostTime());
+        }
+        if (requestViewVO.getRequestStartTime() == null) {
+            requestViewVO.setRequestStartTime(traceContext.getTimeStamp());
+        }
+        if (requestViewVO.getRequestId() == null) {
+            requestViewVO.setRequestId(traceContext.getRequestId());
+        }
     }
 }

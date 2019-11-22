@@ -3,6 +3,7 @@ package com.sohu.tv.mq.cloud.web.controller;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Arrays;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,9 +14,13 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper;
 import com.sohu.tv.mq.cloud.util.Result;
 import com.sohu.tv.mq.util.Version;
+import com.vladsch.flexmark.ext.tables.TablesExtension;
 import com.vladsch.flexmark.html.HtmlRenderer;
 import com.vladsch.flexmark.parser.Parser;
+import com.vladsch.flexmark.parser.ParserEmulationProfile;
 import com.vladsch.flexmark.util.ast.Document;
+import com.vladsch.flexmark.util.builder.Extension;
+import com.vladsch.flexmark.util.options.MutableDataSet;
 
 /**
  * wiki
@@ -57,8 +62,11 @@ public class WikiController {
             return null;
         }
         String markdown = new String(read(inputStream));
-        Document document = Parser.builder().build().parse(markdown);
-        String html = HtmlRenderer.builder().build().render(document);
+        MutableDataSet options = new MutableDataSet();
+        options.setFrom(ParserEmulationProfile.MARKDOWN);
+        options.set(Parser.EXTENSIONS, Arrays.asList(new Extension[] { TablesExtension.create()}));
+        Document document = Parser.builder(options).build().parse(markdown);
+        String html = HtmlRenderer.builder(options).build().render(document);
         return html;
     }
     

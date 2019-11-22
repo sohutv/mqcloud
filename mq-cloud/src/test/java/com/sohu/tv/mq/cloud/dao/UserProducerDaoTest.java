@@ -3,6 +3,7 @@ package com.sohu.tv.mq.cloud.dao;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -47,5 +48,13 @@ public class UserProducerDaoTest {
         idList.add(1L);
         Topic topic = topicDao.selectByIdList(idList).get(1);
         return topic;
+    }
+
+    @Test
+    public void testSelectTidByProducerAndUid() {
+        long uid = 0L;
+        String producer = "test-videoservice-message-group";
+        List<Long> result = userProducerDao.selectTidByProducerAndUid(uid, producer);
+        Assert.assertTrue(result.size() > 0);
     }
 }

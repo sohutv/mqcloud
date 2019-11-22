@@ -1,6 +1,14 @@
 <style type="text/css">
 	li#previous.disabled a {color:#CCC}
 	li#next.disabled a {color:#CCC}
+	pre {
+		font-size: 11px;
+		line-height: 1;
+		padding: 0;
+		margin: 0;
+		border: 0;
+		background-color: transparent;
+	}
 </style>
 <div class="row">
 <div class="col-md-12">
@@ -99,21 +107,23 @@
 			<button type="button" data-toggle='tooltip' title="按trace查询${response.result.topic}" onclick="searchTraceMessage()" class="btn btn-search trace" style="display:none;"><span class="glyphicon glyphicon-search" aria-hidden="true"></span></button>
 			
 			<!-- 消息重发 -->
-			<#if owner == 1>
+			<#if consumer == 1>
 				<button type="button" id="resendMessageBtn" data-toggle='tooltip' title="重发消息" onclick="resendMessageTip()" class="btn"><span class="glyphicon glyphicon-send"></span></button>
 			</#if>
 		</div>
 		<div class="form-group hide" id ="moreSearchCondition" style="margin-top:10px">
 			<label style="margin-left:23px"> broker: </label>
-			<select id="brokerNameSearchSelect" class="selectpicker" name="toBrokerName" onchange="brokerNameSelectChange(this)"></select>
+			<select id="brokerNameSearchSelect" class="selectpicker" name="toBrokerName" onchange="brokerNameSelectChange(this)">
+				<option value='all'>全部</option>
+			</select>
 			<label style="margin-left:27px"> queue: </label>
 			<select id="queueSearchSelect" class="selectpicker" name="toQueue" onchange="queueSelectChange(this)">
-			<option value="-1">全部</option>
+				<option value="-1">全部</option>
 			</select>
 		</div>
 	</form>
 	</div>
-	<table id="dataTable" class="table table-striped table-hover <#if owner == 1>tr-pointer</#if>" style="margin-top: 0px;word-break:break-all; word-wrap:break-all;">
+	<table id="dataTable" class="table table-striped table-hover <#if consumer == 1>tr-pointer</#if>" style="margin-top: 0px;word-break:break-all; word-wrap:break-all;">
 		<colgroup>
 			<col width="50px">
 			<col width="130px">
@@ -121,7 +131,7 @@
 			<col width="100px">
 			<col>
 			<col width="120px">
-			<col width="80px">
+			<col width="50px">
 			<col width="50px">
 		</colgroup>
 		<thead>
@@ -140,7 +150,7 @@
 			<tr class="no_more_data"><td colspan=8 class="text-center">暂无数据</td></tr>
 		</tbody>
 	</table>
-		<!-- trace 消息显示 -->
+	<!-- trace 消息显示 -->
 	<table id="traceDataTable" class="table table-striped table-hover hide" style="margin-top: 0px;word-break:break-all; word-wrap:break-all;">
 		<colgroup>
 			<col width="50px">
@@ -152,7 +162,6 @@
 			<col width="185px">
 			<col width="55px">
 			<col width="70px">
-			<col width="50px">
 		</colgroup>
 		<thead class="text-center">
 			<tr>
@@ -160,8 +169,7 @@
 				<td class="text-center" colspan=4>
 					生产者
 				</td>
-				<td class="text-center" colspan=4>消费者</td>
-				<td rowspan=2 style="padding-top:25px">详情</td>
+				<td class="text-center" colspan=5>消费者</td>
 			</tr>
 			<tr>
 				<td>生产组</td>
@@ -175,7 +183,7 @@
 			</tr>
 		</thead>
 		<tbody>
-			<tr class="no_more_data"><td colspan=10 class="text-center">暂无数据</td></tr>
+			<tr class="no_more_data"><td colspan=9 class="text-center">暂无数据</td></tr>
 		</tbody>
 	</table>
 	<ul class="pager" id="pager" style="display:none;">
@@ -207,12 +215,27 @@
 				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
 				<h4 class="modal-title">消息重发</h4>
 			</div>
-			<div class="modal-body text-center" style="word-break:break-all">
-				重新发送序号为<b id="dataIdx"></b>的消息?
+			<div class="modal-body">
+				<form class="form-horizontal form-bordered form-row-stripped">
+					<div class="form-group">
+						<label class="control-label col-md-3"> 消息序号: </label>
+						<div class="col-md-7">
+			        		<div class="form-control-static">
+				        		&nbsp;<b id="dataIdx" style="word-break:break-all"></b>
+				        	</div>
+						</div>
+					</div>
+					<div class="form-group">
+						<label class="control-label col-md-3"> 发给: </label>
+						<div class="col-md-7">
+							<select id="consumerSelect" class="selectpicker" title="请选择" data-live-search-placeholder="搜索" data-live-search="true"></select>
+						</div>
+					</div>
+				</form>
 			</div>
 			<div class="modal-footer">
 				<button type="button" data-dismiss="modal" class="btn" >取消</button>
-				<button type="button" class="btn btn-primary" id="resendMessageBtn" onclick="resendMessage()">确定</button>
+				<button type="button" class="btn btn-primary" id="resendBtn" onclick="resendMessage()">确定</button>
 			</div>
 		</div>
 	</div>
@@ -244,7 +267,6 @@ function showPage(num){
 	}
 	// 展示数据
 	$("#page_"+pageNum).show().siblings("tbody").hide();
-	$("body").getNiceScroll().resize();
 }
 // 上一页
 function previous(){
@@ -447,12 +469,9 @@ function drawTrackTopology(){
 }
 $(function(){
 	$("[data-toggle='tooltip']").tooltip({container: 'body'});
-	//初始化broker列表
- 	initBrokerList('brokerNameSearchSelect');
  	$(".selectpicker").selectpicker({
 		width : 120
  	});
- 	$("#queueSearchSelect").selectpicker('refresh');
  	// search type tooltip
  	$("#searchCondition").selectpicker({
 		width : 120
@@ -467,6 +486,9 @@ $(function(){
 	$('#searchConditionForm').find("ul.dropdown-menu li").each(function(i){
 	  $(this).attr('title', title[i]).tooltip({container:'body'});
 	})
+	$("#consumerSelect").selectpicker({
+		width : 250
+ 	});
 });
 function setTrackOption(msg){
 	trackOption = {
@@ -615,7 +637,7 @@ function changeSearchType(type){
 	if("trace" == type){
 		// 清空数据
 		$("#traceDataTable tbody").remove();
-		$("#traceDataTable").append("<tbody><tr class='no_more_data'><td colspan=10 class='text-center'>暂无数据</td></tr></tbody>");
+		$("#traceDataTable").append("<tbody><tr class='no_more_data'><td colspan=9 class='text-center'>暂无数据</td></tr></tbody>");
 		$("#traceDataTable input").remove();
 		$("#resendMessageBtn").addClass("disabled");
 		$("#dataTable").addClass("hide");
@@ -643,7 +665,7 @@ timeChange('traceStartTime');
 
 // 初始化多选
 function initMultiSelect(bodyId){
-	<#if owner == 1>
+	<#if consumer == 1>
 		$('#dataTable ' + bodyId).multiSelect();
 	</#if>
 }
@@ -659,7 +681,34 @@ function resendMessageTip(){
 		return;
 	}
 	$("#dataIdx").html(dataIdxArray.toString());
-	$('#resendMsgModal').modal('show');
+	// 获取消费者
+	$.get('${request.contextPath}/userConsumer/list',
+		{
+			tid: ${RequestParameters.tid}
+		},
+        function(data){
+            if(data.status == 200){
+            	if(data.result.length == 0) {
+	        		$("#consumerSelect").html("<option value='-1'>无关联的消费者</option>");
+	        		$("#consumerSelect").selectpicker('val', "-1");
+	        		disable("resendBtn");
+        		} else {
+	            	var content = "";
+	            	for(var i in data.result){
+	            		var consumer = data.result[i];
+	            		content += "<option value='"+consumer.id+"'>"+consumer.name+"</option>";
+	            	}
+	        		$("#consumerSelect").html(content);
+	        		$("#consumerSelect").selectpicker('refresh');
+	        		if(data.result.length == 1) {
+		        		$("#consumerSelect").selectpicker('val', data.result[0].id);
+	        		}
+        		}
+				$('#resendMsgModal').modal('show');
+		    }else{
+		    	toastr.error("错误！"+data.message);  
+		    }
+    }, 'json');
 }
 
 //重发消息 
@@ -672,14 +721,19 @@ function resendMessage(){
 		alert("请先选择消息(支持shift和ctrl)");
 		return;
 	}
-	disable("resendMessageBtn");
+	if($("#consumerSelect").val().length == 0){
+		alert("请选择消费者");
+		return;
+	}
+	disable("resendBtn");
 	$.post('${request.contextPath}/topic/message/resend',
 		{
 			msgIds: dataArray.toString(),
-			tid: ${RequestParameters.tid}
+			tid: ${RequestParameters.tid},
+			cid: $("#consumerSelect").val()
 		},
         function(data){
-			enable("resendMessageBtn");
+			enable("resendBtn");
             if(data.status == 200){
             	toastr.success("申请成功！请耐心等待！");  	            	
             	$('#resendMsgModal').modal('hide');       	
@@ -691,6 +745,10 @@ function resendMessage(){
 
 //显示搜索条件broker和队列
 function showMoreSearchCondition(){
+	//初始化broker列表
+	if($('#brokerNameSearchSelect option').length == 1){
+ 		initBrokerList('brokerNameSearchSelect');
+	}
 	if ($("#moreSearchCondition").hasClass('hide')){
 		$("#moreSearchCondition").removeClass('hide');
 	} else {
@@ -701,8 +759,8 @@ function showMoreSearchCondition(){
 function hideAndResetBrokerSelect(){
 	$("#moreSearchCondition").addClass('hide');
 	//重置broker下拉框状态
-	document.getElementById("brokerNameSearchSelect").options.selectedIndex = 0; //回到初始状态
-    $("#brokerNameSearchSelect").selectpicker('refresh');
+    $("#brokerNameSearchSelect").selectpicker('val', "all");
+    $("#queueSearchSelect").selectpicker('val', "-1");
 }
 /**
  * 初始化broker下拉列表

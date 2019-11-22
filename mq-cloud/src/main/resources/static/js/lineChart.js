@@ -103,8 +103,6 @@ function drawLineChart(lineName){
 				divComponent.append(div);
 			}
 			new Highcharts.Chart(chart);
-			// 兼容滚动插件
-			$("body").getNiceScroll().resize();
 		}
 	}, 'json');
 }

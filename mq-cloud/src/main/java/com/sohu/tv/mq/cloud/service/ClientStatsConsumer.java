@@ -88,6 +88,9 @@ public class ClientStatsConsumer implements MemoryMQConsumer<ClientStats> {
         Date now = new Date();
         producerTotalStat.setCreateDate(NumberUtils.toInt(DateUtil.formatYMD(now)));
         producerTotalStat.setCreateTime(DateUtil.getFormat(DateUtil.HHMM).format(now));
+        if(clientStats.getExceptionMap() != null && clientStats.getExceptionMap().size() > 0) {
+            producerTotalStat.setException(JSON.toJSONString(clientStats.getExceptionMap()));
+        }
         return producerTotalStat;
     }
     

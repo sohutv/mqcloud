@@ -5,7 +5,7 @@
 			<td>${response.result.bornHostString}</td>
 			<td data-tooltip="true" title="存储时间:${response.result.storeTimestamp?number_to_datetime?string("yyyy-MM-dd HH:mm:ss.SSS")}">${response.result.bornTimestamp?number_to_datetime?string("yyyy-MM-dd HH:mm:ss.SSS")}</td>
 			<td data-tooltip="true" title="偏移量:${response.result.queueOffset}">${response.result.broker!}:${response.result.queueId}</td>
-			<td data-tooltip="true" title="序列化方式:<#if response.result.messageBodySerializer??>${response.result.messageBodySerializer.getName()}(${response.result.messageBodyTypeString!})<#else>${response.result.messageBodyTypeString!}</#if>">${response.result.decodedBody}</td>
+			<td data-tooltip="true" title="序列化方式:<#if response.result.messageBodySerializer??>${response.result.messageBodySerializer.getName()}(${response.result.messageBodyTypeString!})<#else>${response.result.messageBodyTypeString!}</#if>"><#if response.result.decodedBody?length gt 1000><pre>${response.result.decodedBody}</pre><#else>${response.result.decodedBody}</#if></td>
 			<td>${response.result.keys!}</td>
 			<td>${response.result.tags!}</td>
 			<td class="text-center"><span class="glyphicon glyphicon-eye-open" style="cursor:pointer;" onclick=track(${response.result.toJson()}) data-target="#trackModal" data-toggle="modal"></span></td>
@@ -26,5 +26,4 @@
 </#if>
 <script>
 	$("#pager").hide();
-	$("body").getNiceScroll().resize();
 </script>

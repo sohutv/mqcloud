@@ -34,7 +34,7 @@ public interface ConsumerDao {
      * 查询记录
      * @param consumer
      */
-    @Select("select * from consumer where tid = #{tid}")
+    @Select("select * from consumer where tid = #{tid} order by id")
     public List<Consumer> selectByTid(@Param("tid") long tid);
     
     /**
@@ -62,7 +62,7 @@ public interface ConsumerDao {
      * 查询记录
      * @param consumer
      */
-    @Select("select * from consumer where id in (select consumer_id from user_consumer where uid = #{uid} and tid = #{tid})")
+    @Select("select * from consumer where id in (select consumer_id from user_consumer where uid = #{uid} and tid = #{tid}) order by id")
     public List<Consumer> select(@Param("uid") long uid, @Param("tid") long tid);
     
     /**
@@ -107,4 +107,13 @@ public interface ConsumerDao {
      */
     @Update("update consumer set info=#{info} where id=#{id}")
     public Integer updateConsumerInfo(@Param("id") long id, @Param("info") String info);
+    
+    /**
+     * 更新trace
+     * 
+     * @param tid
+     * @param traceEnabled
+     */
+    @Update("update consumer set trace_enabled=#{traceEnabled} where id=#{id}")
+    public Integer updateConsumerTrace(@Param("id") long id, @Param("traceEnabled") int traceEnabled);
 }

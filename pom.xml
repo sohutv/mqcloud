@@ -6,7 +6,7 @@
 	<artifactId>mq</artifactId>
 	<packaging>pom</packaging>
 	<name>mq</name>
-	<version>1.9.1</version>
+	<version>1.9.2</version>
 
 	<modules>
 		<module>mq-client-common-open</module>
@@ -22,7 +22,7 @@
 		<java.version>1.7</java.version>
 		<protostuff.version>1.5.0</protostuff.version>
 		<logback.version>1.1.3</logback.version>
-		<hystrix.version>1.3.20</hystrix.version>
+		<hystrix.version>1.5.18</hystrix.version>
 		<commons-codec.version>1.10</commons-codec.version>
 		<commons-lang3.version>3.4</commons-lang3.version>
 		<javax.servlet-api.version>3.1.0</javax.servlet-api.version>

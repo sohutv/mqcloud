@@ -1,6 +1,6 @@
 package com.sohu.tv.mq.cloud.web.vo;
 
-import org.apache.rocketmq.common.MixAll;
+import com.sohu.tv.mq.util.CommonUtil;
 
 /**
  * 队列的消费者
@@ -39,10 +39,10 @@ public class QueueOwnerVO {
     }
     
     public int getTopicType() {
-        if(topic.startsWith(MixAll.RETRY_GROUP_TOPIC_PREFIX)) {
+        if(CommonUtil.isRetryTopic(topic)) {
             return 1;
         }
-        if(topic.startsWith(MixAll.DLQ_GROUP_TOPIC_PREFIX)) {
+        if(CommonUtil.isDeadTopic(topic)) {
             return 2;
         }
         return 0;

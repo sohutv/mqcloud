@@ -100,6 +100,22 @@ public class UserConsumerController {
                     userResult.getResult().notBlankName() + "与" + consumerResult.getResult().getName() + "的关联关系");
         }
         return Result.getWebResult(result);
-
+    }
+    
+    /**
+     * 查询用户topic消费者列表
+     * 
+     * @return
+     * @throws Exception
+     */
+    @ResponseBody
+    @RequestMapping(value = "/list")
+    public Result<?> list(UserInfo userInfo, @RequestParam("tid") int tid) throws Exception {
+        if(userInfo.getUser().isAdmin()) {
+            Result<List<Consumer>> consumerListResult = consumerService.queryByTid(tid);
+            return Result.getWebResult(consumerListResult);
+        }
+        Result<List<Consumer>> listResult = consumerService.queryUserTopicConsumer(userInfo.getUser().getId(), tid);
+        return Result.getWebResult(listResult);
     }
 }

@@ -90,4 +90,15 @@ public interface UserConsumerDao {
      */
     @Select("select u.* from user_consumer uc, user u where uc.uid = u.id and uc.tid = #{tid} and uc.consumer_id = #{cid}")
     public List<User> selectUserByConsumer(@Param("tid") long tid, @Param("cid") long cid);
+
+    /**
+     * 根据uid和consumer查询
+     * @param uid
+     * @param consumer
+     */
+    @Select("<script>select distinct tid from user_consumer where 1=1 "
+            + "<if test=\"uid != 0\"> and uid = #{uid} </if>"
+            +  "and consumer_id in (select id from consumer where name = #{consumer})"
+            + "</script>")
+    public List<Long> selectTidByUidAndConsumer(@Param("uid")long uid, @Param("consumer")String consumer);
 }

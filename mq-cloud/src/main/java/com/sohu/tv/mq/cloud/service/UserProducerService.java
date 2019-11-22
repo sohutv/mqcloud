@@ -2,6 +2,7 @@ package com.sohu.tv.mq.cloud.service;
 
 import java.util.List;
 
+import com.sohu.tv.mq.cloud.bo.User;
 import org.apache.rocketmq.common.protocol.body.ProducerConnection;
 import org.apache.rocketmq.tools.admin.MQAdminExt;
 import org.slf4j.Logger;
@@ -168,20 +169,6 @@ public class UserProducerService {
     }
     
     /**
-     * 按照userProducer
-     */
-    public Result<List<UserProducer>> queryUserProducer(long uid, long tid) {
-        List<UserProducer> userProducerList = null;
-        try {
-            userProducerList = userProducerDao.selectUserProducer(uid, tid);
-        } catch (Exception e) {
-            logger.error("queryUserProducer err, uid:{},tid:{}", uid, tid, e);
-            return Result.getDBErrorResult(e);
-        }
-        return Result.getResult(userProducerList);
-    }
-     
-    /**
      * 删除UserProducer
      * @param userProducer
      * @return
@@ -237,9 +224,34 @@ public class UserProducerService {
         try {
             userProducer = userProducerDao.selectByTidAndUid(uid, tid);
         } catch (Exception e) {
-            logger.error("findUserProducer err, pid:{}, tid:{}", uid, tid, e);
+            logger.error("findUserProducer err, uid:{}, tid:{}", uid, tid, e);
             return Result.getDBErrorResult(e);
         }
         return Result.getResult(userProducer);
+    }
+
+    /**
+     * 按照uid和producer查询topicId
+     */
+    public Result<List<Long>> findTopicIdList(User user, String producer) {
+        if (user.isAdmin()) {
+            return findTopicIdList(0, producer);
+        } else {
+            return findTopicIdList(user.getId(), producer);
+        }
+    }
+
+    /**
+     * 按照uid和producer查询topicId
+     */
+    public Result<List<Long>> findTopicIdList(long uid, String producer) {
+        List<Long> topicIdList = null;
+        try {
+            topicIdList = userProducerDao.selectTidByProducerAndUid(uid, producer);
+        } catch (Exception e) {
+            logger.error("findTopicIdList err, uid:{}, producer:{}", uid, producer, e);
+            return Result.getDBErrorResult(e);
+        }
+        return Result.getResult(topicIdList);
     }
 }

@@ -6,7 +6,6 @@ import java.util.List;
 import java.util.Set;
 
 import org.apache.rocketmq.client.exception.MQClientException;
-import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.TopicConfig;
 import org.apache.rocketmq.common.admin.TopicStatsTable;
 import org.apache.rocketmq.common.protocol.body.ClusterInfo;
@@ -41,6 +40,7 @@ import com.sohu.tv.mq.cloud.mq.SohuMQAdmin;
 import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper;
 import com.sohu.tv.mq.cloud.util.Result;
 import com.sohu.tv.mq.cloud.util.Status;
+import com.sohu.tv.mq.util.CommonUtil;
 
 /**
  * topic服务
@@ -546,8 +546,8 @@ public class TopicService {
                 List<Result> resultList = new ArrayList<Result>();
                 for(String topic : topicList.getTopicList()) {
                     // topic过滤
-                    if (topic.startsWith(MixAll.RETRY_GROUP_TOPIC_PREFIX)
-                            || topic.startsWith(MixAll.DLQ_GROUP_TOPIC_PREFIX)
+                    if (CommonUtil.isRetryTopic(topic)
+                            || CommonUtil.isDeadTopic(topic)
                             || systemTopicList.getTopicList().contains(topic)) {
                         resultList.add(Result.getResult(Status.FILTERED_TOPIC).setResult(topic));
                         continue;
@@ -618,5 +618,85 @@ public class TopicService {
         }
         return Result.getResult(result);
     }
+    
+    /**
+     * 重置topic流量
+     * @param topicTrafficList
+     * @return
+     */
+    public Result<Integer> resetCount(int dayAgo) {
+        Integer result = null;
+        try {
+            result = topicDao.resetCount(dayAgo);
+        } catch (Exception e) {
+            logger.error("resetCount err, dayAgo:{}", dayAgo, e);
+            return Result.getDBErrorResult(e);
+        }
+        return Result.getResult(result);
+    }
+    
+    /**
+     * 创建 trace topic
+     * 
+     * @param audit
+     * @param auditTopic
+     * @param traceClusterId
+     * @return
+     */
+    public Result<?> createTraceTopic(Audit audit, AuditTopic auditTopic, Integer traceClusterId) {
+        if (traceClusterId == null) {
+            return Result.getResult(Status.TRACE_CLUSTER_ID_IS_NULL);
+        }
+        // 获取集群
+        Cluster mqCluster = clusterService.getMQClusterById(traceClusterId);
+        if (mqCluster == null) {
+            return Result.getResult(Status.TRACE_CLUSTER_IS_NULL);
+        }
+        // 更改topic名称 例如mqcloud-test-topic转化成mqcloud-test-trace-topic
+        auditTopic.setName(CommonUtil.buildTraceTopic(auditTopic.getName()));
+        auditTopic.setProducer(CommonUtil.buildTraceTopicProducer(auditTopic.getName()));
+        auditTopic.setTraceEnabled(0);
+        // 创建topic
+        Result<?> createResult = createTopic(mqCluster, audit, auditTopic);
+        if (createResult.isNotOK()) {
+            logger.error("create trace topic err ! traceTopic:{}", auditTopic.getName());
+            return Result.getResult(Status.TRACE_TOPIC_CREATE_ERROR);
+        }
+        return Result.getOKResult();
+    }
+    
+    /**
+     * 更新topic
+     * @param mqCluster
+     * @param auditTopic
+     */
+    @Transactional
+    public Result<?> updateTopicTrace(Audit audit, Topic topic, int traceClusterId) {
+        try {
+            // 第一步：更新topic记录
+            Integer count = topicDao.updateTopicTrace(topic.getId(), topic.getTraceEnabled());
+            if(count == null || count != 1) {
+                return Result.getResult(Status.DB_ERROR);
+            }
+            if(topic.traceEnabled()) {
+                Result<Topic> topicResult = queryTopic(CommonUtil.buildTraceTopic(topic.getName()));
+                // trace topic已经存在，没必要创建
+                if(topicResult.isOK()) {
+                    return Result.getOKResult();
+                }
+                // 第二步：真实更新topic
+                AuditTopic auditTopic = new AuditTopic();
+                auditTopic.setName(topic.getName());
+                auditTopic.setQueueNum(8);
+                return createTraceTopic(audit, auditTopic, traceClusterId);
+            }
+        } catch (Exception e) {
+            logger.error("updateTopicTrace topic:{}", topic, e);
+            TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+            return Result.getWebErrorResult(e);
+        }
+        return Result.getOKResult();
+    }
+    
 }
 

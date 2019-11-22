@@ -167,6 +167,34 @@ public class UserConsumerService {
         userConsumer.setUid(uid);
         return queryUserConsumer(userConsumer);
     }
+    
+    /**
+     * 查询用户消费者关系
+     * @param uid
+     * @param consumerId
+     * @return
+     */
+    public Result<List<UserConsumer>> queryUserConsumer(long uid, long tid, long consumerId){
+        UserConsumer userConsumer = new UserConsumer();
+        userConsumer.setConsumerId(consumerId);
+        userConsumer.setUid(uid);
+        userConsumer.setTid(tid);
+        return queryUserConsumer(userConsumer);
+    }
+    
+    /**
+     * 查询用户topic消费者关系
+     * @param uid
+     * @param consumerID
+     * @return
+     */
+    public Result<List<UserConsumer>> queryUserTopicConsumer(long uid, long tid){
+        UserConsumer userConsumer = new UserConsumer();
+        userConsumer.setUid(uid);
+        userConsumer.setTid(tid);
+        return queryUserConsumer(userConsumer);
+    }
+    
     /**
      * 查询用户消费者关系(包含权限)
      * @param user
@@ -281,5 +309,30 @@ public class UserConsumerService {
             return Result.getDBErrorResult(e);
         }
         return Result.getResult(count);
+    }
+
+    /**
+     * 根据uid和consumer关联的topicId
+     */
+    public Result<List<Long>> queryTopicId(User user, String consumer) {
+        if (user.isAdmin()) {
+            return queryTopicId(0, consumer);
+        } else {
+            return queryTopicId(user.getId(), consumer);
+        }
+    }
+
+    /**
+     * 根据uid和date查询
+     */
+    public Result<List<Long>> queryTopicId(long uid, String consumer) {
+        List<Long> topicId = null;
+        try {
+            topicId = userConsumerDao.selectTidByUidAndConsumer(uid, consumer);
+        } catch (Exception e) {
+            logger.error("queryTopicId err, uid:{}, consumer:{}", uid, consumer, e);
+            return Result.getDBErrorResult(e);
+        }
+        return Result.getResult(topicId);
     }
 }

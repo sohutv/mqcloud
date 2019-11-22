@@ -2,6 +2,8 @@ package com.sohu.tv.mq.cloud.web.controller;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -25,19 +27,24 @@ import com.alibaba.fastjson.JSON;
 import com.sohu.tv.mq.cloud.bo.Audit;
 import com.sohu.tv.mq.cloud.bo.Audit.TypeEnum;
 import com.sohu.tv.mq.cloud.bo.AuditResendMessage;
+import com.sohu.tv.mq.cloud.bo.AuditResendMessageConsumer;
 import com.sohu.tv.mq.cloud.bo.Cluster;
+import com.sohu.tv.mq.cloud.bo.Consumer;
 import com.sohu.tv.mq.cloud.bo.DecodedMessage;
 import com.sohu.tv.mq.cloud.bo.MessageData;
 import com.sohu.tv.mq.cloud.bo.MessageQueryCondition;
 import com.sohu.tv.mq.cloud.bo.Topic;
+import com.sohu.tv.mq.cloud.bo.UserConsumer;
 import com.sohu.tv.mq.cloud.bo.UserProducer;
 import com.sohu.tv.mq.cloud.mq.DefaultCallback;
 import com.sohu.tv.mq.cloud.mq.MQAdminTemplate;
 import com.sohu.tv.mq.cloud.service.AlertService;
 import com.sohu.tv.mq.cloud.service.AuditService;
 import com.sohu.tv.mq.cloud.service.ClusterService;
+import com.sohu.tv.mq.cloud.service.ConsumerService;
 import com.sohu.tv.mq.cloud.service.MessageService;
 import com.sohu.tv.mq.cloud.service.TopicService;
+import com.sohu.tv.mq.cloud.service.UserConsumerService;
 import com.sohu.tv.mq.cloud.service.UserProducerService;
 import com.sohu.tv.mq.cloud.util.CompressUtil;
 import com.sohu.tv.mq.cloud.util.FreemarkerUtil;
@@ -46,6 +53,7 @@ import com.sohu.tv.mq.cloud.util.SplitUtil;
 import com.sohu.tv.mq.cloud.util.Status;
 import com.sohu.tv.mq.cloud.web.controller.param.MessageParam;
 import com.sohu.tv.mq.cloud.web.vo.TraceViewVO;
+import com.sohu.tv.mq.cloud.web.vo.TraceViewVO.RequestViewVO;
 import com.sohu.tv.mq.cloud.web.vo.UserInfo;
 import com.sohu.tv.mq.util.CommonUtil;
 
@@ -74,13 +82,19 @@ public class TopicMessageController extends ViewController {
     private MQAdminTemplate mqAdminTemplate;
     
     @Autowired
-    private UserProducerService userProducerService;
+    private UserConsumerService userConsumerService;
     
     @Autowired
     private AuditService auditService;
     
     @Autowired
     private AlertService alertService;
+    
+    @Autowired
+    private UserProducerService userProducerService;
+    
+    @Autowired
+    private ConsumerService consumerService;
     
     /**
      * 首页
@@ -134,8 +148,8 @@ public class TopicMessageController extends ViewController {
             messageQueryCondition.setMaxOffset(maxOffset);
         }
         
-        // 设置是否是拥有者
-        setOwner(userInfo, map, tid);
+        // 设置是否是消费者
+        setConsumer(userInfo, map, tid);
         setTraceEnabled(map, topic.traceEnabled());
         setResult(map, "cluster", cluster);
         return view;
@@ -242,41 +256,98 @@ public class TopicMessageController extends ViewController {
     
     /**
      * trace搜索
+     * 
      * @return
      * @throws Exception
      */
     @RequestMapping("/trace/search")
-    public String traceSearch(UserInfo userInfo, 
-            HttpServletRequest request, 
-            HttpServletResponse response, 
+    public String traceSearch(UserInfo userInfo,
+            HttpServletRequest request,
+            HttpServletResponse response,
             @RequestParam("topic") String topic,
             @RequestParam("traceStartTime") Long beginTime,
             @RequestParam("traceEndTime") Long endTime,
-            @RequestParam(name="traceKey") String msgKey,
+            @RequestParam(name = "traceKey") String msgKey,
             Map<String, Object> map) throws Exception {
         String view = viewModule() + "/traceSearch";
         // 时间点
-        if(beginTime == 0 || endTime == 0 || beginTime > endTime) {
+        if (beginTime == 0 || endTime == 0 || beginTime > endTime) {
             setResult(map, Result.getResult(Status.PARAM_ERROR));
-        } else {
-            msgKey = msgKey.trim();
-            topic = CommonUtil.buildTraceTopic(topic);
-            Result<Topic> topicResult = topicService.queryTopic(topic);
-            if(topicResult.isNotOK()) {
-                setResult(map, topicResult);
-            } else {
-                // 消息查询
-                Cluster cluster = clusterService.getMQClusterById(topicResult.getResult().getClusterId());
-                Result<List<DecodedMessage>> result = messageService.queryMessageByKey(cluster, topic, msgKey, beginTime, endTime);
-                if (result.isEmpty()) {
-                    setResult(map, null);
-                } else {
-                    Map<String, TraceViewVO> viewMap = messageService.groupTraceMessage(result.getResult(), msgKey);
-                    setResult(map, viewMap);
+            return view;
+        }
+        // topic校验
+        String traceTopic = CommonUtil.buildTraceTopic(topic);
+        Result<Topic> traceTopicResult = topicService.queryTopic(traceTopic);
+        if (traceTopicResult.isNotOK()) {
+            setResult(map, traceTopicResult);
+            return view;
+        }
+        // 消息查询
+        msgKey = msgKey.trim();
+        Cluster cluster = clusterService.getMQClusterById(traceTopicResult.getResult().getClusterId());
+        Result<List<DecodedMessage>> decodedMessageListResult = messageService.queryMessageByKey(cluster, traceTopic,
+                msgKey, beginTime, endTime);
+        if (decodedMessageListResult.isEmpty()) {
+            setResult(map, null);
+            return view;
+        }
+        // 消息分组
+        Map<String, TraceViewVO> viewMap = messageService.groupTraceMessage(decodedMessageListResult.getResult(),
+                msgKey);
+        setResult(map, viewMap);                  
+        // 管理员直接返回
+        if (userInfo.getUser().isAdmin()) {
+            return view;
+        }
+        // 校验
+        Result<Topic> topicResult = topicService.queryTopic(topic);
+        if (topicResult.isNotOK()) {
+            return view;
+        }
+        Result<UserProducer> userProducerResult = userProducerService.findUserProducer(userInfo.getUser().getId(),
+                topicResult.getResult().getId());
+        // 生产者直接返回
+        if (userProducerResult.isOK()) {
+            return view;
+        }
+        // 过滤消费者
+        Result<List<Consumer>> consumerListResult = consumerService.queryUserTopicConsumer(userInfo.getUser().getId(),
+                topicResult.getResult().getId());
+        if(consumerListResult.isEmpty()) {
+            setResult(map, null);
+            return view;
+        }
+        filter(viewMap.values(), consumerListResult.getResult());
+        return view;
+    }
+    
+    /**
+     * 过滤消费者
+     * @param traceViewVOCollection
+     * @param consumerList
+     */
+    private void filter(Collection<TraceViewVO> traceViewVOCollection, List<Consumer> consumerList) {
+        for(TraceViewVO traceViewVO : traceViewVOCollection) {
+            List<RequestViewVO> requestViewVOList = traceViewVO.getConsumerRequestViewList();
+            if(requestViewVOList == null) {
+                continue;
+            }
+            Iterator<RequestViewVO> iterator = requestViewVOList.iterator();
+            while(iterator.hasNext()) {
+                RequestViewVO requestViewVO = iterator.next();
+                boolean found = false;
+                for(Consumer consumer : consumerList) {
+                    if(StringUtils.isNotEmpty(requestViewVO.getGroup()) && 
+                            consumer.getName().equals(requestViewVO.getGroup())){
+                        found = true;
+                        break;
+                    }
+                }
+                if(!found) {
+                    iterator.remove();
                 }
             }
         }
-        return view;
     }
     
     /**
@@ -438,13 +509,14 @@ public class TopicMessageController extends ViewController {
     @RequestMapping("/resend")
     public Result<?> resend(UserInfo userInfo, 
             @RequestParam("tid") int tid,
-            @RequestParam("msgIds") String msgIds) throws Exception {
+            @RequestParam("msgIds") String msgIds,
+            @RequestParam("cid") int cid) throws Exception {
         // 检测
         String[] msgIdArray = msgIds.split(",");
         if(msgIdArray.length == 0) {
             return Result.getResult(Status.PARAM_ERROR);
         }
-        if(!isOwner(userInfo, tid)) {
+        if(!isOwner(userInfo, tid, cid)) {
             return Result.getResult(Status.PERMISSION_DENIED_ERROR);
         }
         // 构造审核记录
@@ -459,9 +531,12 @@ public class TopicMessageController extends ViewController {
             auditResendMessage.setTid(tid);
             auditResendMessageList.add(auditResendMessage);
         }
+        AuditResendMessageConsumer auditResendMessageConsumer = new AuditResendMessageConsumer();
+        auditResendMessageConsumer.setConsumerId(cid);
         
         // 保存记录
-        Result<?> result = auditService.saveAuditAndAuditResendMessage(audit, auditResendMessageList);
+        Result<?> result = auditService.saveAuditAndAuditResendMessage(audit, auditResendMessageList, 
+                auditResendMessageConsumer);
         // 发送提醒邮件
         if(result.isOK()) {
             Result<Topic> topicResult = topicService.queryTopic(tid);
@@ -474,30 +549,32 @@ public class TopicMessageController extends ViewController {
     }
     
     /**
-     * 设置是否是拥有者
+     * 设置是否是消费者
      * @param userInfo
      * @param map
      * @param tid
      */
-    private void setOwner(UserInfo userInfo, Map<String, Object> map, int tid) {
-        setResult(map, "owner", getOwner(userInfo, tid));
+    private void setConsumer(UserInfo userInfo, Map<String, Object> map, int tid) {
+        setResult(map, "consumer", isConsumer(userInfo, tid));
     }
     
-    private boolean isOwner(UserInfo userInfo, int tid) {
-        return 1 == getOwner(userInfo, tid);
-    }
-    
-    private int getOwner(UserInfo userInfo, int tid) {
-        int owner = 0;
+    private int isConsumer(UserInfo userInfo, int tid) {
         if(userInfo.getUser().isAdmin()) {
-            owner = 1;
-        } else {
-            Result<List<UserProducer>> result = userProducerService.queryUserProducer(userInfo.getUser().getId(), tid);
-            if(result.isOK()) {
-                owner = 1;
-            }
+            return 1;
         }
-        return owner;
+        Result<List<UserConsumer>> rst = userConsumerService.queryUserTopicConsumer(userInfo.getUser().getId(), tid);
+        if(rst.isNotEmpty()) {
+            return 1;
+        }
+        return 0;
+    }
+    
+    private boolean isOwner(UserInfo userInfo, int tid, int cid) {
+        if(userInfo.getUser().isAdmin()) {
+            return true;
+        }
+        Result<List<UserConsumer>> rst = userConsumerService.queryUserConsumer(userInfo.getUser().getId(), tid, cid);
+        return rst.isNotEmpty();
     }
     
     @Override

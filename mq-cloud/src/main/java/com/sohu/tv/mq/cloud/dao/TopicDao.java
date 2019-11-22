@@ -142,4 +142,21 @@ public interface TopicDao {
      */
     @Update("update topic set info=#{info} where id=#{tid}")
     public Integer updateTopicInfo(@Param("tid") long tid, @Param("info") String info);
+    
+    /**
+     * 更新记录
+     * 
+     * @param tid
+     * @param info
+     */
+    @Update("update topic set trace_enabled=#{traceEnabled} where id=#{tid}")
+    public Integer updateTopicTrace(@Param("tid") long tid, @Param("traceEnabled") int traceEnabled);
+    
+    /**
+     * 重置count
+     * 
+     * @param day
+     */
+    @Update("update topic set count = 0 where count > 0 and update_time < DATE_SUB(CURDATE(),INTERVAL #{dayAgo} DAY)")
+    public Integer resetCount(@Param("dayAgo") int dayAgo);
 } 

@@ -1,7 +1,7 @@
 package com.sohu.index.tv.mq.common;
 
 /**
- * 消费回掉
+ * 消费回调
  * @Description: 
  * @author yongfeigao
  * @date 2018年1月19日

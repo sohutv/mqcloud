@@ -11,13 +11,12 @@
 				    <select id="topicSearchSelect" class="selectpicker" title="请选择" data-live-search-placeholder="搜索" name="topic" data-live-search="true"></select>
 		 	     </div>
 		 	  <#else>
-		  	  	 <#if pagination.result.totalPages gt 1>
-			 	     <div class="form-group">
-			    	    <input type="text" class="form-control" name="topic" value="<#if response.OK>${response.result.queryTopic!}</#if>" placeholder="Topic名字">
-			  	     </div>
-					 <button type="submit" onclick="searchTopic()" class="btn btn-search"><span class="glyphicon glyphicon-search" aria-hidden="true"></span></button>
-		 	     </#if>
+		 	     <div class="form-group">
+		    	    <input type="text" class="form-control" name="topic" value="<#if response.OK>${response.result.queryTopic!}</#if>" placeholder="Topic名字">
+		  	     </div>
+				 <button type="submit" onclick="searchTopic()" class="btn btn-search"><span class="glyphicon glyphicon-search" aria-hidden="true"></span></button>
 		  	  </#if>
+			  <button type="button" data-toggle="modal" data-target="#ipSearchModal" title="根据ip搜索生产者或消费者" class="btn btn-search ipsearch"><span class="glyphicon"></span></button>
 			  <button type="submit" class="btn btn-success" data-target="#addTopicModal" data-toggle="modal">我要生产消息</button>
 			  <button type="submit" class="btn btn-success" onclick="initTopicList('topicSelectForConsumer')" data-target="#addConsumerModal" data-toggle="modal">我要消费消息</button>
 			  <button type="submit" class="btn btn-success" onclick="initTopicList('topicSelect')" data-target="#buildRelationshipModal" data-toggle="modal" data-toggle="tooltip" title="RocketMQ的老用户通过这个入口来关联生产者和消费者">我是老用户</button>
@@ -83,9 +82,17 @@
 		                    	<#else>
 		                    		<td>0</td>
 								</#if>
-								<td>
-									${topicTrafficVO.info!}
-								</td>
+								<#if topicTrafficVO.own>
+									<td class="edit-text">
+										<#if topicTrafficVO.info?? && topicTrafficVO.info !=''> 
+											<span style="cursor:pointer" data-toggle="tooltip" title="修改用途" onclick="updateTopicInfoShow(${topicTrafficVO.id}, '${topicTrafficVO.name}', '${topicTrafficVO.info}')">${topicTrafficVO.info!}</span>
+				           				<#else>
+			            					<button type="submit" class="btn btn-success btn-sm" onclick="updateTopicInfoShow(${topicTrafficVO.id}, '${topicTrafficVO.name}', '${topicTrafficVO.info!}')" >添加</button>
+				           				</#if>
+									</td>
+								<#else>
+									<td>${topicTrafficVO.info!}</td>
+								</#if>
 								<td>
 									<#if topicTrafficVO.own>
 										<button type="button" class="btn btn-warning" data-target="#deleteTopicModal${topicTrafficVO_index}" data-toggle="modal"><span class="glyphicon glyphicon-trash" aria-hidden="true"></span></button>
@@ -422,6 +429,59 @@
 	</div>
 </div>
 
+<!-- 按ip搜索topic入口 -->
+<div id="ipSearchModal" class="modal fade" tabindex="-1" data-width="400">
+	<div class="modal-dialog" style="width:800px;">
+		<div class="modal-content">
+			<!-- header -->
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+				<h4 class="modal-title">根据生产者/消费者ip搜索topic</h4>
+			</div>
+			<!-- body -->
+			<div class="modal-body">
+				<form class="form-inline" id="ipSearchForm" style="float:right">
+					<div style="float:left;margin:10px 0px;">
+						<!-- 时间 -->
+						<div class="form-group time">
+							<label for="timePicker" title="">开始时间: </label>
+							<input id="timePicker" type="text" title= "只能选择当天时间" class="Wdate form-control" onclick="WdatePicker({ dateFmt: 'yyyy-MM-dd HH:mm:ss',maxDate:'%y-%M-%d',minDate:'%y-%M-%d 00:00:00',onpicked:function(){timeChange('time')}})" style="width:180px;height:34px;cursor:pointer;" readonly="readonly"
+								   value="${(.now?long-3600000)?number_to_datetime?string("yyyy-MM-dd HH:mm:ss")}">
+							<input type="hidden" name="time" id="time" value="${(.now?long-3600000)?number_to_datetime?string("yyyy-MM-dd HH:mm:ss")}">
+							<label for="endTimePicker" title="">结束时间: </label>
+							<input id="endTimePicker" disabled="disabled" title="默认为当前时间,不可选择" type="text" class="Wdate form-control" onclick="WdatePicker({ dateFmt: 'yyyy-MM-dd HH:mm:ss',maxDate:'%y-%M-%d',minDate:'%y-%M-%d'})" style="width:180px;height:34px;cursor:pointer;" readonly="readonly"
+								   value="${(.now?long)?number_to_datetime?string("yyyy-MM-dd HH:mm:ss")}">
+						</div>
+						<!-- ip -->
+						<div class="form-group time">
+							<input type="text" class="form-control" id="ip" name="ip" placeholder="ip地址">
+						</div>
+						<!-- 查询按钮 -->
+						<button type="button" data-toggle='tooltip' title="搜索" onclick="searchTopicByIp()" class="btn btn-search time"><span class="glyphicon glyphicon-search" aria-hidden="true"></span></button>
+					</div>
+				</form>
+				<br>
+				<!-- table -->
+				<table id="dataTable" class="table table-striped table-hover" style="margin-top: 0px;word-break:break-all; word-wrap:break-all;">
+					<colgroup>
+						<col width="180px">
+					</colgroup>
+					<thead>
+					<tr>
+						<td>ip</td>
+						<td title="ip归属的消费者">消费者</td>
+						<td title="ip归属的生产者">生产者</td>
+						<td title="关联的topic">topic</td>
+					</tr>
+					</thead>
+					<tbody>
+					<tr class="no_more_data"><td colspan=8 class="text-center">暂无数据</td></tr>
+					</tbody>
+				</table>
+			</div>
+		</div>
+	</div>
+</div>
 
 <!-- 历史消息 -->
 <div id="messageModel" class="modal fade" tabindex="-1" aria-hidden="true">
@@ -452,6 +512,39 @@
 		</div>
 	</div>
 </div> <!-- 历史消息结束 -->
+
+<#--修改topic描述-->
+<div id="updateTopicInfoModal" class="modal fade" tabindex="-1" data-width="400">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+				<h4 class="modal-title"><b id="topicName"></b>描述更新</h4>
+			</div>
+			<form class="form-horizontal form-bordered form-row-stripped" id="addUserProducerModalForm">
+				<div class="modal-body">
+					<div class="row">
+						<div class="col-md-12">
+							<div class="form-body">
+								<div class="form-group">
+									<label class="control-label col-md-3"> 用途: </label>
+									<div class="col-md-8">
+										<input type="hidden" id="topicId">
+										<textarea id="topicInfo" rows="5" class="form-control"></textarea>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" data-dismiss="modal" class="btn" >取消</button>
+					<button type="button" class="btn btn-primary" id="updateTopicInfoBtn" onclick="updateTopicInfo()">确定</button>
+				</div>
+			</form>
+		</div>
+	</div>
+</div> 
 
 <script type="text/javascript">
 	/**
@@ -956,4 +1049,52 @@ function showExtendConfig(obj){
 		$("input[name='ordered'][value='0']").prop("checked",true);
 	}
 }
+
+	function searchTopicByIp() {
+		if(!$("#ip").val()){
+			alert("请输入ip地址");
+			return;
+		}
+		post('${request.contextPath}/topic/search/ip',$("#ipSearchForm").serialize(),
+				function(data){
+					$("#dataTable tbody").remove();
+					$("#dataTable").append(data);
+				});
+	}
+
+	function timeChange(id){
+		var dt = $("#" + id + "Picker").val();
+		var tm = parseDate(dt);
+		$("#" + id).val(tm);
+	}
+	timeChange('time');
+
+	function updateTopicInfoShow(tid, topicName, info){
+		$("#topicId").val(tid);
+		$("#topicName").html(topicName);
+		$("#topicInfo").val(info);
+		$('#updateTopicInfoModal').modal('show');
+	}
+	
+	function updateTopicInfo(){
+		if(!$("#topicInfo").val()){
+			alert("请输入用途");
+			return;
+		}
+		disable("updateTopicInfoBtn");
+		$.post('${request.contextPath}/topic/update/info',
+				{
+					info: $("#topicInfo").val(),
+					tid: $("#topicId").val()
+				},
+		        function(data){
+		            if(data.status == 200){
+		            	toastr.success("操作成功！即将刷新页面！");  	            	
+		            	reload(2000);            	
+				    }else{
+				    	toastr.error("操作失败！"+data.message);  
+				    	enable("updateTopicInfoBtn");
+				    }
+		    }, 'json');
+	}
 </script>

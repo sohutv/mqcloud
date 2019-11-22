@@ -17,6 +17,7 @@ import com.sohu.tv.mq.cloud.bo.Audit;
 import com.sohu.tv.mq.cloud.bo.Audit.StatusEnum;
 import com.sohu.tv.mq.cloud.bo.AuditResendMessage;
 import com.sohu.tv.mq.cloud.bo.Cluster;
+import com.sohu.tv.mq.cloud.bo.Consumer;
 import com.sohu.tv.mq.cloud.bo.Topic;
 import com.sohu.tv.mq.cloud.service.AuditResendMessageService;
 import com.sohu.tv.mq.cloud.service.AuditService;
@@ -89,6 +90,13 @@ public class AdminMessageController {
             return topicResult;
         }
         String topic = topicResult.getResult().getName();
+        
+        // 获取消费者
+        Result<Consumer> consumerResult = auditResendMessageService.queryConsumer(aid);
+        if(consumerResult.isNotOK()) {
+            return consumerResult;
+        }
+        String consumer = consumerResult.getResult().getName();
 
         // 获取cluster
         Cluster cluster = clusterService.getMQClusterById(topicResult.getResult().getClusterId());
@@ -101,11 +109,11 @@ public class AdminMessageController {
             if(AuditResendMessage.StatusEnum.SUCCESS.getStatus() == msg.getStatus()) {
                 continue;
             }
-            Result<SendResult> sendResult = messageService.resend(cluster, topic, msg.getMsgId());
+            Result<SendResult> sendResult = messageService.resend(cluster, topic, msg.getMsgId(), consumer);
             int status = AuditResendMessage.StatusEnum.SUCCESS.getStatus();
             if (sendResult.isNotOK()) {
-                logger.warn("resendMessage cluster:{} topic:{} msgId:{} err:{}", cluster, topic, msg.getMsgId(),
-                        sendResult);
+                logger.warn("resendMessage cluster:{} topic:{} consumer:{} msgId:{} err:{}", cluster, topic, consumer, 
+                        msg.getMsgId(), sendResult);
                 status = AuditResendMessage.StatusEnum.FAILED.getStatus();
                 resendMessageVO.incrFailed();
             } else {
@@ -114,8 +122,8 @@ public class AdminMessageController {
             Result<Integer> updateResult = auditResendMessageService.update(aid, msg.getMsgId(), status);
             if (updateResult.isNotOK()) {
                 resendMessageVO.incrStatusUpdatedFailed();
-                logger.warn("resendMessage cluster:{} topic:{} msgId:{} update not ok :{}", cluster, topic,
-                        msg.getMsgId(), updateResult);
+                logger.warn("resendMessage cluster:{} topic:{} consumer:{} msgId:{} update not ok :{}", cluster, topic,
+                        consumer, msg.getMsgId(), updateResult);
             }
         }
         
@@ -171,16 +179,23 @@ public class AdminMessageController {
 
         // 获取cluster
         Cluster cluster = clusterService.getMQClusterById(topicResult.getResult().getClusterId());
+        
+        // 获取消费者
+        Result<Consumer> consumerResult = auditResendMessageService.queryConsumer(aid);
+        if(consumerResult.isNotOK()) {
+            return consumerResult;
+        }
+        String consumer = consumerResult.getResult().getName();
 
         // 统计状态
         ResendMessageVO resendMessageVO = new ResendMessageVO();
         resendMessageVO.setTotal(1);
         if(AuditResendMessage.StatusEnum.SUCCESS.getStatus() != auditResendMessage.getStatus()) {
-            Result<SendResult> sendResult = messageService.resend(cluster, topic, msgId);
+            Result<SendResult> sendResult = messageService.resend(cluster, topic, msgId, consumer);
             int status = AuditResendMessage.StatusEnum.SUCCESS.getStatus();
             if (sendResult.isNotOK()) {
-                logger.warn("resendMessage cluster:{} topic:{} msgId:{} err:{}", cluster, topic, msgId,
-                        sendResult);
+                logger.warn("resendMessage cluster:{} topic:{} consumer:{} msgId:{} err:{}", cluster, topic, consumer,
+                        msgId, sendResult);
                 status = AuditResendMessage.StatusEnum.FAILED.getStatus();
                 resendMessageVO.incrFailed();
             } else {
@@ -188,8 +203,8 @@ public class AdminMessageController {
             }
             Result<Integer> updateResult = auditResendMessageService.update(aid, msgId, status);
             if (updateResult.isNotOK()) {
-                logger.warn("resendMessage cluster:{} topic:{} msgId:{} update not ok :{}", cluster, topic,
-                        msgId, updateResult);
+                logger.warn("resendMessage cluster:{} topic:{} consumer:{} msgId:{} update not ok :{}", cluster, topic,
+                        consumer, msgId, updateResult);
                 resendMessageVO.incrStatusUpdatedFailed();
             }
             

@@ -1,14 +1,11 @@
 package com.sohu.tv.mq.cloud.task.monitor;
 
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Random;
-import java.util.Set;
-import java.util.TreeMap;
-
+import com.sohu.tv.mq.cloud.bo.Cluster;
+import com.sohu.tv.mq.cloud.bo.NameServer;
+import com.sohu.tv.mq.cloud.service.NameServerService;
+import com.sohu.tv.mq.cloud.util.Jointer;
+import com.sohu.tv.mq.cloud.util.Result;
+import com.sohu.tv.mq.util.CommonUtil;
 import org.apache.rocketmq.client.consumer.DefaultMQPullConsumer;
 import org.apache.rocketmq.client.consumer.DefaultMQPushConsumer;
 import org.apache.rocketmq.client.consumer.PullResult;
@@ -35,16 +32,12 @@ import org.apache.rocketmq.remoting.RPCHook;
 import org.apache.rocketmq.remoting.exception.RemotingException;
 import org.apache.rocketmq.tools.admin.DefaultMQAdminExt;
 import org.apache.rocketmq.tools.monitor.DeleteMsgsEvent;
-import org.apache.rocketmq.tools.monitor.MonitorListener;
 import org.apache.rocketmq.tools.monitor.UndoneMsgs;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.sohu.tv.mq.cloud.bo.Cluster;
-import com.sohu.tv.mq.cloud.bo.NameServer;
-import com.sohu.tv.mq.cloud.service.NameServerService;
-import com.sohu.tv.mq.cloud.util.Jointer;
-import com.sohu.tv.mq.cloud.util.Result;
+import java.util.*;
+import java.util.Map.Entry;
 
 /**
  * copy from org.apache.rocketmq.tools.monitor.MonitorService
@@ -57,7 +50,7 @@ public class MonitorService {
 
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
-    private MonitorListener monitorListener;
+    private SohuMonitorListener monitorListener;
 
     private DefaultMQAdminExt defaultMQAdminExt;
     private DefaultMQPullConsumer defaultMQPullConsumer;
@@ -69,7 +62,7 @@ public class MonitorService {
     
     private boolean initialized;
 
-    public MonitorService(NameServerService nameServerService, Cluster mqCluster, MonitorListener monitorListener) {
+    public MonitorService(NameServerService nameServerService, Cluster mqCluster, SohuMonitorListener monitorListener) {
         Result<List<NameServer>> nameServerListResult = nameServerService.query(mqCluster.getId());
         if(nameServerListResult.isEmpty()) {
             logger.error("monitor cluster:{} init err!", mqCluster);
@@ -155,7 +148,7 @@ public class MonitorService {
 
         TopicList topicList = defaultMQAdminExt.fetchAllTopicList();
         for (String topic : topicList.getTopicList()) {
-            if (topic.startsWith(MixAll.RETRY_GROUP_TOPIC_PREFIX)) {
+            if (CommonUtil.isRetryTopic(topic)) {
                 String consumerGroup = topic.substring(MixAll.RETRY_GROUP_TOPIC_PREFIX.length());
 
                 // 链接在线检测
@@ -181,6 +174,12 @@ public class MonitorService {
                     this.reportConsumerRunningInfo(consumerGroup, cc);
                 } catch (Exception e) {
                     logger.warn("reportConsumerRunningInfo Exception", e);
+                }
+
+                try {
+                    this.monitorListener.saveConsumerGroupClientInfo(consumerGroup, cc);
+                } catch (Exception e) {
+                    logger.warn("saveConsumerGroupClientInfo Exception", e);
                 }
             }
         }

@@ -57,7 +57,7 @@
 					</div>
 				</div>
 				<div class="modal-footer">
-					<button type="button" class="btn btn-primary" onclick="register()">注册</button>
+					<button type="button" class="btn btn-primary" id="registerBtn" onclick="register()">注册</button>
 				</div>
 			</form>
 			 <#else>
@@ -79,6 +79,7 @@ function register(){
 		alert("两次密码不一致");
 		return;
 	}
+	disable("registerBtn");
 	$.post('${request.contextPath}/register/add',
 		$("#registerForm").serialize(),
         function(data){
@@ -87,6 +88,7 @@ function register(){
 				setTimeout("toTopicList()",3000);
 		    }else{
 		    	toastr.error("注册失败！"+data.message);  
+		    	enable("registerBtn");
 		    }
         }, 'json');
 }

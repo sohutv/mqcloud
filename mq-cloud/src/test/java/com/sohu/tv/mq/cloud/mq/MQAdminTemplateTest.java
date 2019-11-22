@@ -2,6 +2,7 @@ package com.sohu.tv.mq.cloud.mq;
 
 import org.apache.rocketmq.common.admin.TopicStatsTable;
 import org.apache.rocketmq.common.protocol.body.ClusterInfo;
+import org.apache.rocketmq.common.protocol.route.TopicRouteData;
 import org.apache.rocketmq.tools.admin.MQAdminExt;
 import org.junit.Assert;
 import org.junit.Test;
@@ -70,4 +71,18 @@ public class MQAdminTemplateTest {
         Assert.assertNotNull(topicStatsTable);
     }
 
+    @Test
+    public void testExamineTopicRouteInfo() {
+        mqAdminTemplate.execute(new DefaultInvoke() {
+            public Cluster mqCluster() {
+                return clusterService.getMQClusterById(2);
+            }
+
+            @Override
+            public void invoke(MQAdminExt mqAdmin) throws Exception {
+                TopicRouteData route = mqAdmin.examineTopicRouteInfo("search-core_model_v2-topic");
+                Assert.assertNotNull(route);
+            }
+        });
+    }
 }

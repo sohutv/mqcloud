@@ -384,7 +384,7 @@ public class UserController extends ViewController {
         Result<TopicTopology> result = userService.queryTopicTopology(userInfo.getUser(), tid);
         if (result.isOK()) {
             Topic topic = result.getResult().getTopic();
-            topic.setClusterName(clusterService.getMQClusterById(topic.getClusterId()).getName());
+            topic.setCluster(clusterService.getMQClusterById(topic.getClusterId()));
             // 获取一分钟之前的流量数据
             Date oneMinuteAgo = new Date(System.currentTimeMillis() - 60000);
             String time = DateUtil.getFormat(DateUtil.HHMM).format(oneMinuteAgo);
