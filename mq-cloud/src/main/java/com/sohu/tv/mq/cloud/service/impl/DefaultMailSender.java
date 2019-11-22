@@ -104,6 +104,7 @@ public class DefaultMailSender implements MailSender {
     @Override
     public boolean send(String title, String content, String email, String ccEmail, int timeout) {
         if (mailSender == null) {
+            logger.warn("mailSender is null, title:{}, email:{}, content:{}", title, email, content);
             return true;
         }
         try {

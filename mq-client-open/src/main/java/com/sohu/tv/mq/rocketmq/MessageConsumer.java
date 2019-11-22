@@ -2,7 +2,6 @@ package com.sohu.tv.mq.rocketmq;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import org.apache.rocketmq.client.consumer.listener.ConsumeConcurrentlyContext;
 import org.apache.rocketmq.client.consumer.listener.ConsumeConcurrentlyStatus;
@@ -171,8 +170,6 @@ public class MessageConsumer {
      */
     private class ConsumerStrategy {
         
-        private _ConsumerExecutor _consumerExecutor = new _ConsumerExecutor();
-        
         @SuppressWarnings("rawtypes")
         private _ConsumerCallback _consumerCallback = new _ConsumerCallback();
         
@@ -180,33 +177,15 @@ public class MessageConsumer {
         
         /**
          * 挑选消费者
-         * 优先选择ConsumerExecutor
-         * 其次选择ConsumerCallback
-         * 最后选择BatchConsumerCallback
+         * 优先选择ConsumerCallback
+         * 其次选择BatchConsumerCallback
          * @return
          */
         public IConsumer chooseConsumer() {
-            if (rocketMQConsumer.getConsumerExecutor() != null) {
-                return _consumerExecutor;
-            }
             if (rocketMQConsumer.getConsumerCallback() != null) {
                 return _consumerCallback;
             }
             return _batchConsumerCallback;
-        }
-    }
-    
-    /**
-     * for @ConsumerExecutor
-     * 
-     * @author yongfeigao
-     * @date 2019年10月21日
-     */
-    private class _ConsumerExecutor extends AbstractConsumer<Map<String, Object>> {
-
-        @Override
-        public void consume(Map<String, Object> message, MessageExt msgExt) throws Exception {
-            rocketMQConsumer.getConsumerExecutor().execute(message);
         }
     }
     

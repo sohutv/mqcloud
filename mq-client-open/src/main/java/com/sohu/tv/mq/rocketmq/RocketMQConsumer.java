@@ -26,7 +26,6 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.TypeReference;
 import com.sohu.index.tv.mq.common.BatchConsumerCallback;
 import com.sohu.index.tv.mq.common.ConsumerCallback;
-import com.sohu.index.tv.mq.common.ConsumerExecutor;
 import com.sohu.tv.mq.common.AbstractConfig;
 import com.sohu.tv.mq.dto.DTOResult;
 import com.sohu.tv.mq.dto.MessageResetDTO;
@@ -39,8 +38,6 @@ import com.sohu.tv.mq.dto.MessageResetDTO;
  * @date 2018年1月17日
  */
 public class RocketMQConsumer extends AbstractConfig {
-
-    private ConsumerExecutor consumerExecutor;
 
     // 支持一批消息消费
     private BatchConsumerCallback<?, MessageExt> batchConsumerCallback;
@@ -180,10 +177,6 @@ public class RocketMQConsumer extends AbstractConfig {
         this.reconsume = reconsume;
     }
 
-    public void setConsumerExecutor(ConsumerExecutor consumerExecutor) {
-        this.consumerExecutor = consumerExecutor;
-    }
-
     @SuppressWarnings("rawtypes")
     public void setConsumerCallback(ConsumerCallback consumerCallback) {
         this.consumerCallback = consumerCallback;
@@ -288,10 +281,6 @@ public class RocketMQConsumer extends AbstractConfig {
      */
     public void setPullInterval(int pullInterval) {
         consumer.setPullInterval(pullInterval);
-    }
-
-    public ConsumerExecutor getConsumerExecutor() {
-        return consumerExecutor;
     }
 
     @SuppressWarnings("rawtypes")
