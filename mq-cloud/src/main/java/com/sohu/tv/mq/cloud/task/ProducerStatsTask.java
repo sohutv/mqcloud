@@ -172,7 +172,9 @@ public class ProducerStatsTask {
             sb.append("</td>");
             // 异常信息
             sb.append("<td>");
-            sb.append(producerTotalStat.getException());
+            if(producerTotalStat.getException() != null) {
+                sb.append(producerTotalStat.getException());
+            }
             sb.append("</td>");
             if (i > 0) {
                 sb.append("</tr>");

@@ -18,7 +18,17 @@
 
 ----------
 
+## 1.9.2新增重要特性： 
+
+1. 支持跳过堆积的重试消息。
+2. 死消息支持重发。
+3. 根据ip查询其涉及的生产者，消费者，topic。
+4. trace支持开启关闭，trace数据查询优化，增加权限控制。
+5. 客户端异常收集兼容重试机制。
+6. 其余请参考[release](https://github.com/sohutv/mqcloud/releases)。
+
 ## 特性概览
+
 * 用户topic列表-不同用户看到不同的topic，管理员可以管理所有topic
 
   ![用户topic列表](mq-cloud/src/main/resources/static/wiki/intro/img/index.png)

@@ -54,7 +54,7 @@ public interface ProducerTotalStatDao {
      * @return
      */
     @Select("select total.producer producer, total.client client, total.create_date createDate, total.create_time createTime,"
-            + "stat.broker broker, total.exception exception "
+            + "stat.broker broker, stat.exception exception "
             + "from producer_total_stat total, producer_stat stat "
             + "where total.id = stat.total_id and total.create_date = #{createDate} and total.create_time >= #{createTime} "
             + "and total.exception is not null")
