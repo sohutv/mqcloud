@@ -48,7 +48,7 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware {
     private String domain;
     
     // nexus的域名
-    private String nexusDomain;
+    private String repositoryUrl;
 
     // 密码助手的key
     private String ciperKey;
@@ -282,16 +282,16 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware {
         return consumerClass;
     }
 
-    public String getNexusDomain() {
-        return nexusDomain;
-    }
-
     public Integer getIsOpenRegister() {
         return isOpenRegister;
     }
     
-    public void setNexusDomain(String nexusDomain) {
-        this.nexusDomain = nexusDomain;
+    public String getRepositoryUrl() {
+        return repositoryUrl;
+    }
+
+    public void setRepositoryUrl(String repositoryUrl) {
+        this.repositoryUrl = repositoryUrl;
     }
 
     public void setTicketKey(String ticketKey) {
@@ -390,7 +390,7 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware {
     @Override
     public String toString() {
         return "MQCloudConfigHelper [contextPath=" + contextPath + ", profile=" + profile + ", domain=" + domain
-                + ", nexusDomain=" + nexusDomain + ", ciperKey=" + ciperKey + ", ticketKey=" + ticketKey
+                + ", repositoryUrl=" + repositoryUrl + ", ciperKey=" + ciperKey + ", ticketKey=" + ticketKey
                 + ", serverUser=" + serverUser + ", serverPassword=" + serverPassword + ", serverPort=" + serverPort
                 + ", serverConnectTimeout=" + serverConnectTimeout + ", serverOPTimeout=" + serverOPTimeout
                 + ", operatorContact=" + operatorContact + ", specialThx=" + specialThx + ", classList=" + classList

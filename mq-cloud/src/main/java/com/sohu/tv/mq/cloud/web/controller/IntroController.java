@@ -27,7 +27,6 @@ public class IntroController extends ViewController {
     public String index(Map<String, Object> map) {
         setResult(map, "header", viewModule()+"/header");
         setView(map, "index");
-        setResult(map, "nexusDomain", mqCloudConfigHelper.getNexusDomain());
         setResult(map, "version", Version.get());
         setResult(map, "clientArtifactId", mqCloudConfigHelper.getClientArtifactId());
         setResult(map, "producerClass", mqCloudConfigHelper.getProducerClass());

@@ -539,7 +539,7 @@ CREATE TABLE `warn_config` (
   `consumer` varchar(64) DEFAULT '' COMMENT 'consumer名，为空时代表默认（仅一条默认记录）',
   `accumulate_time` int(11) DEFAULT '300000' COMMENT '堆积时间',
   `accumulate_count` int(11) DEFAULT '10000' COMMENT '堆积数量',
-  `block_time` int(11) DEFAULT '10000' COMMENT '堵塞时间',
+  `block_time` int(11) DEFAULT '10000' COMMENT '阻塞时间',
   `consumer_fail_count` int(11) DEFAULT '10' COMMENT '消费失败数量',
   `warn_unit_time` int(4) DEFAULT '1' COMMENT '报警频率的单位时间，单位小时',
   `warn_unit_count` int(4) DEFAULT '2' COMMENT '报警频率在单位时间的次数',

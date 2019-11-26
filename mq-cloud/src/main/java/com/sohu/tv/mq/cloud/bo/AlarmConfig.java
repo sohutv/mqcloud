@@ -17,7 +17,7 @@ public class AlarmConfig {
     private Long accumulateTime;
     // 堆积数量
     private Long accumulateCount;
-    // 堵塞时间
+    // 阻塞时间
     private Long blockTime;
     // 消费失败数量
     private Long consumerFailCount;
@@ -125,7 +125,7 @@ public class AlarmConfig {
      */
     public String spliceWarnFrequency() {
         if (warnUnitTime == null || warnUnitCount == null) {
-            return "";
+            return null;
         }
         return warnUnitTime + "小时" + warnUnitCount + "次";
     }

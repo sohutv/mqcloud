@@ -5,10 +5,10 @@
 	<table class="table table-striped table-hover">
 		<thead>
 			<tr class="text-center ">
-				<td>堆积时间</td>
-				<td>堆积数量</td>
-				<td>堵塞时间</td>
-				<td>消费失败数量</td>
+				<td data-toggle="tooltip" title="从broker维度检测，堆积多久预警，单位毫秒，默认为5分钟">堆积时间</td>
+				<td data-toggle="tooltip" title="堆积时间和堆积数量是&&的关系">堆积数量</td>
+				<td data-toggle="tooltip" title="从客户端维度检测，阻塞多久预警，单位毫秒">阻塞时间</td>
+				<td data-toggle="tooltip" title="每小时消费失败超过此数值就预警">消费失败数量</td>
 				<td>报警频率限制</td>
 				<td>是否接收报警</td>
 				<td>操作</td>
@@ -24,10 +24,10 @@
 			<#else>
 			    <#assign defaultConfig = response.result.defaultConfig>
 				<tr class="text-center ">
-					<td>${defaultConfig.accumulateTimeShow}</td>
-					<td>${defaultConfig.accumulateCountShow}</td>
-					<td>${defaultConfig.blockTimeShow}</td>
-					<td>${defaultConfig.consumerFailCountShow}</td>
+					<td data-toggle="tooltip" title="堆积时间超过${defaultConfig.accumulateTimeShow}ms并且堆积量超过${defaultConfig.accumulateCountShow}触发【堆积预警】">${defaultConfig.accumulateTimeShow}</td>
+					<td data-toggle="tooltip" title="堆积时间超过${defaultConfig.accumulateTimeShow}ms并且堆积量超过${defaultConfig.accumulateCountShow}触发【堆积预警】">${defaultConfig.accumulateCountShow}</td>
+					<td data-toggle="tooltip" title="客户端阻塞超过${defaultConfig.blockTimeShow}ms触发【客户端阻塞预警】">${defaultConfig.blockTimeShow}</td>
+					<td data-toggle="tooltip" title="消费者每小时消费失败超过${defaultConfig.consumerFailCountShow}触发【消费失败预警】">${defaultConfig.consumerFailCountShow}</td>
 					<td>${defaultConfig.spliceWarnFrequency()}</td>
 					<td>${(defaultConfig.ignoreWarn==0)?string('是','否')}</td>
 					<td><button type="button" onclick="updateAlarmConfig('${defaultConfig.consumer}',false)" class="btn btn-success"><span class="glyphicon glyphicon-edit" aria-hidden="true"></span></button></td>
@@ -44,10 +44,10 @@
 			<tr class="text-center ">
 				<td>序号</td>
 				<td>消费者</td>
-				<td>堆积时间</td>
-				<td>堆积数量</td>
-				<td>堵塞时间</td>
-				<td>消费失败数量</td>
+				<td data-toggle="tooltip" title="从broker维度检测，堆积多久预警，单位毫秒">堆积时间</td>
+				<td data-toggle="tooltip" title="堆积时间和堆积数量是&&的关系">堆积数量</td>
+				<td data-toggle="tooltip" title="从客户端维度检测，阻塞多久预警，单位毫秒">阻塞时间</td>
+				<td data-toggle="tooltip" title="每小时消费失败超过此数值就预警">消费失败数量</td>
 				<td>报警频率限制</td>
 				<td>是否接收报警</td>
 				<td>操作</td>
@@ -65,11 +65,11 @@
 					<tr class="text-center ">
 						<td>${alarmConfig_index+1}</td>
 						<td>${alarmConfig.consumer}</td>
-						<td>${alarmConfig.accumulateTimeShow}</td>
-						<td>${alarmConfig.accumulateCountShow}</td>
-						<td>${alarmConfig.blockTimeShow}</td>
-						<td>${alarmConfig.consumerFailCountShow}</td>
-						<td>${alarmConfig.spliceWarnFrequency()}</td>
+						<td data-toggle="tooltip" title="堆积时间超过${alarmConfig.accumulateTime!response.result.defaultConfig.accumulateTimeShow}ms并且堆积量超过${alarmConfig.accumulateCount!response.result.defaultConfig.accumulateCountShow}触发【堆积预警】">${alarmConfig.accumulateTimeShow}</td>
+						<td data-toggle="tooltip" title="堆积时间超过${alarmConfig.accumulateTime!response.result.defaultConfig.accumulateTimeShow}ms并且堆积量超过${alarmConfig.accumulateCount!response.result.defaultConfig.accumulateCountShow}触发【堆积预警】">${alarmConfig.accumulateCountShow}</td>
+						<td data-toggle="tooltip" title="客户端阻塞超过${alarmConfig.blockTime!response.result.defaultConfig.blockTimeShow}ms触发【客户端阻塞预警】">${alarmConfig.blockTimeShow}</td>
+						<td data-toggle="tooltip" title="消费者每小时消费失败超过${alarmConfig.consumerFailCount!response.result.defaultConfig.consumerFailCountShow}触发【消费失败预警】">${alarmConfig.consumerFailCountShow}</td>
+						<td data-toggle="tooltip" title="报警频率默认为${alarmConfig.spliceWarnFrequency()!response.result.defaultConfig.spliceWarnFrequency()}">${alarmConfig.spliceWarnFrequency()!}</td>
 						<td>${(alarmConfig.ignoreWarn==0)?string('是','否')}</td>
 						<td>
 							<button type="button" onclick="updateAlarmConfig('${alarmConfig.consumer}',true)" class="btn btn-success"><span class="glyphicon glyphicon-edit" aria-hidden="true"></span></button>
@@ -232,7 +232,7 @@
 							        <div class="col-md-5">
 							        	<div class="input-group">
 											<input type="text" id="accumulateTimeInput" name="accumulateTime" 
-											 data-toggle="modal" title="堆积时间 ，建议 300000毫秒" class="form-control" />
+											 data-toggle="modal" title="堆积时间 ，默认 300000毫秒" class="form-control" />
 											<span class="input-group-addon">毫秒</span>
 	    								</div>
 									</div>
@@ -242,17 +242,17 @@
 							        <div class="col-md-5">
 							        	<div class="input-group">
 											<input type="text" id="accumulateCountInput" name="accumulateCount"
-											data-toggle="modal" title="堆积数量，建议 10000条" class="form-control" />
+											data-toggle="modal" title="堆积数量，默认 10000条" class="form-control" />
 											<span class="input-group-addon">条</span>
 	    								</div>
 									</div>
 								</div>
 								<div class="form-group" id="blockTimeID">
-									<label class="control-label col-md-4"> 堵塞: </label>
+									<label class="control-label col-md-4"> 阻塞: </label>
 									<div class="col-md-5">
 										<div class="input-group">
 											<input type="text" id="blockTimeInput" name="blockTime" 
-											data-toggle="modal" title="堵塞时间，建议 10000毫秒" class="form-control" />
+											data-toggle="modal" title="阻塞时间，默认 10000毫秒" class="form-control" />
 											<span class="input-group-addon">毫秒</span>
 	    								</div>
 									</div>
@@ -262,7 +262,7 @@
 									<div class="col-md-5">
 										<div class="input-group">
 											<input type="text" id="consumerFailCountrInput" name="consumerFailCount" 
-											data-toggle="modal" title="消费失败数量，建议 10 条" class="form-control" />
+											data-toggle="modal" title="消费失败数量，默认 10 条" class="form-control" />
 											<span class="input-group-addon">条</span>
 	    								</div>	
 									</div>
@@ -330,6 +330,7 @@
 </div>
 <script>
 $(function () {
+$("[data-toggle='tooltip']").tooltip({container: 'body'});
 //初始化consumer列表
 $.get('${request.contextPath}/consumer/list/all',
         function(data){
