@@ -23,7 +23,7 @@ public enum Status {
     PARAM_ERROR(300, "参数错误"),
     NOLOGIN_ERROR(301, "nologin"),
     PERMISSION_DENIED_ERROR(303, "permission denied"),
-    NOT_INIT_IP(304, "请先配置好服务器环境"),
+    NOT_INIT_IP(304, "请先执行初始化脚本"),
     REPEAT_ERROR(305, "关联关系已存在"),
     LONGIN_ERROR(306, "用户名或密码错误"),
     OLD_PASSWORD_ERROR(307, "原始密码输入有误"),

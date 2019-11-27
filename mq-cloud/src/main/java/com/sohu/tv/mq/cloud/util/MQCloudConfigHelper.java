@@ -178,10 +178,6 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware {
         return HTTP_SCHEMA + getDomain() + "/software/" + NMON_ZIP;
     }
     
-    public String getRocketMQURL() {
-        return HTTP_SCHEMA + getDomain() + "/software/" + ROCKETMQ_FILE;
-    }
-
     public String getCiperKey() {
         return ciperKey;
     }
