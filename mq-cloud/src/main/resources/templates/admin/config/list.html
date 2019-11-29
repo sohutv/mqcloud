@@ -27,7 +27,7 @@
 				<tr>
 					<td>${config_index + 1}</td>
 					<td id="key${config.id}">${config.key}</td>
-					<td id="value${config.id}">${config.value}</td>
+					<td id="value${config.id}">${config.value!}</td>
 					<td id="comment${config.id}">${config.comment}</td>
 					<td><button type="button" class="btn btn-success" data-target="#updateConfigModal" onclick="updateConfig(${config.id})" data-toggle="modal">修改</button></td>
 				</tr>

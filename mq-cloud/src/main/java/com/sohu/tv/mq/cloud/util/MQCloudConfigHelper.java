@@ -114,6 +114,8 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware {
     // rocketmq安装文件路径
     private String rocketmqFilePath;
     
+    private String privateKey;
+    
     @Autowired
     private CommonConfigService commonConfigService;
     
@@ -135,9 +137,12 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware {
                 continue;
             }
             String value = commonConfig.getValue();
+            if(value == null) {
+                continue;
+            }
             Class<?> fieldType = field.getType();
             if(fieldType == String.class) {
-                field.set(this, value);
+                field.set(this, value.trim());
             } else if(fieldType == Integer.class) {
                 field.set(this, Integer.valueOf(value));
             } else {
@@ -383,6 +388,10 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware {
         this.rocketmqFilePath = rocketmqFilePath;
     }
     
+    public String getPrivateKey() {
+        return privateKey;
+    }
+
     @Override
     public String toString() {
         return "MQCloudConfigHelper [contextPath=" + contextPath + ", profile=" + profile + ", domain=" + domain

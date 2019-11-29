@@ -228,7 +228,7 @@ DROP TABLE IF EXISTS `common_config`;
 CREATE TABLE `common_config` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `key` varchar(64) DEFAULT NULL COMMENT '配置key',
-  `value` varchar(1024) NOT NULL COMMENT '配置值',
+  `value` varchar(65535) NOT NULL COMMENT '配置值',
   `comment` varchar(256) DEFAULT '' COMMENT '备注',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -639,7 +639,7 @@ INSERT INTO `common_config`(`key`, `value`, `comment`) VALUES ('mailProtocol', '
 INSERT INTO `common_config`(`key`, `value`, `comment`) VALUES ('mailTimeout', '10000', '邮件服务器超时时间');
 INSERT INTO `common_config`(`key`, `value`, `comment`) VALUES ('isOpenRegister', '1', '是否开启注册功能：0-不开启，1-开启');
 INSERT INTO `common_config`(`key`, `value`, `comment`) VALUES ('rocketmqFilePath', 'classpath:static/software/rocketmq.zip', 'rocketmq安装文件路径，支持以下三种资源加载方式,例如 1:classpath:static/software/rocketmq.zip 2：file:///tmp/rocketmq.zip 3：http://127.0.0.1:8080/software/rocketmq.zip');
-
+INSERT INTO `common_config`(`key`, `comment`) VALUES ('privateKey', '私钥');
 -- ----------------------------
 -- warn_config init
 -- ----------------------------

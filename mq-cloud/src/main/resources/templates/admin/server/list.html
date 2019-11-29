@@ -126,12 +126,20 @@
 						<div class="col-md-12">
 							<div class="form-body">
 								<div class="form-group">
-									<label class="control-label col-md-2"> 初始化脚本: </label>
+									<label class="control-label col-md-2" data-toggle="tooltip" title="需要root权限的用户在目标机器执行"> 初始化脚本: </label>
 									<div class="col-md-9">
 										<textarea type="text" rows="5" class="form-control" readonly>1. useradd ${username}
 2. passwd ${username} （密码为：${password}）
 3. echo "${username}     ALL=(ALL)       NOPASSWD: ALL" >> /etc/sudoers
-4. sed -i "s/Defaults    requiretty/#Defaults    requiretty/g" /etc/sudoers</textarea>
+4. sed -i "s/Defaults    requiretty/#Defaults    requiretty/g" /etc/sudoers
+注意：如果希望使用公钥登录，还需要执行如下步骤：
+1. 生成公钥和私钥对：ssh-keygen -t rsa -C ${username} -f key -N ${password}
+2. 完整复制当前目录下key文件(私钥)中的内容至 通用配置 的privateKey的配置项中。
+3. 将key.pub公钥内容添加至目标机器的/home/${username}/.ssh/authorized_keys文件中。
+4. 修改文件归属：chown ${username}:${username} -R /home/${username}/.ssh
+5. 修改文件权限：chmod 700 /home/${username}/.ssh
+mqcloud如果发现通用配置的privateKey不为空，将优先使用公钥验证，如果验证不通过，将使用用户名密码验证。
+以上步骤1,2只需要操作一次，即只用生成一次公私钥对，添加至通用配置即可。</textarea>
 									</div>
 								</div>
 								<div id="producerGroup" class="form-group">
