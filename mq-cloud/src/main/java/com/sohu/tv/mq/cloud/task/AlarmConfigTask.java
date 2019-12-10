@@ -10,6 +10,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import com.sohu.tv.mq.cloud.bo.AlarmConfig;
 import com.sohu.tv.mq.cloud.service.AlarmConfigBridingService;
 import com.sohu.tv.mq.cloud.service.AlarmConfigService;
+import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper;
 import com.sohu.tv.mq.cloud.util.Result;
 
 /**
@@ -27,6 +28,9 @@ public class AlarmConfigTask {
 
     @Autowired
     private AlarmConfigService alarmConfigService;
+    
+    @Autowired
+    private MQCloudConfigHelper mqCloudConfigHelper;
 
     @Scheduled(cron = "3 */10 * * * *")
     public void refreshAlarmConfig() {
@@ -37,6 +41,12 @@ public class AlarmConfigTask {
             return;
         }
         alarmConfigBridingService.setConfigTable(userAlarmConfigResult.getResult());
+        // 更新mqcloud配置
+        try {
+            mqCloudConfigHelper.init();
+        } catch (Exception e) {
+            logger.error("");
+        }
         logger.info("refresh alarm config use: {}ms", (System.currentTimeMillis() - start));
     }
 }

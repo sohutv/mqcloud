@@ -200,7 +200,7 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware {
     }
     
     public String getTopicLink(long topicId, String linkText) {
-        return getHrefLink(getTopicLink(topicId), linkText);
+        return getHrefLink(getTopicLink(topicId) + "?from=alert", linkText);
     }
 
     public String getTopicConsumeLink(long topicId) {
@@ -208,7 +208,7 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware {
     }
     
     public String getTopicConsumeLink(long topicId, String linkText) {
-        return getHrefLink(getTopicConsumeLink(topicId), linkText);
+        return getHrefLink(getTopicConsumeLink(topicId) + "&consumer=" + linkText, linkText);
     }
     
     private String getHrefLink(String link, String linkText) {
@@ -219,8 +219,8 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware {
         return getPrefix() + "admin/audit/list";
     }
 
-    public String getServerLink() {
-        return getPrefix() + "admin/server/list";
+    public String getServerLink(String ip) {
+        return getPrefix() + "admin/server/list?ip=" + ip;
     }
     
     public String getNameServerMonitorLink(int cid) {

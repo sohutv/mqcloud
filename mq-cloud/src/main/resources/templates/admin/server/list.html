@@ -62,7 +62,7 @@
 					<tr>
 						<td><input class="pointer" type="checkbox" name="monitor" value="${server.ip}" onclick="checkThis(this)" /></td>
 						<td>${server_index+1}</td>
-						<td><a href="#" onclick="setIp('${server.ip}')" data-target="#monitorModal" data-toggle="modal">${server.ip}</a></td>
+						<td><a href="#" data="${server.ip}" onclick="setIp('${server.ip}')" data-target="#monitorModal" data-toggle="modal">${server.ip}</a></td>
 						<td>
 							<#if server.host?? && server.host?length gt 8>
 								<span data-toggle="tooltip" title="${server.host}">${server.host?substring(0,9)}...</span>
@@ -397,14 +397,6 @@ mqcloud如果发现通用配置的privateKey不为空，将优先使用公钥验
 <input type="hidden" id="ipInput">
 
 <script>
-$(function(){
-	// 适应小屏幕
-	if(window.screen.width == 1366){
-		$("#serverTable").addClass('tableUpdate');
-	}
-	//初始化
-	initMachineTypeList();
-});
 //全选
 function checkAll(t){
 	if(t.checked){
@@ -623,5 +615,17 @@ function checkData(){
 	}
 	 return true;
 }
-
+$(function(){
+	// 适应小屏幕
+	if(window.screen.width == 1366){
+		$("#serverTable").addClass('tableUpdate');
+	}
+	//初始化
+	initMachineTypeList();
+	
+	<#if RequestParameters.ip?? && RequestParameters.ip != "">
+		setIp("${RequestParameters.ip}");
+		$('a[data="${RequestParameters.ip}"]').click();
+	</#if>
+});
 </script>

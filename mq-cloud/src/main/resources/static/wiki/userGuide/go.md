@@ -159,3 +159,4 @@
 1. rocketmq日志默认在$HOME/logs/rocketmq-cpp下，可以参考定位问题。
 2. 其余注意事项请参考[常见问题](faq)。
 3. 完整用法示例可以参考[官方样例](https://github.com/apache/rocketmq-client-go/tree/master/examples)。
+
