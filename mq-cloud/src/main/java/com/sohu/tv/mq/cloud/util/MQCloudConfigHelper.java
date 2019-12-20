@@ -6,6 +6,8 @@ import java.util.Map;
 
 import javax.annotation.PostConstruct;
 
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -115,6 +117,12 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware {
     private String rocketmqFilePath;
     
     private String privateKey;
+    
+    // rocketmq admin accessKey
+    private String adminAccessKey;
+    
+    // rocketmq admin secretKey
+    private String adminSecretKey;
     
     @Autowired
     private CommonConfigService commonConfigService;
@@ -392,18 +400,21 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware {
         return privateKey;
     }
 
+    public String getAdminAccessKey() {
+        return adminAccessKey;
+    }
+
+    public String getAdminSecretKey() {
+        return adminSecretKey;
+    }
+
+    public boolean isAdminAclEnable() {
+        return StringUtils.isNotEmpty(adminAccessKey) && StringUtils.isNotEmpty(adminSecretKey);
+    }
+    
     @Override
     public String toString() {
-        return "MQCloudConfigHelper [contextPath=" + contextPath + ", profile=" + profile + ", domain=" + domain
-                + ", repositoryUrl=" + repositoryUrl + ", ciperKey=" + ciperKey + ", ticketKey=" + ticketKey
-                + ", serverUser=" + serverUser + ", serverPassword=" + serverPassword + ", serverPort=" + serverPort
-                + ", serverConnectTimeout=" + serverConnectTimeout + ", serverOPTimeout=" + serverOPTimeout
-                + ", operatorContact=" + operatorContact + ", specialThx=" + specialThx + ", classList=" + classList
-                + ", mapWithByteList=" + mapWithByteList + ", clientArtifactId=" + clientArtifactId + ", producerClass="
-                + producerClass + ", consumerClass=" + consumerClass + ", mailHost=" + mailHost + ", mailPort="
-                + mailPort + ", mailProtocol=" + mailProtocol + ", mailUsername=" + mailUsername + ", mailPassword="
-                + mailPassword + ", mailTimeout=" + mailTimeout + ", isOpenRegister=" + isOpenRegister 
-                + ", ignoreTopic=" + ignoreTopic + ", rocketmqFilePath=" + rocketmqFilePath + "]";
+        return ToStringBuilder.reflectionToString(this);
     }
 
     @Override

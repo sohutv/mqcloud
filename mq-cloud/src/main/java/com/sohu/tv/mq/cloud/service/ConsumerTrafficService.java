@@ -74,7 +74,7 @@ public class ConsumerTrafficService extends TrafficService<ConsumerTraffic> {
     public int collectTraffic(Cluster mqCluster) {
         Result<List<Consumer>> consumerListResult = consumerService.queryConsumerList(mqCluster);
         if (consumerListResult.isEmpty()) {
-            logger.error("cannot get consumer list for cluster:{}", mqCluster);
+            logger.warn("cannot get consumer list for cluster:{}", mqCluster);
             return 0;
         }
         String time = DateUtil.getFormatNow(DateUtil.HHMM);

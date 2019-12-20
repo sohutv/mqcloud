@@ -392,7 +392,7 @@ public class MessageService {
                         .decoderFromTraceDataString(new String((byte[]) decodedBody));
                 m.setDecodedBody(JSON.toJSONString(traceContextList));
             } else {
-                m.setDecodedBody(new String((byte[]) decodedBody));
+                m.setDecodedBody(HtmlUtils.htmlEscape(new String((byte[]) decodedBody)));
             }
         } else if (decodedBody instanceof String) {
             m.setMessageBodyType(MessageBodyType.STRING);
@@ -436,6 +436,14 @@ public class MessageService {
                     if(!offsetSearch) {
                         minOffset = consumer.searchOffset(mq, messageQueryCondition.getStart());
                         maxOffset = consumer.searchOffset(mq, messageQueryCondition.getEnd());
+                        // 处理非法情况
+                        if (minOffset >= maxOffset) {
+                            if(minOffset == 0) {
+                                maxOffset = 1;
+                            } else {
+                                minOffset = maxOffset - 1;
+                            }
+                        }
                     } else {
                         maxOffset = messageQueryCondition.getEnd();
                         minOffset = messageQueryCondition.getStart();

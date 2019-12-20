@@ -640,6 +640,8 @@ INSERT INTO `common_config`(`key`, `value`, `comment`) VALUES ('mailTimeout', '1
 INSERT INTO `common_config`(`key`, `value`, `comment`) VALUES ('isOpenRegister', '1', '是否开启注册功能：0-不开启，1-开启');
 INSERT INTO `common_config`(`key`, `value`, `comment`) VALUES ('rocketmqFilePath', 'classpath:static/software/rocketmq.zip', 'rocketmq安装文件路径，支持以下三种资源加载方式,例如 1:classpath:static/software/rocketmq.zip 2：file:///tmp/rocketmq.zip 3：http://127.0.0.1:8080/software/rocketmq.zip');
 INSERT INTO `common_config`(`key`, `comment`) VALUES ('privateKey', '私钥');
+INSERT INTO `common_config`(`key`, `comment`) VALUES ('adminAccessKey', '管理员访问名(broker&nameserver使用)');
+INSERT INTO `common_config`(`key`, `comment`) VALUES ('adminSecretKey', '管理员访问私钥(broker&nameserver使用)');
 -- ----------------------------
 -- warn_config init
 -- ----------------------------

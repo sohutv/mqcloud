@@ -60,7 +60,7 @@ consumer.setSubExpression("tagA || tagB");
 
 **1** org.apache.rocketmq.client.exception.MQBrokerException: CODE: 25 DESC: the consumer's subscription not latest。
 
-该问题是rocketmq4.2版本的bug，拉取消息流程控制不严格导致，但是并不影响消息消费，在4.2版本出现，在4.3版本修复，[参见](https://github.com/apache/rocketmq/issues/370)。
+该问题是拉取消息流程控制不严格导致，但是并不影响消息消费，[参见](https://github.com/apache/rocketmq/issues/370)。
 
 **2** org.apache.rocketmq.client.exception.MQBrokerException: CODE: 2 DESC: [TIMEOUT_CLEAN_QUEUE]broker busy, start flow control for a while
 

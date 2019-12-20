@@ -3,6 +3,8 @@ package com.sohu.tv.mq.cloud.mq;
 import org.apache.commons.pool2.KeyedPooledObjectFactory;
 import org.apache.commons.pool2.PooledObject;
 import org.apache.commons.pool2.impl.DefaultPooledObject;
+import org.apache.rocketmq.acl.common.AclClientRPCHook;
+import org.apache.rocketmq.acl.common.SessionCredentials;
 import org.apache.rocketmq.common.protocol.body.ClusterInfo;
 import org.apache.rocketmq.tools.admin.MQAdminExt;
 import org.slf4j.Logger;
@@ -22,13 +24,20 @@ import com.sohu.tv.mq.util.Constant;
 public class MQAdminPooledObjectFactory implements KeyedPooledObjectFactory<Cluster, MQAdminExt> {
 
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
-    
-    private MQCloudConfigHelper mqCloudConfigHelper; 
-    
+
+    private MQCloudConfigHelper mqCloudConfigHelper;
+
     @Override
     public PooledObject<MQAdminExt> makeObject(Cluster key) throws Exception {
         System.setProperty(Constant.ROCKETMQ_NAMESRV_DOMAIN, mqCloudConfigHelper.getDomain());
-        SohuMQAdmin sohuMQAdmin = new SohuMQAdmin();
+        SohuMQAdmin sohuMQAdmin = null;
+        if (mqCloudConfigHelper.isAdminAclEnable()) {
+            SessionCredentials adminSessionCredentials = new SessionCredentials(
+                    mqCloudConfigHelper.getAdminAccessKey(), mqCloudConfigHelper.getAdminSecretKey());
+            sohuMQAdmin = new SohuMQAdmin(new AclClientRPCHook(adminSessionCredentials), 5000);
+        } else {
+            sohuMQAdmin = new SohuMQAdmin();
+        }
         sohuMQAdmin.setVipChannelEnabled(false);
         sohuMQAdmin.setUnitName(String.valueOf(key.getId()));
         sohuMQAdmin.start();

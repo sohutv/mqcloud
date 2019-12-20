@@ -82,7 +82,7 @@ public class BrokerParam {
     public void setBrokerName(String brokerName) {
         this.brokerName = brokerName;
     }
-    public String toConfig(String nameServerDomain, Cluster cluster) {
+    public String toConfig(String nameServerDomain, Cluster cluster, boolean adminAclEnable) {
         String config = "brokerClusterName=" + cluster.getName()
                 + "\nbrokerName=" + getBrokerName()
                 + "\nbrokerId=" + ("SLAVE".equals(brokerRole) ? "1" : "0")
@@ -95,6 +95,7 @@ public class BrokerParam {
                 /** fix for TIMEOUT_CLEAN_QUEUE] issue **/
                 + "\nsendMessageThreadPoolNums=48"
                 + "\nuseReentrantLockWhenPutMessage=true"
+                + (adminAclEnable ? "\nadminAclEnable=true" : "")
                 + "\nwaitTimeMillsInSendQueue=500"
                 /** fix for TIMEOUT_CLEAN_QUEUE] issue end **/
                 + "\nfileReservedTime=" + fileReservedTime
