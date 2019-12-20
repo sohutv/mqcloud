@@ -285,7 +285,12 @@ public class MessageService {
             try {
                 // 拉取消息
                 PullResult pullResult = consumer.pull(mqOffset.getMq(), SUB_EXPRESSION, mqOffset.getOffset(), 32);
-                mqOffset.setOffset(pullResult.getNextBeginOffset());
+                // 防止offset不前进
+                if (mqOffset.getOffset() < pullResult.getNextBeginOffset()) {
+                    mqOffset.setOffset(pullResult.getNextBeginOffset());
+                } else {
+                    mqOffset.setOffset(mqOffset.getOffset() + 1);
+                }
                 // 无消息继续
                 if (PullStatus.FOUND != pullResult.getPullStatus()) {
                     continue;
