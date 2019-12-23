@@ -6,7 +6,6 @@ import java.util.List;
 
 import javax.sql.DataSource;
 
-import com.sohu.tv.mq.cloud.task.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,8 +16,18 @@ import org.springframework.context.annotation.Profile;
 import com.sohu.tv.mq.cloud.bo.Cluster;
 import com.sohu.tv.mq.cloud.service.ClusterService;
 import com.sohu.tv.mq.cloud.service.NameServerService;
+import com.sohu.tv.mq.cloud.task.AlarmConfigTask;
+import com.sohu.tv.mq.cloud.task.ClusterMonitorTask;
+import com.sohu.tv.mq.cloud.task.ConsumeFailTask;
+import com.sohu.tv.mq.cloud.task.ConsumerStatsTask;
+import com.sohu.tv.mq.cloud.task.MonitorServiceTask;
+import com.sohu.tv.mq.cloud.task.ProducerStatsTask;
+import com.sohu.tv.mq.cloud.task.ServerStatusTask;
+import com.sohu.tv.mq.cloud.task.ServerWarningTask;
+import com.sohu.tv.mq.cloud.task.TrafficTask;
 import com.sohu.tv.mq.cloud.task.monitor.MonitorService;
 import com.sohu.tv.mq.cloud.task.monitor.SohuMonitorListener;
+import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper;
 
 import net.javacrumbs.shedlock.core.LockProvider;
 import net.javacrumbs.shedlock.provider.jdbc.JdbcLockProvider;
@@ -102,19 +111,19 @@ public class TaskConfiguration {
     @Bean
     @Profile({"online", "online-sohu"})
     public List<MonitorService> onlineMonitorServiceList(NameServerService nameServerService, 
-            SohuMonitorListener sohuMonitorListener){
-        return monitorServiceList(true, nameServerService, sohuMonitorListener);
+            SohuMonitorListener sohuMonitorListener, MQCloudConfigHelper mqCloudConfigHelper){
+        return monitorServiceList(true, nameServerService, sohuMonitorListener, mqCloudConfigHelper);
     }
     
     @Bean
     @Profile({"local", "test-sohu", "local-sohu"})
     public List<MonitorService> testMonitorServiceList(NameServerService nameServerService, 
-            SohuMonitorListener sohuMonitorListener){
-        return monitorServiceList(false, nameServerService, sohuMonitorListener);
+            SohuMonitorListener sohuMonitorListener, MQCloudConfigHelper mqCloudConfigHelper){
+        return monitorServiceList(false, nameServerService, sohuMonitorListener, mqCloudConfigHelper);
     }
     
     private List<MonitorService> monitorServiceList(boolean online, NameServerService nameServerService, 
-            SohuMonitorListener sohuMonitorListener){
+            SohuMonitorListener sohuMonitorListener, MQCloudConfigHelper mqCloudConfigHelper){
         if(clusterService.getAllMQCluster() == null) {
             logger.warn("monitorServiceList mqcluster is null");
             return null;
@@ -122,7 +131,8 @@ public class TaskConfiguration {
         List<MonitorService> list = new ArrayList<MonitorService>();
         for(Cluster mqCluster : clusterService.getAllMQCluster()) {
             if(online == mqCluster.online()) {
-                MonitorService monitorService = new MonitorService(nameServerService, mqCluster, sohuMonitorListener);
+                MonitorService monitorService = new MonitorService(nameServerService, mqCluster, sohuMonitorListener, 
+                        mqCloudConfigHelper);
                 list.add(monitorService);
             }
         }
