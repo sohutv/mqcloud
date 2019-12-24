@@ -8,7 +8,7 @@
 </dependency>
 <repository>
     <id>sohu.nexus</id>
-    <url>http://${nexusDomain}/nexus/content/groups/public</url>
+    <url>${repositoryUrl}</url>
 </repository>
 ```
 

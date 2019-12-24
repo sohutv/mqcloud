@@ -285,7 +285,12 @@ public class MessageService {
             try {
                 // 拉取消息
                 PullResult pullResult = consumer.pull(mqOffset.getMq(), SUB_EXPRESSION, mqOffset.getOffset(), 32);
-                mqOffset.setOffset(pullResult.getNextBeginOffset());
+                // 防止offset不前进
+                if (mqOffset.getOffset() < pullResult.getNextBeginOffset()) {
+                    mqOffset.setOffset(pullResult.getNextBeginOffset());
+                } else {
+                    mqOffset.setOffset(mqOffset.getOffset() + 1);
+                }
                 // 无消息继续
                 if (PullStatus.FOUND != pullResult.getPullStatus()) {
                     continue;
@@ -392,7 +397,7 @@ public class MessageService {
                         .decoderFromTraceDataString(new String((byte[]) decodedBody));
                 m.setDecodedBody(JSON.toJSONString(traceContextList));
             } else {
-                m.setDecodedBody(new String((byte[]) decodedBody));
+                m.setDecodedBody(HtmlUtils.htmlEscape(new String((byte[]) decodedBody)));
             }
         } else if (decodedBody instanceof String) {
             m.setMessageBodyType(MessageBodyType.STRING);
@@ -436,6 +441,14 @@ public class MessageService {
                     if(!offsetSearch) {
                         minOffset = consumer.searchOffset(mq, messageQueryCondition.getStart());
                         maxOffset = consumer.searchOffset(mq, messageQueryCondition.getEnd());
+                        // 处理非法情况
+                        if (minOffset >= maxOffset) {
+                            if(minOffset == 0) {
+                                maxOffset = 1;
+                            } else {
+                                minOffset = maxOffset - 1;
+                            }
+                        }
                     } else {
                         maxOffset = messageQueryCondition.getEnd();
                         minOffset = messageQueryCondition.getStart();

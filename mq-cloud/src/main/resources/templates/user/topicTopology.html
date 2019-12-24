@@ -104,7 +104,7 @@
 							    	</#list>
 							    </#if>					    	
 						    </td>
-						    <td><a href="javacript:void();" data-toggle="tooltip" title="查看每个实例的生产状况" onclick="showProducerStats('${key.producer}')">${key.producer}</a></td>
+						    <td><a href="javacript:void();" id="alertA" data-toggle="tooltip" title="查看每个实例的生产状况" onclick="showProducerStats('${key.producer}')">${key.producer}</a></td>
 						</tr>
 					</#list>
 				<#else>
@@ -898,4 +898,9 @@ function updateTopicTrace(){
 			    }
 	    }, 'json');
 }
+$(function () {
+	<#if RequestParameters.from?? && RequestParameters.from == "alert">
+		$('#alertA').click();
+	</#if>
+});
 </script>

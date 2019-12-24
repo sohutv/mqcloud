@@ -57,34 +57,34 @@
 4. 经过查询系统日志，发现如下问题：
 
    ```
-   Sep  9 09:26:53 bx_51_106 kernel: INFO: task java:10226 blocked for more than 120 seconds.
-   Sep  9 09:26:53 bx_51_106 kernel:      Not tainted 2.6.32-431.el6.x86_64 #1
-   Sep  9 09:26:53 bx_51_106 kernel: "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
-   Sep  9 09:26:53 bx_51_106 kernel: java          D 000000000000000d     0 10226   9979 0x00000000
-   Sep  9 09:26:53 bx_51_106 kernel: ffff880e5c1cbe18 0000000000000086 0000000000000000 ffff8810739188c0
-   Sep  9 09:26:53 bx_51_106 kernel: 0000000000000d28 0000000094dae43d ffff880e5c1cbd98 0000000000000000
-   Sep  9 09:26:53 bx_51_106 kernel: ffff88073dbd9098 ffff880e5c1cbfd8 000000000000fbc8 ffff88073dbd9098
-   Sep  9 09:26:53 bx_51_106 kernel: Call Trace:
-   Sep  9 09:26:53 bx_51_106 kernel: [<ffffffff81529f85>] rwsem_down_failed_common+0x95/0x1d0
-   Sep  9 09:26:53 bx_51_106 kernel: [<ffffffff8152a0e3>] rwsem_down_write_failed+0x23/0x30
-   Sep  9 09:26:53 bx_51_106 kernel: [<ffffffff8128e883>] call_rwsem_down_write_failed+0x13/0x20
-   Sep  9 09:26:53 bx_51_106 kernel: [<ffffffff815295e2>] ? down_write+0x32/0x40
-   Sep  9 09:26:53 bx_51_106 kernel: [<ffffffff81152386>] sys_mprotect+0xe6/0x250
-   Sep  9 09:26:53 bx_51_106 kernel: [<ffffffff8100b072>] system_call_fastpath+0x16/0x1b
-   Sep  9 09:28:53 bx_51_106 kernel: INFO: task java:10226 blocked for more than 120 seconds.
-   Sep  9 09:28:53 bx_51_106 kernel:      Not tainted 2.6.32-431.el6.x86_64 #1
-   Sep  9 09:28:53 bx_51_106 kernel: "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
-   Sep  9 09:28:53 bx_51_106 kernel: java          D 000000000000000d     0 10226   9979 0x00000000
-   Sep  9 09:28:53 bx_51_106 kernel: ffff880e5c1cbe18 0000000000000086 0000000000000000 ffff8810739188c0
-   Sep  9 09:28:53 bx_51_106 kernel: 0000000000000d28 0000000094dae43d ffff880e5c1cbd98 0000000000000000
-   Sep  9 09:28:53 bx_51_106 kernel: ffff88073dbd9098 ffff880e5c1cbfd8 000000000000fbc8 ffff88073dbd9098
-   Sep  9 09:28:53 bx_51_106 kernel: Call Trace:
-   Sep  9 09:28:53 bx_51_106 kernel: [<ffffffff81529f85>] rwsem_down_failed_common+0x95/0x1d0
-   Sep  9 09:28:53 bx_51_106 kernel: [<ffffffff8152a0e3>] rwsem_down_write_failed+0x23/0x30
-   Sep  9 09:28:53 bx_51_106 kernel: [<ffffffff8128e883>] call_rwsem_down_write_failed+0x13/0x20
-   Sep  9 09:28:53 bx_51_106 kernel: [<ffffffff815295e2>] ? down_write+0x32/0x40
-   Sep  9 09:28:53 bx_51_106 kernel: [<ffffffff81152386>] sys_mprotect+0xe6/0x250
-   Sep  9 09:28:53 bx_51_106 kernel: [<ffffffff8100b072>] system_call_fastpath+0x16/0x1b
+   Sep  9 09:26:53 bxxxx kernel: INFO: task java:10226 blocked for more than 120 seconds.
+   Sep  9 09:26:53 bxxxx kernel:      Not tainted 2.6.32-431.el6.x86_64 #1
+   Sep  9 09:26:53 bxxxx kernel: "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
+   Sep  9 09:26:53 bxxxx kernel: java          D 000000000000000d     0 10226   9979 0x00000000
+   Sep  9 09:26:53 bxxxx kernel: ffff880e5c1cbe18 0000000000000086 0000000000000000 ffff8810739188c0
+   Sep  9 09:26:53 bxxxx kernel: 0000000000000d28 0000000094dae43d ffff880e5c1cbd98 0000000000000000
+   Sep  9 09:26:53 bxxxx kernel: ffff88073dbd9098 ffff880e5c1cbfd8 000000000000fbc8 ffff88073dbd9098
+   Sep  9 09:26:53 bxxxx kernel: Call Trace:
+   Sep  9 09:26:53 bxxxx kernel: [<ffffffff81529f85>] rwsem_down_failed_common+0x95/0x1d0
+   Sep  9 09:26:53 bxxxx kernel: [<ffffffff8152a0e3>] rwsem_down_write_failed+0x23/0x30
+   Sep  9 09:26:53 bxxxx kernel: [<ffffffff8128e883>] call_rwsem_down_write_failed+0x13/0x20
+   Sep  9 09:26:53 bxxxx kernel: [<ffffffff815295e2>] ? down_write+0x32/0x40
+   Sep  9 09:26:53 bxxxx kernel: [<ffffffff81152386>] sys_mprotect+0xe6/0x250
+   Sep  9 09:26:53 bxxxx kernel: [<ffffffff8100b072>] system_call_fastpath+0x16/0x1b
+   Sep  9 09:28:53 bxxxx kernel: INFO: task java:10226 blocked for more than 120 seconds.
+   Sep  9 09:28:53 bxxxx kernel:      Not tainted 2.6.32-431.el6.x86_64 #1
+   Sep  9 09:28:53 bxxxx kernel: "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
+   Sep  9 09:28:53 bxxxx kernel: java          D 000000000000000d     0 10226   9979 0x00000000
+   Sep  9 09:28:53 bxxxx kernel: ffff880e5c1cbe18 0000000000000086 0000000000000000 ffff8810739188c0
+   Sep  9 09:28:53 bxxxx kernel: 0000000000000d28 0000000094dae43d ffff880e5c1cbd98 0000000000000000
+   Sep  9 09:28:53 bxxxx kernel: ffff88073dbd9098 ffff880e5c1cbfd8 000000000000fbc8 ffff88073dbd9098
+   Sep  9 09:28:53 bxxxx kernel: Call Trace:
+   Sep  9 09:28:53 bxxxx kernel: [<ffffffff81529f85>] rwsem_down_failed_common+0x95/0x1d0
+   Sep  9 09:28:53 bxxxx kernel: [<ffffffff8152a0e3>] rwsem_down_write_failed+0x23/0x30
+   Sep  9 09:28:53 bxxxx kernel: [<ffffffff8128e883>] call_rwsem_down_write_failed+0x13/0x20
+   Sep  9 09:28:53 bxxxx kernel: [<ffffffff815295e2>] ? down_write+0x32/0x40
+   Sep  9 09:28:53 bxxxx kernel: [<ffffffff81152386>] sys_mprotect+0xe6/0x250
+   Sep  9 09:28:53 bxxxx kernel: [<ffffffff8100b072>] system_call_fastpath+0x16/0x1b
    ```
 
    经过搜索，发现有类似[文章](https://www.cnblogs.com/dongqingswt/)记录，基本可以确定可能是内存引起的。

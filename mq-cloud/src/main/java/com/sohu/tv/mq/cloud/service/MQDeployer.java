@@ -237,9 +237,13 @@ public class MQDeployer {
     public Result<?> configNameServer(String ip, int port, String nsHome){
         String absoluteDir = MQ_CLOUD_DIR + nsHome;
         String absoluteConfig = absoluteDir + "/" + CONFIG_FILE;
+        String mqConf = "echo \"kvConfigPath="+absoluteDir+"/data/kvConfig.json\" >> " + absoluteConfig + "|"
+                + "echo \"listenPort="+port+"\" >> " + absoluteConfig + "|";
+        if(mqCloudConfigHelper.isAdminAclEnable()) {
+            mqConf += "echo \"adminAclEnable=true\" >> " + absoluteConfig + "|";
+        }
         String comm = String.format(DATA_LOGS_DIR, absoluteDir, absoluteDir)
-                + "echo \"kvConfigPath="+absoluteDir+"/data/kvConfig.json\" >> " + absoluteConfig + "|"
-                + "echo \"listenPort="+port+"\" >> " + absoluteConfig + "|"
+                + mqConf
                 + String.format(RUN_CONFIG, absoluteDir, "mqnamesrv", absoluteDir, absoluteDir, absoluteDir);
         SSHResult sshResult = null;
         try {
@@ -267,7 +271,9 @@ public class MQDeployer {
         Cluster cluster = clusterService.getMQClusterById(brokerParam.getMqClusterId());
         // 1.基础配置
         String comm = String.format(DATA_LOGS_DIR, absoluteDir, absoluteDir)
-                + "echo -e \""+brokerParam.toConfig(mqCloudConfigHelper.getDomain(), cluster)
+                + "echo -e \""
+                + brokerParam.toConfig(mqCloudConfigHelper.getDomain(), cluster,
+                        mqCloudConfigHelper.isAdminAclEnable())
                 + "\" > " + absoluteConfig + "|"
                 + String.format(RUN_CONFIG, absoluteDir, "mqbroker", absoluteDir, absoluteDir, absoluteDir);
         SSHResult sshResult = null;

@@ -335,7 +335,7 @@ public class ServerWarningTask {
             content.append("<tr>");
             content.append("<td rowspan=" + alarmList.size() + ">");
             content.append("<a href='");
-            content.append(mqCloudConfigHelper.getServerLink());
+            content.append(mqCloudConfigHelper.getServerLink(ip));
             content.append("'>" + ip + "</a>");
             content.append("</td>");
             for (int i = 0; i < alarmList.size(); i++) {

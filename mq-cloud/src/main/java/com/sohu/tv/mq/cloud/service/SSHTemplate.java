@@ -13,6 +13,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -58,8 +59,7 @@ public class SSHTemplate {
      * @throws SSHException
      */
     public boolean validate(String ip) throws SSHException {
-        SSHResult result = execute(ip, mqCloudConfigHelper.getServerPort(), mqCloudConfigHelper.getServerUser(),
-                mqCloudConfigHelper.getServerPassword(),
+        SSHResult result = execute(ip,
                 new SSHCallback() {
                     public SSHResult call(SSHSession session) {
                         return session.executeCommand("date");
@@ -68,27 +68,18 @@ public class SSHTemplate {
         return result.isSuccess();
     }
 
-    public SSHResult execute(String ip, SSHCallback callback) throws SSHException {
-        return execute(ip, mqCloudConfigHelper.getServerPort(), mqCloudConfigHelper.getServerUser(),
-                mqCloudConfigHelper.getServerPassword(), callback);
-    }
-
     /**
      * 通过回调执行命令
      * 
      * @param ip
-     * @param port
-     * @param username
-     * @param password
      * @param callback 可以使用Session执行多个命令
      * @throws SSHException
      */
-    public SSHResult execute(String ip, int port, String username, String password,
-            SSHCallback callback) throws SSHException {
+    public SSHResult execute(String ip, SSHCallback callback) throws SSHException {
         Connection conn = null;
         try {
-            conn = getConnection(ip, port, username, password);
-            return callback.call(new SSHSession(conn, ip + ":" + port));
+            conn = getConnection(ip);
+            return callback.call(new SSHSession(conn, ip));
         } catch (Exception e) {
             throw new SSHException("SSH err: " + e.getMessage(), e);
         } finally {
@@ -100,22 +91,28 @@ public class SSHTemplate {
      * 获取连接并校验
      * 
      * @param ip
-     * @param port
-     * @param username
-     * @param password
      * @return Connection
      * @throws Exception
      */
-    private Connection getConnection(String ip, int port,
-            String username, String password) throws Exception {
-        Connection conn = new Connection(ip, port);
-        conn.connect(null, mqCloudConfigHelper.getServerConnectTimeout(), mqCloudConfigHelper.getServerConnectTimeout());
-        boolean isAuthenticated = conn.authenticateWithPassword(username, password);
-        if (isAuthenticated == false) {
-            throw new Exception("SSH authentication failed with [userName:" +
-                    username + ", password:" + password + "]");
+    private Connection getConnection(String ip) throws Exception {
+        Connection conn = new Connection(ip, mqCloudConfigHelper.getServerPort());
+        conn.connect(null, mqCloudConfigHelper.getServerConnectTimeout(),
+                mqCloudConfigHelper.getServerConnectTimeout());
+        // 如果private key不为空，优先使用private key验证
+        if (StringUtils.isNotBlank(mqCloudConfigHelper.getPrivateKey())) {
+            if (conn.authenticateWithPublicKey(mqCloudConfigHelper.getServerUser(),
+                    mqCloudConfigHelper.getPrivateKey().toCharArray(), mqCloudConfigHelper.getServerPassword())) {
+                return conn;
+            }
         }
-        return conn;
+        // 其次使用用户名密码验证
+        if (conn.authenticateWithPassword(mqCloudConfigHelper.getServerUser(),
+                mqCloudConfigHelper.getServerPassword())) {
+            return conn;
+        }
+        throw new Exception("SSH authentication failed with [userName:" +
+                mqCloudConfigHelper.getServerUser() + ", password:" + mqCloudConfigHelper.getServerPassword()
+                + "]");
     }
 
     /**

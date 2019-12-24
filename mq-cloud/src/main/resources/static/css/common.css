@@ -188,6 +188,11 @@ table.tr-pointer > tbody > tr:not(.no_more_data){
 	height: 1.3em;
 	display: inline-block;
 }
-button.btn.btn-search.ipsearch{
- padding: 5px 10px 3px;
+button.btn.btn-search.ipsearch {
+	padding: 5px 10px 3px;
+}
+
+.noborder th, .noborder td {
+	padding: .5em;
+	border: 1px solid #fff;
 }

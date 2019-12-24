@@ -50,7 +50,7 @@
 							<tr>
 								<#assign row = consumerProgressVO_index + 1> 
 								<td>${row}</td>
-		                    	<td><a style="cursor:pointer" title="查看消费详情" data-target="#consumeDetailModel${row}" data-toggle="modal" <#if consumerProgressVO.minLastTimestamp gt 0 && consumerProgressVO.minLastTimestamp lt long.MAX_VALUE>onclick="getQueueOwner('${consumerProgressVO.consumer.name}', '${consumerProgressVO.consumer.id}')"</#if>>${consumerProgressVO.consumer.name}</a></td>
+		                    	<td><a style="cursor:pointer" data="${RequestParameters.consumer!}" title="查看消费详情" data-target="#consumeDetailModel${row}" data-toggle="modal" <#if consumerProgressVO.minLastTimestamp gt 0 && consumerProgressVO.minLastTimestamp lt long.MAX_VALUE>onclick="getQueueOwner('${consumerProgressVO.consumer.name}', '${consumerProgressVO.consumer.id}')"</#if>>${consumerProgressVO.consumer.name}</a></td>
 		                    	<#if consumerProgressVO.ownerList??>
 		                    		<td>
 			                    		<#if consumerProgressVO.ownerList?seq_contains(userInfo.user) || userInfo.user.type == 1>
@@ -395,7 +395,7 @@
 							<tr>
 								<#assign row = consumerProgressVO_index + 1 + response.result?size> 
 								<td>${row}</td>
-		                    	<td><a style="cursor:pointer" title="查看消费详情" data-target="#consumeDetailModel${row}b" data-toggle="modal">${consumerProgressVO.consumer.name}</a></td>
+		                    	<td><a style="cursor:pointer" data="${RequestParameters.consumer!}" title="查看消费详情" data-target="#consumeDetailModel${row}b" data-toggle="modal">${consumerProgressVO.consumer.name}</a></td>
 		                    	<#if consumerProgressVO.ownerList??>
 			                    	<td>
 			                    		<#if consumerProgressVO.ownerList?seq_contains(userInfo.user) || userInfo.user.type == 1>
@@ -620,7 +620,7 @@
 		                    	</td>
 		                   	</tr>
 						</#list>
-						<#if hasMore??>
+						<#if hasMore>
 							<tr id="viewAll">
 		                    	<td colspan=10 align="center" class="pointer" onclick="leftPage()">查看全部</td>
 		                	<tr>
@@ -933,16 +933,6 @@
 		</div>
 	</div>
 </div> 
-
-<script>
-<#if response.OK>
-$(function() {
-	lineChart("consume", function (){
-		$("#tid").val("${RequestParameters.tid}");
-	});
-});
-</#if>
-</script>
 
 <script>
 function showUpdateInfo(cid, consumer, info){
@@ -1498,4 +1488,15 @@ function updateConsumerTrace(){
 			    }
 	    }, 'json');
 }
+
+<#if response.OK>
+	$(function() {
+		lineChart("consume", function (){
+			$("#tid").val("${RequestParameters.tid}");
+		});
+		<#if RequestParameters.consumer?? && RequestParameters.consumer != "">
+			$('a[data="${RequestParameters.consumer}"]').click();
+		</#if>
+	});
+</#if>
 </script>

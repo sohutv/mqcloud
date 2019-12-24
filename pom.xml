@@ -6,7 +6,7 @@
 	<artifactId>mq</artifactId>
 	<packaging>pom</packaging>
 	<name>mq</name>
-	<version>1.9.2</version>
+	<version>1.9.3</version>
 
 	<modules>
 		<module>mq-client-common-open</module>
@@ -26,6 +26,7 @@
 		<commons-codec.version>1.10</commons-codec.version>
 		<commons-lang3.version>3.4</commons-lang3.version>
 		<javax.servlet-api.version>3.1.0</javax.servlet-api.version>
+		<github.global.server>github</github.global.server>
 	</properties>
 
 	<dependencyManagement>
@@ -113,6 +114,24 @@
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
+	
+	<repositories>
+	    <repository>
+	        <id>github.repo</id>
+	        <url>https://raw.github.com/sohutv/mvn_repo/master</url>
+	        <snapshots>
+	            <enabled>true</enabled>
+	            <updatePolicy>always</updatePolicy>
+	        </snapshots>
+	    </repository>
+	</repositories>
+
+	<distributionManagement>
+	    <repository>
+	        <id>internal.repo</id>
+	        <url>file://${project.build.directory}/mvn-repo</url>
+	    </repository>
+	</distributionManagement>
 
 	<build>
 		<plugins>
@@ -149,6 +168,38 @@
 					</execution>
 				</executions>
 			</plugin>
+			
+			<!-- github repo -->
+			<plugin>
+                <artifactId>maven-deploy-plugin</artifactId>
+                <configuration>
+                    <altDeploymentRepository>internal.repo::default::file://${project.build.directory}/mvn-repo</altDeploymentRepository>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>com.github.github</groupId>
+                <artifactId>site-maven-plugin</artifactId>
+                <configuration>
+                    <message>mqcloud for ${project.version}</message>
+                    <noJekyll>true</noJekyll>
+                    <outputDirectory>${project.build.directory}/mvn-repo</outputDirectory>
+                    <branch>refs/heads/master</branch>
+                    <merge>true</merge>
+                    <includes>
+                        <include>**/*</include>
+                    </includes>
+                    <repositoryName>mvn_repo</repositoryName>
+                    <repositoryOwner>sohutv</repositoryOwner>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>site</goal>
+                        </goals>
+                        <phase>deploy</phase>
+                    </execution>
+                </executions>
+        	</plugin>
 		</plugins>
 	</build>
 </project>

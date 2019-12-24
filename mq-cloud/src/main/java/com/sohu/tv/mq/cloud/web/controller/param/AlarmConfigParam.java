@@ -16,7 +16,7 @@ public class AlarmConfigParam {
     private Long accumulateTime;
     // 堆积数量
     private Long accumulateCount;
-    // 堵塞时间
+    // 阻塞时间
     private Long blockTime;
     // 消费失败数量
     private Long consumerFailCount;

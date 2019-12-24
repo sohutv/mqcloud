@@ -4,8 +4,12 @@ import com.sohu.tv.mq.cloud.bo.Cluster;
 import com.sohu.tv.mq.cloud.bo.NameServer;
 import com.sohu.tv.mq.cloud.service.NameServerService;
 import com.sohu.tv.mq.cloud.util.Jointer;
+import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper;
 import com.sohu.tv.mq.cloud.util.Result;
 import com.sohu.tv.mq.util.CommonUtil;
+
+import org.apache.rocketmq.acl.common.AclClientRPCHook;
+import org.apache.rocketmq.acl.common.SessionCredentials;
 import org.apache.rocketmq.client.consumer.DefaultMQPullConsumer;
 import org.apache.rocketmq.client.consumer.DefaultMQPushConsumer;
 import org.apache.rocketmq.client.consumer.PullResult;
@@ -28,7 +32,6 @@ import org.apache.rocketmq.common.protocol.body.ConsumerRunningInfo;
 import org.apache.rocketmq.common.protocol.body.TopicList;
 import org.apache.rocketmq.common.protocol.heartbeat.MessageModel;
 import org.apache.rocketmq.common.protocol.topic.OffsetMovedEvent;
-import org.apache.rocketmq.remoting.RPCHook;
 import org.apache.rocketmq.remoting.exception.RemotingException;
 import org.apache.rocketmq.tools.admin.DefaultMQAdminExt;
 import org.apache.rocketmq.tools.monitor.DeleteMsgsEvent;
@@ -62,7 +65,8 @@ public class MonitorService {
     
     private boolean initialized;
 
-    public MonitorService(NameServerService nameServerService, Cluster mqCluster, SohuMonitorListener monitorListener) {
+    public MonitorService(NameServerService nameServerService, Cluster mqCluster, SohuMonitorListener monitorListener,
+            MQCloudConfigHelper mqCloudConfigHelper) {
         Result<List<NameServer>> nameServerListResult = nameServerService.query(mqCluster.getId());
         if(nameServerListResult.isEmpty()) {
             logger.error("monitor cluster:{} init err!", mqCluster);
@@ -77,7 +81,13 @@ public class MonitorService {
         this.defaultMQPullConsumer.setNamesrvAddr(nsAddr);
         this.defaultMQPullConsumer.setVipChannelEnabled(mqCluster.isEnableVipChannel());
         
-        this.defaultMQAdminExt = new DefaultMQAdminExt((RPCHook)null);
+        if (mqCloudConfigHelper.isAdminAclEnable()) {
+            SessionCredentials adminSessionCredentials = new SessionCredentials(
+                    mqCloudConfigHelper.getAdminAccessKey(), mqCloudConfigHelper.getAdminSecretKey());
+            this.defaultMQAdminExt = new DefaultMQAdminExt(new AclClientRPCHook(adminSessionCredentials));
+        } else {
+            this.defaultMQAdminExt = new DefaultMQAdminExt();
+        }
         this.defaultMQAdminExt.setVipChannelEnabled(mqCluster.isEnableVipChannel());
         this.defaultMQAdminExt.setInstanceName(instanceName());
         this.defaultMQAdminExt.setNamesrvAddr(nsAddr);

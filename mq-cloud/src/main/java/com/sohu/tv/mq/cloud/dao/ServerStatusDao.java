@@ -35,7 +35,7 @@ public interface ServerStatusDao {
      * @return @ServerInfo
      */
     @Select("select * from server s left join server_stat ss on ss.ip = s.ip and ss.cdate=#{cdate} and ss.ctime in "
-            + "(select max(ctime) from server_stat where cdate=#{cdate})")
+            + "(select max(ctime) from server_stat where ip = s.ip and cdate=#{cdate})")
     public List<ServerInfoExt> queryAllServer(@Param("cdate") String date);
 
     /**

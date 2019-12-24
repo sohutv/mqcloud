@@ -110,7 +110,8 @@ public class ConsumerController extends ViewController {
     @RequestMapping("/progress")
     public String progress(UserInfo userInfo, @RequestParam("tid") int tid,
             @RequestParam(value = "begin", defaultValue = "0") int begin,
-            @RequestParam(value = "end", defaultValue = "10") int end, Map<String, Object> map) throws Exception {
+            @RequestParam(value = "end", defaultValue = "10") int end, 
+            @RequestParam(value = "consumer", required = false) String consumer, Map<String, Object> map) throws Exception {
         String view = viewModule() + "/progress";
         // 获取消费者
         Result<TopicTopology> topicTopologyResult = userService.queryTopicTopology(userInfo.getUser(), tid);
@@ -123,10 +124,6 @@ public class ConsumerController extends ViewController {
         }
         // 查询消费进度
         TopicTopology topicTopology = topicTopologyResult.getResult();
-        // 拆分不同方式的消费者
-        List<Consumer> clusteringConsumerList = new ArrayList<Consumer>();
-        List<Consumer> broadcastConsumerList = new ArrayList<Consumer>();
-        List<Long> cidList = new ArrayList<Long>();
         List<Consumer> consumerList = topicTopology.getConsumerList();
         if(begin < 0) {
             begin = 0;
@@ -137,33 +134,29 @@ public class ConsumerController extends ViewController {
         if(end > consumerList.size()) {
             end = consumerList.size();
         }
-        for (int i = begin; i < end; ++i) {
-            Consumer consumer = consumerList.get(i);
-            cidList.add(consumer.getId());
-            if(consumer.isClustering()) {
-                clusteringConsumerList.add(consumer);
-            } else {
-                broadcastConsumerList.add(consumer);
-            }
+        // consumer选择
+        ConsumerSelector consumerSelector = new ConsumerSelector();
+        if(consumer == null || consumer.length() == 0) {
+            consumerSelector.select(consumerList, begin, end);
+        } else {
+            consumerSelector.select(consumerList, consumer);
         }
-        
         // 获取消费者归属者
-        Map<Long, List<User>> consumerMap = getConsumerMap(tid, cidList);
+        Map<Long, List<User>> consumerMap = getConsumerMap(tid, consumerSelector.getCidList());
         
         Topic topic = topicTopology.getTopic();
         Cluster cluster = clusterService.getMQClusterById(topic.getClusterId());
         
         // 组装集群模式消费者信息
-        setResult(map, buildClusteringConsumerProgressVOList(cluster, topic.getName(), clusteringConsumerList, consumerMap));
+        setResult(map, buildClusteringConsumerProgressVOList(cluster, topic.getName(), 
+                consumerSelector.getClusteringConsumerList(), consumerMap));
         
         // 组装广播模式消费者信息
         setResult(map, "resultExt", Result.getResult(buildBroadcastingConsumerProgressVOList(cluster, topic.getName(), 
-                broadcastConsumerList, consumerMap)));
+                consumerSelector.getBroadcastConsumerList(), consumerMap)));
         
         setResult(map, "topic", topic);
-        if(consumerList.size() > begin + cidList.size()) {
-            setResult(map, "hasMore", true);
-        } 
+        setResult(map, "hasMore", consumerSelector.isHasMore());
         FreemarkerUtil.set("long", Long.class, map);
         return view;
     }
@@ -813,5 +806,79 @@ public class ConsumerController extends ViewController {
     @Override
     public String viewModule() {
         return "consumer";
+    }
+    
+    /**
+     * consumer 选择
+     * 
+     * @author yongfeigao
+     * @date 2019年12月3日
+     */
+    class ConsumerSelector {
+        // 集群消费者
+        private List<Consumer> clusteringConsumerList = new ArrayList<Consumer>();
+        // 广播消费者
+        private List<Consumer> broadcastConsumerList = new ArrayList<Consumer>();
+        // cid列表
+        private List<Long> cidList = new ArrayList<Long>();
+        // 是否还有数据
+        private boolean hasMore;
+
+        /**
+         * 选择特定的consumer
+         * @param consumerList
+         * @param consumerName
+         */
+        public void select(List<Consumer> consumerList, String consumerName) {
+            for (int i = 0; i < consumerList.size(); ++i) {
+                Consumer consumer = consumerList.get(i);
+                // 查找特定consumer
+                if (consumerName.equals(consumer.getName())) {
+                    addConsumer(consumer);
+                    break;
+                }
+            }
+        }
+
+        /**
+         * 选择某个范围的consumer
+         * @param consumerList
+         * @param begin
+         * @param end
+         */
+        public void select(List<Consumer> consumerList, int begin, int end) {
+            for (int i = begin; i < end; ++i) {
+                Consumer consumer = consumerList.get(i);
+                addConsumer(consumer);
+            }
+            if(consumerList.size() > begin + cidList.size()) {
+                hasMore = true;
+            } 
+        }
+
+        private void addConsumer(Consumer consumer) {
+            cidList.add(consumer.getId());
+            if (consumer.isClustering()) {
+                clusteringConsumerList.add(consumer);
+            } else {
+                broadcastConsumerList.add(consumer);
+            }
+        }
+
+        public List<Consumer> getClusteringConsumerList() {
+            return clusteringConsumerList;
+        }
+
+        public List<Consumer> getBroadcastConsumerList() {
+            return broadcastConsumerList;
+        }
+
+        public List<Long> getCidList() {
+            return cidList;
+        }
+
+        public boolean isHasMore() {
+            return hasMore;
+        }
     }
 }

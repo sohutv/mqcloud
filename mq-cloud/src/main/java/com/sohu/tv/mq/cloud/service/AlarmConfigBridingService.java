@@ -93,7 +93,7 @@ public class AlarmConfigBridingService {
     }
 
     /**
-     * 获取客户端堵塞
+     * 获取客户端阻塞
      * 
      * @param consumer
      * @return

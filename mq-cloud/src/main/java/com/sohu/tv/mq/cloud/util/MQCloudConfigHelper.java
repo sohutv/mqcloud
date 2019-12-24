@@ -6,6 +6,8 @@ import java.util.Map;
 
 import javax.annotation.PostConstruct;
 
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -48,7 +50,7 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware {
     private String domain;
     
     // nexus的域名
-    private String nexusDomain;
+    private String repositoryUrl;
 
     // 密码助手的key
     private String ciperKey;
@@ -114,6 +116,14 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware {
     // rocketmq安装文件路径
     private String rocketmqFilePath;
     
+    private String privateKey;
+    
+    // rocketmq admin accessKey
+    private String adminAccessKey;
+    
+    // rocketmq admin secretKey
+    private String adminSecretKey;
+    
     @Autowired
     private CommonConfigService commonConfigService;
     
@@ -135,9 +145,12 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware {
                 continue;
             }
             String value = commonConfig.getValue();
+            if(value == null) {
+                continue;
+            }
             Class<?> fieldType = field.getType();
             if(fieldType == String.class) {
-                field.set(this, value);
+                field.set(this, value.trim());
             } else if(fieldType == Integer.class) {
                 field.set(this, Integer.valueOf(value));
             } else {
@@ -178,10 +191,6 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware {
         return HTTP_SCHEMA + getDomain() + "/software/" + NMON_ZIP;
     }
     
-    public String getRocketMQURL() {
-        return HTTP_SCHEMA + getDomain() + "/software/" + ROCKETMQ_FILE;
-    }
-
     public String getCiperKey() {
         return ciperKey;
     }
@@ -199,7 +208,7 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware {
     }
     
     public String getTopicLink(long topicId, String linkText) {
-        return getHrefLink(getTopicLink(topicId), linkText);
+        return getHrefLink(getTopicLink(topicId) + "?from=alert", linkText);
     }
 
     public String getTopicConsumeLink(long topicId) {
@@ -207,7 +216,7 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware {
     }
     
     public String getTopicConsumeLink(long topicId, String linkText) {
-        return getHrefLink(getTopicConsumeLink(topicId), linkText);
+        return getHrefLink(getTopicConsumeLink(topicId) + "&consumer=" + linkText, linkText);
     }
     
     private String getHrefLink(String link, String linkText) {
@@ -218,8 +227,8 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware {
         return getPrefix() + "admin/audit/list";
     }
 
-    public String getServerLink() {
-        return getPrefix() + "admin/server/list";
+    public String getServerLink(String ip) {
+        return getPrefix() + "admin/server/list?ip=" + ip;
     }
     
     public String getNameServerMonitorLink(int cid) {
@@ -282,16 +291,16 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware {
         return consumerClass;
     }
 
-    public String getNexusDomain() {
-        return nexusDomain;
-    }
-
     public Integer getIsOpenRegister() {
         return isOpenRegister;
     }
     
-    public void setNexusDomain(String nexusDomain) {
-        this.nexusDomain = nexusDomain;
+    public String getRepositoryUrl() {
+        return repositoryUrl;
+    }
+
+    public void setRepositoryUrl(String repositoryUrl) {
+        this.repositoryUrl = repositoryUrl;
     }
 
     public void setTicketKey(String ticketKey) {
@@ -387,18 +396,25 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware {
         this.rocketmqFilePath = rocketmqFilePath;
     }
     
+    public String getPrivateKey() {
+        return privateKey;
+    }
+
+    public String getAdminAccessKey() {
+        return adminAccessKey;
+    }
+
+    public String getAdminSecretKey() {
+        return adminSecretKey;
+    }
+
+    public boolean isAdminAclEnable() {
+        return StringUtils.isNotEmpty(adminAccessKey) && StringUtils.isNotEmpty(adminSecretKey);
+    }
+    
     @Override
     public String toString() {
-        return "MQCloudConfigHelper [contextPath=" + contextPath + ", profile=" + profile + ", domain=" + domain
-                + ", nexusDomain=" + nexusDomain + ", ciperKey=" + ciperKey + ", ticketKey=" + ticketKey
-                + ", serverUser=" + serverUser + ", serverPassword=" + serverPassword + ", serverPort=" + serverPort
-                + ", serverConnectTimeout=" + serverConnectTimeout + ", serverOPTimeout=" + serverOPTimeout
-                + ", operatorContact=" + operatorContact + ", specialThx=" + specialThx + ", classList=" + classList
-                + ", mapWithByteList=" + mapWithByteList + ", clientArtifactId=" + clientArtifactId + ", producerClass="
-                + producerClass + ", consumerClass=" + consumerClass + ", mailHost=" + mailHost + ", mailPort="
-                + mailPort + ", mailProtocol=" + mailProtocol + ", mailUsername=" + mailUsername + ", mailPassword="
-                + mailPassword + ", mailTimeout=" + mailTimeout + ", isOpenRegister=" + isOpenRegister 
-                + ", ignoreTopic=" + ignoreTopic + ", rocketmqFilePath=" + rocketmqFilePath + "]";
+        return ToStringBuilder.reflectionToString(this);
     }
 
     @Override

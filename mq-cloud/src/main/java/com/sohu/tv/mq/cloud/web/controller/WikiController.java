@@ -41,7 +41,7 @@ public class WikiController {
         String html = markdown2html(path + "/" + filename, ".md");
         html = html.replace("${clientArtifactId}", mqCloudConfigHelper.getClientArtifactId());
         html = html.replace("${version}", Version.get());
-        html = html.replace("${nexusDomain}", mqCloudConfigHelper.getNexusDomain());
+        html = html.replace("${repositoryUrl}", mqCloudConfigHelper.getRepositoryUrl());
         html = html.replace("${producer}", mqCloudConfigHelper.getProducerClass());
         html = html.replace("${consumer}", mqCloudConfigHelper.getConsumerClass());
         html = html.replace("${mqcloudDomain}", mqCloudConfigHelper.getDomain());

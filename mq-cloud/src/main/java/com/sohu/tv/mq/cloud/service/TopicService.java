@@ -444,7 +444,7 @@ public class TopicService {
             if(deleteCount == null) {
                 return Result.getResult(Status.DB_ERROR);
             }
-            // 第三步：真实删除topic(为了防止误删，只有线上缓存才能删除)
+            // 第三步：真实删除topic(为了防止误删，只有线上环境才能删除)
             if(mqCloudConfigHelper.isOnline()) {
                 Cluster mqCluster = clusterService.getMQClusterById(topic.getClusterId());
                 Result<?> result = deleteTopicOnCluster(mqCluster, topic.getName());

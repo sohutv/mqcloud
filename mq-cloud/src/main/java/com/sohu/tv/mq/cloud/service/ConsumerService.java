@@ -13,6 +13,7 @@ import java.util.TreeSet;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.rocketmq.client.exception.MQBrokerException;
 import org.apache.rocketmq.common.MQVersion;
+import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.admin.ConsumeStats;
 import org.apache.rocketmq.common.admin.OffsetWrapper;
 import org.apache.rocketmq.common.admin.TopicOffset;
@@ -74,6 +75,9 @@ public class ConsumerService {
     
     @Autowired
     private ClusterService clusterService;
+    
+    @Autowired
+    private TopicService topicService;
     
     /**
      * 保存Consumer记录
@@ -379,6 +383,9 @@ public class ConsumerService {
                 Result<?> result = deleteConsumerOnCluster(mqCluster, consumer.getName());
                 if(result.isNotOK()) {
                     throw new RuntimeException("delete consumer:"+consumer.getName()+" on cluster err!");
+                }
+                if(consumer.isClustering()) {
+                    topicService.deleteTopicOnCluster(mqCluster, MixAll.RETRY_GROUP_TOPIC_PREFIX + consumer.getName());
                 }
             }
         } catch (Exception e) {

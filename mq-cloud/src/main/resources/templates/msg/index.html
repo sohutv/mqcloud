@@ -17,9 +17,9 @@
 		<div class="form-group" id="searchConditionForm">
 			<label for="type">查询方式: </label>
 		    <select id="searchCondition" class="selectpicker form-control">
-				<option data-title="按照偏移量查询消息,最多检索5000条" value="offset">偏移量</option>
 				<option data-title="按照key查询消息，最多可查时间段内的${brokerSize*64}条" value="key">key</option>
 				<option data-title="按照时间段查询消息,最多检索5000条" value="time">时间段</option>
+				<option data-title="按照偏移量查询消息,最多检索5000条" value="offset">偏移量</option>
 				<option data-title="按照消息id查询" value="msgId">消息id</option>
 				<#if traceEnabled>
 					<option data-title="查询trace情况(支持按照key或msgId查询)" value="trace">trace</option>
@@ -32,15 +32,15 @@
 	<form class="form-inline" id="msgSearchForm">
 		<div>
 			<!-- 偏移量查询 -->
-			<div class="form-group offset">
+			<div class="form-group offset" style="display:none;">
 				<label for="offsetStart" data-toggle='tooltip' title="参考生产详情里的最小偏移量"> 起始偏移量: </label>
 				<input id="offsetStart" name="offsetStart" type="text" class="form-control" style="width:120px;" value="${response.result.minOffset?c}">
 			</div>
-			<div class="form-group offset">
+			<div class="form-group offset" style="display:none;">
 	  			<label for="offsetEnd" data-toggle='tooltip' title="参考生产详情里的最大偏移量"> 结束偏移量: </label>
 				<input id="offsetEnd" name="offsetEnd" type="text" class="form-control" style="width:120px;" value="${response.result.maxOffset?c}">
 			</div>
-			<div class="form-group offset">
+			<div class="form-group offset" style="display:none;">
 	    	    <input type="text" class="form-control" id="offsetKey" name="offsetKey" value="${response.result.key!}" placeholder="关键字，支持模糊匹配">
 	  	    </div>
 			<!-- 时间段查询 -->
@@ -62,7 +62,7 @@
 	    	    <input type="text" class="form-control" id="msgId" name="msgId" value="${response.result.msgId!}" placeholder="消息id">
 	  	    </div>
 	  	    <!-- key查询 -->
-	  	    <div class="form-group key" style="display:none;">
+	  	    <div class="form-group key">
 				<label for="keyStartTimePicker"> 开始时间: </label>
 				<input id="keyStartTimePicker" type="text" class="Wdate form-control" onclick="WdatePicker({ dateFmt: 'yyyy-MM-dd HH:mm:ss',maxDate:'%y-%M-%d',minDate:'%y-%M-{%d-${cluster.fileReservedDays}}',onpicked:function(){timeChange('keyStartTime')}})" style="width:180px;height:34px;cursor:pointer;" readonly="readonly"
 	  								value="${response.result.start?number_to_datetime?string("yyyy-MM-dd 00:00:00")}">
@@ -72,7 +72,7 @@
 	  								value="${.now?string("yyyy-MM-dd HH:mm:ss")}">
 	  			<input type="hidden" name="keyEndTime" id="keyEndTime" value="${response.result.end?c}">
 			</div>
-	  	    <div class="form-group key" style="display:none;">
+	  	    <div class="form-group key">
 	    	    <input type="text" class="form-control" id="msgKey" name="msgKey" placeholder="消息key">
 			</div>
 			<!-- trace查询 -->
@@ -99,10 +99,10 @@
 			<!-- 消息查询 -->
 			<button type="button" data-toggle='tooltip' title="按消息id查询${response.result.topic}" onclick="viewMessage()" class="btn btn-search msgId" style="display:none;"><span class="glyphicon glyphicon-search" aria-hidden="true"></span></button>
 			<!-- key查询 -->
-			<button type="button" data-toggle='tooltip' title="按key查询${response.result.topic}" onclick="searchKeyMessage()" class="btn btn-search key" style="display:none;"><span class="glyphicon glyphicon-search" aria-hidden="true"></span></button>
+			<button type="button" data-toggle='tooltip' title="按key查询${response.result.topic}" onclick="searchKeyMessage()" class="btn btn-search key"><span class="glyphicon glyphicon-search" aria-hidden="true"></span></button>
 			<!-- 偏移量查询 -->
-			<button type="button" onclick="showMoreSearchCondition()" class="btn offset" data-toggle="tooltip" title="单击展开更多搜索项"><span class="glyphicon glyphicon-filter" aria-hidden="true"></span></button>
-			<button type="button" data-toggle='tooltip' title="按偏移量查询${response.result.topic}" onclick="searchOffsetMessage(false)" class="btn btn-search offset"><span class="glyphicon glyphicon-search" aria-hidden="true"></span></button>
+			<button type="button" onclick="showMoreSearchCondition()" class="btn offset" data-toggle="tooltip" title="单击展开更多搜索项"  style="display:none;"><span class="glyphicon glyphicon-filter" aria-hidden="true"></span></button>
+			<button type="button" data-toggle='tooltip' title="按偏移量查询${response.result.topic}" onclick="searchOffsetMessage(false)" class="btn btn-search offset"  style="display:none;"><span class="glyphicon glyphicon-search" aria-hidden="true"></span></button>
 			<!-- trace查询 -->
 			<button type="button" data-toggle='tooltip' title="按trace查询${response.result.topic}" onclick="searchTraceMessage()" class="btn btn-search trace" style="display:none;"><span class="glyphicon glyphicon-search" aria-hidden="true"></span></button>
 			
@@ -620,7 +620,7 @@ function setTrackOption(msg){
 	};
 }
 
-var prevSearchType = "offset";
+var prevSearchType = "key";
 function changeSearchType(type){
 	// 无改变
 	if(prevSearchType == type){

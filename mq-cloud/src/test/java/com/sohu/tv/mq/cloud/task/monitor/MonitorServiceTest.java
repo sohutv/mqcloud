@@ -11,6 +11,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 import com.sohu.tv.mq.cloud.Application;
 import com.sohu.tv.mq.cloud.service.ClusterService;
 import com.sohu.tv.mq.cloud.service.NameServerService;
+import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = Application.class)
@@ -25,9 +26,12 @@ public class MonitorServiceTest {
     @Autowired
     private ClusterService clusterService;
     
+    private MQCloudConfigHelper mqCloudConfigHelper;
+    
     @Test
     public void test() throws MQClientException, RemotingException, InterruptedException {
-        MonitorService monitorService = new MonitorService(nameServerService, clusterService.getMQClusterById(1), sohuMonitorListener);
+        MonitorService monitorService = new MonitorService(nameServerService, clusterService.getMQClusterById(1), 
+                sohuMonitorListener, mqCloudConfigHelper);
         monitorService.doMonitorWork();
     }
 

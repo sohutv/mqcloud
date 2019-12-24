@@ -53,6 +53,8 @@ public class StatsHelper implements StatsHelperMBean {
     
     // 异常统计助手
     private ExceptionStatsHelper exceptionStatsHelper;
+    
+    public static final int ONE_MINITE_IN_MILLIS = 60000;
 
     /**
      * 初始化
@@ -143,9 +145,9 @@ public class StatsHelper implements StatsHelperMBean {
             Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {
                 @Override
                 public Thread newThread(Runnable r) {
-                    return new Thread(r, "TimeSectionSamplerScheduledThread-" + threadCounter.incrementAndGet());
+                    return new Thread(r, "StatsReporter-" + statsHelper.getProducer() + "-" + threadCounter.incrementAndGet());
                 }
-            }).scheduleAtFixedRate(new Runnable() {
+            }).scheduleWithFixedDelay(new Runnable() {
                 @Override
                 public void run() {
                     try {
@@ -154,7 +156,7 @@ public class StatsHelper implements StatsHelperMBean {
                         logger.warn("report err:{}", ignored.getMessage());
                     }
                 }
-            }, 60, 60, TimeUnit.SECONDS);
+            }, ONE_MINITE_IN_MILLIS, ONE_MINITE_IN_MILLIS, TimeUnit.MILLISECONDS);
         }
 
         /**
@@ -194,7 +196,7 @@ public class StatsHelper implements StatsHelperMBean {
             }
 
             // 百分数结果封装
-            clientStats.setStatsTime((int) (System.currentTimeMillis() / 60000));
+            clientStats.setStatsTime((int) (System.currentTimeMillis() / ONE_MINITE_IN_MILLIS));
             clientStats.setAvg(statsHelper.timeSectionStats.avg());
             clientStats.setPercent99(statsHelper.timeSectionStats.percentile(0.99));
             clientStats.setPercent90(statsHelper.timeSectionStats.percentile(0.9));

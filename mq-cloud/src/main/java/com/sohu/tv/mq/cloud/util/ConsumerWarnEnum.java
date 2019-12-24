@@ -57,9 +57,9 @@ public enum ConsumerWarnEnum {
             case CONSUMER_FAIL_COUNT:
                 return config.getConsumerFailCount();
             case WARN_UNIT_TIME:
-                return (long) config.getWarnUnitTime();
+                return config.getWarnUnitTime() == null ? null : config.getWarnUnitTime().longValue();
             case WARN_UNIT_COUNT:
-                return (long) config.getWarnUnitCount();
+                return config.getWarnUnitCount() == null ? null : config.getWarnUnitCount().longValue();
             default:
                 break;
         }
