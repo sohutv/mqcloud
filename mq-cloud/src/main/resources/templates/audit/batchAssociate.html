@@ -1,0 +1,74 @@
+<#if response.notOK>
+<div class="modal-body">
+	<div class="form-body">
+		<div class="form-group">
+			<div>异常数据</div>
+		</div>
+	</div>
+</div>
+<#else>
+<div class="row">
+	<div class="col-md-12">
+		<div class="form-body">
+			<div class="form-group">
+				<label class="control-label col-md-2"> 关联用户: </label>
+		        <div class="col-md-10">
+		        	<#if response.result.userList??>
+		        		<div class="form-control-static">
+			        	<#list response.result.userList as user>
+			        		<#if user_index != 0>
+					    		,
+					    	</#if>
+			        		${user.name!user.emailName}			        					        		
+			        	</#list>
+			        	</div>	
+					<#else>
+						<input type="text" value="暂无数据" readonly="readonly" class="form-control" />
+					</#if>						
+				</div>
+			</div>
+			<div class="form-group">
+				<label class="control-label col-md-2"> 关联资源:</label>
+		        <div class="col-md-10">
+        			<table class="table table-striped table-hover" style="margin-top: 0px">
+						<thead>
+							<colgroup>
+							  <col width='50px'>
+							  <col width='200px'>
+							  <col width='60px'>
+							  <col> 
+							</colgroup>
+							<tr>
+								<td>序号</td>
+								<td>Topic</td>
+								<td>角色</td>
+								<td></td>
+							</tr>
+						</thead>
+						<tbody>
+							<#list response.result.topicInfoVoList as topicInfoVO>
+								<tr>
+									<td rowspan="${topicInfoVO.producerList?size+topicInfoVO.consumerList?size+1}">${topicInfoVO_index + 1}</td>
+									<td rowspan="${topicInfoVO.producerList?size+topicInfoVO.consumerList?size+1}">${topicInfoVO.topic.name}</td>
+								</tr>
+								<#list topicInfoVO.producerList as userProducer>		
+									<tr>
+										<td>生产者</td>
+										<td>${userProducer.producer}</td>
+									</tr>
+								</#list>	
+								<#list topicInfoVO.consumerList as consumer>		
+									<tr>
+										<td>消费者</td>
+										<td>${consumer.name}</td>
+									</tr>
+								</#list>
+							</#list>
+						</tbody>
+					</table>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+</#if>

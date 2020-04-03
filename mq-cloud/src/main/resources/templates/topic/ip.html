@@ -3,7 +3,6 @@
         <tbody>
         <#list response.result as ipSearchResultVO>
             <tr>
-                <td>${ipSearchResultVO.ip}</td>
                 <td>
                     <#if ipSearchResultVO.consumer??>
                         <a title="查看消费者详情" href="${request.contextPath}/user/topic/${ipSearchResultVO.topic.id}/detail?tab=consume">${ipSearchResultVO.consumer}</a>
@@ -24,12 +23,12 @@
         </tbody>
     <#else>
         <tbody>
-        <tr class="no_more_data"><td colspan=8 class="text-center">未查询到数据</td></tr>
+        <tr class="no_more_data"><td colspan=3 class="text-center">未查询到数据</td></tr>
         </tbody>
     </#if>
 
 <#else>
     <tbody>
-    <tr class="no_more_data"><td colspan=8 class="text-center">查询异常！${response.message}</td></tr>
+    <tr class="no_more_data"><td colspan=3 class="text-center">查询异常！${response.message}</td></tr>
     </tbody>
 </#if>

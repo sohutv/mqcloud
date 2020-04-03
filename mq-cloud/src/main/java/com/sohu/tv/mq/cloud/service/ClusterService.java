@@ -68,6 +68,27 @@ public class ClusterService {
     }
     
     /**
+     * 获取第一个集群id
+     * @return
+     */
+    public int getFirstClusterId() {
+        return mqClusterArray[0].getId();
+    }
+    
+    /**
+     * 获取trace集群id
+     * @return
+     */
+    public int getTraceClusterId() {
+        for (Cluster cluster : mqClusterArray) {
+            if (cluster.isEnableTrace()) {
+                return cluster.getId();
+            }
+        }
+        return -1;
+    }
+    
+    /**
      * 根据id查找集群
      * @param id
      * @return

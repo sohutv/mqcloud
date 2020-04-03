@@ -4,16 +4,17 @@
            currentPage: ${pagination.result.currentPage},
            totalPages: ${pagination.result.totalPages},
     	   bootstrapMajorVersion: 3,
+    	   size: "small",
     	   itemTexts:function(type,page, current){
                switch (type) {
                    case "first":
-                       return "首页";
+                       return "<<";
                    case "prev":
-                       return "上一页";
+                       return "<";
                    case "next":
-                       return "下一页";
+                       return ">";
                    case "last":
-                       return "尾页";
+                       return ">>";
                    case "page":
                        return page;
                }

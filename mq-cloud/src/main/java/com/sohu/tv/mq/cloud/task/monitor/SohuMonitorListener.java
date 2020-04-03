@@ -11,8 +11,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
 
-import com.sohu.tv.mq.cloud.bo.*;
-import com.sohu.tv.mq.cloud.service.*;
+import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.message.MessageQueue;
 import org.apache.rocketmq.common.protocol.body.Connection;
 import org.apache.rocketmq.common.protocol.body.ConsumerConnection;
@@ -30,7 +29,19 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import com.sohu.tv.mq.cloud.bo.ConsumerBlock;
+import com.sohu.tv.mq.cloud.bo.ConsumerClientStat;
+import com.sohu.tv.mq.cloud.bo.ConsumerStat;
+import com.sohu.tv.mq.cloud.bo.Topic;
+import com.sohu.tv.mq.cloud.bo.User;
+import com.sohu.tv.mq.cloud.bo.UserConsumer;
 import com.sohu.tv.mq.cloud.dao.ConsumerStatDao;
+import com.sohu.tv.mq.cloud.service.AlarmConfigBridingService;
+import com.sohu.tv.mq.cloud.service.AlertService;
+import com.sohu.tv.mq.cloud.service.ConsumerClientStatService;
+import com.sohu.tv.mq.cloud.service.TopicService;
+import com.sohu.tv.mq.cloud.service.UserConsumerService;
+import com.sohu.tv.mq.cloud.service.UserService;
 import com.sohu.tv.mq.cloud.util.DateUtil;
 import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper;
 import com.sohu.tv.mq.cloud.util.Result;
@@ -217,7 +228,9 @@ public class SohuMonitorListener implements MonitorListener {
 			log.warn("receive offset event:{}", deleteMsgsEvent);
 			OffsetMovedEvent event = deleteMsgsEvent.getOffsetMovedEvent(); 
 			String consumerGroup = event.getConsumerGroup();
-			
+			if(MixAll.TOOLS_CONSUMER_GROUP.equals(consumerGroup)) {
+			    return;
+			}
 			// 保存consume状态
 			ConsumerStat consumerStat = new ConsumerStat();
             consumerStat.setConsumerGroup(consumerGroup);

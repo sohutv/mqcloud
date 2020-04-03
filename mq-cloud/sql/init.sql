@@ -353,7 +353,7 @@ DROP TABLE IF EXISTS `producer_total_stat`;
 CREATE TABLE `producer_total_stat` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `producer` varchar(255) NOT NULL COMMENT 'producer',
-  `client` varchar(20) NOT NULL COMMENT 'client',
+  `client` varchar(100) NOT NULL COMMENT 'client',
   `percent90` int(11) NOT NULL COMMENT '耗时百分位90',
   `percent99` int(11) NOT NULL COMMENT '耗时百分位99',
   `avg` double NOT NULL COMMENT '平均耗时',
@@ -365,7 +365,7 @@ CREATE TABLE `producer_total_stat` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `producer` (`producer`,`stat_time`,`client`),
   KEY `create_date` (`create_date`,`producer`),
-  KEY `client` (`client`,`create_date`,`create_time`)
+  KEY `date_client` (`create_date`,`client`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='生产者总体统计';
 
 -- ----------------------------
@@ -611,10 +611,21 @@ DROP TABLE IF EXISTS `consumer_client_stat`;
 CREATE TABLE `consumer_client_stat` (
   `consumer` varchar(255) NOT NULL COMMENT 'consumer',
   `client` varchar(20) NOT NULL COMMENT 'client',
-  `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-  KEY `client` (`create_time`,`client`)
+  `create_date` date NOT NULL COMMENT '创建日期',
+  KEY `cck` (`create_date`,`client`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='消费者客户端统计表';
 
+-- ----------------------------
+-- Table structure for `audit_batch_associate`
+-- ----------------------------
+DROP TABLE IF EXISTS `audit_batch_associate`;
+CREATE TABLE `audit_batch_associate` (
+  `uids` text NOT NULL COMMENT '关联的用户id',
+  `aid` int(11) NOT NULL COMMENT '审核id',
+  `producer_ids` text NULL COMMENT '生产者id',
+  `consumer_ids` text NULL COMMENT '消费者id',
+  PRIMARY KEY (`aid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='审核批量关联';
 -- ----------------------------
 -- user init
 -- ----------------------------

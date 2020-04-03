@@ -41,13 +41,12 @@ public class ConsumerClientStatService {
     /**
      * 根据时间和client查询
      */
-    public Result<List<String>> selectByDateAndClient(String client, long startTime) {
+    public Result<List<String>> selectByDateAndClient(String client, Date date) {
         List<String> result = null;
-        Date start = new Date(startTime);
         try {
-            result = consumerClientStatDao.selectByDateAndClient(client, start);
+            result = consumerClientStatDao.selectByDateAndClient(client, date);
         } catch (Exception e) {
-            logger.error("select consumerClientStat err, startTime:{},client:{}", startTime, client, e);
+            logger.error("select consumerClientStat err, date:{},client:{}", date, client, e);
             return Result.getDBErrorResult(e);
         }
         return Result.getResult(result);

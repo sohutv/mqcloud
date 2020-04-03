@@ -321,8 +321,10 @@ public class VerifyDataService {
      * @return
      */
     private Result<?> findAuditRecordsForNotReview(TypeEnum typeEnum, long id, String name) {
-        Result<List<Audit>> auditListResult = auditService.queryAuditByTypeAndStatus(typeEnum,
-                StatusEnum.INIT);
+        Audit audit = new Audit();
+        audit.setType(typeEnum.getType());
+        audit.setStatus(StatusEnum.INIT.getStatus());
+        Result<List<Audit>> auditListResult = auditService.queryAuditList(audit);
         if (auditListResult.getStatus() != Status.NO_RESULT.getKey()) {
             if (auditListResult.isNotOK()) {
                 return Result.getResult(Status.DB_ERROR);

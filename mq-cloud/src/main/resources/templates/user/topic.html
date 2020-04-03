@@ -4,23 +4,30 @@
         <div class="page-header">
             <h4>Topic列表</h4>
         </div>
-		<div style="float:right">
-			<form class="form-inline" id="topicList">
-		  	  <#if userInfo.user.type == 1>
-		  	     <div class="form-group">
-				    <select id="topicSearchSelect" class="selectpicker" title="请选择" data-live-search-placeholder="搜索" name="topic" data-live-search="true"></select>
-		 	     </div>
-		 	  <#else>
-		 	     <div class="form-group">
-		    	    <input type="text" class="form-control" name="topic" value="<#if response.OK>${response.result.queryTopic!}</#if>" placeholder="Topic名字">
-		  	     </div>
-				 <button type="submit" onclick="searchTopic()" class="btn btn-search"><span class="glyphicon glyphicon-search" aria-hidden="true"></span></button>
-		  	  </#if>
-			  <button type="button" data-toggle="modal" data-target="#ipSearchModal" title="根据ip搜索生产者或消费者" class="btn btn-search ipsearch"><span class="glyphicon"></span></button>
-			  <button type="submit" class="btn btn-success" data-target="#addTopicModal" data-toggle="modal">我要生产消息</button>
-			  <button type="submit" class="btn btn-success" onclick="initTopicList('topicSelectForConsumer')" data-target="#addConsumerModal" data-toggle="modal">我要消费消息</button>
-			  <button type="submit" class="btn btn-success" onclick="initTopicList('topicSelect')" data-target="#buildRelationshipModal" data-toggle="modal" data-toggle="tooltip" title="RocketMQ的老用户通过这个入口来关联生产者和消费者">我是老用户</button>
-			</form>
+		<div class="form-body">
+			<div class="form-group">
+				<div class="col-md-6" style="padding-left:0px;">
+					<button type="button" class="btn btn-sm" data-target="#addTopicModal" data-toggle="modal" title="新建topic">生产消息</button>
+				  	<button type="button" class="btn btn-sm" onclick="initTopicList('topicSelectForConsumer')" data-target="#addConsumerModal" data-toggle="modal" title="新建消费者">消费消息</button>
+				  	<button type="button" class="btn btn-sm" onclick="initTopicList('topicSelect')" data-target="#buildRelationshipModal" data-toggle="modal" title="关联生产者和消费者">关联资源</button>
+			  	  	<button type="button" class="btn btn-sm" onclick="batchAssociateModalShow()" data-toggle="tooltip" title="将自己拥有的生产者和消费者批量授权给他人">批量授权</button>
+					<button type="button" class="btn btn-sm" data-toggle="modal" data-target="#ipSearchModal" title="根据ip搜索生产者或消费者">搜索ip</button>
+				</div>
+		        <div class="col-md-6 text-right" style="padding-right:0px;">
+		       	 	<form class="form-inline" id="topicList">
+	       		  	   <#if userInfo.user.type == 1>
+				  	     <div class="form-group">
+						    <select id="topicSearchSelect" class="selectpicker" title="搜索topic" data-live-search-placeholder="输入任意字母" name="topic" data-live-search="true"></select>
+				 	     </div>
+				 	   <#else>
+				 	     <div class="form-group">
+				    	    <input type="text" class="form-control" name="topic" value="<#if response.OK>${response.result.queryTopic!}</#if>" placeholder="Topic名字">
+				  	     </div>
+						 <button type="submit" onclick="searchTopic()" class="btn btn-search"><span class="glyphicon glyphicon-search" aria-hidden="true"></span></button>
+				  	   </#if>
+				  	</form>
+				</div>
+			</div>
 		</div>
 	</div>
 </div>
@@ -36,16 +43,16 @@
 					<col width="100px">
 					<col width="100px">
 					<col width="300px">
-					<col width="60px">
+					<col width="45px">
 				</colgroup>
                 <thead>
 	                <tr>
 	                	<td>序号</td>
 	                    <td>Topic</td>
-	                    <td data-toggle="tooltip" title="每分钟生产的消息数量">生产量</td>
-	                    <td data-toggle="tooltip" title="每分钟消费的消息数量">消费量</td>
-	                    <td data-toggle="tooltip" title="每分钟生产的消息大小">生产大小</td>
-	                    <td data-toggle="tooltip" title="每分钟消费的消息大小">消费大小</td>
+	                    <td data-toggle="tooltip" title="上一分钟生产的消息数量">生产量</td>
+	                    <td data-toggle="tooltip" title="上一分钟消费的消息数量">消费量</td>
+	                    <td data-toggle="tooltip" title="上一分钟生产的消息大小">生产大小</td>
+	                    <td data-toggle="tooltip" title="上一分钟消费的消息大小">消费大小</td>
 	                    <td>用途</td>
 	                    <td>操作</td>
 	                </tr>
@@ -87,7 +94,7 @@
 										<#if topicTrafficVO.info?? && topicTrafficVO.info !=''> 
 											<span style="cursor:pointer" data-toggle="tooltip" title="修改用途" onclick="updateTopicInfoShow(${topicTrafficVO.id}, '${topicTrafficVO.name}', '${topicTrafficVO.info}')">${topicTrafficVO.info!}</span>
 				           				<#else>
-			            					<button type="submit" class="btn btn-success btn-sm" onclick="updateTopicInfoShow(${topicTrafficVO.id}, '${topicTrafficVO.name}', '${topicTrafficVO.info!}')" >添加</button>
+			            					<span onclick="updateTopicInfoShow(${topicTrafficVO.id}, '${topicTrafficVO.name}', '${topicTrafficVO.info!}')" class="glyphicon glyphicon-pencil pointer" data-toggle="tooltip" title="添加用途" aria-hidden="true"></span>
 				           				</#if>
 									</td>
 								<#else>
@@ -95,7 +102,7 @@
 								</#if>
 								<td>
 									<#if topicTrafficVO.own>
-										<button type="button" class="btn btn-warning" data-target="#deleteTopicModal${topicTrafficVO_index}" data-toggle="modal"><span class="glyphicon glyphicon-trash" aria-hidden="true"></span></button>
+										<button type="button" class="btn btn-warning btn-xs" data-target="#deleteTopicModal${topicTrafficVO_index}" data-toggle="modal" title="删除${topicTrafficVO.name}"><span class="glyphicon glyphicon-trash" aria-hidden="true"></span></button>
 										<!-- 删除topic -->
 										<div id="deleteTopicModal${topicTrafficVO_index}" class="modal fade" tabindex="-1">
 											<div class="modal-dialog" style="width:400px">
@@ -213,10 +220,10 @@
 									<label class="control-label col-md-3"> 使用环境: </label>
 									<div class="col-md-5 checkbox">
 										<label data-toggle="tooltip" title="开启后，会在线上集群上创建该topic">
-										    <input type="radio" name="testEnabled" value="0" checked>线上
+										    <input onclick="enableTestEnv()" type="radio" name="testEnabled" value="0" checked>线上
 										</label>
 										<label data-toggle="tooltip" title="开启后，会在测试集群上创建该topic">
-										    <input type="radio" name="testEnabled" value="1">测试
+										    <input onclick="disableTestEnv()" type="radio" name="testEnabled" value="1">测试
 										</label>
 									</div>
 								</div>
@@ -256,7 +263,7 @@
 											</label>
 										</div>
 									</div>
-									<div class="form-group">
+									<div class="form-group" id="traceForm">
 										<label class="control-label col-md-3"> 开启trace: </label>
 										<div class="col-md-5 checkbox">
 											<label>
@@ -436,7 +443,7 @@
 			<!-- header -->
 			<div class="modal-header">
 				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-				<h4 class="modal-title">根据生产者/消费者ip搜索topic</h4>
+				<h4 class="modal-title">根据ip搜索生产者或消费者</h4>
 			</div>
 			<!-- body -->
 			<div class="modal-body">
@@ -444,20 +451,16 @@
 					<div style="float:left;margin:10px 0px;">
 						<!-- 时间 -->
 						<div class="form-group time">
-							<label for="timePicker" title="">开始时间: </label>
-							<input id="timePicker" type="text" title= "只能选择当天时间" class="Wdate form-control" onclick="WdatePicker({ dateFmt: 'yyyy-MM-dd HH:mm:ss',maxDate:'%y-%M-%d',minDate:'%y-%M-%d 00:00:00',onpicked:function(){timeChange('time')}})" style="width:180px;height:34px;cursor:pointer;" readonly="readonly"
-								   value="${(.now?long-3600000)?number_to_datetime?string("yyyy-MM-dd HH:mm:ss")}">
-							<input type="hidden" name="time" id="time" value="${(.now?long-3600000)?number_to_datetime?string("yyyy-MM-dd HH:mm:ss")}">
-							<label for="endTimePicker" title="">结束时间: </label>
-							<input id="endTimePicker" disabled="disabled" title="默认为当前时间,不可选择" type="text" class="Wdate form-control" onclick="WdatePicker({ dateFmt: 'yyyy-MM-dd HH:mm:ss',maxDate:'%y-%M-%d',minDate:'%y-%M-%d'})" style="width:180px;height:34px;cursor:pointer;" readonly="readonly"
-								   value="${(.now?long)?number_to_datetime?string("yyyy-MM-dd HH:mm:ss")}">
+							<label for="timePicker" title="">日期: </label>
+							<input id="timePicker" name="date" type="text" class="Wdate form-control" onclick="WdatePicker({ dateFmt: 'yyyy-MM-dd',maxDate:'%y-%M-%d',minDate:'%y-%M-{%d-7}'})" style="width:180px;height:34px;cursor:pointer;" readonly="readonly"
+								   value="${(.now?long-3600000)?number_to_date?string("yyyy-MM-dd")}">
 						</div>
 						<!-- ip -->
 						<div class="form-group time">
-							<input type="text" class="form-control" id="ip" name="ip" placeholder="ip地址">
+							<input type="text" class="form-control" id="ip" name="ip" placeholder="可以只写ip的前边部分">
 						</div>
 						<!-- 查询按钮 -->
-						<button type="button" data-toggle='tooltip' title="搜索" onclick="searchTopicByIp()" class="btn btn-search time"><span class="glyphicon glyphicon-search" aria-hidden="true"></span></button>
+						<button type="button" data-toggle='tooltip' title="查询一天的链接" onclick="searchTopicByIp()" class="btn btn-search time"><span class="glyphicon glyphicon-search" aria-hidden="true"></span></button>
 					</div>
 				</form>
 				<br>
@@ -468,14 +471,13 @@
 					</colgroup>
 					<thead>
 					<tr>
-						<td>ip</td>
 						<td title="ip归属的消费者">消费者</td>
 						<td title="ip归属的生产者">生产者</td>
 						<td title="关联的topic">topic</td>
 					</tr>
 					</thead>
 					<tbody>
-					<tr class="no_more_data"><td colspan=8 class="text-center">暂无数据</td></tr>
+					<tr class="no_more_data"><td colspan=3 class="text-center">暂无数据</td></tr>
 					</tbody>
 				</table>
 			</div>
@@ -546,6 +548,57 @@
 	</div>
 </div> 
 
+<!-- 批量关联 -->
+<div id="batchAssociateModal" class="modal fade" tabindex="-1" aria-hidden="true">
+	<div class="modal-dialog" style="width:800px">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+				<h4 class="modal-title">批量授权</h4>
+			</div>
+			<div class="row">
+				<div class="col-md-12">
+					<div class="form-body">
+						<div class="form-group">
+							<label class="control-label col-md-3"> 第一步，选择用户: </label>
+					        <div class="col-md-9">
+								<select id="userSearchSelect" multiple class="selectpicker" title="请选择" data-live-search-placeholder="搜索" name="user" data-live-search="true"></select>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+			<hr>
+			<b>&nbsp;&nbsp;&nbsp;第二步，选择生产者、消费者:</b>
+			<br><br>
+			<table class="table table-striped table-hover" style="margin-top: 0px">
+				<thead>
+					<colgroup>
+					  <col width='50px'>
+					  <col width='350px'>
+					  <col width='60px'>
+					  <col> 
+					  <col width='70px'>
+					</colgroup>
+					<tr>
+						<td>序号</td>
+						<td>Topic</td>
+						<td>角色</td>
+						<td></td>
+						<td><input onclick="clickAll()" id="allBox" type="checkbox"></td>
+					</tr>
+				</thead>
+				<tbody id="topicsBody">
+				</tbody>
+			</table>
+			<div class="modal-footer">
+				<button type="button" data-dismiss="modal" class="btn" >取消</button>
+				<button type="button" class="btn btn-primary" id="batchAssociateBtn" onclick="batchAssociate()">确定</button>
+			</div>
+		</div>
+	</div>
+</div> <!-- 批量授权结束 -->
+
 <script type="text/javascript">
 	/**
 	 * 查询topic
@@ -560,6 +613,9 @@
 		
 		// 初始化topic列表
   		<#if userInfo.user.type == 1>
+	  		$("#topicSearchSelect").selectpicker({
+	  			width : 300
+	  	 	});
 	  		initTopicList('topicSearchSelect', true);
  	 	</#if>
 		
@@ -790,6 +846,11 @@
 		$('#topicSearchSelect').on('changed.bs.select', function(e) {
 			searchTopic();
 		});
+		
+		
+	 	$("#userSearchSelect").selectpicker({
+			width : 500
+	 	});
 	});
 	
 	/**
@@ -1062,13 +1123,6 @@ function showExtendConfig(obj){
 				});
 	}
 
-	function timeChange(id){
-		var dt = $("#" + id + "Picker").val();
-		var tm = parseDate(dt);
-		$("#" + id).val(tm);
-	}
-	timeChange('time');
-
 	function updateTopicInfoShow(tid, topicName, info){
 		$("#topicId").val(tid);
 		$("#topicName").html(topicName);
@@ -1096,5 +1150,97 @@ function showExtendConfig(obj){
 				    	enable("updateTopicInfoBtn");
 				    }
 		    }, 'json');
+	}
+	
+	function enableTestEnv(){
+		$("#traceForm").show();
+	}
+	function disableTestEnv(){
+		$("#traceForm").hide();
+	}
+	
+	
+	function batchAssociateModalShow(){
+		$.get('${request.contextPath}/user/batch/associate',
+	        function(data){
+				$("#topicsBody").html(data);
+				initUserList('userSearchSelect');
+				$('#batchAssociateModal').modal('show');
+        	}
+		);
+	}
+	
+	function clickAll(){
+		$(".authBox").prop("checked", $("#allBox").prop('checked'));
+	}
+	
+	/**
+	 * 初始化user下拉列表
+	 */
+	function initUserList(componentId){
+		$.post('${request.contextPath}/user/list',
+		        function(data){
+		            if(data.status == 200){
+		            	var content = "";
+		            	for(var i in data.result){
+		            		var user = data.result[i];
+		            		// admin跳过
+		            		if(user.type == 1){
+		            			continue;
+		            		}
+		            		var value = user.email.substring(0, user.email.indexOf("@"));
+		            		if(user.name && user.name != value){
+		            			value = user.name + "【" + value +"】";
+		            		}
+		            		content += "<option value='"+user.id+"'>"+value+"</option>";	
+		            	}
+		        		$("#"+componentId).html(content);
+		        		$("#"+componentId).selectpicker('refresh');
+				    }else{
+				    	toastr.error("数据获取失败！"+data.message);  
+				    }
+	        }, 'json');
+	}
+	
+	/**
+	 * 批量关联
+	 */
+	function batchAssociate(){
+		var uids = $("#userSearchSelect").val();
+		if(!uids){
+			alert("请选择用户!");
+			return;
+		}
+		var producerIds = new Array();
+		var consumerIds = new Array();
+		$(".authBox:checked").each(function(){
+			if($(this).attr("dataType") == 1) {
+				producerIds.push($(this).val());
+			} else {
+				consumerIds.push($(this).val());
+			}
+		});
+		if(producerIds.length == 0 && consumerIds.length == 0){
+			alert("请选择生产者或消费者!");
+			return;
+		}
+		if(confirm("确定授权给这"+uids.length+"个用户吗？")){
+    		disable("batchAssociateBtn");
+    		$.post('${request.contextPath}/user/batch/associate',{
+    			uids: uids.join(","),
+    			producerIds: producerIds.join(","),
+    			consumerIds: consumerIds.join(",")
+    			},function(data){
+   		            if(data.status == 200){
+   		            	toastr.success("申请成功！请耐心等待！");  
+   		            	modalHide(3000, function(){
+   		            		enable("batchAssociateBtn");
+   		            	});
+   				    }else{
+   				    	toastr.error("申请失败！"+data.message);  
+   				    	enable("batchAssociateBtn");
+   				    }
+   	        }, 'json');
+    	}
 	}
 </script>

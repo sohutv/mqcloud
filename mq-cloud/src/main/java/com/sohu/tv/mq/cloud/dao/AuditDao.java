@@ -36,15 +36,6 @@ public interface AuditDao {
     public Audit selectById(@Param("id") long id);
 
     /**
-     * 按类型与审核状态查询
-     * 
-     * @param id
-     * @return
-     */
-    @Select("select * from audit where type = #{type} and status = #{status}")
-    public List<Audit> selectAuditByTypeAndStatus(@Param("type") long type, @Param("status") long status);
-
-    /**
      * 更新
      * @param audit
      */

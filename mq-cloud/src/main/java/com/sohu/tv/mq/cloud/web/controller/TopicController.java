@@ -3,6 +3,7 @@ package com.sohu.tv.mq.cloud.web.controller;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -54,6 +55,7 @@ import com.sohu.tv.mq.cloud.service.UserConsumerService;
 import com.sohu.tv.mq.cloud.service.UserProducerService;
 import com.sohu.tv.mq.cloud.service.UserService;
 import com.sohu.tv.mq.cloud.service.VerifyDataService;
+import com.sohu.tv.mq.cloud.util.DateUtil;
 import com.sohu.tv.mq.cloud.util.FreemarkerUtil;
 import com.sohu.tv.mq.cloud.util.Result;
 import com.sohu.tv.mq.cloud.util.Status;
@@ -541,7 +543,7 @@ public class TopicController extends ViewController {
     @RequestMapping(value="/search/ip")
     public String searchByIp(UserInfo userInfo,
                              @RequestParam("ip") String ip,
-                             @RequestParam("time") Long time,
+                             @RequestParam("date") String datePara,
                              Map<String, Object> map) throws Exception {
         // 设置返回视图
         String view = viewModule() + "/ip";
@@ -555,8 +557,9 @@ public class TopicController extends ViewController {
                 return view;
             }
         }
+        Date date = DateUtil.getFormat(DateUtil.YMD_DASH).parse(datePara);
         // ip按生产者查询
-        Result<List<String>> producerListResult = producerTotalStatService.queryProducerList(ip, time);
+        Result<List<String>> producerListResult = producerTotalStatService.queryProducerList(ip, date);
         if (producerListResult.isOK()) {
             List<String> producerList = producerListResult.getResult();
             for (String producer : producerList) {
@@ -566,7 +569,7 @@ public class TopicController extends ViewController {
             }
         }
         // ip按消费者查询
-        Result<List<String>> consumerListResult = consumerClientStatService.selectByDateAndClient(ip, time);
+        Result<List<String>> consumerListResult = consumerClientStatService.selectByDateAndClient(ip, date);
         if (consumerListResult.isOK()) {
             List<String> consumerList = consumerListResult.getResult(); // 这里的consumer同样是不重复的
             for (String consumer : consumerList) {

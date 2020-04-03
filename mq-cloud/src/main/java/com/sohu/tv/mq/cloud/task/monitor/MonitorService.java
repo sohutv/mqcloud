@@ -160,7 +160,10 @@ public class MonitorService {
         for (String topic : topicList.getTopicList()) {
             if (CommonUtil.isRetryTopic(topic)) {
                 String consumerGroup = topic.substring(MixAll.RETRY_GROUP_TOPIC_PREFIX.length());
-
+                // 内置consumer不检测
+                if(MixAll.TOOLS_CONSUMER_GROUP.equals(consumerGroup)) {
+                    continue;
+                }
                 // 链接在线检测
                 ConsumerConnection cc = null;
                 try {

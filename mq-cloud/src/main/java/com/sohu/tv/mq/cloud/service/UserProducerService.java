@@ -1,8 +1,8 @@
 package com.sohu.tv.mq.cloud.service;
 
+import java.util.Collection;
 import java.util.List;
 
-import com.sohu.tv.mq.cloud.bo.User;
 import org.apache.rocketmq.common.protocol.body.ProducerConnection;
 import org.apache.rocketmq.tools.admin.MQAdminExt;
 import org.slf4j.Logger;
@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.sohu.tv.mq.cloud.bo.Cluster;
+import com.sohu.tv.mq.cloud.bo.User;
 import com.sohu.tv.mq.cloud.bo.UserProducer;
 import com.sohu.tv.mq.cloud.dao.UserProducerDao;
 import com.sohu.tv.mq.cloud.mq.MQAdminCallback;
@@ -253,5 +254,20 @@ public class UserProducerService {
             return Result.getDBErrorResult(e);
         }
         return Result.getResult(topicIdList);
+    }
+    
+    /**
+     * 批量查询
+     * 
+     */
+    public Result<List<UserProducer>> query(Collection<Long> idCollection) {
+        List<UserProducer> userProducerList = null;
+        try {
+            userProducerList = userProducerDao.selectByIdList(idCollection);
+        } catch (Exception e) {
+            logger.error("query err, idCollection:{}", idCollection, e);
+            return Result.getDBErrorResult(e);
+        }
+        return Result.getResult(userProducerList);
     }
 }

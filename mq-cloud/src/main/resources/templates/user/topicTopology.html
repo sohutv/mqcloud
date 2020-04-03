@@ -803,12 +803,16 @@ $(function() {
 	 * 初始化user下拉列表
 	 */
 	function initUserList(componentId){
-		$.get('${request.contextPath}/user/list',
+		$.post('${request.contextPath}/user/list',
 		        function(data){
 		            if(data.status == 200){
 		            	var content = "";
 		            	for(var i in data.result){
 		            		var user = data.result[i];
+		            		// admin跳过
+		            		if(user.type == 1){
+		            			continue;
+		            		}
 		            		var value = user.email.substring(0, user.email.indexOf("@"));
 		            		if(user.name && user.name != value){
 		            			value = user.name + "【" + value +"】";

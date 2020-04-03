@@ -13,13 +13,14 @@ public class ConsumerClientStat {
     // client
     private String client;
     // 创建时间
-    private Date createTime;
+    private Date createDate;
 
     public ConsumerClientStat() {}
 
     public ConsumerClientStat(String consumer, String client) {
         this.consumer = consumer;
         this.client = client;
+        createDate = new Date();
     }
 
     public String getConsumer() {
@@ -38,12 +39,12 @@ public class ConsumerClientStat {
         this.client = client;
     }
 
-    public Date getCreateTime() {
-        return createTime;
+    public Date getCreateDate() {
+        return createDate;
     }
 
-    public void setCreateTime(Date createTime) {
-        this.createTime = createTime;
+    public void setCreateDate(Date createDate) {
+        this.createDate = createDate;
     }
 
     @Override
@@ -51,7 +52,7 @@ public class ConsumerClientStat {
         return "ConsumerClientStat{" +
                 "consumer='" + consumer + '\'' +
                 ", client='" + client + '\'' +
-                ", createTime=" + createTime +
+                ", createDate=" + createDate +
                 '}';
     }
 }

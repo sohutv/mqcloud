@@ -1,7 +1,10 @@
 package com.sohu.tv.mq.cloud.service;
 
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -18,6 +21,7 @@ import com.sohu.tv.mq.cloud.bo.Audit.StatusEnum;
 import com.sohu.tv.mq.cloud.bo.Audit.TypeEnum;
 import com.sohu.tv.mq.cloud.bo.AuditAssociateConsumer;
 import com.sohu.tv.mq.cloud.bo.AuditAssociateProducer;
+import com.sohu.tv.mq.cloud.bo.AuditBatchAssociate;
 import com.sohu.tv.mq.cloud.bo.AuditConsumer;
 import com.sohu.tv.mq.cloud.bo.AuditConsumerDelete;
 import com.sohu.tv.mq.cloud.bo.AuditResendMessage;
@@ -42,6 +46,8 @@ import com.sohu.tv.mq.cloud.dao.AuditTopicTraceDao;
 import com.sohu.tv.mq.cloud.dao.AuditTopicUpdateDao;
 import com.sohu.tv.mq.cloud.dao.AuditUserConsumerDeleteDao;
 import com.sohu.tv.mq.cloud.dao.AuditUserProducerDeleteDao;
+import com.sohu.tv.mq.cloud.dao.UserConsumerDao;
+import com.sohu.tv.mq.cloud.dao.UserProducerDao;
 import com.sohu.tv.mq.cloud.util.Result;
 import com.sohu.tv.mq.cloud.util.Status;
 import com.sohu.tv.mq.cloud.web.vo.AuditAssociateConsumerVO;
@@ -56,6 +62,8 @@ import com.sohu.tv.mq.cloud.web.vo.AuditTopicUpdateVO;
 import com.sohu.tv.mq.cloud.web.vo.AuditUserConsumerDeleteVO;
 import com.sohu.tv.mq.cloud.web.vo.AuditUserProducerDeleteVO;
 import com.sohu.tv.mq.cloud.web.vo.AuditVO;
+import com.sohu.tv.mq.cloud.web.vo.TopicInfoVO;
+import com.sohu.tv.mq.cloud.web.vo.UserTopicInfoVO;
 
 /**
  * audit服务
@@ -71,79 +79,88 @@ public class AuditService {
 
     @Autowired
     private AuditDao auditDao;
-    
+
     @Autowired
     private AuditTopicService auditTopicService;
-    
+
     @Autowired
     private AssociateProducerService associateProducerService;
-    
+
     @Autowired
     private AssociateConsumerService associateConsumerService;
-    
+
     @Autowired
     private AuditConsumerService auditConsumerService;
-    
+
     @Autowired
     private AuditTopicDeleteDao auditTopicDeleteDao;
-    
+
     @Autowired
     private AuditConsumerDeleteDao auditConsumerDeleteDao;
-    
+
     @Autowired
     private AuditResetOffsetDao auditResetOffsetDao;
-    
+
     @Autowired
     private AuditTopicUpdateDao auditTopicUpdateDao;
-    
+
     @Autowired
     private AuditUserProducerDeleteDao auditUserProducerDeleteDao;
-    
+
     @Autowired
     private AuditUserConsumerDeleteDao auditUserConsumerDeleteDao;
-    
+
     @Autowired
     private AuditResendMessageService auditResendMessageService;
 
     @Autowired
     private TopicService topicService;
-    
+
     @Autowired
     private UserProducerService userProducerService;
-    
+
     @Autowired
     private AuditTopicDeleteService auditTopicDeleteService;
-    
+
     @Autowired
     private UserService userService;
-    
+
     @Autowired
     private AuditTopicUpdateService auditTopicUpdateService;
-    
+
     @Autowired
     private AuditConsumerDeleteService auditConsumerDeleteService;
-    
+
     @Autowired
     private AuditResetOffsetService auditResetOffsetService;
-    
+
     @Autowired
     private AuditUserProducerDeleteService auditUserProducerDeleteService;
-    
+
     @Autowired
     private AuditUserConsumerDeleteService auditUserConsumerDeleteService;
-    
+
     @Autowired
     private UserConsumerService userConsumerService;
 
     @Autowired
     private ConsumerService consumerService;
-    
+
     @Autowired
     private AuditTopicTraceDao auditTopicTraceDao;
-    
+
     @Autowired
     private AuditTopicTraceService auditTopicTraceService;
-    
+
+    @Autowired
+    private AuditBatchAssociateService auditBatchAssociateService;
+
+    @Autowired
+    private UserProducerDao userProducerDao;
+
+    @Autowired
+    private UserConsumerDao userConsumerDao;
+
     /**
      * 查询列表
      * 
@@ -160,13 +177,14 @@ public class AuditService {
         }
         return Result.getResult(auditList);
     }
-    
+
     /**
      * 保存审核admin信息
+     * 
      * @param audit
      * @return
      */
-    public Result<?> saveAuditAdmin(Audit audit){
+    public Result<?> saveAuditAdmin(Audit audit) {
         try {
             auditDao.insert(audit);
         } catch (Exception e) {
@@ -175,27 +193,28 @@ public class AuditService {
         }
         return Result.getResult(audit);
     }
-    
+
     /**
      * 保存审核以及topic信息
+     * 
      * @param audit
      * @param topicParam
      * @return
      */
     @Transactional
-    public Result<?> saveAuditAndTopic(Audit audit, AuditTopic auditTopic){
+    public Result<?> saveAuditAndTopic(Audit audit, AuditTopic auditTopic) {
         Long count = null;
         try {
             count = auditDao.insert(audit);
-            //如果保存成功，保存auditTopic
-            if(count != null && count > 0) {
+            // 如果保存成功，保存auditTopic
+            if (count != null && count > 0) {
                 auditTopic.setAid(audit.getId());
                 auditTopicService.saveAuditTopic(auditTopic);
             }
         } catch (DuplicateKeyException e) {
             logger.warn("duplicate key:{}", audit);
             TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
-            return Result.getResult(Status.DB_DUPLICATE_KEY).setMessage(auditTopic.getName()+"已存在");
+            return Result.getResult(Status.DB_DUPLICATE_KEY).setMessage(auditTopic.getName() + "已存在");
         } catch (Exception e) {
             logger.error("insert err, audit:{}", audit, e);
             TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
@@ -203,26 +222,27 @@ public class AuditService {
         }
         return Result.getResult(audit);
     }
-    
+
     /**
      * 保存审核以及consumer信息
+     * 
      * @param audit
      * @param topicParam
      * @return
      */
     @Transactional
-    public Result<?> saveAuditAndConsumer(Audit audit, AuditConsumer auditConsumer){
+    public Result<?> saveAuditAndConsumer(Audit audit, AuditConsumer auditConsumer) {
         Long count = null;
         try {
             count = auditDao.insert(audit);
-            if(count != null && count > 0) {
+            if (count != null && count > 0) {
                 auditConsumer.setAid(audit.getId());
                 auditConsumerService.saveAuditConsumer(auditConsumer);
             }
         } catch (DuplicateKeyException e) {
             logger.warn("duplicate key:{}", audit);
             TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
-            return Result.getResult(Status.DB_DUPLICATE_KEY).setMessage(auditConsumer.getConsumer()+"已存在");
+            return Result.getResult(Status.DB_DUPLICATE_KEY).setMessage(auditConsumer.getConsumer() + "已存在");
         } catch (Exception e) {
             logger.error("insert err, audit:{}", audit, e);
             TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
@@ -230,9 +250,10 @@ public class AuditService {
         }
         return Result.getResult(audit);
     }
-    
+
     /**
      * 保存用户关联的生产者
+     * 
      * @param audit
      * @param auditAssociateProducer
      * @return
@@ -242,8 +263,8 @@ public class AuditService {
         Long count = null;
         try {
             count = auditDao.insert(audit);
-            //如果保存成功，保存auditAssociateProducer
-            if(count != null && count > 0) {
+            // 如果保存成功，保存auditAssociateProducer
+            if (count != null && count > 0) {
                 auditAssociateProducer.setAid(audit.getId());
                 associateProducerService.save(auditAssociateProducer);
             }
@@ -258,9 +279,10 @@ public class AuditService {
         }
         return Result.getResult(audit);
     }
-    
+
     /**
      * 保存用户关联的消费者
+     * 
      * @param audit
      * @param AuditAssociateConsumer
      * @return
@@ -270,8 +292,8 @@ public class AuditService {
         Long count = null;
         try {
             count = auditDao.insert(audit);
-            //如果保存成功，保存auditAssociateProducer
-            if(count != null && count > 0) {
+            // 如果保存成功，保存auditAssociateProducer
+            if (count != null && count > 0) {
                 auditAssociateConsumer.setAid(audit.getId());
                 associateConsumerService.save(auditAssociateConsumer);
             }
@@ -286,20 +308,45 @@ public class AuditService {
         }
         return Result.getResult(audit);
     }
-    
+
+    /**
+     * 保存批量关联数据
+     * 
+     * @param audit
+     * @return
+     */
+    @Transactional
+    public Result<Audit> saveAuditAndAssociateBatch(Audit audit, AuditBatchAssociate auditBatchAssociate) {
+        Long count = null;
+        try {
+            count = auditDao.insert(audit);
+            // 如果保存成功，保存其他的
+            if (count != null && count > 0) {
+                auditBatchAssociate.setAid(audit.getId());
+                auditBatchAssociateService.save(auditBatchAssociate);
+            }
+        } catch (Exception e) {
+            logger.error("insert err, audit:{}", audit, e);
+            TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+            return Result.getDBErrorResult(e);
+        }
+        return Result.getResult(audit);
+    }
+
     /**
      * 保存审核以及topic删除信息
+     * 
      * @param audit
      * @param topicParam
      * @return
      */
     @Transactional
-    public Result<?> saveAuditAndTopicDelete(Audit audit, long tid, String topic){
+    public Result<?> saveAuditAndTopicDelete(Audit audit, long tid, String topic) {
         Long count = null;
         try {
             count = auditDao.insert(audit);
-            //如果保存成功，保存auditTopic
-            if(count != null && count > 0) {
+            // 如果保存成功，保存auditTopic
+            if (count != null && count > 0) {
                 auditTopicDeleteDao.insert(audit.getId(), tid, topic);
             }
         } catch (DuplicateKeyException e) {
@@ -313,21 +360,21 @@ public class AuditService {
         }
         return Result.getResult(audit);
     }
-    
-    
+
     /**
      * 保存审核以及topic trace信息
+     * 
      * @param audit
      * @param topicParam
      * @return
      */
     @Transactional
-    public Result<?> saveAuditAndTopicTrace(Audit audit, long tid, int traceEnabled){
+    public Result<?> saveAuditAndTopicTrace(Audit audit, long tid, int traceEnabled) {
         Long count = null;
         try {
             count = auditDao.insert(audit);
-            //如果保存成功，保存auditTopic
-            if(count != null && count > 0) {
+            // 如果保存成功，保存auditTopic
+            if (count != null && count > 0) {
                 auditTopicTraceDao.insert(audit.getId(), tid, traceEnabled);
             }
         } catch (Exception e) {
@@ -337,20 +384,21 @@ public class AuditService {
         }
         return Result.getResult(audit);
     }
-    
+
     /**
      * 保存审核以及topic更新信息
+     * 
      * @param audit
      * @param auditTopicUpdate
      * @return
      */
     @Transactional
-    public Result<?> saveAuditAndTopicUpdate(Audit audit, AuditTopicUpdate auditTopicUpdate){
+    public Result<?> saveAuditAndTopicUpdate(Audit audit, AuditTopicUpdate auditTopicUpdate) {
         Long count = null;
         try {
             count = auditDao.insert(audit);
-            //如果保存成功，保存auditTopicUpdate
-            if(count != null && count > 0) {
+            // 如果保存成功，保存auditTopicUpdate
+            if (count != null && count > 0) {
                 auditTopicUpdate.setAid(audit.getId());
                 auditTopicUpdateDao.insert(auditTopicUpdate);
             }
@@ -361,18 +409,19 @@ public class AuditService {
         }
         return Result.getResult(audit);
     }
-    
+
     /**
      * 保存审核以及consumer删除信息
+     * 
      * @param audit
      * @return
      */
     @Transactional
-    public Result<?> saveAuditAndConsumerDelete(Audit audit, long cid, String consumer, String topic){
+    public Result<?> saveAuditAndConsumerDelete(Audit audit, long cid, String consumer, String topic) {
         Long count = null;
         try {
             count = auditDao.insert(audit);
-            if(count != null && count > 0) {
+            if (count != null && count > 0) {
                 auditConsumerDeleteDao.insert(audit.getId(), cid, consumer, topic);
             }
         } catch (Exception e) {
@@ -382,19 +431,20 @@ public class AuditService {
         }
         return Result.getResult(audit);
     }
-    
+
     /**
      * 保存审核以及跳过堆积
+     * 
      * @param audit
      * @param topicParam
      * @return
      */
     @Transactional
-    public Result<?> saveAuditAndSkipAccumulation(Audit audit, AuditResetOffset auditResetOffset){
+    public Result<?> saveAuditAndSkipAccumulation(Audit audit, AuditResetOffset auditResetOffset) {
         Long count = null;
         try {
             count = auditDao.insert(audit);
-            if(count != null && count > 0) {
+            if (count != null && count > 0) {
                 auditResetOffset.setAid(audit.getId());
                 auditResetOffsetDao.insert(auditResetOffset);
             }
@@ -405,7 +455,7 @@ public class AuditService {
         }
         return Result.getResult(audit);
     }
-    
+
     /**
      * 查询
      * 
@@ -424,32 +474,14 @@ public class AuditService {
     }
 
     /**
-     * 按类型跟审核状态查询
-     * 
-     * @param typeEnum
-     * @param statusEnum
-     * @return
-     */
-    public Result<List<Audit>> queryAuditByTypeAndStatus(TypeEnum typeEnum, StatusEnum statusEnum) {
-        List<Audit> auditList = null;
-        try {
-            auditList = auditDao.selectAuditByTypeAndStatus(typeEnum.getType(), statusEnum.getStatus());
-        } catch (Exception e) {
-            logger.error("queryAuditByTypeAndStatus err, type:{}, status:{}", typeEnum.getType(),
-                    statusEnum.getStatus(), e);
-            return Result.getDBErrorResult(e);
-        }
-        return Result.getResult(auditList);
-    }
-
-    /**
      * 更新
      * 
      * @param type
      * @return status
      */
     public Result<Integer> updateAudit(Audit audit) {
-        Integer result = null;;
+        Integer result = null;
+        ;
         try {
             result = auditDao.update(audit);
         } catch (Exception e) {
@@ -483,7 +515,7 @@ public class AuditService {
         }
         return Result.getResult(audit);
     }
-    
+
     @Transactional
     public Result<?> saveAuditAndUserConsumerDelete(Audit audit, long ucid, String consumer, String topic, long uid) {
         Long count = null;
@@ -499,22 +531,23 @@ public class AuditService {
         }
         return Result.getResult(audit);
     }
-    
+
     /**
      * 保存审核以及重发消息信息
+     * 
      * @param audit
      * @param auditResendMessageList
      * @return
      */
     @Transactional
-    public Result<?> saveAuditAndAuditResendMessage(Audit audit, List<AuditResendMessage> auditResendMessageList, 
-            AuditResendMessageConsumer auditResendMessageConsumer){
+    public Result<?> saveAuditAndAuditResendMessage(Audit audit, List<AuditResendMessage> auditResendMessageList,
+            AuditResendMessageConsumer auditResendMessageConsumer) {
         Long count = null;
         try {
             count = auditDao.insert(audit);
-            //如果保存成功，保存auditResendMessageList
-            if(count != null && count > 0) {
-                for(AuditResendMessage msg : auditResendMessageList) {
+            // 如果保存成功，保存auditResendMessageList
+            if (count != null && count > 0) {
+                for (AuditResendMessage msg : auditResendMessageList) {
                     msg.setAid(audit.getId());
                 }
                 auditResendMessageConsumer.setAid(audit.getId());
@@ -527,8 +560,7 @@ public class AuditService {
         }
         return Result.getResult(audit);
     }
-    
-    
+
     /**
      * 根据uid查询列表
      * 
@@ -545,7 +577,7 @@ public class AuditService {
         }
         return Result.getResult(auditList);
     }
-    
+
     /**
      * 申请详情
      * 
@@ -556,7 +588,7 @@ public class AuditService {
     public Result<?> detail(TypeEnum typeEnum, long aid) {
         switch (typeEnum) {
             case NEW_TOPIC:
-                return  auditTopicService.queryAuditTopic(aid);
+                return auditTopicService.queryAuditTopic(aid);
             case UPDATE_TOPIC:
                 return getUpdateTopicResult(aid);
             case DELETE_TOPIC:
@@ -583,10 +615,12 @@ public class AuditService {
                 return getResendMessageResult(aid);
             case UPDATE_TOPIC_TRACE:
                 return getUpdateTopicTraceResult(aid);
+            case BATCH_ASSOCIATE:
+                return getAuditBatchAssociateResult(aid);
         }
         return null;
     }
-    
+
     /**
      * 获取 topic申请删除 信息
      * 
@@ -595,7 +629,7 @@ public class AuditService {
      */
     private Result<?> getDeleteTopicResult(long aid) {
         Result<Audit> auditResult = queryAudit(aid);
-        if(auditResult.isNotOK()) {
+        if (auditResult.isNotOK()) {
             return auditResult;
         }
         // 查询 topic删除审核记录
@@ -604,7 +638,7 @@ public class AuditService {
             return auditTopicDeleteResult;
         }
         // 已经同意过的，数据已经删除了
-        if(StatusEnum.AGREE.getStatus() == auditResult.getResult().getStatus()) {
+        if (StatusEnum.AGREE.getStatus() == auditResult.getResult().getStatus()) {
             AuditTopicDeleteVO auditTopicDeleteVO = new AuditTopicDeleteVO();
             Topic t = new Topic();
             t.setName(auditTopicDeleteResult.getResult().getTopic());
@@ -619,25 +653,26 @@ public class AuditService {
             return topicResult;
         }
         // 查询该topic生产者记录
-        Result<List<UserProducer>> userProducerListResult = userProducerService.queryUserProducerByTid(auditTopicDelete.getTid());
+        Result<List<UserProducer>> userProducerListResult = userProducerService
+                .queryUserProducerByTid(auditTopicDelete.getTid());
         List<UserProducer> userProducerList = null;
         if (userProducerListResult.isNotEmpty()) {
             userProducerList = userProducerListResult.getResult();
             // 查询用户
             List<Long> uidList = new ArrayList<Long>();
-            for(UserProducer up : userProducerList) {
+            for (UserProducer up : userProducerList) {
                 uidList.add(up.getUid());
             }
             Result<List<User>> userListResult = userService.query(uidList);
-            if(userListResult.isEmpty()) {
+            if (userListResult.isEmpty()) {
                 return userListResult;
             }
-            
+
             // 赋值用户
-            for(UserProducer up : userProducerList) {
-                for(User u : userListResult.getResult()) {
-                    if(up.getUid() == u.getId()) {
-                        if(StringUtils.isBlank(u.getName())) {
+            for (UserProducer up : userProducerList) {
+                for (User u : userListResult.getResult()) {
+                    if (up.getUid() == u.getId()) {
+                        if (StringUtils.isBlank(u.getName())) {
                             up.setUsername(u.getEmail());
                         } else {
                             up.setUsername(u.getName());
@@ -647,7 +682,7 @@ public class AuditService {
                 }
             }
         }
-        
+
         // 组装vo
         AuditTopicDeleteVO auditTopicDeleteVO = new AuditTopicDeleteVO();
         auditTopicDeleteVO.setTopic(topicResult.getResult());
@@ -655,7 +690,7 @@ public class AuditService {
         auditTopicDeleteVO.setAid(aid);
         return Result.getResult(auditTopicDeleteVO);
     }
-    
+
     /**
      * 获取审核消费者
      * 
@@ -677,7 +712,7 @@ public class AuditService {
         auditConsumerVO.setTopic(topicResult.getResult().getName());
         return Result.getResult(auditConsumerVO);
     }
-    
+
     /**
      * 获取 topic更新 信息
      * 
@@ -695,14 +730,14 @@ public class AuditService {
         if (topicResult.isNotOK()) {
             return topicResult;
         }
-       
+
         // 组装vo
         AuditTopicUpdateVO auditTopicUpdateVO = new AuditTopicUpdateVO();
         BeanUtils.copyProperties(auditTopicUpdate, auditTopicUpdateVO);
         auditTopicUpdateVO.setTopic(topicResult.getResult());
         return Result.getResult(auditTopicUpdateVO);
     }
-    
+
     /**
      * 获取 topic更新trace信息
      * 
@@ -720,16 +755,17 @@ public class AuditService {
         if (topicResult.isNotOK()) {
             return topicResult;
         }
-       
+
         // 组装vo
         AuditTopicTraceVO auditTopicTraceVO = new AuditTopicTraceVO();
         BeanUtils.copyProperties(auditTopicTrace, auditTopicTraceVO);
         auditTopicTraceVO.setTopic(topicResult.getResult());
         return Result.getResult(auditTopicTraceVO);
     }
-    
+
     /**
      * 获取重发消息详情
+     * 
      * @param aid
      * @return
      */
@@ -742,33 +778,33 @@ public class AuditService {
         // 查询AuditResendMessage
         Audit audit = auditResult.getResult();
         Result<List<AuditResendMessage>> auditResendMessageListResult = auditResendMessageService.query(audit.getId());
-        if(auditResendMessageListResult.isEmpty()) {
+        if (auditResendMessageListResult.isEmpty()) {
             return auditResendMessageListResult;
         }
-        
+
         // 查询topic
         List<AuditResendMessage> auditResendMessageList = auditResendMessageListResult.getResult();
         Result<Topic> topicResult = topicService.queryTopic(auditResendMessageList.get(0).getTid());
-        if(topicResult.isNotOK()) {
+        if (topicResult.isNotOK()) {
             return topicResult;
         }
-        
+
         // 查询consumer
         Result<Consumer> consumerResult = auditResendMessageService.queryConsumer(aid);
-        if(consumerResult.isNotOK() && Status.NO_RESULT.getKey() != consumerResult.getStatus()) {
+        if (consumerResult.isNotOK() && Status.NO_RESULT.getKey() != consumerResult.getStatus()) {
             return consumerResult;
         }
-        
+
         // 拼装vo
         AuditResendMessageVO auditResendMessageVO = new AuditResendMessageVO();
         auditResendMessageVO.setTopic(topicResult.getResult().getName());
         auditResendMessageVO.setMsgList(auditResendMessageList);
-        if(consumerResult.getResult() != null) {
+        if (consumerResult.getResult() != null) {
             auditResendMessageVO.setConsumer(consumerResult.getResult().getName());
         }
         return Result.getResult(auditResendMessageVO);
     }
-    
+
     /**
      * 获取 consumer申请删除 信息
      * 
@@ -777,16 +813,17 @@ public class AuditService {
      */
     private Result<?> getDeleteConsumerResult(long aid) {
         Result<Audit> auditResult = queryAudit(aid);
-        if(auditResult.isNotOK()) {
+        if (auditResult.isNotOK()) {
             return auditResult;
         }
         // 查询consumer删除审核记录
-        Result<AuditConsumerDelete> auditConsumerDeleteResult = auditConsumerDeleteService.queryAuditConsumerDelete(aid);
+        Result<AuditConsumerDelete> auditConsumerDeleteResult = auditConsumerDeleteService
+                .queryAuditConsumerDelete(aid);
         if (auditConsumerDeleteResult.isNotOK()) {
             return auditConsumerDeleteResult;
         }
         // 已经同意过的，数据已经删除了
-        if(StatusEnum.AGREE.getStatus() == auditResult.getResult().getStatus()) {
+        if (StatusEnum.AGREE.getStatus() == auditResult.getResult().getStatus()) {
             AuditConsumerDeleteVO auditConsumerDeleteVO = new AuditConsumerDeleteVO();
             Topic topic = new Topic();
             topic.setName(auditConsumerDeleteResult.getResult().getTopic());
@@ -810,7 +847,8 @@ public class AuditService {
             return topicResult;
         }
         // 查询该消费者的用户
-        Result<List<UserConsumer>> userConsumerListResult = userConsumerService.queryUserConsumerByConsumerId(consumer.getId());
+        Result<List<UserConsumer>> userConsumerListResult = userConsumerService
+                .queryUserConsumerByConsumerId(consumer.getId());
         if (userConsumerListResult.isNotOK()) {
             return userConsumerListResult;
         }
@@ -819,23 +857,23 @@ public class AuditService {
         auditConsumerDeleteVO.setTopic(topicResult.getResult());
         auditConsumerDeleteVO.setConsumer(consumer);
         auditConsumerDeleteVO.setAid(aid);
-        //修改部分逻辑，让那些无主消费者可以删除（限管理员）
+        // 修改部分逻辑，让那些无主消费者可以删除（限管理员）
         if (!userConsumerListResult.isEmpty()) {
             List<UserConsumer> userConsumerList = userConsumerListResult.getResult();
             // 查询用户
             List<Long> uidList = new ArrayList<Long>();
-            for(UserConsumer uc : userConsumerList) {
+            for (UserConsumer uc : userConsumerList) {
                 uidList.add(uc.getUid());
             }
             Result<List<User>> userListResult = userService.query(uidList);
-            if(userListResult.isEmpty()) {
+            if (userListResult.isEmpty()) {
                 return userListResult;
             }
             auditConsumerDeleteVO.setUser(userListResult.getResult());
-        }        
+        }
         return Result.getResult(auditConsumerDeleteVO);
     }
-    
+
     /**
      * 获取重置偏移量
      * 
@@ -862,7 +900,7 @@ public class AuditService {
         auditResetOffsetVO.setConsumer(consumerResult.getResult().getName());
         return Result.getResult(auditResetOffsetVO);
     }
-    
+
     /**
      * 获取关联生产者
      * 
@@ -938,11 +976,112 @@ public class AuditService {
         BeanUtils.copyProperties(auditAssociateConsumer, auditAssociateConsumerVO);
         auditAssociateConsumerVO.setTopic(topicResult.getResult().getName());
         auditAssociateConsumerVO.setConsumer(consumerResult.getResult().getName());
-        auditAssociateConsumerVO.setUser(userResult.getResult().getName() == null ? userResult.getResult().getEmailName()
+        auditAssociateConsumerVO
+                .setUser(userResult.getResult().getName() == null ? userResult.getResult().getEmailName()
                         : userResult.getResult().getName());
         return Result.getResult(auditAssociateConsumerVO);
     }
-    
+
+    /**
+     * 获取批量关联
+     * 
+     * @param aid
+     * @return Result
+     */
+    public Result<?> getAuditBatchAssociateResult(long aid) {
+        Result<AuditBatchAssociate> auditBatchAssociateResult = auditBatchAssociateService.query(aid);
+        if (auditBatchAssociateResult.isNotOK()) {
+            return auditBatchAssociateResult;
+        }
+        AuditBatchAssociate auditBatchAssociate = auditBatchAssociateResult.getResult();
+        // 获取用户
+        List<Long> uidList = auditBatchAssociate.getUidList();
+        Result<List<User>> userListResult = userService.query(uidList);
+        if (userListResult.isEmpty()) {
+            return userListResult;
+        }
+
+        // 获取生产者
+        List<UserProducer> userProducerList = null;
+        List<Long> producerIdList = auditBatchAssociate.getProducerIdList();
+        if (producerIdList != null) {
+            Result<List<UserProducer>> userProducerListResult = userProducerService.query(producerIdList);
+            if (userProducerListResult.isNotEmpty()) {
+                userProducerList = userProducerListResult.getResult();
+            }
+        }
+
+        // 获取消费者
+        List<Consumer> consumerList = null;
+        List<Long> consumerIdList = auditBatchAssociate.getConsumerIdList();
+        if (consumerIdList != null) {
+            Result<List<Consumer>> consumerListResult = consumerService.queryByIdList(consumerIdList);
+            if (consumerListResult.isNotEmpty()) {
+                consumerList = consumerListResult.getResult();
+            }
+        }
+
+        // 获取topic
+        List<Topic> topicList = getTopicList(userProducerList, consumerList);
+
+        // 拼装vo
+        List<TopicInfoVO> topicInfoVOList = new ArrayList<>();
+        for (Topic topic : topicList) {
+            TopicInfoVO ti = new TopicInfoVO();
+            ti.setTopic(topic);
+            addUserProducer(ti, userProducerList);
+            addConsumer(ti, consumerList);
+            topicInfoVOList.add(ti);
+        }
+
+        UserTopicInfoVO userTopicInfoVO = new UserTopicInfoVO(userListResult.getResult(), topicInfoVOList);
+        userTopicInfoVO.setAid(aid);
+        return Result.getResult(userTopicInfoVO);
+    }
+
+    private List<Topic> getTopicList(List<UserProducer> producerList, List<Consumer> consumerList) {
+        Set<Long> topicIdSet = new HashSet<>();
+        if (producerList != null) {
+            for (UserProducer up : producerList) {
+                topicIdSet.add(up.getTid());
+            }
+        }
+        if (consumerList != null) {
+            for (Consumer consumer : consumerList) {
+                topicIdSet.add(consumer.getTid());
+            }
+        }
+        if (topicIdSet.size() != 0) {
+            Result<List<Topic>> topicListResult = topicService.queryTopicList(topicIdSet);
+            if (topicListResult.isNotEmpty()) {
+                return topicListResult.getResult();
+            }
+        }
+        return null;
+    }
+
+    private void addUserProducer(TopicInfoVO ti, List<UserProducer> list) {
+        if (list == null) {
+            return;
+        }
+        for (UserProducer up : list) {
+            if (up.getTid() == ti.getTopic().getId()) {
+                ti.addUserProducer(up);
+            }
+        }
+    }
+
+    private void addConsumer(TopicInfoVO ti, List<Consumer> list) {
+        if (list == null) {
+            return;
+        }
+        for (Consumer consumer : list) {
+            if (consumer.getTid() == ti.getTopic().getId()) {
+                ti.addConsumer(consumer);
+            }
+        }
+    }
+
     /**
      * 获取管理员审核
      * 
@@ -956,7 +1095,7 @@ public class AuditService {
         }
         AuditVO auditVo = new AuditVO();
         BeanUtils.copyProperties(result.getResult(), auditVo);
-        
+
         Result<User> userResult = userService.query(auditVo.getUid());
         if (userResult.isNotOK()) {
             return userResult;
@@ -964,7 +1103,7 @@ public class AuditService {
         auditVo.setUser(userResult.getResult());
         return Result.getResult(auditVo);
     }
-    
+
     /**
      * 获取 userProducer申请删除 信息
      * 
@@ -993,7 +1132,7 @@ public class AuditService {
             }
             user = userResult.getResult();
         }
-        //以前的数据默认用户名未知
+        // 以前的数据默认用户名未知
         if (user == null) {
             user = new User();
             user.setName("未知");
@@ -1014,7 +1153,8 @@ public class AuditService {
         }
         AuditUserProducerDelete auditUserProducerDelete = auditUserProducerDeleteResult.getResult();
         // 查询userProducer信息
-        Result<UserProducer> userProducerResult = userProducerService.findUserProducer(auditUserProducerDelete.getPid());
+        Result<UserProducer> userProducerResult = userProducerService
+                .findUserProducer(auditUserProducerDelete.getPid());
         if (userProducerResult.isNotOK()) {
             return userProducerResult;
         }
@@ -1025,11 +1165,11 @@ public class AuditService {
         if (topicResult.isNotOK()) {
             return topicResult;
         }
-        //兼容老数据
-        if("未知".equals(user.getName())) {
+        // 兼容老数据
+        if ("未知".equals(user.getName())) {
             Result<User> queryResult = userService.query(userProducer.getUid());
-            if(queryResult.isOK()) {
-                user =  queryResult.getResult();
+            if (queryResult.isOK()) {
+                user = queryResult.getResult();
             }
         }
         // 查询当前生产者所有的关联用户
@@ -1041,7 +1181,7 @@ public class AuditService {
         // 保存所有与当前生产者关联的用户
         List<Long> userIdList = new ArrayList<Long>();
         for (UserProducer up : userProducerListResult.getResult()) {
-            userIdList.add(up.getUid());  
+            userIdList.add(up.getUid());
         }
         Result<List<User>> userResult = userService.query(userIdList);
         if (userResult.isNotOK()) {
@@ -1080,7 +1220,7 @@ public class AuditService {
         if (consumerResult.isNotOK()) {
             return consumerResult;
         }
-        
+
         // 当前被审核的用户
         User user = null;
         // 此为新增字段，兼容以前的数据
@@ -1091,7 +1231,7 @@ public class AuditService {
             }
             user = userResult.getResult();
         }
-        //以前的数据默认用户名未知
+        // 以前的数据默认用户名未知
         if (user == null) {
             user = new User();
             user.setName("未知");
@@ -1103,7 +1243,7 @@ public class AuditService {
             topic.setName(AuditUserConsumerDelete.getTopic());
             auditUserConsumerDeleteVO.setTopic(topic);
             auditUserConsumerDeleteVO.setConsumer(consumerResult.getResult());
-            auditUserConsumerDeleteVO.setAid(aid);            
+            auditUserConsumerDeleteVO.setAid(aid);
             auditUserConsumerDeleteVO.setUser(user);
             auditUserConsumerDeleteVO.setCommit(true);
             return Result.getResult(auditUserConsumerDeleteVO);
@@ -1120,11 +1260,11 @@ public class AuditService {
         if (topicResult.isNotOK()) {
             return topicResult;
         }
-        //兼容老数据
-        if("未知".equals(user.getName())) {
+        // 兼容老数据
+        if ("未知".equals(user.getName())) {
             Result<User> queryResult = userService.query(userConsumer.getUid());
-            if(queryResult.isOK()) {
-                user =  queryResult.getResult();
+            if (queryResult.isOK()) {
+                user = queryResult.getResult();
             }
         }
         // 查询当前生产者所有的关联用户
@@ -1140,7 +1280,7 @@ public class AuditService {
             if (userResult.isNotOK()) {
                 return userResult;
             }
-            userList.add(userResult.getResult());          
+            userList.add(userResult.getResult());
         }
 
         // 组装vo
@@ -1152,5 +1292,55 @@ public class AuditService {
         auditUserConsumerDeleteVO.setUserList(userList);
         auditUserConsumerDeleteVO.setCommit(false);
         return Result.getResult(auditUserConsumerDeleteVO);
+    }
+
+    @Transactional
+    public Result<?> saveBatchAssociate(List<UserProducer> upList, List<UserConsumer> ucList) {
+        try {
+            // 过滤已经存在的UserProducer
+            Iterator<UserProducer> upIterator = upList.iterator();
+            while (upIterator.hasNext()) {
+                UserProducer up = upIterator.next();
+                List<Long> tidList = userProducerDao.selectTidByProducerAndUid(up.getUid(), up.getProducer());
+                if (tidList == null) {
+                    continue;
+                }
+                for (Long tid : tidList) {
+                    if (up.getTid() == tid) {
+                        upIterator.remove();
+                        break;
+                    }
+                }
+            }
+            // 批量保存
+            if (upList.size() > 0) {
+                userProducerDao.batchInsert(upList);
+            }
+
+            // 过滤已经存在的UserConsumer
+            Iterator<UserConsumer> ucIterator = ucList.iterator();
+            while (ucIterator.hasNext()) {
+                UserConsumer uc = ucIterator.next();
+                List<Long> tidList = userConsumerDao.selectTidByUidAndConsumerId(uc.getUid(), uc.getConsumerId());
+                if (tidList == null) {
+                    continue;
+                }
+                for (Long tid : tidList) {
+                    if (uc.getTid() == tid) {
+                        ucIterator.remove();
+                        break;
+                    }
+                }
+            }
+            // 批量保存
+            if (ucList.size() > 0) {
+                userConsumerDao.batchInsert(ucList);
+            }
+        } catch (Exception e) {
+            logger.error("insert err, upList:{}, ucList:{}", upList, ucList, e);
+            TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+            return Result.getDBErrorResult(e);
+        }
+        return Result.getOKResult();
     }
 }

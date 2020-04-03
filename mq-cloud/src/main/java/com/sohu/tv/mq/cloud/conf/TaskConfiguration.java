@@ -17,6 +17,7 @@ import com.sohu.tv.mq.cloud.bo.Cluster;
 import com.sohu.tv.mq.cloud.service.ClusterService;
 import com.sohu.tv.mq.cloud.service.NameServerService;
 import com.sohu.tv.mq.cloud.task.AlarmConfigTask;
+import com.sohu.tv.mq.cloud.task.AutoAuditTask;
 import com.sohu.tv.mq.cloud.task.ClusterMonitorTask;
 import com.sohu.tv.mq.cloud.task.ConsumeFailTask;
 import com.sohu.tv.mq.cloud.task.ConsumerStatsTask;
@@ -106,6 +107,12 @@ public class TaskConfiguration {
     @Profile({"online", "online-sohu"})
     public ClusterMonitorTask mqClusterStatsMonitorServiceTask() {
         return new ClusterMonitorTask();
+    }
+    
+    @Bean
+    @Profile({"online", "online-sohu"})
+    public AutoAuditTask autoAuditTask() {
+        return new AutoAuditTask();
     }
     
     @Bean

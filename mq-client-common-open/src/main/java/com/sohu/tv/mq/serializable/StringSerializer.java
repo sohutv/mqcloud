@@ -1,6 +1,5 @@
 package com.sohu.tv.mq.serializable;
 
-import org.apache.commons.lang3.NotImplementedException;
 import org.apache.rocketmq.remoting.common.RemotingHelper;
 
 /**
@@ -15,7 +14,7 @@ public class StringSerializer<T> implements MessageSerializer<T> {
     @Override
     public byte[] serialize(T source) throws Exception {
         if (!(source instanceof String)) {
-            throw new NotImplementedException(
+            throw new UnsupportedOperationException(
                     "please publish(String) or use DefaultMessageSerializer for " + source.getClass());
         }
         return ((String) source).getBytes(RemotingHelper.DEFAULT_CHARSET);

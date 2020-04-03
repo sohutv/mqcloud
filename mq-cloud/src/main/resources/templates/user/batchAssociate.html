@@ -1,0 +1,24 @@
+<#if response.notOK>
+	<tr><td colspan=4 class='text-center'>暂无数据</td></tr>
+<#else>
+	<#list response.result as topicInfoVO>
+		<tr>
+			<td rowspan="${topicInfoVO.producerList?size+topicInfoVO.consumerList?size+1}">${topicInfoVO_index + 1}</td>
+			<td rowspan="${topicInfoVO.producerList?size+topicInfoVO.consumerList?size+1}">${topicInfoVO.topic.name}</td>
+		</tr>
+		<#list topicInfoVO.producerList as userProducer>		
+			<tr>
+				<td>生产者</td>
+				<td>${userProducer.producer}</td>
+				<td><input class="authBox" type="checkbox" dataType="1" value="${userProducer.id}"></td>
+			</tr>
+		</#list>	
+		<#list topicInfoVO.consumerList as consumer>		
+			<tr>
+				<td>消费者</td>
+				<td>${consumer.name}</td>
+				<td><input class="authBox" type="checkbox" dataType="2" value="${consumer.id}"></td>
+			</tr>
+		</#list>
+	</#list>
+</#if>
