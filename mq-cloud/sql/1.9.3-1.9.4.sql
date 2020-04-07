@@ -18,3 +18,5 @@ CREATE TABLE `audit_batch_associate` (
   `consumer_ids` text NULL COMMENT '消费者id',
   PRIMARY KEY (`aid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='审核批量关联';
+
+alter table audit_topic drop index `name`;

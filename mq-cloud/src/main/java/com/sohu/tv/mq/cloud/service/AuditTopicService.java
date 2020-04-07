@@ -4,7 +4,6 @@ package com.sohu.tv.mq.cloud.service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -36,9 +35,6 @@ public class AuditTopicService {
     public Result<?> saveAuditTopic(AuditTopic auditTopic){
         try {
             auditTopicDao.insert(auditTopic);
-        } catch (DuplicateKeyException e) {
-            logger.warn("duplicate key:{}", auditTopic);
-            throw e;
         } catch (Exception e) {
             logger.error("insert err, auditTopic:{}", auditTopic, e);
             throw e;

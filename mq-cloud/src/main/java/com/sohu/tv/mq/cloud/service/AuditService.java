@@ -211,10 +211,6 @@ public class AuditService {
                 auditTopic.setAid(audit.getId());
                 auditTopicService.saveAuditTopic(auditTopic);
             }
-        } catch (DuplicateKeyException e) {
-            logger.warn("duplicate key:{}", audit);
-            TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
-            return Result.getResult(Status.DB_DUPLICATE_KEY).setMessage(auditTopic.getName() + "已存在");
         } catch (Exception e) {
             logger.error("insert err, audit:{}", audit, e);
             TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();

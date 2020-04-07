@@ -1,10 +1,12 @@
 package com.sohu.tv.mq.cloud.service;
 
 import java.util.List;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
 import com.sohu.tv.mq.cloud.bo.Audit;
 import com.sohu.tv.mq.cloud.bo.Audit.StatusEnum;
 import com.sohu.tv.mq.cloud.bo.Audit.TypeEnum;
@@ -191,6 +193,11 @@ public class VerifyDataService {
      * @return
      */
     public Result<?> verifyAddTopicIsExist(TopicParam topicParam) {
+        // 排除topic冲突
+        Result<Topic> topicResult = topicService.queryTopic(topicParam.getName());
+        if (topicResult.getResult() != null) {
+            return Result.getResult(Status.TOPIC_REPEAT);
+        }
         // 排除topic名称与consumer名称冲突的可能性
         Result<Consumer> consumerResult = consumerService.queryConsumerByName(topicParam.getName());
         if (consumerResult.getResult() != null) {
@@ -200,7 +207,6 @@ public class VerifyDataService {
         if (isProducerRepeat.isNotOK()) {
             return isProducerRepeat;
         }
-        logger.info("verify add topic is ok, topicParam:{}", topicParam);
         return Result.getOKResult();
     }
 

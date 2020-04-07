@@ -110,8 +110,7 @@ CREATE TABLE `audit_topic` (
   `info` varchar(360) DEFAULT NULL COMMENT 'topic描述',
   `qps` int(11) DEFAULT NULL COMMENT '消息量qps预估',
   `qpd` int(11) DEFAULT NULL COMMENT '一天消息量预估',
-  `serializer` int(4) NOT NULL DEFAULT '0' COMMENT '序列化器 0:Protobuf,1:String',
-  UNIQUE KEY `name` (`name`)
+  `serializer` int(4) NOT NULL DEFAULT '0' COMMENT '序列化器 0:Protobuf,1:String'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='审核topic相关表';
 
 -- ----------------------------
