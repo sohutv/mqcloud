@@ -4,10 +4,12 @@ import org.apache.rocketmq.client.hook.SendMessageContext;
 import org.apache.rocketmq.client.hook.SendMessageHook;
 import org.apache.rocketmq.client.producer.DefaultMQProducer;
 import org.apache.rocketmq.client.trace.TraceContext;
+import org.apache.rocketmq.common.UtilAll;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.sohu.tv.mq.stats.StatsHelper;
+
 /**
  * 对发送消息进行hook
  * 
@@ -16,16 +18,16 @@ import com.sohu.tv.mq.stats.StatsHelper;
  */
 public class SohuSendMessageHook implements SendMessageHook {
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
-    
+
     // 统计助手
     private StatsHelper statsHelper;
-    
+
     public SohuSendMessageHook(DefaultMQProducer producer) {
         statsHelper = new StatsHelper();
         // 最大耗时，延后500毫秒
         statsHelper.init(producer.getSendMsgTimeout() + 500);
-        // 客户端ip
-        statsHelper.setClientHost(producer.getClientIP());
+        // 客户端id
+        statsHelper.setClientId(buildMQClientId(producer));
         // 获取生产者group
         statsHelper.setProducer(producer.getProducerGroup());
     }
@@ -63,6 +65,28 @@ public class SohuSendMessageHook implements SendMessageHook {
         } catch (Throwable e) {
             logger.warn("stats err", e);
         }
+    }
+
+    /**
+     * copy from org.apache.rocketmq.client.ClientConfig.buildMQClientId()
+     * 将changeInstanceNameToPID逻辑加了进来
+     * @param producer
+     * @return
+     */
+    private String buildMQClientId(DefaultMQProducer producer) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(producer.getClientIP());
+        sb.append("@");
+        if (producer.getInstanceName().equals("DEFAULT")) {
+            sb.append(String.valueOf(UtilAll.getPid()));
+        } else {
+            sb.append(producer.getInstanceName());
+        }
+        if (!UtilAll.isBlank(producer.getUnitName())) {
+            sb.append("@");
+            sb.append(producer.getUnitName());
+        }
+        return sb.toString();
     }
 
     public StatsHelper getStatsHelper() {

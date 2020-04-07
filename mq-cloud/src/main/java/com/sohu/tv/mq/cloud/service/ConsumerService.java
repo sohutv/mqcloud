@@ -193,6 +193,22 @@ public class ConsumerService {
     }
     
     /**
+     * 按照id列表查询consumer
+     * 
+     * @param Result<List<Consumer>>
+     */
+    public Result<List<Consumer>> queryByIdList(Collection<Long> idCollection) {
+        List<Consumer> consumerList = null;
+        try {
+            consumerList = consumerDao.selectByIdList(idCollection);
+        } catch (Exception e) {
+            logger.error("queryByIdList err, idCollection:{}", idCollection, e);
+            return Result.getDBErrorResult(e);
+        }
+        return Result.getResult(consumerList);
+    }
+    
+    /**
      * 查询用户所属topic的消费者
      * 
      * @param Result<List<Consumer>>
@@ -203,6 +219,22 @@ public class ConsumerService {
             consumerList = consumerDao.select(uid, tid);
         } catch (Exception e) {
             logger.error("queryUserTopicConsumer err, uid:{}, tid:{}", uid, tid, e);
+            return Result.getDBErrorResult(e);
+        }
+        return Result.getResult(consumerList);
+    }
+    
+    /**
+     * 查询用户的消费者
+     * 
+     * @param Result<List<Consumer>>
+     */
+    public Result<List<Consumer>> queryUserConsumer(long uid) {
+        List<Consumer> consumerList = null;
+        try {
+            consumerList = consumerDao.selectByUid(uid);
+        } catch (Exception e) {
+            logger.error("queryUserConsumer err, uid:{}", uid, e);
             return Result.getDBErrorResult(e);
         }
         return Result.getResult(consumerList);

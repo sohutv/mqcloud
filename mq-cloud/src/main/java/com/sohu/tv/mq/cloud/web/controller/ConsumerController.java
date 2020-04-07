@@ -351,27 +351,6 @@ public class ConsumerController extends ViewController {
         if(userConsumerListResult.isEmpty() && !userInfo.getUser().isAdmin()) {
             return Result.getResult(Status.PERMISSION_DENIED_ERROR);
         }
-        // 非线上集群，免审
-        Cluster cluster = clusterService.getMQClusterById(userConsumerParam.getCid());
-        if (cluster != null && !cluster.online()) {
-            // 查询consumer信息
-            Result<Consumer> consumerResult = consumerService.queryById(userConsumerParam.getConsumerId());
-            if (consumerResult.isNotOK()) {
-                return consumerResult;
-            }
-            // 查询topic记录
-            Result<Topic> topicResult = topicService.queryTopic(userConsumerParam.getTid());
-            if (topicResult.isNotOK()) {
-                return topicResult;
-            }
-             Result<?> resetOffsetResult = consumerService.resetOffset(userConsumerParam.getCid(), topicResult.getResult().getName(),
-                     consumerResult.getResult().getName(), userConsumerParam.getOffset());
-             // 操作成功，自定义返回文案
-             if (resetOffsetResult.isOK()) {
-                 return resetOffsetResult.setMessage("操作成功！");
-             }
-             return resetOffsetResult;
-        }
         Date resetOffsetTo = null;
         try {
             if(userConsumerParam.getOffset() != null) {

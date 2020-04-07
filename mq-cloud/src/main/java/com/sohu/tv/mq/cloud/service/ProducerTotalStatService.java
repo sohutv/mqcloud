@@ -7,6 +7,7 @@ import org.apache.commons.lang3.math.NumberUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 
 import com.sohu.tv.mq.cloud.bo.ProducerTotalStat;
@@ -37,6 +38,9 @@ public class ProducerTotalStatService {
         Integer result = null;
         try {
             result = producerTotalStatDao.insert(producerTotalStat);
+        } catch (DuplicateKeyException e) {
+            logger.warn("duplicate key, {}", e.getMessage());
+            return Result.getDBErrorResult(e);
         } catch (Exception e) {
             logger.error("insert err, producerTotalStat:{}", producerTotalStat, e);
             return Result.getDBErrorResult(e);
@@ -120,15 +124,13 @@ public class ProducerTotalStatService {
      * @param client
      * @param time
      */
-    public Result<List<String>> queryProducerList(String client, long time) {
+    public Result<List<String>> queryProducerList(String client, Date date) {
         List<String> result = null;
-        Date date = new Date(time);
         int createDate = NumberUtils.toInt(DateUtil.formatYMD(date));
-        String createTime = DateUtil.getFormat(DateUtil.HHMM).format(time);
         try {
-            result = producerTotalStatDao.selectProducerList(client, createDate, createTime);
+            result = producerTotalStatDao.selectProducerList(client, createDate);
         } catch (Exception e) {
-            logger.error("queryProducerList err, client:{}, time:{}", client, time, e);
+            logger.error("queryProducerList err, client:{}, date:{}", client, date, e);
             return Result.getDBErrorResult(e);
         }
         return Result.getResult(result);

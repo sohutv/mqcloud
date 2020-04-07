@@ -35,8 +35,8 @@ import com.sohu.tv.mq.stats.dto.ClientStats;
  * @date 2018年9月11日
  */
 public class StatsHelper implements StatsHelperMBean {
-    // 客户端host
-    private String clientHost;
+    // 客户端id
+    private String clientId;
     // producer
     private String producer;
     // brokerAddr<->调用统计
@@ -179,7 +179,7 @@ public class StatsHelper implements StatsHelperMBean {
             // 客户端统计结果封装
             ClientStats clientStats = new ClientStats();
             clientStats.setProducer(statsHelper.getProducer());
-            clientStats.setClient(statsHelper.getClientHost());
+            clientStats.setClient(statsHelper.getClientId());
 
             // 精确统计结果封装
             Map<String, InvokeStatsResult> detailInvoke = new HashMap<String, InvokeStatsResult>();
@@ -248,12 +248,12 @@ public class StatsHelper implements StatsHelperMBean {
         }
     }
 
-    public String getClientHost() {
-        return clientHost;
+    public String getClientId() {
+        return clientId;
     }
 
-    public void setClientHost(String clientHost) {
-        this.clientHost = clientHost;
+    public void setClientId(String clientId) {
+        this.clientId = clientId;
     }
 
     public String getProducer() {

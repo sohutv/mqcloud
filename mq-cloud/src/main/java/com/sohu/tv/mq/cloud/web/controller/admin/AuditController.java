@@ -68,7 +68,9 @@ import com.sohu.tv.mq.cloud.util.Result;
 import com.sohu.tv.mq.cloud.util.Status;
 import com.sohu.tv.mq.cloud.web.vo.AuditVO;
 import com.sohu.tv.mq.cloud.web.vo.ConnectionVO;
+import com.sohu.tv.mq.cloud.web.vo.TopicInfoVO;
 import com.sohu.tv.mq.cloud.web.vo.UserInfo;
+import com.sohu.tv.mq.cloud.web.vo.UserTopicInfoVO;
 
 /**
  * 审核
@@ -83,7 +85,7 @@ public class AuditController extends AdminViewController {
 
     @Autowired
     private AuditService auditService;
-    
+
     @Autowired
     private AuditTopicService auditTopicService;
 
@@ -113,37 +115,37 @@ public class AuditController extends AdminViewController {
 
     @Autowired
     private AuditConsumerService auditConsumerService;
-    
+
     @Autowired
     private AuditTopicDeleteService auditTopicDeleteService;
-    
+
     @Autowired
     private AuditConsumerDeleteService auditConsumerDeleteService;
-    
+
     @Autowired
     private AuditResetOffsetService auditResetOffsetService;
-    
+
     @Autowired
     private AuditTopicUpdateService auditTopicUpdateService;
-    
+
     @Autowired
     private AuditUserProducerDeleteService auditUserProducerDeleteService;
-    
+
     @Autowired
     private AuditUserConsumerDeleteService auditUserConsumerDeleteService;
-    
+
     @Autowired
     private ClusterService clusterService;
-    
+
     @Autowired
     private AuditResendMessageService auditResendMessageService;
-    
+
     @Autowired
     private AlertService alertService;
-    
+
     @Autowired
     private MessageResetService messageResetService;
-    
+
     @Autowired
     private AuditTopicTraceService auditTopicTraceService;
 
@@ -197,7 +199,7 @@ public class AuditController extends AdminViewController {
         setResult(map, auditVOList);
         return view();
     }
-    
+
     /**
      * 申请详情
      * 
@@ -210,7 +212,7 @@ public class AuditController extends AdminViewController {
             @RequestParam(value = "aid") long aid, Map<String, Object> map) {
         TypeEnum typeEnum = TypeEnum.getEnumByType(type);
         // 创建topic需要集群信息
-        if(TypeEnum.NEW_TOPIC == typeEnum || TypeEnum.UPDATE_TOPIC_TRACE == typeEnum) {
+        if (TypeEnum.NEW_TOPIC == typeEnum || TypeEnum.UPDATE_TOPIC_TRACE == typeEnum) {
             setResult(map, "clusters", clusterService.getAllMQCluster());
         }
         Result<?> result = auditService.detail(typeEnum, aid);
@@ -300,9 +302,11 @@ public class AuditController extends AdminViewController {
                 case UPDATE_TOPIC_TRACE:
                     msg = getUpdateTopicTraceMessage(aid);
                     break;
+                case BATCH_ASSOCIATE:
+                    break;
             }
             StringBuilder sb = new StringBuilder("您");
-            if(audit.getCreateTime() != null) {
+            if (audit.getCreateTime() != null) {
                 String createTime = DateUtil.getFormat(DateUtil.YMD_DASH_BLANK_HMS_COLON).format(audit.getCreateTime());
                 sb.append(createTime);
             }
@@ -338,7 +342,7 @@ public class AuditController extends AdminViewController {
         }
         return null;
     }
-    
+
     /**
      * 获取提示消息
      * 
@@ -347,7 +351,7 @@ public class AuditController extends AdminViewController {
      */
     private String getAuditResetOffsetTipMessage(long aid) {
         Result<AuditResetOffset> auditResetOffsetResult = auditResetOffsetService.queryAuditResetOffset(aid);
-        if(auditResetOffsetResult.isNotOK()) {
+        if (auditResetOffsetResult.isNotOK()) {
             return null;
         }
         // 查询consumer信息
@@ -357,9 +361,10 @@ public class AuditController extends AdminViewController {
         }
         return consumerResult.getResult().getName();
     }
-    
+
     /**
      * 获取提示消息
+     * 
      * @param aid
      * @return
      */
@@ -376,9 +381,10 @@ public class AuditController extends AdminViewController {
         }
         return topicResult.getResult().getName();
     }
-    
+
     /**
      * 获取提示消息
+     * 
      * @param aid
      * @return
      */
@@ -395,9 +401,10 @@ public class AuditController extends AdminViewController {
         }
         return topicResult.getResult().getName();
     }
-    
+
     /**
      * 获取提示消息
+     * 
      * @param aid
      * @return
      */
@@ -415,15 +422,17 @@ public class AuditController extends AdminViewController {
         }
         return topicResult.getResult().getName();
     }
-    
+
     /**
      * 获取提示消息
+     * 
      * @param aid
      * @return
      */
     public String getDeleteConsumerTipMessage(long aid) {
         // 查询consumer删除审核记录
-        Result<AuditConsumerDelete> auditConsumerDeleteResult = auditConsumerDeleteService.queryAuditConsumerDelete(aid);
+        Result<AuditConsumerDelete> auditConsumerDeleteResult = auditConsumerDeleteService
+                .queryAuditConsumerDelete(aid);
         if (auditConsumerDeleteResult.isNotOK()) {
             return null;
         }
@@ -453,35 +462,40 @@ public class AuditController extends AdminViewController {
         }
         return consumerResult.getResult().getName();
     }
-    
+
     /**
      * 获取提示消息
+     * 
      * @param aid
      * @return
      */
     public String getDeleteUserProducerTipMessage(long aid) {
         // 查询consumer删除审核记录
-        Result<AuditUserProducerDelete> auditUserProducerDeleteResult = auditUserProducerDeleteService.queryAuditUserProducerDelete(aid);
+        Result<AuditUserProducerDelete> auditUserProducerDeleteResult = auditUserProducerDeleteService
+                .queryAuditUserProducerDelete(aid);
         if (auditUserProducerDeleteResult.isNotOK()) {
             return null;
         }
         AuditUserProducerDelete auditUserProducerDelete = auditUserProducerDeleteResult.getResult();
         // 查询UserProducer信息
-        Result<UserProducer> userProducerResult = userProducerService.findUserProducer(auditUserProducerDelete.getPid());
+        Result<UserProducer> userProducerResult = userProducerService
+                .findUserProducer(auditUserProducerDelete.getPid());
         if (userProducerResult.isNotOK()) {
             return null;
         }
         return userProducerResult.getResult().getProducer();
     }
-    
+
     /**
      * 获取提示消息
+     * 
      * @param aid
      * @return
      */
     public String getDeleteUserConsumerTipMessage(long aid) {
         // 查询consumer删除审核记录
-        Result<AuditUserConsumerDelete> auditUserConsumerDeleteResult = auditUserConsumerDeleteService.queryAuditUserConsumerDelete(aid);
+        Result<AuditUserConsumerDelete> auditUserConsumerDeleteResult = auditUserConsumerDeleteService
+                .queryAuditUserConsumerDelete(aid);
         if (auditUserConsumerDeleteResult.isNotOK()) {
             return null;
         }
@@ -493,7 +507,7 @@ public class AuditController extends AdminViewController {
         }
         return consumerResult.getResult().getName();
     }
-    
+
     /**
      * 成为管理员
      * 
@@ -536,6 +550,7 @@ public class AuditController extends AdminViewController {
 
     /**
      * 创建topic
+     * 
      * @param userInfo
      * @param aid
      * @param cid
@@ -545,7 +560,7 @@ public class AuditController extends AdminViewController {
     @ResponseBody
     @RequestMapping(value = "/topic/create", method = RequestMethod.POST)
     public Result<?> createTopic(UserInfo userInfo,
-            @RequestParam("aid") long aid, @RequestParam("cid") int cid, 
+            @RequestParam("aid") long aid, @RequestParam("cid") int cid,
             @RequestParam("traceClusterId") Integer traceClusterId) {
         // 获取audit
         Result<Audit> auditResult = auditService.queryAudit(aid);
@@ -621,7 +636,7 @@ public class AuditController extends AdminViewController {
             return auditConsumerResult;
         }
         AuditConsumer auditConsumer = auditConsumerResult.getResult();
-        
+
         // 查询topic
         Result<Topic> topicResult = topicService.queryTopic(auditConsumer.getTid());
         if (topicResult.isNotOK()) {
@@ -629,7 +644,7 @@ public class AuditController extends AdminViewController {
         }
         // 查询cluster
         Cluster cluster = clusterService.getMQClusterById(topicResult.getResult().getClusterId());
-        if(cluster == null) {
+        if (cluster == null) {
             return Result.getResult(Status.PARAM_ERROR);
         }
 
@@ -794,8 +809,7 @@ public class AuditController extends AdminViewController {
         }
         return Result.getResult(Status.DB_UPDATE_ERR_ASSOCIATE_CONSUME_OK);
     }
-    
-    
+
     /**
      * 删除topic
      * 
@@ -817,7 +831,7 @@ public class AuditController extends AdminViewController {
         if (StatusEnum.INIT.getStatus() != audit.getStatus()) {
             return Result.getResult(Status.PARAM_ERROR);
         }
-        
+
         // 查询 topic删除审核记录
         Result<AuditTopicDelete> auditTopicDeleteResult = auditTopicDeleteService.queryAuditTopicDelete(aid);
         if (auditTopicDeleteResult.isNotOK()) {
@@ -829,7 +843,7 @@ public class AuditController extends AdminViewController {
         if (topicResult.isNotOK()) {
             return topicResult;
         }
-        
+
         // 删除topic
         Result<?> createResult = topicService.deleteTopic(topicResult.getResult());
         if (createResult.isNotOK()) {
@@ -843,7 +857,7 @@ public class AuditController extends AdminViewController {
         }
         return Result.getResult(Status.DB_UPDATE_ERR_DELETE_TOPIC_OK);
     }
-    
+
     /**
      * 更新topic
      * 
@@ -865,7 +879,7 @@ public class AuditController extends AdminViewController {
         if (StatusEnum.INIT.getStatus() != audit.getStatus()) {
             return Result.getResult(Status.PARAM_ERROR);
         }
-        
+
         // 查询 topic更新审核记录
         Result<AuditTopicUpdate> auditTopicUpdateResult = auditTopicUpdateService.queryAuditTopicUpdate(aid);
         if (auditTopicUpdateResult.isNotOK()) {
@@ -893,7 +907,7 @@ public class AuditController extends AdminViewController {
         }
         return Result.getResult(Status.DB_UPDATE_ERR_DELETE_TOPIC_UPDATE_OK);
     }
-    
+
     /**
      * 删除consumer
      * 
@@ -915,9 +929,10 @@ public class AuditController extends AdminViewController {
         if (StatusEnum.INIT.getStatus() != audit.getStatus()) {
             return Result.getResult(Status.PARAM_ERROR);
         }
-        
+
         // 查询consumer删除审核记录
-        Result<AuditConsumerDelete> auditConsumerDeleteResult = auditConsumerDeleteService.queryAuditConsumerDelete(aid);
+        Result<AuditConsumerDelete> auditConsumerDeleteResult = auditConsumerDeleteService
+                .queryAuditConsumerDelete(aid);
         if (auditConsumerDeleteResult.isNotOK()) {
             return auditConsumerDeleteResult;
         }
@@ -933,7 +948,7 @@ public class AuditController extends AdminViewController {
         if (topicResult.isNotOK()) {
             return topicResult;
         }
-        
+
         // 删除消费者
         Cluster cluster = clusterService.getMQClusterById(topicResult.getResult().getClusterId());
         Result<?> deleteResult = consumerService.deleteConsumer(cluster, consumer, audit.getUid());
@@ -1002,7 +1017,7 @@ public class AuditController extends AdminViewController {
         }
         return Result.getResult(Status.DB_UPDATE_ERR_DELETE_USERPRODUCER_OK);
     }
-    
+
     /**
      * 删除userConsumer
      * 
@@ -1034,7 +1049,7 @@ public class AuditController extends AdminViewController {
         Result<UserConsumer> userConsumerResult = userConsumerService.selectById(auditUserConsumerDelete.getUcid());
         if (userConsumerResult.isNotOK()) {
             return userConsumerResult;
-        }  
+        }
         // 删除userConsumer
         Result<?> deleteResult = userConsumerService.deleteById(auditUserConsumerDelete.getUcid());
         if (deleteResult.isNotOK()) {
@@ -1054,7 +1069,7 @@ public class AuditController extends AdminViewController {
      * @param aid
      * @param map
      * @return
-     * @throws ParseException 
+     * @throws ParseException
      */
     @ResponseBody
     @RequestMapping(value = "/reset/offset", method = RequestMethod.POST)
@@ -1069,7 +1084,7 @@ public class AuditController extends AdminViewController {
         if (StatusEnum.INIT.getStatus() != audit.getStatus()) {
             return Result.getResult(Status.PARAM_ERROR);
         }
-        
+
         // 查询审核记录
         Result<AuditResetOffset> auditResetOffsetResult = auditResetOffsetService.queryAuditResetOffset(aid);
         if (auditResetOffsetResult.isNotOK()) {
@@ -1082,15 +1097,15 @@ public class AuditController extends AdminViewController {
             return consumerResult;
         }
         Consumer consumer = consumerResult.getResult();
-        
+
         // 重试消息重置
-        if(TypeEnum.RESET_RETRY_OFFSET.getType() == audit.getType()) {
+        if (TypeEnum.RESET_RETRY_OFFSET.getType() == audit.getType()) {
             MessageReset messageReset = new MessageReset();
             messageReset.setConsumer(consumer.getName());
             Date resetTo = DateUtil.getFormat(DateUtil.YMD_DASH_BLANK_HMS_COLON).parse(auditResetOffset.getOffset());
             messageReset.setResetTo(resetTo.getTime());
             Result<?> result = messageResetService.save(messageReset);
-            if(result.isNotOK()) {
+            if (result.isNotOK()) {
                 return Result.getWebResult(result);
             }
         } else {
@@ -1132,7 +1147,7 @@ public class AuditController extends AdminViewController {
             UserMessage userMessage = new UserMessage();
             TypeEnum typeEnum = TypeEnum.getEnumByType(audit.getType());
             StringBuilder sb = new StringBuilder("您");
-            if(audit.getCreateTime() != null) {
+            if (audit.getCreateTime() != null) {
                 String createTime = DateUtil.getFormat(DateUtil.YMD_DASH_BLANK_HMS_COLON).format(audit.getCreateTime());
                 sb.append(createTime);
             }
@@ -1152,7 +1167,7 @@ public class AuditController extends AdminViewController {
         }
         return false;
     }
-    
+
     /**
      * resendMessage
      * 
@@ -1173,7 +1188,7 @@ public class AuditController extends AdminViewController {
         if (StatusEnum.INIT.getStatus() != audit.getStatus()) {
             return Result.getResult(Status.PARAM_ERROR);
         }
-        
+
         // 查询审核记录
         Result<List<AuditResendMessage>> listResult = auditResendMessageService.query(aid);
         if (listResult.isNotOK()) {
@@ -1181,8 +1196,8 @@ public class AuditController extends AdminViewController {
         }
         // 未全部重发成功不可审核
         List<AuditResendMessage> auditResendMessageList = listResult.getResult();
-        for(AuditResendMessage msg : auditResendMessageList) {
-            if(AuditResendMessage.StatusEnum.SUCCESS.getStatus() != msg.getStatus()) {
+        for (AuditResendMessage msg : auditResendMessageList) {
+            if (AuditResendMessage.StatusEnum.SUCCESS.getStatus() != msg.getStatus()) {
                 return Result.getResult(Status.AUDIT_MESSAGE_CANNOT_AUTID_WHEN_NOT_SEND_OK);
             }
         }
@@ -1193,7 +1208,7 @@ public class AuditController extends AdminViewController {
         }
         return Result.getResult(Status.DB_UPDATE_ERR_DELETE_RESET_OFFSET_OK);
     }
-    
+
     /**
      * vo赋值
      * 
@@ -1237,7 +1252,7 @@ public class AuditController extends AdminViewController {
             logger.warn("send audit result fail!  email:{}, content:{}", email, content);
         }
     }
-    
+
     /**
      * 更新topic Trace
      * 
@@ -1260,7 +1275,7 @@ public class AuditController extends AdminViewController {
         if (StatusEnum.INIT.getStatus() != audit.getStatus()) {
             return Result.getResult(Status.PARAM_ERROR);
         }
-        
+
         // 查询 topic更新审核记录
         Result<AuditTopicTrace> auditTopicTraceResult = auditTopicTraceService.queryAuditTopicTrace(aid);
         if (auditTopicTraceResult.isNotOK()) {
@@ -1291,6 +1306,74 @@ public class AuditController extends AdminViewController {
             return Result.getOKResult();
         }
         return Result.getResult(Status.DB_UPDATE_ERR_DELETE_TOPIC_UPDATE_OK);
+    }
+
+    /**
+     * 批量关联
+     * 
+     * @param aid
+     * @param map
+     * @return
+     */
+    @SuppressWarnings({"unchecked"})
+    @ResponseBody
+    @RequestMapping(value = "/batch/associate", method = RequestMethod.POST)
+    public Result<?> batchAssociate(UserInfo userInfo,
+            @RequestParam("aid") long aid) {
+        // 获取audit
+        Result<Audit> auditResult = auditService.queryAudit(aid);
+        if (auditResult.isNotOK()) {
+            return auditResult;
+        }
+        // 校验状态是否合法
+        Audit audit = auditResult.getResult();
+        if (StatusEnum.INIT.getStatus() != audit.getStatus()) {
+            return Result.getResult(Status.PARAM_ERROR);
+        }
+
+        Result<UserTopicInfoVO> userTopicInfoVOResult = (Result<UserTopicInfoVO>) auditService
+                .getAuditBatchAssociateResult(aid);
+        if (userTopicInfoVOResult.isNotOK()) {
+            return Result.getWebResult(userTopicInfoVOResult);
+        }
+
+        // 拼装对象
+        List<UserProducer> upList = new ArrayList<>();
+        List<UserConsumer> ucList = new ArrayList<>();
+        UserTopicInfoVO userTopicInfoVO = userTopicInfoVOResult.getResult();
+        for (User user : userTopicInfoVO.getUserList()) {
+            for (TopicInfoVO topicInfoVO : userTopicInfoVO.getTopicInfoVoList()) {
+                // 拼装UserProducer
+                for (UserProducer up : topicInfoVO.getProducerList()) {
+                    UserProducer tmp = new UserProducer();
+                    tmp.setUid(user.getId());
+                    tmp.setTid(topicInfoVO.getTopic().getId());
+                    tmp.setProducer(up.getProducer());
+                    upList.add(tmp);
+                }
+                // 拼装UserConsumer
+                for (Consumer consumer : topicInfoVO.getConsumerList()) {
+                    UserConsumer uc = new UserConsumer();
+                    uc.setUid(user.getId());
+                    uc.setTid(topicInfoVO.getTopic().getId());
+                    uc.setConsumerId(consumer.getId());
+                    ucList.add(uc);
+                }
+            }
+        }
+
+        // 保存关联关系
+        Result<?> result = auditService.saveBatchAssociate(upList, ucList);
+        if (result.isNotOK()) {
+            return result;
+        }
+
+        // 更新申请状态
+        boolean updateOK = agreeAndTip(audit, userInfo.getUser().getEmail(), null);
+        if (updateOK) {
+            return Result.getOKResult();
+        }
+        return Result.getResult(Status.DB_UPDATE_ERR_ASSOCIATE_PRODUCER_OK);
     }
 
     @Override

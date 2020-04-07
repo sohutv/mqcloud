@@ -1,5 +1,6 @@
 package com.sohu.tv.mq.cloud.dao;
 
+import java.util.Collection;
 import java.util.List;
 
 import org.apache.ibatis.annotations.Delete;
@@ -103,4 +104,25 @@ public interface UserProducerDao {
             "and producer = #{producer} " +
             "</script>")
     public List<Long> selectTidByProducerAndUid(@Param("uid") long uid, @Param("producer") String producer);
+    
+    /**
+     * 根据id列表批量查询
+     * @param aidList
+     * @return List<User>
+     */
+    @Select("<script>select * from user_producer where id in "
+            + "<foreach collection=\"idList\" item=\"id\" separator=\",\" open=\"(\" close=\")\">#{id}</foreach>"
+            + "</script>")
+    public List<UserProducer> selectByIdList(@Param("idList") Collection<Long> idList);
+    
+    /**
+     * 批量插入记录
+     * 
+     * @param consumer
+     */
+    @Insert("<script>insert into user_producer(uid, tid, producer) values"
+            + "<foreach collection=\"upList\" item=\"up\" separator=\",\">"
+            + "(#{up.uid},#{up.tid},#{up.producer})"
+            + "</foreach></script>")
+    public Integer batchInsert(@Param("upList") List<UserProducer> userProducerList);
 }

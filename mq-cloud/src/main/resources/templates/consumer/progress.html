@@ -14,15 +14,15 @@
         <table class="table table-striped table-hover" style="margin-top: 0px;word-break:break-all; word-wrap:break-all;">
 		        <colgroup>
 					<col width="45px">
-					<col width="250px">
-					<col width="150px">
 					<col>
+					<col width="150px">
+					<col width="180px">
 					<col width="50px">
 					<col width="70px">
 					<col width="50px">
 					<col width="53px">
 					<col width="160px">
-					<col width="210px">
+					<col width="80px">
 				</colgroup>
                 <thead>
 	                <tr>
@@ -81,7 +81,7 @@
 											<#if consumerProgressVO.ownerList?? && (consumerProgressVO.ownerList?seq_contains(userInfo.user) || userInfo.user.type == 1)><span style="cursor:pointer" data-toggle="tooltip" title="修改用途" onclick="showUpdateInfo(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', '${consumerProgressVO.consumer.info!}')"></#if>${consumerProgressVO.consumer.info}<#if consumerProgressVO.ownerList?? && (consumerProgressVO.ownerList?seq_contains(userInfo.user) || userInfo.user.type == 1)></span></#if>
 										<#else>
 											<#if consumerProgressVO.ownerList?? && (consumerProgressVO.ownerList?seq_contains(userInfo.user) || userInfo.user.type == 1)>
-												<button type="button" class="btn-sm btn-success" onclick="showUpdateInfo(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', '${consumerProgressVO.consumer.info!}')">添加</button>
+												<span class="glyphicon glyphicon-pencil pointer" onclick="showUpdateInfo(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', '${consumerProgressVO.consumer.info!}')" data-toggle="tooltip" title="添加用途" aria-hidden="true"></span>
 				                    		</#if>
 										</#if>
 									</#if>
@@ -116,10 +116,10 @@
 		                    	<td>
 		                    		<#if (consumerProgressVO.ownerList?? && consumerProgressVO.ownerList?seq_contains(userInfo.user)) || userInfo.user.type == 1>
 			                    		<#if consumerProgressVO.offsetMap??>
-				                    		<button title="跳过堆积的消息，直接消费至最新的消息" type="button" class="btn-sm btn-success" data-target="#skipAccumulationModel${row}" data-toggle="modal">跳过堆积</button>
-				                    		<button title="消费过去一段时间至现在的消息" type="button" class="btn-sm btn-success" data-target="#resetOffSetModel${row}" data-toggle="modal">消息回溯</button>
+				                    		<span title="跳过堆积的消息，直接消费至最新的消息" class="glyphicon glyphicon-fast-forward pointer" data-target="#skipAccumulationModel${row}" data-toggle="modal"></span>
+				                    		<span title="消费过去一段时间至现在的消息" class="glyphicon glyphicon-backward pointer" data-target="#resetOffSetModel${row}" data-toggle="modal"></span>
 			                    		</#if>
-			                    		<button type="button" class="btn-sm btn-warning" data-target="#deleteConsumerModel${row}" data-toggle="modal"><span class="glyphicon glyphicon-trash" aria-hidden="true"></span></button>
+			                    		<button type="button" class="btn btn-xs btn-warning" data-target="#deleteConsumerModel${row}" title="删除${consumerProgressVO.consumer.name}" data-toggle="modal"><span class="glyphicon glyphicon-trash" aria-hidden="true"></span></button>
 		                    		</#if>
 		                    		<#if consumerProgressVO.offsetMap??>
 		                    		<!-- 详情 -->
@@ -426,7 +426,7 @@
 											<#if consumerProgressVO.ownerList?? && (consumerProgressVO.ownerList?seq_contains(userInfo.user) || userInfo.user.type == 1)><span style="cursor:pointer" data-toggle="tooltip" title="修改用途" onclick="showUpdateInfo(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', '${consumerProgressVO.consumer.info!}')"></#if>${consumerProgressVO.consumer.info}<#if consumerProgressVO.ownerList?? && (consumerProgressVO.ownerList?seq_contains(userInfo.user) || userInfo.user.type == 1)></span></#if>
 										<#else>
 											<#if consumerProgressVO.ownerList?? && (consumerProgressVO.ownerList?seq_contains(userInfo.user) || userInfo.user.type == 1)>
-												<button type="button" class="btn-sm btn-success" onclick="showUpdateInfo(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', '${consumerProgressVO.consumer.info!}')">添加</button>
+				                    			<span class="glyphicon glyphicon-pencil pointer" onclick="showUpdateInfo(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', '${consumerProgressVO.consumer.info!}')" data-toggle="tooltip" title="添加用途" aria-hidden="true"></span>
 				                    		</#if>
 										</#if>
 									</#if>
@@ -447,10 +447,10 @@
 		                    	<td>
 		                    		<#if (consumerProgressVO.ownerList?? && consumerProgressVO.ownerList?seq_contains(userInfo.user)) || userInfo.user.type == 1>
 			                    		<#if consumerProgressVO.offsetMap??>
-				                    		<button title="跳过堆积的消息，直接消费至最新的消息" type="button" class="btn-sm btn-success" data-target="#skipAccumulationModel${row}b" data-toggle="modal">跳过堆积</button>
-				                    		<button title="消费过去一段时间至现在的消息" type="button" class="btn-sm btn-success" data-target="#resetOffSetModel${row}b" data-toggle="modal">消息回溯</button>
+				                    		<span title="跳过堆积的消息，直接消费至最新的消息" class="glyphicon glyphicon-fast-forward pointer" data-target="#skipAccumulationModel${row}b" data-toggle="modal"></span>
+				                    		<span title="消费过去一段时间至现在的消息" class="glyphicon glyphicon-backward pointer" data-target="#resetOffSetModel${row}b" data-toggle="modal"></span>
 			                    		</#if>
-			                    		<button type="button" class="btn-sm btn-warning" data-target="#deleteConsumerModel${row}b" data-toggle="modal"><span class="glyphicon glyphicon-trash" aria-hidden="true"></span></button>
+			                    		<button type="button" class="btn btn-xs btn-warning" data-target="#deleteConsumerModel${row}b" title="删除${consumerProgressVO.consumer.name}" data-toggle="modal"><span class="glyphicon glyphicon-trash" aria-hidden="true"></span></button>
 		                    		</#if>
 		                    		<#if consumerProgressVO.offsetMap??>
 		                    		<!-- 详情 -->
@@ -622,7 +622,7 @@
 						</#list>
 						<#if hasMore>
 							<tr id="viewAll">
-		                    	<td colspan=10 align="center" class="pointer" onclick="leftPage()">查看全部</td>
+		                    	<td colspan=10 align="center" class="pointer" onclick="leftPage()"><b>查看全部</b></td>
 		                	<tr>
 						</#if>
 					</#if>
@@ -1083,12 +1083,16 @@ function deleteUserConsumer(){
  * 初始化user下拉列表
  */
 function initUserList(componentId){
-	$.get('${request.contextPath}/user/list',
+	$.post('${request.contextPath}/user/list',
 	        function(data){
 	            if(data.status == 200){
 	            	var content = "";
 	            	for(var i in data.result){
 	            		var user = data.result[i];
+	            		// admin跳过
+	            		if(user.type == 1){
+	            			continue;
+	            		}
 	            		var value = user.email.substring(0, user.email.indexOf("@"));
 	            		if(user.name && user.name != value){
 	            			value = user.name + "【" + value +"】";

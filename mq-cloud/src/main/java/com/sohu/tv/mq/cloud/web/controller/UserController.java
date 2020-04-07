@@ -12,6 +12,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
 
 import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.rocketmq.common.protocol.body.ClusterInfo;
 import org.apache.rocketmq.tools.admin.MQAdminExt;
 import org.springframework.beans.BeanUtils;
@@ -23,6 +24,9 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
+import com.sohu.tv.mq.cloud.bo.Audit;
+import com.sohu.tv.mq.cloud.bo.Audit.TypeEnum;
+import com.sohu.tv.mq.cloud.bo.AuditBatchAssociate;
 import com.sohu.tv.mq.cloud.bo.Cluster;
 import com.sohu.tv.mq.cloud.bo.Consumer;
 import com.sohu.tv.mq.cloud.bo.ConsumerTraffic;
@@ -35,6 +39,8 @@ import com.sohu.tv.mq.cloud.bo.User;
 import com.sohu.tv.mq.cloud.bo.UserProducer;
 import com.sohu.tv.mq.cloud.mq.DefaultCallback;
 import com.sohu.tv.mq.cloud.mq.MQAdminTemplate;
+import com.sohu.tv.mq.cloud.service.AlertService;
+import com.sohu.tv.mq.cloud.service.AuditService;
 import com.sohu.tv.mq.cloud.service.ClusterService;
 import com.sohu.tv.mq.cloud.service.ConsumerService;
 import com.sohu.tv.mq.cloud.service.ConsumerTrafficService;
@@ -51,6 +57,7 @@ import com.sohu.tv.mq.cloud.util.SplitUtil;
 import com.sohu.tv.mq.cloud.util.Status;
 import com.sohu.tv.mq.cloud.util.WebUtil;
 import com.sohu.tv.mq.cloud.web.controller.param.PaginationParam;
+import com.sohu.tv.mq.cloud.web.vo.TopicInfoVO;
 import com.sohu.tv.mq.cloud.web.vo.TopicTrafficHolderVO;
 import com.sohu.tv.mq.cloud.web.vo.TopicTrafficVO;
 import com.sohu.tv.mq.cloud.web.vo.UserInfo;
@@ -90,12 +97,18 @@ public class UserController extends ViewController {
 
     @Autowired
     private ProducerTotalStatService producerTotalStatService;
-    
+
     @Autowired
     private ClusterService clusterService;
-    
+
     @Autowired
     private DelayMessageService delayMessageService;
+
+    @Autowired
+    private AuditService auditService;
+    
+    @Autowired
+    private AlertService alertService;
 
     /**
      * 退出登录
@@ -139,7 +152,7 @@ public class UserController extends ViewController {
         Result<Integer> result = userService.resetPassword(uid, passwordNew);
         return result;
     }
-    
+
     /**
      * 获取user列表
      * 
@@ -147,7 +160,7 @@ public class UserController extends ViewController {
      * @throws Exception
      */
     @ResponseBody
-    @RequestMapping("/list")
+    @RequestMapping(value = "/list", method = RequestMethod.POST)
     public Result<?> list(UserInfo userInfo) throws Exception {
         // 管理员查看所有用户，普通用户查看普通用户
         Result<List<User>> userListResult = userService.queryAll();
@@ -230,13 +243,14 @@ public class UserController extends ViewController {
                 delayTidList.add(topic.getId());
             } else {
                 tidList.add(topic.getId());
-            } 
+            }
         }
         // 获取一分钟之前的topic流量数据
         Date oneMinuteAgo = new Date(System.currentTimeMillis() - 60000);
         String time = DateUtil.getFormat(DateUtil.HHMM).format(oneMinuteAgo);
         String date = DateUtil.formatYMD(oneMinuteAgo);
-        Result<List<TopicTraffic>> topicTrafficListResult = Result.getResult(new ArrayList<TopicTraffic>(topicList.size()));
+        Result<List<TopicTraffic>> topicTrafficListResult = Result
+                .getResult(new ArrayList<TopicTraffic>(topicList.size()));
         if (!tidList.isEmpty()) {
             Result<List<TopicTraffic>> trafficListResult = topicTrafficService.query(tidList, date, time);
             if (trafficListResult.isNotEmpty()) {
@@ -244,7 +258,8 @@ public class UserController extends ViewController {
             }
         }
         if (!delayTidList.isEmpty()) {
-            Result<List<TopicTraffic>> delayTrafficListResult = delayMessageService.query(delayTidList, Integer.parseInt(date), time);
+            Result<List<TopicTraffic>> delayTrafficListResult = delayMessageService.query(delayTidList,
+                    Integer.parseInt(date), time);
             if (delayTrafficListResult.isNotEmpty()) {
                 topicTrafficListResult.getResult().addAll(delayTrafficListResult.getResult());
             }
@@ -397,7 +412,7 @@ public class UserController extends ViewController {
             } else {
                 topicTrafficListResult = topicTrafficService.query(tidList, date, time);
             }
-            
+
             if (topicTrafficListResult.isNotEmpty()) {
                 result.getResult().setTopicTraffic(topicTrafficListResult.getResult().get(0));
             }
@@ -481,6 +496,127 @@ public class UserController extends ViewController {
         FreemarkerUtil.set("splitUtil", SplitUtil.class, map);
         setResult(map, "version", Version.get());
         return viewModule() + "/topicTopology";
+    }
+
+    /**
+     * 获取用户的topic及关联的生产者和消费者
+     * 
+     * @param topicParam
+     * @return
+     * @throws Exception
+     */
+    @RequestMapping(value = "/batch/associate", method = RequestMethod.GET)
+    public String batchAssociate(UserInfo userInfo, Map<String, Object> map) throws Exception {
+        String view = viewModule() + "/batchAssociate";
+        // 默认设置一个空数据
+        Result.setResult(map, (Object) null);
+
+        // 获取生产者
+        Result<List<UserProducer>> userProducerListResult = userProducerService
+                .queryUserProducer(userInfo.getUser().getId());
+
+        // 获取消费者
+        Result<List<Consumer>> consumerListResult = consumerService.queryUserConsumer(userInfo.getUser().getId());
+
+        // 定义各个角色集合
+        Set<Long> topicIdSet = new HashSet<>();
+
+        // 获取topicId
+        if (userProducerListResult.isNotEmpty()) {
+            for (UserProducer up : userProducerListResult.getResult()) {
+                topicIdSet.add(up.getTid());
+            }
+        }
+
+        // 获取topicId
+        if (consumerListResult.isNotEmpty()) {
+            for (Consumer consumer : consumerListResult.getResult()) {
+                topicIdSet.add(consumer.getTid());
+            }
+        }
+
+        if (topicIdSet.isEmpty()) {
+            return view;
+        }
+
+        // 获取topic列表
+        Result<List<Topic>> topicListResult = topicService.queryTopicList(topicIdSet);
+
+        if (topicListResult.isEmpty()) {
+            return view;
+        }
+
+        // 拼装vo
+        List<TopicInfoVO> topicInfoVOList = new ArrayList<>();
+        for (Topic topic : topicListResult.getResult()) {
+            TopicInfoVO ti = new TopicInfoVO();
+            ti.setTopic(topic);
+            addUserProducer(ti, userProducerListResult.getResult());
+            addConsumer(ti, consumerListResult.getResult());
+            topicInfoVOList.add(ti);
+        }
+
+        setResult(map, topicInfoVOList);
+        return view;
+    }
+
+    /**
+     * 批量关联
+     * 
+     * @return
+     * @throws Exception
+     */
+    @ResponseBody
+    @RequestMapping(value = "/batch/associate", method = RequestMethod.POST)
+    public Result<?> batchAssociatePost(UserInfo userInfo, @RequestParam("uids") String uids,
+            @RequestParam("producerIds") String producerIds, @RequestParam("consumerIds") String consumerIds,
+            Map<String, Object> map) throws Exception {
+        if (StringUtils.isEmpty(uids) || (StringUtils.isEmpty(producerIds) && StringUtils.isEmpty(consumerIds))) {
+            return Result.getResult(Status.PARAM_ERROR);
+        }
+
+        // 构建Audit
+        Audit audit = new Audit();
+        audit.setType(Audit.TypeEnum.BATCH_ASSOCIATE.getType());
+        audit.setStatus(Audit.StatusEnum.INIT.getStatus());
+        audit.setUid(userInfo.getUser().getId());
+        // 构建AuditBatchAssociate
+        AuditBatchAssociate auditBatchAssociate = new AuditBatchAssociate();
+        auditBatchAssociate.setUids(uids);
+        if (StringUtils.isNotEmpty(producerIds)) {
+            auditBatchAssociate.setProducerIds(producerIds);
+        }
+        if (StringUtils.isNotEmpty(consumerIds)) {
+            auditBatchAssociate.setConsumerIds(consumerIds);
+        }
+
+        Result<Audit> result = auditService.saveAuditAndAssociateBatch(audit, auditBatchAssociate);
+        if (result.isOK()) {
+            alertService.sendAuditMail(userInfo.getUser(), TypeEnum.BATCH_ASSOCIATE, "");
+        }
+        return Result.getWebResult(result);
+    }
+
+    private void addUserProducer(TopicInfoVO ti, List<UserProducer> list) {
+        if (list == null) {
+            return;
+        }
+        for (UserProducer up : list) {
+            if (up.getTid() == ti.getTopic().getId()) {
+                ti.addUserProducer(up);
+            }
+        }
+    }
+
+    private void addConsumer(TopicInfoVO ti, List<Consumer> list) {
+        if (list == null) {
+            return;
+        }
+        for (Consumer consumer : list) {
+            if (consumer.getTid() == ti.getTopic().getId()) {
+                ti.addConsumer(consumer);
+            }
+        }
     }
 
     @Override

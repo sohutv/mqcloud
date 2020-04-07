@@ -51,6 +51,13 @@ public class ClientStatsConsumer implements MemoryMQConsumer<ClientStats> {
                         && !(result.getException() instanceof DataIntegrityViolationException)) {
                     // 数据库错误，可以进行重试
                     throw result.getException();
+                } else {
+                    // 数据重复，重试一次
+                    if(clientStats.getClient().indexOf("@") == -1) {
+                        clientStats.setClient(clientStats.getClient() + "@1");
+                        consume(clientStats);
+                        return;
+                    }
                 }
             }
             logger.error("save producerTotalStat:{} err", producerTotalStat);

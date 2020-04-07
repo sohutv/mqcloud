@@ -1,5 +1,6 @@
 package com.sohu.tv.mq.rocketmq;
 
+import java.util.Collection;
 import java.util.Map;
 
 import org.apache.rocketmq.client.exception.MQClientException;
@@ -184,6 +185,25 @@ public class RocketMQProducer extends AbstractConfig {
     public Result<SendResult> publish(Message message) {
         try {
             SendResult sendResult = producer.send(message);
+            return new Result<SendResult>(true, sendResult);
+        } catch (Exception e) {
+            logger.error(e.getMessage(), e);
+            if(statsHelper != null) {
+                statsHelper.recordException(e);
+            }
+            return new Result<SendResult>(false, e);
+        }
+    }
+    
+    /**
+     * 批量发送消息
+     *
+     * @param message 消息
+     * @return 发送结果
+     */
+    public Result<SendResult> publish(Collection<Message> messages) {
+        try {
+            SendResult sendResult = producer.send(messages);
             return new Result<SendResult>(true, sendResult);
         } catch (Exception e) {
             logger.error(e.getMessage(), e);

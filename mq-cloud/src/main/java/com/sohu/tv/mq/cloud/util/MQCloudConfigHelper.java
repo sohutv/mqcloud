@@ -124,6 +124,9 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware {
     // rocketmq admin secretKey
     private String adminSecretKey;
     
+    // 自动审核类型
+    private int[] autoAuditType;
+    
     @Autowired
     private CommonConfigService commonConfigService;
     
@@ -410,6 +413,28 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware {
 
     public boolean isAdminAclEnable() {
         return StringUtils.isNotEmpty(adminAccessKey) && StringUtils.isNotEmpty(adminSecretKey);
+    }
+    
+    public int[] getAutoAuditType() {
+        return autoAuditType;
+    }
+
+    public void setAutoAuditType(int[] autoAuditType) {
+        this.autoAuditType = autoAuditType;
+    }
+
+    /**
+     * 是否是自动审核类型
+     * @param type
+     * @return
+     */
+    public boolean isAutoAuditType(int type) {
+        for (int auditType : autoAuditType) {
+            if (auditType == type) {
+                return true;
+            }
+        }
+        return false;
     }
     
     @Override

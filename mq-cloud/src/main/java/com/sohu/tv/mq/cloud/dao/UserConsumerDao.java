@@ -101,4 +101,23 @@ public interface UserConsumerDao {
             +  "and consumer_id in (select id from consumer where name = #{consumer})"
             + "</script>")
     public List<Long> selectTidByUidAndConsumer(@Param("uid")long uid, @Param("consumer")String consumer);
+    
+    /**
+     * 批量插入记录
+     * 
+     * @param consumer
+     */
+    @Insert("<script>insert into user_consumer(uid, tid, consumer_id) values"
+            + "<foreach collection=\"ucList\" item=\"uc\" separator=\",\">"
+            + "(#{uc.uid},#{uc.tid},#{uc.consumerId})"
+            + "</foreach></script>")
+    public Integer batchInsert(@Param("ucList") List<UserConsumer> userConsumerList);
+    
+    /**
+     * 根据uid和consumerId查询
+     * @param uid
+     * @param consumerId
+     */
+    @Select("select distinct tid from user_consumer where uid = #{uid} and consumer_id =#{cid}")
+    public List<Long> selectTidByUidAndConsumerId(@Param("uid")long uid, @Param("cid")long cid);
 }

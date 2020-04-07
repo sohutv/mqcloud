@@ -116,4 +116,23 @@ public interface ConsumerDao {
      */
     @Update("update consumer set trace_enabled=#{traceEnabled} where id=#{id}")
     public Integer updateConsumerTrace(@Param("id") long id, @Param("traceEnabled") int traceEnabled);
+    
+    
+    /**
+     * 查询记录
+     * @param consumer
+     */
+    @Select("select * from consumer where id in (select consumer_id from user_consumer where uid = #{uid})")
+    public List<Consumer> selectByUid(@Param("uid") long uid);
+    
+    /**
+     * 根据id列表批量查询consumer
+     * 
+     * @param idList
+     * @return List<Topic>
+     */
+    @Select("<script>select * from consumer where id in "
+            + "<foreach collection=\"idList\" item=\"id\" separator=\",\" open=\"(\" close=\")\">#{id}</foreach>"
+            + "</script>")
+    public List<Consumer> selectByIdList(@Param("idList") Collection<Long> idList);
 }
