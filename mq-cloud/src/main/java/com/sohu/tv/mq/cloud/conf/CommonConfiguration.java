@@ -39,6 +39,7 @@ import com.sohu.tv.mq.cloud.common.service.LoginService;
 import com.sohu.tv.mq.cloud.common.service.SmsSender;
 import com.sohu.tv.mq.cloud.common.service.impl.AbstractLoginService;
 import com.sohu.tv.mq.cloud.common.util.CipherHelper;
+import com.sohu.tv.mq.cloud.mq.DefaultSohuMQAdmin;
 import com.sohu.tv.mq.cloud.mq.MQAdminPooledObjectFactory;
 import com.sohu.tv.mq.cloud.mq.SohuMQAdminFactory;
 import com.sohu.tv.mq.cloud.service.ClientStatsConsumer;
@@ -150,8 +151,8 @@ public class CommonConfiguration {
      */
     @Bean
     @Profile({"local", "online"})
-    public Class<SohuMQAdmin> mqAdminClass() throws Exception {
-        return SohuMQAdmin.class;
+    public Class<?> mqAdminClass() throws Exception {
+        return DefaultSohuMQAdmin.class;
     }
     
     /**
