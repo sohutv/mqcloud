@@ -70,4 +70,60 @@ public interface BrokerTrafficDao {
             + "group by cluster_id, create_date, create_time")
     public List<BrokerTraffic> selectClusterTraffic(@Param("clusterId") int clusterId, 
             @Param("createDate") String createDate);
+    
+    /**
+     * 获取流量
+     * @param createDate
+     * @param createTimes
+     * @param ips
+     * @return
+     */
+    @Select("<script>select ip, cluster_id, sum(put_count) put_count, sum(put_size) put_size, sum(get_count) get_count, sum(get_size) get_size "
+            + "from broker_traffic where create_date=#{createDate} "
+            + "and create_time in <foreach collection=\"createTimes\" item=\"tm\" separator=\",\" open=\"(\" close=\")\">#{tm}</foreach> "
+            + "and ip in <foreach collection=\"ips\" item=\"ip\" separator=\",\" open=\"(\" close=\")\">#{ip}</foreach> "
+            + "group by ip</script>")
+    public List<BrokerTraffic> selectTrafficList(@Param("createDate") String createDate, 
+            @Param("createTimes") List<String> createTimes, 
+            @Param("ips") List<String> ips);
+    
+    /**
+     * 获取统计流量
+     * @param createDate
+     * @param createTimes
+     * @param ips
+     * @return
+     */
+    @Select("<script>select max(put_count) put_count, avg(put_count) avg_put_count, "
+            + "max(put_size) put_size, avg(put_size) avg_put_size, "
+            + "max(get_count) get_count, avg(get_count) avg_get_count, "
+            + "max(get_size) get_size, avg(get_size) avg_get_size from "
+            + "(select sum(put_count) put_count, sum(put_size) put_size, sum(get_count) get_count, sum(get_size) get_size "
+            + "from broker_traffic where create_date=#{createDate} "
+            + "and create_time in <foreach collection=\"createTimes\" item=\"tm\" separator=\",\" open=\"(\" close=\")\">#{tm}</foreach> "
+            + "and ip in <foreach collection=\"ips\" item=\"ip\" separator=\",\" open=\"(\" close=\")\">#{ip}</foreach> "
+            + "group by create_time) tmp"
+            + "</script>")
+    public BrokerTraffic selectTrafficStatistic(@Param("createDate") String createDate, 
+            @Param("createTimes") List<String> createTimes, 
+            @Param("ips") List<String> ips);
+    
+    /**
+     * 获取统计流量
+     * @param createDate
+     * @param createTimes
+     * @param ips
+     * @return
+     */
+    @Select("<script>select max(put_count) put_count, avg(put_count) avg_put_count, "
+            + "max(put_size) put_size, avg(put_size) avg_put_size, "
+            + "max(get_count) get_count, avg(get_count) avg_get_count, "
+            + "max(get_size) get_size, avg(get_size) avg_get_size "
+            + "from broker_traffic where create_date=#{createDate} "
+            + "and create_time in <foreach collection=\"createTimes\" item=\"tm\" separator=\",\" open=\"(\" close=\")\">#{tm}</foreach> "
+            + "and ip = #{ip} "
+            + "</script>")
+    public BrokerTraffic selectTrafficStatisticByIp(@Param("createDate") String createDate, 
+            @Param("createTimes") List<String> createTimes, 
+            @Param("ip") String ip);
 }

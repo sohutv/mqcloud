@@ -31,6 +31,10 @@ public class NameServer {
     public String getAddr() {
         return addr;
     }
+    
+    public String getIp() {
+        return addr.split(":")[0];
+    }
 
     public void setAddr(String addr) {
         this.addr = addr;

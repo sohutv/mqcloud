@@ -49,6 +49,7 @@ import java.util.Map.Entry;
  * @author yongfeigao
  * @date 2018年8月7日
  */
+@SuppressWarnings("deprecation")
 public class MonitorService {
 
     private final Logger logger = LoggerFactory.getLogger(this.getClass());

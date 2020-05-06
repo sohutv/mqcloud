@@ -3,6 +3,7 @@ package com.sohu.tv.mq.trace;
 import java.lang.reflect.Field;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.apache.rocketmq.client.AccessChannel;
 import org.apache.rocketmq.client.exception.MQClientException;
 import org.apache.rocketmq.client.producer.DefaultMQProducer;
 import org.apache.rocketmq.client.trace.AsyncTraceDispatcher;
@@ -23,23 +24,23 @@ public class SohuAsyncTraceDispatcher extends AsyncTraceDispatcher {
 
     public SohuAsyncTraceDispatcher(String traceTopicName, RPCHook rpcHook) throws MQClientException,
             IllegalArgumentException, IllegalAccessException, NoSuchFieldException, SecurityException {
-        super(traceTopicName, rpcHook);
+        super(null, null, traceTopicName, rpcHook);
     }
 
     @Override
-    public void start(String nameSrvAddr) throws MQClientException {
+    public void start(String nameSrvAddr, AccessChannel accessChannel) throws MQClientException {
         // 禁止AsyncTraceDispatcher启动自己的producer
         try {
             set("isStarted", new AtomicBoolean(true));
         } catch (Exception e) {
             e.printStackTrace();
         }
-        super.start(nameSrvAddr);
+        super.start(nameSrvAddr, accessChannel);
     }
 
     public void start() throws MQClientException {
         // 启动dispatcher
-        start(null);
+        start(null, AccessChannel.LOCAL);
     }
 
     public int getMaxMsgSize()

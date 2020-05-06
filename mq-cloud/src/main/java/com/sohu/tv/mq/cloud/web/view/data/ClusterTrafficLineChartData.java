@@ -122,7 +122,6 @@ public class ClusterTrafficLineChartData implements LineChartData {
         // 构造曲线图对象
         LineChart lineChart = new LineChart();
         lineChart.setChartId("clusterTraffic");
-//        lineChart.setTitle(MQCluster.getMQClusterById(clusterId).getClusterName()+"流量情况");
         lineChart.setOneline(true);
         lineChart.setTickInterval(6);
         XAxis xAxis = new XAxis();

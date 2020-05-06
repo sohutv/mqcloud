@@ -64,11 +64,12 @@ import com.sohu.tv.mq.cloud.bo.MessageData;
 import com.sohu.tv.mq.cloud.bo.MessageQueryCondition;
 import com.sohu.tv.mq.cloud.bo.MessageTrackExt;
 import com.sohu.tv.mq.cloud.bo.TraceMessageDetail;
+import com.sohu.tv.mq.cloud.common.mq.SohuMQAdmin;
 import com.sohu.tv.mq.cloud.mq.DefaultCallback;
 import com.sohu.tv.mq.cloud.mq.MQAdminCallback;
 import com.sohu.tv.mq.cloud.mq.MQAdminTemplate;
-import com.sohu.tv.mq.cloud.mq.SohuMQAdmin;
 import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper;
+import com.sohu.tv.mq.cloud.util.MessageDelayLevel;
 import com.sohu.tv.mq.cloud.util.MessageTypeLoader;
 import com.sohu.tv.mq.cloud.util.MsgTraceDecodeUtil;
 import com.sohu.tv.mq.cloud.util.Result;
@@ -89,34 +90,36 @@ import com.sohu.tv.mq.util.CommonUtil;
  * @date 2018年8月20日
  */
 @Service
+@SuppressWarnings("deprecation")
 public class MessageService {
 
     private Logger logger = LoggerFactory.getLogger(this.getClass());
 
     public static final String SUB_EXPRESSION = "*";
-    
+
     @Autowired
     private MQAdminTemplate mqAdminTemplate;
 
     @Autowired
     private ConsumerService consumerService;
-    
+
     @Autowired
     private MessageTypeLoader messageTypeLoader;
-    
+
     @Autowired
     private ClusterService clusterService;
-    
+
     @Autowired
     private MQCloudConfigHelper mqCloudConfigHelper;
-    
+
     private MessageSerializer<Object> messageSerializer = new DefaultMessageSerializer<Object>();
-    
+
     @Autowired
     private TopicService topicService;
-    
+
     /**
      * 根据key查询消息
+     * 
      * @param cluster
      * @param topic
      * @param key key
@@ -124,7 +127,8 @@ public class MessageService {
      * @param end 结束时间
      * @return
      */
-    public Result<List<DecodedMessage>> queryMessageByKey(Cluster cluster, String topic, String key, long begin, long end) {
+    public Result<List<DecodedMessage>> queryMessageByKey(Cluster cluster, String topic, String key, long begin,
+            long end) {
         return mqAdminTemplate.execute(new MQAdminCallback<Result<List<DecodedMessage>>>() {
             public Result<List<DecodedMessage>> callback(MQAdminExt mqAdmin) throws Exception {
                 // 获取broker集群信息
@@ -132,12 +136,12 @@ public class MessageService {
                 // 其实这里只能查询64条消息，broker端有限制
                 QueryResult queryResult = mqAdmin.queryMessage(topic, key, 100, begin, end);
                 List<MessageExt> messageExtList = queryResult.getMessageList();
-                if(messageExtList == null || messageExtList.size() == 0) {
+                if (messageExtList == null || messageExtList.size() == 0) {
                     logger.warn("msg list is null, cluster:{} topic:{} msgId:{}", cluster, topic, key);
                     return Result.getResult(Status.NO_RESULT);
                 }
                 // 特定类型使用自定义的classloader
-                if(mqCloudConfigHelper.getClassList() != null && 
+                if (mqCloudConfigHelper.getClassList() != null &&
                         mqCloudConfigHelper.getClassList().contains(topic)) {
                     Thread.currentThread().setContextClassLoader(messageTypeLoader);
                 }
@@ -153,29 +157,32 @@ public class MessageService {
                 // 按时间排序
                 Collections.sort(messageList, new Comparator<DecodedMessage>() {
                     public int compare(DecodedMessage o1, DecodedMessage o2) {
-                        return (int)(o1.getBornTimestamp() - o2.getBornTimestamp());
+                        return (int) (o1.getBornTimestamp() - o2.getBornTimestamp());
                     }
                 });
                 return Result.getResult(messageList);
             }
+
             public Result<List<DecodedMessage>> exception(Exception e) throws Exception {
                 logger.error("queryMessage cluster:{} topic:{} key:{}, err:{}", cluster, topic, key, e.getMessage());
                 // 此异常代表查无数据，不进行异常提示
-                if(e instanceof MQClientException) {
-                    if(((MQClientException) e).getResponseCode() == ResponseCode.NO_MESSAGE) {
+                if (e instanceof MQClientException) {
+                    if (((MQClientException) e).getResponseCode() == ResponseCode.NO_MESSAGE) {
                         return Result.getOKResult();
                     }
                 }
                 return Result.getWebErrorResult(e);
             }
+
             public Cluster mqCluster() {
                 return cluster;
             }
         });
     }
-    
+
     /**
      * 根据msgId查询消息
+     * 
      * @param cluster
      * @param topic
      * @param msgId
@@ -194,22 +201,24 @@ public class MessageService {
                     return Result.getResult(Status.NO_RESULT);
                 }
                 // 特定类型使用自定义的classloader
-                if(mqCloudConfigHelper.getClassList() != null && 
+                if (mqCloudConfigHelper.getClassList() != null &&
                         mqCloudConfigHelper.getClassList().contains(topic)) {
                     Thread.currentThread().setContextClassLoader(messageTypeLoader);
                 }
                 return Result.getResult(toDecodedMessage(messageExt, clusterInfo));
             }
+
             public Result<DecodedMessage> exception(Exception e) throws Exception {
                 logger.error("queryMessage cluster:{} topic:{} msgId:{}", cluster, topic, msgId, e);
                 return Result.getWebErrorResult(e);
             }
+
             public Cluster mqCluster() {
                 return cluster;
             }
         });
     }
-    
+
     /**
      * 查询消息
      * 
@@ -226,14 +235,15 @@ public class MessageService {
             consumer = getConsumer(cluster);
             // 初始化参数
             if (messageQueryCondition.getMqOffsetList() == null) {
-                List<MQOffset> mqOffsetList = getMQOffsetList(cluster, consumer, messageQueryCondition, true, offsetSearch);
+                List<MQOffset> mqOffsetList = getMQOffsetList(cluster, consumer, messageQueryCondition, true,
+                        offsetSearch);
                 if (mqOffsetList == null) {
                     return Result.getResult(Status.NO_RESULT);
                 }
                 messageQueryCondition.setMqOffsetList(mqOffsetList);
             }
             // 特定类型使用自定义的classloader
-            if(mqCloudConfigHelper.getClassList() != null && 
+            if (mqCloudConfigHelper.getClassList() != null &&
                     mqCloudConfigHelper.getClassList().contains(messageQueryCondition.getTopic())) {
                 Thread.currentThread().setContextClassLoader(messageTypeLoader);
             }
@@ -299,7 +309,7 @@ public class MessageService {
                         + pullResult.getMsgFoundList().size());
                 for (MessageExt msg : pullResult.getMsgFoundList()) {
                     // 过滤不在时间范围的消息
-                    if (!offsetSearch && !messageQueryCondition.valid(msg.getStoreTimestamp())) {
+                    if (!offsetSearch && !messageQueryCondition.valid(msg.getBornTimestamp())) {
                         continue;
                     }
                     // 过滤不在当前offset查询条件内的消息
@@ -341,23 +351,24 @@ public class MessageService {
             }
         }
     }
-    
+
     /**
      * 转换为解码后的消息
+     * 
      * @param msg
      * @return clusterInfo
      */
     private DecodedMessage toDecodedMessage(MessageExt msg, ClusterInfo clusterInfo) {
         String broker = null;
-        if(clusterInfo != null) {
+        if (clusterInfo != null) {
             HashMap<String, BrokerData> brokerAddressMap = clusterInfo.getBrokerAddrTable();
             InetSocketAddress inetSocketAddress = (InetSocketAddress) msg.getStoreHost();
             String addr = inetSocketAddress.getAddress().getHostAddress();
-            for(BrokerData brokerData : brokerAddressMap.values()) {
+            for (BrokerData brokerData : brokerAddressMap.values()) {
                 String master = brokerData.getBrokerAddrs().get(MixAll.MASTER_ID);
-                if(master != null) {
+                if (master != null) {
                     master = master.split(":")[0];
-                    if(master.equals(addr)) {
+                    if (master.equals(addr)) {
                         broker = brokerData.getBrokerName();
                         break;
                     }
@@ -366,9 +377,10 @@ public class MessageService {
         }
         return toDecodedMessage(msg, broker);
     }
-    
+
     /**
      * 转换为解码后的消息
+     * 
      * @param msg
      * @return DecodedMessage
      */
@@ -392,7 +404,7 @@ public class MessageService {
         // 将主体消息转换为String
         if (decodedBody instanceof byte[]) {
             m.setMessageBodyType(MessageBodyType.BYTE_ARRAY);
-            if(CommonUtil.isTraceTopic(msg.getTopic())) {
+            if (CommonUtil.isTraceTopic(msg.getTopic())) {
                 List<TraceContext> traceContextList = MsgTraceDecodeUtil
                         .decoderFromTraceDataString(new String((byte[]) decodedBody));
                 m.setDecodedBody(JSON.toJSONString(traceContextList));
@@ -401,8 +413,8 @@ public class MessageService {
             }
         } else if (decodedBody instanceof String) {
             m.setMessageBodyType(MessageBodyType.STRING);
-            m.setDecodedBody(HtmlUtils.htmlEscape((String)decodedBody));
-        } else if (decodedBody instanceof Map && 
+            m.setDecodedBody(HtmlUtils.htmlEscape((String) decodedBody));
+        } else if (decodedBody instanceof Map &&
                 mqCloudConfigHelper.getMapWithByteList() != null &&
                 !mqCloudConfigHelper.getMapWithByteList().contains(msg.getTopic())) {
             m.setMessageBodyType(MessageBodyType.Map);
@@ -413,9 +425,18 @@ public class MessageService {
         }
         BeanUtils.copyProperties(msg, m);
         m.setBroker(broker);
+        // 设置topic原始信息
+        String realTopic = msg.getProperty(MessageConst.PROPERTY_REAL_TOPIC);
+        String retryTopic = msg.getProperty(MessageConst.PROPERTY_RETRY_TOPIC);
+        if(retryTopic == null) {
+            m.setRealTopic(realTopic);
+        } else {
+            m.setRealTopic(retryTopic);
+            m.setConsumer(realTopic);
+        }
         return m;
     }
-    
+
     /**
      * 获取mq偏移量数据
      * 
@@ -424,7 +445,7 @@ public class MessageService {
      * @return
      * @throws MQClientException
      */
-    private List<MQOffset> getMQOffsetList(Cluster cluster, MQPullConsumer consumer, 
+    private List<MQOffset> getMQOffsetList(Cluster cluster, MQPullConsumer consumer,
             MessageQueryCondition messageQueryCondition, boolean retryWithErr, boolean offsetSearch) {
         List<MQOffset> offsetList = null;
         try {
@@ -432,18 +453,19 @@ public class MessageService {
             offsetList = new ArrayList<MQOffset>();
             for (MessageQueue mq : mqs) {
                 // 判断当前消息队列是否符合条件
-                if (!isContainsBrokerOrQueue(mq, messageQueryCondition.getBrokerName(), messageQueryCondition.getQueueId())) {
+                if (!isContainsBrokerOrQueue(mq, messageQueryCondition.getBrokerName(),
+                        messageQueryCondition.getQueueId())) {
                     continue;
                 }
                 long minOffset = 0;
                 long maxOffset = 0;
                 try {
-                    if(!offsetSearch) {
+                    if (!offsetSearch) {
                         minOffset = consumer.searchOffset(mq, messageQueryCondition.getStart());
                         maxOffset = consumer.searchOffset(mq, messageQueryCondition.getEnd());
                         // 处理非法情况
                         if (minOffset >= maxOffset) {
-                            if(minOffset == 0) {
+                            if (minOffset == 0) {
                                 maxOffset = 1;
                             } else {
                                 minOffset = maxOffset - 1;
@@ -453,11 +475,11 @@ public class MessageService {
                         maxOffset = messageQueryCondition.getEnd();
                         minOffset = messageQueryCondition.getStart();
                         long tmpMaxOffset = consumer.maxOffset(mq);
-                        if(maxOffset > tmpMaxOffset) {
+                        if (maxOffset > tmpMaxOffset) {
                             maxOffset = tmpMaxOffset;
                         }
                         long tmpMinOffset = consumer.minOffset(mq);
-                        if(minOffset < tmpMinOffset) {
+                        if (minOffset < tmpMinOffset) {
                             minOffset = tmpMinOffset;
                         }
                     }
@@ -476,21 +498,29 @@ public class MessageService {
                 offsetList.add(mqOffset);
             }
         } catch (Exception e) {
-            if(retryWithErr 
-                    && e instanceof MQClientException 
-                    && messageQueryCondition.getTopic().startsWith(MixAll.DLQ_GROUP_TOPIC_PREFIX)
+            if (retryWithErr
+                    && e instanceof MQClientException
                     && e.getMessage().contains("Can not find Message Queue for this topic")) {
-                TopicRouteData topicRouteData = topicService.route(cluster, messageQueryCondition.getTopic());
-                if(topicRouteData != null) {
+                TopicConfig topicConfig = null;
+                if (messageQueryCondition.getTopic().startsWith(MixAll.DLQ_GROUP_TOPIC_PREFIX)) {
+                    TopicRouteData topicRouteData = topicService.route(cluster, messageQueryCondition.getTopic());
                     List<QueueData> queueDatas = topicRouteData.getQueueDatas();
                     QueueData queueData = queueDatas.get(0);
-                    TopicConfig topicConfig = new TopicConfig();
+                    topicConfig = new TopicConfig();
                     topicConfig.setTopicName(messageQueryCondition.getTopic());
                     topicConfig.setWriteQueueNums(queueData.getWriteQueueNums());
                     topicConfig.setReadQueueNums(queueData.getReadQueueNums());
                     topicConfig.setTopicSysFlag(queueData.getTopicSynFlag());
+                } else if (messageQueryCondition.getTopic().equals("SCHEDULE_TOPIC_XXXX")) {
+                    topicConfig = new TopicConfig();
+                    topicConfig.setTopicName("SCHEDULE_TOPIC_XXXX");
+                    int nums = MessageDelayLevel.values().length;
+                    topicConfig.setWriteQueueNums(nums);
+                    topicConfig.setReadQueueNums(nums);
+                }
+                if (topicConfig != null) {
                     Result<?> result = topicService.createAndUpdateTopicOnCluster(cluster, topicConfig);
-                    if(result.isNotOK()) {
+                    if (result.isNotOK()) {
                         logger.warn("change topic:{} perm failed, {}", topicConfig.getTopicName(), result);
                     } else {
                         // 尝试一次
@@ -502,7 +532,7 @@ public class MessageService {
         }
         return offsetList;
     }
-    
+
     /**
      * 获取消费者
      * 
@@ -520,7 +550,7 @@ public class MessageService {
                 return mqAdmin.getNameServerAddressList();
             }
         });
-        DefaultMQPullConsumer consumer = new DefaultMQPullConsumer(MixAll.TOOLS_CONSUMER_GROUP, null);
+        DefaultMQPullConsumer consumer = new DefaultMQPullConsumer(MixAll.TOOLS_CONSUMER_GROUP);
         consumer.setNamesrvAddr(Joiner.on(";").join(nsList));
         consumer.setVipChannelEnabled(mqCluster.isEnableVipChannel());
         consumer.start();
@@ -593,7 +623,7 @@ public class MessageService {
      * @return
      * @throws Exception
      */
-    private MessageTrackExt messageTrack(MQAdminExt mqAdmin, String group, MessageParam mp, 
+    private MessageTrackExt messageTrack(MQAdminExt mqAdmin, String group, MessageParam mp,
             boolean isBroadcast) throws Exception {
         MessageTrackExt mt = new MessageTrackExt();
         mt.setConsumerGroup(group);
@@ -611,7 +641,7 @@ public class MessageService {
             mt.setExceptionDesc(RemotingHelper.exceptionSimpleDesc(e));
             return mt;
         }
-        
+
         ClusterInfo ci = mqAdmin.examineBrokerClusterInfo();
 
         switch (cc.getConsumeType()) {
@@ -621,7 +651,7 @@ public class MessageService {
             case CONSUME_PASSIVELY:
                 boolean ifConsumed = false;
                 try {
-                    if(isBroadcast) {
+                    if (isBroadcast) {
                         ifConsumed = this.consumed(mqAdmin, cc.getConnectionSet(), mp, group, ci.getBrokerAddrTable());
                     } else {
                         ifConsumed = this.consumed(mqAdmin, mp, group, ci.getBrokerAddrTable());
@@ -675,20 +705,21 @@ public class MessageService {
      * @return
      * @throws Exception
      */
-    private boolean consumed(MQAdminExt mqAdmin, MessageParam mp, String group, 
+    private boolean consumed(MQAdminExt mqAdmin, MessageParam mp, String group,
             Map<String, BrokerData> brokerAddrTable) throws Exception {
         ConsumeStats consumeStats = mqAdmin.examineConsumeStats(group);
         HashMap<MessageQueue, OffsetWrapper> offsetTable = consumeStats.getOffsetTable();
         Map<MessageQueue, Long> consumerOffsetMap = new HashMap<>();
-        for(MessageQueue messageQueue : offsetTable.keySet()) {
+        for (MessageQueue messageQueue : offsetTable.keySet()) {
             consumerOffsetMap.put(messageQueue, offsetTable.get(messageQueue).getConsumerOffset());
         }
-        
+
         return consumed(consumerOffsetMap, mp, brokerAddrTable);
     }
-    
+
     /**
      * 广播模式，需要判断每个链接
+     * 
      * @param mqAdmin
      * @param connSet
      * @param messageParam
@@ -697,48 +728,49 @@ public class MessageService {
      * @return
      * @throws Exception
      */
-    private boolean consumed(MQAdminExt mqAdmin, Set<Connection> connSet, MessageParam messageParam, String consumer, 
+    private boolean consumed(MQAdminExt mqAdmin, Set<Connection> connSet, MessageParam messageParam, String consumer,
             Map<String, BrokerData> brokerAddrTable) throws Exception {
-        for(Connection conn : connSet) {
+        for (Connection conn : connSet) {
             // 抓取状态
-            Map<String, Map<MessageQueue, Long>> consumerStatusTable = 
-                    mqAdmin.getConsumeStatus(messageParam.getTopic(), consumer, conn.getClientId());
-            if(consumerStatusTable == null) {
+            Map<String, Map<MessageQueue, Long>> consumerStatusTable = mqAdmin.getConsumeStatus(messageParam.getTopic(),
+                    consumer, conn.getClientId());
+            if (consumerStatusTable == null) {
                 return false;
             }
-            for(Map<MessageQueue, Long> map : consumerStatusTable.values()) {
-                if(!consumed(map, messageParam, brokerAddrTable)) {
+            for (Map<MessageQueue, Long> map : consumerStatusTable.values()) {
+                if (!consumed(map, messageParam, brokerAddrTable)) {
                     return false;
                 }
             }
         }
         return true;
     }
-    
+
     /**
      * 判断是否消费了
+     * 
      * @param consumerOffsetMap
      * @param messageParam
      * @param brokerAddrTable
      * @return
      */
-    private boolean consumed(Map<MessageQueue, Long> consumerOffsetMap, MessageParam messageParam, 
-        Map<String, BrokerData> brokerAddrTable) {
-        for(MessageQueue messageQueue : consumerOffsetMap.keySet()) {
+    private boolean consumed(Map<MessageQueue, Long> consumerOffsetMap, MessageParam messageParam,
+            Map<String, BrokerData> brokerAddrTable) {
+        for (MessageQueue messageQueue : consumerOffsetMap.keySet()) {
             // topic不一致
-            if(!messageQueue.getTopic().equals(messageParam.getTopic())) {
+            if (!messageQueue.getTopic().equals(messageParam.getTopic())) {
                 continue;
             }
             // queueid不一致
-            if(messageQueue.getQueueId() != messageParam.getQueueId()) {
+            if (messageQueue.getQueueId() != messageParam.getQueueId()) {
                 continue;
             }
             // offset太小
-            if(consumerOffsetMap.get(messageQueue) <=  messageParam.getQueueOffset()) {
+            if (consumerOffsetMap.get(messageQueue) <= messageParam.getQueueOffset()) {
                 continue;
             }
             BrokerData brokerData = brokerAddrTable.get(messageQueue.getBrokerName());
-            if(brokerData == null) {
+            if (brokerData == null) {
                 continue;
             }
             String addr = brokerData.getBrokerAddrs().get(MixAll.MASTER_ID);
@@ -748,9 +780,10 @@ public class MessageService {
         }
         return false;
     }
-    
+
     /**
      * 重发消息
+     * 
      * @param cluster
      * @param topic
      * @param msgId
@@ -765,7 +798,8 @@ public class MessageService {
                 Message message = new Message(MixAll.getRetryTopic(consumer), messageExt.getTags(),
                         messageExt.getKeys(), messageExt.getBody());
                 String originMsgId = MessageAccessor.getOriginMessageId(messageExt);
-                MessageAccessor.setOriginMessageId(message, UtilAll.isBlank(originMsgId) ? messageExt.getMsgId() : originMsgId);
+                MessageAccessor.setOriginMessageId(message,
+                        UtilAll.isBlank(originMsgId) ? messageExt.getMsgId() : originMsgId);
                 message.setFlag(messageExt.getFlag());
                 MessageAccessor.setProperties(message, messageExt.getProperties());
                 MessageAccessor.putProperty(message, MessageConst.PROPERTY_RETRY_TOPIC, topic);
@@ -786,7 +820,7 @@ public class MessageService {
             }
         });
     }
-    
+
     /**
      * 根据参数brokerName和queueId过滤要拉取消息的MessageQueue
      * 
@@ -799,12 +833,13 @@ public class MessageService {
         if (StringUtils.isBlank(brokerName)) {
             return true;
         }
-        if (mq.getBrokerName().equals(brokerName) && (queueId == null || (queueId !=null && mq.getQueueId() == queueId))) {
+        if (mq.getBrokerName().equals(brokerName)
+                && (queueId == null || (queueId != null && mq.getQueueId() == queueId))) {
             return true;
         }
         return false;
     }
-    
+
     /**
      * 对trace消息进行分组,并过滤不符合要求的消息
      * 
@@ -860,9 +895,9 @@ public class MessageService {
             }
         }
         // 排序
-        for(TraceViewVO traceViewVO : msgTraceViewMap.values()) {
+        for (TraceViewVO traceViewVO : msgTraceViewMap.values()) {
             List<RequestViewVO> consumerRequestViewList = traceViewVO.getConsumerRequestViewList();
-            if(consumerRequestViewList != null) {
+            if (consumerRequestViewList != null) {
                 Collections.sort(consumerRequestViewList);
             }
         }

@@ -45,7 +45,7 @@ public class ServerDataService {
         try {
             return serverStatusDao.queryServerInfo(ip);
         } catch (Exception e) {
-            logger.error("query err:" + ip, e);
+            logger.error("query err:{}", ip, e);
         }
         return null;
     }
@@ -71,7 +71,7 @@ public class ServerDataService {
         try {
             return serverStatusDao.queryAllServer(date);
         } catch (Exception e) {
-            logger.error("queryAllServerStat err", e);
+            logger.error("queryAllServerStat err, date:{}", date, e);
         }
         return new ArrayList<ServerInfoExt>(0);
     }
@@ -82,19 +82,21 @@ public class ServerDataService {
 	 * @param dist
 	 * @param type
 	 */
-	public void saveServerInfo(String ip, String dist, int type) {
+	public Result<?> saveServerInfo(String ip, String dist, int type, String room) {
 		if(dist == null) {
-			return;
+			return null;
 		}
 		dist = dist.trim();
 		if(dist.length() == 0) {
-			return;
+			return null;
 		}
 		try {
-			serverStatusDao.saveServerInfo(ip, dist, type);
+			serverStatusDao.saveServerInfo(ip, dist, type, room);
 		} catch (Exception e) {
-			logger.error("saveServerInfo err:"+ip+" dist="+dist+ "type="+type, e);
+			logger.error("saveServerInfo err:ip:{}, dist:{}, type:{}",ip, dist, type, e);
+			return Result.getDBErrorResult(e);
 		}
+		return Result.getOKResult();
 	}
 
 	/**
@@ -110,7 +112,7 @@ public class ServerDataService {
 		try {
 			return serverStatusDao.saveAndUpdateServerInfo(server);
 		} catch (Exception e) {
-			logger.error("saveAndUpdateServerInfo err server="+server, e);
+			logger.error("saveAndUpdateServerInfo err server:{}", server, e);
 		}
 		return null;
 	}
@@ -125,11 +127,26 @@ public class ServerDataService {
 		try {
 			return serverStatusDao.queryServerStat(ip, date);
 		} catch (Exception e) {
-			logger.error("queryServerStat err ip="+ip+" date="+date, e);
+			logger.error("queryServerStat err ip:{}, date:{}", ip, date, e);
 		}
 		return new ArrayList<ServerStatus>(0);
 	}
-
+	
+	   /**
+     * 查询服务器状态
+     * @param ip
+     * @param date
+     * @return
+     */
+    public List<ServerStatus> queryServerStatByIp(String ip, String date, List<String> ctimeList) {
+        try {
+            return serverStatusDao.queryServerStatByIp(ip, date, ctimeList);
+        } catch (Exception e) {
+            logger.error("queryServerStat err ip:{}, date:{}", ip, date, e);
+        }
+        return new ArrayList<ServerStatus>(0);
+    }
+	
 	/**
 	 * 保存服务器状态
 	 * @param server
@@ -141,7 +158,7 @@ public class ServerDataService {
 		try {
 			serverStatusDao.saveServerStat(server);
 		} catch (Exception e) {
-			logger.error("saveServerStat err server="+server, e);
+			logger.error("saveServerStat err server:{}", server, e);
 		}
 	}
 	

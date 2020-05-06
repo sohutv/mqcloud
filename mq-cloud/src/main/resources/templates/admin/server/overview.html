@@ -1,102 +1,68 @@
-<div class="col-md-6">
-	<div class="page-header">
-		<h4>
-		服务器信息
-		</h4>
-	</div>
-	<div class="tabbable-custom">
-		<table class="table table-striped table-hover">
-			<tr>
-			    <td>ip&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>
-			    <td>${info.ip}</td>
-			</tr>
-			<tr>
-			    <td>host</td>
-			    <td>${info.host!}</td>
-			</tr>
-			<tr>
-			    <td>cpu核数</td>
-			    <td>${info.cpus}</td>
-			</tr>
-			<tr>
-			    <td>nmon版本</td>
-			    <td>${info.nmon!}</td>
-			</tr>
-			<tr>
-			    <td>max file</td>
-			    <td>${file!}</td>
-			</tr>
-			<tr>
-			    <td>max procs</td>
-			    <td>${process!}</td>
-			</tr>
-			<tr>
-				<td>cpu型号</td>
-			    <td>${info.cpuModel!}</td>
-			</tr>
-			<tr>
-			    <td>发行版本</td>
-			    <td>${info.dist!}</td>
-			</tr>
-			<tr>
-			   <td>内核版本</td>
-			   <td>${info.kernel!}</td>
-			</tr>
-		</table>
-	</div>
+<div class="col-md-6" style="padding-right:0px;">
+	<table class="table table-striped table-hover" border=1>
+		<tr>
+		    <td>ip&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>
+		    <td>${info.ip}</td>
+		</tr>
+		<tr>
+		    <td>host</td>
+		    <td>${info.host!}</td>
+		</tr>
+		<tr>
+		    <td>cpu核数</td>
+		    <td>${info.cpus}</td>
+		</tr>
+		<tr>
+		    <td>nmon版本</td>
+		    <td>${info.nmon!}</td>
+		</tr>
+		<tr>
+		    <td>max file</td>
+		    <td>${file!}</td>
+		</tr>
+		<tr>
+		    <td>max procs</td>
+		    <td>${process!}</td>
+		</tr>
+		<tr>
+			<td>cpu型号</td>
+		    <td>${info.cpuModel!}</td>
+		</tr>
+		<tr>
+		    <td>发行版本</td>
+		    <td>${info.dist!}</td>
+		</tr>
+		<tr>
+		   <td>内核版本</td>
+		   <td>${info.kernel!}</td>
+		</tr>
+	</table>
 </div>
-<div class="col-md-6">
-	<div class="page-header">
-		<div style="float:right">
-			<form class="form-inline">
-			    <input type="text" style="width:120px;height:34px;cursor:pointer;" name="dateInput" id="dateInput" readonly="readonly" class="Wdate form-control" value="${date}" onclick="WdatePicker({ dateFmt: 'yyyy-MM-dd',maxDate:'%y-%M-%d'})"/>
-			    <button type="button" onclick="showOverview()" class="btn"><span class="glyphicon glyphicon-search" aria-hidden="true"></span></button>
-			</form>
-		</div>
-		<h4>load</h4>
-	</div>
+<div class="col-md-6" style="padding:0px;">
 	<div id="containerLoad"
-		style="min-width: 310px; height: 400px; margin: 0 auto"></div>
+		style="min-width: 310px; height: 400px; margin: 0 auto;"></div>
 </div>
-<div class="col-md-6">
-	<div class="page-header">
-		<h4>cpu</h4>
-	</div>
+<div class="col-md-6" style="padding-right:0px;">
 	<div id="containerCpu"
-		style="min-width: 310px; height: 400px; margin: 0 auto"></div>
+		style="min-width: 310px; height: 400px; margin: 0 auto;"></div>
 </div>
-<div class="col-md-6">
-	<div class="page-header">
-		<h4>memory</h4>
-	</div>
+<div class="col-md-6" style="padding:0px;">
 	<div id="containerMemory"
 		style="min-width: 310px; height: 400px; margin: 0 auto"></div>
 </div>
-<div class="col-md-6">
-	<div class="page-header">
-		<h4>swap</h4>
-	</div>
+<div class="col-md-6" style="padding-right:0px;">
 	<div id="containerSwap"
-		style="min-width: 310px; height: 400px; margin: 0 auto"></div>
+		style="min-width: 310px; height: 400px; margin: 0 auto;"></div>
 </div>
-<div class="col-md-6">
-	<div class="page-header">
-		<h4>net</h4>
-	</div>
+<div class="col-md-6" style="padding:0px;">
 	<div id="containerNet"
 		style="min-width: 310px; height: 400px; margin: 0 auto"></div>
 </div>
-<div class="col-md-6">
-	<div class="page-header">
-		<h4>tcp connection</h4>
-	</div>
+<div class="col-md-6" style="padding-right:0px;">
 	<div id="containerTcp"
-		style="min-width: 310px; height: 400px; margin: 0 auto"></div>
+		style="min-width: 310px; height: 400px; margin: 0 auto;"></div>
 </div>
-<div class="col-md-6">
-	<div class="page-header">
-		<h4>disk</h4>
-	</div>
+<div class="col-md-6" style="padding:0px;">
 	<div id="containerDisk"
 		style="min-width: 310px; height: 400px; margin: 0 auto"></div>
 </div>
@@ -112,8 +78,7 @@
 	});
 	
 	function initLoadChart(){
-		var title = "1-min-max:${maxLoad1?string('#.##')} 1-min-avg:${avgLoad1}";
-		var options = getOptions(title, "containerLoad");
+		var options = getOptions("containerLoad", "load", "1-min-max:${maxLoad1} 1-min-avg:${avgLoad1}");
 		push(options.series, ${load1});
 		push(options.series, ${load5});
 		push(options.series, ${load15});
@@ -121,8 +86,7 @@
 	}
 	
 	function initCpuChart(){
-		var title = "max user:${maxUser?string('#.##')}% sys:${maxSys?string('#.##')}% wa:${maxWa?string('#.##')}%";
-		var options = getOptions(title, "containerCpu");
+		var options = getOptions("containerCpu", "cpu", "max user:${maxUser}% sys:${maxSys}% wa:${maxWa}%");
 		push(options.series, ${user});
 		push(options.series, ${sys});
 		push(options.series, ${wa});
@@ -130,8 +94,7 @@
 	}
 	
 	function initMemoryChart(){
-		var title = "now free:${curFree}G max use:${maxUse}G cache:${maxCache}G buffer:${maxBuffer}G";
-		var options = getOptions(title, "containerMemory", "area");
+		var options = getOptions("containerMemory", "memory", "now free:${curFree}G max use:${maxUse}G cache:${maxCache}G buffer:${maxBuffer}G", "area");
 		push(options.series, ${mtotal});
 		push(options.series, ${muse});
 		push(options.series, ${mcache});
@@ -140,24 +103,21 @@
 	}
 	
 	function initSwapChart(){
-		var title = "max use:${maxSwap}M";
-		var options = getOptions(title, "containerSwap");
+		var options = getOptions("containerSwap", "swap", "max use:${maxSwap}M");
 		push(options.series, ${mswap});
 		push(options.series, ${mswapUse});
 	    new Highcharts.Chart(options); 
 	}
 	
 	function initNetChart(){
-		var title = "max in:${maxNetIn}M/s out:${maxNetOut}M/s";
-		var options = getOptions(title, "containerNet");
+		var options = getOptions("containerNet", "net", "max in:${maxNetIn}M/s out:${maxNetOut}M/s");
 		push(options.series, ${nin});
 		push(options.series, ${nout});
 	    new Highcharts.Chart(options); 
 	}
 	
 	function initTcpChart(){
-		var title = "max estab:${maxConn} tw:${maxWait} orphan:${maxOrphan}";
-		var options = getOptions(title, "containerTcp");
+		var options = getOptions("containerTcp", "tcp", "max estab:${maxConn} tw:${maxWait} orphan:${maxOrphan}");
 		push(options.series, ${testab});
 		push(options.series, ${twait});
 		push(options.series, ${torph});
@@ -165,8 +125,7 @@
 	}
 	
 	function initDiskChart(){
-		var title = "max read:${maxRead}M/s write:${maxWrite}M/s busy:${maxBusy?string('#.##')}% iops:${maxIops?string('#.##')}次/s";
-		var options = getOptions(title, "containerDisk");
+		var options = getOptions("containerDisk", "disk", "max read:${maxRead}M/s write:${maxWrite}M/s busy:${maxBusy}% iops:${maxIops}次/s");
 		options.yAxis = [{title:{text:""}},{opposite: true},{opposite: true}];
 		var dread = eval(${dread});
 		dread.tooltip = {
@@ -197,10 +156,9 @@
 		}
 	}
 	
-	function getOptions(title, renderTo, chartType){
-		var showTitle = title;
+	function getOptions(renderTo, title, subTitle, chartType){
 	    if(!chartType){
-	    	chartType = "";
+	    	chartType = "spline";
 	    }
 	    var marginRight = 10;
 	    if(renderTo.indexOf("Disk") != -1){
@@ -209,19 +167,17 @@
 	   	var options = {
 			chart: {
 				renderTo: renderTo,
-				animation: Highcharts.svg,
-				backgroundColor: '#E6F1F5',
-				plotBackgroundColor:'#FFFFFF',
-				zoomType: "x",
+				borderWidth: 1,
+				zoomType: "xy",
 				type: chartType,
 				marginRight: marginRight
 			},
             title: {
             	useHTML:true,
-                text: showTitle
+                text: title
             },
             subtitle: {
-                text: ''
+                text: subTitle
             },
             xAxis: {
             	categories: ${xAxis},

@@ -10,11 +10,11 @@ package com.sohu.tv.mq.cloud.util;
 public enum MachineType {
 
     UNKNOWN(0, "未知"), 
-    PHYSICS(1, "物理机"), 
+    PHYSICAL(1, "物理机"), 
     VIRTUAL(2, "虚拟机"), 
     DOCKER(3, "docker"),
     ;
-
+    
     private int key;
     private String value;
 

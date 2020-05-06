@@ -9,7 +9,7 @@ import java.util.Date;
  * @date 2018年9月28日
  */
 public class BrokerTraffic {
-    
+
     // 创建日期
     private Date createDate;
     // 创建时间，格式：HHMM
@@ -26,6 +26,15 @@ public class BrokerTraffic {
     private String ip;
     // 集群id
     private int clusterId;
+    // 以下为冗余字段
+    // 生产次数
+    private long avgPutCount;
+    // 生成大小
+    private long avgPutSize;
+    // 拉取次数
+    private long avgGetCount;
+    // 拉取大小
+    private long avgGetSize;
 
     public int getClusterId() {
         return clusterId;
@@ -90,12 +99,107 @@ public class BrokerTraffic {
     public void setGetSize(long getSize) {
         this.getSize = getSize;
     }
-    
+
     public void add(BrokerTraffic other) {
         setGetCount(getGetCount() + other.getGetCount());
         setGetSize(getGetSize() + other.getGetSize());
         setPutCount(getPutCount() + other.getPutCount());
         setPutSize(getPutSize() + other.getPutSize());
+    }
+
+    public String getGetSizeFormat() {
+        return sizeFormat(getSize);
+    }
+
+    public String getPutSizeFormat() {
+        return sizeFormat(putSize);
+    }
+
+    public String getGetCountFormat() {
+        return countFormat(getCount);
+    }
+
+    public String getPutCountFormat() {
+        return countFormat(putCount);
+    }
+    
+    public String getAvgGetSizeFormat() {
+        return sizeFormat(avgGetSize);
+    }
+
+    public String getAvgPutSizeFormat() {
+        return sizeFormat(avgPutSize);
+    }
+
+    public String getAvgGetCountFormat() {
+        return countFormat(avgGetCount);
+    }
+
+    public String getAvgPutCountFormat() {
+        return countFormat(avgPutCount);
+    }
+
+    private String countFormat(long value) {
+        if (value >= 100000000) {
+            return format(value / 100000000F) + "亿";
+        }
+        if (value >= 10000) {
+            return format(value / 10000F) + "万";
+        }
+        return format(value);
+    }
+
+    private String sizeFormat(long value) {
+        if (value >= 1073741824) {
+            return format(value / 1073741824F) + "g";
+        }
+        if (value >= 1048576) {
+            return format(value / 1048576F) + "m";
+        }
+        if (value >= 1024) {
+            return format(value / 1024F) + "k";
+        }
+        return format(value) + "b";
+    }
+
+    private String format(float value) {
+        long v = (long) (value * 10);
+        if (v % 10 == 0) {
+            return String.valueOf(v / 10);
+        }
+        return String.valueOf(v / 10.0);
+    }
+
+    public long getAvgPutCount() {
+        return avgPutCount;
+    }
+
+    public void setAvgPutCount(long avgPutCount) {
+        this.avgPutCount = avgPutCount;
+    }
+
+    public long getAvgPutSize() {
+        return avgPutSize;
+    }
+
+    public void setAvgPutSize(long avgPutSize) {
+        this.avgPutSize = avgPutSize;
+    }
+
+    public long getAvgGetCount() {
+        return avgGetCount;
+    }
+
+    public void setAvgGetCount(long avgGetCount) {
+        this.avgGetCount = avgGetCount;
+    }
+
+    public long getAvgGetSize() {
+        return avgGetSize;
+    }
+
+    public void setAvgGetSize(long avgGetSize) {
+        this.avgGetSize = avgGetSize;
     }
 
     @Override

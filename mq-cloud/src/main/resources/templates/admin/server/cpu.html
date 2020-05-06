@@ -2,9 +2,9 @@
 	no data
 </#if>
 <#list cpu as item>
-	<div class="col-md-6">
+	<div class="col-md-6" style="padding-right:0px;<#if item_index%2==1>padding-left:0px;</#if>">
 		<div id="container${item.name}"
-			style="min-width: 310px; height: 400px; margin: 0 auto"></div>
+			style="min-width: 310px; height: 400px;"></div>
 	</div>
 </#list>
 <script type="text/javascript">
@@ -14,8 +14,7 @@
 	
 	function initSubCpuChart(){
 		<#list cpu as item>
-			var options = getOptions("${item.name}", "container${item.name}");
-			options.subtitle.text = "max user:${item.maxUser?string('#.##')}% sys:${item.maxSys?string('#.##')}% wa:${item.maxWa?string('#.##')}% avg user:${item.avgUser}% sys:${item.avgSys}% wa:${item.avgWa}%";
+			var options = getOptions("container${item.name}", "${item.name}", "max user:${item.maxUser?string('#.##')}% sys:${item.maxSys?string('#.##')}% wa:${item.maxWa?string('#.##')}% avg user:${item.avgUser}% sys:${item.avgSys}% wa:${item.avgWa}%");
 			options.series.push(${item.userSeries.toJson()});
 			options.series.push(${item.sysSeries.toJson()});
 			options.series.push(${item.waSeries.toJson()});

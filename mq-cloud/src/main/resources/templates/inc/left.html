@@ -4,6 +4,7 @@
       <li id="audit"><a class="glyphicon glyphicon-pencil" href="${request.contextPath}/admin/audit/list"> 流程审核</a></li>
       <li id="nameserver"><a class="glyphicon glyphicon-link" href="${request.contextPath}/admin/nameserver/list"> 集群发现</span></a></li>
       <li id="cluster"><a class="glyphicon glyphicon-cloud" href="${request.contextPath}/admin/cluster/list"> 集群管理</span></a></li>
+      <li id="topology"><a class="glyphicon glyphicon-globe" href="${request.contextPath}/admin/topology/cluster"> 集群拓扑</span></a></li>
       <li id="monitor"><a href="${request.contextPath}/admin/monitor/consumer" class="glyphicon glyphicon-eye-open"> 监控管理</a></li>
       <li id="user"><a href="${request.contextPath}/admin/user/list" class="glyphicon glyphicon-user"> 用户管理</a></li>
       <li id="server"><a href="${request.contextPath}/admin/server/list" class="glyphicon glyphicon-wrench"> 机器管理</a></li>
@@ -37,6 +38,8 @@
 			$("#config").addClass("active");
 		} else if (uri.indexOf("/admin/nameserver/list") != -1){
 			$("#nameserver").addClass("active");
+		} else if (uri.indexOf("/admin/topology/cluster") != -1){
+			$("#topology").addClass("active");
 		}
 		
 		// 初始化提示

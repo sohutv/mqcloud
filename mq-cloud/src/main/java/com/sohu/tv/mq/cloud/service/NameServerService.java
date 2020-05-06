@@ -60,6 +60,22 @@ public class NameServerService {
     }
     
     /**
+     * 查询全部name server
+     * 
+     * @return Result<List<NameServer>>
+     */
+    public Result<List<NameServer>> queryAll() {
+        List<NameServer> result = null;
+        try {
+            result = nameServerDao.selectAll();
+        } catch (Exception e) {
+            logger.error("query all err", e);
+            return Result.getDBErrorResult(e);
+        }
+        return Result.getResult(result);
+    }
+    
+    /**
      * 删除记录
      * 
      * @return 返回Result

@@ -20,6 +20,8 @@ public class ServerInfoExt extends ServerStatus {
     private String ulimit;
 
     private Integer machineType;
+    
+    private String room;
 
     public String getHost() {
         return host;
@@ -67,6 +69,14 @@ public class ServerInfoExt extends ServerStatus {
 
     public void setMachineType(int machineType) {
         this.machineType = machineType;
+    }
+
+    public String getRoom() {
+        return room;
+    }
+
+    public void setRoom(String room) {
+        this.room = room;
     }
 
     /***

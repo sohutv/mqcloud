@@ -2,7 +2,7 @@
 	no data
 </#if>
 <#list net as item>
-	<div class="col-md-6">
+	<div class="col-md-6" style="padding-right:0px;<#if item_index%2==1>padding-left:0px;</#if>">
 		<div id="container${item.name}"
 			style="min-width: 310px; height: 400px; margin: 0 auto"></div>
 	</div>
@@ -15,8 +15,7 @@
 	
 	function initSubNetChart(){
 		<#list net as item>
-			var options = getOptions("${item.name}", "container${item.name}");
-			options.subtitle.text = "max in:${item.maxIn?string('#.##')}k/s out:${item.maxOut?string('#.##')}k/s avg in:${item.avgIn}k/s out:${item.avgOut}k/s";
+			var options = getOptions("container${item.name}", "${item.name}", "max in:${item.maxIn?string('#.##')}M/s out:${item.maxOut?string('#.##')}M/s avg in:${item.avgIn}M/s out:${item.avgOut}M/s");
 			options.series.push(${item.inSeries.toJson()});
 			options.series.push(${item.outSeries.toJson()});
 		    new Highcharts.Chart(options); 

@@ -37,6 +37,7 @@ import com.sohu.tv.mq.dto.MessageResetDTO;
  * @author copy from indexmq
  * @date 2018年1月17日
  */
+@SuppressWarnings("deprecation")
 public class RocketMQConsumer extends AbstractConfig {
 
     // 支持一批消息消费

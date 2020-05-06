@@ -34,11 +34,13 @@ import com.sohu.tv.mq.cloud.cache.LocalCache;
 import com.sohu.tv.mq.cloud.cache.LocalCacheStats;
 import com.sohu.tv.mq.cloud.common.Destroyable;
 import com.sohu.tv.mq.cloud.common.MemoryMQ;
+import com.sohu.tv.mq.cloud.common.mq.SohuMQAdmin;
 import com.sohu.tv.mq.cloud.common.service.LoginService;
 import com.sohu.tv.mq.cloud.common.service.SmsSender;
 import com.sohu.tv.mq.cloud.common.service.impl.AbstractLoginService;
 import com.sohu.tv.mq.cloud.common.util.CipherHelper;
 import com.sohu.tv.mq.cloud.mq.MQAdminPooledObjectFactory;
+import com.sohu.tv.mq.cloud.mq.SohuMQAdminFactory;
 import com.sohu.tv.mq.cloud.service.ClientStatsConsumer;
 import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper;
 import com.sohu.tv.mq.cloud.util.MessageTypeLoader;
@@ -139,9 +141,34 @@ public class CommonConfiguration {
         mbeanExporter.setBeans(beans);
         return mbeanExporter;
     }
+    
+    /**
+     * mq admin class
+     * 
+     * @return
+     * @throws Exception
+     */
+    @Bean
+    @Profile({"local", "online"})
+    public Class<SohuMQAdmin> mqAdminClass() throws Exception {
+        return SohuMQAdmin.class;
+    }
+    
+    /**
+     * mq admin class
+     * 
+     * @return
+     * @throws Exception
+     */
+    @Bean
+    @SuppressWarnings("unchecked")
+    @Profile({"local-sohu", "test-sohu", "test-online-sohu", "online-sohu"})
+    public Class<SohuMQAdmin> sohuMQAdminClass() throws Exception {
+        return (Class<SohuMQAdmin>) Class.forName("com.sohu.tv.mq.cloud.common.mq.SohuMQAdminExt");
+    }
 
     @Bean
-    public GenericKeyedObjectPool<Cluster, MQAdminExt> mqPool() {
+    public GenericKeyedObjectPool<Cluster, MQAdminExt> mqPool(Class<SohuMQAdmin> adminClass) {
         GenericKeyedObjectPoolConfig genericKeyedObjectPoolConfig = new GenericKeyedObjectPoolConfig();
         genericKeyedObjectPoolConfig.setTestWhileIdle(true);
         genericKeyedObjectPoolConfig.setMaxTotalPerKey(1);
@@ -150,7 +177,8 @@ public class CommonConfiguration {
         genericKeyedObjectPoolConfig.setMaxWaitMillis(10000);
         genericKeyedObjectPoolConfig.setTimeBetweenEvictionRunsMillis(20000);
         MQAdminPooledObjectFactory mqAdminPooledObjectFactory = new MQAdminPooledObjectFactory();
-        mqAdminPooledObjectFactory.setMqCloudConfigHelper(mqCloudConfigHelper);
+        SohuMQAdminFactory sohuMQAdminFactory = new SohuMQAdminFactory(mqCloudConfigHelper, adminClass);
+        mqAdminPooledObjectFactory.setSohuMQAdminFactory(sohuMQAdminFactory);
         GenericKeyedObjectPool<Cluster, MQAdminExt> genericKeyedObjectPool = new GenericKeyedObjectPool<Cluster, MQAdminExt>(
                 mqAdminPooledObjectFactory,
                 genericKeyedObjectPoolConfig);
@@ -192,7 +220,7 @@ public class CommonConfiguration {
         memoryMQ.init();
         return memoryMQ;
     }
-
+    
     @PreDestroy
     public void destroy() {
         Collections.sort(list);

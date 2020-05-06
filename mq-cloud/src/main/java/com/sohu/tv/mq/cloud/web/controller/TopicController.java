@@ -63,31 +63,33 @@ import com.sohu.tv.mq.cloud.web.controller.param.AssociateProducerParam;
 import com.sohu.tv.mq.cloud.web.controller.param.TopicParam;
 import com.sohu.tv.mq.cloud.web.vo.IpSearchResultVO;
 import com.sohu.tv.mq.cloud.web.vo.UserInfo;
+
 /**
  * topic接口
- * @Description: 
+ * 
+ * @Description:
  * @author yongfeigao
  * @date 2018年6月12日
  */
 @Controller
 @RequestMapping("/topic")
 public class TopicController extends ViewController {
-    
+
     @Autowired
     private TopicService topicService;
-    
+
     @Autowired
     private AuditService auditService;
-    
+
     @Autowired
     private AlertService alertService;
-    
+
     @Autowired
     private UserConsumerService userConsumerService;
-    
+
     @Autowired
     private UserProducerService userProducerService;
-    
+
     @Autowired
     private ConsumerService consumerService;
 
@@ -96,7 +98,7 @@ public class TopicController extends ViewController {
 
     @Autowired
     private VerifyDataService verifyDataService;
-    
+
     @Autowired
     private ClusterService clusterService;
 
@@ -113,11 +115,11 @@ public class TopicController extends ViewController {
      * @throws Exception
      */
     @ResponseBody
-    @RequestMapping(value="/updateRoute", method=RequestMethod.POST)
-    public Result<?> updateRoute(UserInfo userInfo, @RequestParam("tid") int tid, 
+    @RequestMapping(value = "/updateRoute", method = RequestMethod.POST)
+    public Result<?> updateRoute(UserInfo userInfo, @RequestParam("tid") int tid,
             @RequestParam("queueNum") int queueNum,
             @RequestParam("info") String info) throws Exception {
-        //校验审核记录是否重复
+        // 校验审核记录是否重复
         Result<?> isExist = verifyDataService.verifyUpdateTopicIsExist(tid, queueNum);
         if (isExist.isNotOK()) {
             return isExist;
@@ -138,17 +140,19 @@ public class TopicController extends ViewController {
         auditTopicUpdate.setQueueNum(queueNum);
         // 保存记录
         Result<?> result = auditService.saveAuditAndTopicUpdate(audit, auditTopicUpdate);
-        if(result.isOK()) {
-            String topicTip = " topic:<b>" + topicResult.getResult().getName() + "</b> 队列:<b>" + topicResult.getResult().getQueueNum() 
+        if (result.isOK()) {
+            String topicTip = " topic:<b>" + topicResult.getResult().getName() + "</b> 队列:<b>"
+                    + topicResult.getResult().getQueueNum()
                     + "</b> 修改为:<b>" + queueNum + "</b>";
             alertService.sendAuditMail(userInfo.getUser(), TypeEnum.UPDATE_TOPIC, topicTip);
         }
-        
+
         return Result.getWebResult(result);
     }
-    
+
     /**
      * 获取topic各个队列状态
+     * 
      * @return
      * @throws Exception
      */
@@ -156,7 +160,7 @@ public class TopicController extends ViewController {
     public String produceProgress(UserInfo userInfo, @PathVariable long tid, Map<String, Object> map) throws Exception {
         String view = viewModule() + "/produceProgress";
         Result<Topic> topicResult = topicService.queryTopic(tid);
-        if(topicResult.isNotOK()) {
+        if (topicResult.isNotOK()) {
             setResult(map, topicResult);
             return view;
         }
@@ -166,9 +170,9 @@ public class TopicController extends ViewController {
         // 对topic状态进行排序
         HashMap<MessageQueue, TopicOffset> offsetTable = topicStatsTable.getOffsetTable();
         Map<String, TreeMap<MessageQueue, TopicOffset>> topicOffsetMap = new TreeMap<String, TreeMap<MessageQueue, TopicOffset>>();
-        for(MessageQueue mq : offsetTable.keySet()) {
+        for (MessageQueue mq : offsetTable.keySet()) {
             TreeMap<MessageQueue, TopicOffset> offsetMap = topicOffsetMap.get(mq.getBrokerName());
-            if(offsetMap == null) {
+            if (offsetMap == null) {
                 offsetMap = new TreeMap<MessageQueue, TopicOffset>();
                 topicOffsetMap.put(mq.getBrokerName(), offsetMap);
             }
@@ -178,14 +182,15 @@ public class TopicController extends ViewController {
         setResult(map, "topic", topic);
         return view;
     }
-    
+
     /**
      * 新建topic
+     * 
      * @return
      * @throws Exception
      */
     @ResponseBody
-    @RequestMapping(value="/add", method=RequestMethod.POST)
+    @RequestMapping(value = "/add", method = RequestMethod.POST)
     public Result<?> add(UserInfo userInfo, @Valid TopicParam topicParam) throws Exception {
         logger.info("create topic, user:{} topic:{}", userInfo, topicParam);
         Result<?> isExist = verifyDataService.verifyAddTopicIsExist(topicParam);
@@ -203,15 +208,16 @@ public class TopicController extends ViewController {
         BeanUtils.copyProperties(topicParam, auditTopic);
         // 保存记录
         Result<?> result = auditService.saveAuditAndTopic(audit, auditTopic);
-        if(result.isOK()) {
+        if (result.isOK()) {
             String tip = " topic:<b>" + topicParam.getName() + "</b>";
             alertService.sendAuditMail(userInfo.getUser(), TypeEnum.NEW_TOPIC, tip);
         }
         return Result.getWebResult(result);
     }
-    
+
     /**
      * 获取topic列表
+     * 
      * @return
      * @throws Exception
      */
@@ -221,20 +227,22 @@ public class TopicController extends ViewController {
         Result<List<Topic>> topicListResult = topicService.queryAllTopic();
         return Result.getWebResult(topicListResult);
     }
-    
+
     /**
      * 关联生产者
+     * 
      * @param topicParam
      * @return
      * @throws Exception
      */
     @ResponseBody
-    @RequestMapping(value="/associate", method = RequestMethod.POST)
-    public Result<?> associate(UserInfo userInfo, @Valid AssociateProducerParam associateProducerParam) throws Exception {
-        return associateUserProducer(userInfo,userInfo.getUser().getId(),associateProducerParam.getTid(),
+    @RequestMapping(value = "/associate", method = RequestMethod.POST)
+    public Result<?> associate(UserInfo userInfo, @Valid AssociateProducerParam associateProducerParam)
+            throws Exception {
+        return associateUserProducer(userInfo, userInfo.getUser().getId(), associateProducerParam.getTid(),
                 associateProducerParam.getProducer());
     }
-    
+
     /**
      * 授权关联
      * 
@@ -255,7 +263,7 @@ public class TopicController extends ViewController {
         }
         return associateUserProducer(userInfo, uid, tid, producer);
     }
-    
+
     /**
      * 复用之前的逻辑，
      * 
@@ -291,7 +299,7 @@ public class TopicController extends ViewController {
                 Result<User> userResult = userService.query(uid);
                 if (userResult.isOK()) {
                     tip = getTopicTip(tid) + " producer:<b>" + producer + "</b>  user:<b>"
-                            + userResult.getResult().notBlankName()+ "</b>";
+                            + userResult.getResult().notBlankName() + "</b>";
                 }
             }
             if (tip == null) {
@@ -309,7 +317,7 @@ public class TopicController extends ViewController {
      * @throws Exception
      */
     @ResponseBody
-    @RequestMapping(value="/delete/{tid}", method=RequestMethod.POST)
+    @RequestMapping(value = "/delete/{tid}", method = RequestMethod.POST)
     public Result<?> delete(UserInfo userInfo, @PathVariable long tid) throws Exception {
         Result<List<UserConsumer>> userConsumerListResult = userConsumerService.queryUserConsumer(tid);
         // 数据库异常，直接返回
@@ -337,12 +345,12 @@ public class TopicController extends ViewController {
         audit.setUid(userInfo.getUser().getId());
         // 保存记录
         Result<?> result = auditService.saveAuditAndTopicDelete(audit, tid, topicResult.getResult().getName());
-        if(result.isOK()) {
+        if (result.isOK()) {
             alertService.sendAuditMail(userInfo.getUser(), TypeEnum.DELETE_TOPIC, topicResult.getResult().getName());
         }
         return Result.getWebResult(result);
     }
-    
+
     /**
      * 更新topic trace
      * 
@@ -368,12 +376,12 @@ public class TopicController extends ViewController {
         if (topic.getTraceEnabled() == traceEnabled) {
             return Result.getResult(Status.NO_NEED_MODIFY_ERROR);
         }
-        
+
         // 校验消费者是否还开启trace了
         Result<List<Consumer>> consumerList = consumerService.queryByTid(tid);
-        if(consumerList.isNotEmpty()) {
-            for(Consumer consumer : consumerList.getResult()) {
-                if(consumer.traceEnabled()) {
+        if (consumerList.isNotEmpty()) {
+            for (Consumer consumer : consumerList.getResult()) {
+                if (consumer.traceEnabled()) {
                     return Result.getResult(Status.CONSUMER_TRACE_OPEN);
                 }
             }
@@ -391,9 +399,9 @@ public class TopicController extends ViewController {
         }
         return Result.getWebResult(result);
     }
-    
+
     private String getTraceTip(int traceEnabled) {
-        if(traceEnabled == 1) {
+        if (traceEnabled == 1) {
             return "开启";
         }
         return "关闭";
@@ -401,10 +409,11 @@ public class TopicController extends ViewController {
 
     /**
      * 诊断链接
+     * 
      * @return
      * @throws Exception
      */
-    @RequestMapping(value="/connection", method=RequestMethod.POST)
+    @RequestMapping(value = "/connection", method = RequestMethod.POST)
     public String connection(UserInfo userInfo, @RequestParam("topic") String topic,
             @RequestParam("cid") int cid,
             @RequestParam("group") String group,
@@ -415,18 +424,19 @@ public class TopicController extends ViewController {
         String view = viewModule() + "/connection";
         Cluster cluster = clusterService.getMQClusterById(cid);
         HashSet<Connection> connectionSet = null;
-        if(type == 1) {
-            Result<ProducerConnection> result = userProducerService.examineProducerConnectionInfo(group, topic, cluster);
-            if(result.isOK()) {
+        if (type == 1) {
+            Result<ProducerConnection> result = userProducerService.examineProducerConnectionInfo(group, topic,
+                    cluster);
+            if (result.isOK()) {
                 connectionSet = result.getResult().getConnectionSet();
             }
         } else {
             Result<ConsumerConnection> result = consumerService.examineConsumerConnectionInfo(group, cluster);
-            if(result.isOK()) {
+            if (result.isOK()) {
                 connectionSet = result.getResult().getConnectionSet();
             }
         }
-        if(connectionSet == null || connectionSet.isEmpty()) {
+        if (connectionSet == null || connectionSet.isEmpty()) {
             return view;
         }
         List<Connection> connList = new ArrayList<Connection>(connectionSet);
@@ -438,7 +448,7 @@ public class TopicController extends ViewController {
         setResult(map, connList);
         return view;
     }
-    
+
     /**
      * 根据topic查询broker信息
      * 
@@ -460,7 +470,7 @@ public class TopicController extends ViewController {
         if (topicStatsTable == null) {
             return Result.getResult(topicStatsTable);
         }
-        Map<String, Long> brokerNameMap = new TreeMap<String,Long>();
+        Map<String, Long> brokerNameMap = new TreeMap<String, Long>();
         for (MessageQueue mq : topicStatsTable.getOffsetTable().keySet()) {
             String brokerName = mq.getBrokerName();
             TopicOffset topicOffset = topicStatsTable.getOffsetTable().get(mq);
@@ -470,23 +480,24 @@ public class TopicController extends ViewController {
         }
         return Result.getResult(brokerNameMap);
     }
-    
+
     /**
      * 获取topic的提示信息
+     * 
      * @param tid
      * @return
      */
     private String getTopicTip(long tid) {
         StringBuilder sb = new StringBuilder();
         Result<Topic> topicResult = topicService.queryTopic(tid);
-        if(topicResult.isOK()) {
+        if (topicResult.isOK()) {
             sb.append(" topic:<b>");
             sb.append(topicResult.getResult().getName());
             sb.append("</b>");
         }
         return sb.toString();
     }
-    
+
     /**
      * 更新Topic描述
      * 
@@ -510,10 +521,11 @@ public class TopicController extends ViewController {
             return Result.getResult(Status.PARAM_ERROR);
         }
         Result<Integer> result = topicService.updateTopicInfo(tid, HtmlUtils.htmlEscape(info.trim(), "UTF-8"));
-        logger.info(userInfo.getUser().getName() + " update topic info , tid:{}, info:{}, status:{}", tid, info, result.isOK());
+        logger.info(userInfo.getUser().getName() + " update topic info , tid:{}, info:{}, status:{}", tid, info,
+                result.isOK());
         return Result.getWebResult(result);
     }
-    
+
     /**
      * topic详情 只供管理员使用
      * 
@@ -523,7 +535,8 @@ public class TopicController extends ViewController {
     @ResponseBody
     @RequestMapping(value = "/detail")
     public String updateTopicInfo(HttpServletResponse response, HttpServletRequest request,
-            UserInfo userInfo, @RequestParam("topic") String topic) throws Exception {
+            UserInfo userInfo, @RequestParam("topic") String topic,
+            @RequestParam(name = "consumer", required = false) String consumer) throws Exception {
         if (!userInfo.getUser().isAdmin()) {
             return Result.getResult(Status.PERMISSION_DENIED_ERROR).toJson();
         }
@@ -531,20 +544,26 @@ public class TopicController extends ViewController {
         if (topicResult.isNotOK()) {
             return Result.getWebResult(topicResult).toJson();
         }
-        WebUtil.redirect(response, request, "/user/topic/" + topicResult.getResult().getId() + "/detail");
+        if (consumer == null) {
+            WebUtil.redirect(response, request, "/user/topic/" + topicResult.getResult().getId() + "/detail");
+        } else {
+            WebUtil.redirect(response, request,
+                    "/user/topic/" + topicResult.getResult().getId() + "/detail?tab=consume&consumer=" + consumer);
+        }
         return null;
     }
 
     /**
      * 根据ip和时间查询topic
+     * 
      * @param ip
      * @param time
      */
-    @RequestMapping(value="/search/ip")
+    @RequestMapping(value = "/search/ip")
     public String searchByIp(UserInfo userInfo,
-                             @RequestParam("ip") String ip,
-                             @RequestParam("date") String datePara,
-                             Map<String, Object> map) throws Exception {
+            @RequestParam("ip") String ip,
+            @RequestParam("date") String datePara,
+            Map<String, Object> map) throws Exception {
         // 设置返回视图
         String view = viewModule() + "/ip";
         // 设置返回结果
@@ -564,7 +583,8 @@ public class TopicController extends ViewController {
             List<String> producerList = producerListResult.getResult();
             for (String producer : producerList) {
                 // 根据producer获取用户关联的topicId列表
-                Result<List<Long>> topicIdListResult = userProducerService.findTopicIdList(userInfo.getUser(), producer);
+                Result<List<Long>> topicIdListResult = userProducerService.findTopicIdList(userInfo.getUser(),
+                        producer);
                 saveIpSearchResultVO(ipSearchResultVOList, ip, producer, topicIdListResult, 1);
             }
         }
@@ -581,7 +601,8 @@ public class TopicController extends ViewController {
         return view;
     }
 
-    public void saveIpSearchResultVO(List<IpSearchResultVO> ipSearchResultVOList, String ip, String group, Result<List<Long>> topicIdListResult, int type) {
+    public void saveIpSearchResultVO(List<IpSearchResultVO> ipSearchResultVOList, String ip, String group,
+            Result<List<Long>> topicIdListResult, int type) {
         if (topicIdListResult.isEmpty()) {
             return;
         }

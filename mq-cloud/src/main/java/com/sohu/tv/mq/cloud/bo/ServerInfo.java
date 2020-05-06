@@ -1,4 +1,7 @@
 package com.sohu.tv.mq.cloud.bo;
+
+import com.sohu.tv.mq.cloud.util.MachineType;
+
 /**
  * 服务器信息
  */
@@ -17,7 +20,13 @@ public class ServerInfo {
 	private String dist;
 	//ulimit
 	private String ulimit;
-	
+	// 机房
+    private String room;
+    // 机器类型
+    private Integer machineType;
+    // 机房颜色，额外添加字段
+    private String roomColor;
+    
 	public String getUlimit() {
 		return ulimit;
 	}
@@ -27,6 +36,9 @@ public class ServerInfo {
 	public String getIp() {
 		return ip;
 	}
+	public String getIpSub() {
+        return ip.split("\\.", 3)[2];
+    }
 	public void setIp(String ip) {
 		this.ip = ip;
 	}
@@ -66,4 +78,51 @@ public class ServerInfo {
 	public void setDist(String dist) {
 		this.dist = dist;
 	}
+    public String getRoom() {
+        return room;
+    }
+    public void setRoom(String room) {
+        this.room = room;
+    }
+    public Integer getMachineType() {
+        return machineType;
+    }
+    public void setMachineType(Integer machineType) {
+        this.machineType = machineType;
+    }
+    
+    public String getRoomColor() {
+        return roomColor;
+    }
+    public void setRoomColor(String roomColor) {
+        this.roomColor = roomColor;
+    }
+    public boolean isPhysical() {
+        return MachineType.PHYSICAL.getKey() == machineType;
+    }
+    
+    public boolean isVirtual() {
+        return MachineType.VIRTUAL.getKey() == machineType;
+    }
+    
+    public boolean isDocker() {
+        return MachineType.DOCKER.getKey() == machineType;
+    }
+    
+    /***
+     * 获取机器类型名称
+     * 
+     * @return
+     */
+    public String getMachineTypeName() {
+        if (getMachineType() == null) {
+            return MachineType.UNKNOWN.getValue();
+        }
+        for (MachineType mt : MachineType.values()) {
+            if (mt.getKey() == getMachineType()) {
+                return mt.getValue();
+            }
+        }
+        return MachineType.UNKNOWN.getValue();
+    }
 }

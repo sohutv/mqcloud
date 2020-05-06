@@ -137,7 +137,7 @@
 																<td class="warning" colspan=7>死消息Topic：<b style="color:red" data-toggle="tooltip" 
 																title="消费失败达到最大重试次数(16)后，将会进入此topic，不再重试">${consumerProgressVO.dlqTopic}</b>
 																	&nbsp;&nbsp;&nbsp;<span title="搜索死消息" class="glyphicon glyphicon-search" style="cursor:pointer;" 
-																	onclick="initOffsetMsgModal('dlq', ${row}, '${consumerProgressVO.dlqTopic}','${consumerProgressVO.dlqMaxOffset?c}')" data-target="#offsetMsgSearchModal" data-toggle="modal"></span>
+																	onclick="initOffsetMsgModal('dlq', ${row}, '${consumerProgressVO.dlqTopic}','${consumerProgressVO.dlqMaxOffset?c}')" data-target="#msgSearchModal" data-toggle="modal"></span>
 																</td>
 															</tr>
 															<tr>
@@ -182,7 +182,7 @@
 																<td class="warning" colspan=7>重试Topic：<b style="color:red" data-toggle="tooltip" 
 																title="消费失败的消息，会重新发回到此topic，以便重试消费">${consumerProgressVO.retryTopic}</b>
 																&nbsp;&nbsp;&nbsp;<span title="搜索重试消息" class="glyphicon glyphicon-search" style="cursor:pointer;" 
-																onclick="initOffsetMsgModal('retry', ${row}, '${consumerProgressVO.retryTopic}','${consumerProgressVO.retryMaxOffset?c}')" data-target="#offsetMsgSearchModal" data-toggle="modal"></span>
+																onclick="initOffsetMsgModal('retry', ${row}, '${consumerProgressVO.retryTopic}','${consumerProgressVO.retryMaxOffset?c}')" data-target="#msgSearchModal" data-toggle="modal"></span>
 																&nbsp;&nbsp;&nbsp;<span title="跳过重试消息" class="glyphicon glyphicon-fast-forward" style="cursor:pointer;" 
 																onclick="showResetRetryMessageOffsetModel(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}')" data-toggle="modal"></span>
 																</td>
@@ -725,35 +725,83 @@
 <div id="consume_lineChart"><center>暂无数据</center></div>
 
 <!-- 偏移量消息搜索 -->
-<div id="offsetMsgSearchModal" class="modal fade" tabindex="-1">
-	<div class="modal-dialog" style="width:900px">
+<div id="msgSearchModal" class="modal fade" tabindex="-1">
+	<div class="modal-dialog" style="width:1050px">
 		<div class="modal-content">
 			<div class="modal-header">
-				<button type="button" class="close" onclick="hideOffsetMsgSearchModal()" aria-hidden="true">&times;</button>
+				<button type="button" class="close" onclick="hideMsgSearchModal()" aria-hidden="true">&times;</button>
 				<h4 class="modal-title">消息查询</h4>
 			</div>
 			<div class="modal-body">
+				<div style="float:left;margin:0px 5px;">
+					<form class="form-inline">
+						<div class="form-group" id="searchConditionForm">
+							<label for="type">查询方式: </label>
+						    <select id="searchCondition" class="selectpicker form-control">
+								<option data-title="按照key查询消息，最多可查时间段内的brokerSize*64条" value="key">key</option>
+								<option data-title="按照偏移量查询消息,最多检索5000条" value="offset">偏移量</option>
+								<option data-title="按照时间段查询消息,最多检索5000条" value="time">时间段</option>
+							</select>
+						</div>
+					</form>
+				</div>
 				<div style="float:right;margin:0px 0px 10px 0px;">
-					<form class="form-inline" id="offsetMsgSearchForm">
+					<form class="form-inline" id="msgSearchForm">
 						<div>
 							<!-- 偏移量查询 -->
-							<div class="form-group">
-								<label for="toStart"> 起始偏移量: </label>
-								<input id="toStart" name="toStart" type="text" class="form-control" style="width:120px;" placeholder="broker最小偏移量">
+							<div class="form-group offset" style="display:none;">
+								<label for="offsetStart"> 起始偏移量: </label>
+								<input id="offsetStart" name="offsetStart" type="text" class="form-control" style="width:120px;" placeholder="broker最小偏移量">
 							</div>
-							<div class="form-group">
-					  			<label for="toEnd"> 结束偏移量: </label>
-								<input id="toEnd" name="toEnd" type="text" class="form-control" style="width:120px;" placeholder="broker最大偏移量">
+							<div class="form-group offset" style="display:none;">
+					  			<label for="offsetEnd"> 结束偏移量: </label>
+								<input id="offsetEnd" name="offsetEnd" type="text" class="form-control" style="width:120px;" placeholder="broker最大偏移量">
 							</div>
-							<div class="form-group">
+							<div class="form-group offset" style="display:none;">
 					    	    <input type="text" class="form-control" id="toKey" name="toKey" style="width:150px;" placeholder="关键字">
 					  	    </div>
+					  	    
+		  	    			<!-- 时间段查询 -->
+							<div class="form-group time" style="display:none;">
+								<label for="timeStartTimePicker"> 开始时间: </label>
+								<input id="timeStartTimePicker" type="text" class="Wdate form-control" onclick="WdatePicker({ dateFmt: 'yyyy-MM-dd HH:mm:ss',maxDate:'%y-%M-%d',minDate:'%y-%M-{%d-${cluster.fileReservedDays}}',onpicked:function(){timeChange('timeStartTime')}})" style="width:180px;height:34px;cursor:pointer;" readonly="readonly"
+					  								value="${(.now?long-300000)?number_to_datetime?string("yyyy-MM-dd HH:mm:ss")}">
+					  			<input type="hidden" name="startTime" id="timeStartTime" value="${.now?long-300000}">
+					  			<label for="timeEndTimePicker"> 结束时间: </label>
+								<input id="timeEndTimePicker" type="text" class="Wdate form-control" onclick="WdatePicker({ dateFmt: 'yyyy-MM-dd HH:mm:ss',maxDate:'%y-%M-%d',minDate:'%y-%M-{%d-${cluster.fileReservedDays}}',onpicked:function(){timeChange('timeEndTime')}})" style="width:180px;height:34px;cursor:pointer;" readonly="readonly"
+					  								value="${.now}">
+					  			<input type="hidden" name="endTime" id="timeEndTime" value="${.now?long}">
+							</div>
+							<div class="form-group time" style="display:none;">
+					    	    <input type="text" class="form-control" id="key" name="key" placeholder="关键字，支持模糊匹配">
+					  	    </div>
+					  	    <!-- key查询 -->
+					  	    <div class="form-group key">
+								<label for="keyStartTimePicker"> 开始时间: </label>
+								<input id="keyStartTimePicker" type="text" class="Wdate form-control" onclick="WdatePicker({ dateFmt: 'yyyy-MM-dd HH:mm:ss',maxDate:'%y-%M-%d',minDate:'%y-%M-{%d-${cluster.fileReservedDays}}',onpicked:function(){timeChange('keyStartTime')}})" style="width:180px;height:34px;cursor:pointer;" readonly="readonly"
+					  								value="${.now?string("yyyy-MM-dd 00:00:00")}">
+					  			<input type="hidden" id="keyStartTime" name="keyStartTime">
+					  			<label for="keyEndTimePicker"> 结束时间: </label>
+								<input id="keyEndTimePicker" type="text" class="Wdate form-control" onclick="WdatePicker({ dateFmt: 'yyyy-MM-dd HH:mm:ss',maxDate:'%y-%M-%d',minDate:'%y-%M-{%d-${cluster.fileReservedDays}}',onpicked:function(){timeChange('keyEndTime')}})" style="width:180px;height:34px;cursor:pointer;" readonly="readonly"
+					  								value="${.now}">
+					  			<input type="hidden" name="keyEndTime" id="keyEndTime" value="${.now?long}">
+							</div>
+					  	    <div class="form-group key">
+					    	    <input type="text" class="form-control" id="msgKey" name="msgKey" placeholder="消息key">
+							</div>
+			
 							<input type="hidden" id="toCid" name="toCid" value="${topic.clusterId}">
 		  	    			<input type="hidden" id="toTopic" name="toTopic" value="">
 		  	    			<input type="hidden" id="toMessageParam" name="toMessageParam">
 		  	    			<input type="hidden" id="toAppend" name="toAppend" value="false">
-		  	    			<button type="button" onclick="showMoreSearchCondition()" class="btn" data-toggle="tooltip" title="单击展开更多搜索项"><span class="glyphicon glyphicon-filter" aria-hidden="true"></span></button>
-							<button type="button" onclick="searchOffsetMessage(false)" class="btn btn-search time"><span class="glyphicon glyphicon-search" aria-hidden="true"></span></button>
+		  	    			
+		  	    			<!-- 时间段查询 -->
+							<button type="button" data-toggle='tooltip' title="按时间段查询" onclick="searchMessage(false)" class="btn btn-search time" style="display:none;"><span class="glyphicon glyphicon-search" aria-hidden="true"></span></button>
+							<!-- key查询 -->
+							<button type="button" data-toggle='tooltip' title="按key查询" onclick="searchKeyMessage()" class="btn btn-search key"><span class="glyphicon glyphicon-search" aria-hidden="true"></span></button>
+							<!-- 偏移量查询 -->
+							<button type="button" onclick="showMoreSearchCondition()" class="btn offset" data-toggle="tooltip" title="单击展开更多搜索项" style="display:none;"><span class="glyphicon glyphicon-filter" aria-hidden="true"></span></button>
+							<button type="button" data-toggle='tooltip' title="按偏移量查询" onclick="searchOffsetMessage(false)" class="btn btn-search offset" style="display:none;"><span class="glyphicon glyphicon-search" aria-hidden="true"></span></button>
 							<!-- 消息重发 -->
 							<button type="button" id="resendMessageBtn" data-toggle='tooltip' title="重发消息" onclick="resendMessageTip()" class="btn"><span class="glyphicon glyphicon-send"></span></button>
 						</div>
@@ -767,7 +815,7 @@
 						</div>	
 					</form>
 				</div>
-				<table id="offsetDataTable" class="table table-striped table-hover" style="margin-top: 0px;word-break:break-all; word-wrap:break-all;">
+				<table id="dataTable" class="table table-striped table-hover" style="margin-top: 0px;word-break:break-all; word-wrap:break-all;">
 					<colgroup>
 						<col width="50px">
 						<col width="110px">
@@ -788,10 +836,10 @@
 						<tr class="no_more_data"><td colspan=5 class="text-center">暂无数据</td></tr>
 					</tbody>
 				</table>
-				<ul class="pager" id="offsetPager" style="display:none;">
-					<li id="offsetPrevious" class="previous" onclick="offsetPrevious()"><a href="javascript:void(0)">&larr; 上一页</a></li>
-					<li><a href="#">第<b id="offsetPageNum"></b>页，命中数：<b id="offsetSizeNum"></b>，检索数：<b id="offsetSearchNum"></b>，预估剩余数：<b id="offsetLeftNum"></b></a></li>
-					<li id="offsetNext" class="next" onclick="offsetNext()"><a href="javascript:void(0)">下一页 &rarr;</a></li>
+				<ul class="pager" id="pager" style="display:none;">
+					<li id="previous" class="previous" onclick="previous()"><a href="javascript:void(0)">&larr; 上一页</a></li>
+					<li><a href="#">第<b id="pageNum"></b>页，命中数：<b id="sizeNum"></b>，检索数：<b id="searchNum"></b>，预估剩余数：<b id="leftNum"></b></a></li>
+					<li id="next" class="next" onclick="next()"><a href="javascript:void(0)">下一页 &rarr;</a></li>
 				</ul>
 			</div>
 		</div>
@@ -1047,11 +1095,17 @@ $(function(){
     });
  	// 初始化user列表
 	initUserList('user_search_select');
-	$(".selectpicker").selectpicker({
-		width : 120
+	$(".user_search_select").selectpicker({
+		width : 500
  	});
 	$("#consumerSelect").selectpicker({
 		width : 250
+ 	});
+ 	// search type tooltip
+ 	$("#searchCondition").selectpicker({
+		width : 120
+ 	}).on('changed.bs.select', function(){
+ 	  	changeSearchType($('#searchCondition option:selected').val());
  	});
 });
 //准备删除
@@ -1139,8 +1193,8 @@ function addUserCounsumerRelationship(){
 	    }, 'json');
 }
 
-function hideOffsetMsgSearchModal(){
-	$('#offsetMsgSearchModal').modal('hide');
+function hideMsgSearchModal(){
+	$('#msgSearchModal').modal('hide');
 }
 //当前消息搜索时的topic
 var currentSelectTopic = '';
@@ -1150,8 +1204,8 @@ function brokerNameSelectChange(obj){
 	if (value == "all"){
 		$("#queueSearchSelect").html("<option value='-1'>全部</option>");
 		$("#queueSearchSelect").selectpicker('refresh');
-		$("#toStart").val(minAllOffset);
-		$("#toEnd").val(maxAllOffset);
+		$("#offsetStart").val(minAllOffset);
+		$("#offsetEnd").val(maxAllOffset);
 		return;
 	}
 	resetMaxOffsetByBrokerName(value);
@@ -1177,10 +1231,10 @@ var maxAllOffset = '';
 var minAllOffset = '';
 function initOffsetMsgModal(type, index, topic, maxOffset){
 	// 清空数据
-	$("#offsetDataTable tbody").html("<tr class='no_more_data'><td colspan=5 class='text-center'>暂无数据</td></tr>");
-	$("#offsetDataTable input").remove();
+	$("#dataTable tbody").html("<tr class='no_more_data'><td colspan=5 class='text-center'>暂无数据</td></tr>");
+	$("#dataTable input").remove();
 	$("#toTopic").val(topic);
-	$("#offsetPager").hide();
+	$("#pager").hide();
 	
 	// 计算offset
 	var start = maxOffset - 100;
@@ -1190,16 +1244,16 @@ function initOffsetMsgModal(type, index, topic, maxOffset){
 	maxAllOffset = maxOffset;
 	minAllOffset = start;
 	currentSelectTopic = topic;
-	$("#toStart").val(start);
-	$("#toEnd").val(maxOffset);
+	$("#offsetStart").val(start);
+	$("#offsetEnd").val(maxOffset);
 	$("#toKey").val("");
 	
 	if(type == "dlq") {
-		$("#offsetDataTable").addClass("tr-pointer");
+		$("#dataTable").addClass("tr-pointer");
 		$("#resendMessageBtn").show();
 		$("#cosumeTimes").html("消费次数");
 	} else {
-		$("#offsetDataTable").removeClass("tr-pointer");
+		$("#dataTable").removeClass("tr-pointer");
 		$("#resendMessageBtn").hide();
 		$("#cosumeTimes").html("重试次数");
 	}
@@ -1221,54 +1275,58 @@ function showMoreSearchCondition(){
 //偏移量消息搜索
 function searchOffsetMessage(append){
 	$("#toAppend").val(append);
-	post('${request.contextPath}/topic/message/topic/offset/search', $("#offsetMsgSearchForm").serialize(), function(data){
+	post('${request.contextPath}/topic/message/retry/search/offset', $("#msgSearchForm").serialize(), function(data){
 		if(!append){
-			$("#offsetDataTable tbody").remove();
-			$("#offsetDataTable input").remove();
+			$("#dataTable tbody").remove();
+			$("#dataTable input").remove();
 		}
-       	$("#offsetDataTable").append(data);
+       	$("#dataTable").append(data);
     });
 }
 
-var offsetPageNum = 0;
+var pageNum = 0;
 //显示分页
-function showOffsetPage(num){
-	offsetPageNum = num;
-	var comp = $("#offsetData_"+num);
+function showPage(num){
+	pageNum = num;
+	var comp = $("#data_"+num);
 	var size = comp.attr("data_size");
 	var search = comp.attr("data_search");
 	var left = comp.attr("data_left");
-	$("#offsetPageNum").html(num);
-	$("#offsetSizeNum").html(size);
-	$("#offsetSearchNum").html(search);
-	$("#offsetLeftNum").html(left);
-	$("#offsetPager").show();
+	$("#pageNum").html(num);
+	$("#sizeNum").html(size);
+	$("#searchNum").html(search);
+	$("#leftNum").html(left);
+	$("#pager").show();
 	if(num == 1){
-		$("#offsetPrevious").addClass("disabled");
+		$("#previous").addClass("disabled");
 	} else {
-		$("#offsetPrevious").removeClass("disabled");
+		$("#previous").removeClass("disabled");
 	}
 	if(left > 0){
-		$("#offsetNext").removeClass("disabled");
+		$("#next").removeClass("disabled");
 	} else {
-		$("#offsetNext").addClass("disabled");
+		$("#next").addClass("disabled");
 	}
 	// 展示数据
-	$("#offsetPage_"+offsetPageNum).show().siblings("tbody").hide();
+	$("#page_"+pageNum).show().siblings("tbody").hide();
 }
 //上一页
-function offsetPrevious(){
-	if(!$("#offsetPrevious").hasClass("disabled")){
-		showOffsetPage(offsetPageNum - 1);
+function previous(){
+	if(!$("#previous").hasClass("disabled")){
+		showPage(pageNum - 1);
 	}
 }
 //下一页
-function offsetNext(){
-	if(!$("#offsetNext").hasClass("disabled")){
-		if($("#offsetData_"+(offsetPageNum+1)).length > 0){
-			showOffsetPage(offsetPageNum+1);
+function next(){
+	if(!$("#next").hasClass("disabled")){
+		if($("#data_"+(pageNum+1)).length > 0){
+			showPage(pageNum+1);
 		} else {
-			searchOffsetMessage(true);
+			if($("#offsetStart").is(":visible")){
+				searchOffsetMessage(true);
+			} else {
+				searchMessage(true);
+			}
 		}
 	}
 }
@@ -1323,8 +1381,8 @@ function resetMaxOffset(key,type){
 	if (min < 0){
 		min = 0;
 	}
-	$("#toStart").val(min);
-	$("#toEnd").val(max);
+	$("#offsetStart").val(min);
+	$("#offsetEnd").val(max);
 }
 
 // 获取队列客户端ip
@@ -1379,7 +1437,7 @@ function updateConsumerInfo(){
 //重发消息 提示
 function resendMessageTip(){
 	var dataIdxArray = new Array();
-	$('#offsetDataTable tbody tr.selected').each(function(){
+	$('#dataTable tbody tr.selected').each(function(){
 		dataIdxArray.push($(this).attr("dataIdx"));
 	});
 	if(dataIdxArray.length == 0) {
@@ -1420,7 +1478,7 @@ function resendMessageTip(){
 //重发消息 
 function resendMessage(){
 	var dataArray = new Array();
-	$('#offsetDataTable tbody tr.selected').each(function(){
+	$('#dataTable tbody tr.selected').each(function(){
 		dataArray.push($(this).attr("data"));
 	});
 	if(dataArray.length == 0) {
@@ -1503,4 +1561,66 @@ function updateConsumerTrace(){
 		</#if>
 	});
 </#if>
+
+// 更改搜素选项
+var prevSearchType = "key";
+function changeSearchType(type){
+	// 无改变
+	if(prevSearchType == type){
+		return;
+	}
+	$("."+type).show();
+	if(prevSearchType) {
+		$("."+prevSearchType).hide();
+	}
+	prevSearchType = type;
+	
+	$("#pager").hide();
+	hideAndResetBrokerSelect();
+	// 清空数据
+	$("#dataTable tbody").remove();
+	$("#dataTable").append("<tbody><tr class='no_more_data'><td colspan=5 class='text-center'>暂无数据</td></tr></tbody>");
+	$("#dataTable input").remove();
+	$("#dataTable").removeClass("hide");
+	$("#resendMessageBtn").removeClass("disabled");
+}
+
+function hideAndResetBrokerSelect(){
+	$("#moreSearchCondition").addClass('hide');
+	//重置broker下拉框状态
+    $("#brokerNameSearchSelect").selectpicker('val', "all");
+    $("#queueSearchSelect").selectpicker('val', "-1");
+}
+
+//消息搜索
+function searchMessage(append){
+	$("#toAppend").val(append);
+	post('${request.contextPath}/topic/message/retry/search/time', $("#msgSearchForm").serialize(), function(data){
+		if(!append){
+			$("#dataTable tbody").remove();
+			$("#dataTable input").remove();
+		}
+       	$("#dataTable").append(data);
+    });
+}
+//消息key搜索
+function searchKeyMessage() {
+	if(!$("#msgKey").val()){
+		alert("消息key不能为空");
+		return;
+	}
+	post('${request.contextPath}/topic/message/retry/search/key', $("#msgSearchForm").serialize(), function(data){
+		$("#dataTable tbody").remove();
+		$("#dataTable input").remove();
+       	$("#dataTable").append(data);
+    });
+}
+
+function timeChange(id){
+	var dt = $("#" + id + "Picker").val();
+	var tm = parseDate(dt);
+	$("#" + id).val(tm);
+}
+//初始化key查询方式的时间
+timeChange('keyStartTime');
 </script>

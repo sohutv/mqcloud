@@ -11,9 +11,7 @@
 		<thead>
 			<colgroup>
 			  <col width='20px'>
-			  <col>
-			  <col width='120px'>
-			  <col>
+			  <col width='110px'>
 			  <col>
 			  <col width='120px'>
 			  <col>
@@ -31,12 +29,10 @@
 			</colgroup>
 			<tr>
 				<td><input class="pointer" type="checkbox" name="monitor" id="checkAll" onclick="checkAll(this)" data-toggle="tooltip" title="单击全选或反选"/></td>
-				<td>序号</td>
 				<td>ip</td>
-				<td>host</td>
 				<td data-toggle="tooltip" title="cpu核数">cpu</td>
 				<td data-toggle="tooltip" title="使用/总内存">内存</td>
-				<td data-toggle="tooltip" title="一分钟load">load1</td>
+				<td data-toggle="tooltip" title="一分钟load">load</td>
 				<td data-toggle="tooltip" title="磁盘读速率 单位K/s">ior</td>
 				<td data-toggle="tooltip" title="磁盘写速率 单位K/s">iow</td>
 				<td data-toggle="tooltip" title="磁盘io速率 交互次数/s">iops</td>
@@ -44,8 +40,8 @@
 				<td data-toggle="tooltip" title="网络入流量 单位K/s">入网</td>
 				<td data-toggle="tooltip" title="网络出流量 单位k/s">出网</td>
 				<td data-toggle="tooltip" title="tcp estab连接数">连接</td>
-				<td data-toggle="tooltip" title="tcp time wait连接数">等待</td>
-				<td>机器类型</td>
+				<td>类型</td>
+				<td>机房</td>
 				<td>收集时间</td>
 				<td>操作</td>
 			</tr>
@@ -53,7 +49,7 @@
 		<tbody>
             <#if response.empty>
 			     <tr>
-                    <td colspan="17"class="text-center" >
+                    <td colspan="16"class="text-center" >
                     	暂无数据
                     </td>
                 <tr>
@@ -61,16 +57,7 @@
 				<#list response.result as server>
 					<tr>
 						<td><input class="pointer" type="checkbox" name="monitor" value="${server.ip}" onclick="checkThis(this)" /></td>
-						<td>${server_index+1}</td>
 						<td><a href="#" data="${server.ip}" onclick="setIp('${server.ip}')" data-target="#monitorModal" data-toggle="modal">${server.ip}</a></td>
-						<td>
-							<#if server.host?? && server.host?length gt 8>
-								<span data-toggle="tooltip" title="${server.host}">${server.host?substring(0,9)}...</span>
-							<#else>
-								${server.host!}
-							</#if>
-						</td>
-						
 						<td>${server.cpus!}</td>
 						<td>
 							<#if server.mtotal != 0>
@@ -89,7 +76,6 @@
 						<td>${server.nin?string(",###.#")}</td>
 						<td>${server.nout?string(",###.#")}</td>
 						<td>${server.tuse?string(",###")}</td>
-						<td>${server.twait?string(",###")}</td>
 						<td>
 							<#if server.machineType??>
 								${server.machineTypeName}
@@ -97,6 +83,7 @@
 								<button type="button" data-toggle="tooltip" title="添加机器类型" onclick="updateServer('${server.ip}');" class="btn-xs btn-success"><span class="glyphicon glyphicon-plus" aria-hidden="true"></span></button>
 							</#if>
 						</td>
+						<td>${server.room!}</td>
 						<td>
 						<#if server.cdate??>
 							${server.cdate!} ${server.ctime?substring(0,2)}:${server.ctime?substring(2)}
@@ -142,16 +129,30 @@ mqcloud如果发现通用配置的privateKey不为空，将优先使用公钥验
 以上步骤1,2只需要操作一次，即只用生成一次公私钥对，添加至通用配置即可。</textarea>
 									</div>
 								</div>
-								<div id="producerGroup" class="form-group">
+								<div class="form-group">
 									<label class="control-label col-md-2"> 机器IP: </label>
 									<div class="col-md-5">
 										<input type="text" id="ipInput" name="ip" value="" placeholder="IP" class="form-control" />
 									</div>
 								</div>
-								<div id="machineTypeGroup" class="form-group">
+								<div class="form-group">
 									<label class="control-label col-md-2"> 机器类型: </label>
 							        <div class="col-md-5">
 			    						<select id="machineTypeSearchSelect" class="selectpicker" title="请选择"  name="machineType"></select>
+									</div>
+								</div>
+								<div class="form-group">
+									<label class="control-label col-md-2"> 机房: </label>
+									<div class="col-md-5">
+										<select id="machineRoomSelect" class="selectpicker" title="请选择"  name="machineRoom">
+											<#if machineRoom??>
+												<#list machineRoom as room>
+													<option value='${room}'>${room}</option>
+												</#list>
+											<#else>
+												<option value='未知'>未知</option>
+											</#if>
+										</select>
 									</div>
 								</div>
 							</div>
@@ -364,7 +365,7 @@ mqcloud如果发现通用配置的privateKey不为空，将优先使用公钥验
 </div>
 <!-- 监控 -->
 <div id="monitorModal" class="modal fade" tabindex="-1">
-	<div class="modal-dialog" style="width:90%;height:90%;">
+	<div class="modal-dialog" style="width:1200px;height:90%;">
 		<div class="modal-content">
 			<div class="modal-header">
 				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
@@ -377,8 +378,20 @@ mqcloud如果发现通用配置的privateKey不为空，将优先使用公钥验
 			            <li><a href="#cpu" data-url="${request.contextPath}/admin/server/cpu" data-toggle="tab">cpu</a></li>
 			            <li><a href="#net" data-url="${request.contextPath}/admin/server/net" data-toggle="tab">net</a></li>
 			        	<li><a href="#disk" data-url="${request.contextPath}/admin/server/disk" data-toggle="tab">disk</a></li>
-			        </ul>
-			        <div class="tab-content">
+						<li style="float: right">
+							<form class="form-inline">
+								<input type="text"
+									style="width: 120px; height: 34px; cursor: pointer;"
+									name="dateInput" id="dateInput" readonly="readonly"
+									class="Wdate form-control" value="${.now?date}"
+									onclick="WdatePicker({ dateFmt: 'yyyy-MM-dd',maxDate:'%y-%M-%d'})" />
+								<button type="button" onclick="showOverview()" class="btn">
+									<span class="glyphicon glyphicon-search" aria-hidden="true"></span>
+								</button>
+							</form>
+						</li>
+					</ul>
+			        <div class="tab-content" style="padding-left:2px;">
 			            <div class="tab-pane active" id="overview">
 			            </div>
 			            <div class="tab-pane" id="cpu">
@@ -493,11 +506,16 @@ function addServer(){
 		alert("请选择机器类型");
 		return;
 	}
+	if(!$("#machineRoomSelect").val()){
+		alert("请选择机房");
+		return;
+	}
 	disable("addTopicBtn");
 	$.post('${request.contextPath}/admin/server/add',
 			{
 				ip: $("#ipInput").val(),
-				type : $("#machineTypeSearchSelect").val()
+				type : $("#machineTypeSearchSelect").val(),
+				machineRoom: $("#machineRoomSelect").val()
 			},
 	        function(data){
 	            if(data.status == 200){

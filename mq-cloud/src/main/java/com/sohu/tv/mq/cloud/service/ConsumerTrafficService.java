@@ -192,8 +192,8 @@ public class ConsumerTrafficService extends TrafficService<ConsumerTraffic> {
         BrokerTraffic brokerTraffic = new BrokerTraffic();
         brokerTraffic.setIp(ip);
         brokerTraffic.setCreateTime(traffic.getCreateTime());
-        brokerTraffic.setGetCount(traffic.getCount());
-        brokerTraffic.setGetSize(traffic.getSize());
+        brokerTraffic.setGetCount(traffic.getCurCount());
+        brokerTraffic.setGetSize(traffic.getCurSize());
         brokerTraffic.setClusterId(traffic.getClusterId());
         brokerTrafficService.aggragateConsumeTraffic(brokerTraffic);
     }

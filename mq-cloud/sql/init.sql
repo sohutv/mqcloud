@@ -382,6 +382,7 @@ CREATE TABLE `server` (
   `kernel` varchar(255) DEFAULT NULL COMMENT '内核信息',
   `ulimit` varchar(255) DEFAULT NULL COMMENT 'ulimit -n,ulimit -u',
   `updatetime` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `room` varchar(255) DEFAULT NULL COMMENT '机房',
   PRIMARY KEY (`ip`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -625,6 +626,24 @@ CREATE TABLE `audit_batch_associate` (
   `consumer_ids` text NULL COMMENT '消费者id',
   PRIMARY KEY (`aid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='审核批量关联';
+
+-- ----------------------------
+-- Table structure for `broker_store_stat`
+-- ----------------------------
+DROP TABLE IF EXISTS `broker_store_stat`;
+CREATE TABLE `broker_store_stat` (
+  `cluster_id` int(11) NOT NULL COMMENT 'cluster_id',
+  `broker_ip` varchar(255) NOT NULL COMMENT 'broker ip',
+  `percent90` int(11) NOT NULL COMMENT '耗时百分位90',
+  `percent99` int(11) NOT NULL COMMENT '耗时百分位99',
+  `avg` double NOT NULL COMMENT '平均耗时',
+  `max` int(11) NOT NULL COMMENT '最大耗时',
+  `count` bigint(20) NOT NULL COMMENT '调用次数',
+  `create_date` int(11) NOT NULL COMMENT '创建日期',
+  `create_time` char(4) NOT NULL COMMENT '创建分钟,格式:HHMM',
+  `stat_time` int(11) NOT NULL COMMENT '统计时间',
+  PRIMARY KEY (`create_date`,`broker_ip`,`create_time`, `cluster_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='broker存储统计';
 -- ----------------------------
 -- user init
 -- ----------------------------
@@ -652,6 +671,8 @@ INSERT INTO `common_config`(`key`, `value`, `comment`) VALUES ('rocketmqFilePath
 INSERT INTO `common_config`(`key`, `comment`) VALUES ('privateKey', '私钥');
 INSERT INTO `common_config`(`key`, `comment`) VALUES ('adminAccessKey', '管理员访问名(broker&nameserver使用)');
 INSERT INTO `common_config`(`key`, `comment`) VALUES ('adminSecretKey', '管理员访问私钥(broker&nameserver使用)');
+INSERT INTO `common_config`(`key`, `value`, `comment`) VALUES ('machineRoom', '["默认"]', '机房列表');
+INSERT INTO `common_config`(`key`, `value`, `comment`) VALUES ('machineRoomColor', '["#95a5a6"]', '机房节点颜色');
 -- ----------------------------
 -- warn_config init
 -- ----------------------------

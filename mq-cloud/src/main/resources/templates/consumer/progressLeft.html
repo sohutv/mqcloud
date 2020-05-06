@@ -89,7 +89,7 @@
                                         <td class="warning" colspan=7>死消息Topic：<b style="color:red" data-toggle="tooltip" 
                                         title="消费失败达到最大重试次数(16)后，将会进入此topic，不再重试">${consumerProgressVO.dlqTopic}</b>
                                             &nbsp;&nbsp;&nbsp;<span title="搜索死消息" class="glyphicon glyphicon-search" style="cursor:pointer;" 
-                                            onclick="initOffsetMsgModal('dlq', ${row}, '${consumerProgressVO.dlqTopic}','${consumerProgressVO.dlqMaxOffset?c}')" data-target="#offsetMsgSearchModal" data-toggle="modal"></span>
+                                            onclick="initOffsetMsgModal('dlq', ${row}, '${consumerProgressVO.dlqTopic}','${consumerProgressVO.dlqMaxOffset?c}')" data-target="#msgSearchModal" data-toggle="modal"></span>
                                         </td>
                                     </tr>
                                     <tr>
@@ -134,7 +134,7 @@
                                         <td class="warning" colspan=7>重试Topic：<b style="color:red" data-toggle="tooltip" 
                                         title="消费失败的消息，会重新发回到此topic，以便重试消费">${consumerProgressVO.retryTopic}</b>
                                         &nbsp;&nbsp;&nbsp;<span title="搜索重试消息" class="glyphicon glyphicon-search" style="cursor:pointer;" 
-                                        onclick="initOffsetMsgModal('retry', ${row}, '${consumerProgressVO.retryTopic}','${consumerProgressVO.retryMaxOffset?c}')" data-target="#offsetMsgSearchModal" data-toggle="modal"></span>
+                                        onclick="initOffsetMsgModal('retry', ${row}, '${consumerProgressVO.retryTopic}','${consumerProgressVO.retryMaxOffset?c}')" data-target="#msgSearchModal" data-toggle="modal"></span>
                                         &nbsp;&nbsp;&nbsp;<span title="跳过重试消息" class="glyphicon glyphicon-fast-forward" style="cursor:pointer;" 
                                         onclick="showResetRetryMessageOffsetModel(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}')" data-toggle="modal"></span>
                                         </td>
