@@ -199,12 +199,12 @@ public class BrokerTrafficService {
      * @param date
      * @return
      */
-    public Result<BrokerTraffic> queryTrafficStatistic(String date, List<String> times, List<String> ips) {
+    public Result<BrokerTraffic> queryTrafficStatistic(String date, List<String> ips, String beginTime) {
         BrokerTraffic brokerTraffic = null;
         try {
-            brokerTraffic = brokerTrafficDao.selectTrafficStatistic(date, times, ips);
+            brokerTraffic = brokerTrafficDao.selectTrafficStatistic(date, ips, beginTime);
         } catch (Exception e) {
-            logger.error("query traffic err, ips:{}, times:{}, date:{}", ips, times, date, e);
+            logger.error("query traffic err, ips:{}, beginTime:{}, date:{}", ips, beginTime, date, e);
             return Result.getDBErrorResult(e);
         }
         return Result.getResult(brokerTraffic);
@@ -217,12 +217,12 @@ public class BrokerTrafficService {
      * @param date
      * @return
      */
-    public Result<BrokerTraffic> queryTrafficStatistic(String date, List<String> times, String ip) {
+    public Result<BrokerTraffic> queryTrafficStatistic(String date, String ip, String beginTime) {
         BrokerTraffic brokerTraffic = null;
         try {
-            brokerTraffic = brokerTrafficDao.selectTrafficStatisticByIp(date, times, ip);
+            brokerTraffic = brokerTrafficDao.selectTrafficStatisticByIp(date, ip, beginTime);
         } catch (Exception e) {
-            logger.error("query traffic err, ip:{}, times:{}, date:{}", ip, times, date, e);
+            logger.error("query traffic err, ip:{}, beginTime:{}, date:{}", ip, beginTime, date, e);
             return Result.getDBErrorResult(e);
         }
         return Result.getResult(brokerTraffic);

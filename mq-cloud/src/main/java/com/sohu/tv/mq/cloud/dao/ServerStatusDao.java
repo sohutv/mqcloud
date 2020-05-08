@@ -146,9 +146,7 @@ public interface ServerStatusDao {
      * @param date
      * @return List<ServerStatus>
      */
-    @Select("<script>select * from server_stat where ip=#{ip} and cdate=#{cdate} and ctime in"
-            + "<foreach collection=\"ctimeList\" item=\"tm\" separator=\",\" open=\"(\" close=\")\">#{tm}</foreach> "
-            + "</script>")
+    @Select("select * from server_stat where ip=#{ip} and cdate=#{cdate} and ctime >= #{beginTime}")
     public List<ServerStatus> queryServerStatByIp(@Param("ip") String ip, 
-            @Param("cdate") String date, @Param("ctimeList") List<String> ctimeList);
+            @Param("cdate") String date, @Param("beginTime") String beginTime);
 }

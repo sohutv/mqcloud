@@ -263,35 +263,11 @@ public class AdminServerController extends AdminViewController {
         setResult(map, "server", serverInfo);
         // 获取统计信息
         String date = DateUtil.formatYMDNow();
-        List<ServerStatus> list = serverDataService.queryServerStatByIp(ip, date, getTimeList());
+        String time = DateUtil.getFormat(DateUtil.HHMM).format(new Date(System.currentTimeMillis() - 60 * 60 * 1000));
+        List<ServerStatus> list = serverDataService.queryServerStatByIp(ip, date, time);
         ServerMetic serverMetic = new ServerMetic(list);
         setResult(map, serverMetic);
         return adminViewModule() + "/preview";
-    }
-
-    /**
-     * 获取前30分钟时间段
-     * 
-     * @param now
-     * @return
-     */
-    private List<String> getTimeList() {
-        Date date = new Date();
-        long time = date.getTime() / (60 * 1000L);
-        int left = (int) (time % 10);
-        if (left < 5) {
-            time -= left;
-        } else {
-            time -= left + 5;
-        }
-        time *= 60 * 1000L;
-        date.setTime(time);
-        List<String> times = new ArrayList<>(12);
-        for (int i = 0; i < 12; ++i) {
-            times.add(DateUtil.getFormat(DateUtil.HHMM).format(date));
-            date.setTime(date.getTime() - 5 * 60 * 1000);
-        }
-        return times;
     }
 
     public void setDataToMap(List<ServerStatus> list, Map<String, Object> map) {

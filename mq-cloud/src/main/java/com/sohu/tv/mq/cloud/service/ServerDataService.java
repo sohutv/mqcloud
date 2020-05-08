@@ -132,15 +132,15 @@ public class ServerDataService {
 		return new ArrayList<ServerStatus>(0);
 	}
 	
-	   /**
+	/**
      * 查询服务器状态
      * @param ip
      * @param date
      * @return
      */
-    public List<ServerStatus> queryServerStatByIp(String ip, String date, List<String> ctimeList) {
+    public List<ServerStatus> queryServerStatByIp(String ip, String date, String beginTime) {
         try {
-            return serverStatusDao.queryServerStatByIp(ip, date, ctimeList);
+            return serverStatusDao.queryServerStatByIp(ip, date, beginTime);
         } catch (Exception e) {
             logger.error("queryServerStat err ip:{}, date:{}", ip, date, e);
         }

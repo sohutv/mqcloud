@@ -103,19 +103,13 @@ public class AdminTopologyController extends AdminViewController {
         Date now = new Date();
         String date = DateUtil.getFormat(DateUtil.YMD_DASH).format(now);
         // 获取前60分钟数据
-        int timeSize = 60;
-        List<String> times = new ArrayList<>(timeSize);
-        for (int i = 1; i <= timeSize; ++i) {
-            now.setTime(now.getTime() - 60 * 1000);
-            String time = DateUtil.getFormat(DateUtil.HHMM).format(now);
-            times.add(time);
-        }
+        String time = DateUtil.getFormat(DateUtil.HHMM).format(new Date(System.currentTimeMillis() - 60 * 60 * 1000));
         String[] ipArray = ips.split(",");
         if(ipArray.length == 1) {
-            setResult(map, brokerTrafficService.queryTrafficStatistic(date, times, ips));
+            setResult(map, brokerTrafficService.queryTrafficStatistic(date, ips, time));
         } else {
             List<String> ipList = Arrays.asList(ips.split(","));
-            setResult(map, brokerTrafficService.queryTrafficStatistic(date, times, ipList));
+            setResult(map, brokerTrafficService.queryTrafficStatistic(date, ipList, time));
         }
         return adminViewModule() + "/traffic";
     }
