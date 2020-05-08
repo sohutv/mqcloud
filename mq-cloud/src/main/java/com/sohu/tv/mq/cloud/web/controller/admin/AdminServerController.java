@@ -1032,7 +1032,7 @@ public class AdminServerController extends AdminViewController {
                 cpuSys.add(ss.getCsys());
                 cpuWio.add(ss.getCwio());
                 // memory
-                memUsePercent.add((ss.getMfree() + ss.getMcache() + ss.getMbuffer()) / ss.getMtotal() * 100);
+                memUsePercent.add((ss.getMtotal() - ss.getMfree()) / ss.getMtotal() * 100);
                 swapUsePercent.add((ss.getMswap() - ss.getMswapFree()) / ss.getMswap() * 100);
                 // net
                 netIn.add(ss.getNin());

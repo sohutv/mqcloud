@@ -67,10 +67,6 @@ public class BrokerStoreStatTask {
     private int fetchAndSaveStoreStat(List<Broker> brokerList) {
         int size = 0;
         for (Broker broker : brokerList) {
-            // TODO 测试 后续删除
-            if(broker.getCid() < 3) {
-                continue;
-            }
             // 非master跳过
             if (broker.getBrokerID() != 0) {
                 continue;
