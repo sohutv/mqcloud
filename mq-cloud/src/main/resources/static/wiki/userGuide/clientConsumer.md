@@ -28,9 +28,6 @@ public class MQConfiguration {
     init-method="start" destroy-method="shutdown">
     <constructor-arg index="0" value="${请从topic详情查询消费者的consumer group}"/>
     <constructor-arg index="1" value="${topic名字}"/>
-    <!-- 如果topic的消息格式是map，可以使用此属性 -->
-    <property name="consumerExecutor" ref="consumerExecutorBean"/> 
-    <!-- 如果topic的消息格式是map, byte[], String或其他格式，可以使用此属性(兼容所有类型) -->
     <property name="consumerCallback" ref="consumerCallbackBean"/> 
 </bean>
 ```

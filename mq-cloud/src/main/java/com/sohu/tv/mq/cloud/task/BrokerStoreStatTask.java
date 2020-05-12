@@ -1,5 +1,6 @@
 package com.sohu.tv.mq.cloud.task;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -12,6 +13,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import com.sohu.tv.mq.cloud.bo.Broker;
 import com.sohu.tv.mq.cloud.bo.Cluster;
 import com.sohu.tv.mq.cloud.common.model.BrokerStoreStat;
+import com.sohu.tv.mq.cloud.service.AlertService;
 import com.sohu.tv.mq.cloud.service.BrokerService;
 import com.sohu.tv.mq.cloud.service.BrokerStoreStatService;
 import com.sohu.tv.mq.cloud.service.ClusterService;
@@ -44,6 +46,9 @@ public class BrokerStoreStatTask {
     @Autowired
     private ClusterService clusterService;
 
+    @Autowired
+    private AlertService alertService;
+
     /**
      * broker store 流量收集
      */
@@ -63,9 +68,9 @@ public class BrokerStoreStatTask {
             }
         });
     }
-    
+
     private int fetchAndSaveStoreStat(List<Broker> brokerList) {
-        int size = 0;
+        List<BrokerStoreStat> brokerStoreStatList = new ArrayList<BrokerStoreStat>(brokerList.size());
         for (Broker broker : brokerList) {
             // 非master跳过
             if (broker.getBrokerID() != 0) {
@@ -93,9 +98,55 @@ public class BrokerStoreStatTask {
             brokerStoreStat.setClusterId(cluster.getId());
             // 数据存储
             brokerStoreStatService.save(brokerStoreStat);
-            ++size;
+            brokerStoreStatList.add(brokerStoreStat);
         }
-        return size;
+        // 预警
+        warn(brokerStoreStatList);
+        return brokerStoreStatList.size();
+    }
+
+    /**
+     * 预警
+     * 
+     * @param brokerStoreStatList
+     */
+    public void warn(List<BrokerStoreStat> brokerStoreStatList) {
+        StringBuilder content = new StringBuilder();
+        for (BrokerStoreStat brokerStoreStat : brokerStoreStatList) {
+            if (brokerStoreStat.getMax() < 500 && brokerStoreStat.getPercent99() < 200) {
+                continue;
+            }
+            content.append("<tr>");
+            content.append("<td>");
+            content.append(clusterService.getMQClusterById(brokerStoreStat.getClusterId()).getName());
+            content.append("</td>");
+            content.append("<td>");
+            content.append(brokerStoreStat.getBrokerIp());
+            content.append("</td>");
+            content.append("<td>");
+            content.append(brokerStoreStat.getAvg());
+            content.append("ms</td>");
+            content.append("<td>");
+            content.append(brokerStoreStat.getPercent90());
+            content.append("ms</td>");
+            content.append("<td>");
+            content.append(brokerStoreStat.getPercent99());
+            content.append("ms</td>");
+            content.append("<td>");
+            content.append(brokerStoreStat.getMax());
+            content.append("ms</td>");
+            content.append("<td>");
+            content.append(brokerStoreStat.getCount());
+            content.append("</td>");
+            content.append("</tr>");
+        }
+        if (content.length() <= 0) {
+            return;
+        }
+        String header = "<table border=1><thead><tr><th>集群</th><th>broker</th><th>avg</th><th>90%</th><th>99%</th>"
+                + "<th>max</th><th>写入量</th></tr></thead><tbody>";
+        String footer = "</tbody></table>";
+        alertService.sendWanMail(null, "BrokerStore", header + content.toString() + footer);
     }
 
     /**
