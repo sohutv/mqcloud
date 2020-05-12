@@ -18,14 +18,23 @@
 
 ----------
 
-## 1.9.2新增重要特性： 
+## 4.6.3新增重要特性： 
+1. rocketmq升级至[4.6.1](https://github.com/apache/rocketmq/releases/tag/rocketmq-all-4.6.1)。
+2. 版本号(x.y.z)规则变更：
 
-1. 支持跳过堆积的重试消息。
-2. 死消息支持重发。
-3. 根据ip查询其涉及的生产者，消费者，topic。
-4. trace支持开启关闭，trace数据查询优化，增加权限控制。
-5. 客户端异常收集兼容重试机制。
-6. 其余请参考[release](https://github.com/sohutv/mqcloud/releases)。
+    2.1 x.y代表RocketMQ的大版本。
+    
+    2.2 z代表mqcloud的更新版本。
+    
+3. 增加集群拓扑，便于从整体了解机器，机房，流量等情况。
+![](https://raw.githubusercontent.com/sohutv/mqcloud/master/mq-cloud/src/main/resources/static/img/admin/intro/clusterTopology.gif)
+4. 延时队列消息支持消息量及消息查询。
+![image](https://user-images.githubusercontent.com/10137071/81646825-83f61280-945e-11ea-93b9-48fa7908f54a.png)
+
+5. 重试及死消息支持按照key，时间查询。
+![image](https://user-images.githubusercontent.com/10137071/81647218-39c16100-945f-11ea-8b98-a2d562e026a6.png)
+
+6. String序列化兼容非String类型。
 
 ## 特性概览
 
