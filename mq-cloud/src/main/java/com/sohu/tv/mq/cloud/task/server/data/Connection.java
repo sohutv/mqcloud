@@ -25,7 +25,7 @@ public class Connection implements LineParser {
         if (line.startsWith(FLAG)) {
             String[] items = line.split("\\s+");
             for (int i = 0; i < items.length; ++i) {
-                if (items[i].equals("inuse")) {
+                if (items[i].equals("alloc")) {
                     established = NumberUtils.toInt(items[i + 1]);
                 } else if (items[i].equals("orphan")) {
                     orphan = NumberUtils.toInt(items[i + 1]);

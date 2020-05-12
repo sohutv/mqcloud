@@ -40,7 +40,7 @@ public class TimeSectionStats {
      */
     public TimeSectionStats(int timeInMillis) {
         timeSectionCounter = timeSection(timeInMillis);
-        timeSectionStatsSampler = new TimeSectionStatsSampler(this);
+        timeSectionStatsSampler = new TimeSectionStatsSampler();
     }
 
     /**
@@ -217,18 +217,12 @@ public class TimeSectionStats {
         // 总请求次数
         private long totalCount;
 
-        private TimeSectionStats timeSectionStats;
-
-        public TimeSectionStatsSampler(TimeSectionStats timeSectionStats) {
-            this.timeSectionStats = timeSectionStats;
-        }
-
         /**
          * 数据采样
          */
         public void sample() {
             // 获取计数
-            AtomicLong[] timeSectionCounterArray = timeSectionStats.getTimeSectionCounter();
+            AtomicLong[] timeSectionCounterArray = getTimeSectionCounter();
             if (snapshotData == null) {
                 snapshotData = new long[timeSectionCounterArray.length];
             }
@@ -272,7 +266,7 @@ public class TimeSectionStats {
                 curCount += sampledData[i];
                 double curPercentile = (double) curCount / totalCount;
                 if (percentile - curPercentile <= 0.0001) {
-                    return timeSectionStats.time(i);
+                    return time(i);
                 }
             }
             return -1;
@@ -292,7 +286,7 @@ public class TimeSectionStats {
                 if (sampledData[i] == 0) {
                     continue;
                 }
-                totalTime += sampledData[i] * timeSectionStats.time(i);
+                totalTime += sampledData[i] * time(i);
             }
             return (long)(totalTime / totalCount * 10) / 10D;
         }

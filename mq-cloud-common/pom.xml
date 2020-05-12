@@ -6,7 +6,7 @@
 	<parent>
 		<groupId>com.sohu.tv</groupId>
 		<artifactId>mq</artifactId>
-		<version>1.9.4</version>
+		<version>4.6.3</version>
 	</parent>
 
 	<artifactId>mq-cloud-common</artifactId>
@@ -32,6 +32,10 @@
 		<dependency>
 			<groupId>javax.servlet</groupId>
 			<artifactId>javax.servlet-api</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.rocketmq</groupId>
+			<artifactId>rocketmq-tools</artifactId>
 		</dependency>
 	</dependencies>
 </project>

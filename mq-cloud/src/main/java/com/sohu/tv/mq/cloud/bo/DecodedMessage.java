@@ -4,11 +4,14 @@ import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 
+import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.message.MessageDecoder;
 import org.apache.rocketmq.common.message.MessageExt;
+import org.apache.rocketmq.common.sysflag.MessageSysFlag;
 
 import com.alibaba.fastjson.JSONObject;
 import com.sohu.tv.mq.serializable.MessageSerializerEnum;
+import com.sohu.tv.mq.util.CommonUtil;
 
 /**
  * 解码的消息
@@ -20,6 +23,8 @@ public class DecodedMessage extends MessageExt {
     private static final long serialVersionUID = 6615581963568753859L;
     private String decodedBody;
     private String broker;
+    private String realTopic;
+    private String consumer;
     
     // 消息体类型
     private MessageBodyType messageBodyType;
@@ -43,6 +48,31 @@ public class DecodedMessage extends MessageExt {
         this.decodedBody = decodedBody;
     }
     
+    public String getRealTopic() {
+        return realTopic;
+    }
+
+    public void setRealTopic(String realTopic) {
+        this.realTopic = realTopic;
+    }
+
+    public String getConsumer() {
+        return consumer;
+    }
+    
+    public String getRealConsumer() {
+        if (CommonUtil.isRetryTopic(consumer)) {
+            return consumer.substring(MixAll.RETRY_GROUP_TOPIC_PREFIX.length());
+        } else if (CommonUtil.isDeadTopic(consumer)) {
+            return consumer.substring(MixAll.DLQ_GROUP_TOPIC_PREFIX.length());
+        }
+        return consumer;
+    }
+
+    public void setConsumer(String consumer) {
+        this.consumer = consumer;
+    }
+
     /**
      * 将某些属性转换为json
      * @return
@@ -72,7 +102,8 @@ public class DecodedMessage extends MessageExt {
      * @return
      */
     public String getOffsetMsgId() {
-        ByteBuffer byteBufferMsgId = ByteBuffer.allocate(MessageDecoder.MSG_ID_LENGTH);
+        int msgIdLength = (getSysFlag() & MessageSysFlag.STOREHOSTADDRESS_V6_FLAG) == 0 ? 4 + 4 + 8 : 16 + 4 + 8;
+        ByteBuffer byteBufferMsgId = ByteBuffer.allocate(msgIdLength);
         return MessageDecoder.createMessageId(byteBufferMsgId, getStoreHostBytes(), getCommitLogOffset());
     }
 

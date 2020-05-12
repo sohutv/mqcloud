@@ -18,6 +18,7 @@ import com.sohu.tv.mq.cloud.service.ClusterService;
 import com.sohu.tv.mq.cloud.service.NameServerService;
 import com.sohu.tv.mq.cloud.task.AlarmConfigTask;
 import com.sohu.tv.mq.cloud.task.AutoAuditTask;
+import com.sohu.tv.mq.cloud.task.BrokerStoreStatTask;
 import com.sohu.tv.mq.cloud.task.ClusterMonitorTask;
 import com.sohu.tv.mq.cloud.task.ConsumeFailTask;
 import com.sohu.tv.mq.cloud.task.ConsumerStatsTask;
@@ -82,6 +83,13 @@ public class TaskConfiguration {
     public ProducerStatsTask producerStatsTask() {
         ProducerStatsTask producerStatsTask = new ProducerStatsTask();
         return producerStatsTask;
+    }
+    
+    @Bean
+    @Profile({"online-sohu"})
+    public BrokerStoreStatTask brokerStoreStatTask() {
+        BrokerStoreStatTask brokerStoreStatTask = new BrokerStoreStatTask();
+        return brokerStoreStatTask;
     }
     
     @Bean

@@ -1,6 +1,6 @@
 <#if response.OK>
 	<#if response.result.msgList?? && response.result.msgList?size gt 0>
-		<tbody id="offsetPage_${response.result.mqc.times}">
+		<tbody id="page_${response.result.mqc.times}">
 			<#list response.result.msgList as msg>
 				<tr data="${msg.offsetMsgId}" dataIdx="${msg_index + 1 + response.result.mqc.prevSize}">
 					<td data-tooltip="true" title="msgId:${msg.msgId}">${msg_index + 1 + response.result.mqc.prevSize}</td>
@@ -11,24 +11,24 @@
 				</tr>
 			</#list>
 		</tbody>
+		<script>
+			showPage(${response.result.mqc.times});
+			$("#toMessageParam").val('${response.result.mqc.serialize()}');
+			$(function() {
+		        $('[data-tooltip="true"]').tooltip({
+		            container: 'body'
+		        });
+		        <#if response.result.mqc.topic?index_of("%DLQ%") == 0>
+					$('#dataTable tbody#page_${response.result.mqc.times}').multiSelect();
+		        </#if>
+			});
+		</script>
 	<#else>
-		<tbody id="offsetPage_${response.result.mqc.times}">
+		<tbody id="page_${response.result.mqc.times}">
 			<tr><td colspan=5 class="text-center">本次查无数据</td></tr>
 		</tbody>
 	</#if>
-	<input type="hidden" id="offsetData_${response.result.mqc.times}" data_size="${response.result.msgList?size}"  data_search="${response.result.mqc.searchedSize?c}" data_left="${response.result.mqc.leftSize?c}">
-	<script>
-		showOffsetPage(${response.result.mqc.times});
-		$("#toMessageParam").val('${response.result.mqc.serialize()}');
-		$(function() {
-	        $('[data-tooltip="true"]').tooltip({
-	            container: 'body'
-	        });
-	        <#if response.result.mqc.topic?index_of("%DLQ%") == 0>
-				$('#offsetDataTable tbody#offsetPage_${response.result.mqc.times}').multiSelect();
-	        </#if>
-		});
-	</script>
+	<input type="hidden" id="data_${response.result.mqc.times}" data_size="${response.result.msgList?size}"  data_search="${response.result.mqc.searchedSize?c}" data_left="${response.result.mqc.leftSize?c}">
 <#else>
 	<tbody>
 		<tr><td colspan=5 class="text-center">查询异常！${response.message}</td></tr>

@@ -218,8 +218,9 @@ public class UserController extends ViewController {
         topicTrafficHolderVO.setQueryTopic(queryTopic);
         setResult(map, topicTrafficHolderVO);
 
+        List<Integer> traceClusterIdList = clusterService.getTraceClusterIdList();
         // 获取topic列表数量
-        Result<Integer> countResult = topicService.queryTopicCount(queryTopic, userInfo.getUser());
+        Result<Integer> countResult = topicService.queryTopicCount(queryTopic, userInfo.getUser(), traceClusterIdList);
         if (!countResult.isOK()) {
             return view();
         }
@@ -230,7 +231,7 @@ public class UserController extends ViewController {
         paginationParam.setTotalPages(totalPage);
         // 获取topic列表
         Result<List<Topic>> result = topicService.queryTopicList(queryTopic, userInfo.getUser(),
-                paginationParam.getCurrentPage(), paginationParam.getNumOfPage());
+                paginationParam.getCurrentPage(), paginationParam.getNumOfPage(), traceClusterIdList);
         if (result.isEmpty()) {
             return view();
         }

@@ -1,5 +1,6 @@
 package com.sohu.tv.mq.cloud.service;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
@@ -25,34 +26,35 @@ import com.sohu.tv.mq.cloud.util.Result;
  */
 @Service
 public class ClusterService {
-    
+
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
-    
+
     @Autowired
     private ClusterDao clusterDao;
-    
+
     // cluster持有，初始化后即缓存到内存
     private volatile Cluster[] mqClusterArray;
-    
+
     @PostConstruct
     public void refresh() {
         Result<List<Cluster>> clusterListResult = queryAll();
-        if(clusterListResult.isEmpty()) {
+        if (clusterListResult.isEmpty()) {
             logger.error("no cluster data found!");
             return;
         }
         List<Cluster> list = clusterListResult.getResult();
-        if(mqClusterArray == null || mqClusterArray.length != list.size()) {
+        if (mqClusterArray == null || mqClusterArray.length != list.size()) {
             logger.info("cluster config refreshed, old:{} new:{}", Arrays.toString(mqClusterArray), list);
             mqClusterArray = clusterListResult.getResult().toArray(new Cluster[list.size()]);
         }
     }
-    
+
     /**
      * 查询所有集群
+     * 
      * @return
      */
-    public Result<List<Cluster>> queryAll(){
+    public Result<List<Cluster>> queryAll() {
         List<Cluster> list = null;
         try {
             list = clusterDao.select();
@@ -62,21 +64,23 @@ public class ClusterService {
         }
         return Result.getResult(list);
     }
-    
+
     public Cluster[] getAllMQCluster() {
         return mqClusterArray;
     }
-    
+
     /**
      * 获取第一个集群id
+     * 
      * @return
      */
     public int getFirstClusterId() {
         return mqClusterArray[0].getId();
     }
-    
+
     /**
      * 获取trace集群id
+     * 
      * @return
      */
     public int getTraceClusterId() {
@@ -87,9 +91,28 @@ public class ClusterService {
         }
         return -1;
     }
-    
+
+    /**
+     * 获取trace集群id
+     * 
+     * @return
+     */
+    public List<Integer> getTraceClusterIdList() {
+        List<Integer> ids = new ArrayList<Integer>();
+        if (mqClusterArray == null) {
+            return ids;
+        }
+        for (Cluster cluster : mqClusterArray) {
+            if (cluster.isEnableTrace()) {
+                ids.add(cluster.getId());
+            }
+        }
+        return ids;
+    }
+
     /**
      * 根据id查找集群
+     * 
      * @param id
      * @return
      */
@@ -101,12 +124,13 @@ public class ClusterService {
         }
         return null;
     }
-    
+
     /**
      * 保存数据
+     * 
      * @return
      */
-    public Result<List<Cluster>> save(Cluster cluster){
+    public Result<List<Cluster>> save(Cluster cluster) {
         Integer result = null;
         try {
             result = clusterDao.insert(cluster);
@@ -117,9 +141,10 @@ public class ClusterService {
         }
         return Result.getResult(result);
     }
-    
+
     /**
      * 更新fileReservedTime
+     * 
      * @param mqAdmin
      * @param cid
      * @param brokerAddr
@@ -130,13 +155,13 @@ public class ClusterService {
         String fileReservedTime = properties.getProperty("fileReservedTime");
         update(cid, NumberUtils.toInt(fileReservedTime));
     }
-    
+
     public void update(int cid, int fileReservedTime) {
         Cluster cluster = getMQClusterById(cid);
-        if(cluster == null) {
+        if (cluster == null) {
             return;
         }
-        if(fileReservedTime > cluster.getFileReservedTime()) {
+        if (fileReservedTime > cluster.getFileReservedTime()) {
             cluster.setFileReservedTime(fileReservedTime);
         }
     }

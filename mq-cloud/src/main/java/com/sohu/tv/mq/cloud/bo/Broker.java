@@ -83,6 +83,10 @@ public class Broker {
     public void setCheckTime(Date checkTime) {
         this.checkTime = checkTime;
     }
+    
+    public String getIp() {
+        return addr.split(":")[0];
+    }
 
     public String getCreateTimeFormat() {
         if(getCreateTime() == null) {

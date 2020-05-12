@@ -216,6 +216,7 @@ public class BrokerTrafficLineChartData implements LineChartData {
         putCountYAxisList.add(putCountYAxis);
         
         YAxis putCountYAxisDayBefore = new YAxis();
+        putCountYAxisDayBefore.setVisible(false);
         putCountYAxisDayBefore.setName(curDateBefore + "-生产量");
         putCountYAxisDayBefore.setData(putCountListDayBefore);
         putCountYAxisList.add(putCountYAxisDayBefore);
@@ -228,6 +229,7 @@ public class BrokerTrafficLineChartData implements LineChartData {
         getCountYAxisList.add(getCountYAxis);
         
         YAxis getCountYAxisDayBefore = new YAxis();
+        getCountYAxisDayBefore.setVisible(false);
         getCountYAxisDayBefore.setName(curDateBefore + "-消费量");
         getCountYAxisDayBefore.setData(getCountListDayBefore);
         getCountYAxisList.add(getCountYAxisDayBefore);
@@ -246,6 +248,7 @@ public class BrokerTrafficLineChartData implements LineChartData {
         putSizeYAxisList.add(putSizeYAxis);
         
         YAxis putSizeYAxisDayBefore = new YAxis();
+        putSizeYAxisDayBefore.setVisible(false);
         putSizeYAxisDayBefore.setName(curDateBefore + "-生产大小");
         putSizeYAxisDayBefore.setData(putSizeListDayBefore);
         putSizeYAxisList.add(putSizeYAxisDayBefore);
@@ -257,6 +260,7 @@ public class BrokerTrafficLineChartData implements LineChartData {
         getSizeYAxisList.add(getSizeYAxis);
         
         YAxis getSizeYAxisDayBefore = new YAxis();
+        getSizeYAxisDayBefore.setVisible(false);
         getSizeYAxisDayBefore.setName(curDateBefore + "-消费大小");
         getSizeYAxisDayBefore.setData(getSizeListDayBefore);
         getSizeYAxisList.add(getSizeYAxisDayBefore);
@@ -285,7 +289,7 @@ public class BrokerTrafficLineChartData implements LineChartData {
                 + "<td>"+formatSize(totalPutSize)+"</td>"
                 + "</tr><tr><td>消费</td>"
                 + "<td>"+formatCount(maxGetCount)+"/分</td>"
-                + "<td>"+formatSize(totalGetCount)+"</td>"
+                + "<td>"+formatCount(totalGetCount)+"</td>"
                 + "<td>"+formatSize(maxGetSize)+"/分</td>"
                 + "<td>"+formatSize(totalGetSize)+"</td>"
                 + "</tr><tr><td rowspan=2>"+curDateBefore+"</td><td>生产</td>"
@@ -295,7 +299,7 @@ public class BrokerTrafficLineChartData implements LineChartData {
                 + "<td>"+formatSize(totalPutSizeDayBefore)+"</td>"
                 + "</tr><tr><td>消费</td>"
                 + "<td>"+formatCount(maxGetCountDayBefore)+"/分</td>"
-                + "<td>"+formatSize(totalGetCountDayBefore)+"</td>"
+                + "<td>"+formatCount(totalGetCountDayBefore)+"</td>"
                 + "<td>"+formatSize(maxGetSizeDayBefore)+"/分</td>"
                 + "<td>"+formatSize(totalGetSizeDayBefore)+"</td>"
                 + "</tr></tbody></table>");

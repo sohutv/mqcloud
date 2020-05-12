@@ -20,7 +20,7 @@ public class ServerStatDaoTest {
 
     @Test
     public void testSaveServerInfo() {
-        serverStatusDao.saveServerInfo("test.mqcloud.com", "init", -1);
+        serverStatusDao.saveServerInfo("test.mqcloud.com", "init", -1, null);
     }
     
     @Test

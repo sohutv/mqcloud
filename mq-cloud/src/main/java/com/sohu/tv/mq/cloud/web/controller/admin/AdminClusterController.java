@@ -13,6 +13,7 @@ import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.rocketmq.common.protocol.body.ClusterInfo;
 import org.apache.rocketmq.common.protocol.body.KVTable;
 import org.apache.rocketmq.common.protocol.route.BrokerData;
+import org.apache.rocketmq.common.running.RunningStats;
 import org.apache.rocketmq.tools.admin.MQAdminExt;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,6 +25,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.sohu.tv.mq.cloud.bo.Broker;
 import com.sohu.tv.mq.cloud.bo.Cluster;
+import com.sohu.tv.mq.cloud.bo.MessageQueryCondition;
 import com.sohu.tv.mq.cloud.bo.Topic;
 import com.sohu.tv.mq.cloud.mq.DefaultCallback;
 import com.sohu.tv.mq.cloud.mq.MQAdminCallback;
@@ -34,6 +36,7 @@ import com.sohu.tv.mq.cloud.service.ConsumerService;
 import com.sohu.tv.mq.cloud.service.TopicService;
 import com.sohu.tv.mq.cloud.util.DateUtil;
 import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper;
+import com.sohu.tv.mq.cloud.util.MessageDelayLevel;
 import com.sohu.tv.mq.cloud.util.Result;
 import com.sohu.tv.mq.cloud.web.controller.param.ClusterParam;
 import com.sohu.tv.mq.cloud.web.vo.BrokerStatVO;
@@ -53,22 +56,22 @@ public class AdminClusterController extends AdminViewController {
 
     @Autowired
     private MQAdminTemplate mqAdminTemplate;
-    
+
     @Autowired
     private ClusterService clusterService;
-    
+
     @Autowired
     private TopicService topicService;
-    
+
     @Autowired
     private ConsumerService consumerService;
-    
+
     @Autowired
     private MQCloudConfigHelper mqCloudConfigHelper;
-    
+
     @Autowired
     private BrokerService brokerService;
-    
+
     @RequestMapping("/list")
     public String list(@RequestParam(name = "cid", required = false) Integer cid, Map<String, Object> map) {
         setView(map, "list");
@@ -86,7 +89,7 @@ public class AdminClusterController extends AdminViewController {
         Map<String, Map<String, BrokerStatVO>> brokerGroup = null;
         if (brokerListResult.isOK()) {
             List<Broker> brokerList = brokerListResult.getResult();
-            brokerGroup = fetchBrokerRuntimeStats(brokerList, mqCluster); 
+            brokerGroup = fetchBrokerRuntimeStats(brokerList, mqCluster);
         }
         // 生成vo
         ClusterInfoVO clusterInfoVO = new ClusterInfoVO();
@@ -101,25 +104,33 @@ public class AdminClusterController extends AdminViewController {
         clusterInfoVO.setSelectedMQCluster(mqCluster);
         setResult(map, clusterInfoVO);
         setResult(map, "username", mqCloudConfigHelper.getServerUser());
+        // 查询延时消息用
+        MessageQueryCondition messageQueryCondition = new MessageQueryCondition();
+        messageQueryCondition.setCid(mqCluster.getId());
+        messageQueryCondition.setTopic("SCHEDULE_TOPIC_XXXX");
+        setResult(map, "messageQueryCondition", messageQueryCondition);
+        // 判断是否sohu
+        setResult(map, "sohu", mqCloudConfigHelper.isSohu());
         return view();
     }
-    
+
     /**
      * 禁止写入
+     * 
      * @param cid
      * @param broker
      * @return
      */
     @ResponseBody
-    @RequestMapping(value="/nowrite", method=RequestMethod.POST)
-    public Result<?> nowrite(UserInfo ui, @RequestParam(name="cid") Integer cid,
-            @RequestParam(name="broker") String broker) {
+    @RequestMapping(value = "/nowrite", method = RequestMethod.POST)
+    public Result<?> nowrite(UserInfo ui, @RequestParam(name = "cid") Integer cid,
+            @RequestParam(name = "broker") String broker) {
         Cluster mqCluster = getMQCluster(cid);
         logger.warn("nowrite {}:{}, user:{}", mqCluster, broker, ui);
         Integer rst = mqAdminTemplate.execute(new DefaultCallback<Integer>() {
             public Integer callback(MQAdminExt mqAdmin) throws Exception {
                 List<String> namesrvList = mqAdmin.getNameServerAddressList();
-                if(namesrvList == null) {
+                if (namesrvList == null) {
                     return null;
                 }
                 int totalWipeTopicCount = 0;
@@ -134,13 +145,14 @@ public class AdminClusterController extends AdminViewController {
                 }
                 return totalWipeTopicCount;
             }
+
             public Cluster mqCluster() {
                 return mqCluster;
             }
         });
         return Result.getResult(rst);
     }
-    
+
     /**
      * 流量展示
      * 
@@ -152,7 +164,7 @@ public class AdminClusterController extends AdminViewController {
             throws Exception {
         return adminViewModule() + "/traffic";
     }
-    
+
     /**
      * 初始化topic
      * 
@@ -167,7 +179,7 @@ public class AdminClusterController extends AdminViewController {
         setResult(map, result);
         return adminViewModule() + "/initTopic";
     }
-    
+
     /**
      * 初始化consumer
      * 
@@ -180,7 +192,7 @@ public class AdminClusterController extends AdminViewController {
             throws Exception {
         Cluster cluster = clusterService.getMQClusterById(cid);
         Result<List<Topic>> topicListResult = topicService.queryTopicList(cluster);
-        if(topicListResult.isEmpty()) {
+        if (topicListResult.isEmpty()) {
             setResult(map, Result.getWebResult(topicListResult));
             return adminViewModule() + "/initConsumer";
         }
@@ -188,8 +200,7 @@ public class AdminClusterController extends AdminViewController {
         setResult(map, Result.getResult(resultMap));
         return adminViewModule() + "/initConsumer";
     }
-    
-    
+
     /**
      * 新增cluster
      * 
@@ -205,22 +216,22 @@ public class AdminClusterController extends AdminViewController {
         Result<?> result = clusterService.save(cluster);
         return result;
     }
-    
-    private String getFromMap(HashMap<String, String> map, String key) {
+
+    private String removeFromMap(HashMap<String, String> map, String key) {
         return map.remove(key);
     }
-    
+
     private Cluster getMQCluster(Integer cid) {
         Cluster mqCluster = null;
-        if(cid != null) {
+        if (cid != null) {
             mqCluster = clusterService.getMQClusterById(cid);
         }
-        if(mqCluster == null && clusterService.getAllMQCluster() != null) {
+        if (mqCluster == null && clusterService.getAllMQCluster() != null) {
             mqCluster = clusterService.getAllMQCluster()[0];
         }
         return mqCluster;
     }
-    
+
     private String formatTraffic(String value) {
         String[] array = value.split(" ");
         if (array != null && array.length > 0) {
@@ -228,7 +239,7 @@ public class AdminClusterController extends AdminViewController {
         }
         return "-";
     }
-    
+
     /**
      * 从nameserver 拉取当前集群的broker地址
      * 
@@ -268,7 +279,7 @@ public class AdminClusterController extends AdminViewController {
         });
         return brokerListResult;
     }
-    
+
     /**
      * list接口过长，拆分，获取brokerGroupMap
      * 
@@ -300,7 +311,7 @@ public class AdminClusterController extends AdminViewController {
                                 // 抓取统计指标
                                 KVTable kvTable = mqAdmin.fetchBrokerRuntimeStats(broker.getAddr());
                                 // 处理broker stats 数据
-                                handleBrokerStat(kvTable, brokerStatVO);
+                                handleBrokerStat(broker, kvTable, brokerStatVO);
                             } catch (Exception e) {
                                 logger.error("cluster:{} broker:{} err", mqCluster(), broker.getAddr(), e);
                             }
@@ -319,7 +330,7 @@ public class AdminClusterController extends AdminViewController {
                 });
         return brokerGroup;
     }
-    
+
     /**
      * 处理broker stat数据
      * 
@@ -327,22 +338,36 @@ public class AdminClusterController extends AdminViewController {
      * @param kvTable
      * @param broker
      */
-    private void handleBrokerStat(KVTable kvTable, BrokerStatVO brokerStatVO) {
+    private void handleBrokerStat(Broker broker, KVTable kvTable, BrokerStatVO brokerStatVO) {
         HashMap<String, String> stats = kvTable.getTable();
-        // 启动时间 转换 
+        // 启动时间 转换
         String bootTime = stats.get("bootTimestamp");
         String boot = DateUtil.getFormat(DateUtil.YMD_BLANK_HMS_COLON).format(new Date(NumberUtils.toLong(bootTime)));
         stats.put("bootTimestamp", boot);
         // 版本
-        brokerStatVO.setVersion(getFromMap(stats, "brokerVersionDesc"));
+        brokerStatVO.setVersion(removeFromMap(stats, "brokerVersionDesc"));
         kvTable.getTable().remove("brokerVersion");
         // 流量
-        brokerStatVO.setInTps(formatTraffic(getFromMap(stats, "putTps")));
-        brokerStatVO.setOutTps(formatTraffic(getFromMap(stats, "getTransferedTps")));
+        brokerStatVO.setInTps(formatTraffic(removeFromMap(stats, "putTps")));
+        brokerStatVO.setOutTps(formatTraffic(removeFromMap(stats, "getTransferedTps")));
+        // 延迟队列
+        for (MessageDelayLevel messageDelayLevel : MessageDelayLevel.values()) {
+            String offsetString = removeFromMap(stats,
+                    RunningStats.scheduleMessageOffset.name() + "_" + messageDelayLevel.getLevel());
+            if (offsetString == null || broker.getBrokerID() != 0) {
+                continue;
+            }
+            String[] offsets = offsetString.split(",");
+            if (offsets != null && offsets.length == 2) {
+                long curOffset = NumberUtils.toLong(offsets[0]);
+                long maxOffset = NumberUtils.toLong(offsets[1]);
+                brokerStatVO.addDelayMessageOffset(messageDelayLevel, curOffset, maxOffset);
+            }
+        }
         // 其余指标
         brokerStatVO.setInfo(new TreeMap<String, String>(stats));
     }
-    
+
     @Override
     public String viewModule() {
         return "cluster";

@@ -62,6 +62,22 @@ public class BrokerService {
     }
     
     /**
+     * 查询所有的broker
+     * 
+     * @return Result<List<Broker>>
+     */
+    public Result<List<Broker>> queryAll() {
+        List<Broker> result = null;
+        try {
+            result = brokerDao.selectAll();
+        } catch (Exception e) {
+            logger.error("query all err", e);
+            return Result.getDBErrorResult(e);
+        }
+        return Result.getResult(result);
+    }
+    
+    /**
      * 删除记录
      * 
      * @return 返回Result

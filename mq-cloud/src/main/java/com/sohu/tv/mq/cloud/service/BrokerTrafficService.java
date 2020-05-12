@@ -173,4 +173,58 @@ public class BrokerTrafficService {
         }
         return Result.getResult(list);
     }
+    
+    /**
+     * 查询流量
+     * 
+     * @param ip
+     * @param date
+     * @return
+     */
+    public Result<List<BrokerTraffic>> queryTraffic(String date, List<String> times, List<String> ips) {
+        List<BrokerTraffic> list = null;
+        try {
+            list = brokerTrafficDao.selectTrafficList(date, times, ips);
+        } catch (Exception e) {
+            logger.error("query traffic err, ips:{}, times:{}, date:{}", ips, times, date, e);
+            return Result.getDBErrorResult(e);
+        }
+        return Result.getResult(list);
+    }
+    
+    /**
+     * 查询统计流量
+     * 
+     * @param ip
+     * @param date
+     * @return
+     */
+    public Result<BrokerTraffic> queryTrafficStatistic(String date, List<String> ips, String beginTime) {
+        BrokerTraffic brokerTraffic = null;
+        try {
+            brokerTraffic = brokerTrafficDao.selectTrafficStatistic(date, ips, beginTime);
+        } catch (Exception e) {
+            logger.error("query traffic err, ips:{}, beginTime:{}, date:{}", ips, beginTime, date, e);
+            return Result.getDBErrorResult(e);
+        }
+        return Result.getResult(brokerTraffic);
+    }
+    
+    /**
+     * 查询统计流量
+     * 
+     * @param ip
+     * @param date
+     * @return
+     */
+    public Result<BrokerTraffic> queryTrafficStatistic(String date, String ip, String beginTime) {
+        BrokerTraffic brokerTraffic = null;
+        try {
+            brokerTraffic = brokerTrafficDao.selectTrafficStatisticByIp(date, ip, beginTime);
+        } catch (Exception e) {
+            logger.error("query traffic err, ip:{}, beginTime:{}, date:{}", ip, beginTime, date, e);
+            return Result.getDBErrorResult(e);
+        }
+        return Result.getResult(brokerTraffic);
+    }
 }

@@ -1,0 +1,33 @@
+<#if response.OK>
+	<#if response.result?? && response.result?size gt 0>
+		<tbody id="page">
+			<#list response.result as msg>
+				<tr data="${msg.offsetMsgId}" dataIdx="${msg_index + 1}">
+					<td data-tooltip="true" title="msgId:${msg.msgId}">${msg_index + 1}</td>
+					<td>${msg.bornHostString}</td>
+					<td data-tooltip="true" title="存储时间:${msg.storeTimestamp?number_to_datetime?string("yyyy-MM-dd HH:mm:ss.SSS")}">${msg.bornTimestamp?number_to_datetime?string("yyyy-MM-dd HH:mm:ss.SSS")}</td>
+					<td>${msg.reconsumeTimes}</td>
+					<td data-tooltip="true" title="序列化方式:<#if msg.messageBodySerializer??>${msg.messageBodySerializer.getName()}(${msg.messageBodyTypeString!})<#else>${msg.messageBodyTypeString!}</#if>"><#if msg.decodedBody?length gt 1000><pre>${msg.decodedBody}</pre><#else>${msg.decodedBody}</#if></td>
+				</tr>
+			</#list>
+		</tbody>
+		<script>
+			$(function() {
+		        $('[data-tooltip="true"]').tooltip({
+		            container: 'body'
+		        });
+		        <#if RequestParameters.toTopic?index_of("%DLQ%") == 0>
+					$('#dataTable tbody#page').multiSelect();
+		        </#if>
+			});
+		</script>
+	<#else>
+		<tbody>
+			<tr class="no_more_data"><td colspan=5 class="text-center">本次查无数据</td></tr>
+		</tbody>
+	</#if>
+<#else>
+	<tbody>
+		<tr><td colspan=5 class="text-center">查询异常！${response.message}</td></tr>
+	</tbody>
+</#if>

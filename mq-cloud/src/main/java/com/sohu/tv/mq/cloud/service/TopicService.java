@@ -32,11 +32,11 @@ import com.sohu.tv.mq.cloud.bo.TopicConsumer;
 import com.sohu.tv.mq.cloud.bo.TopicTraffic;
 import com.sohu.tv.mq.cloud.bo.User;
 import com.sohu.tv.mq.cloud.bo.UserProducer;
+import com.sohu.tv.mq.cloud.common.mq.SohuMQAdmin;
 import com.sohu.tv.mq.cloud.dao.TopicDao;
 import com.sohu.tv.mq.cloud.mq.DefaultCallback;
 import com.sohu.tv.mq.cloud.mq.MQAdminCallback;
 import com.sohu.tv.mq.cloud.mq.MQAdminTemplate;
-import com.sohu.tv.mq.cloud.mq.SohuMQAdmin;
 import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper;
 import com.sohu.tv.mq.cloud.util.Result;
 import com.sohu.tv.mq.cloud.util.Status;
@@ -136,11 +136,11 @@ public class TopicService {
      * 
      * @param Result<List<Topic>>
      */
-    public Result<List<Topic>> queryTopicList(String topic, long uid, int page, int size) {
+    public Result<List<Topic>> queryTopicList(String topic, long uid, int page, int size, List<Integer> traceClusterIds) {
         List<Topic> topicList = null;
         try {
             int m = (page - 1)*size;
-            topicList = topicDao.selectByUid(topic, uid, m, size);
+            topicList = topicDao.selectByUid(topic, uid, m, size, traceClusterIds);
         } catch (Exception e) {
             logger.error("selectByUid err, uid:{}", uid, e);
             return Result.getDBErrorResult(e);
@@ -153,10 +153,10 @@ public class TopicService {
      * 
      * @param Result<Integer>
      */
-    public Result<Integer> queryTopicListCount(String topic, long uid) {
+    public Result<Integer> queryTopicListCount(String topic, long uid, List<Integer> traceClusterIds) {
         Integer count = null;
         try {
-            count = topicDao.selectByUidCount(topic, uid);
+            count = topicDao.selectByUidCount(topic, uid, traceClusterIds);
         } catch (Exception e) {
             logger.error("selectByUidCount err, uid:{}", uid, e);
             return Result.getDBErrorResult(e);
@@ -169,11 +169,11 @@ public class TopicService {
      * 
      * @param Result<Integer>
      */
-    public Result<Integer> queryTopicCount(String topic, User user) {
+    public Result<Integer> queryTopicCount(String topic, User user, List<Integer> traceClusterIds) {
         if(user.isAdmin()) {
-            return queryTopicListCount(topic, 0);
+            return queryTopicListCount(topic, 0, traceClusterIds);
         } 
-        return queryTopicListCount(topic, user.getId());
+        return queryTopicListCount(topic, user.getId(), traceClusterIds);
     }
     
     /**
@@ -181,11 +181,11 @@ public class TopicService {
      * 
      * @param Result<Integer>
      */
-    public Result<List<Topic>> queryTopicList(String topic, User user, int page, int size) {
+    public Result<List<Topic>> queryTopicList(String topic, User user, int page, int size, List<Integer> traceClusterIds) {
         if(user.isAdmin()) {
-            return queryTopicList(topic, 0, page, size);
+            return queryTopicList(topic, 0, page, size, traceClusterIds);
         } 
-        return queryTopicList(topic, user.getId(), page, size);
+        return queryTopicList(topic, user.getId(), page, size, traceClusterIds);
     }
 
     /**

@@ -1,0 +1,84 @@
+<table class="table table-striped table-hover" style="margin: 0px">
+	<tbody>
+		<tr>
+			<td colspan=17>${server.room!}${server.machineTypeName!}${server.ip}最近一小时状况</td>
+		</tr>
+		<tr>
+			<td></td>
+			<td colspan=3 align="center">load</td>
+			<td colspan=3 align="center">cpu</td>
+			<td colspan=2 align="center">memory</td>
+		</tr>
+		<tr>
+			<td></td>
+			<td>1</td>
+			<td>5</td>
+			<td>15</td>
+			<td>user</td>
+			<td>sys</td>
+			<td>wio</td>
+			<td>use</td>
+			<td>swap</td>
+		</tr>
+		<tr>
+			<td>平均</td>
+			<td>${response.result.load1.maxString}</td>
+			<td>${response.result.load5.avgString}</td>
+			<td>${response.result.load15.avgString}</td>
+			<td>${response.result.cpuUser.avgString}%</td>
+			<td>${response.result.cpuSys.avgString}%</td>
+			<td>${response.result.cpuWio.avgString}%</td>
+			<td>${response.result.memUsePercent.avgString}%</td>
+			<td>${response.result.swapUsePercent.avgString}%</td>
+		</tr>
+		<tr>
+			<td>最大</td>
+			<td>${response.result.load1.maxString}</td>
+			<td>${response.result.load5.maxString}</td>
+			<td>${response.result.load15.maxString}</td>
+			<td>${response.result.cpuUser.maxString}%</td>
+			<td>${response.result.cpuSys.maxString}%</td>
+			<td>${response.result.cpuWio.maxString}%</td>
+			<td>${response.result.memUsePercent.maxString}%</td>
+			<td>${response.result.swapUsePercent.maxString}%</td>
+		</tr>
+		<tr>
+			<td></td>
+			<td colspan=4 align="center">net</td>
+			<td colspan=4 align="center">io</td>
+		</tr>
+		<tr>
+			<td></td>
+			<td>in</td>
+			<td>out</td>
+			<td>conn</td>
+			<td>wait</td>
+			<td>read</td>
+			<td>write</td>
+			<td>busy</td>
+			<td>iops</td>
+		</tr>
+		<tr>
+			<td>平均</td>
+			<td>${response.result.netIn.avgFormat}</td>
+			<td>${response.result.netOut.avgFormat}</td>
+			<td>${response.result.tcpEstablished.avgString}</td>
+			<td>${response.result.tcpWait.avgString}</td>
+			<td>${response.result.ioRead.avgFormat}</td>
+			<td>${response.result.ioWrite.avgFormat}</td>
+			<td>${response.result.ioBusy.avgString}%</td>
+			<td>${response.result.iops.avgString}</td>
+		</tr>
+		<tr>
+			<td>最大</td>
+			<td>${response.result.netIn.maxFormat}</td>
+			<td>${response.result.netOut.maxFormat}</td>
+			<td>${response.result.tcpEstablished.maxString}</td>
+			<td>${response.result.tcpWait.maxString}</td>
+			<td>${response.result.ioRead.maxFormat}</td>
+			<td>${response.result.ioWrite.maxFormat}</td>
+			<td>${response.result.ioBusy.maxString}%</td>
+			<td>${response.result.iops.maxString}</td>
+		</tr>
+	</tbody>
+</table>

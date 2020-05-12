@@ -3,16 +3,12 @@ package com.sohu.tv.mq.cloud.mq;
 import org.apache.commons.pool2.KeyedPooledObjectFactory;
 import org.apache.commons.pool2.PooledObject;
 import org.apache.commons.pool2.impl.DefaultPooledObject;
-import org.apache.rocketmq.acl.common.AclClientRPCHook;
-import org.apache.rocketmq.acl.common.SessionCredentials;
 import org.apache.rocketmq.common.protocol.body.ClusterInfo;
 import org.apache.rocketmq.tools.admin.MQAdminExt;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.sohu.tv.mq.cloud.bo.Cluster;
-import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper;
-import com.sohu.tv.mq.util.Constant;
 
 /**
  * MQAdmin对象池
@@ -25,23 +21,12 @@ public class MQAdminPooledObjectFactory implements KeyedPooledObjectFactory<Clus
 
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
-    private MQCloudConfigHelper mqCloudConfigHelper;
+    private SohuMQAdminFactory sohuMQAdminFactory;
 
     @Override
     public PooledObject<MQAdminExt> makeObject(Cluster key) throws Exception {
-        System.setProperty(Constant.ROCKETMQ_NAMESRV_DOMAIN, mqCloudConfigHelper.getDomain());
-        SohuMQAdmin sohuMQAdmin = null;
-        if (mqCloudConfigHelper.isAdminAclEnable()) {
-            SessionCredentials adminSessionCredentials = new SessionCredentials(
-                    mqCloudConfigHelper.getAdminAccessKey(), mqCloudConfigHelper.getAdminSecretKey());
-            sohuMQAdmin = new SohuMQAdmin(new AclClientRPCHook(adminSessionCredentials), 5000);
-        } else {
-            sohuMQAdmin = new SohuMQAdmin();
-        }
-        sohuMQAdmin.setVipChannelEnabled(false);
-        sohuMQAdmin.setUnitName(String.valueOf(key.getId()));
-        sohuMQAdmin.start();
-        DefaultPooledObject<MQAdminExt> pooledObject = new DefaultPooledObject<MQAdminExt>(sohuMQAdmin);
+        DefaultPooledObject<MQAdminExt> pooledObject = new DefaultPooledObject<MQAdminExt>(
+                sohuMQAdminFactory.getInstance(key));
         logger.info("create object, key:{}", key);
         return pooledObject;
     }
@@ -89,7 +74,7 @@ public class MQAdminPooledObjectFactory implements KeyedPooledObjectFactory<Clus
     public void passivateObject(Cluster key, PooledObject<MQAdminExt> p) throws Exception {
     }
 
-    public void setMqCloudConfigHelper(MQCloudConfigHelper mqCloudConfigHelper) {
-        this.mqCloudConfigHelper = mqCloudConfigHelper;
+    public void setSohuMQAdminFactory(SohuMQAdminFactory sohuMQAdminFactory) {
+        this.sohuMQAdminFactory = sohuMQAdminFactory;
     }
 }

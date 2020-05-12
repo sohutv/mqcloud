@@ -51,9 +51,18 @@ public interface ServerStatusDao {
      * @param ip
      * @param dist from /etc/issue
      */
-    @Insert("<script>insert ignore into server(ip,dist<if test=\"type >= 0\">,machine_type</if>) "
-            + "values (#{ip},#{dist}<if test=\"type >= 0\">,#{type}</if>)</script>")
-    public void saveServerInfo(@Param("ip") String ip, @Param("dist") String dist, @Param("type") int type);
+    @Insert("<script>insert into server(ip,dist"
+            + "<if test=\"type >= 0\">,machine_type</if>"
+            + "<if test=\"room != null\">,room</if>"
+            + ") "
+            + "values (#{ip},#{dist}"
+            + "<if test=\"type >= 0\">,#{type}</if>"
+            + "<if test=\"room != null\">,#{room}</if>"
+            + ") on duplicate key update dist=values(dist)"
+            + "<if test=\"type >= 0\">,machine_type=values(machine_type) </if>"
+            + "<if test=\"room != null\">,room=values(room) </if>"
+            + "</script>")
+    public void saveServerInfo(@Param("ip") String ip, @Param("dist") String dist, @Param("type") int type, @Param("room") String room);
     
     /**
      * 删除服务器信息
@@ -130,4 +139,14 @@ public interface ServerStatusDao {
      */
     @Update("update server set machine_type=#{type} where ip = #{ip}")
     public Integer updateServer(@Param("ip") String ip, @Param("type") int type);
+    
+    /**
+     * 查询服务器状态
+     * @param ip
+     * @param date
+     * @return List<ServerStatus>
+     */
+    @Select("select * from server_stat where ip=#{ip} and cdate=#{cdate} and ctime >= #{beginTime}")
+    public List<ServerStatus> queryServerStatByIp(@Param("ip") String ip, 
+            @Param("cdate") String date, @Param("beginTime") String beginTime);
 }

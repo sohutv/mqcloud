@@ -23,6 +23,14 @@ public interface BrokerDao {
      */
     @Select("select * from broker where cid = #{cid}")
     public List<Broker> selectByClusterId(@Param("cid") int cid);
+    
+    /**
+     * 查询
+     * 
+     * @return
+     */
+    @Select("select * from broker")
+    public List<Broker> selectAll();
 
     /**
      * 插入

@@ -1,4 +1,4 @@
-package com.sohu.tv.mq.cloud.mq;
+package com.sohu.tv.mq.cloud.common.mq;
 
 import java.lang.reflect.Field;
 
@@ -9,9 +9,14 @@ import org.apache.rocketmq.client.producer.SendResult;
 import org.apache.rocketmq.common.message.Message;
 import org.apache.rocketmq.common.protocol.body.TopicList;
 import org.apache.rocketmq.remoting.RPCHook;
+import org.apache.rocketmq.remoting.exception.RemotingConnectException;
 import org.apache.rocketmq.remoting.exception.RemotingException;
+import org.apache.rocketmq.remoting.exception.RemotingSendRequestException;
+import org.apache.rocketmq.remoting.exception.RemotingTimeoutException;
 import org.apache.rocketmq.tools.admin.DefaultMQAdminExt;
 import org.apache.rocketmq.tools.admin.DefaultMQAdminExtImpl;
+
+import com.sohu.tv.mq.cloud.common.model.BrokerStoreStat;
 
 /**
  * sohu实现，为了添加扩展某些方法
@@ -19,30 +24,14 @@ import org.apache.rocketmq.tools.admin.DefaultMQAdminExtImpl;
  * @author yongfeigao
  * @date 2018年10月16日
  */
-public class SohuMQAdmin extends DefaultMQAdminExt {
+public abstract class SohuMQAdmin extends DefaultMQAdminExt {
 
     public SohuMQAdmin() {
         super();
     }
 
-    public SohuMQAdmin(long timeoutMillis) {
-        super(timeoutMillis);
-    }
-
     public SohuMQAdmin(RPCHook rpcHook, long timeoutMillis) {
         super(rpcHook, timeoutMillis);
-    }
-
-    public SohuMQAdmin(RPCHook rpcHook) {
-        super(rpcHook);
-    }
-
-    public SohuMQAdmin(String adminExtGroup, long timeoutMillis) {
-        super(adminExtGroup, timeoutMillis);
-    }
-
-    public SohuMQAdmin(String adminExtGroup) {
-        super(adminExtGroup);
     }
 
     /**
@@ -104,4 +93,17 @@ public class SohuMQAdmin extends DefaultMQAdminExt {
         MQClientInstance mqClientInstance = (MQClientInstance) field.get(defaultMQAdminExtImpl);
         return mqClientInstance;
     }
+
+    /**
+     * 获取broker存储统计
+     * @param brokerAddr
+     * @return
+     * @throws RemotingConnectException
+     * @throws RemotingSendRequestException
+     * @throws RemotingTimeoutException
+     * @throws MQClientException
+     * @throws InterruptedException
+     */
+    public abstract BrokerStoreStat getBrokerStoreStats(String brokerAddr) throws RemotingConnectException,
+            RemotingSendRequestException, RemotingTimeoutException, MQClientException, InterruptedException;
 }

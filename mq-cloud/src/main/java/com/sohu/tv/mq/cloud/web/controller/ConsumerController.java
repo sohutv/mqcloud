@@ -158,6 +158,7 @@ public class ConsumerController extends ViewController {
         setResult(map, "topic", topic);
         setResult(map, "hasMore", consumerSelector.isHasMore());
         FreemarkerUtil.set("long", Long.class, map);
+        setResult(map, "cluster", cluster);
         return view;
     }
     

@@ -25,6 +25,7 @@ import com.sohu.tv.mq.stats.StatsHelper;
  * @date 2018年1月17日
  * @author copy from indexmq
  */
+@SuppressWarnings("deprecation")
 public class RocketMQProducer extends AbstractConfig {
     // rocketmq 实际生产者
     private final DefaultMQProducer producer;

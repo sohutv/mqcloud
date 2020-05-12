@@ -36,7 +36,7 @@
 				</tr>
 				<tr>
 					<td>消息顺序:</td>
-					<td class="nostyleA">
+					<td>
 						<#if response.result.topic.ordered == 0>
 							<a data-toggle="tooltip" title="查看释义" target=_blank href="/wiki/userGuide/clientConsumer#normalOrder">局部有序</a>
 						<#else>
@@ -46,9 +46,9 @@
 				</tr>
 				<tr>
 					<td>序列化方式:</td>
-					<td class="nostyleA">
+					<td>
 						<#if response.result.topic.serializer == 1>
-							<a href="/wiki/userGuide/clientProducer#produceJson"target=_blank  data-toggle="tooltip" title="查看生产JSON样例，客户端务必升级至${version}及以上">${response.result.topic.serializerName!}</a>
+							<a href="/wiki/userGuide/clientProducer#produceJson"target=_blank  data-toggle="tooltip" title="查看生产JSON样例">${response.result.topic.serializerName!}</a>
 						<#else>
 							<a href="/wiki/userGuide/clientProducer#produceObject" target=_blank data-toggle="tooltip" title="查看生产对象或Map样例">${response.result.topic.serializerName!}</a>
 						</#if>

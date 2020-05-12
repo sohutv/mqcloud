@@ -232,6 +232,8 @@ public class LineChart {
 
         // 默认是否可见
         private boolean visible = true;
+        
+        private Tip tooltip;
 
         public boolean isVisible() {
             return visible;
@@ -273,7 +275,14 @@ public class LineChart {
         public void setData(List<?> data) {
             this.data = (List<Object>) data;
         }
-        
+
+        public Tip getTooltip() {
+            return tooltip;
+        }
+
+        public void setTooltip(Tip tooltip) {
+            this.tooltip = tooltip;
+        }
 
     }
     
@@ -290,6 +299,7 @@ public class LineChart {
         private String footerFormat;
         // message是否使用html格式
         private boolean useHTML;
+        private String valueSuffix;
 
         public boolean isShared() {
             return shared;
@@ -329,6 +339,14 @@ public class LineChart {
 
         public void setUseHTML(boolean useHTML) {
             this.useHTML = useHTML;
+        }
+
+        public String getValueSuffix() {
+            return valueSuffix;
+        }
+
+        public void setValueSuffix(String valueSuffix) {
+            this.valueSuffix = valueSuffix;
         }
     }
 }

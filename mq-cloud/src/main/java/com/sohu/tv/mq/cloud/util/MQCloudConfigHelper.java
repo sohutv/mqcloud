@@ -29,26 +29,26 @@ import com.sohu.tv.mq.cloud.service.CommonConfigService;
 @Component
 @ConfigurationProperties(prefix = "mqcloud")
 public class MQCloudConfigHelper implements ApplicationEventPublisherAware {
-    
+
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
-    
+
     public static final String HTTP_SCHEMA = "http://";
-    
+
     public static final String NMON_ZIP = "nmon.zip";
-    
+
     public static final String ROCKETMQ_FILE = "rocketmq.zip";
 
     // 应用路径
     @Value("${server.contextPath}")
     private String contextPath;
-    
+
     // 环境
     @Value("${spring.profiles.active:local}")
     private String profile;
 
     // mqcloud的域名
     private String domain;
-    
+
     // nexus的域名
     private String repositoryUrl;
 
@@ -78,31 +78,31 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware {
 
     // 特别感谢
     private String specialThx;
-    
+
     // 消息体是对象的topic列表
     private List<String> classList;
-    
+
     // 消息体是map，但是value含有byte[]的topic列表
     private List<String> mapWithByteList;
-    
+
     // 客户端包的artifactId
     private String clientArtifactId;
-    
+
     // 发送者类，用于快速指南里提示
     private String producerClass;
-    
+
     // 消费者类，用于快速指南里提示
     private String consumerClass;
-    
+
     // 以下为邮件发送相关
     private String mailHost;
-    
+
     private int mailPort;
-    
+
     private String mailProtocol;
-    
+
     private String mailUsername;
-    
+
     private String mailPassword;
     // ms
     private int mailTimeout;
@@ -112,49 +112,55 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware {
     private String ignoreTopic;
     // 忽略的topic
     private String[] ignoreTopicArray;
-    
+
     // rocketmq安装文件路径
     private String rocketmqFilePath;
-    
+
     private String privateKey;
-    
+
     // rocketmq admin accessKey
     private String adminAccessKey;
-    
+
     // rocketmq admin secretKey
     private String adminSecretKey;
-    
+
     // 自动审核类型
     private int[] autoAuditType;
-    
+
+    // 机房
+    private List<String> machineRoom;
+
+    // 机房颜色
+    private List<String> machineRoomColor;
+
     @Autowired
     private CommonConfigService commonConfigService;
-    
+
     private ApplicationEventPublisher publisher;
-    
+
     @PostConstruct
     public void init() throws IllegalArgumentException, IllegalAccessException {
         Result<List<CommonConfig>> result = commonConfigService.query();
-        if(result.isEmpty()) {
+        if (result.isEmpty()) {
             logger.error("no CommonConfig data found!");
             return;
         }
         List<CommonConfig> commonConfigList = result.getResult();
         Field[] fields = this.getClass().getDeclaredFields();
-        for(Field field : fields) {
+        for (Field field : fields) {
             field.setAccessible(true);
             CommonConfig commonConfig = findCommonConfig(commonConfigList, field.getName());
-            if(commonConfig == null) {
+            if (commonConfig == null) {
                 continue;
             }
             String value = commonConfig.getValue();
-            if(value == null) {
+            if (value == null) {
                 continue;
             }
             Class<?> fieldType = field.getType();
-            if(fieldType == String.class) {
+            if (fieldType == String.class) {
                 field.set(this, value.trim());
-            } else if(fieldType == Integer.class) {
+            } else if (fieldType == Integer.class) {
                 field.set(this, Integer.valueOf(value));
             } else {
                 field.set(this, JSON.parseObject(value, fieldType));
@@ -164,22 +170,26 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware {
         publisher.publishEvent(new MQCloudConfigEvent());
         logger.info("init ok:{}", this);
     }
-    
+
     private CommonConfig findCommonConfig(List<CommonConfig> commonConfigList, String key) {
-        for(CommonConfig commonConfig : commonConfigList) {
-            if(commonConfig.getKey().equals(key)) {
+        for (CommonConfig commonConfig : commonConfigList) {
+            if (commonConfig.getKey().equals(key)) {
                 return commonConfig;
             }
         }
         return null;
     }
-    
+
     public boolean isOnline() {
         return "online".equals(profile) || "online-sohu".equals(profile);
     }
 
     public boolean isLocal() {
         return "local".equals(profile) || "local-sohu".equals(profile);
+    }
+    
+    public boolean isSohu() {
+        return profile.contains("sohu");
     }
 
     public String getEnv() {
@@ -189,11 +199,11 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware {
     public String getDomain() {
         return domain;
     }
-    
+
     public String getNMONURL() {
         return HTTP_SCHEMA + getDomain() + "/software/" + NMON_ZIP;
     }
-    
+
     public String getCiperKey() {
         return ciperKey;
     }
@@ -209,7 +219,7 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware {
     public String getTopicLink(long topicId) {
         return getPrefix() + "user/topic/" + topicId + "/detail";
     }
-    
+
     public String getTopicLink(long topicId, String linkText) {
         return getHrefLink(getTopicLink(topicId) + "?from=alert", linkText);
     }
@@ -217,11 +227,11 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware {
     public String getTopicConsumeLink(long topicId) {
         return getTopicLink(topicId) + "?tab=consume";
     }
-    
+
     public String getTopicConsumeLink(long topicId, String linkText) {
         return getHrefLink(getTopicConsumeLink(topicId) + "&consumer=" + linkText, linkText);
     }
-    
+
     private String getHrefLink(String link, String linkText) {
         return "<a href='" + link + "'>" + linkText + "</a>";
     }
@@ -233,15 +243,15 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware {
     public String getServerLink(String ip) {
         return getPrefix() + "admin/server/list?ip=" + ip;
     }
-    
+
     public String getNameServerMonitorLink(int cid) {
         return getPrefix() + "admin/nameserver/list?cid=" + cid;
     }
-    
+
     public String getBrokerMonitorLink(int cid) {
         return getPrefix() + "admin/cluster/list?cid=" + cid;
     }
-    
+
     private String getPrefix() {
         return HTTP_SCHEMA + getDomain() + getContextPath();
     }
@@ -297,7 +307,7 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware {
     public Integer getIsOpenRegister() {
         return isOpenRegister;
     }
-    
+
     public String getRepositoryUrl() {
         return repositoryUrl;
     }
@@ -373,9 +383,9 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware {
     public String getIgnoreTopic() {
         return ignoreTopic;
     }
-    
+
     public boolean isIgnoreTopic(String topic) {
-        if(ignoreTopicArray == null) {
+        if (ignoreTopicArray == null) {
             return false;
         }
         for (int i = 0; i < ignoreTopicArray.length; i++) {
@@ -398,7 +408,7 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware {
     public void setRocketmqFilePath(String rocketmqFilePath) {
         this.rocketmqFilePath = rocketmqFilePath;
     }
-    
+
     public String getPrivateKey() {
         return privateKey;
     }
@@ -414,17 +424,40 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware {
     public boolean isAdminAclEnable() {
         return StringUtils.isNotEmpty(adminAccessKey) && StringUtils.isNotEmpty(adminSecretKey);
     }
-    
+
     public int[] getAutoAuditType() {
         return autoAuditType;
+    }
+
+    public List<String> getMachineRoom() {
+        return machineRoom;
     }
 
     public void setAutoAuditType(int[] autoAuditType) {
         this.autoAuditType = autoAuditType;
     }
 
+    public String getMachineRoomColor(String room) {
+        if (room == null || machineRoom == null) {
+            if(machineRoomColor != null) {
+                return machineRoomColor.get(0);
+            } else {
+                return "#95a5a6";
+            }
+        }
+        int roomIndex = machineRoom.indexOf(room);
+        if (roomIndex == -1) {
+            return machineRoomColor.get(0);
+        }
+        if (roomIndex < machineRoomColor.size()) {
+            return machineRoomColor.get(roomIndex);
+        }
+        return machineRoomColor.get(0);
+    }
+
     /**
      * 是否是自动审核类型
+     * 
      * @param type
      * @return
      */
@@ -436,7 +469,7 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware {
         }
         return false;
     }
-    
+
     @Override
     public String toString() {
         return ToStringBuilder.reflectionToString(this);

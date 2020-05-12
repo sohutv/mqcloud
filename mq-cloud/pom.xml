@@ -5,7 +5,7 @@
 	<parent>
 		<groupId>com.sohu.tv</groupId>
 		<artifactId>mq</artifactId>
-		<version>1.9.4</version>
+		<version>4.6.3</version>
 	</parent>
 
 	<artifactId>mq-cloud</artifactId>
@@ -136,6 +136,11 @@
 		    <version>${flexmark.version}</version>
 		</dependency>
 		<!--markdown to html end-->
+		
+		<dependency>
+		    <groupId>com.google.guava</groupId>
+		  	<artifactId>guava</artifactId>
+		</dependency>
 	</dependencies>
 
 	<build>

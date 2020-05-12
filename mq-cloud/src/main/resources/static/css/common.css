@@ -196,3 +196,50 @@ button.btn.btn-search.ipsearch {
 	padding: .5em;
 	border: 1px solid #fff;
 }
+
+.oval {
+	width: 60px;
+	height: 25px;
+	border-radius: 50%;
+	border: 1px solid #000;
+	text-align: center;
+	line-height: 24px;
+}
+
+.rect {
+	width: 60px;
+	height: 25px;
+	border: 1px solid #000;
+	text-align: center;
+}
+.vitual {
+	width: 60px;
+	height: 25px;
+	border: 1px solid #000;
+	text-align: center;
+	border-radius:10px;
+}
+
+.diamond {
+	width: 30px;
+	height: 30px;
+	border: 1px solid #000;
+	text-align:center;
+	line-height: 30px;
+	transform: rotate(45deg);
+	-ms-transform: rotate(45deg); 
+	-moz-transform: rotate(45deg);
+	-webkit-transform: rotate(45deg);
+	-o-transform:rotate(45deg);
+}
+
+.diamond span {
+	position: absolute;
+	left: 0;
+	right: 0;
+	transform: rotate(-45deg);
+	-ms-transform: rotate(-45deg); 
+	-moz-transform: rotate(-45deg);
+	-webkit-transform: rotate(-45deg);
+	-o-transform:rotate(-45deg);
+}
