@@ -100,9 +100,9 @@ insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynami
 insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) values(3, 'traceTopicEnable', 'false', '是否启用trace topic', null, 6, 0, 'true:是;false:否;', 0);
 insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) values(3, 'msgTraceTopicName', 'RMQ_SYS_TRACE_TOPIC', '默认的trace topic名', null, 7, 0, null, 0);
 
-insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) values(4, 'useReentrantLockWhenPutMessage', 'false', '写消息是否使用重入锁', '若不使用建议配合transientStorePool使用；若使用要加大sendMessageThreadPoolNums', 1, 0, 'true:是;false:否;', 0);
-insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) values(4, 'sendMessageThreadPoolNums', '1', '处理发消息的线程池大小', '默认使用spin锁', 2, 0, null, 0);
-insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) values(4, 'waitTimeMillsInSendQueue', '200', '消息发送请求超过阈值没有处理则返回失败', '若出现broker busy建议调大', 3, 1, null, 0);
+insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) values(4, 'useReentrantLockWhenPutMessage', 'true', '写消息是否使用重入锁', '若不使用建议配合transientStorePool使用；若使用要加大sendMessageThreadPoolNums', 1, 0, 'true:是;false:否;', 0);
+insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) values(4, 'sendMessageThreadPoolNums', '48', '处理发消息的线程池大小', '默认使用spin锁', 2, 0, null, 0);
+insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) values(4, 'waitTimeMillsInSendQueue', '500', '消息发送请求超过阈值没有处理则返回失败', '若出现broker busy建议调大', 3, 1, null, 0);
 
 insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) values(5, 'sendThreadPoolQueueCapacity', '10000', '处理发消息的线程池队列大小', null, 2, 0, null, 0);
 insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) values(5, 'pullMessageThreadPoolNums', '16+核数*2', '处理拉消息的线程池大小', null, 3, 0, null, 0);
