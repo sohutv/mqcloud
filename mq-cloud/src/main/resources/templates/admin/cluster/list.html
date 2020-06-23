@@ -78,14 +78,14 @@
 								<td rowspan=${brokerGroup[key]?size}>${key}</td>
 							</#if>
 						</#if>
-						<td>${bkey}</td>
 						<td>
 							<#if bkey == "0">
-								<a href='#' onclick="setIp('${brokerGroup[key][bkey].brokerAddr}')" data-target="#brokerTrafficModal" data-toggle="modal" title="查看broker流量">${brokerGroup[key][bkey].brokerAddr}</a>
+								<a href='#' onclick="setIp('${brokerGroup[key][bkey].brokerAddr}')" data-target="#brokerTrafficModal" data-toggle="modal" title="查看master流量">${bkey}</a>
 							<#else>
-								${brokerGroup[key][bkey].brokerAddr}
+								${bkey}
 							</#if>
 						</td>
+						<td><a href="#" onclick="showBrokerConfigModal('${brokerGroup[key][bkey].brokerAddr}')" data-toggle="tooltip" title="线上配置">${brokerGroup[key][bkey].brokerAddr}</a></td>
 						<td>
 							<#if brokerGroup[key][bkey].inTps??>${brokerGroup[key][bkey].inTps}</#if>	
 						</td>
@@ -385,57 +385,9 @@
 							</div>
 						</div>
 						<div class="form-group">
-							<label class="control-label col-md-3"> brokerName: </label>
-					        <div class="col-md-8">
-								<input type="text" id="brokerName" name="brokerName" placeholder="格式类似：broker-a" value="" class="form-control"/>
-								<input type="hidden" id="dir" name="dir" value=""/>
-							</div>
-						</div>
-						<div class="form-group">
-							<label class="control-label col-md-3"> 安装路径: </label>
-					        <div class="col-md-8">
-								<input type="text" id="brokerPath" placeholder="/opt/mqcloud/broker-a" value="" class="form-control" readonly/>
-							</div>
-						</div>
-						<div class="form-group">
-							<label class="control-label col-md-3"> 角色: </label>
-					        <div class="col-md-8 checkbox">
-							    <label id="brokerRole_async_span"><input type="radio" id="brokerRole_async" name="brokerRole" value="ASYNC_MASTER">异步复制</label>
-							    <label id="brokerRole_sync_span"><input type="radio" id="brokerRole_sync" name="brokerRole" value="SYNC_MASTER">同步双写</label>
-							    <label id="brokerRole_slave_span"><input type="radio" id="brokerRole_slave" name="brokerRole" value="SLAVE">Slave</label>
-							</div>
-						</div>
-						<div class="form-group">
-							<label class="control-label col-md-3"> 监听端口: </label>
-					        <div class="col-md-8">
-								<input type="text" id="listenPort" name="port" placeholder="master默认10915,slave默认20915" value="" class="form-control" />
-							</div>
-						</div>
-						<div class="form-group">
-							<label class="control-label col-md-3"> 刷盘方式: </label>
-					        <div class="col-md-8 checkbox">
-							    <label>
-							    	<input type="radio" name="flushDiskType" value="ASYNC_FLUSH" checked>异步刷盘
-							    </label>
-							    <label>
-							    	<input type="radio" name="flushDiskType" value="SYNC_FLUSH">同步刷盘
-							    </label>
-							</div>
-						</div>
-						<div class="form-group">
-							<label class="control-label col-md-3"> 数据保留时间: </label>
-					        <div class="col-md-8">
-					        	<div class="input-group">
-								    <input type="text" id="fileReservedTime" name="fileReservedTime" value="168" placeholder="默认保留7天" class="form-control" />
-									<span class="input-group-addon">小时</span>
-								</div>
-							</div>
-						</div>
-						<div class="form-group">
 							<label class="control-label col-md-3"> 所属集群: </label>
 					        <div class="col-md-8">
 								<input type="text" value="${response.result.selectedMQCluster.name}" class="form-control" readonly/>
-								<input type="hidden" name="mqClusterId" value="${response.result.selectedMQCluster.id}"/>
 							</div>
 						</div>
 						<div class="form-group">
@@ -451,6 +403,30 @@
 							</div>
 						</div>
 					</div>
+					<input type="hidden" id="dir" name="dir" value=""/>
+					<table class="table table-striped table-hover" style="margin-top: 0px;word-break:break-all; word-wrap:break-all;">
+						<colgroup>
+							<col width="100px">
+							<col width="250px">
+							<col width="200px">
+							<col width="100px">
+							<col>
+							<col width='46px'>
+							<col width='60px'>
+						</colgroup>
+						<thead>
+							<tr>
+								<td>分组</td>
+								<td>key</td>
+								<td>线上值</td>
+								<td>默认值</td>
+								<td>描述</td>
+								<td data-toggle="tooltip" title="修改后需要重启则表示不支持动态修改，反之则支持">动改</td>
+							</tr>
+						</thead>
+						<tbody id="clusterConfigBody">
+						</tbody>
+					</table>
 				</form>
 			</div>
 			<div class="modal-footer">
@@ -569,6 +545,42 @@
 	</div>
 </div>
 
+<!-- broker配置 -->
+<div id="brokerConfigModal" class="modal fade" tabindex="-1" data-width="400">
+	<div class="modal-dialog" style="width:1100px;">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h4 class="modal-title"><span id="brokerAddr"></span>线上配置</h4>
+			</div>
+			<table id="brokerConfigTable" class="table table-striped table-hover" style="margin-top: 0px;word-break:break-all; word-wrap:break-all;">
+				<colgroup>
+					<col width="100px">
+					<col width="280px">
+					<col width="250px">
+					<col>
+					<col width='46px'>
+				</colgroup>
+				<thead>
+					<tr>
+						<td>分组</td>
+						<td>key</td>
+						<td>线上值</td>
+						<td>描述</td>
+						<td data-toggle="tooltip" title="修改后需要重启则表示不支持动态修改，反之则支持">动改</td>
+					</tr>
+				</thead>
+				<tbody id="brokerConfigBody">
+					<tr class="no_more_data"><td colspan=7 class="text-center">暂无数据</td></tr>
+				</tbody>
+			</table>
+			<div class="modal-footer">
+				<button type="button" data-dismiss="modal" class="btn" >取消</button>
+				<button type="submit" class="btn btn-primary" onclick="modifyBrokerConfig()" data-toggle="tooltip" title="注意：此更新仅对当前broker有效！" id="modifyBrokerConfigBtn">更新</button>
+			</div>
+		</div>
+	</div>
+</div>
+
 <script>
 var installId = "";
 var method = "";
@@ -590,15 +602,15 @@ function install(id){
 			alert("请选择broker角色");
 			return;
 		}
-		if(!$('#listenPort').val()){
+		if($('#listenPort').length > 0 && !$('#listenPort').val()){
 			alert("请填写监听端口");
 			return;
 		}
-		if(!$('input[name="flushDiskType"]').is(":checked")){
+		if($('input[name="flushDiskType"]').length > 0 && !$('input[name="flushDiskType"]').is(":checked")){
 			alert("请选择刷盘方式");
 			return;
 		}
-		if(!$('#fileReservedTime').val()){
+		if($('#fileReservedTime').length > 0 && !$('#fileReservedTime').val()){
 			alert("请填写数据保留时间");
 			return;
 		}
@@ -824,17 +836,58 @@ function checkProgram(){
        }, 'json');
 }
 function addBroker(brokerName){
-	if(brokerName){
-		$("#brokerName").val(brokerName).attr("readonly","readonly");
-		$("#dir").val($("#brokerName").val()+"-s");
-		$("#brokerPath").val("/opt/mqcloud/"+$("#dir").val());
-		$('#brokerRole_slave').attr('checked', 'checked');
-		$("#listenPort").val("20915");
-		$('#brokerRole_async_span').hide();
-		$('#brokerRole_sync_span').hide();
-	} else {
-		$('#brokerRole_slave_span').hide();
-	}
+	$.get('${request.contextPath}/admin/broker/cluster/config',{
+			cid: ${response.result.selectedMQCluster.id}
+			}, function(data){
+	            $("#clusterConfigBody").html(data);
+	            $("#brokerClusterName").val('${response.result.selectedMQCluster.name}').attr("readonly","readonly");
+	    		$("#brokerIP1").attr("readonly","readonly");
+	    		$("#brokerIP2").attr("readonly","readonly");
+	    		if(!$("#storePathRootDir").val() && !$("#storePathCommitLog").val()){
+		    		$("#brokerName").bind('input propertychange', function(){
+		    			$("#dir").val($("#brokerName").val());
+		    			$("#storePathRootDir").val("/opt/mqcloud/"+$("#brokerName").val()+"/data");
+		    			$("#storePathCommitLog").val("/opt/mqcloud/"+$("#brokerName").val()+"/data/commitlog");
+		    		});
+	    		}
+	    		if(!$("#rmqAddressServerDomain").val()){
+		    		$("#rmqAddressServerDomain").val('${mqcloudDomain}').attr("readonly","readonly");
+	    		}
+	    		if(!$("#rmqAddressServerSubGroup").val()){
+		    		$("#rmqAddressServerSubGroup").val('nsaddr-${response.result.selectedMQCluster.id}').attr("readonly","readonly");
+	    		}
+	    		if(brokerName){
+	    			$("#brokerName").val(brokerName);
+	    			$("#dir").val(brokerName+"-s");
+	    			if(!$("#storePathRootDir").val()){
+		    			$("#storePathRootDir").val("/opt/mqcloud/"+brokerName+"-s/data");
+		    		}
+	    			if(!$("#storePathCommitLog").val()){
+		    			$("#storePathCommitLog").val("/opt/mqcloud/"+brokerName+"-s/data/commitlog");
+		    		}
+	    			$("#brokerId").val(1);
+	    			$('input[name="brokerRole"]').each(function(){
+	    				if($(this).val() == 'ASYNC_MASTER' || $(this).val() == 'SYNC_MASTER'){
+	    					$(this).next().remove();
+	    					$(this).remove();
+	    				} else {
+	    					$(this).attr("checked", "checked");
+	    				}
+	    			});
+	    		} else {
+	    			$("#brokerId").attr("readonly","readonly");
+	    			$('input[name="brokerRole"]').each(function(){
+	    				if($(this).val() == 'SLAVE'){
+	    					$(this).next().remove();
+	    					$(this).remove();
+	    				}
+	    			});
+	    		}
+	            $('[data-tooltip="true"]').tooltip({
+		            container: 'body'
+		        });
+    		}
+	);
 	initServerList("brokerServerSelect");
 }
 /**
@@ -914,6 +967,7 @@ $(function(){
 	// broker server select change
 	$('#brokerServerSelect').on('shown.bs.select', function(e) {
 		active("brokerServer");
+		
 	});
 	$('#brokerServerSelect').on('hidden.bs.select', function(e) {
 		if(!$('#brokerServerSelect').val()){
@@ -921,22 +975,10 @@ $(function(){
 		}
 	});
 	$('#brokerServerSelect').on('changed.bs.select', function(e) {
+		$("#brokerIP1").val($(this).val());
+		$("#brokerIP2").val($(this).val());
 		complete("brokerServer");
 	});
-	
-	$("#brokerName").bind('input propertychange', function(){
-		$("#dir").val($("#brokerName").val());
-		$("#brokerPath").val("/opt/mqcloud/"+$("#brokerName").val());
-	});
-	
-	$('input[name="brokerRole"]').click(function(){
-	    if("SLAVE" == $(this).val()){
-	    	$("#listenPort").val("20915");
-	    } else {
-	    	$("#listenPort").val("10915");
-	    }
-	});
-	
 	
 	// fix bootstrap model & highcharts resize
 	$('#brokerTrafficModal').on('shown.bs.modal', function() {
@@ -959,6 +1001,10 @@ $(function(){
 			$("#brokerIp").val(brokerIp);
 		});
 	});
+	
+	<#if RequestParameters.brokerStoreIp?? && RequestParameters.brokerStoreIp != "">
+		showBrokerStoreStatModal('${RequestParameters.brokerStoreIp}');
+	</#if>
 });
 
 function warn(id){
@@ -1116,6 +1162,75 @@ function showBrokerStoreStatModal(ip){
 	$("#ipBroker").html(ip);
 	setIp(ip);
 	$("#brokerStoreStatModal").modal('show');
+}
+
+function showBrokerConfigModal(addr){
+	$("#brokerAddr").html(addr);
+	$.get('${request.contextPath}/admin/broker/online/config',
+		{
+		cid: ${response.result.selectedMQCluster.id},
+	    addr:  addr
+		},
+        function(data){
+			$("#brokerConfigBody").html(data);
+			$('[data-tooltip="true"]').tooltip({
+	            container: 'body'
+	        });
+			$("#brokerConfigModal").modal('show');
+    });	
+}
+
+function modifyBrokerConfig(){
+	var tip = "";
+	var needReboot = false;
+	var configParam = "";
+	$("#brokerConfigBody input:text").each(function(){
+		var nowValue = $.trim($(this).val());
+		var prevValue = $(this).attr("data");
+		if(nowValue != prevValue){
+			if($(this).attr("dynamic") == "false"){
+				needReboot = true;
+			}
+			tip += $(this).attr("name") + "修改为" + nowValue + "\n";
+			configParam += $(this).attr("name") + ":" + nowValue + ";";
+		}
+	})
+	$("#brokerConfigBody input:radio:checked").each(function(){
+		var nowValue = $.trim($(this).val());
+		var prevValue = $(this).attr("data");
+		if(nowValue != prevValue){
+			if($(this).attr("dynamic") == "false"){
+				needReboot = true;
+			}
+			tip += $(this).attr("name") + "修改为" + nowValue + "\n";
+			configParam += $(this).attr("name") + ":" + nowValue + ";";
+		}
+	})
+	if(tip){
+		if(needReboot){
+			tip += "由于修改了不支持动态修改的项，请更新后重启broker";
+		}
+		if(confirm(tip)){
+			disable("modifyBrokerConfigBtn");
+			$.get('${request.contextPath}/admin/broker/update/online/config',
+					{
+					cid: ${response.result.selectedMQCluster.id},
+				    addr:  $("#brokerAddr").html(),
+				    config: configParam
+					},
+			        function(data){
+						if(data.status == 200){
+			            	toastr.success("操作成功！即将刷新页面！");  	            	
+			            	reload(2000);            	
+					    }else{
+					    	toastr.error("操作失败！"+data.message);  
+					    	enable("modifyBrokerConfigBtn");
+					    }
+			    });	
+		}
+	} else {
+		alert("没有改动，无需更新");
+	}
 }
 </script>
 </#if>

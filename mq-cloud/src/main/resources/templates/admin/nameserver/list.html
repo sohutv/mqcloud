@@ -160,7 +160,7 @@
 						<div class="form-group">
 							<label class="control-label col-md-3"> 监听端口: </label>
 					        <div class="col-md-8">
-								<input type="text" id="nsListenPort" name="port" placeholder="默认监听端口为9876" value="9876" class="form-control" />
+								<input type="text" id="nsListenPort" name="listenPort" placeholder="默认监听端口为9876" value="9876" class="form-control" />
 							</div>
 						</div>
 						<div class="form-group">
@@ -168,6 +168,7 @@
 					        <div class="col-md-8">
 								<input type="text" value="/opt/mqcloud/ns" class="form-control" readonly/>
 								<input type="hidden" name="dir" value="ns"/>
+								<input type="hidden" name="brokerName" value="ns"/>
 							</div>
 						</div>
 						<div class="form-group">

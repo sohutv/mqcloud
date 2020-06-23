@@ -1,6 +1,6 @@
 package com.sohu.tv.mq.cloud.web.controller.admin;
 
-import javax.validation.Valid;
+import java.util.Map;
 
 import org.apache.commons.lang3.math.NumberUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,7 +12,6 @@ import org.springframework.web.bind.annotation.RestController;
 import com.sohu.tv.mq.cloud.service.MQDeployer;
 import com.sohu.tv.mq.cloud.util.Result;
 import com.sohu.tv.mq.cloud.util.Status;
-import com.sohu.tv.mq.cloud.web.controller.param.BrokerParam;
 import com.sohu.tv.mq.cloud.web.vo.UserInfo;
 
 /**
@@ -42,7 +41,7 @@ public class AdminDeployController extends AdminViewController {
      * @return
      */
     @RequestMapping(value="/check/port", method=RequestMethod.POST)
-    public Result<?> checkPort(UserInfo ui, @RequestParam(name="ip") String ip, @RequestParam(name="port") int port) {
+    public Result<?> checkPort(UserInfo ui, @RequestParam(name="ip") String ip, @RequestParam(name="listenPort") int port) {
         // 获取监听的端口的信息
         Result<?> portResult = mqDeployer.getListenPortInfo(ip, port);
         return portResult;
@@ -66,7 +65,7 @@ public class AdminDeployController extends AdminViewController {
      * @return
      */
     @RequestMapping("/check/program")
-    public Result<?> checkProgram(@RequestParam(name="ip") String ip, @RequestParam(name="port") int port) {
+    public Result<?> checkProgram(@RequestParam(name="ip") String ip, @RequestParam(name="listenPort") int port) {
         return mqDeployer.getProgram(ip, port);
     }
     
@@ -123,7 +122,7 @@ public class AdminDeployController extends AdminViewController {
      * @return
      */
     @RequestMapping(value="/config/ns", method=RequestMethod.POST)
-    public Result<?> configNS(UserInfo ui, @RequestParam(name="ip") String ip, @RequestParam(name="port") int port, 
+    public Result<?> configNS(UserInfo ui, @RequestParam(name="ip") String ip, @RequestParam(name="listenPort") int port, 
             @RequestParam(name="dir") String dir) {
         logger.warn("configNS:{}, dir:{}, port:{}, user:{}", ip, dir, port, ui);
         // 配置
@@ -139,10 +138,10 @@ public class AdminDeployController extends AdminViewController {
      * @return
      */
     @RequestMapping(value="/config/broker", method=RequestMethod.POST)
-    public Result<?> configBroker(UserInfo ui, @Valid BrokerParam brokerParam) {
-        logger.warn("configBroker, brokerParam:{}, user:{}", brokerParam, ui);
+    public Result<?> configBroker(UserInfo ui, @RequestParam Map<String, Object> param) {
+        logger.warn("configBroker, brokerParam:{}, user:{}", param, ui);
         // 配置
-        Result<?> configResult = mqDeployer.configBroker(brokerParam);
+        Result<?> configResult = mqDeployer.configBroker(param);
         if(configResult.isNotOK()) {
             return configResult;
         }

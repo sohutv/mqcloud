@@ -11,6 +11,7 @@ import org.apache.rocketmq.common.message.MessageQueue;
 
 import com.sohu.tv.mq.cloud.bo.ConsumeStatsExt;
 import com.sohu.tv.mq.cloud.bo.Consumer;
+import com.sohu.tv.mq.cloud.bo.ConsumerConfig;
 import com.sohu.tv.mq.cloud.bo.User;
 
 /**
@@ -41,6 +42,8 @@ public class ConsumerProgressVO {
     private List<User> ownerList;
     // 总偏移量
     private long diffTotal;
+    // 消费者配置
+    private ConsumerConfig consumerConfig;
 
     public Consumer getConsumer() {
         return consumer;
@@ -210,5 +213,13 @@ public class ConsumerProgressVO {
 
     public void setDlqTopic(String dlqTopic) {
         this.dlqTopic = dlqTopic;
+    }
+
+    public ConsumerConfig getConsumerConfig() {
+        return consumerConfig;
+    }
+
+    public void setConsumerConfig(ConsumerConfig consumerConfig) {
+        this.consumerConfig = consumerConfig;
     }
 }

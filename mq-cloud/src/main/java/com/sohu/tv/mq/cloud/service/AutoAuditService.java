@@ -121,6 +121,11 @@ public class AutoAuditService {
                     case BATCH_ASSOCIATE:
                         result = auditController.batchAssociate(userInfo, aid);
                         break;
+                    case LIMIT_CONSUME:
+                    case PAUSE_CONSUME:
+                    case RESUME_CONSUME:
+                        result = auditController.updateConsumerConfig(userInfo, aid);
+                        break;
                 }
                 if (result != null) {
                     ++auditCount;

@@ -25,14 +25,14 @@
 				</div>
 				<div class="form-group">
 					<label class="control-label col-md-3"> 消费方式: </label>
-					<div class="col-md-5 checkbox">
+					<div class="col-md-6 checkbox">
 					    <input type="radio" name="ordered" value="0" disabled="disabled" <#if response.result.consumeWay == 0>checked</#if>>集群消费
 					    <input type="radio" name="ordered" value="1" disabled="disabled" <#if response.result.consumeWay == 1>checked</#if>>广播消费
 					</div>
 				</div>
 				<div class="form-group">
 					<label class="control-label col-md-3"> 是否trace: </label>
-					<div class="col-md-5 checkbox">
+					<div class="col-md-6 checkbox">
 					    <input type="radio" value="0" disabled="disabled" <#if response.result.traceEnabled == 0>checked</#if>>否
 					    <input type="radio" value="1" disabled="disabled" <#if response.result.traceEnabled == 1>checked</#if>>是
 					</div>

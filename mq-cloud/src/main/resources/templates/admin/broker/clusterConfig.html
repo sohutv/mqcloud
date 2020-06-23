@@ -1,0 +1,19 @@
+<#if response.notEmpty>
+    <#list response.result as brokerConfigGroupVO>
+    	<#list brokerConfigGroupVO.brokerConfigList as brokerConfig>
+   			<tr>
+	   			<#if brokerConfig_index == 0>
+	    		<td rowspan=${brokerConfigGroupVO.brokerConfigList?size}>${brokerConfigGroupVO.brokerConfigGroup.group}</td>
+	    		<#else>
+   				</#if>
+    			<td>${brokerConfig.key}</td>
+    			<td data-tooltip="true" title="${brokerConfig.tip!}">${brokerConfig.onlineValueHtml}</td>
+    			<td>${brokerConfig.value!}</td>
+    			<td>${brokerConfig.desc!}</td>
+    			<td>${brokerConfig.dynamicModify?string('<b>是</b>','否')}</td>
+    		</tr>
+    	</#list>
+    </#list>
+<#else>
+	<tr class="no_more_data"><td colspan=8 class="text-center">请先到【配置模板】模块为集群添加broker配置</td></tr>
+</#if>

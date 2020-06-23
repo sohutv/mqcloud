@@ -616,6 +616,7 @@ public class RocketMQProducer extends AbstractConfig {
 
     public void shutdown() {
         producer.shutdown();
+        statsHelper.shutdown();
     }
 
     public DefaultMQProducer getProducer() {

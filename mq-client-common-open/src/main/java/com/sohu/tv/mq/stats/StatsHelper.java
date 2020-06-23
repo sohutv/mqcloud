@@ -12,6 +12,7 @@ import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -113,6 +114,10 @@ public class StatsHelper implements StatsHelperMBean {
     public void recordException(Throwable exception) {
         exceptionStatsHelper.record(exception);
     }
+    
+    public void shutdown() {
+        statsReporter.shutdown();
+    }
 
     /**
      * 统计报告
@@ -132,6 +137,8 @@ public class StatsHelper implements StatsHelperMBean {
         private Stats sampleStats = new Stats();
         // 上报统计
         private Stats reportStats = new Stats();
+        
+        private ScheduledExecutorService reportExecutorService;
 
         public StatsReporter(StatsHelper statsHelper) {
             this.statsHelper = statsHelper;
@@ -142,12 +149,13 @@ public class StatsHelper implements StatsHelperMBean {
          */
         public void init() {
             // 数据采样线程
-            Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {
+            reportExecutorService = Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {
                 @Override
                 public Thread newThread(Runnable r) {
                     return new Thread(r, "StatsReporter-" + statsHelper.getProducer() + "-" + threadCounter.incrementAndGet());
                 }
-            }).scheduleWithFixedDelay(new Runnable() {
+            });
+            reportExecutorService.scheduleWithFixedDelay(new Runnable() {
                 @Override
                 public void run() {
                     try {
@@ -245,6 +253,10 @@ public class StatsHelper implements StatsHelperMBean {
 
         public Stats getReportStats() {
             return reportStats;
+        }
+        
+        public void shutdown() {
+            reportExecutorService.shutdown();
         }
     }
 

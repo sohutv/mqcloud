@@ -95,16 +95,20 @@ public class SSHTemplate {
      * @throws Exception
      */
     private Connection getConnection(String ip) throws Exception {
-        Connection conn = new Connection(ip, mqCloudConfigHelper.getServerPort());
-        conn.connect(null, mqCloudConfigHelper.getServerConnectTimeout(),
-                mqCloudConfigHelper.getServerConnectTimeout());
+        Connection conn = buildConnection(ip);
         // 如果private key不为空，优先使用private key验证
         if (StringUtils.isNotBlank(mqCloudConfigHelper.getPrivateKey())) {
-            if (conn.authenticateWithPublicKey(mqCloudConfigHelper.getServerUser(),
-                    mqCloudConfigHelper.getPrivateKey().toCharArray(), mqCloudConfigHelper.getServerPassword())) {
-                return conn;
+            try {
+                if (conn.authenticateWithPublicKey(mqCloudConfigHelper.getServerUser(),
+                        mqCloudConfigHelper.getPrivateKey().toCharArray(), mqCloudConfigHelper.getServerPassword())) {
+                    return conn;
+                }
+            } catch (Exception e) {
+                logger.error("auth with publickKey err, try to user/passwd auth, serverUser:{}, privateKey:{}",
+                        mqCloudConfigHelper.getServerUser(), mqCloudConfigHelper.getPrivateKey(), e);
             }
         }
+        conn = buildConnection(ip);
         // 其次使用用户名密码验证
         if (conn.authenticateWithPassword(mqCloudConfigHelper.getServerUser(),
                 mqCloudConfigHelper.getServerPassword())) {
@@ -113,6 +117,19 @@ public class SSHTemplate {
         throw new Exception("SSH authentication failed with [userName:" +
                 mqCloudConfigHelper.getServerUser() + ", password:" + mqCloudConfigHelper.getServerPassword()
                 + "]");
+    }
+    
+    /**
+     * 构建链接
+     * @param ip
+     * @return
+     * @throws IOException
+     */
+    private Connection buildConnection(String ip) throws IOException {
+        Connection conn = new Connection(ip, mqCloudConfigHelper.getServerPort());
+        conn.connect(null, mqCloudConfigHelper.getServerConnectTimeout(),
+                    mqCloudConfigHelper.getServerConnectTimeout());
+        return conn;
     }
 
     /**

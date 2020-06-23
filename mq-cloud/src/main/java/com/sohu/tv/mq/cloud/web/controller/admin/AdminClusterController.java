@@ -111,6 +111,7 @@ public class AdminClusterController extends AdminViewController {
         setResult(map, "messageQueryCondition", messageQueryCondition);
         // 判断是否sohu
         setResult(map, "sohu", mqCloudConfigHelper.isSohu());
+        setResult(map, "mqcloudDomain", mqCloudConfigHelper.getDomain());
         return view();
     }
 

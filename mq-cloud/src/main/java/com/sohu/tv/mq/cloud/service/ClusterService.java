@@ -124,6 +124,21 @@ public class ClusterService {
         }
         return null;
     }
+    
+    /**
+     * 根据name查找集群
+     * 
+     * @param id
+     * @return
+     */
+    public Cluster getMQClusterByName(String name) {
+        for (Cluster mqCluster : getAllMQCluster()) {
+            if (mqCluster.getName().equals(name)) {
+                return mqCluster;
+            }
+        }
+        return null;
+    }
 
     /**
      * 保存数据

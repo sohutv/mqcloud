@@ -234,3 +234,29 @@ consumer.shutdown();
    * 队列热点问题，个别队列由于哈希不均导致消息过多，消费速度跟不上，产生消息堆积问题。
    * 遇到消息失败的消息，无法跳过，当前队列消费只能暂停。
 
+5. <span id="limitConsumer">匀速消费？</span>
+
+   如果有如下需求：
+
+   1. 突然大量消息涌入时，希望能够均匀消费，避免服务被消息冲垮；
+   2. 较为精准的控制消息消费速率；
+
+   针对匀速消费的需求，mqclient借助了guava的RateLimiter来进行速率限制，可以在消费者初始化时按照如下方式设置：
+
+   ```
+   consumer.setEnableRateLimit(true);
+   consumer.setRate(200);
+   ```
+
+   rate的含义为每秒消费多少条消息，200即每秒消费200条消息，限速器默认是禁用的。
+
+   另外，客户端版本在4.6.4及以上，支持不重启服务的情况下，在MQCloud里进行动态开启(MQCloud设置的配置优先级高于本地)：
+
+   ![](img/limitConsume.png)
+
+6. <span id="pauseConsumer">暂停消费？</span>
+
+   如果业务端遇到某些问题，需要暂停消息消费，在不重启服务时(客户端版本在4.6.4及以上)，可以在MQCloud里进行动态设置：
+
+   ![](img/pauseConsume.png)
+

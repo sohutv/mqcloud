@@ -261,7 +261,7 @@ $(function() {
 		            </#if>
 	            	<#list response.result.consumerList as consumer>
 	            	, {
-		                name: '${splitUtil.getNewLine(consumer.name, 20)}',
+		                name: '${consumer.name}_c',
 		                tag: '${consumer.name}_1',
 		                _type: 2,
 		                _group: '${consumer.name}',
@@ -285,7 +285,10 @@ $(function() {
 		                label : {
 		                	color: '#000',
 		                	textShadowColor: '#808A87',
-		                	textShadowBlur : '3'
+		                	textShadowBlur : '3',
+		                    formatter: function (){
+		                    	return "${splitUtil.getNewLine(consumer.name, 20)}";
+		                    }
 		                }
 		            }
 	            	</#list>
@@ -318,7 +321,7 @@ $(function() {
 		            </#if>
 	            	<#list response.result.producerFilterMap as producer, v>
 	            	, {
-		                name: '${splitUtil.getNewLine(producer.producer, 20)}',
+		                name: '${producer.producer}_p',
 		                tag: '${producer}_0',
 		                _type: 1,
 		                _group: '${producer.producer}',
@@ -343,6 +346,11 @@ $(function() {
 		                        shadowOffsetX: 0,
 		                        shadowOffsetY: 0,
 		                        shadowColor: 'rgba(0,0,0,0.5)'
+		                    }
+		                },
+		                label : {
+		                    formatter: function (){
+		                    	return "${splitUtil.getNewLine(producer.producer, 20)}";
 		                    }
 		                }
 		            }

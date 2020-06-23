@@ -18,6 +18,7 @@ import com.sohu.tv.mq.cloud.service.BrokerService;
 import com.sohu.tv.mq.cloud.service.BrokerStoreStatService;
 import com.sohu.tv.mq.cloud.service.ClusterService;
 import com.sohu.tv.mq.cloud.util.DateUtil;
+import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper;
 import com.sohu.tv.mq.cloud.util.Result;
 
 import net.javacrumbs.shedlock.core.SchedulerLock;
@@ -48,6 +49,9 @@ public class BrokerStoreStatTask {
 
     @Autowired
     private AlertService alertService;
+    
+    @Autowired
+    private MQCloudConfigHelper mqCloudConfigHelper;
 
     /**
      * broker store 流量收集
@@ -113,7 +117,7 @@ public class BrokerStoreStatTask {
     public void warn(List<BrokerStoreStat> brokerStoreStatList) {
         StringBuilder content = new StringBuilder();
         for (BrokerStoreStat brokerStoreStat : brokerStoreStatList) {
-            if (brokerStoreStat.getMax() < 500 && brokerStoreStat.getPercent99() < 200) {
+            if (brokerStoreStat.getMax() < 500 && brokerStoreStat.getPercent99() < 400) {
                 continue;
             }
             content.append("<tr>");
@@ -121,7 +125,8 @@ public class BrokerStoreStatTask {
             content.append(clusterService.getMQClusterById(brokerStoreStat.getClusterId()).getName());
             content.append("</td>");
             content.append("<td>");
-            content.append(brokerStoreStat.getBrokerIp());
+            content.append(mqCloudConfigHelper.getBrokerStoreLink(brokerStoreStat.getClusterId(),
+                    brokerStoreStat.getBrokerIp()));
             content.append("</td>");
             content.append("<td>");
             content.append(brokerStoreStat.getAvg());

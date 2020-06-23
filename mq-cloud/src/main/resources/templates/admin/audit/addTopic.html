@@ -13,60 +13,60 @@
 			<div class="form-body">
 				<div class="form-group">
 					<label class="control-label col-md-3"> Topic: </label>
-			        <div class="col-md-5">
+			        <div class="col-md-6">
 						<input type="text" value="${response.result.name}" readonly="readonly" class="form-control" />
 					</div>
 				</div>
 				<div class="form-group">
 					<label class="control-label col-md-3"> 队列数量: </label>
-					<div class="col-md-5">
+					<div class="col-md-6">
 						<input type="text" value="${response.result.queueNum}" readonly="readonly" class="form-control" />
 					</div>
 				</div>
 				<div class="form-group">
 					<label class="control-label col-md-3"> 生产者: </label>
-					<div class="col-md-5">
+					<div class="col-md-6">
 						<input type="text" value="${response.result.producer}" readonly="readonly" class="form-control" />
 					</div>
 				</div>
 				<div class="form-group">
 					<label class="control-label col-md-3"> 序列化方式: </label>
-					<div class="col-md-5 checkbox">
+					<div class="col-md-6 checkbox">
 					    <input type="radio" name="serializer" value="0" disabled="disabled" <#if response.result.serializer == 0>checked</#if>>Protobuf
 					    <input type="radio" name="serializer" value="1" disabled="disabled" <#if response.result.serializer == 1>checked</#if>>String
 					</div>
 				</div>
 				<div class="form-group">
 					<label class="control-label col-md-3"> 消息顺序: </label>
-					<div class="col-md-5 checkbox">
+					<div class="col-md-6 checkbox">
 					    <input type="radio" name="ordered" value="0" disabled="disabled" <#if response.result.ordered == 0>checked</#if>>局部有序
 					    <input type="radio" name="ordered" value="1" disabled="disabled" <#if response.result.ordered == 1>checked</#if>>全局有序
 					</div>
 				</div>
 				<div class="form-group">
 					<label class="control-label col-md-3"> 开启trace: </label>
-					<div class="col-md-5 checkbox">
+					<div class="col-md-6 checkbox">
 					    <input type="radio" name="traceEnabled" value="0" disabled="disabled" <#if !response.result.traceEnabled()>checked</#if>>否
 					    <input type="radio" name="traceEnabled" value="1" disabled="disabled" <#if response.result.traceEnabled()>checked</#if>>是
 					</div>
 				</div>
 				<div class="form-group">
 					<label class="control-label col-md-3"> 开启事务: </label>
-					<div class="col-md-5 checkbox">
+					<div class="col-md-6 checkbox">
 					    <input type="radio" name="transactionEnabled" value="0" disabled="disabled" <#if !response.result.transactionEnabled()>checked</#if>>否
 					    <input type="radio" name="transactionEnabled" value="1" disabled="disabled" <#if response.result.transactionEnabled()>checked</#if>>是
 					</div>
 				</div>
 				<div class="form-group">
 					<label class="control-label col-md-3"> 使用环境: </label>
-					<div class="col-md-5 checkbox">
+					<div class="col-md-6 checkbox">
 					    <input type="radio" name="testEnabled" value="0" disabled="disabled" <#if !response.result.testEnabled()>checked</#if>>线上
 					    <input type="radio" name="testEnabled" value="1" disabled="disabled" <#if response.result.testEnabled()>checked</#if>>测试
 					</div>
 				</div>
 				<div class="form-group">
 					<label class="control-label col-md-3"> 消息量: </label>
-					<div class="col-md-5">
+					<div class="col-md-6">
 						<div class="input-group">
 							<input type="text" value="${response.result.qpd}" readonly="readonly" class="form-control" />
 							<span class="input-group-addon">条/天</span>
@@ -75,7 +75,7 @@
 				</div>
 				<div class="form-group">
 					<label class="control-label col-md-3"> 高峰消息量: </label>
-					<div class="col-md-5">
+					<div class="col-md-6">
 						<div class="input-group">
 							<input type="text" value="${response.result.qps}" readonly="readonly" class="form-control" />
 							<span class="input-group-addon">条/秒</span>
@@ -84,14 +84,14 @@
 				</div>
 				<div class="form-group" id="opnionRadio">
 					<label class="control-label col-md-3"> 是否同意: </label>
-					<div class="col-md-5 checkbox">
+					<div class="col-md-6 checkbox">
 					    <input type="radio" name="creatTopicRadio" onclick="agree()" value="0">同意
 					    <input type="radio" name="creatTopicRadio" onclick="disAgree()" value="1">不同意
 					</div>
 				</div>
 				<div class="form-group" style="display:none;" id="clusterDiv" >
 					<label class="control-label col-md-3"> 在哪个集群创建: </label>
-					<div class="col-md-5">
+					<div class="col-md-6">
 						<select name="type" id="clusterSelect" class="form-control select2_category">
 						<#--事务及测试同时满足-->
 						<#if response.result.transactionEnabled() && response.result.testEnabled()>
@@ -126,7 +126,7 @@
 				</div>
 				<div class="form-group" style="display:none;" id="traceDiv" >
 					<label class="control-label col-md-3"> 创建trace topic: </label>
-					<div class="col-md-5">
+					<div class="col-md-6">
 						<select name="type" id="traceClusterSelect" class="form-control select2_category">
 							<#list clusters as cluster>
 								<#if cluster.isEnableTrace()>
@@ -138,7 +138,7 @@
 				</div>
 				<div id="refuseReasonDiv" class="form-group" style="display:none;">
 					<label class="control-label col-md-3"> 拒绝理由: </label>
-					<div class="col-md-5">
+					<div class="col-md-6">
 						<textarea type="text" id="topicCreateRefuseReason" rows="3" class="form-control" placeholder="请填写"></textarea>
 					</div>
 				</div>

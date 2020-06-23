@@ -13,21 +13,21 @@
 			<div class="form-body">
 				<div class="form-group">
 					<label class="control-label col-md-3"> Topic: </label>
-					<div class="col-md-5">
+					<div class="col-md-6">
 						<input type="text" value="${response.result.topic.name}"
 							readonly="readonly" class="form-control" />
 					</div>
 				</div>
 				<div class="form-group">
 					<label class="control-label col-md-3"> 消费者组: </label>
-					<div class="col-md-5">
+					<div class="col-md-6">
 						<input type="text" value="${response.result.consumer.name}"
 							readonly="readonly" class="form-control" />
 					</div>
 				</div>
 				<div class="form-group">
 					<label class="control-label col-md-3"> 删除用户: </label>
-					<div class="col-md-5">
+					<div class="col-md-6">
 						<#if response.result.user??>
 							<input type="text" value="${response.result.user.name!response.result.user.emailName}" readonly="readonly" class="form-control" />
 						<#else>
@@ -38,7 +38,7 @@
 				<#if response.result.userList?? && !response.result.isCommit()>
 					<div class="form-group">
 						<label class="control-label col-md-3"> 当前关联用户: </label>
-				        <div class="col-md-5">
+				        <div class="col-md-6">
 				        	<#if response.result.userList??>
 				        		<div class="form-control-static">
 					        	<#list response.result.userList as user>
@@ -56,7 +56,7 @@
 				</#if>
 				<div class="form-group">
 					<label class="control-label col-md-3"> 拒绝理由: </label>
-					<div class="col-md-5">
+					<div class="col-md-6">
 						<textarea type="text" id="deleteUserConsumerRefuseReason" rows="3" class="form-control" placeholder="请填写"></textarea>
 					</div>
 				</div>

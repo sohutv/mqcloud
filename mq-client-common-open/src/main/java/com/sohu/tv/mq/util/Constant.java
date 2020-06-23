@@ -1,4 +1,5 @@
 package com.sohu.tv.mq.util;
+
 /**
  * 一些常量定义
  * @Description: 
@@ -10,4 +11,9 @@ public class Constant {
      * rocketmq nameserv 域名
      */
     public static final String ROCKETMQ_NAMESRV_DOMAIN = "rocketmq.namesrv.domain";
+    
+    /**
+     * 消费限制tps
+     */
+    public static final int LIMIT_CONSUME_TPS = 200;
 }
