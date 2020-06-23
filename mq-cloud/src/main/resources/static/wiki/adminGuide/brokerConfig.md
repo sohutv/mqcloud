@@ -48,6 +48,16 @@ MQCloud作为其运维平台，需要考虑如下事情：
 
    其中`线上值`是指该集群中的broker采用的特有配置，如果不修改将采用[broker的配置模板](#brokerConfigTemplate)中的默认值，其余属性与[broker的配置模板](#brokerConfigTemplate)中的一致。
 
+   **注意：** MQCloud之前部署broker修改了如下三项：
+
+   ```
+   useReentrantLockWhenPutMessage=true
+   sendMessageThreadPoolNums=48
+   waitTimeMillsInSendQueue=500
+   ```
+
+   原因是由于默认写消息使用的spin锁和单线程机制经常导致超时，建议管理员将[集群配置模板](#clusterConfigTemplate)中的对应的3项结合自己的性能状况修改。
+
 ## 三、<span id="bkOnlineConfig">broker线上配置</span>
 
 在[集群管理](/admin/cluster/list)模块，点击broker的地址，将会弹出broker线上配置：
