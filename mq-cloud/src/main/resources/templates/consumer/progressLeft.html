@@ -70,6 +70,16 @@
                 <#if consumerProgressVO.offsetMap??>
                     <span title="跳过堆积的消息，直接消费至最新的消息" class="glyphicon glyphicon-fast-forward pointer" data-target="#skipAccumulationModel${row}" data-toggle="modal"></span>
                     <span title="消费过去一段时间至现在的消息" class="glyphicon glyphicon-backward pointer" data-target="#resetOffSetModel${row}" data-toggle="modal"></span>
+               		<#if consumerProgressVO.consumerConfig?? && consumerProgressVO.consumerConfig.pause?? && consumerProgressVO.consumerConfig.pause>
+               			<span title="恢复消费" class="glyphicon glyphicon-play pointer" onclick="showPauseConsumeConfigModel(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', false<#if consumerProgressVO.consumerConfig?? && consumerProgressVO.consumerConfig.pauseClientId??>,'${consumerProgressVO.consumerConfig.pauseClientId}'</#if>)" data-toggle="modal"></span>
+               		<#else>
+               			<span title="暂停消费" class="glyphicon glyphicon-pause pointer" onclick="showPauseConsumeConfigModel(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', true<#if consumerProgressVO.consumerConfig?? && consumerProgressVO.consumerConfig.pauseClientId??>,'${consumerProgressVO.consumerConfig.pauseClientId}'</#if>)" data-toggle="modal"></span>
+               		</#if>
+               		<#if consumerProgressVO.consumerConfig?? && consumerProgressVO.consumerConfig.enableRateLimit?? && consumerProgressVO.consumerConfig.enableRateLimit>
+           				<img title="解除消费限速" width="22" height="24" style="display:inline-block;" src="${request.contextPath}/img/rateLimiter2.png" class="pointer" onclick="showLimitConsumeConfigModel(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', true, <#if consumerProgressVO.consumerConfig.permitsPerSecond??>${consumerProgressVO.consumerConfig.permitsPerSecond}<#else>${limitConsumeTps}</#if>)" data-toggle="modal"></img>
+               		<#else>
+               			<img title="限制消费速率" width="22" height="24" style="display:inline-block;" src="${request.contextPath}/img/rateLimiter.png" class="pointer" onclick="showLimitConsumeConfigModel(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', false, <#if consumerProgressVO.consumerConfig?? && consumerProgressVO.consumerConfig.permitsPerSecond??>${consumerProgressVO.consumerConfig.permitsPerSecond}<#else>${limitConsumeTps}</#if>)" data-toggle="modal"></img>
+               		</#if>            	
                 </#if>
                 <button type="button" class="btn btn-xs btn-warning" data-target="#deleteConsumerModel${row}" data-toggle="modal"><span class="glyphicon glyphicon-trash" aria-hidden="true"></span></button>
             </#if>
@@ -401,6 +411,16 @@
                 <#if consumerProgressVO.offsetMap??>
                     <span title="跳过堆积的消息，直接消费至最新的消息" class="glyphicon glyphicon-fast-forward pointer" data-target="#skipAccumulationModel${row}b" data-toggle="modal"></span>
                     <span title="消费过去一段时间至现在的消息" class="glyphicon glyphicon-backward pointer" data-target="#resetOffSetModel${row}b" data-toggle="modal"></span>
+               		<#if consumerProgressVO.consumerConfig?? && consumerProgressVO.consumerConfig.pause?? && consumerProgressVO.consumerConfig.pause>
+               			<span title="恢复消费" class="glyphicon glyphicon-play pointer" onclick="showPauseConsumeConfigModel(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', false<#if consumerProgressVO.consumerConfig?? && consumerProgressVO.consumerConfig.pauseClientId??>,'${consumerProgressVO.consumerConfig.pauseClientId}'</#if>)" data-toggle="modal"></span>
+               		<#else>
+               			<span title="暂停消费" class="glyphicon glyphicon-pause pointer" onclick="showPauseConsumeConfigModel(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', true<#if consumerProgressVO.consumerConfig?? && consumerProgressVO.consumerConfig.pauseClientId??>,'${consumerProgressVO.consumerConfig.pauseClientId}'</#if>)" data-toggle="modal"></span>
+               		</#if>
+               		<#if consumerProgressVO.consumerConfig?? && consumerProgressVO.consumerConfig.enableRateLimit?? && consumerProgressVO.consumerConfig.enableRateLimit>
+           				<img title="解除消费限速" width="22" height="24" style="display:inline-block;" src="${request.contextPath}/img/rateLimiter2.png" class="pointer" onclick="showLimitConsumeConfigModel(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', true, <#if consumerProgressVO.consumerConfig.permitsPerSecond??>${consumerProgressVO.consumerConfig.permitsPerSecond}<#else>${limitConsumeTps}</#if>)" data-toggle="modal"></img>
+               		<#else>
+               			<img title="限制消费速率" width="22" height="24" style="display:inline-block;" src="${request.contextPath}/img/rateLimiter.png" class="pointer" onclick="showLimitConsumeConfigModel(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', false, <#if consumerProgressVO.consumerConfig?? && consumerProgressVO.consumerConfig.permitsPerSecond??>${consumerProgressVO.consumerConfig.permitsPerSecond}<#else>${limitConsumeTps}</#if>)" data-toggle="modal"></img>
+               		</#if> 
                 </#if>
                 <button type="button" class="btn btn-xs btn-warning" data-target="#deleteConsumerModel${row}b" data-toggle="modal" title="删除${consumerProgressVO.consumer.name}"><span class="glyphicon glyphicon-trash" aria-hidden="true"></span></button>
             </#if>

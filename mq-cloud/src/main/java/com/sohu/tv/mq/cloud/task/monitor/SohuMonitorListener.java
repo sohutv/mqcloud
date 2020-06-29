@@ -396,6 +396,10 @@ public class SohuMonitorListener implements MonitorListener {
      * 订阅报警
      */
     public void subscriptionWarn(String consumerGroup, String topics) {
+        // 验证报警频率
+        if (!alarmConfigBridingService.needWarn("subscribe", topics, consumerGroup)) {
+            return;
+        }
         StringBuilder content = new StringBuilder("详细如下:<br><br>");
         content.append("消费者：<b>");
         content.append(consumerGroup);

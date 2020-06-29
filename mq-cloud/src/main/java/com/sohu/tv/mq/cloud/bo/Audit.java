@@ -163,6 +163,9 @@ public class Audit {
         RESET_RETRY_OFFSET(13, "跳过重试消息", "resetOffset"),
         UPDATE_TOPIC_TRACE(14, "修改Topic追踪", "updateTopicTrace"),
         BATCH_ASSOCIATE(15, "批量关联", "batchAssociate"), 
+        PAUSE_CONSUME(16, "暂停消费", "pauseConsume"), 
+        RESUME_CONSUME(17, "恢复消费", "pauseConsume"),
+        LIMIT_CONSUME(18, "消费限速", "limitConsume"), 
         ;
 
         private Integer type;

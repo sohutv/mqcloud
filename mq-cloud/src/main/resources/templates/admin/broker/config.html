@@ -1,0 +1,612 @@
+<div class="main">
+	<form class="form-inline" role="form">
+		<div class="form-group">
+			<label data-toggle="tooltip" title="支持排序，便于分组展示"> broker配置模板组: </label>
+		</div>
+		<div class="form-group">
+			<button type="button" class="btn btn-success" onclick="addBrokerConfigGroup()" data-target="#addBrokerConfigGroupModal" data-toggle="modal"><span class="glyphicon glyphicon-plus" aria-hidden="true"></span>&nbsp;配置模板组</button>
+		</div>
+	</form>
+	<hr/>
+	<table class="table table-striped table-hover" style="margin-top: 0px;word-break:break-all; word-wrap:break-all;">
+		<thead>
+			<tr>
+				<td>序号</td>
+				<td>配置模板组</td>
+				<td>操作</td>
+			</tr>
+		</thead>
+		<tbody>
+            <#if response.empty>
+			     <tr>
+                    <td colspan="3" class="text-center" >
+                    	暂无数据
+                    </td>
+                <tr>
+			<#else>
+				<#list response.result as brokerConfigGroupVO>
+					<tr>
+						<td>${brokerConfigGroupVO.brokerConfigGroup.order}</td>
+						<td>${brokerConfigGroupVO.brokerConfigGroup.group!}</td>
+						<td>
+							<span onclick="modifyBrokerConfigGroupShow(${brokerConfigGroupVO.brokerConfigGroup.id}, '${brokerConfigGroupVO.brokerConfigGroup.group!}', ${brokerConfigGroupVO.brokerConfigGroup.order})" class="glyphicon glyphicon-pencil pointer" data-toggle="tooltip" title="修改" aria-hidden="true"></span>
+							<button type="button" class="btn btn-warning btn-xs" data-target="#delete" onclick="deleteBrokerConfigGroupShow(${brokerConfigGroupVO.brokerConfigGroup.id}, '${brokerConfigGroupVO.brokerConfigGroup.group!}')" data-toggle="modal" title="删除"><span class="glyphicon glyphicon-trash" aria-hidden="true"></span></button>
+						</td>
+					</tr>
+				</#list>
+			</#if>
+		</tbody>
+	</table>
+</div>
+<div class="main">
+	<form class="form-inline" role="form">
+		<div class="form-group">
+			<label data-toggle="tooltip" title="便于在查看broker线上配置和部署broker时使用"> broker配置模板: </label>
+		</div>
+		<div class="form-group">
+			<button type="button" class="btn btn-success" onclick="addBrokerConfig()" data-target="#addBrokerConfigModal" data-toggle="modal"><span class="glyphicon glyphicon-plus" aria-hidden="true"></span>&nbsp;配置模板</button>
+		</div>
+	</form>
+	<hr/>
+	<table class="table table-striped table-hover" style="margin-top: 0px;word-break:break-all; word-wrap:break-all;">
+		<colgroup>
+			<col width='100px'>
+			<col width='200px'>
+			<col width='150px'>
+			<col>
+			<col width='150px'>
+			<col width='48px'>
+			<col width='140px'>
+			<col width='46px'>
+			<col width='46px'>
+			<col width='80px'>
+		</colgroup>
+		<thead>
+			<tr>
+				<td>分组</td>
+				<td>key</td>
+				<td>value</td>
+				<td>描述</td>
+				<td>提示</td>
+				<td data-toggle="tooltip" title="修改后需要重启则表示不支持动态修改，反之则支持">动改</td>
+				<td data-toggle="tooltip" title="用于将value展示为单选按钮组">选项</td>
+				<td data-toggle="tooltip" title="越小排在越前面">序号</td>
+				<td data-toggle="tooltip" title="必须添加到集群配置中">必选</td>
+				<td>操作</td>
+			</tr>
+		</thead>
+		<tbody id="brokerConfigTable">
+            <#if response.empty>
+			     <tr>
+                    <td colspan="9" class="text-center" >
+                    	暂无数据
+                    </td>
+                <tr>
+			<#else>
+				<#assign hasBrokerConfig = false>
+				<#list response.result as brokerConfigGroupVO>
+				 	<#if brokerConfigGroupVO.brokerConfigList??>
+				  	<#assign hasBrokerConfig = true>
+				  	<tr><td rowspan=${brokerConfigGroupVO.brokerConfigList?size}>${brokerConfigGroupVO.brokerConfigGroup.group!}</td>
+					<#list brokerConfigGroupVO.brokerConfigList as brokerConfig>
+						<#if brokerConfig_index != 0>
+						<tr>
+						</#if>
+						<td id="key${brokerConfig.id}">${brokerConfig.key}</td>
+						<td id="value${brokerConfig.id}">${brokerConfig.value!}</td>
+						<td id="desc${brokerConfig.id}">${brokerConfig.desc!}</td>
+						<td id="tip${brokerConfig.id}">${brokerConfig.tip!}</td>
+						<td id="dynamicModify${brokerConfig.id}">${brokerConfig.dynamicModify?string('<b>是</b>','否')}</td>
+						<td id="option${brokerConfig.id}">${brokerConfig.option!}</td>
+						<td id="order${brokerConfig.id}">${brokerConfig.order}</td>
+						<td id="required${brokerConfig.id}">${brokerConfig.required?string('<b style="color:red">是</b>','否')}</td>
+						<td>
+							<span onclick="modifyBrokerConfigShow(${brokerConfigGroupVO.brokerConfigGroup.id}, ${brokerConfig.id})" class="glyphicon glyphicon-pencil pointer" data-toggle="tooltip" title="修改" aria-hidden="true"></span>
+							<button type="button" class="btn btn-warning btn-xs" data-target="#delete" onclick="deleteBrokerConfigShow(${brokerConfig.id}, '${brokerConfig.key}')" data-toggle="modal" title="删除"><span class="glyphicon glyphicon-trash" aria-hidden="true"></span></button>
+							<input class="pointer" type="checkbox" style="vertical-align: -2px" value="${brokerConfig.id}" <#if !brokerConfig.canSelect>disabled=true<#else><#if brokerConfig.required>checked='checked' onclick="return false;"</#if></#if> />
+						</td>
+					</tr>
+					</#list>
+				  	</#if>
+				</#list>
+				<#if !hasBrokerConfig>
+			    	<tr>
+	                    <td colspan="9" class="text-center" >
+	                    	暂无数据
+	                    </td>
+                	<tr>
+				</#if>
+			</#if>
+		</tbody>
+	</table>
+</div>
+<!-- cluster配置 -->
+<#if clusters??>
+<div class="main">
+	<form class="form-inline" role="form">
+		<div class="form-group">
+			<label for="mqClusterSelect"> 集群: </label>
+			<select name="type" id="mqClusterSelect" class="form-control select2_category">
+				<#list clusters as mqCluster>
+					<option value="${mqCluster.id}" <#if selectCluster?? && selectCluster.id == mqCluster.id>selected="selected"</#if>>${mqCluster.name}</option>
+				</#list>
+			</select>
+		</div>
+		<div class="form-group">
+			<label data-toggle="tooltip" title="部署broker时展示的选项取自这里">的配置模板: </label>
+		</div>
+		<div class="form-group">
+			<button type="button" id="addClusterConfigBtn" class="btn btn-success" onclick="addClusterConfig()" data-toggle="tooltip" title="添加broker配置模板中选中的配置到<#if selectCluster??>${selectCluster.name}</#if>集群中">加入集群</button>
+		</div>
+	</form>
+	<hr/>
+	<table class="table table-striped table-hover" style="margin-top: 0px;word-break:break-all; word-wrap:break-all;">
+		<colgroup>
+			<col width="100px">
+			<col width="250px">
+			<col width="140px">
+			<col width="140px">
+			<col>
+			<col width='180px'>
+			<col width='46px'>
+			<col width='60px'>
+		</colgroup>
+		<thead>
+			<tr>
+				<td>分组</td>
+				<td>key</td>
+				<td>线上值</td>
+				<td>默认值</td>
+				<td>描述</td>
+				<td>提示</td>
+				<td data-toggle="tooltip" title="修改后需要重启则表示不支持动态修改，反之则支持">动改</td>
+				<td>操作</td>
+			</tr>
+		</thead>
+		<tbody id="clusterConfigBody">
+			<#if clusterConfigs??>
+		    <#list clusterConfigs as brokerConfigGroupVO>
+		    	<#list brokerConfigGroupVO.brokerConfigList as brokerConfig>
+		   			<tr>
+			   			<#if brokerConfig_index == 0>
+			    		<td rowspan=${brokerConfigGroupVO.brokerConfigList?size}>${brokerConfigGroupVO.brokerConfigGroup.group}</td>
+			    		<#else>
+		   				</#if>
+		    			<td id="clusterConfigKey${brokerConfig.id}">${brokerConfig.key}</td>
+		    			<td id="clusterConfigValue${brokerConfig.id}">${brokerConfig.onlineValue!}</td>
+		    			<td>${brokerConfig.value!}</td>
+		    			<td>${brokerConfig.desc!}</td>
+		    			<td>${brokerConfig.tip!}</td>
+		    			<td>${brokerConfig.dynamicModify?string('<b>是</b>','否')}</td>
+		    			<td>
+							<span onclick="modifyClusterConfigShow(${brokerConfig.id})" class="glyphicon glyphicon-pencil pointer" data-toggle="tooltip" title="修改" aria-hidden="true"></span>
+							<button type="button" class="btn btn-warning btn-xs" data-target="#delete" onclick="deleteClusterConfigShow(${brokerConfig.id}, '${brokerConfig.key}')" data-toggle="modal" title="删除"><span class="glyphicon glyphicon-trash" aria-hidden="true"></span></button>
+						</td>
+		    		</tr>
+		    	</#list>
+		    </#list>
+		    <#else>
+		    	<tr class="no_more_data"><td colspan=8 class="text-center">暂无数据</td></tr>
+		    </#if>
+		</tbody>
+	</table>
+</div>
+</#if>
+<!-- 更新BrokerConfigGroup -->
+<div id="addBrokerConfigGroupModal" class="modal fade" tabindex="-1" data-width="400">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h4 class="modal-title"><span id="opration"></span>broker配置模板组</h4>
+			</div>
+			<div class="modal-body">
+			<form class="form-horizontal form-bordered form-row-stripped" id="brokerConfigGroupForm">
+				<div class="form-body">
+					<input type="hidden" id="id" name="id">
+					<div class="form-group">
+						<label class="control-label col-md-3"> 序号: </label>
+				        <div class="col-md-8">
+							<input type="text" id="brokerConfigGroupOrder" name="order" class="form-control"/>
+						</div>
+					</div>
+					<div class="form-group">
+						<label class="control-label col-md-3"> 组名: </label>
+				        <div class="col-md-8">
+							<input type="text" id="brokerConfigGroupName" name="group" class="form-control"/>
+						</div>
+					</div>
+				</div>
+			</form>
+			</div>
+			<div class="modal-footer">
+				<button type="button" data-dismiss="modal" class="btn" >取消</button>
+				<button type="button" class="btn btn-primary" id="modifyBrokerConfigGroupBtn" onclick="modifyBrokerConfigGroup()">确定</button>
+			</div>
+		</div>
+	</div>
+</div>
+<!-- 删除BrokerConfigGroup -->
+<div id="deleteBrokerConfigGroupModal" class="modal fade" tabindex="-1" data-width="400">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+				<h4 class="modal-title">删除确认</h4>
+			</div>
+			<form class="form-inline form-bordered form-row-stripped">
+				<input type="hidden" id="bgid">
+				<div class="modal-body">
+					<div class="form-group text-center">
+						<span>确定删除 <b><span id="brokerConfigGroupTtitle"></span></b> 吗?</span>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" data-dismiss="modal" class="btn" >取消</button>
+					<button type="button" class="btn btn-primary" id="deleteBrokerConfigGroupBtn" onclick="deleteBrokerConfigGroup()">确定</button>
+				</div>
+			</form>
+		</div>
+	</div>
+</div>
+
+<!-- 更新BrokerConfig -->
+<div id="addBrokerConfigModal" class="modal fade" tabindex="-1" data-width="400">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h4 class="modal-title"><span id="brokerConfigOpration"></span>broker配置模板</h4>
+			</div>
+			<div class="modal-body">
+			<form class="form-horizontal form-bordered form-row-stripped" id="brokerConfigForm">
+				<div class="form-body">
+					<input type="hidden" id="brokerConfigId" name="id" value=0>
+					<div class="form-group">
+						<label class="control-label col-md-3"> 配置模板组: </label>
+				        <div class="col-md-8">
+							<select id="brokerConfigGroupSelect" class="selectpicker" title="请选择"  name="gid">
+								<#if response.notEmpty>
+									<#list response.result as brokerConfigGroupVO>
+										<option value='${brokerConfigGroupVO.brokerConfigGroup.id}'>${brokerConfigGroupVO.brokerConfigGroup.group!}</option>
+									</#list>
+								</#if>
+							</select>
+						</div>
+					</div>
+					<div class="form-group">
+						<label class="control-label col-md-3"> key: </label>
+				        <div class="col-md-8">
+							<input type="text" id="brokerConfigKey" name="key" class="form-control"/>
+						</div>
+					</div>
+					<div class="form-group">
+						<label class="control-label col-md-3" data-toggle="tooltip" title="默认值"> value: </label>
+				        <div class="col-md-8">
+							<input type="text" id="brokerConfigValue" name="value" class="form-control"/>
+						</div>
+					</div>
+					<div class="form-group">
+						<label class="control-label col-md-3"> 描述: </label>
+				        <div class="col-md-8">
+							<input type="text" id="brokerConfigDesc" name="desc" class="form-control"/>
+						</div>
+					</div>
+					<div class="form-group">
+						<label class="control-label col-md-3"> 提示: </label>
+				        <div class="col-md-8">
+							<input type="text" id="brokerConfigTip" name="tip" class="form-control"/>
+						</div>
+					</div>
+					<div class="form-group">
+						<label class="control-label col-md-3" data-toggle="tooltip" title="不重启broker修改后实时生效"> 动态修改: </label>
+						<div class="col-md-8 checkbox">
+							<label>
+							    <input type="radio" id="brokerConfigDynamicModifyYes" name="dynamicModify" value="1">是
+							</label>
+							<label>
+							    <input type="radio" id="brokerConfigDynamicModifyNo" name="dynamicModify" value="0">否
+							</label>
+						</div>
+					</div>
+					<div class="form-group">
+						<label class="control-label col-md-3" data-toggle="tooltip" title="用于在broker或集群配置时展示选项使用"> 选项: </label>
+				        <div class="col-md-8">
+							<input type="text" id="brokerConfigOption" name="option" placeholder="格式value:显示值;value2:显示值2;" class="form-control"/>
+						</div>
+					</div>
+					<div class="form-group">
+						<label class="control-label col-md-3"> 序号: </label>
+				        <div class="col-md-8">
+							<input type="text" id="brokerConfigOrder" name="order" class="form-control"/>
+						</div>
+					</div>
+					<div class="form-group">
+						<label class="control-label col-md-3" data-toggle="tooltip" title="必须添加到集群配置中"> 必选: </label>
+						<div class="col-md-8 checkbox">
+							<label>
+							    <input type="radio" id="brokerConfigRequiredYes" name="required" value="1">是
+							</label>
+							<label>
+							    <input type="radio" id="brokerConfigRequiredNo" name="required" value="0">否
+							</label>
+						</div>
+					</div>
+				</div>
+			</form>
+			</div>
+			<div class="modal-footer">
+				<button type="button" data-dismiss="modal" class="btn" >取消</button>
+				<button type="button" class="btn btn-primary" id="modifyBrokerConfigBtn" onclick="modifyBrokerConfig()">确定</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- 删除BrokerConfig -->
+<div id="deleteBrokerConfigModal" class="modal fade" tabindex="-1" data-width="400">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+				<h4 class="modal-title">删除确认</h4>
+			</div>
+			<form class="form-inline form-bordered form-row-stripped">
+				<input type="hidden" id="bkid">
+				<div class="modal-body">
+					<div class="form-group text-center">
+						<span>确定删除 <b><span id="brokerConfigKeyShow"></span></b> 吗?</span>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" data-dismiss="modal" class="btn" >取消</button>
+					<button type="button" class="btn btn-primary" id="deleteBrokerConfigBtn" onclick="deleteBrokerConfig()">确定</button>
+				</div>
+			</form>
+		</div>
+	</div>
+</div>
+
+<!-- 更新集群配置模板 -->
+<div id="updateClusterConfigGroupModal" class="modal fade" tabindex="-1" data-width="400">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h4 class="modal-title">修改集群配置模板</h4>
+			</div>
+			<div class="modal-body">
+			<form class="form-horizontal form-bordered form-row-stripped" id="clusterConfigForm">
+				<div class="form-body">
+					<input type="hidden" id="clusterId" name="cid">
+					<input type="hidden" id="clusterConfigBid" name="bid">
+					<div class="form-group">
+						<label class="control-label col-md-5" style="word-break:break-all; word-wrap:break-all;"> <span id="clusterConfigKey"></span>: </label>
+				        <div class="col-md-6">
+				        	<input type="text" id="clusterConfigValue" name="onlineValue" class="form-control"/>
+						</div>
+					</div>
+				</div>
+			</form>
+			</div>
+			<div class="modal-footer">
+				<button type="button" data-dismiss="modal" class="btn" >取消</button>
+				<button type="button" class="btn btn-primary" id="modifyClusterConfigBtn" onclick="modifyClusterConfig()">确定</button>
+			</div>
+		</div>
+	</div>
+</div>
+<!-- 删除集群配置模板 -->
+<div id="deleteClusterConfigModal" class="modal fade" tabindex="-1" data-width="400">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+				<h4 class="modal-title">删除确认</h4>
+			</div>
+			<form class="form-inline form-bordered form-row-stripped">
+				<input type="hidden" id="bid">
+				<div class="modal-body">
+					<div class="form-group text-center">
+						<span>确定删除 <b><span id="clusterConfigKeySpan"></span></b> 吗?</span>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" data-dismiss="modal" class="btn" >取消</button>
+					<button type="button" class="btn btn-primary" id="deleteClusterConfigBtn" onclick="deleteClusterConfig()">确定</button>
+				</div>
+			</form>
+		</div>
+	</div>
+</div>
+<script>
+function addBrokerConfigGroup(){
+	$("#opration").html("添加");
+	$("#brokerConfigGroupForm")[0].reset();
+	$('#addBrokerConfigGroupModal').modal('show');
+}
+
+function modifyBrokerConfigGroupShow(id, group, order){
+	$("#opration").html("修改");
+	$("#id").val(id);
+	$("#brokerConfigGroupName").val(group);
+	$("#brokerConfigGroupOrder").val(order);
+	$('#addBrokerConfigGroupModal').modal('show');
+}
+
+function modifyBrokerConfigGroup(){
+	disable("modifyBrokerConfigGroupBtn");
+	var url = '${request.contextPath}/admin/broker/add/config/group';
+	if($("#opration").html() == '修改'){
+		url = '${request.contextPath}/admin/broker/update/config/group';
+	}
+	$.post(url, $("#brokerConfigGroupForm").serialize(),
+        function(data){
+            if(data.status == 200){
+				toastr.success("操作成功，将自动刷新");  
+				reload(3000);
+		    }else{
+		    	toastr.error("操作失败！"+data.message);
+		    	enable("modifyBrokerConfigGroupBtn");
+		    }
+        }, 'json');
+}
+
+function deleteBrokerConfigGroupShow(id, group){
+	$("#bgid").val(id);
+	$("#brokerConfigGroupTtitle").html(group);
+	$('#deleteBrokerConfigGroupModal').modal('show');
+}
+function deleteBrokerConfigGroup(){
+	disable("deleteBrokerConfigGroupBtn");
+	$.post("${request.contextPath}/admin/broker/delete/config/group", {
+		id: $("#bgid").val()
+		},function(data){
+           if(data.status == 200){
+			toastr.success("操作成功，将自动刷新");  
+			reload(3000);
+	    } else{
+	    	toastr.error("操作失败！"+data.message);
+	    	enable("deleteBrokerConfigGroupBtn");
+	    }
+       }, 'json');
+}
+function addBrokerConfig(){
+	$("#brokerConfigOpration").html("添加");
+	$("#brokerConfigForm")[0].reset();
+	$('#addBrokerConfigModal').modal('show');
+}
+function modifyBrokerConfigShow(gid, id){
+	$("#brokerConfigForm")[0].reset();
+	$("#brokerConfigOpration").html("修改");
+	$('#brokerConfigGroupSelect').selectpicker('val', gid);
+	$("#brokerConfigId").val(id);
+	$("#brokerConfigKey").val($("#key" + id).html());
+	$("#brokerConfigValue").val($("#value" + id).html());
+	$("#brokerConfigDesc").val($("#desc" + id).html());
+	$("#brokerConfigTip").val($("#tip" + id).html());
+	if($("#dynamicModify" + id).html() == "否"){
+		$("#brokerConfigDynamicModifyNo").attr('checked','checked');
+		$("#brokerConfigDynamicModifyYes").removeAttr('checked');
+	} else {
+		$("#brokerConfigDynamicModifyYes").attr('checked','true');
+		$("#brokerConfigDynamicModifyNo").removeAttr('checked');
+	}
+	if($("#required" + id).html() == "否"){
+		$("#brokerConfigRequiredNo").attr('checked','checked');
+		$("#brokerConfigRequiredYes").removeAttr('checked');
+	} else {
+		$("#brokerConfigRequiredYes").attr('checked','true');
+		$("#brokerConfigRequiredNo").removeAttr('checked');
+	}
+	$("#brokerConfigOption").val($("#option" + id).html());
+	$("#brokerConfigOrder").val($("#order" + id).html());
+	$('#addBrokerConfigModal').modal('show');
+}
+function modifyBrokerConfig(){
+	disable("modifyBrokerConfigBtn");
+	var url = '${request.contextPath}/admin/broker/add/config';
+	if($("#brokerConfigOpration").html() == '修改'){
+		url = '${request.contextPath}/admin/broker/update/config';
+	}
+	$.post(url, $("#brokerConfigForm").serialize(),
+        function(data){
+            if(data.status == 200){
+				toastr.success("操作成功，将自动刷新");  
+				reload(3000);
+		    }else{
+		    	toastr.error("操作失败！"+data.message);
+		    	enable("modifyBrokerConfigBtn");
+		    }
+        }, 'json');
+}
+function deleteBrokerConfigShow(id, key){
+	$("#bkid").val(id);
+	$("#brokerConfigKeyShow").html(key);
+	$('#deleteBrokerConfigModal').modal('show');
+}
+function deleteBrokerConfig(){
+	disable("deleteBrokerConfigBtn");
+	$.post("${request.contextPath}/admin/broker/delete/config", {
+		id: $("#bkid").val()
+		},function(data){
+           if(data.status == 200){
+			toastr.success("操作成功，将自动刷新");  
+			reload(3000);
+	    } else{
+	    	toastr.error("操作失败！"+data.message);
+	    	enable("deleteBrokerConfigBtn");
+	    }
+       }, 'json');
+}
+function deleteClusterConfigShow(id, key){
+	$("#bid").val(id);
+	$("#clusterConfigKeySpan").html(key);
+	$('#deleteClusterConfigModal').modal('show');
+}
+function deleteClusterConfig(){
+	disable("deleteClusterConfigBtn");
+	$.post("${request.contextPath}/admin/broker/delete/cluster/config", {
+		bid: $("#bid").val(),
+		cid: $("#mqClusterSelect").val()
+		},function(data){
+           if(data.status == 200){
+			toastr.success("操作成功，将自动刷新");  
+			reload(3000);
+	    } else{
+	    	toastr.error("操作失败！"+data.message);
+	    	enable("deleteClusterConfigBtn");
+	    }
+       }, 'json');
+}
+function modifyClusterConfigShow(bid){
+	$("#clusterConfigBid").val(bid);
+	$("#clusterId").val($("#mqClusterSelect").val());
+	$("#clusterConfigKey").html($("#clusterConfigKey" + bid).html());
+	$("#clusterConfigValue").val($("#clusterConfigValue" + bid).html());
+	$('#updateClusterConfigGroupModal').modal('show');
+}
+function modifyClusterConfig(){
+	disable("modifyClusterConfigBtn");
+	$.get('${request.contextPath}/admin/broker/update/cluster/config', 
+		$("#clusterConfigForm").serialize(),
+        function(data){
+            if(data.status == 200){
+				toastr.success("操作成功，将自动刷新");  
+				reload(3000);
+		    }else{
+		    	toastr.error("操作失败！"+data.message);
+		    	enable("modifyClusterConfigBtn");
+		    }
+        }, 'json');
+}
+<#if selectCluster??>
+function addClusterConfig(){
+	var bids = "";
+	$("#brokerConfigTable input:checkbox").each(function(){
+		if($(this).is(':checked')){
+			bids += $(this).val() + ","
+		}
+	});
+	if(!bids){
+		alert("请先选择配置项!");
+		return;
+	}
+	disable("addClusterConfigBtn");
+	$.get('${request.contextPath}/admin/broker/add/cluster/config',
+			{
+			cid: ${selectCluster.id},
+			bids: bids
+			},
+	        function(data){
+				if(data.status == 200){
+	            	toastr.success("操作成功！即将刷新页面！");  	            	
+	            	reload(2000);            	
+			    }else{
+			    	toastr.error("操作失败！"+data.message);
+			    	enable("addClusterConfigBtn");
+			    }
+	    });
+}
+$('#mqClusterSelect').on('change',function(){
+	window.location.href = "${request.contextPath}/admin/broker/config?cid="+$(this).val();
+});
+</#if>
+</script>

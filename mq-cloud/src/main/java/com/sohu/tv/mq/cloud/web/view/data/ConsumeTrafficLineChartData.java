@@ -66,6 +66,12 @@ public class ConsumeTrafficLineChartData implements LineChartData {
     
     @Autowired
     private DelayMessageService delayMessageService;
+    
+    // x轴数据
+    private List<String> xDataList;
+
+    // x轴格式化后的数据
+    private List<String> xDataFormatList;
 
     public ConsumeTrafficLineChartData() {
         initSearchHeader();
@@ -90,6 +96,18 @@ public class ConsumeTrafficLineChartData implements LineChartData {
         searchFieldList.add(hiddenSearchField);
 
         searchHeader.setSearchFieldList(searchFieldList);
+        
+        // 初始化x轴数据，因为x轴数据是固定的
+        xDataFormatList = new ArrayList<String>();
+        xDataList = new ArrayList<String>();
+        for (int i = 0; i < 23; ++i) {
+            for (int j = 0; j < 60; ++j) {
+                String hour = i < 10 ? "0" + i : "" + i;
+                String ninutes = j < 10 ? "0" + j : "" + j;
+                xDataList.add(hour + ninutes);
+                xDataFormatList.add(hour + ":" + ninutes);
+            }
+        }
     }
 
     @Override
@@ -205,17 +223,8 @@ public class ConsumeTrafficLineChartData implements LineChartData {
         lineChart.setOneline(true);
         lineChart.setTickInterval(6);
         
-        List<String> xList = new ArrayList<String>();
-        Map<String, Traffic> producerTrafficMapTmp = producerTrafficMap;
-        if(producerTrafficMap.size() == 0) {
-            producerTrafficMapTmp = list2Map(listResult.getResult());
-        }
-        for(String time : producerTrafficMapTmp.keySet()) {
-            xList.add(time.substring(0, 2) + ":" + time.substring(2));
-        }
-        
         XAxis xAxis = new XAxis();
-        xAxis.setxList(xList);
+        xAxis.setxList(xDataFormatList);
         lineChart.setxAxis(xAxis);
 
         // 设置y轴列表
@@ -236,7 +245,7 @@ public class ConsumeTrafficLineChartData implements LineChartData {
             Map<String, Traffic> trafficMap = list2Map(list);
             // 填充y轴数据
             List<Number> countList = new ArrayList<Number>();
-            for (String time : producerTrafficMapTmp.keySet()) {
+            for(String time : xDataList) {
                 setCountData(trafficMap.get(time), countList);
             }
             YAxis countYAxis = new YAxis();
@@ -247,7 +256,7 @@ public class ConsumeTrafficLineChartData implements LineChartData {
         
         // 设置生产者数据
         List<Number> producerCountList = new ArrayList<Number>();
-        for (String time : producerTrafficMap.keySet()) {
+        for(String time : xDataList) {
             setCountData(producerTrafficMap.get(time), producerCountList);
         }
         YAxis producerCountYAxis = new YAxis();

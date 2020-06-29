@@ -22,7 +22,7 @@
 					<col width="50px">
 					<col width="53px">
 					<col width="160px">
-					<col width="80px">
+					<col width="122px">
 				</colgroup>
                 <thead>
 	                <tr>
@@ -32,7 +32,7 @@
 	                    <td>用途</td>
 	                    <td data-toggle="tooltip" title="集群：所有的消费者均分消息进行消费； 广播：每个消费者会消费所有消息">模式</td>
 	                    <td data-toggle="tooltip" title="消费者未消费的消息数量">堆积量</td>
-	                    <td data-toggle="tooltip">TPS</td>
+	                    <td data-toggle="tooltip" title="每秒消费的消息数">TPS</td>
 	                    <td data-toggle="tooltip" title="追踪状态">trace</td>
 	                    <td data-toggle="tooltip" title="所有队列中的最小更新时间">更新时间</td>
 	                    <td>操作</td>
@@ -118,6 +118,16 @@
 			                    		<#if consumerProgressVO.offsetMap??>
 				                    		<span title="跳过堆积的消息，直接消费至最新的消息" class="glyphicon glyphicon-fast-forward pointer" data-target="#skipAccumulationModel${row}" data-toggle="modal"></span>
 				                    		<span title="消费过去一段时间至现在的消息" class="glyphicon glyphicon-backward pointer" data-target="#resetOffSetModel${row}" data-toggle="modal"></span>
+				                    		<#if consumerProgressVO.consumerConfig?? && consumerProgressVO.consumerConfig.pause?? && consumerProgressVO.consumerConfig.pause>
+				                    			<span title="恢复消费" class="glyphicon glyphicon-play pointer" onclick="showPauseConsumeConfigModel(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', false<#if consumerProgressVO.consumerConfig?? && consumerProgressVO.consumerConfig.pauseClientId??>,'${consumerProgressVO.consumerConfig.pauseClientId}'</#if>)" data-toggle="modal"></span>
+				                    		<#else>
+				                    			<span title="暂停消费" class="glyphicon glyphicon-pause pointer" onclick="showPauseConsumeConfigModel(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', true<#if consumerProgressVO.consumerConfig?? && consumerProgressVO.consumerConfig.pauseClientId??>,'${consumerProgressVO.consumerConfig.pauseClientId}'</#if>)" data-toggle="modal"></span>
+				                    		</#if>
+				                    		<#if consumerProgressVO.consumerConfig?? && consumerProgressVO.consumerConfig.enableRateLimit?? && consumerProgressVO.consumerConfig.enableRateLimit>
+			                    				<img title="解除消费限速" width="22" height="24" style="display:inline-block;" src="${request.contextPath}/img/rateLimiter2.png" class="pointer" onclick="showLimitConsumeConfigModel(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', true, <#if consumerProgressVO.consumerConfig.permitsPerSecond??>${consumerProgressVO.consumerConfig.permitsPerSecond}<#else>${limitConsumeTps}</#if>)" data-toggle="modal"></img>
+				                    		<#else>
+				                    			<img title="限制消费速率" width="22" height="24" style="display:inline-block;" src="${request.contextPath}/img/rateLimiter.png" class="pointer" onclick="showLimitConsumeConfigModel(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', false, <#if consumerProgressVO.consumerConfig?? && consumerProgressVO.consumerConfig.permitsPerSecond??>${consumerProgressVO.consumerConfig.permitsPerSecond}<#else>${limitConsumeTps}</#if>)" data-toggle="modal"></img>
+				                    		</#if>
 			                    		</#if>
 			                    		<button type="button" class="btn btn-xs btn-warning" data-target="#deleteConsumerModel${row}" title="删除${consumerProgressVO.consumer.name}" data-toggle="modal"><span class="glyphicon glyphicon-trash" aria-hidden="true"></span></button>
 		                    		</#if>
@@ -449,6 +459,16 @@
 			                    		<#if consumerProgressVO.offsetMap??>
 				                    		<span title="跳过堆积的消息，直接消费至最新的消息" class="glyphicon glyphicon-fast-forward pointer" data-target="#skipAccumulationModel${row}b" data-toggle="modal"></span>
 				                    		<span title="消费过去一段时间至现在的消息" class="glyphicon glyphicon-backward pointer" data-target="#resetOffSetModel${row}b" data-toggle="modal"></span>
+			                    			<#if consumerProgressVO.consumerConfig?? && consumerProgressVO.consumerConfig.pause?? && consumerProgressVO.consumerConfig.pause>
+						               			<span title="恢复消费" class="glyphicon glyphicon-play pointer" onclick="showPauseConsumeConfigModel(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', false<#if consumerProgressVO.consumerConfig?? && consumerProgressVO.consumerConfig.pauseClientId??>,'${consumerProgressVO.consumerConfig.pauseClientId}'</#if>)" data-toggle="modal"></span>
+						               		<#else>
+						               			<span title="暂停消费" class="glyphicon glyphicon-pause pointer" onclick="showPauseConsumeConfigModel(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', true<#if consumerProgressVO.consumerConfig?? && consumerProgressVO.consumerConfig.pauseClientId??>,'${consumerProgressVO.consumerConfig.pauseClientId}'</#if>)" data-toggle="modal"></span>
+						               		</#if>
+						               		<#if consumerProgressVO.consumerConfig?? && consumerProgressVO.consumerConfig.enableRateLimit?? && consumerProgressVO.consumerConfig.enableRateLimit>
+						           				<img title="解除消费限速" width="22" height="24" style="display:inline-block;" src="${request.contextPath}/img/rateLimiter2.png" class="pointer" onclick="showLimitConsumeConfigModel(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', true, <#if consumerProgressVO.consumerConfig.permitsPerSecond??>${consumerProgressVO.consumerConfig.permitsPerSecond}<#else>${limitConsumeTps}</#if>)" data-toggle="modal"></img>
+						               		<#else>
+						               			<img title="限制消费速率" width="22" height="24" style="display:inline-block;" src="${request.contextPath}/img/rateLimiter.png" class="pointer" onclick="showLimitConsumeConfigModel(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', false, <#if consumerProgressVO.consumerConfig?? && consumerProgressVO.consumerConfig.permitsPerSecond??>${consumerProgressVO.consumerConfig.permitsPerSecond}<#else>${limitConsumeTps}</#if>)" data-toggle="modal"></img>
+						               		</#if> 
 			                    		</#if>
 			                    		<button type="button" class="btn btn-xs btn-warning" data-target="#deleteConsumerModel${row}b" title="删除${consumerProgressVO.consumer.name}" data-toggle="modal"><span class="glyphicon glyphicon-trash" aria-hidden="true"></span></button>
 		                    		</#if>
@@ -982,7 +1002,191 @@
 	</div>
 </div> 
 
+<!-- 暂停消费 -->
+<div id="pauseConsumeConfigModel" class="modal fade" tabindex="-1" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+				<h4 class="modal-title">确定<b id="pauseConsumeTip"></b>消费吗?</h4>
+			</div>
+			<div class="modal-body">
+				<form class="form-horizontal form-bordered form-row-stripped" id="pauseConsumeConfigForm">
+					<input type="hidden" id="pauseConsumeIdInput" name="consumerId">
+					<input type="hidden" id="pauseConsumeBoolean" name="pause">
+					<div class="form-body">
+						<div class="form-group">
+							<label class="control-label col-md-3"> 消费者: </label>
+							<div class="col-md-5">
+								<input type="text" readonly="readonly" id="pauseConsumeName" value="" class="form-control" />
+							</div>
+						</div>
+					</div>
+					<div class="form-group">
+						<label class="control-label col-md-3"> 客户端: </label>
+						<div class="col-md-5">
+							<select id="pauseClientIdSelect" class="selectpicker" title="不选默认应用于所有的消费者" name="pauseClientId" data-live-search="true" multiple data-max-options="1">
+							</select>
+						</div>
+					</div>
+				</form>
+			</div>
+			<div  class="modal-footer">
+				<button type="button" data-dismiss="modal" class="btn" >取消</button>
+				<button type="button" id="pauseConsumeConfigBtn" class="btn btn-primary" onclick="pauseConsumeConfig()">确定</button>
+			</div>
+		</div>
+	</div>
+</div><!-- 暂停消费 -->
+
+<!-- 消费限速 -->
+<div id="limitConsumeConfigModel" class="modal fade" tabindex="-1" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+				<h4 class="modal-title">消费限速</h4>
+			</div>
+			<div class="modal-body">
+				<form class="form-horizontal form-bordered form-row-stripped" id="limitConsumeConfigForm">
+					<input type="hidden" id="limitConsumeIdInput" name="consumerId">
+					<div class="form-body">
+						<div class="form-group">
+							<label class="control-label col-md-3"> 消费者: </label>
+							<div class="col-md-6">
+								<input type="text" readonly="readonly" id="limitConsumeName" value="" class="form-control" />
+							</div>
+						</div>
+					</div>
+					<div class="form-body">
+						<div class="form-group">
+							<label class="control-label col-md-3"> 限制消费速率: </label>
+							<div class="col-md-6 checkbox">
+								<label data-toggle="tooltip" title="每个实例将会参照TPS进行限速">
+								    <input type="radio" id="enableRateLimitRadio" name="enableRateLimit" value="true">是
+								</label>
+								<label data-toggle="tooltip" title="每个实例将会关闭限速">
+								    <input type="radio" id="disableRateLimitRadio" name="enableRateLimit" value="false" checked>否
+								</label>
+							</div>
+						</div>
+					</div>
+					<div class="form-body">
+						<div class="form-group">
+							<label class="control-label col-md-3" data-toggle="tooltip" title="每秒最多消费多少条消息，最小值为1"> TPS: </label>
+							<div class="col-md-6">
+								<input type="text" id="permitsPerSecondInput" data-toggle="tooltip" name="permitsPerSecond" value="${limitConsumeTps}" title="例如：${limitConsumeTps}代表每秒最多消费${limitConsumeTps}条消息" class="form-control" />
+							</div>
+						</div>
+					</div>
+				</form>
+			</div>
+			<div  class="modal-footer">
+				<button type="button" data-dismiss="modal" class="btn" >取消</button>
+				<button type="button" id="limitConsumeBtn" class="btn btn-primary" onclick="limitConsume()">确定</button>
+			</div>
+		</div>
+	</div>
+</div>
+
 <script>
+/**
+ * 限制消费速率
+ */
+function showLimitConsumeConfigModel(consumerId, consumer, enableRateLimit, permitsPerSecond){
+	$("#limitConsumeConfigForm")[0].reset();
+	if(enableRateLimit){
+		$("#enableRateLimitRadio").prop("checked",true);
+	} else {
+		$("#disableRateLimitRadio").prop("checked",true);
+	}
+	if(permitsPerSecond){
+		$("#permitsPerSecondInput").val(permitsPerSecond);
+	}
+	$("#limitConsumeIdInput").val(consumerId);
+	$("#limitConsumeName").val(consumer);
+	$("#limitConsumeConfigModel").modal('show');
+}
+/**
+ * 暂停恢复消费者
+ */
+function showPauseConsumeConfigModel(consumerId, consumer, pause, pauseClientId){
+	$("#pauseConsumeConfigBtn").attr("disabled", "disabled");
+	$.get('${request.contextPath}/consumer/connection',{
+		group: consumer,
+		cid: ${topic.clusterId},
+	},function(data){
+          if(data.status == 200){
+          	var content = "";
+          	for(var i in data.result){
+          		var ip = data.result[i];
+         		content += "<option value='"+ip+"'>"+ip+"</option>";
+          	}
+      		$("#pauseClientIdSelect").html(content);
+      		$("#pauseClientIdSelect").selectpicker('refresh');
+      		$("#pauseConsumeConfigBtn").removeAttr("disabled");
+      		if(pauseClientId){
+	      		$('#pauseClientIdSelect').selectpicker('val', pauseClientId);
+      		}
+	    } else {
+	    	toastr.error("数据获取失败！"+data.message);  
+	    }
+    }, 'json');
+	if(pause){
+		$("#pauseConsumeTip").html("暂停");
+	} else {
+		$("#pauseConsumeTip").html("恢复");
+	}
+	$("#pauseConsumeBoolean").val(pause);
+	$("#pauseConsumeIdInput").val(consumerId);
+	$("#pauseConsumeName").val(consumer);
+	$("#pauseConsumeConfigModel").modal('show');
+}
+/**
+ * 暂停消费
+ */
+function pauseConsumeConfig(){
+	disable("pauseConsumeConfigBtn");
+	$.get('${request.contextPath}/consumer/update/config',
+	$("#pauseConsumeConfigForm").serialize()
+	,function(data){
+        if(data.status == 200){
+			toastr.success(data.message);  
+			modalHide(3000);
+	    }else{
+	    	toastr.error("操作失败！"+data.message);  
+	    	enable("pauseConsumeConfigBtn");
+	    }
+    }, 'json');
+}
+
+/**
+ * 限速
+ */
+function limitConsume(){
+	var tps = Number($("#permitsPerSecondInput").val());
+	if(tps < 1){
+		alert("tps不能小于1");
+		return;
+	}
+	if(!Number.isInteger(tps)){
+		alert("tps只能为正整数");
+		return;
+	}
+	disable("limitConsumeBtn");
+	$.get('${request.contextPath}/consumer/update/config',
+	$("#limitConsumeConfigForm").serialize()
+	,function(data){
+        if(data.status == 200){
+			toastr.success(data.message);  
+			modalHide(3000);
+	    }else{
+	    	toastr.error("操作失败！"+data.message);  
+	    	enable("limitConsumeBtn");
+	    }
+    }, 'json');
+}
+
 function showUpdateInfo(cid, consumer, info){
 	$("#currentConsumerID").val(cid);
 	$("#consumerTitle").html(consumer);

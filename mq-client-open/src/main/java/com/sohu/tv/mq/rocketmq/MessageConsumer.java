@@ -59,6 +59,17 @@ public class MessageConsumer {
     }
     
     /**
+     * 获取许可
+     */
+    private void acquirePermit() {
+        try {
+            rocketMQConsumer.getMessageConsumeRateLimiter().acquire();
+        } catch (InterruptedException e) {
+            rocketMQConsumer.getLogger().warn("acquirePermit error", e.getMessage());
+        }
+    }
+    
+    /**
      * 消费状态
      * 
      * @author yongfeigao
@@ -101,6 +112,8 @@ public class MessageConsumer {
             // 消费消息
             for (MQMessage<T, MessageExt> mqMessage : messageList) {
                 try {
+                    // 获取许可
+                    acquirePermit();
                     consume(mqMessage.getMessage(), mqMessage.getMessageExt());
                 } catch (Throwable e) {
                     rocketMQConsumer.getLogger().error("consume topic:{} consumer:{} msg:{} msgId:{} bornTimestamp:{}",

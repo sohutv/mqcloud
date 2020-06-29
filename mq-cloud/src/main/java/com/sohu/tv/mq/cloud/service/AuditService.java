@@ -23,6 +23,7 @@ import com.sohu.tv.mq.cloud.bo.AuditAssociateConsumer;
 import com.sohu.tv.mq.cloud.bo.AuditAssociateProducer;
 import com.sohu.tv.mq.cloud.bo.AuditBatchAssociate;
 import com.sohu.tv.mq.cloud.bo.AuditConsumer;
+import com.sohu.tv.mq.cloud.bo.AuditConsumerConfig;
 import com.sohu.tv.mq.cloud.bo.AuditConsumerDelete;
 import com.sohu.tv.mq.cloud.bo.AuditResendMessage;
 import com.sohu.tv.mq.cloud.bo.AuditResendMessageConsumer;
@@ -38,6 +39,7 @@ import com.sohu.tv.mq.cloud.bo.Topic;
 import com.sohu.tv.mq.cloud.bo.User;
 import com.sohu.tv.mq.cloud.bo.UserConsumer;
 import com.sohu.tv.mq.cloud.bo.UserProducer;
+import com.sohu.tv.mq.cloud.dao.AuditConsumerConfigDao;
 import com.sohu.tv.mq.cloud.dao.AuditConsumerDeleteDao;
 import com.sohu.tv.mq.cloud.dao.AuditDao;
 import com.sohu.tv.mq.cloud.dao.AuditResetOffsetDao;
@@ -52,6 +54,7 @@ import com.sohu.tv.mq.cloud.util.Result;
 import com.sohu.tv.mq.cloud.util.Status;
 import com.sohu.tv.mq.cloud.web.vo.AuditAssociateConsumerVO;
 import com.sohu.tv.mq.cloud.web.vo.AuditAssociateProducerVO;
+import com.sohu.tv.mq.cloud.web.vo.AuditConsumerConfigVO;
 import com.sohu.tv.mq.cloud.web.vo.AuditConsumerDeleteVO;
 import com.sohu.tv.mq.cloud.web.vo.AuditConsumerVO;
 import com.sohu.tv.mq.cloud.web.vo.AuditResendMessageVO;
@@ -160,6 +163,12 @@ public class AuditService {
 
     @Autowired
     private UserConsumerDao userConsumerDao;
+    
+    @Autowired
+    private AuditConsumerConfigService auditConsumerConfigService;
+    
+    @Autowired
+    private AuditConsumerConfigDao auditConsumerConfigDao;
 
     /**
      * 查询列表
@@ -613,6 +622,11 @@ public class AuditService {
                 return getUpdateTopicTraceResult(aid);
             case BATCH_ASSOCIATE:
                 return getAuditBatchAssociateResult(aid);
+            case PAUSE_CONSUME:
+            case RESUME_CONSUME:
+                return getConsumerConfig(aid);
+            case LIMIT_CONSUME:
+                return getConsumerConfig(aid);
         }
         return null;
     }
@@ -1338,5 +1352,54 @@ public class AuditService {
             return Result.getDBErrorResult(e);
         }
         return Result.getOKResult();
+    }
+    
+    /**
+     * 获取消费者配置
+     * 
+     * @param aid
+     * @return Result
+     */
+    private Result<?> getConsumerConfig(long aid) {
+        Result<AuditConsumerConfig> result = auditConsumerConfigService.query(aid);
+        if (result.isNotOK()) {
+            return result;
+        }
+        AuditConsumerConfig auditConsumerConfig = result.getResult();
+        Result<Consumer> consumerResult = consumerService.queryById(auditConsumerConfig.getConsumerId());
+        if (consumerResult.isNotOK()) {
+            return consumerResult;
+        }
+        Result<Topic> topicResult = topicService.queryTopic(consumerResult.getResult().getTid());
+        if (topicResult.isNotOK()) {
+            return topicResult;
+        }
+        AuditConsumerConfigVO auditConsumerConfigVO = new AuditConsumerConfigVO();
+        BeanUtils.copyProperties(auditConsumerConfig, auditConsumerConfigVO);
+        auditConsumerConfigVO.setTopic(topicResult.getResult().getName());
+        auditConsumerConfigVO.setConsumer(consumerResult.getResult().getName());
+        return Result.getResult(auditConsumerConfigVO);
+    }
+    
+    /**
+     * 保存审核以及消费者配置
+     * 
+     * @return
+     */
+    @Transactional
+    public Result<?> saveAuditAndConsumerConfig(Audit audit, AuditConsumerConfig auditConsumerConfig) {
+        Long count = null;
+        try {
+            count = auditDao.insert(audit);
+            if (count != null && count > 0) {
+                auditConsumerConfig.setAid(audit.getId());
+                auditConsumerConfigDao.insert(auditConsumerConfig);
+            }
+        } catch (Exception e) {
+            logger.error("insert err, audit:{}", audit, e);
+            TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+            return Result.getDBErrorResult(e);
+        }
+        return Result.getResult(audit);
     }
 }

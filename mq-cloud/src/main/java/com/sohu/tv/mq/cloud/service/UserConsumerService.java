@@ -213,6 +213,22 @@ public class UserConsumerService {
     }
     
     /**
+     * 查询用户消费者关系(包含权限)
+     * @param user
+     * @param tid
+     * @param cid
+     * @return
+     */
+    public Result<List<UserConsumer>> queryUserConsumer(User user, long cid){
+        UserConsumer userConsumer = new UserConsumer();
+        userConsumer.setConsumerId(cid);
+        if(!user.isAdmin()) {
+            userConsumer.setUid(user.getId());
+        }
+        return queryUserConsumer(userConsumer);
+    }
+    
+    /**
      * 查询topic的消费者
      * @param userConsumer
      * @return

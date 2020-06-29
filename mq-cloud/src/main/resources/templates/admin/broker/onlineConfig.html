@@ -1,0 +1,34 @@
+<#if response.OK>
+    <#list response.result.brokerConfigGroups as brokerConfigGroupVO>
+    	<#list brokerConfigGroupVO.brokerConfigList as brokerConfig>
+   			<tr>
+	   			<#if brokerConfig_index == 0>
+	    		<td rowspan=${brokerConfigGroupVO.brokerConfigList?size}>${brokerConfigGroupVO.brokerConfigGroup.group}</td>
+	    		<#else>
+   				</#if>
+   				<#if brokerConfig.valueChanged>
+    				<td data-tooltip="true" title="默认值为${brokerConfig.value!}">${brokerConfig.keyHtml}</td>
+   				<#else>
+   					<td <#if brokerConfig.value??>data-tooltip="true" title="默认值为${brokerConfig.value!"空"}"</#if> >${brokerConfig.key}</td>
+   				</#if>
+    			<td data-tooltip="true" title="${brokerConfig.tip!}">${brokerConfig.onlineValueHtml}</td>
+    			<td>${brokerConfig.desc!}</td>
+    			<td>${brokerConfig.dynamicModify?string('<b>是</b>','否')}</td>
+    		</tr>
+    	</#list>
+    </#list>
+    <#if response.result.unknownBrokerConfigGroup??>
+	   <#list response.result.unknownBrokerConfigGroup.brokerConfigList as brokerConfig>
+	   		<tr>
+		    	<td>${response.result.unknownBrokerConfigGroup.brokerConfigGroup.group}</td>
+	   			<td>${brokerConfig.key}</td>
+	   			<td>${brokerConfig.onlineValueHtml}</td>
+	   			<td></td>
+	   			<td></td>
+	   			<td></td>
+	   		</tr>
+	   </#list>
+    </#if>
+<#else>
+	<tr class="no_more_data"><td colspan=8 class="text-center">异常！${response.message}</td></tr>
+</#if>

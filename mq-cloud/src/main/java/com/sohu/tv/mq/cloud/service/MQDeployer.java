@@ -1,6 +1,8 @@
 package com.sohu.tv.mq.cloud.service;
 
 import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.protocol.body.ClusterInfo;
@@ -14,6 +16,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import com.alibaba.fastjson.JSON;
+import com.sohu.tv.mq.cloud.bo.BrokerConfig;
 import com.sohu.tv.mq.cloud.bo.Cluster;
 import com.sohu.tv.mq.cloud.bo.SubscriptionGroup;
 import com.sohu.tv.mq.cloud.mq.MQAdminCallback;
@@ -25,7 +28,6 @@ import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper;
 import com.sohu.tv.mq.cloud.util.Result;
 import com.sohu.tv.mq.cloud.util.SSHException;
 import com.sohu.tv.mq.cloud.util.Status;
-import com.sohu.tv.mq.cloud.web.controller.param.BrokerParam;
 
 /**
  * MQ部署
@@ -78,6 +80,9 @@ public class MQDeployer {
     
     @Autowired
     private RocketMQFileService rocketMQFileService;
+    
+    @Autowired
+    private BrokerConfigService brokerConfigService;
     
     /**
      * 获取jdk版本
@@ -265,27 +270,28 @@ public class MQDeployer {
      * @param ip
      * @return
      */
-    public Result<?> configBroker(BrokerParam brokerParam){
-        String absoluteDir = MQ_CLOUD_DIR + brokerParam.getDir();
+    public Result<?> configBroker(Map<String, Object> param){
+        String clusterName = param.get("brokerClusterName").toString();
+        Cluster cluster = clusterService.getMQClusterByName(clusterName);
+        String absoluteDir = MQ_CLOUD_DIR + param.get("dir");
         String absoluteConfig = absoluteDir + "/" + CONFIG_FILE;
-        Cluster cluster = clusterService.getMQClusterById(brokerParam.getMqClusterId());
+        String brokerIp = param.get("ip").toString();
         // 1.基础配置
         String comm = String.format(DATA_LOGS_DIR, absoluteDir, absoluteDir)
                 + "echo -e \""
-                + brokerParam.toConfig(mqCloudConfigHelper.getDomain(), cluster,
-                        mqCloudConfigHelper.isAdminAclEnable())
+                + map2String(param, cluster.getId())
                 + "\" > " + absoluteConfig + "|"
                 + String.format(RUN_CONFIG, absoluteDir, "mqbroker", absoluteDir, absoluteDir, absoluteDir);
         SSHResult sshResult = null;
         try {
-            sshResult = sshTemplate.execute(brokerParam.getIp(), new SSHCallback() {
+            sshResult = sshTemplate.execute(brokerIp, new SSHCallback() {
                 public SSHResult call(SSHSession session) {
                     SSHResult sshResult = session.executeCommand(comm);
                     return sshResult;
                 }
             });
         } catch (SSHException e) {
-            logger.error("configBroker, ip:{},comm:{}", brokerParam.getIp(), comm, e);
+            logger.error("configBroker, ip:{},comm:{}", brokerIp, comm, e);
             return Result.getWebErrorResult(e);
         }
         Result<?> configResult = wrapSSHResult(sshResult);
@@ -295,14 +301,14 @@ public class MQDeployer {
         // 2.初始化监控订阅信息
         final String subscriptionGroupComm = String.format(SUBSCRIPTIONGROUP_JSON, absoluteDir);
         try {
-            sshResult = sshTemplate.execute(brokerParam.getIp(), new SSHCallback() {
+            sshResult = sshTemplate.execute(brokerIp, new SSHCallback() {
                 public SSHResult call(SSHSession session) {
                     SSHResult sshResult = session.executeCommand(subscriptionGroupComm);
                     return sshResult;
                 }
             });
         } catch (SSHException e) {
-            logger.error("init subscriptionGroup, ip:{},comm:{}", brokerParam.getIp(), subscriptionGroupComm, e);
+            logger.error("init subscriptionGroup, ip:{},comm:{}", brokerIp, subscriptionGroupComm, e);
             return Result.getWebErrorResult(e);
         }
         configResult = wrapSSHResult(sshResult);
@@ -311,7 +317,7 @@ public class MQDeployer {
         }
         
         // slave直接返回
-        if(brokerParam.isSlave()) {
+        if("SLAVE".equals(param.get("brokerRole"))) {
             return Result.getOKResult();
         }
         // 获取master地址
@@ -331,7 +337,7 @@ public class MQDeployer {
         }
         
         // 3.2保存topic配置
-        Result<?> topicSSHResult = saveConfig(brokerParam.getIp(), result.getResult(), absoluteDir, "topics.json");
+        Result<?> topicSSHResult = saveConfig(brokerIp, result.getResult(), absoluteDir, "topics.json");
         if(!topicSSHResult.isOK()) {
             return topicSSHResult;
         }
@@ -343,9 +349,22 @@ public class MQDeployer {
         }
         
         // 4.2保存consumer配置
-        Result<?> consumerSSHResult = saveConfig(brokerParam.getIp(), consumerResult.getResult(), absoluteDir, 
+        Result<?> consumerSSHResult = saveConfig(brokerIp, consumerResult.getResult(), absoluteDir, 
                 "subscriptionGroup.json");
         return consumerSSHResult;
+    }
+    
+    private String map2String(Map<String, Object> param, int cid) {
+        StringBuilder sb = new StringBuilder();
+        Result<List<BrokerConfig>> result = brokerConfigService.queryByCid(cid);
+        for (String key : param.keySet()) {
+            for (BrokerConfig brokerConfig : result.getResult()) {
+                if (brokerConfig.getKey().equals(key)) {
+                    sb.append(key + "=" + param.get(key) + "\n");
+                }
+            }
+        }
+        return sb.toString();
     }
     
     private Result<?> saveConfig(String ip, String content, String absoluteDir, String fileName) {

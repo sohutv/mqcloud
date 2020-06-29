@@ -24,6 +24,7 @@ import com.sohu.tv.mq.cloud.bo.Audit.TypeEnum;
 import com.sohu.tv.mq.cloud.bo.AuditAssociateConsumer;
 import com.sohu.tv.mq.cloud.bo.AuditAssociateProducer;
 import com.sohu.tv.mq.cloud.bo.AuditConsumer;
+import com.sohu.tv.mq.cloud.bo.AuditConsumerConfig;
 import com.sohu.tv.mq.cloud.bo.AuditConsumerDelete;
 import com.sohu.tv.mq.cloud.bo.AuditResendMessage;
 import com.sohu.tv.mq.cloud.bo.AuditResetOffset;
@@ -35,7 +36,7 @@ import com.sohu.tv.mq.cloud.bo.AuditUserConsumerDelete;
 import com.sohu.tv.mq.cloud.bo.AuditUserProducerDelete;
 import com.sohu.tv.mq.cloud.bo.Cluster;
 import com.sohu.tv.mq.cloud.bo.Consumer;
-import com.sohu.tv.mq.cloud.bo.MessageReset;
+import com.sohu.tv.mq.cloud.bo.ConsumerConfig;
 import com.sohu.tv.mq.cloud.bo.Topic;
 import com.sohu.tv.mq.cloud.bo.User;
 import com.sohu.tv.mq.cloud.bo.UserConsumer;
@@ -44,6 +45,7 @@ import com.sohu.tv.mq.cloud.bo.UserProducer;
 import com.sohu.tv.mq.cloud.service.AlertService;
 import com.sohu.tv.mq.cloud.service.AssociateConsumerService;
 import com.sohu.tv.mq.cloud.service.AssociateProducerService;
+import com.sohu.tv.mq.cloud.service.AuditConsumerConfigService;
 import com.sohu.tv.mq.cloud.service.AuditConsumerDeleteService;
 import com.sohu.tv.mq.cloud.service.AuditConsumerService;
 import com.sohu.tv.mq.cloud.service.AuditResendMessageService;
@@ -56,8 +58,8 @@ import com.sohu.tv.mq.cloud.service.AuditTopicUpdateService;
 import com.sohu.tv.mq.cloud.service.AuditUserConsumerDeleteService;
 import com.sohu.tv.mq.cloud.service.AuditUserProducerDeleteService;
 import com.sohu.tv.mq.cloud.service.ClusterService;
+import com.sohu.tv.mq.cloud.service.ConsumerConfigService;
 import com.sohu.tv.mq.cloud.service.ConsumerService;
-import com.sohu.tv.mq.cloud.service.MessageResetService;
 import com.sohu.tv.mq.cloud.service.TopicService;
 import com.sohu.tv.mq.cloud.service.UserConsumerService;
 import com.sohu.tv.mq.cloud.service.UserMessageService;
@@ -144,10 +146,13 @@ public class AuditController extends AdminViewController {
     private AlertService alertService;
 
     @Autowired
-    private MessageResetService messageResetService;
+    private ConsumerConfigService consumerConfigService;
 
     @Autowired
     private AuditTopicTraceService auditTopicTraceService;
+    
+    @Autowired
+    private AuditConsumerConfigService auditConsumerConfigService;
 
     /**
      * 审核主列表
@@ -303,6 +308,11 @@ public class AuditController extends AdminViewController {
                     msg = getUpdateTopicTraceMessage(aid);
                     break;
                 case BATCH_ASSOCIATE:
+                    break;
+                case PAUSE_CONSUME:
+                case RESUME_CONSUME:
+                case LIMIT_CONSUME:
+                    msg = getConsumerConfigMessage(aid);
                     break;
             }
             StringBuilder sb = new StringBuilder("您");
@@ -1100,11 +1110,11 @@ public class AuditController extends AdminViewController {
 
         // 重试消息重置
         if (TypeEnum.RESET_RETRY_OFFSET.getType() == audit.getType()) {
-            MessageReset messageReset = new MessageReset();
-            messageReset.setConsumer(consumer.getName());
             Date resetTo = DateUtil.getFormat(DateUtil.YMD_DASH_BLANK_HMS_COLON).parse(auditResetOffset.getOffset());
-            messageReset.setResetTo(resetTo.getTime());
-            Result<?> result = messageResetService.save(messageReset);
+            ConsumerConfig consumerConfig = new ConsumerConfig();
+            consumerConfig.setConsumer(consumer.getName());
+            consumerConfig.setRetryMessageResetTo(resetTo.getTime());
+            Result<?> result = consumerConfigService.save(consumerConfig);
             if (result.isNotOK()) {
                 return Result.getWebResult(result);
             }
@@ -1374,6 +1384,75 @@ public class AuditController extends AdminViewController {
             return Result.getOKResult();
         }
         return Result.getResult(Status.DB_UPDATE_ERR_ASSOCIATE_PRODUCER_OK);
+    }
+    
+    /**
+     * 获取提示消息
+     * 
+     * @param aid
+     * @return
+     */
+    public String getConsumerConfigMessage(long aid) {
+        Result<AuditConsumerConfig> result = auditConsumerConfigService.query(aid);
+        if (result.isNotOK()) {
+            return null;
+        }
+        Result<Consumer> consumerResult = consumerService.queryById(result.getResult().getConsumerId());
+        if (consumerResult.isNotOK()) {
+            return null;
+        }
+        return consumerResult.getResult().getName();
+    }
+    
+    /**
+     * 更新客户端配置
+     * 
+     * @param aid
+     * @param map
+     * @return
+     * @throws ParseException
+     */
+    @ResponseBody
+    @RequestMapping(value = "/update/consumer/config", method = RequestMethod.POST)
+    public Result<?> updateConsumerConfig(UserInfo userInfo, @RequestParam("aid") long aid) throws ParseException {
+        // 获取audit
+        Result<Audit> auditResult = auditService.queryAudit(aid);
+        if (auditResult.isNotOK()) {
+            return auditResult;
+        }
+        // 校验状态是否合法
+        Audit audit = auditResult.getResult();
+        if (StatusEnum.INIT.getStatus() != audit.getStatus()) {
+            return Result.getResult(Status.PARAM_ERROR);
+        }
+
+        // 查询审核记录
+        Result<AuditConsumerConfig> result = auditConsumerConfigService.query(aid);
+        if (result.isNotOK()) {
+            return result;
+        }
+        AuditConsumerConfig auditConsumerConfig = result.getResult();
+        // 查询consumer信息
+        Result<Consumer> consumerResult = consumerService.queryById(auditConsumerConfig.getConsumerId());
+        if (consumerResult.isNotOK()) {
+            return consumerResult;
+        }
+        Consumer consumer = consumerResult.getResult();
+
+        // 更新配置表
+        ConsumerConfig consumerConfig = new ConsumerConfig();
+        BeanUtils.copyProperties(auditConsumerConfig, consumerConfig);
+        consumerConfig.setConsumer(consumer.getName());
+        Result<?> saveResult = consumerConfigService.save(consumerConfig);
+        if (saveResult.isNotOK()) {
+            return Result.getWebResult(saveResult);
+        }
+        // 更新申请状态
+        boolean updateOK = agreeAndTip(audit, userInfo.getUser().getEmail(), consumer.getName());
+        if (updateOK) {
+            return Result.getOKResult();
+        }
+        return Result.getResult(Status.DB_UPDATE_ERR_UPDATE_CONSUMER_CONFIG_OK);
     }
 
     @Override

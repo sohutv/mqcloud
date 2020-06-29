@@ -17,7 +17,7 @@ public enum Status {
     
     FILTERED_TOPIC(208, "被过滤"),
     NO_CONFIG_TOPIC(209, "查无配置"),
-    NO_ONLINE(210, "不在线"),
+    NO_ONLINE(210, "消费者不在线"),
     
     // 3xx代表参数问题
     PARAM_ERROR(300, "参数错误"),
@@ -50,6 +50,8 @@ public enum Status {
     AUDIT_RECORD_REPEAT(514, "已提交该审核记录，不可重复提交，请耐心等待"),
     AUDIT_MESSAGE_CANNOT_AUTID_WHEN_NOT_SEND_OK(515, "消息还未全部发送成功，不可审批"),
     AUDIT_MESSAGE_NOT_SEND_OK(516, "消息未发送成功"),
+    DELETE_BROKER_CONFIG_FIRST(517, "请先删除配置组下的配置"),
+    DB_UPDATE_ERR_UPDATE_CONSUMER_CONFIG_OK(518, "更新消费者配置成功,但是审核记录更新失败"),
     
     // 6xx代表web请求异常
     WEB_ERROR(600, "请求错误"),

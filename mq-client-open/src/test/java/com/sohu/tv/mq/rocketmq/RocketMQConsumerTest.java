@@ -50,6 +50,56 @@ public class RocketMQConsumerTest {
             Thread.sleep(1000);
         }
     }
+    
+    @Test
+    public void testPause() throws InterruptedException {
+        consumer.setConsumerCallback(new ConsumerCallback<Map<String, Object>, MessageExt>() {
+            public void call(Map<String, Object> t, MessageExt k) throws InterruptedException {
+                counter.incrementAndGet();
+                Thread.sleep(100);
+            }
+        });
+        consumer.start();
+        while (true) {
+            System.out.println(counter.get());
+            Thread.sleep(10000);
+        }
+    }
+    
+    @Test
+    public void testRateLimit() throws InterruptedException {
+        consumer.setConsumerCallback(new ConsumerCallback<Map<String, Object>, MessageExt>() {
+            public void call(Map<String, Object> t, MessageExt k) {
+                if (counter.incrementAndGet() == 100) {
+                    consumer.setEnableRateLimit(true);
+                    consumer.setRate(1);
+                }
+                System.out.println(t);
+            }
+        });
+        consumer.start();
+        while (true) {
+            System.out.println(counter.get());
+            Thread.sleep(10000);
+        }
+    }
+    
+    @Test
+    public void testSkipRetryMessage() throws InterruptedException {
+        consumer.setConsumerCallback(new ConsumerCallback<Map<String, Object>, MessageExt>() {
+            public void call(Map<String, Object> t, MessageExt k) {
+                counter.incrementAndGet();
+                if ("b".equals(t.get("a"))) {
+                    throw new RuntimeException();
+                }
+            }
+        });
+        consumer.start();
+        while (true) {
+            System.out.println(counter.get());
+            Thread.sleep(10000);
+        }
+    }
 
     @After
     public void clean() {

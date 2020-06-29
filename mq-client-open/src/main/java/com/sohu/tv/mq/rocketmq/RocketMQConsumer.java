@@ -3,6 +3,7 @@ package com.sohu.tv.mq.rocketmq;
 import java.net.HttpURLConnection;
 import java.util.List;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
@@ -27,8 +28,8 @@ import com.alibaba.fastjson.TypeReference;
 import com.sohu.index.tv.mq.common.BatchConsumerCallback;
 import com.sohu.index.tv.mq.common.ConsumerCallback;
 import com.sohu.tv.mq.common.AbstractConfig;
+import com.sohu.tv.mq.dto.ConsumerConfigDTO;
 import com.sohu.tv.mq.dto.DTOResult;
-import com.sohu.tv.mq.dto.MessageResetDTO;
 
 /**
  * rocketmq 消费者
@@ -69,6 +70,11 @@ public class RocketMQConsumer extends AbstractConfig {
 
     // 跳过重试消息时间，默认为-1，即不跳过
     private volatile long retryMessageResetTo = -1;
+    
+    // 消息限速器
+    private MessageConsumeRateLimiter messageConsumeRateLimiter;
+    
+    private ScheduledExecutorService clientConfigScheduledExecutorService;
 
     /**
      * 一个应用创建一个Consumer，由应用来维护此对象，可以设置为全局对象或者单例<br>
@@ -83,6 +89,8 @@ public class RocketMQConsumer extends AbstractConfig {
 
     public void start() {
         try {
+            // 初始化限速器
+            messageConsumeRateLimiter = new MessageConsumeRateLimiter(group, 2 * consumer.getConsumeThreadMin());
             // 初始化配置
             initConfig(consumer);
             if (getClusterInfoDTO().isBroadcast()) {
@@ -118,44 +126,71 @@ public class RocketMQConsumer extends AbstractConfig {
     }
 
     /**
-     * 从mqcloud更新重试消息跳过消息的时间
+     * 从mqcloud更新动态配置
      */
     private void initScheduleTask() {
         // 数据采样线程
-        Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {
+        clientConfigScheduledExecutorService = Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {
             @Override
             public Thread newThread(Runnable r) {
-                return new Thread(r, "skipRetryMessageTimeThread-" + getGroup());
+                return new Thread(r, "updateConsumerConfigThread-" + getGroup());
             }
-        }).scheduleAtFixedRate(new Runnable() {
+        });
+        clientConfigScheduledExecutorService.scheduleAtFixedRate(new Runnable() {
             @Override
             public void run() {
                 try {
                     HttpResult result = HttpTinyClient.httpGet(
-                            "http://" + getMqCloudDomain() + "/consumer/reset/" + getGroup(), null, null, "UTF-8", 5000);
+                            "http://" + getMqCloudDomain() + "/consumer/config/" + getGroup(), null, null, "UTF-8", 5000);
                     if (HttpURLConnection.HTTP_OK != result.code) {
                         logger.error("http response err: code:{},info:{}", result.code, result.content);
                         return;
                     }
-                    DTOResult<MessageResetDTO> dtoResult = JSON.parseObject(result.content, new TypeReference<DTOResult<MessageResetDTO>>(){});
-                    MessageResetDTO messageResetDTO = dtoResult.getResult();
-                    if(messageResetDTO == null) {
+                    DTOResult<ConsumerConfigDTO> dtoResult = JSON.parseObject(result.content, new TypeReference<DTOResult<ConsumerConfigDTO>>(){});
+                    ConsumerConfigDTO consumerConfigDTO = dtoResult.getResult();
+                    if(consumerConfigDTO == null) {
                         return;
                     }
-                    if (messageResetDTO.getResetTo() != retryMessageResetTo) {
-                        logger.info("retryMessage reset from:{} to:{}", retryMessageResetTo,
-                                messageResetDTO.getResetTo());
-                        retryMessageResetTo = messageResetDTO.getResetTo();
+                    // 1.更新重试跳过时间戳
+                    if (consumerConfigDTO.getRetryMessageResetTo() != null && 
+                            retryMessageResetTo != consumerConfigDTO.getRetryMessageResetTo()) {
+                        setRetryMessageResetTo(consumerConfigDTO.getRetryMessageResetTo());
+                    }
+                    // 2.更新消费是否暂停
+                    boolean needCheckPause = false;
+                    if (consumerConfigDTO.getPause() != null) {
+                        String pauseClientId = consumerConfigDTO.getPauseClientId();
+                        // 停止所有实例
+                        if (pauseClientId == null || pauseClientId.length() == 0) {
+                            needCheckPause = true;
+                        } else if (consumerConfigDTO.getPauseClientId()
+                                .equals(consumer.getDefaultMQPushConsumerImpl().getmQClientFactory().getClientId())) { // 只停止当前实例
+                            needCheckPause = true;
+                        }
+                    }
+                    if (needCheckPause && consumer.getDefaultMQPushConsumerImpl().isPause() != consumerConfigDTO.getPause()) {
+                        setPause(consumerConfigDTO.getPause());
+                    }
+                    // 3.更新限速
+                    if (consumerConfigDTO.getEnableRateLimit() != null && 
+                            isEnableRateLimit() != consumerConfigDTO.getEnableRateLimit()) {
+                        setEnableRateLimit(consumerConfigDTO.getEnableRateLimit());
+                    }
+                    if (consumerConfigDTO.getPermitsPerSecond() != null && 
+                            getRate() != consumerConfigDTO.getPermitsPerSecond()) {
+                        setRate(consumerConfigDTO.getPermitsPerSecond().intValue());
                     }
                 } catch (Throwable ignored) {
                     logger.warn("skipRetryMessage err:{}", ignored);
                 }
             }
-        }, 60, 300, TimeUnit.SECONDS);
+        }, 5, 60, TimeUnit.SECONDS);
     }
 
     public void shutdown() {
         consumer.shutdown();
+        messageConsumeRateLimiter.shutdown();
+        clientConfigScheduledExecutorService.shutdown();
     }
 
     /**
@@ -377,6 +412,7 @@ public class RocketMQConsumer extends AbstractConfig {
     }
 
     public void setRetryMessageResetTo(long retryMessageResetTo) {
+        logger.info("topic:{}'s consumer:{} retryMessageReset {}->{}", getTopic(), getGroup(), this.retryMessageResetTo, retryMessageResetTo);
         this.retryMessageResetTo = retryMessageResetTo;
     }
     
@@ -387,5 +423,42 @@ public class RocketMQConsumer extends AbstractConfig {
      */
     public void setMaxReconsumeTimes(int maxReconsumeTimes) {
         consumer.setMaxReconsumeTimes(maxReconsumeTimes);
+    }
+
+    public MessageConsumeRateLimiter getMessageConsumeRateLimiter() {
+        return messageConsumeRateLimiter;
+    }
+
+    /**
+     * 设置速率
+     * @param permitsPerSecond
+     */
+    public void setRate(int permitsPerSecond) {
+        if (permitsPerSecond < 1) {
+            logger.warn("topic:{}'s consumer:{} qps:{} must >= 1", getTopic(), getGroup(), permitsPerSecond);
+            return;
+        }
+        messageConsumeRateLimiter.setRate(permitsPerSecond);
+    }
+    
+    public double getRate() {
+        return messageConsumeRateLimiter.getRate();
+    }
+    
+    public void setPause(boolean pause) {
+        logger.info("topic:{}'s consumer:{} pause changed: {}->{}", getTopic(), getGroup(), isPause(), pause);
+        consumer.getDefaultMQPushConsumerImpl().setPause(pause);
+    }
+
+    public boolean isPause() {
+        return consumer.getDefaultMQPushConsumerImpl().isPause();
+    }
+
+    public void setEnableRateLimit(boolean enableRateLimit) {
+        messageConsumeRateLimiter.setEnableRateLimit(enableRateLimit);
+    }
+    
+    public boolean isEnableRateLimit() {
+        return messageConsumeRateLimiter.isEnableRateLimit();
     }
 }

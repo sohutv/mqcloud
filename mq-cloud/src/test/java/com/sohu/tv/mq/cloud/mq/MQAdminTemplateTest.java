@@ -1,5 +1,8 @@
 package com.sohu.tv.mq.cloud.mq;
 
+import java.util.List;
+import java.util.Properties;
+
 import org.apache.rocketmq.common.admin.TopicStatsTable;
 import org.apache.rocketmq.common.protocol.body.ClusterInfo;
 import org.apache.rocketmq.common.protocol.route.TopicRouteData;
@@ -12,8 +15,11 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import com.sohu.tv.mq.cloud.Application;
+import com.sohu.tv.mq.cloud.bo.Broker;
 import com.sohu.tv.mq.cloud.bo.Cluster;
+import com.sohu.tv.mq.cloud.service.BrokerService;
 import com.sohu.tv.mq.cloud.service.ClusterService;
+import com.sohu.tv.mq.cloud.util.Result;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = Application.class)
@@ -24,6 +30,9 @@ public class MQAdminTemplateTest {
     
     @Autowired
     private MQAdminTemplate mqAdminTemplate;
+    
+    @Autowired
+    private BrokerService brokerService;
     
     @Test
     public void test() {
@@ -82,6 +91,26 @@ public class MQAdminTemplateTest {
             public void invoke(MQAdminExt mqAdmin) throws Exception {
                 TopicRouteData route = mqAdmin.examineTopicRouteInfo("search-core_model_v2-topic");
                 Assert.assertNotNull(route);
+            }
+        });
+    }
+    
+    @Test
+    public void testBrokerConfig() {
+        int cid = 2;
+        Result<List<Broker>> result = brokerService.query(cid);
+        if(result.isEmpty()) {
+            return;
+        }
+        mqAdminTemplate.execute(new DefaultInvoke() {
+            public Cluster mqCluster() {
+                return clusterService.getMQClusterById(cid);
+            }
+
+            @Override
+            public void invoke(MQAdminExt mqAdmin) throws Exception {
+                Properties properties = mqAdmin.getBrokerConfig(result.getResult().get(0).getAddr());
+                Assert.assertNotNull(properties);
             }
         });
     }
