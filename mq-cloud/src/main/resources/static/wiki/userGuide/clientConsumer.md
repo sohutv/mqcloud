@@ -241,7 +241,7 @@ consumer.shutdown();
    1. 突然大量消息涌入时，希望能够均匀消费，避免服务被消息冲垮；
    2. 较为精准的控制消息消费速率；
 
-   针对匀速消费的需求，mqclient借助了guava的RateLimiter来进行速率限制，可以在消费者初始化时按照如下方式设置：
+   可以在消费者初始化时按照如下方式设置：
 
    ```
    consumer.setEnableRateLimit(true);
