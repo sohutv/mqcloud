@@ -121,12 +121,12 @@
 				                    		<#if consumerProgressVO.consumerConfig?? && consumerProgressVO.consumerConfig.pause?? && consumerProgressVO.consumerConfig.pause>
 				                    			<span title="恢复消费" class="glyphicon glyphicon-play pointer" onclick="showPauseConsumeConfigModel(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', false<#if consumerProgressVO.consumerConfig?? && consumerProgressVO.consumerConfig.pauseClientId??>,'${consumerProgressVO.consumerConfig.pauseClientId}'</#if>)" data-toggle="modal"></span>
 				                    		<#else>
-				                    			<span title="暂停消费" class="glyphicon glyphicon-pause pointer" onclick="showPauseConsumeConfigModel(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', true<#if consumerProgressVO.consumerConfig?? && consumerProgressVO.consumerConfig.pauseClientId??>,'${consumerProgressVO.consumerConfig.pauseClientId}'</#if>)" data-toggle="modal"></span>
+				                    			<span title="暂停消费【客户端需要升级至最新版本】" class="glyphicon glyphicon-pause pointer" onclick="showPauseConsumeConfigModel(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', true<#if consumerProgressVO.consumerConfig?? && consumerProgressVO.consumerConfig.pauseClientId??>,'${consumerProgressVO.consumerConfig.pauseClientId}'</#if>)" data-toggle="modal"></span>
 				                    		</#if>
 				                    		<#if consumerProgressVO.consumerConfig?? && consumerProgressVO.consumerConfig.enableRateLimit?? && consumerProgressVO.consumerConfig.enableRateLimit>
 			                    				<img title="解除消费限速" width="22" height="24" style="display:inline-block;" src="${request.contextPath}/img/rateLimiter2.png" class="pointer" onclick="showLimitConsumeConfigModel(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', true, <#if consumerProgressVO.consumerConfig.permitsPerSecond??>${consumerProgressVO.consumerConfig.permitsPerSecond}<#else>${limitConsumeTps}</#if>)" data-toggle="modal"></img>
 				                    		<#else>
-				                    			<img title="限制消费速率" width="22" height="24" style="display:inline-block;" src="${request.contextPath}/img/rateLimiter.png" class="pointer" onclick="showLimitConsumeConfigModel(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', false, <#if consumerProgressVO.consumerConfig?? && consumerProgressVO.consumerConfig.permitsPerSecond??>${consumerProgressVO.consumerConfig.permitsPerSecond}<#else>${limitConsumeTps}</#if>)" data-toggle="modal"></img>
+				                    			<img title="限制消费速率【客户端需要升级至最新版本】" width="22" height="24" style="display:inline-block;" src="${request.contextPath}/img/rateLimiter.png" class="pointer" onclick="showLimitConsumeConfigModel(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', false, <#if consumerProgressVO.consumerConfig?? && consumerProgressVO.consumerConfig.permitsPerSecond??>${consumerProgressVO.consumerConfig.permitsPerSecond}<#else>${limitConsumeTps}</#if>)" data-toggle="modal"></img>
 				                    		</#if>
 			                    		</#if>
 			                    		<button type="button" class="btn btn-xs btn-warning" data-target="#deleteConsumerModel${row}" title="删除${consumerProgressVO.consumer.name}" data-toggle="modal"><span class="glyphicon glyphicon-trash" aria-hidden="true"></span></button>
@@ -1008,7 +1008,7 @@
 		<div class="modal-content">
 			<div class="modal-header">
 				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-				<h4 class="modal-title">确定<b id="pauseConsumeTip"></b>消费吗?</h4>
+				<span class="h4"><b id="pauseConsumeTip"></b>消费</span><span class="nostyleA" data-toggle="tooltip" data-placement="bottom" title="详细释义"><a href="/wiki/userGuide/clientConsumer#pauseConsumer" target=_blank class="glyphicon glyphicon-question-sign"></a></span>
 			</div>
 			<div class="modal-body">
 				<form class="form-horizontal form-bordered form-row-stripped" id="pauseConsumeConfigForm">
@@ -1045,7 +1045,7 @@
 		<div class="modal-content">
 			<div class="modal-header">
 				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-				<h4 class="modal-title">消费限速</h4>
+				<span class="h4">消费限速</span><span class="nostyleA" data-toggle="tooltip" data-placement="bottom" title="详细释义"><a href="/wiki/userGuide/clientConsumer#limitConsumer" target=_blank class="glyphicon glyphicon-question-sign"></a></span>
 			</div>
 			<div class="modal-body">
 				<form class="form-horizontal form-bordered form-row-stripped" id="limitConsumeConfigForm">
