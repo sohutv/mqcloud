@@ -18,23 +18,23 @@
 
 ----------
 
-## 4.6.3新增重要特性： 
-1. rocketmq升级至[4.6.1](https://github.com/apache/rocketmq/releases/tag/rocketmq-all-4.6.1)。
-2. 版本号(x.y.z)规则变更：
+## 4.6.4新增重要特性： 
+1. 消费者支持在线暂停和限流功能。
 
-    2.1 x.y代表RocketMQ的大版本。
-    
-    2.2 z代表mqcloud的更新版本。
-    
-3. 增加集群拓扑，便于从整体了解机器，机房，流量等情况。
-![](https://raw.githubusercontent.com/sohutv/mqcloud/master/mq-cloud/src/main/resources/static/img/admin/intro/clusterTopology.gif)
-4. 延时队列消息支持消息量及消息查询。
-![image](https://user-images.githubusercontent.com/10137071/81646825-83f61280-945e-11ea-93b9-48fa7908f54a.png)
+    ![image](https://user-images.githubusercontent.com/10137071/86195177-e7f5a700-bb82-11ea-9171-ce4810db62fe.png)
 
-5. 重试及死消息支持按照key，时间查询。
-![image](https://user-images.githubusercontent.com/10137071/81647218-39c16100-945f-11ea-8b98-a2d562e026a6.png)
+2. 增加[broker配置模板](https://github.com/sohutv/mqcloud/blob/4.6.4.RELEASE/mq-cloud/src/main/resources/static/wiki/adminGuide/brokerConfig.md#clusterConfigTemplate)概念：
+      2.1 支持broker在线动态修改配置。
+      2.2 支持部署broker参数灵活配置。
+      2.3 支持新部署broker采用集群配置模板。
 
-6. String序列化兼容非String类型。
+3. 客户端资源安全关闭。
+
+4. 重试消息跳过功能重构。
+
+5. 服务器公钥登录支持降级为用户密码登录。
+
+6. 部分UI调整。
 
 ## 特性概览
 
