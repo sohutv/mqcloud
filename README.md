@@ -24,9 +24,10 @@
     ![image](https://user-images.githubusercontent.com/10137071/86195177-e7f5a700-bb82-11ea-9171-ce4810db62fe.png)
 
 2. 增加[broker配置模板](https://github.com/sohutv/mqcloud/blob/4.6.4.RELEASE/mq-cloud/src/main/resources/static/wiki/adminGuide/brokerConfig.md#clusterConfigTemplate)概念：
-      2.1 支持broker在线动态修改配置。
-      2.2 支持部署broker参数灵活配置。
-      2.3 支持新部署broker采用集群配置模板。
+
+      1. 支持broker在线动态修改配置。
+      2. 支持部署broker参数灵活配置。
+      3. 支持新部署broker采用集群配置模板。
 
 3. 客户端资源安全关闭。
 
