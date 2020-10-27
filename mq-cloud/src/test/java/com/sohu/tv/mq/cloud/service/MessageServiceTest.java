@@ -15,6 +15,7 @@ import com.sohu.tv.mq.cloud.Application;
 import com.sohu.tv.mq.cloud.bo.DecodedMessage;
 import com.sohu.tv.mq.cloud.bo.MessageData;
 import com.sohu.tv.mq.cloud.bo.MessageQueryCondition;
+import com.sohu.tv.mq.cloud.bo.ResentMessageResult;
 import com.sohu.tv.mq.cloud.util.DateUtil;
 import com.sohu.tv.mq.cloud.util.Result;
 
@@ -75,5 +76,14 @@ public class MessageServiceTest {
                         + " msgBody:" + m.getDecodedBody());
             }
         } while(messageParam.getLeftSize() > 0);
+    }
+    
+    @Test
+    public void testResendDirectly() {
+        String msgId = "0A131F9000002A9F00000001B214B695";
+        String consumer = "basic-apitest-topic-broadcast-consumer";
+        int clusterId = 3;
+        Result<List<ResentMessageResult>> result = messageService.resendDirectly(clusterService.getMQClusterById(clusterId), msgId, consumer);
+        Assert.assertTrue(result.isOK());
     }
 }

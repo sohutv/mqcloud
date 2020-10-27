@@ -2,10 +2,18 @@ package com.sohu.tv.mq.cloud.web.view.data;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
+import com.sohu.tv.mq.cloud.bo.TopicTrafficCheckResult;
+import com.sohu.tv.mq.cloud.bo.TopicTrafficStat;
+import com.sohu.tv.mq.cloud.bo.TopicTrafficWarnConfig;
+import com.sohu.tv.mq.cloud.service.TopicTrafficStatService;
+import com.sohu.tv.mq.cloud.service.TopicTrafficWarnConfigService;
+import com.sohu.tv.mq.cloud.service.TrafficSimpleStatStrategy;
+import com.sohu.tv.mq.cloud.service.TrafficStatCheckStrategy;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,6 +50,9 @@ public class ProduceTrafficLineChartData implements LineChartData {
     // 搜索区域
     private SearchHeader searchHeader;
 
+    // 流量检测工具
+    private TrafficStatCheckStrategy checkStrategy;
+
     public static final String DATE_FIELD = "date";
     public static final String TID_FIELD = "tid";
     public static final String DATE_FIELD_TITLE = "日期";
@@ -60,6 +71,12 @@ public class ProduceTrafficLineChartData implements LineChartData {
 
     @Autowired
     private TopicService topicService;
+
+    @Autowired
+    private TopicTrafficStatService topicTrafficStatService;
+
+    @Autowired
+    private TopicTrafficWarnConfigService topicTrafficWarnConfigService;
     
     public ProduceTrafficLineChartData() {
         initSearchHeader();
@@ -88,7 +105,7 @@ public class ProduceTrafficLineChartData implements LineChartData {
         // 初始化x轴数据，因为x轴数据是固定的
         xDataFormatList = new ArrayList<String>();
         xDataList = new ArrayList<String>();
-        for (int i = 0; i < 23; ++i) {
+        for (int i = 0; i < 24; ++i) {
             for (int j = 0; j < 60; ++j) {
                 String hour = i < 10 ? "0" + i : "" + i;
                 String ninutes = j < 10 ? "0" + j : "" + j;
@@ -143,15 +160,20 @@ public class ProduceTrafficLineChartData implements LineChartData {
         XAxis xAxis = new XAxis();
         xAxis.setxList(xDataFormatList);
         lineChart.setxAxis(xAxis);
-        
+
+        // 获取统计结果和预警配置
+        checkStrategy = getCheckStrategy(topicResult.getResult());
+        // 存储异常数据结果
+        Map<String, String> dataMap = new HashMap<>();
+
         // 将list转为map方便数据查找
         Map<String, Traffic> trafficMap = list2Map(result.getResult());
         Map<String, Traffic> trafficMapDayBefore = list2Map(
                 resultDayBefore.isOK() ? resultDayBefore.getResult() : null);
         // 填充y轴数据
-        List<Number> countList = new ArrayList<Number>();
+        List<Map<String, Object>> countList = new ArrayList<Map<String, Object>>();
         List<Number> sizeList = new ArrayList<Number>();
-        List<Number> countListDayBefore = new ArrayList<Number>();
+        List<Map<String, Object>> countListDayBefore = new ArrayList<Map<String, Object>>();
         List<Number> sizeListDayBefore = new ArrayList<Number>();
         long maxCount = 0;
         long maxSize = 0;
@@ -162,7 +184,7 @@ public class ProduceTrafficLineChartData implements LineChartData {
         long totalCountDayBefore = 0;
         long totalSizeDayBefore = 0;
         for (String time : xDataList) {
-            long count = setCountData(trafficMap.get(time), countList);
+            long count = setCountDataAndWarnInfo(trafficMap.get(time), countList, dataMap);
             totalCount += count;
             if (maxCount < count) {
                 maxCount = count;
@@ -172,7 +194,7 @@ public class ProduceTrafficLineChartData implements LineChartData {
             if(maxSize < size) {
                 maxSize = size;
             }
-            long countDayBefore = setCountData(trafficMapDayBefore.get(time), countListDayBefore);
+            long countDayBefore = setCountDataAndWarnInfo(trafficMapDayBefore.get(time), countListDayBefore, dataMap);
             totalCountDayBefore += countDayBefore;
             if(maxCountDayBefore < countDayBefore) {
                 maxCountDayBefore = countDayBefore;
@@ -249,8 +271,10 @@ public class ProduceTrafficLineChartData implements LineChartData {
                 + "<td>"+formatSize(totalSizeDayBefore)+"</td>"
                 + "</tr></tbody></table>");
 
+        lineChart.setDataMap(dataMap);
+
         lineChartList.add(lineChart);
-        
+
         return lineChartList;
     }
     
@@ -300,12 +324,30 @@ public class ProduceTrafficLineChartData implements LineChartData {
         }
     }
 
-    private long setCountData(Traffic traffic, List<Number> countList) {
+    private long setCountDataAndWarnInfo(Traffic traffic, List<Map<String, Object>> countList, Map<String, String> dataMap) {
+        Map<String, Object> countMap = new HashMap<>();
         if (traffic == null) {
-            countList.add(0);
+            countMap.put("y", 0);
+            countList.add(countMap);
             return 0;
         } else {
-            countList.add(traffic.getCount());
+            countMap.put("y", traffic.getCount());
+            countList.add(countMap);
+            // 检测流量是否异常
+            if (checkStrategy != null) {
+                TopicTrafficCheckResult checkResult = checkStrategy.check((TopicTraffic) traffic);
+                if (checkResult != null) {
+                    Map<String, Object> markerMap = new HashMap<>();
+                    markerMap.put("symbol", "circle");
+                    markerMap.put("fillColor", "red");
+                    markerMap.put("enabled", true);
+                    countMap.put("marker", markerMap);
+                    String time = traffic.getCreateTime();
+                    time = time.substring(0, 2) + ":" + time.substring(2, time.length());
+                    String key = DateUtil.formatYMD(traffic.getCreateDate()) + "-消息量_" + time;
+                    dataMap.put(key, checkResult.getWarnInfo());
+                }
+            }
             return traffic.getCount();
         }
     }
@@ -336,6 +378,40 @@ public class ProduceTrafficLineChartData implements LineChartData {
             result = topicTrafficService.query(topic.getId(), dateStr);
         }
         return result;
+    }
+
+    /**
+     * 获取 checkStrategy
+     * @param topic
+     * @return TrafficStatCheckStrategy
+     */
+    private TrafficStatCheckStrategy getCheckStrategy(Topic topic) {
+        if (!topic.trafficWarnEnabled()) {
+            return null;
+        }
+        // 获取统计结果
+        Result<TopicTrafficStat> topicTrafficStatResult = topicTrafficStatService.query(topic.getId());
+        if (topicTrafficStatResult.isNotOK()) {
+            return null;
+        }
+        TopicTrafficStat topicTrafficStat = topicTrafficStatResult.getResult();
+        // 获取预警配置
+        TopicTrafficWarnConfig topicTrafficWarnConfig = null;
+        Result<TopicTrafficWarnConfig> topicTrafficWarnConfigResult = topicTrafficWarnConfigService.query(topic.getName());
+        Result<TopicTrafficWarnConfig> defaultConfigResult = topicTrafficWarnConfigService.query("");
+        if (topicTrafficWarnConfigResult.isOK()) {
+            topicTrafficWarnConfig = topicTrafficWarnConfigResult.getResult();
+            if (defaultConfigResult.isOK()) {
+                topicTrafficWarnConfig.copyProperties(defaultConfigResult.getResult());
+            }
+        } else if (defaultConfigResult.isOK()) {
+            topicTrafficWarnConfig = defaultConfigResult.getResult();
+        }
+        // 构造检测对象
+        if (topicTrafficStat != null && topicTrafficWarnConfig != null) {
+            checkStrategy = new TrafficSimpleStatStrategy(topicTrafficStat, topicTrafficWarnConfig);
+        }
+        return checkStrategy;
     }
     
     /**

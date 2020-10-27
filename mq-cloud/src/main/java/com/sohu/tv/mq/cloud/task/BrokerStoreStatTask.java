@@ -151,7 +151,7 @@ public class BrokerStoreStatTask {
         String header = "<table border=1><thead><tr><th>集群</th><th>broker</th><th>avg</th><th>90%</th><th>99%</th>"
                 + "<th>max</th><th>写入量</th></tr></thead><tbody>";
         String footer = "</tbody></table>";
-        alertService.sendWanMail(null, "BrokerStore", header + content.toString() + footer);
+        alertService.sendWarnMail(null, "BrokerStore", header + content.toString() + footer);
     }
 
     /**

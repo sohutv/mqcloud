@@ -56,4 +56,24 @@ public class TopicTrafficDaoTest {
         Assert.assertNotNull(result);
     }
 
+    @Test
+    public void testSelectByCreateDateAndTime() {
+        List<String> timeList = new ArrayList<String>();
+        timeList.add("1653");
+        timeList.add("1656");
+        timeList.add("1652");
+        timeList.add("1651");
+        timeList.add("1624");
+        timeList.add("1620");
+        timeList.add("1620");
+        timeList.add("1621");
+        timeList.add("1621");
+        timeList.add("1622");
+        timeList.add("1622");
+        List<TopicTraffic> res = topicTrafficDao.selectByCreateDateAndTime(700, "2020-08-21", timeList);
+        System.out.println(res.size());
+        for(TopicTraffic topicTraffic : res) {
+            System.out.println(topicTraffic.getCreateTime());
+        }
+    }
 }

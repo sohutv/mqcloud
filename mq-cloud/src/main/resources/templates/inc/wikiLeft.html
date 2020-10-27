@@ -80,10 +80,25 @@
 		<li id="userGuide_go"><a href="${request.contextPath}/wiki/userGuide/go">go接入</a></li>
 		<li id="userGuide_python"><a href="${request.contextPath}/wiki/userGuide/python">python接入</a></li>
 	</ul>
+	<#if userInfo.user.admin>
 	<li><span>管理指南</span></li>
 	<ul class="nav sub-menu">
+		<li id="adminGuide_audit"><a href="${request.contextPath}/wiki/adminGuide/audit">流程审核</a></li>
+		<li id="adminGuide_ns"><a href="${request.contextPath}/wiki/adminGuide/ns">集群发现</a></li>
+		<li id="adminGuide_broker"><a href="${request.contextPath}/wiki/adminGuide/broker">集群管理</a></li>
+		<li id="adminGuide_topology"><a href="${request.contextPath}/wiki/adminGuide/topology">集群拓扑</a></li>
+		<li id="adminGuide_monitor"><a href="${request.contextPath}/wiki/adminGuide/monitor">监控管理</a></li>
+		<li id="adminGuide_trafficMonitor"><a href="${request.contextPath}/wiki/adminGuide/trafficMonitor">流量监控</a></li>
+		<li id="adminGuide_user"><a href="${request.contextPath}/wiki/adminGuide/user">用户管理</a></li>
+		<li id="adminGuide_machine"><a href="${request.contextPath}/wiki/adminGuide/machine">机器管理</a></li>
+		<li id="adminGuide_notify"><a href="${request.contextPath}/wiki/adminGuide/notify">通知管理</a></li>
+		<li id="adminGuide_clientVersion"><a href="${request.contextPath}/wiki/adminGuide/clientVersion">客户端版本</a></li>
+		<li id="adminGuide_feedback"><a href="${request.contextPath}/wiki/adminGuide/feedback">用户反馈</a></li>
 		<li id="adminGuide_brokerConfig"><a href="${request.contextPath}/wiki/adminGuide/brokerConfig">配置模板</a></li>
+		<li id="adminGuide_commonConfig"><a href="${request.contextPath}/wiki/adminGuide/commonConfig">通用配置</a></li>
+		<li id="adminGuide_faq"><a href="${request.contextPath}/wiki/adminGuide/faq">常见问题</a></li>
 	</ul>
+	</#if>
 	<li><span>开发指南</span></li>
 	<ul class="nav sub-menu">
 		<li id="developerGuide_intro"><a href="${request.contextPath}/wiki/developerGuide/intro">介绍</a></li>

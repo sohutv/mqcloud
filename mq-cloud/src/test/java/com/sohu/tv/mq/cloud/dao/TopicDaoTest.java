@@ -3,6 +3,7 @@ package com.sohu.tv.mq.cloud.dao;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.sohu.tv.mq.cloud.bo.TopicConsumer;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -70,5 +71,11 @@ public class TopicDaoTest {
         List<TopicTraffic> result = topicTrafficDao.selectByDateTime("2018-07-31", timeList, list);
         Integer rst = topicDao.updateCount(result);
         Assert.assertEquals(timeList.size(), rst.intValue());
+    }
+
+    @Test
+    public void testQueryTopicConsumer() {
+        List<TopicConsumer> list = topicDao.selectTopicConsumerByTid(1809L);
+        Assert.assertNotNull(list);
     }
 }

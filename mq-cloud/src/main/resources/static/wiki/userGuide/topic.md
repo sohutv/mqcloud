@@ -28,6 +28,24 @@
 
 **生产者**：即producer group，应用代码里初始化时需要使用此选项。
 
+关于<span id="modifySerializer">**序列化方式**</span>这里需要说明一下，序列化是mqcloud提供的客户端做的，rocketmq只存储二进制数据。一旦消息发送到了rocketmq，那么消息的序列化方式就定了。针对需要修改topic序列化方式的需求，mqcloud进行了兼容：
+
+Protostuf改为String需要参考如下步骤进行：
+
+1. 联系此topic的消费者，将客户端版本升级至最新版本（若已经是最新版本，忽略此步骤）。
+2. 联系管理员修改topic的序列化方式为String。
+3. 联系此topic的生产者修改为[String方式的发送代码](clientProducer#produceJson)。
+4. 等待消费者把历史Protostuf消息消费完毕，修改为[String方式的消费代码](clientConsumer#consumeJson)。
+
+String改为Protostuf需要参考如下步骤进行：
+
+1. 联系管理员修改topic的序列化方式为Protostuf。
+2. 联系此topic的消费者，将客户端版本升级至最新版本并进行重启（若已是最新版本直接重启）。
+3. 联系此topic的生产者修改为[Protostuf方式的发送代码](clientProducer#produceObject)。
+4. 等待消费者把历史String消息消费完毕，修改为[Protostuf的消费代码](clientConsumer#consumeObject)。
+
+遵照以上步骤，修改topic序列化方式时可以保证消息生产不停止，消费无异常。
+
 **2 今日流量**
 
 ![](img/3.1.png)

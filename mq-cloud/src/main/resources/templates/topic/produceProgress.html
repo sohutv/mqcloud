@@ -1,3 +1,13 @@
+<style>
+.highcharts-tooltip>span {
+	background-color: #fff;
+	border: 1px solid #172F8F;
+	border-radius: 5px;
+	opacity: 1;
+	z-index: 9999 !important;
+	padding: .8em;
+}
+</style>
 <div class="row">
 	<br/>
 	<div class="col-md-12">
@@ -88,6 +98,7 @@
 <!-- 	准备曲线图 -->
 <div id="produce_lineChart"><center>暂无数据</center></div>
 <script>
+var statMap;
 function toggleTR(clz){
 	if($("tr."+clz).is(':visible')){
 		$("tr."+clz).hide();
@@ -103,6 +114,38 @@ function toggleTR(clz){
 $(function() {
 	lineChart("produce", function (){
 		$("#tid").val("${topic.id}");
+	}, function chartToolTip(chart){
+		if(!chart){
+			statMap = null;
+			return;
+		}
+		if(chart.dataMap){
+			if(!statMap){
+				statMap = chart.dataMap;
+			} else {
+				for(var k in chart.dataMap){
+					statMap[k] = chart.dataMap[k];
+				}
+			}
+		}
+		chart.tooltip = {
+			formatter: function () {
+				var s = '<span style="font-size: 10px">'+this.x+'</span><br/>';
+				$.each(this.points ,function(){
+					s += '<span style="color: '+this.series.color+'">\u25CF</span>'+this.series.name+': <b>'+this.y+'</b><br/>';
+					var exception = statMap[this.series.name + '_' + this.x];
+					if (exception) {
+						s += '<span style="color: red">' +exception+ '</span><br/>';
+					}
+				});
+				return s;
+			},
+			useHTML: true,
+			borderWidth: 0,
+			backgroundColor: "rgba(255,255,255,0)",
+			shadow: false,
+			shared: true
+		};
 	});
 });
 </#if>

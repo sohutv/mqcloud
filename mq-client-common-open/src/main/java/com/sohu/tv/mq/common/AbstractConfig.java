@@ -4,9 +4,11 @@ import java.net.HttpURLConnection;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.rocketmq.client.ClientConfig;
 import org.apache.rocketmq.client.log.ClientLogger;
 import org.apache.rocketmq.client.trace.AsyncTraceDispatcher;
+import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.UtilAll;
 import org.apache.rocketmq.common.utils.HttpTinyClient;
 import org.apache.rocketmq.common.utils.HttpTinyClient.HttpResult;
@@ -185,8 +187,33 @@ public abstract class AbstractConfig {
         if(messageSerializer == null) {
             logger.error("serializer is null! clusterInfoDTO:{}", clusterInfoDTO.toString());
         }
+        // 客户端ip初始化
+        initClientIp(clientConfig);
         // trace 初始化
         initTrace();
+    }
+    
+    /**
+     * 为了防止服务器多网卡或docker情况无法获取正确ip
+     * @param clientConfig
+     */
+    protected void initClientIp(ClientConfig clientConfig) {
+        String ip = System.getProperty("MY_POD_IP");
+        if (StringUtils.isEmpty(ip)) {
+            ip = System.getenv("MY_POD_IP");
+        }
+        if (StringUtils.isEmpty(ip)) {
+            return;
+        }
+        ip = ip.trim();
+        for (String address : MixAll.getLocalInetAddress()) {
+            if (ip.equals(address)) {
+                logger.info("topic:{} group:{} useIp:{}", getTopic(), getGroup(), ip);
+                clientConfig.setClientIP(ip);
+                return;
+            }
+        }
+        logger.warn("MY_POD_IP:{} not in {}", ip, MixAll.getLocalInetAddress());
     }
 
     /**

@@ -132,15 +132,30 @@ public class TopicService {
     }
 
     /**
+     * 根据集群获取开启了流量预警功能的topic列表
+     * @param mqCluster
+     * @return Result<List<Topic>>
+     */
+    public Result<List<Topic>> queryTrafficWarnEnabledTopicList(Cluster mqCluster) {
+        List<Topic> topicList = null;
+        try {
+            topicList = topicDao.selectTrafficWarnEnabledTopic(mqCluster.getId());
+        } catch (Exception e) {
+            logger.error("queryTrafficWarnEnabledTopicList err, mqCluster:{}", mqCluster, e);
+            return Result.getDBErrorResult(e);
+        }
+        return Result.getResult(topicList);
+    }
+
+    /**
      * 按照uid查询topic
      * 
      * @param Result<List<Topic>>
      */
-    public Result<List<Topic>> queryTopicList(String topic, long uid, int page, int size, List<Integer> traceClusterIds) {
+    public Result<List<Topic>> queryTopicList(String topic, long uid, int offset, int size, List<Integer> traceClusterIds) {
         List<Topic> topicList = null;
         try {
-            int m = (page - 1)*size;
-            topicList = topicDao.selectByUid(topic, uid, m, size, traceClusterIds);
+            topicList = topicDao.selectByUid(topic, uid, offset, size, traceClusterIds);
         } catch (Exception e) {
             logger.error("selectByUid err, uid:{}", uid, e);
             return Result.getDBErrorResult(e);
@@ -510,12 +525,27 @@ public class TopicService {
      * 
      * @param Result<List<TopicConsumer>>
      */
-    public Result<List<TopicConsumer>> queryTopicConsumer() {
+    public Result<List<TopicConsumer>> queryTopicConsumer(int consumeWay) {
         List<TopicConsumer> topicConsumerList = null;
         try {
-            topicConsumerList = topicDao.selectTopicConsumer();
+            topicConsumerList = topicDao.selectTopicConsumer(consumeWay);
         } catch (Exception e) {
             logger.error("queryTopicConsumer err", e);
+            return Result.getDBErrorResult(e);
+        }
+        return Result.getResult(topicConsumerList);
+    }
+
+    /**
+     * 查询指定topic对应的consumer
+     *
+     */
+    public Result<List<TopicConsumer>> queryTopicConsumer(long tid) {
+        List<TopicConsumer> topicConsumerList = null;
+        try {
+            topicConsumerList = topicDao.selectTopicConsumerByTid(tid);
+        } catch (Exception e) {
+            logger.error("queryTopicConsumer err,tid:{}", tid, e);
             return Result.getDBErrorResult(e);
         }
         return Result.getResult(topicConsumerList);
@@ -693,6 +723,24 @@ public class TopicService {
         } catch (Exception e) {
             logger.error("updateTopicTrace topic:{}", topic, e);
             TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+            return Result.getWebErrorResult(e);
+        }
+        return Result.getOKResult();
+    }
+
+    /**
+     * 更新topic流量预警
+     * @param audit
+     * @param topic
+     */
+    public Result<?> updateTopicTrafficWarn(Topic topic) {
+        try {
+            Integer count = topicDao.updateTopicTrafficWarn(topic.getId(), topic.getTrafficWarnEnabled());
+            if(count == null || count != 1) {
+                return Result.getResult(Status.DB_ERROR);
+            }
+        } catch (Exception e) {
+            logger.error("updateTopicTrafficWarn topic:{}", topic, e);
             return Result.getWebErrorResult(e);
         }
         return Result.getOKResult();

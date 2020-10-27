@@ -12,6 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.ApplicationEventPublisherAware;
@@ -28,7 +29,7 @@ import com.sohu.tv.mq.cloud.service.CommonConfigService;
  */
 @Component
 @ConfigurationProperties(prefix = "mqcloud")
-public class MQCloudConfigHelper implements ApplicationEventPublisherAware {
+public class MQCloudConfigHelper implements ApplicationEventPublisherAware, CommandLineRunner {
 
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
@@ -132,6 +133,15 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware {
 
     // 机房颜色
     private List<String> machineRoomColor;
+    
+    // 从slave查询消息
+    private Boolean queryMessageFromSlave;
+    
+    // 消费落后多少进行预警,单位byte
+    private Long consumeFallBehindSize = 0L;
+    
+    // 消息类型位置
+    private String messageTypeLocation;
 
     @Autowired
     private CommonConfigService commonConfigService;
@@ -162,6 +172,10 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware {
                 field.set(this, value.trim());
             } else if (fieldType == Integer.class) {
                 field.set(this, Integer.valueOf(value));
+            } else if (fieldType == Long.class) {
+                field.set(this, Long.valueOf(value));
+            } else if (fieldType == Boolean.class) {
+                field.set(this, Boolean.valueOf(value));
             } else {
                 field.set(this, JSON.parseObject(value, fieldType));
             }
@@ -227,9 +241,17 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware {
     public String getTopicConsumeLink(long topicId) {
         return getTopicLink(topicId) + "?tab=consume";
     }
-
+    
+    public String getTopicProduceLink(long topicId, String linkText) {
+        return getHrefLink(getTopicLink(topicId) + "?tab=produce", linkText);
+    }
+    
     public String getTopicConsumeLink(long topicId, String linkText) {
         return getHrefLink(getTopicConsumeLink(topicId) + "&consumer=" + linkText, linkText);
+    }
+    
+    public String getTopicConsumeLink(String topic, String consumer) {
+        return getHrefLink(getPrefix() + "topic/detail?topic=" + topic + "&consumer=" + consumer, consumer);
     }
 
     private String getHrefLink(String link, String linkText) {
@@ -437,8 +459,27 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware {
         return machineRoom;
     }
 
+    public Boolean isQueryMessageFromSlave() {
+        if (queryMessageFromSlave == null) {
+            return false;
+        }
+        return queryMessageFromSlave;
+    }
+
     public void setAutoAuditType(int[] autoAuditType) {
         this.autoAuditType = autoAuditType;
+    }
+
+    public Long getConsumeFallBehindSize() {
+        return consumeFallBehindSize;
+    }
+
+    public void setConsumeFallBehindSize(Long consumeFallBehindSize) {
+        this.consumeFallBehindSize = consumeFallBehindSize;
+    }
+
+    public String getMessageTypeLocation() {
+        return messageTypeLocation;
     }
 
     public String getMachineRoomColor(String room) {
@@ -482,6 +523,11 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware {
     @Override
     public void setApplicationEventPublisher(ApplicationEventPublisher applicationEventPublisher) {
         publisher = applicationEventPublisher;
+    }
+
+    @Override
+    public void run(String... args) throws Exception {
+        publisher.publishEvent(new MQCloudConfigEvent());
     }
 
     /**

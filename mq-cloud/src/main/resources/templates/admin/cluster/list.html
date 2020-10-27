@@ -194,6 +194,7 @@
 									</div>
 								</div>
 							</#if>
+							<#if brokerGroup[key][bkey].version??>
 							<#if bkey == "0">
 								<button title="禁止客户端写入，broker下线前需要先禁止写入，等没有人写入后，再下线" type="button" onclick="program('${brokerGroup[key][bkey].brokerAddr}', 'program${i}')" class="btn btn-sm btn-success" data-target="#nowriteModal${i}" data-toggle="modal">停写</button>
 								<button title="已经停写的broker，可以进行关闭操作" type="button" class="btn btn-sm btn-success" data-target="#brokerOfflineModal${i}" onclick="program('${brokerGroup[key][bkey].brokerAddr}', 'brokerOfflineProgram${i}')" data-toggle="modal">下线</button>
@@ -240,6 +241,9 @@
 								</div>
 							<#else>
 								<button title="slave可以直接进行关闭" type="button" class="btn btn-sm btn-success" data-target="#brokerOfflineModal${i}" onclick="program('${brokerGroup[key][bkey].brokerAddr}', 'brokerOfflineProgram${i}')" data-toggle="modal">下线</button>
+							</#if>
+							<#else>
+								<button title="启动broker" data-toggle="tooltip" type="button" id="${key}<#if bkey != "0">-s</#if>Btn" class="btn btn-sm btn-success" onclick="startupBroker('${brokerGroup[key][bkey].brokerAddr}', '${key}<#if bkey != "0">-s</#if>')">启动</button>
 							</#if>
 							
 							<!-- 下线 -->
@@ -1231,6 +1235,24 @@ function modifyBrokerConfig(){
 	} else {
 		alert("没有改动，无需更新");
 	}
+}
+/**
+ * 启动实例
+ */
+function startupBroker(ipAddr, dir){
+	disable(dir+"Btn");
+	$.post('${request.contextPath}/admin/deploy/startup/broker',{
+		ipAddr: ipAddr,
+		dir: dir
+		},function(data){
+            if(data.status == 200){
+            	toastr.success("启动成功！即将刷新页面！");  	            	
+            	reload(5000);   
+		    } else {
+		    	toastr.error("启动失败！"+data.message);  
+		    	enable(dir+"Btn");
+		    }
+       }, 'json');
 }
 </script>
 </#if>

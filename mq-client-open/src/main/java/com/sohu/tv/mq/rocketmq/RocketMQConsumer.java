@@ -1,8 +1,12 @@
 package com.sohu.tv.mq.rocketmq;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.net.HttpURLConnection;
 import java.util.List;
 import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
@@ -15,8 +19,14 @@ import org.apache.rocketmq.client.consumer.listener.ConsumeOrderlyStatus;
 import org.apache.rocketmq.client.consumer.listener.MessageListenerConcurrently;
 import org.apache.rocketmq.client.consumer.listener.MessageListenerOrderly;
 import org.apache.rocketmq.client.exception.MQClientException;
+import org.apache.rocketmq.client.impl.consumer.DefaultMQPushConsumerImpl;
+import org.apache.rocketmq.client.impl.consumer.PullMessageService;
+import org.apache.rocketmq.client.impl.consumer.PullRequest;
+import org.apache.rocketmq.client.impl.factory.MQClientInstance;
 import org.apache.rocketmq.client.trace.AsyncTraceDispatcher;
 import org.apache.rocketmq.client.trace.hook.ConsumeMessageTraceHookImpl;
+import org.apache.rocketmq.common.ServiceState;
+import org.apache.rocketmq.common.ServiceThread;
 import org.apache.rocketmq.common.consumer.ConsumeFromWhere;
 import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.common.protocol.heartbeat.MessageModel;
@@ -30,6 +40,11 @@ import com.sohu.index.tv.mq.common.ConsumerCallback;
 import com.sohu.tv.mq.common.AbstractConfig;
 import com.sohu.tv.mq.dto.ConsumerConfigDTO;
 import com.sohu.tv.mq.dto.DTOResult;
+import com.sohu.tv.mq.rocketmq.limiter.LeakyBucketRateLimiter;
+import com.sohu.tv.mq.rocketmq.limiter.RateLimiter;
+import com.sohu.tv.mq.rocketmq.limiter.SwitchableRateLimiter;
+import com.sohu.tv.mq.rocketmq.limiter.TokenBucketRateLimiter;
+import com.sohu.tv.mq.util.Constant;
 
 /**
  * rocketmq 消费者
@@ -72,25 +87,42 @@ public class RocketMQConsumer extends AbstractConfig {
     private volatile long retryMessageResetTo = -1;
     
     // 消息限速器
-    private MessageConsumeRateLimiter messageConsumeRateLimiter;
+    private RateLimiter rateLimiter;
     
     private ScheduledExecutorService clientConfigScheduledExecutorService;
+    
+    private Class<?> consumerParameterTypeClass;
+    
+    // 关闭等待最大时间
+    private long shutdownWaitMaxMillis = 30000;
 
     /**
      * 一个应用创建一个Consumer，由应用来维护此对象，可以设置为全局对象或者单例<br>
      * ConsumerGroupName需要由应用来保证唯一
      */
     public RocketMQConsumer(String consumerGroup, String topic) {
+        this(consumerGroup, topic, false);
+    }
+    
+    /**
+     * 一个应用创建一个Consumer，由应用来维护此对象，可以设置为全局对象或者单例<br>
+     * ConsumerGroupName需要由应用来保证唯一
+     */
+    public RocketMQConsumer(String consumerGroup, String topic, boolean useLeakyBucketRateLimiter) {
         super(consumerGroup, topic);
         consumer = new DefaultMQPushConsumer(consumerGroup);
         // 消费消息超时将会发回重试队列，超时时间由默认的15分钟修改为2小时
         consumer.setConsumeTimeout(2 * 60);
+        // 初始化限速器
+        if (useLeakyBucketRateLimiter) {
+            initLeakyBucketRateLimiter();
+        } else {
+            initTokenBucketRateLimiter();
+        }
     }
 
     public void start() {
         try {
-            // 初始化限速器
-            messageConsumeRateLimiter = new MessageConsumeRateLimiter(group, 2 * consumer.getConsumeThreadMin());
             // 初始化配置
             initConfig(consumer);
             if (getClusterInfoDTO().isBroadcast()) {
@@ -115,6 +147,8 @@ public class RocketMQConsumer extends AbstractConfig {
                     }
                 });
             }
+            // 初始化消费者参数类型
+            initConsumerParameterTypeClass();
             // 初始化定时调度任务
             initScheduleTask();
             // 消费者启动
@@ -176,9 +210,11 @@ public class RocketMQConsumer extends AbstractConfig {
                             isEnableRateLimit() != consumerConfigDTO.getEnableRateLimit()) {
                         setEnableRateLimit(consumerConfigDTO.getEnableRateLimit());
                     }
-                    if (consumerConfigDTO.getPermitsPerSecond() != null && 
-                            getRate() != consumerConfigDTO.getPermitsPerSecond()) {
-                        setRate(consumerConfigDTO.getPermitsPerSecond().intValue());
+                    if (consumerConfigDTO.getPermitsPerSecond() != null) {
+                        int rate = consumerConfigDTO.getPermitsPerSecond().intValue();
+                        if (getRate() != rate) {
+                            setRate(rate);
+                        }
                     }
                 } catch (Throwable ignored) {
                     logger.warn("skipRetryMessage err:{}", ignored);
@@ -188,9 +224,71 @@ public class RocketMQConsumer extends AbstractConfig {
     }
 
     public void shutdown() {
+        DefaultMQPushConsumerImpl innerConsumer = consumer.getDefaultMQPushConsumerImpl();
+		if (ServiceState.RUNNING != innerConsumer.getServiceState()) {
+			logger.info("conusmer:{} state is {}, no need shutdown", getGroup(), innerConsumer.getServiceState());
+			return;
+		}
+        // 1.首先关闭rebalance线程，不再接受新的队列变更等。
+        ServiceThread thread = getField(MQClientInstance.class, "rebalanceService", innerConsumer.getmQClientFactory());
+        thread.shutdown();
+        // 2.接着标记拉取线程停止，不直接关闭是为了把拉下来的消息消费完毕。
+        PullMessageService pull = innerConsumer.getmQClientFactory().getPullMessageService();
+        pull.makeStop();
+        // 3.根据拉取任务数是否与处理队列数相等，来判断消息是否已经消费完毕；超过30秒则不再等待
+        long start = System.currentTimeMillis();
+        LinkedBlockingQueue<PullRequest> q = getField(PullMessageService.class, "pullRequestQueue", pull);
+        int pullRequestSize = getPullRequestSize(q);
+        while (pullRequestSize != innerConsumer.getRebalanceImpl().getProcessQueueTable().size()) {
+            long use = System.currentTimeMillis() - start;
+            if (use > getShutdownWaitMaxMillis()) {
+                logger.warn("{} shutdown too long, use:{}ms, break!!, pullRequestQueueSize:{} processQueueTableSize:{}",
+                        getGroup(), use, pullRequestSize, innerConsumer.getRebalanceImpl().getProcessQueueTable().size());
+                break;
+            }
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                logger.warn("ignore interrupted!!");
+            }
+            pullRequestSize = getPullRequestSize(q);
+        }
+        // 4.如下为正常关闭流程
         consumer.shutdown();
-        messageConsumeRateLimiter.shutdown();
+        rateLimiter.shutdown();
         clientConfigScheduledExecutorService.shutdown();
+    }
+    
+    private int getPullRequestSize(LinkedBlockingQueue<PullRequest> q) {
+        if (q == null) {
+            return 0;
+        }
+        int size = 0;
+        for (PullRequest pullRequest : q) {
+            if (getGroup().equals(pullRequest.getConsumerGroup())) {
+                ++size;
+            }
+        }
+        return size;
+    }
+    
+    /**
+     * 获取类的字段实例
+     * @param clz
+     * @param field
+     * @param obj
+     * @return
+     */
+    @SuppressWarnings("unchecked")
+    private <T> T getField(Class<?> clz, String field, Object obj){
+        try {
+            Field f = clz.getDeclaredField(field);
+            f.setAccessible(true);
+            return(T) f.get(obj);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
     /**
@@ -425,8 +523,12 @@ public class RocketMQConsumer extends AbstractConfig {
         consumer.setMaxReconsumeTimes(maxReconsumeTimes);
     }
 
-    public MessageConsumeRateLimiter getMessageConsumeRateLimiter() {
-        return messageConsumeRateLimiter;
+    public RateLimiter getRateLimiter() {
+        return rateLimiter;
+    }
+
+    public void setRateLimiter(RateLimiter rateLimiter) {
+        this.rateLimiter = rateLimiter;
     }
 
     /**
@@ -438,11 +540,11 @@ public class RocketMQConsumer extends AbstractConfig {
             logger.warn("topic:{}'s consumer:{} qps:{} must >= 1", getTopic(), getGroup(), permitsPerSecond);
             return;
         }
-        messageConsumeRateLimiter.setRate(permitsPerSecond);
+        rateLimiter.setRate(permitsPerSecond);
     }
     
-    public double getRate() {
-        return messageConsumeRateLimiter.getRate();
+    public int getRate() {
+        return rateLimiter.getRate();
     }
     
     public void setPause(boolean pause) {
@@ -455,10 +557,87 @@ public class RocketMQConsumer extends AbstractConfig {
     }
 
     public void setEnableRateLimit(boolean enableRateLimit) {
-        messageConsumeRateLimiter.setEnableRateLimit(enableRateLimit);
+        if (rateLimiter instanceof SwitchableRateLimiter) {
+            ((SwitchableRateLimiter) rateLimiter).setEnabled(enableRateLimit);
+        }
     }
     
     public boolean isEnableRateLimit() {
-        return messageConsumeRateLimiter.isEnableRateLimit();
+        if (rateLimiter instanceof SwitchableRateLimiter) {
+            return ((SwitchableRateLimiter) rateLimiter).isEnabled();
+        }
+        return false;
+    }
+    
+    public long getShutdownWaitMaxMillis() {
+        return shutdownWaitMaxMillis;
+    }
+
+    public void setShutdownWaitMaxMillis(long shutdownWaitMaxMillis) {
+        this.shutdownWaitMaxMillis = shutdownWaitMaxMillis;
+    }
+
+    /**
+     * 初始化漏桶限速器
+     */
+    public void initLeakyBucketRateLimiter() {
+        initRateLimiter(new LeakyBucketRateLimiter(group, 2 * consumer.getConsumeThreadMin(),
+                Constant.LIMIT_CONSUME_TPS, TimeUnit.SECONDS));
+    }
+    
+    /**
+     * 初始化令牌桶限速器
+     */
+    public void initTokenBucketRateLimiter() {
+        initRateLimiter(new TokenBucketRateLimiter(Constant.LIMIT_CONSUME_TPS));
+    }
+    
+    
+    /**
+     * 初始化限速器
+     * @param rateLimiter
+     */
+    public void initRateLimiter(RateLimiter rateLimiter) {
+        SwitchableRateLimiter switchableRateLimiter = new SwitchableRateLimiter();
+        switchableRateLimiter.setName(group);
+        switchableRateLimiter.setRateLimiter(rateLimiter);
+        this.rateLimiter = switchableRateLimiter;
+    }
+    
+    protected Class<?> getConsumerParameterTypeClass() {
+        return consumerParameterTypeClass;
+    }
+
+    public void initConsumerParameterTypeClass() {
+        consumerParameterTypeClass = _getConsumerParameterTypeClass();
+    }
+    
+    /**
+     * 获取消费者参数类型
+     * @return
+     */
+    private Class<?> _getConsumerParameterTypeClass() {
+        Method[] methods = getConsumerCallback().getClass().getMethods();
+        for (Method method : methods) {
+            if (!"call".equals(method.getName())) {
+                continue;
+            }
+            if (!Modifier.isPublic(method.getModifiers())) {
+                continue;
+            }
+            if (!method.getReturnType().equals(Void.TYPE)) {
+                continue;
+            }
+            Class<?>[] parameterTypes = method.getParameterTypes();
+            if (parameterTypes.length != 2) {
+                continue;
+            }
+            if (MessageExt.class != parameterTypes[1]) {
+                continue;
+            }
+            logger.info("consumer:{}'s parameterTypeClass:{}", getGroup(), parameterTypes[0].getName());
+            return parameterTypes[0];
+        }
+        return null;
     }
 }

@@ -3,6 +3,7 @@ package com.sohu.tv.mq.cloud.web.view.data;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -27,6 +28,7 @@ import com.sohu.tv.mq.cloud.service.UserService;
 import com.sohu.tv.mq.cloud.util.DateUtil;
 import com.sohu.tv.mq.cloud.util.Result;
 import com.sohu.tv.mq.cloud.util.WebUtil;
+import com.sohu.tv.mq.cloud.web.controller.param.PaginationParam;
 import com.sohu.tv.mq.cloud.web.view.SearchHeader;
 import com.sohu.tv.mq.cloud.web.view.SearchHeader.DateSearchField;
 import com.sohu.tv.mq.cloud.web.view.SearchHeader.HiddenSearchField;
@@ -54,6 +56,8 @@ public class ConsumeTrafficLineChartData implements LineChartData {
     public static final String DATE_FIELD = "date";
     public static final String TID_FIELD = "tid";
     public static final String DATE_FIELD_TITLE = "日期";
+    public static final String CONSUMER_FIELD = "_consumer";
+    public static final String CURRENTPAGE_FIELD = "currentPage";
 
     @Autowired
     private TopicTrafficService topicTrafficService;
@@ -72,6 +76,8 @@ public class ConsumeTrafficLineChartData implements LineChartData {
 
     // x轴格式化后的数据
     private List<String> xDataFormatList;
+    
+    private PaginationParam paginationParam = new PaginationParam();
 
     public ConsumeTrafficLineChartData() {
         initSearchHeader();
@@ -94,6 +100,16 @@ public class ConsumeTrafficLineChartData implements LineChartData {
         HiddenSearchField hiddenSearchField = new HiddenSearchField();
         hiddenSearchField.setKey(TID_FIELD);
         searchFieldList.add(hiddenSearchField);
+        
+        // hidden
+        HiddenSearchField hiddenConsumerField = new HiddenSearchField();
+        hiddenConsumerField.setKey(CONSUMER_FIELD);
+        searchFieldList.add(hiddenConsumerField);
+        
+        // begin
+        HiddenSearchField currentPageField = new HiddenSearchField();
+        currentPageField.setKey(CURRENTPAGE_FIELD);
+        searchFieldList.add(currentPageField);
 
         searchHeader.setSearchFieldList(searchFieldList);
         
@@ -152,12 +168,52 @@ public class ConsumeTrafficLineChartData implements LineChartData {
         // 将list转为map方便数据查找
         Map<String, Traffic> trafficMap = list2Map(result.getResult());
         
+        // 过滤消费者
+        filterConsumer(searchMap, topicTopology);
+        
         // 生成消费者数据
         LineChart lineChart2 = getConsumerLineChart(searchMap, dateStr, topicTopology, trafficMap);
         if (lineChart2 != null) {
             lineChartList.add(lineChart2);
         }
         return lineChartList;
+    }
+    
+    /**
+     * 过滤消费者
+     * @param searchMap
+     * @param topicTopology
+     */
+    private void filterConsumer(Map<String, Object> searchMap, TopicTopology topicTopology) {
+        List<Consumer> consumerList = topicTopology.getConsumerList();
+        Object object = searchMap.get(CONSUMER_FIELD);
+        if (object != null) {
+            String tmp = object.toString();
+            if (StringUtils.isBlank(tmp)) {
+                return;
+            }
+            tmp = tmp.trim();
+            Iterator<Consumer> iterator = consumerList.iterator();
+            while (iterator.hasNext()) {
+                Consumer consumer = iterator.next();
+                if (!consumer.getName().equals(tmp)) {
+                    iterator.remove();
+                }
+            }
+        } else {
+            Object currentPageObject = searchMap.get(CURRENTPAGE_FIELD);
+            int currentPage = 1;
+            if (currentPageObject != null) {
+                currentPage = NumberUtils.toInt(currentPageObject.toString());
+            }
+            paginationParam.setCurrentPage(currentPage);
+            paginationParam.caculatePagination(consumerList.size());
+            List<Consumer> tmpList = new ArrayList<>();
+            for (int i = paginationParam.getBegin(); i < paginationParam.getEnd(); ++i) {
+                tmpList.add(consumerList.get(i));
+            }
+            topicTopology.setConsumerList(tmpList);
+        }
     }
 
     private long setCountData(Traffic traffic, List<Number> countList) {

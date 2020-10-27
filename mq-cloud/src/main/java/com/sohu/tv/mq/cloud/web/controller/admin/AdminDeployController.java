@@ -174,6 +174,37 @@ public class AdminDeployController extends AdminViewController {
     }
     
     /**
+     * 启动，校验port方式重复启动
+     * 
+     * @return
+     */
+    @RequestMapping(value = "/startup/broker", method = RequestMethod.POST)
+    public Result<?> startupBroker(UserInfo ui, @RequestParam(name = "ipAddr") String ipAddr,
+            @RequestParam(name = "dir") String dir) {
+        logger.warn("startup, ipAddr:{}, dir:{}, user:{}", ipAddr, dir, ui);
+        // 参数校验
+        String[] ips = ipAddr.split(":");
+        if (ips.length != 2) {
+            return Result.getResult(Status.PARAM_ERROR);
+        }
+        // 校验端口
+        String ip = ips[0];
+        int port = NumberUtils.toInt(ips[1]);
+        Result<?> result = mqDeployer.getListenPortInfo(ip, port);
+        if (result.isNotOK()) {
+            // 端口被占
+            if (result.getStatus() == Status.DB_ERROR.getKey()) {
+                if (result.getResult() != null) {
+                    result.setMessage(result.getResult().toString() + "端口被占用");
+                }
+            }
+            return result;
+        }
+        // 启动
+        return mqDeployer.startup(ip, dir);
+    }
+    
+    /**
      * 下线
      * @param cid
      * @param broker

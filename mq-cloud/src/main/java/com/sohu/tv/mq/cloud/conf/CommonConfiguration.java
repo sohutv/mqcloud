@@ -1,8 +1,6 @@
 package com.sohu.tv.mq.cloud.conf;
 
-import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.net.URL;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -19,12 +17,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
-import org.springframework.core.io.Resource;
-import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
-import org.springframework.core.io.support.ResourcePatternResolver;
-import org.springframework.core.type.classreading.CachingMetadataReaderFactory;
-import org.springframework.core.type.classreading.MetadataReader;
-import org.springframework.core.type.classreading.MetadataReaderFactory;
 import org.springframework.jmx.export.MBeanExporter;
 
 import com.sohu.tv.mq.cloud.bo.BrokerTraffic;
@@ -44,7 +36,6 @@ import com.sohu.tv.mq.cloud.mq.MQAdminPooledObjectFactory;
 import com.sohu.tv.mq.cloud.mq.SohuMQAdminFactory;
 import com.sohu.tv.mq.cloud.service.ClientStatsConsumer;
 import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper;
-import com.sohu.tv.mq.cloud.util.MessageTypeLoader;
 import com.sohu.tv.mq.stats.dto.ClientStats;
 
 /**
@@ -184,28 +175,6 @@ public class CommonConfiguration {
                 mqAdminPooledObjectFactory,
                 genericKeyedObjectPoolConfig);
         return genericKeyedObjectPool;
-    }
-
-    /**
-     * 构建MessageTypeLoader
-     * 
-     * @return
-     * @throws IOException
-     */
-    @Bean
-    public MessageTypeLoader messageTypeLoader() throws IOException {
-        ResourcePatternResolver resourcePatternResolver = new PathMatchingResourcePatternResolver();
-        Resource[] resources = resourcePatternResolver.getResources("classpath*:msg-type/*.class");
-        MetadataReaderFactory readerFactory = new CachingMetadataReaderFactory(resourcePatternResolver);
-        Map<String, URL> classUrlMap = new HashMap<String, URL>();
-        for (Resource resource : resources) {
-            if (resource.isReadable()) {
-                MetadataReader reader = readerFactory.getMetadataReader(resource);
-                String className = reader.getClassMetadata().getClassName();
-                classUrlMap.put(className, resource.getURL());
-            }
-        }
-        return new MessageTypeLoader(classUrlMap);
     }
 
     @Bean

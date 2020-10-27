@@ -33,7 +33,7 @@ public class ConsumeFailTask {
             public void run() {
                 logger.info("monitor start");
                 long start = System.currentTimeMillis();
-                int size = consumerRetryTrafficService.collectHourRetryTraffic();
+                int size = consumerRetryTrafficService.collectHourTraffic();
                 logger.info("monitor, size:{},use:{}ms", size, System.currentTimeMillis() - start);
             }
         });

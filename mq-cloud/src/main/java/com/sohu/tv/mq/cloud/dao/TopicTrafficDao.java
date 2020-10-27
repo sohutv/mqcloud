@@ -79,4 +79,19 @@ public interface TopicTrafficDao {
             + " group by tid</script>")
     public List<TopicTraffic> selectByDateTime(@Param("createDate") String createDate, 
             @Param("createTimeList") List<String> createTimeList, @Param("clusterIdList") List<Integer> clusterIdList);
+
+    /**
+     * 获取topic指定日期内的流量信息
+     */
+    @Select("select tid, create_date createDate, count from topic_traffic where tid = #{tid} and create_date < #{createDate}")
+    public List<TopicTraffic> selectRangeTraffic(@Param("tid") long tid, @Param("createDate") String createDate);
+
+    /**
+     * 根据具体date和time列表查询
+     */
+    @Select("<script>select * from `topic_traffic` where tid = #{tid} and create_date = #{createDate} and create_time in "
+            + "<foreach collection=\"createTimeList\" item=\"time\" separator=\",\" open=\"(\" close=\")\">#{time}</foreach>"
+            + " order by create_time</script>")
+    public List<TopicTraffic> selectByCreateDateAndTime(@Param("tid") long tid,
+           @Param("createDate") String createDate, @Param("createTimeList") List<String> createTimeList);
 }

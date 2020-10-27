@@ -224,14 +224,10 @@ public class UserController extends ViewController {
         if (!countResult.isOK()) {
             return view();
         }
-        int totalPage = countResult.getResult() / paginationParam.getNumOfPage();
-        if (countResult.getResult() % paginationParam.getNumOfPage() != 0) {
-            totalPage += 1;
-        }
-        paginationParam.setTotalPages(totalPage);
+        paginationParam.caculatePagination(countResult.getResult());
         // 获取topic列表
         Result<List<Topic>> result = topicService.queryTopicList(queryTopic, userInfo.getUser(),
-                paginationParam.getCurrentPage(), paginationParam.getNumOfPage(), traceClusterIdList);
+                paginationParam.getBegin(), paginationParam.getNumOfPage(), traceClusterIdList);
         if (result.isEmpty()) {
             return view();
         }
@@ -396,8 +392,10 @@ public class UserController extends ViewController {
      * @throws Exception
      */
     @RequestMapping("/topic/{tid}/topology")
-    public String topology(UserInfo userInfo, @PathVariable long tid, Map<String, Object> map) throws Exception {
+    public String topology(UserInfo userInfo, @PathVariable long tid, @Valid PaginationParam paginationParam,
+            Map<String, Object> map) throws Exception {
         Result<TopicTopology> result = userService.queryTopicTopology(userInfo.getUser(), tid);
+        setPagination(map, paginationParam);
         if (result.isOK()) {
             Topic topic = result.getResult().getTopic();
             topic.setCluster(clusterService.getMQClusterById(topic.getClusterId()));
@@ -421,6 +419,9 @@ public class UserController extends ViewController {
             List<Consumer> consumerList = result.getResult().getConsumerList();
             List<Long> cidList = new ArrayList<Long>();
             if (consumerList != null && consumerList.size() > 0) {
+                // 分页
+                pagination(result.getResult(), paginationParam);
+                
                 for (Consumer c : consumerList) {
                     cidList.add(c.getId());
                 }
@@ -460,6 +461,7 @@ public class UserController extends ViewController {
                 Result<List<User>> userListResult = userService.query(uidList);
                 if (userListResult.isNotEmpty()) {
                     Map<StatsProducer, List<UserProducer>> filterMap = result.getResult().getProducerFilterMap();
+                    int producerHasTrafficCount = 0;
                     for (StatsProducer statsProducer : filterMap.keySet()) {
                         for (UserProducer up : filterMap.get(statsProducer)) {
                             for (User u : userListResult.getResult()) {
@@ -471,6 +473,27 @@ public class UserController extends ViewController {
                         // 查询是否有流量统计
                         Result<Boolean> statResult = producerTotalStatService.query(statsProducer.getProducer());
                         statsProducer.setStats(statResult.isOK() && statResult.getResult());
+                        if (statsProducer.isStats()) {
+                            ++producerHasTrafficCount;
+                        }
+                    }
+                    // 多于一个生产者需要统计各个生产者的流量
+                    if (filterMap.size() > 1 && producerHasTrafficCount > 0) {
+                        int statTime = (int) ((System.currentTimeMillis() - 60000) / 60000);
+                        for (StatsProducer statsProducer : filterMap.keySet()) {
+                            if(!statsProducer.isStats()) {
+                                continue;
+                            }
+                            result.getResult().setProducerHasTraffic(true);
+                            Result<Integer> rst = producerTotalStatService.query(statsProducer.getProducer(), statTime);
+                            if (rst.isOK()) {
+                                Integer count = rst.getResult();
+                                if (count != null && count > 0) {
+                                    statsProducer.copyTraffic(result.getResult().getTopicTraffic());
+                                    statsProducer.getTraffic().setCount(count);
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -497,6 +520,18 @@ public class UserController extends ViewController {
         FreemarkerUtil.set("splitUtil", SplitUtil.class, map);
         setResult(map, "version", Version.get());
         return viewModule() + "/topicTopology";
+    }
+    
+    /**
+     * 分页
+     * @param topicTopology
+     * @param paginationParam
+     * @param map
+     */
+    private void pagination(TopicTopology topicTopology, PaginationParam paginationParam) {
+        List<Consumer> consumerList = topicTopology.getConsumerList();
+        paginationParam.caculatePagination(consumerList.size());
+        topicTopology.setConsumerList(consumerList.subList(paginationParam.getBegin(), paginationParam.getEnd()));
     }
 
     /**

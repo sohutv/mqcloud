@@ -6,6 +6,7 @@ import org.apache.rocketmq.remoting.exception.RemotingConnectException;
 import org.apache.rocketmq.remoting.exception.RemotingSendRequestException;
 import org.apache.rocketmq.remoting.exception.RemotingTimeoutException;
 
+import com.sohu.tv.mq.cloud.common.model.BrokerMomentStatsData;
 import com.sohu.tv.mq.cloud.common.model.BrokerStoreStat;
 import com.sohu.tv.mq.cloud.common.mq.SohuMQAdmin;
 /**
@@ -30,4 +31,10 @@ public class DefaultSohuMQAdmin extends SohuMQAdmin {
         throw new UnsupportedOperationException();
     }
 
+    @Override
+    public BrokerMomentStatsData getMomentStatsInBroker(String brokerAddr, String statsName, long minValue)
+            throws RemotingConnectException, RemotingSendRequestException, RemotingTimeoutException, MQClientException,
+            InterruptedException {
+        throw new UnsupportedOperationException();
+    }
 }

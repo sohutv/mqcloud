@@ -26,6 +26,9 @@ public class ConsumerParam {
     @Range(min = 0, max = 1)
     private int traceEnable;
     
+    @Range(min = 1)
+    private int permitsPerSecond;
+    
     public long getTid() {
         return tid;
     }
@@ -62,9 +65,15 @@ public class ConsumerParam {
         return traceEnable;
     }
     
+    public int getPermitsPerSecond() {
+        return permitsPerSecond;
+    }
+    public void setPermitsPerSecond(int permitsPerSecond) {
+        this.permitsPerSecond = permitsPerSecond;
+    }
     @Override
     public String toString() {
-        return "ConsumerParam [tid=" + tid + ", consumer=" + consumer + ", consumeWay=" + consumeWay 
-                + ", traceEnable=" + traceEnable + "]";
+        return "ConsumerParam [tid=" + tid + ", consumer=" + consumer + ", consumeWay=" + consumeWay + ", info=" + info
+                + ", traceEnable=" + traceEnable + ", permitsPerSecond=" + permitsPerSecond + "]";
     }
 }

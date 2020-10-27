@@ -39,6 +39,7 @@ import com.sohu.tv.mq.cloud.bo.Topic;
 import com.sohu.tv.mq.cloud.bo.User;
 import com.sohu.tv.mq.cloud.bo.UserConsumer;
 import com.sohu.tv.mq.cloud.bo.UserProducer;
+import com.sohu.tv.mq.cloud.bo.AuditTopicTrafficWarn;
 import com.sohu.tv.mq.cloud.dao.AuditConsumerConfigDao;
 import com.sohu.tv.mq.cloud.dao.AuditConsumerDeleteDao;
 import com.sohu.tv.mq.cloud.dao.AuditDao;
@@ -50,6 +51,7 @@ import com.sohu.tv.mq.cloud.dao.AuditUserConsumerDeleteDao;
 import com.sohu.tv.mq.cloud.dao.AuditUserProducerDeleteDao;
 import com.sohu.tv.mq.cloud.dao.UserConsumerDao;
 import com.sohu.tv.mq.cloud.dao.UserProducerDao;
+import com.sohu.tv.mq.cloud.dao.AuditTopicTrafficWarnDao;
 import com.sohu.tv.mq.cloud.util.Result;
 import com.sohu.tv.mq.cloud.util.Status;
 import com.sohu.tv.mq.cloud.web.vo.AuditAssociateConsumerVO;
@@ -67,7 +69,7 @@ import com.sohu.tv.mq.cloud.web.vo.AuditUserProducerDeleteVO;
 import com.sohu.tv.mq.cloud.web.vo.AuditVO;
 import com.sohu.tv.mq.cloud.web.vo.TopicInfoVO;
 import com.sohu.tv.mq.cloud.web.vo.UserTopicInfoVO;
-
+import com.sohu.tv.mq.cloud.web.vo.AuditTopicTrafficWarnVO;
 /**
  * audit服务
  * 
@@ -169,6 +171,12 @@ public class AuditService {
     
     @Autowired
     private AuditConsumerConfigDao auditConsumerConfigDao;
+
+    @Autowired
+    private AuditTopicTrafficWarnDao auditTopicTrafficWarnDao;
+
+    @Autowired
+    private AuditTopicTrafficWarnService auditTopicTrafficWarnService;
 
     /**
      * 查询列表
@@ -381,6 +389,31 @@ public class AuditService {
             // 如果保存成功，保存auditTopic
             if (count != null && count > 0) {
                 auditTopicTraceDao.insert(audit.getId(), tid, traceEnabled);
+            }
+        } catch (Exception e) {
+            logger.error("insert err, audit:{}", audit, e);
+            TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+            return Result.getDBErrorResult(e);
+        }
+        return Result.getResult(audit);
+    }
+
+    /**
+     * 保存审核以及topic流量预警信息
+     *
+     * @param audit
+     * @param tid
+     * @param trafficWarnEnabled
+     * @return
+     */
+    @Transactional
+    public Result<?> saveAuditAndTopicTrafficWarn(Audit audit, long tid, int trafficWarnEnabled) {
+        Long count = null;
+        try {
+            count = auditDao.insert(audit);
+            // 如果保存成功，保存auditTopic
+            if (count != null && count > 0) {
+                auditTopicTrafficWarnDao.insert(audit.getId(), tid, trafficWarnEnabled);
             }
         } catch (Exception e) {
             logger.error("insert err, audit:{}", audit, e);
@@ -627,6 +660,8 @@ public class AuditService {
                 return getConsumerConfig(aid);
             case LIMIT_CONSUME:
                 return getConsumerConfig(aid);
+            case UPDATE_TOPIC_TRAFFIC_WARN:
+                return getUpdateTopicTrafficWarnResult(aid);
         }
         return null;
     }
@@ -1380,7 +1415,31 @@ public class AuditService {
         auditConsumerConfigVO.setConsumer(consumerResult.getResult().getName());
         return Result.getResult(auditConsumerConfigVO);
     }
-    
+
+    /**
+     * 获取topic流量预警信息
+     *
+     * @param aid
+     * @return Result
+     */
+    private Result<?> getUpdateTopicTrafficWarnResult(long aid) {
+        Result<AuditTopicTrafficWarn> result = auditTopicTrafficWarnService.queryAuditTopicTrafficWarn(aid);
+        if (result.isNotOK()) {
+            return result;
+        }
+        AuditTopicTrafficWarn auditTopicTrafficWarn = result.getResult();
+        // 查询topic记录
+        Result<Topic> topicResult = topicService.queryTopic(auditTopicTrafficWarn.getTid());
+        if (topicResult.isNotOK()) {
+            return topicResult;
+        }
+        // 组装vo
+        AuditTopicTrafficWarnVO auditTopicTrafficWarnVO = new AuditTopicTrafficWarnVO();
+        BeanUtils.copyProperties(auditTopicTrafficWarn, auditTopicTrafficWarnVO);
+        auditTopicTrafficWarnVO.setTopic(topicResult.getResult());
+        return Result.getResult(auditTopicTrafficWarnVO);
+    }
+
     /**
      * 保存审核以及消费者配置
      * 

@@ -113,8 +113,8 @@ public class AlertService {
      * @param content 内容
      * @return 成功返回true，否则返回false
      */
-    public boolean sendWanMail(String email, String flag, String content) {
-        return sendWanMail(email, flag, content, 3);
+    public boolean sendWarnMail(String email, String flag, String content) {
+        return sendWarnMail(email, flag, content, 3);
     }
     
     /**
@@ -124,12 +124,12 @@ public class AlertService {
      * @param content 内容
      * @return 成功返回true，否则返回false
      */
-    public boolean sendWanMail(String email, String flag, String content, int retry) {
+    public boolean sendWarnMail(String email, String flag, String content, int retry) {
         if(retry <= 0) {
             retry = 1;
         }
         for(int i = 0; i < retry; ++i) {
-            boolean ok = sendWanMailInternal(email, flag, content);
+            boolean ok = sendWarnMailInternal(email, flag, content);
             if(ok) {
                 return true;
             } else {
@@ -150,7 +150,7 @@ public class AlertService {
      * @param content 内容
      * @return 成功返回true，否则返回false
      */
-    private boolean sendWanMailInternal(String email, String flag, String content) {
+    private boolean sendWarnMailInternal(String email, String flag, String content) {
         String title = "MQCloud" + flag + "预警";
         if(mqCloudConfigHelper.isLocal()) {
             title = "local-" + title;

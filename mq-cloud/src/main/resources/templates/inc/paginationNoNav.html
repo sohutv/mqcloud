@@ -1,0 +1,34 @@
+<script type='text/javascript'>
+	<#if pagination.OK && pagination.result.totalPages gt 1>
+       var options = {
+           currentPage: ${pagination.result.currentPage},
+           totalPages: ${pagination.result.totalPages},
+    	   bootstrapMajorVersion: 3,
+    	   size: "small",
+    	   shouldShowPage: function(type, page, current){
+    		   return type == "page";
+    	   },
+           tooltipTitles: function (type, page, current) {
+               switch (type) {
+               case "first":
+                   return "跳到首页";
+               case "prev":
+                   return "上一页";
+               case "next":
+                   return "下一页";
+               case "last":
+                   return "跳到尾页";
+               case "page":
+                   return "第" + page + "页";
+               }
+           },
+           onPageClicked: function (event, originalEvent, type, page) {
+        	   window.location.href = $('#pagination').attr("data-url")+"&currentPage="+page;
+           },
+           itemContainerClass: function (type, page, current) {
+       	   		return (page === current) ? "active" : "pointer-cursor";
+       	   }
+       }
+       $('#pagination').bootstrapPaginator(options);
+	</#if>
+</script>

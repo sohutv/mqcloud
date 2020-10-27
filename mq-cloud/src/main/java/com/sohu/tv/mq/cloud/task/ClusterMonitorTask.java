@@ -268,7 +268,7 @@ public class ClusterMonitorTask {
      * @param content
      */
     private void sendAlertMessage(String title, String content) {
-        alertService.sendWanMail(null, title, content);
+        alertService.sendWarnMail(null, title, content);
         logger.error(title + content);
     }
 }

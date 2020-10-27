@@ -11,6 +11,8 @@ public class StatsProducer {
     private String producer;
     // 是否进行过统计
     private boolean stats;
+    // 前一分钟流量
+    private Traffic traffic;
 
     public boolean isStats() {
         return stats;
@@ -26,6 +28,20 @@ public class StatsProducer {
 
     public void setProducer(String producer) {
         this.producer = producer;
+    }
+
+    public Traffic getTraffic() {
+        return traffic;
+    }
+
+    public void setTraffic(Traffic traffic) {
+        this.traffic = traffic;
+    }
+    
+    public void copyTraffic(Traffic traffic) {
+        this.traffic = new Traffic();
+        this.traffic.setSize(traffic.getSize());
+        this.traffic.setCount(traffic.getCount());
     }
 
     @Override

@@ -50,6 +50,9 @@ public class Topic {
     // 序列化器
     private int serializer;
 
+    // 是否开启流量预警
+    private int trafficWarnEnabled;
+
     public long getId() {
         return id;
     }
@@ -166,9 +169,23 @@ public class Topic {
         return MessageSerializerEnum.getNameByType(serializer);
     }
 
-    @Override
-    public String toString() {
-        return "Topic [id=" + id + ", clusterId=" + clusterId + ", name=" + name + ", queueNum=" + queueNum
-                + ", ordered=" + ordered + ", createDate=" + createDate + ", updateTime=" + updateTime + "]";
+    public int getTrafficWarnEnabled() {
+        return trafficWarnEnabled;
     }
+
+    public void setTrafficWarnEnabled(int trafficWarnEnabled) {
+        this.trafficWarnEnabled = trafficWarnEnabled;
+    }
+
+    public boolean trafficWarnEnabled() {
+        return trafficWarnEnabled == 1;
+    }
+
+	@Override
+	public String toString() {
+		return "Topic [id=" + id + ", clusterId=" + clusterId + ", name=" + name + ", queueNum=" + queueNum
+				+ ", ordered=" + ordered + ", createDate=" + createDate + ", updateTime=" + updateTime + ", cluster="
+				+ cluster + ", count=" + count + ", traceEnabled=" + traceEnabled + ", info=" + info + ", delayEnabled="
+				+ delayEnabled + ", serializer=" + serializer + ", trafficWarnEnabled=" + trafficWarnEnabled + "]";
+	}
 }

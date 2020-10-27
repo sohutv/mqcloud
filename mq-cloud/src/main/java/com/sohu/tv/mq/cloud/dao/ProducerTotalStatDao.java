@@ -65,4 +65,10 @@ public interface ProducerTotalStatDao {
      */
     @Select("select distinct producer from producer_total_stat where create_date = #{createDate} and client like '${client}%'")
     public List<String> selectProducerList(@Param("client")String client, @Param("createDate")int createDate);
+    
+    /**
+     * 查看producer是否存在
+     */
+    @Select("select sum(`count`) from producer_total_stat where producer = #{producer} and stat_time = #{time}")
+    public Integer selectByProducerAndTime(@Param("producer")String producer, @Param("time")int time);
 }

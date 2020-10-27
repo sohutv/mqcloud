@@ -37,6 +37,7 @@ import org.apache.rocketmq.common.message.MessageQueue;
 import org.apache.rocketmq.common.protocol.ResponseCode;
 import org.apache.rocketmq.common.protocol.body.ClusterInfo;
 import org.apache.rocketmq.common.protocol.body.Connection;
+import org.apache.rocketmq.common.protocol.body.ConsumeMessageDirectlyResult;
 import org.apache.rocketmq.common.protocol.body.ConsumerConnection;
 import org.apache.rocketmq.common.protocol.heartbeat.SubscriptionData;
 import org.apache.rocketmq.common.protocol.route.BrokerData;
@@ -50,6 +51,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 import org.springframework.web.util.HtmlUtils;
 
@@ -63,14 +65,17 @@ import com.sohu.tv.mq.cloud.bo.MQOffset;
 import com.sohu.tv.mq.cloud.bo.MessageData;
 import com.sohu.tv.mq.cloud.bo.MessageQueryCondition;
 import com.sohu.tv.mq.cloud.bo.MessageTrackExt;
+import com.sohu.tv.mq.cloud.bo.ResentMessageResult;
 import com.sohu.tv.mq.cloud.bo.TraceMessageDetail;
 import com.sohu.tv.mq.cloud.common.mq.SohuMQAdmin;
 import com.sohu.tv.mq.cloud.mq.DefaultCallback;
 import com.sohu.tv.mq.cloud.mq.MQAdminCallback;
 import com.sohu.tv.mq.cloud.mq.MQAdminTemplate;
 import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper;
+import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper.MQCloudConfigEvent;
+import com.sohu.tv.mq.cloud.util.MQCloudIdStrategy;
 import com.sohu.tv.mq.cloud.util.MessageDelayLevel;
-import com.sohu.tv.mq.cloud.util.MessageTypeLoader;
+import com.sohu.tv.mq.cloud.util.MessageTypeClassLoader;
 import com.sohu.tv.mq.cloud.util.MsgTraceDecodeUtil;
 import com.sohu.tv.mq.cloud.util.Result;
 import com.sohu.tv.mq.cloud.util.Status;
@@ -103,8 +108,7 @@ public class MessageService {
     @Autowired
     private ConsumerService consumerService;
 
-    @Autowired
-    private MessageTypeLoader messageTypeLoader;
+    private volatile MessageTypeClassLoader messageTypeClassLoader;
 
     @Autowired
     private ClusterService clusterService;
@@ -143,7 +147,7 @@ public class MessageService {
                 // 特定类型使用自定义的classloader
                 if (mqCloudConfigHelper.getClassList() != null &&
                         mqCloudConfigHelper.getClassList().contains(topic)) {
-                    Thread.currentThread().setContextClassLoader(messageTypeLoader);
+                    Thread.currentThread().setContextClassLoader(messageTypeClassLoader);
                 }
                 List<DecodedMessage> messageList = new ArrayList<DecodedMessage>();
                 for (MessageExt msg : messageExtList) {
@@ -203,7 +207,7 @@ public class MessageService {
                 // 特定类型使用自定义的classloader
                 if (mqCloudConfigHelper.getClassList() != null &&
                         mqCloudConfigHelper.getClassList().contains(topic)) {
-                    Thread.currentThread().setContextClassLoader(messageTypeLoader);
+                    Thread.currentThread().setContextClassLoader(messageTypeClassLoader);
                 }
                 return Result.getResult(toDecodedMessage(messageExt, clusterInfo));
             }
@@ -245,7 +249,7 @@ public class MessageService {
             // 特定类型使用自定义的classloader
             if (mqCloudConfigHelper.getClassList() != null &&
                     mqCloudConfigHelper.getClassList().contains(messageQueryCondition.getTopic())) {
-                Thread.currentThread().setContextClassLoader(messageTypeLoader);
+                Thread.currentThread().setContextClassLoader(messageTypeClassLoader);
             }
             messageList = new ArrayList<DecodedMessage>();
             for (MQOffset mqOffset : messageQueryCondition.getMqOffsetList()) {
@@ -554,6 +558,11 @@ public class MessageService {
         consumer.setNamesrvAddr(Joiner.on(";").join(nsList));
         consumer.setVipChannelEnabled(mqCluster.isEnableVipChannel());
         consumer.start();
+        // 是否从slave查询消息
+        if (mqCloudConfigHelper.isQueryMessageFromSlave()) {
+            consumer.getDefaultMQPullConsumerImpl().getPullAPIWrapper().setConnectBrokerByUser(true);
+            consumer.getDefaultMQPullConsumerImpl().getPullAPIWrapper().setDefaultBrokerId(MixAll.MASTER_ID + 1);
+        }
         return consumer;
     }
 
@@ -732,15 +741,13 @@ public class MessageService {
             Map<String, BrokerData> brokerAddrTable) throws Exception {
         for (Connection conn : connSet) {
             // 抓取状态
-            Map<String, Map<MessageQueue, Long>> consumerStatusTable = mqAdmin.getConsumeStatus(messageParam.getTopic(),
-                    consumer, conn.getClientId());
-            if (consumerStatusTable == null) {
+            Map<MessageQueue, Long> mqOffsetMap = consumerService.fetchConsumerStatus(mqAdmin, messageParam.getTopic(),
+                    consumer, conn);
+            if (mqOffsetMap == null) {
                 return false;
             }
-            for (Map<MessageQueue, Long> map : consumerStatusTable.values()) {
-                if (!consumed(map, messageParam, brokerAddrTable)) {
-                    return false;
-                }
+            if (!consumed(mqOffsetMap, messageParam, brokerAddrTable)) {
+                return false;
             }
         }
         return true;
@@ -813,6 +820,43 @@ public class MessageService {
             public Result<SendResult> exception(Exception e) throws Exception {
                 logger.error("cluster:{} topic:{} msgId:{}, send msg err", cluster, topic, msgId, e);
                 return Result.getDBErrorResult(e);
+            }
+
+            public Cluster mqCluster() {
+                return cluster;
+            }
+        });
+    }
+    
+    /**
+     * 直接发送消息
+     * @param cluster
+     * @param msgId
+     * @param consumer
+     * @return
+     */
+    public Result<List<ResentMessageResult>> resendDirectly(Cluster cluster, String msgId, String consumer) {
+        return mqAdminTemplate.execute(new MQAdminCallback<Result<List<ResentMessageResult>>>() {
+            public Result<List<ResentMessageResult>> callback(MQAdminExt mqAdmin) throws Exception {
+                ConsumerConnection ccs = mqAdmin.examineConsumerConnectionInfo(consumer);
+                List<ResentMessageResult> list = new ArrayList<>();
+                Result<List<ResentMessageResult>> allResult = Result.getOKResult();
+                for (Connection conn : ccs.getConnectionSet()) {
+                    ConsumeMessageDirectlyResult result = mqAdmin.consumeMessageDirectly(consumer, conn.getClientId(),
+                            msgId);
+                    ResentMessageResult resentMessageResult = new ResentMessageResult(conn.getClientId(), result);
+                    list.add(resentMessageResult);
+                    if (!resentMessageResult.isOK()) {
+                        allResult.setStatus(Status.WEB_ERROR.getKey());
+                    }
+                }
+                allResult.setResult(list);
+                return allResult;
+            }
+
+            public Result<List<ResentMessageResult>> exception(Exception e) throws Exception {
+                logger.error("cluster:{} consumer:{} msgId:{}, send msg err", cluster, consumer, msgId, e);
+                return Result.getWebErrorResult(e);
             }
 
             public Cluster mqCluster() {
@@ -902,5 +946,44 @@ public class MessageService {
             }
         }
         return msgTraceViewMap;
+    }
+    
+    /**
+     * 配置改变
+     */
+    @EventListener
+    public void configChange(MQCloudConfigEvent mqCloudConfigEvent) {
+        if (mqCloudConfigHelper.getMessageTypeLocation() == null) {
+            return;
+        }
+        if (messageTypeClassLoader == null) {
+            initMessageTypeClassLoader(false);
+            return;
+        }
+        if (mqCloudConfigHelper.getMessageTypeLocation().equals(messageTypeClassLoader.getMessageTypeLocation())) {
+            return;
+        }
+        logger.info("messageTypeLocation changed from {} to {}", messageTypeClassLoader.getMessageTypeLocation(),
+                mqCloudConfigHelper.getMessageTypeLocation());
+        initMessageTypeClassLoader(true);
+    }
+    
+    private void initMessageTypeClassLoader(boolean clearCache) {
+        MessageTypeClassLoader tmp = messageTypeClassLoader;
+        boolean initOK = true;
+        try {
+            messageTypeClassLoader = new MessageTypeClassLoader(mqCloudConfigHelper.getMessageTypeLocation());
+        } catch (Exception e) {
+            logger.error("init {}", mqCloudConfigHelper.getMessageTypeLocation(), e);
+            initOK = false;
+        }
+        if (initOK && clearCache) {
+            for (String className : tmp.getClassNameUrlMap().keySet()) {
+                Object result = MQCloudIdStrategy.removeSchema(className);
+                if (result != null) {
+                    logger.info("clear class cache {}", className);
+                }
+            }
+        }
     }
 }

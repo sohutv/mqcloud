@@ -167,6 +167,41 @@ public class TopicTrafficService extends TrafficService<TopicTraffic> {
     }
     
     /**
+     * 查询小于某一日期的所有流量
+     * @param tid
+     * @param createDate
+     * @return
+     */
+    public Result<List<TopicTraffic>> queryRangeTraffic(long tid, String createDate) {
+        List<TopicTraffic> list = null;
+        try {
+            list = topicTrafficDao.selectRangeTraffic(tid, createDate);
+        } catch (Exception e) {
+            logger.error("queryRangeTraffic err,tid:{},createDate:{}", tid, createDate, e);
+            return Result.getDBErrorResult(e);
+        }
+        return Result.getResult(list);
+    }
+
+    /**
+     * 查询指定一天时间内的流量
+     * @param tid
+     * @param createDate
+     * @param createTimeList
+     * @return
+     */
+    public Result<List<TopicTraffic>> queryRangeTraffic(long tid, String createDate, List<String> createTimeList) {
+        List<TopicTraffic> list = null;
+        try {
+            list = topicTrafficDao.selectByCreateDateAndTime(tid, createDate, createTimeList);
+        } catch (Exception e) {
+            logger.error("queryRangeTraffic err,tid:{},createDate:{},createTimeList:{}", tid, createDate, createTimeList, e);
+            return Result.getDBErrorResult(e);
+        }
+        return Result.getResult(list);
+    }
+
+    /**
      * 查询时间段内的流量
      * @param date
      * @param timeList

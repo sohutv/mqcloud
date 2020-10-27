@@ -1,12 +1,13 @@
 package com.sohu.tv.mq.cloud.task.monitor;
 
-import com.sohu.tv.mq.cloud.bo.Cluster;
-import com.sohu.tv.mq.cloud.bo.NameServer;
-import com.sohu.tv.mq.cloud.service.NameServerService;
-import com.sohu.tv.mq.cloud.util.Jointer;
-import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper;
-import com.sohu.tv.mq.cloud.util.Result;
-import com.sohu.tv.mq.util.CommonUtil;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Random;
+import java.util.Set;
+import java.util.TreeMap;
 
 import org.apache.rocketmq.acl.common.AclClientRPCHook;
 import org.apache.rocketmq.acl.common.SessionCredentials;
@@ -39,8 +40,18 @@ import org.apache.rocketmq.tools.monitor.UndoneMsgs;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
-import java.util.Map.Entry;
+import com.sohu.tv.mq.cloud.bo.Cluster;
+import com.sohu.tv.mq.cloud.bo.Consumer;
+import com.sohu.tv.mq.cloud.bo.NameServer;
+import com.sohu.tv.mq.cloud.bo.TopicConsumer;
+import com.sohu.tv.mq.cloud.bo.TypedUndoneMsgs;
+import com.sohu.tv.mq.cloud.service.ConsumerService;
+import com.sohu.tv.mq.cloud.service.NameServerService;
+import com.sohu.tv.mq.cloud.service.TopicService;
+import com.sohu.tv.mq.cloud.util.Jointer;
+import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper;
+import com.sohu.tv.mq.cloud.util.Result;
+import com.sohu.tv.mq.util.CommonUtil;
 
 /**
  * copy from org.apache.rocketmq.tools.monitor.MonitorService
@@ -65,9 +76,13 @@ public class MonitorService {
     private String nsAddr;
     
     private boolean initialized;
+    
+    private TopicService topicService;
+    
+    private ConsumerService consumerService;
 
     public MonitorService(NameServerService nameServerService, Cluster mqCluster, SohuMonitorListener monitorListener,
-            MQCloudConfigHelper mqCloudConfigHelper) {
+            MQCloudConfigHelper mqCloudConfigHelper, TopicService topicService) {
         Result<List<NameServer>> nameServerListResult = nameServerService.query(mqCluster.getId());
         if(nameServerListResult.isEmpty()) {
             logger.error("monitor cluster:{} init err!", mqCluster);
@@ -76,6 +91,7 @@ public class MonitorService {
         this.nsAddr = Jointer.BY_SEMICOLON.join(nameServerListResult.getResult(), ns -> ns.getAddr());
         this.clusterName = mqCluster.getName();
         this.monitorListener = monitorListener;
+        this.topicService = topicService;
         
         this.defaultMQPullConsumer = new DefaultMQPullConsumer(MixAll.TOOLS_CONSUMER_GROUP);
         this.defaultMQPullConsumer.setInstanceName(instanceName());
@@ -156,7 +172,7 @@ public class MonitorService {
         }
         long beginTime = System.currentTimeMillis();
         this.monitorListener.beginRound();
-
+        // 检测集群模式消费者
         TopicList topicList = defaultMQAdminExt.fetchAllTopicList();
         for (String topic : topicList.getTopicList()) {
             if (CommonUtil.isRetryTopic(topic)) {
@@ -166,14 +182,7 @@ public class MonitorService {
                     continue;
                 }
                 // 链接在线检测
-                ConsumerConnection cc = null;
-                try {
-                    cc = defaultMQAdminExt.examineConsumerConnectionInfo(consumerGroup);
-                } catch (Exception e) {
-                    if(logger.isDebugEnabled()) {
-                        logger.debug("examineConsumerConnectionInfo consumerGroup:{}, err:{}", consumerGroup, e.getMessage());
-                    }
-                }
+                ConsumerConnection cc = getConsumerConnection(consumerGroup);
                 if(cc == null) {
                     continue;
                 }
@@ -200,6 +209,46 @@ public class MonitorService {
         this.monitorListener.endRound();
         long spentTimeMills = System.currentTimeMillis() - beginTime;
         logger.info("{} monitor use: {}ms", clusterName, spentTimeMills);
+    }
+    
+    /**
+     * 检测广播模式消费者
+     * @param broadCastTopicConsumerList
+     */
+    public void monitorBroadCastConsumer() {
+        Result<List<TopicConsumer>> result = topicService.queryTopicConsumer(Consumer.BROADCAST);
+        List<TopicConsumer> broadCastTopicConsumerList = result.getResult();
+        if (broadCastTopicConsumerList == null) {
+            return;
+        }
+        for (TopicConsumer topicConsumer : broadCastTopicConsumerList) {
+            // test不检测
+            String tmpConsumer = topicConsumer.getConsumer().toLowerCase();
+            if (tmpConsumer.contains("test")) {
+                continue;
+            }
+            try {
+                // 链接在线检测
+                ConsumerConnection cc = getConsumerConnection(topicConsumer.getConsumer());
+                if (cc == null) {
+                    continue;
+                }
+                this.reportUndoneMsgs(topicConsumer.getConsumer(), cc);
+            } catch (Exception e) {
+                logger.warn("reportUndoneMsgs Exception", e);
+            }
+        }
+    }
+    
+    private ConsumerConnection getConsumerConnection(String consumerGroup) {
+        try {
+            return defaultMQAdminExt.examineConsumerConnectionInfo(consumerGroup);
+        } catch (Exception e) {
+            if(logger.isDebugEnabled()) {
+                logger.debug("examineConsumerConnectionInfo consumerGroup:{}, err:{}", consumerGroup, e.getMessage());
+            }
+        }
+        return null;
     }
 
     private void reportUndoneMsgs(String consumerGroup, ConsumerConnection cc) {
@@ -233,9 +282,10 @@ public class MonitorService {
                 Iterator<Entry<String, ConsumeStats>> it = csByTopic.entrySet().iterator();
                 while (it.hasNext()) {
                     Entry<String, ConsumeStats> next = it.next();
-                    UndoneMsgs undoneMsgs = new UndoneMsgs();
+                    TypedUndoneMsgs undoneMsgs = new TypedUndoneMsgs();
                     undoneMsgs.setConsumerGroup(consumerGroup);
                     undoneMsgs.setTopic(next.getKey());
+                    undoneMsgs.setClustering(true);
                     this.computeUndoneMsgs(undoneMsgs, next.getValue());
                     if(undoneMsgs.getUndoneMsgsTotal() <= 0 && undoneMsgs.getUndoneMsgsDelayTimeMills() <= 0) {
                         continue;
@@ -255,37 +305,32 @@ public class MonitorService {
             if(topicStatsTable == null || topicStatsTable.getOffsetTable().size() == 0) {
                 return;
             }
-            UndoneMsgs undoneMsgs = new UndoneMsgs();
+            TypedUndoneMsgs undoneMsgs = new TypedUndoneMsgs();
             undoneMsgs.setTopic(topic);
             undoneMsgs.setConsumerGroup(consumerGroup);
             
             Set<Connection> connSet = cc.getConnectionSet();
             for(Connection conn : connSet) {
-                // 抓取状态
-                Map<String, Map<MessageQueue, Long>> consumerStatusTable;
-                try {
-                    consumerStatusTable = defaultMQAdminExt.getConsumeStatus(topic, consumerGroup, conn.getClientId());
-                } catch (Exception e) {
-                    logger.error("getConsumeStatus topic:{},consumerGroup:{}", topic, consumerGroup, e);
+                Map<MessageQueue, Long> mqOffsetMap = consumerService.fetchConsumerStatus(defaultMQAdminExt, topic,
+                        consumerGroup, conn);
+                if (mqOffsetMap == null) {
                     return;
                 }
                 // 组装数据
-                for(Map<MessageQueue, Long> m : consumerStatusTable.values()) {
-                    for(MessageQueue mq : m.keySet()) {
-                        TopicOffset topicOffset = topicStatsTable.getOffsetTable().get(mq);
-                        // 经过测试，客户端存在broker发生变更，但是消费者状态统计未变更的情况，这样会引起空指针异常
-                        if(topicOffset == null) {
-                            logger.debug("client:{} topic:{} consumerGroup:{} mq:{} not in topicStatsTable", 
-                                    conn.getClientId(), topic, consumerGroup, mq);
-                            continue;
-                        }
-                        long undoneMsgsSingleMQ = topicOffset.getMaxOffset() - m.get(mq);
-                        if(undoneMsgsSingleMQ > 0) {
-                            undoneMsgs.setUndoneMsgsTotal(undoneMsgs.getUndoneMsgsTotal() + undoneMsgsSingleMQ);
-                        }
-                        if(undoneMsgsSingleMQ > undoneMsgs.getUndoneMsgsSingleMQ()) {
-                            undoneMsgs.setUndoneMsgsSingleMQ(undoneMsgsSingleMQ);
-                        }
+                for(MessageQueue mq : mqOffsetMap.keySet()) {
+                    TopicOffset topicOffset = topicStatsTable.getOffsetTable().get(mq);
+                    // 经过测试，客户端存在broker发生变更，但是消费者状态统计未变更的情况，这样会引起空指针异常
+                    if(topicOffset == null) {
+                        logger.debug("client:{} topic:{} consumerGroup:{} mq:{} not in topicStatsTable", 
+                                conn.getClientId(), topic, consumerGroup, mq);
+                        continue;
+                    }
+                    long undoneMsgsSingleMQ = topicOffset.getMaxOffset() - mqOffsetMap.get(mq);
+                    if(undoneMsgsSingleMQ > 0) {
+                        undoneMsgs.setUndoneMsgsTotal(undoneMsgs.getUndoneMsgsTotal() + undoneMsgsSingleMQ);
+                    }
+                    if(undoneMsgsSingleMQ > undoneMsgs.getUndoneMsgsSingleMQ()) {
+                        undoneMsgs.setUndoneMsgsSingleMQ(undoneMsgsSingleMQ);
                     }
                 }
             }
@@ -363,5 +408,9 @@ public class MonitorService {
         undoneMsgs.setUndoneMsgsTotal(total);
         undoneMsgs.setUndoneMsgsSingleMQ(singleMax);
         undoneMsgs.setUndoneMsgsDelayTimeMills(delayMax);
+    }
+
+    public void setConsumerService(ConsumerService consumerService) {
+        this.consumerService = consumerService;
     }
 }

@@ -11,6 +11,8 @@ public class AuditConsumer {
     private int consumeWay;
     
     private int traceEnabled;
+    
+    private int permitsPerSecond;
 
     public long getAid() {
         return aid;
@@ -56,9 +58,17 @@ public class AuditConsumer {
         return consumer;
     }
     
+    public int getPermitsPerSecond() {
+        return permitsPerSecond;
+    }
+
+    public void setPermitsPerSecond(int permitsPerSecond) {
+        this.permitsPerSecond = permitsPerSecond;
+    }
+
     @Override
     public String toString() {
         return "AuditConsumer [aid=" + aid + ", tid=" + tid + ", consumer=" + consumer + ", consumeWay=" + consumeWay
-                + ", traceEnabled=" + traceEnabled + "]";
+                + ", traceEnabled=" + traceEnabled + ", permitsPerSecond=" + permitsPerSecond + "]";
     }
 }

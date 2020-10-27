@@ -133,4 +133,20 @@ public interface UserDao {
             + "<foreach collection=\"consumerList\" item=\"c\" separator=\",\" open=\"(\" close=\")\">#{c}</foreach>"
             + "</script>")
     public List<User> selectByConsumerList(@Param("consumerList") Collection<String> consumerList);
+
+    /**
+     * 根据topic id查询关联的消费者用户
+     * @param tid
+     * @return List<User>
+     */
+    @Select("select * from user where id in (select distinct uid from user_consumer where tid = #{tid})")
+    public List<User> selectConsumerUserListByTid(@Param("tid") long tid);
+
+    /**
+     * 根据topic id查询关联的生产者用户
+     * @param tid
+     * @return List<User>
+     */
+    @Select("select * from user where id in (select distinct uid from user_producer where tid = #{tid})")
+    public List<User> selectProducerUserListByTid(@Param("tid") long tid);
 }

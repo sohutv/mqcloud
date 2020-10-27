@@ -17,7 +17,7 @@ public class ConsumerRetryTrafficServiceTest {
     
     @Test
     public void test() {
-        consumerRetryTrafficService.collectHourRetryTraffic();
+        consumerRetryTrafficService.collectHourTraffic();
     }
 
 }

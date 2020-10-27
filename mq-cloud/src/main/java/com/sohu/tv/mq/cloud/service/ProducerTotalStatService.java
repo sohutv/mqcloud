@@ -135,4 +135,19 @@ public class ProducerTotalStatService {
         }
         return Result.getResult(result);
     }
+    
+    /**
+     * 查询producer流量
+     * @param producer
+     * @param time
+     * @return
+     */
+    public Result<Integer> query(String producer, int time) {
+        try {
+            return Result.getResult(producerTotalStatDao.selectByProducerAndTime(producer, time));
+        } catch (Exception e) {
+            logger.error("query err, producer:{}, time:{}", producer, time, e);
+            return Result.getDBErrorResult(e);
+        }
+    }
 }

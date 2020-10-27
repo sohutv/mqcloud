@@ -6,6 +6,7 @@
       <li id="cluster"><a class="glyphicon glyphicon-cloud" href="${request.contextPath}/admin/cluster/list"> 集群管理</span></a></li>
       <li id="topology"><a class="glyphicon glyphicon-globe" href="${request.contextPath}/admin/topology/cluster"> 集群拓扑</span></a></li>
       <li id="monitor"><a href="${request.contextPath}/admin/monitor/consumer" class="glyphicon glyphicon-eye-open"> 监控管理</a></li>
+      <li id="trafficWarn"><a href="${request.contextPath}/admin/trafficMonitor/topic" class="glyphicon glyphicon-warning-sign"> 流量监控</a></li>
       <li id="user"><a href="${request.contextPath}/admin/user/list" class="glyphicon glyphicon-user"> 用户管理</a></li>
       <li id="server"><a href="${request.contextPath}/admin/server/list" class="glyphicon glyphicon-wrench"> 机器管理</a></li>
       <li id="notice"><a href="${request.contextPath}/admin/notice/list" class="glyphicon glyphicon-bell"> 通知管理</a></li>
@@ -31,7 +32,9 @@
 			$("#server").addClass("active");
 		} else if (uri.indexOf("/admin/monitor/consumer") != -1){
 			$("#monitor").addClass("active");
-		} else if (uri.indexOf("/admin/client/list") != -1){
+		} else if (uri.indexOf("/admin/trafficMonitor/topic") != -1) {
+            $("#trafficWarn").addClass("active");
+        } else if (uri.indexOf("/admin/client/list") != -1){
 			$("#client").addClass("active");
 		} else if (uri.indexOf("/admin/feedback/list") != -1){
 			$("#feedback").addClass("active");

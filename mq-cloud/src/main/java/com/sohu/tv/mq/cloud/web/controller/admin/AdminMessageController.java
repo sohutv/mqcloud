@@ -3,7 +3,6 @@ package com.sohu.tv.mq.cloud.web.controller.admin;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.rocketmq.client.producer.SendResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -109,7 +108,12 @@ public class AdminMessageController {
             if(AuditResendMessage.StatusEnum.SUCCESS.getStatus() == msg.getStatus()) {
                 continue;
             }
-            Result<SendResult> sendResult = messageService.resend(cluster, topic, msg.getMsgId(), consumer);
+            Result<?> sendResult;
+            if (consumerResult.getResult().isClustering()) {
+                sendResult = messageService.resend(cluster, topic, msg.getMsgId(), consumer);
+            } else {
+                sendResult = messageService.resendDirectly(cluster, msg.getMsgId(), consumer);
+            }
             int status = AuditResendMessage.StatusEnum.SUCCESS.getStatus();
             if (sendResult.isNotOK()) {
                 logger.warn("resendMessage cluster:{} topic:{} consumer:{} msgId:{} err:{}", cluster, topic, consumer, 
@@ -191,7 +195,12 @@ public class AdminMessageController {
         ResendMessageVO resendMessageVO = new ResendMessageVO();
         resendMessageVO.setTotal(1);
         if(AuditResendMessage.StatusEnum.SUCCESS.getStatus() != auditResendMessage.getStatus()) {
-            Result<SendResult> sendResult = messageService.resend(cluster, topic, msgId, consumer);
+            Result<?> sendResult;
+            if (consumerResult.getResult().isClustering()) {
+                sendResult = messageService.resend(cluster, topic, msgId, consumer);
+            } else {
+                sendResult = messageService.resendDirectly(cluster, msgId, consumer);
+            }
             int status = AuditResendMessage.StatusEnum.SUCCESS.getStatus();
             if (sendResult.isNotOK()) {
                 logger.warn("resendMessage cluster:{} topic:{} consumer:{} msgId:{} err:{}", cluster, topic, consumer,

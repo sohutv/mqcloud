@@ -31,6 +31,7 @@ import com.sohu.tv.mq.cloud.bo.AuditResetOffset;
 import com.sohu.tv.mq.cloud.bo.AuditTopic;
 import com.sohu.tv.mq.cloud.bo.AuditTopicDelete;
 import com.sohu.tv.mq.cloud.bo.AuditTopicTrace;
+import com.sohu.tv.mq.cloud.bo.AuditTopicTrafficWarn;
 import com.sohu.tv.mq.cloud.bo.AuditTopicUpdate;
 import com.sohu.tv.mq.cloud.bo.AuditUserConsumerDelete;
 import com.sohu.tv.mq.cloud.bo.AuditUserProducerDelete;
@@ -65,6 +66,7 @@ import com.sohu.tv.mq.cloud.service.UserConsumerService;
 import com.sohu.tv.mq.cloud.service.UserMessageService;
 import com.sohu.tv.mq.cloud.service.UserProducerService;
 import com.sohu.tv.mq.cloud.service.UserService;
+import com.sohu.tv.mq.cloud.service.AuditTopicTrafficWarnService;
 import com.sohu.tv.mq.cloud.util.DateUtil;
 import com.sohu.tv.mq.cloud.util.Result;
 import com.sohu.tv.mq.cloud.util.Status;
@@ -153,6 +155,9 @@ public class AuditController extends AdminViewController {
     
     @Autowired
     private AuditConsumerConfigService auditConsumerConfigService;
+
+    @Autowired
+    private AuditTopicTrafficWarnService auditTopicTrafficWarnService;
 
     /**
      * 审核主列表
@@ -313,6 +318,9 @@ public class AuditController extends AdminViewController {
                 case RESUME_CONSUME:
                 case LIMIT_CONSUME:
                     msg = getConsumerConfigMessage(aid);
+                    break;
+                case UPDATE_TOPIC_TRAFFIC_WARN:
+                    msg = getUpdateTopicTrafficWarnMessage(aid);
                     break;
             }
             StringBuilder sb = new StringBuilder("您");
@@ -673,6 +681,16 @@ public class AuditController extends AdminViewController {
             return saveResult;
         }
 
+        // 保存限速数据
+        ConsumerConfig consumerConfig = new ConsumerConfig();
+        consumerConfig.setConsumer(auditConsumer.getConsumer());
+        consumerConfig.setPermitsPerSecond(Double.valueOf(auditConsumer.getPermitsPerSecond()));
+        consumerConfig.setEnableRateLimit(true);
+        Result<?> consumerConfigResult = consumerConfigService.save(consumerConfig);
+        if (consumerConfigResult.isNotOK()) {
+            logger.error("save consumer{} rate limit error", auditConsumer.getConsumer());
+        }
+        
         // 更新申请状态
         boolean updateOK = agreeAndTip(audit, userInfo.getUser().getEmail(), consumer.getName());
         if (updateOK) {
@@ -1319,6 +1337,57 @@ public class AuditController extends AdminViewController {
     }
 
     /**
+     * 更新topic流量预警
+     *
+     * @param aid
+     * @return
+     */
+    @ResponseBody
+    @RequestMapping(value = "/topic/update/trafficWarn", method = RequestMethod.POST)
+    public Result<?> updateTopicTrafficWarn(UserInfo userInfo,
+                                      @RequestParam("aid") long aid) {
+        // 获取audit
+        Result<Audit> auditResult = auditService.queryAudit(aid);
+        if (auditResult.isNotOK()) {
+            return auditResult;
+        }
+        // 校验状态是否合法
+        Audit audit = auditResult.getResult();
+        if (StatusEnum.INIT.getStatus() != audit.getStatus()) {
+            return Result.getResult(Status.PARAM_ERROR);
+        }
+        // 查询 topic更新审核记录
+        Result<AuditTopicTrafficWarn> result = auditTopicTrafficWarnService.queryAuditTopicTrafficWarn(aid);
+        if (result.isNotOK()) {
+            return result;
+        }
+        AuditTopicTrafficWarn auditTopicTrafficWarn = result.getResult();
+        // 查询topic记录
+        Result<Topic> topicResult = topicService.queryTopic(auditTopicTrafficWarn.getTid());
+        if (topicResult.isNotOK()) {
+            return topicResult;
+        }
+        // 构造更新用的topic
+        Topic topic = topicResult.getResult();
+        // 校验是否需要修改
+        if (topic.getTrafficWarnEnabled() == auditTopicTrafficWarn.getTrafficWarnEnabled()) {
+            return Result.getResult(Status.NO_NEED_MODIFY_ERROR);
+        }
+        topic.setTrafficWarnEnabled(auditTopicTrafficWarn.getTrafficWarnEnabled());
+        // 更新topic
+        Result<?> updateResult = topicService.updateTopicTrafficWarn(topic);
+        if (updateResult.isNotOK()) {
+            return updateResult;
+        }
+        // 更新申请状态
+        boolean updateOK = agreeAndTip(audit, userInfo.getUser().getEmail(), topicResult.getResult().getName());
+        if (updateOK) {
+            return Result.getOKResult();
+        }
+        return Result.getResult(Status.DB_UPDATE_ERR_DELETE_TOPIC_UPDATE_OK);
+    }
+
+    /**
      * 批量关联
      * 
      * @param aid
@@ -1402,6 +1471,19 @@ public class AuditController extends AdminViewController {
             return null;
         }
         return consumerResult.getResult().getName();
+    }
+
+    public String getUpdateTopicTrafficWarnMessage(long aid) {
+        Result<AuditTopicTrafficWarn> result = auditTopicTrafficWarnService.queryAuditTopicTrafficWarn(aid);
+        if (result.isNotOK()) {
+            return null;
+        }
+        AuditTopicTrafficWarn auditTopicTrafficWarn = result.getResult();
+        Result<Topic> topicResult = topicService.queryTopic(auditTopicTrafficWarn.getTid());
+        if (topicResult.isNotOK()) {
+            return null;
+        }
+        return topicResult.getResult().getName();
     }
     
     /**

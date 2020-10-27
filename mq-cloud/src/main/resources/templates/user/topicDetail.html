@@ -1,8 +1,8 @@
 <div class="tabbable-custom">
     <ul class="nav nav-tabs" id="tabs">
-        <li id="topology" class="active" data-url="${request.contextPath}/user/topic/${response.result}/topology?from=${RequestParameters.from!}"><a href="?tab=topology">详情</a></li>
+        <li id="topology" class="active" data-url="${request.contextPath}/user/topic/${response.result}/topology?<#if RequestParameters.from??>from=${RequestParameters.from}</#if><#if RequestParameters.currentPage??>&currentPage=${RequestParameters.currentPage}</#if>"><a href="?tab=topology">详情</a></li>
         <li id="produce" data-url="${request.contextPath}/topic/${response.result}/produce/progress"><a href="?tab=produce">生产详情</a></li>
-        <li id="consume" data-url="${request.contextPath}/consumer/progress?tid=${response.result}&consumer=${RequestParameters.consumer!}"><a href="?tab=consume">消费详情</a></li>
+        <li id="consume" data-url="${request.contextPath}/consumer/progress?tid=${response.result}<#if RequestParameters.consumer??>&consumer=${RequestParameters.consumer}</#if><#if RequestParameters.currentPage??>&currentPage=${RequestParameters.currentPage}</#if>"><a href="?tab=consume">消费详情</a></li>
         <li id="msg" data-url="${request.contextPath}/topic/message/index?tid=${response.result}"><a href="?tab=msg">消息</a></li>
     </ul>
     <div class="tab-content" id="tabContent">

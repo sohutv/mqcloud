@@ -83,7 +83,7 @@ public class ProducerStatsLineChartData implements LineChartData {
         // 初始化x轴数据，因为x轴数据是固定的
         xDataFormatList = new ArrayList<String>();
         xDataList = new ArrayList<String>();
-        for (int i = 0; i < 23; ++i) {
+        for (int i = 0; i < 24; ++i) {
             for (int j = 0; j < 60; ++j) {
                 String hour = i < 10 ? "0" + i : "" + i;
                 String ninutes = j < 10 ? "0" + j : "" + j;

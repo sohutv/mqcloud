@@ -16,6 +16,7 @@ import org.apache.rocketmq.remoting.exception.RemotingTimeoutException;
 import org.apache.rocketmq.tools.admin.DefaultMQAdminExt;
 import org.apache.rocketmq.tools.admin.DefaultMQAdminExtImpl;
 
+import com.sohu.tv.mq.cloud.common.model.BrokerMomentStatsData;
 import com.sohu.tv.mq.cloud.common.model.BrokerStoreStat;
 
 /**
@@ -106,4 +107,21 @@ public abstract class SohuMQAdmin extends DefaultMQAdminExt {
      */
     public abstract BrokerStoreStat getBrokerStoreStats(String brokerAddr) throws RemotingConnectException,
             RemotingSendRequestException, RemotingTimeoutException, MQClientException, InterruptedException;
+    
+    /**
+     * 从broker获取瞬时统计
+     * 
+     * @param brokerAddr
+     * @param statsName
+     * @param minValue
+     * @return
+     * @throws RemotingConnectException
+     * @throws RemotingSendRequestException
+     * @throws RemotingTimeoutException
+     * @throws MQClientException
+     * @throws InterruptedException
+     */
+    public abstract BrokerMomentStatsData getMomentStatsInBroker(String brokerAddr, String statsName, long minValue)
+            throws RemotingConnectException, RemotingSendRequestException, RemotingTimeoutException,
+            MQClientException, InterruptedException;
 }

@@ -355,4 +355,34 @@ public class UserService {
         }
         return Result.getResult(count);
     }
+
+    /**
+     * 查询topic id关联的消费者用户列表
+     * @param tid
+     */
+    public Result<List<User>> queryConsumerUserList(long tid) {
+        List<User> userList = null;
+        try {
+            userList = userDao.selectConsumerUserListByTid(tid);
+        } catch (Exception e) {
+            logger.error("queryConsumerUserList err", e);
+            return Result.getDBErrorResult(e);
+        }
+        return Result.getResult(userList);
+    }
+
+    /**
+     * 查询topic id关联的生产者用户列表
+     * @param tid
+     */
+    public Result<List<User>> queryProducerUserList(long tid) {
+        List<User> userList = null;
+        try {
+            userList = userDao.selectProducerUserListByTid(tid);
+        } catch (Exception e) {
+            logger.error("queryProducerUserList err", e);
+            return Result.getDBErrorResult(e);
+        }
+        return Result.getResult(userList);
+    }
 }

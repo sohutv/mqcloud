@@ -18,6 +18,8 @@ public class AuditConsumerVO {
     
     private int traceEnabled;
     
+    private int permitsPerSecond;
+    
     public long getAid() {
         return aid;
     }
@@ -53,5 +55,11 @@ public class AuditConsumerVO {
     }
     public void setTraceEnabled(int traceEnabled) {
         this.traceEnabled = traceEnabled;
+    }
+    public int getPermitsPerSecond() {
+        return permitsPerSecond;
+    }
+    public void setPermitsPerSecond(int permitsPerSecond) {
+        this.permitsPerSecond = permitsPerSecond;
     }
 }

@@ -65,6 +65,7 @@ import com.sohu.tv.mq.cloud.util.Status;
 import com.sohu.tv.mq.cloud.web.controller.param.AssociateConsumerParam;
 import com.sohu.tv.mq.cloud.web.controller.param.ConsumerConfigParam;
 import com.sohu.tv.mq.cloud.web.controller.param.ConsumerParam;
+import com.sohu.tv.mq.cloud.web.controller.param.PaginationParam;
 import com.sohu.tv.mq.cloud.web.controller.param.UserConsumerParam;
 import com.sohu.tv.mq.cloud.web.vo.ConsumerProgressVO;
 import com.sohu.tv.mq.cloud.web.vo.QueueOwnerVO;
@@ -116,35 +117,24 @@ public class ConsumerController extends ViewController {
      */
     @RequestMapping("/progress")
     public String progress(UserInfo userInfo, @RequestParam("tid") int tid,
-            @RequestParam(value = "begin", defaultValue = "0") int begin,
-            @RequestParam(value = "end", defaultValue = "10") int end, 
-            @RequestParam(value = "consumer", required = false) String consumer, Map<String, Object> map) throws Exception {
+            @Valid PaginationParam paginationParam, @RequestParam(value = "consumer", required = false) String consumer,
+            Map<String, Object> map) throws Exception {
         String view = viewModule() + "/progress";
+        // 设置分页参数
+        setPagination(map, paginationParam);
         // 获取消费者
         Result<TopicTopology> topicTopologyResult = userService.queryTopicTopology(userInfo.getUser(), tid);
         if(topicTopologyResult.isNotOK()) {
             setResult(map, topicTopologyResult);
             return view;
         }
-        if(begin != 0) {
-            view = viewModule() + "/progressLeft";
-        }
         // 查询消费进度
         TopicTopology topicTopology = topicTopologyResult.getResult();
         List<Consumer> consumerList = topicTopology.getConsumerList();
-        if(begin < 0) {
-            begin = 0;
-        }
-        if(begin > consumerList.size()) {
-            begin = consumerList.size();
-        }
-        if(end > consumerList.size()) {
-            end = consumerList.size();
-        }
         // consumer选择
         ConsumerSelector consumerSelector = new ConsumerSelector();
         if(consumer == null || consumer.length() == 0) {
-            consumerSelector.select(consumerList, begin, end);
+            pagination(consumerSelector, consumerList, paginationParam);
         } else {
             consumerSelector.select(consumerList, consumer);
         }
@@ -175,13 +165,24 @@ public class ConsumerController extends ViewController {
         setResult(map, "resultExt", Result.getResult(list));
         
         setResult(map, "topic", topic);
-        setResult(map, "hasMore", consumerSelector.isHasMore());
         FreemarkerUtil.set("long", Long.class, map);
         setResult(map, "cluster", cluster);
         
         // 限速常量
         setResult(map, "limitConsumeTps", Constant.LIMIT_CONSUME_TPS);
         return view;
+    }
+    
+    /**
+     * 分页
+     * @param consumerSelector
+     * @param consumerList
+     * @param paginationParam
+     */
+    private void pagination(ConsumerSelector consumerSelector, List<Consumer> consumerList,
+            PaginationParam paginationParam) {
+        paginationParam.caculatePagination(consumerList.size());
+        consumerSelector.select(consumerList, paginationParam.getBegin(), paginationParam.getEnd());
     }
     
     /**
@@ -293,6 +294,9 @@ public class ConsumerController extends ViewController {
                         offsetMap.put(mq, prev);
                     }
                     OffsetWrapper cur = offsetTable.get(mq);
+                    if (cur.getConsumerOffset() < 0) {
+                        cur.setConsumerOffset(0);
+                    }
                     prev.setBrokerOffset(prev.getBrokerOffset() + cur.getBrokerOffset());
                     prev.setConsumerOffset(prev.getConsumerOffset() + cur.getConsumerOffset());
                     // 取最小的更新时间
@@ -926,8 +930,6 @@ public class ConsumerController extends ViewController {
         private List<Consumer> broadcastConsumerList = new ArrayList<Consumer>();
         // cid列表
         private List<Long> cidList = new ArrayList<Long>();
-        // 是否还有数据
-        private boolean hasMore;
 
         /**
          * 选择特定的consumer
@@ -956,9 +958,6 @@ public class ConsumerController extends ViewController {
                 Consumer consumer = consumerList.get(i);
                 addConsumer(consumer);
             }
-            if(consumerList.size() > begin + cidList.size()) {
-                hasMore = true;
-            } 
         }
 
         private void addConsumer(Consumer consumer) {
@@ -980,10 +979,6 @@ public class ConsumerController extends ViewController {
 
         public List<Long> getCidList() {
             return cidList;
-        }
-
-        public boolean isHasMore() {
-            return hasMore;
         }
     }
 }

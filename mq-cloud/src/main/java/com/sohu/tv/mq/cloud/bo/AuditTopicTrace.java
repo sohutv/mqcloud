@@ -9,7 +9,7 @@ package com.sohu.tv.mq.cloud.bo;
 public class AuditTopicTrace {
     // 审核id
     private long aid;
-    // topic di
+    // topic id
     private long tid;
     
     private int traceEnabled;

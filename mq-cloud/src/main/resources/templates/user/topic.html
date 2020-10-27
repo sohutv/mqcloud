@@ -348,6 +348,14 @@
 									    </label>
 									</div>
 								</div>
+								<div class="form-body">
+									<div class="form-group">
+										<label class="control-label col-md-3" data-toggle="tooltip" title="消息流量控制"> 流控: </label>
+										<div class="col-md-6">
+											<input type="text" id="permitsPerSecondInput" data-toggle="tooltip" name="permitsPerSecond" value="" placeholder="最小为1，建议设为20，根据业务设置" data-toggle="tooltip" title="每个实例每秒最多消费多少条消息" class="form-control" />
+										</div>
+									</div>
+								</div>
 								<div class="form-group hide" id="traceDiv">
 									<label class="control-label col-md-3"> 开启Trace: </label>
 									<div class="col-md-6 checkbox">
@@ -812,6 +820,26 @@
                             }
                         }
                     },
+                    permitsPerSecond: {
+                        validators: {
+                            notEmpty: {
+                                message: '流控值不能为空'
+                            },
+                            callback: {
+                                message: '流控值只能为正整数',
+                                callback: function(value, validator) {
+                                    var tps = Number($("#permitsPerSecondInput").val());
+                                	if(tps < 1){
+                                		return false;
+                                	}
+                                	if(!Number.isInteger(tps)){
+                                		return false;
+                                	}
+                                	return true;
+                                }
+                            }
+                        }
+                    },
                     info: {
                     	validators: {
                             notEmpty: {
@@ -1184,10 +1212,6 @@ function showExtendConfig(obj){
 		            	var content = "";
 		            	for(var i in data.result){
 		            		var user = data.result[i];
-		            		// admin跳过
-		            		if(user.type == 1){
-		            			continue;
-		            		}
 		            		var value = user.email.substring(0, user.email.indexOf("@"));
 		            		if(user.name && user.name != value){
 		            			value = user.name + "【" + value +"】";

@@ -1,0 +1,30 @@
+<#if response.notOK>
+<div class="modal-body">
+    <div class="form-body">
+        <div class="form-group">
+            <div>异常数据</div>
+        </div>
+    </div>
+</div>
+<#else>
+<div class="modal-body">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="form-body">
+                <div class="form-group">
+                    <label class="control-label col-md-3"> Topic: </label>
+                    <div class="col-md-6">
+                        <input type="text" value="${response.result.topic.name}" readonly="readonly" class="form-control" />
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="control-label col-md-3"> 修改为: </label>
+                    <div class="col-md-6">
+                        <div class="form-control-static"><span><#if response.result.trafficWarnEnabled == 1>开启<#else>关闭</#if></span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</#if>

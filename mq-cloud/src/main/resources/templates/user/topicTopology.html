@@ -73,6 +73,16 @@
 					</td>
 				</tr>
 				<tr>
+					<td>流量预警</td>
+					<td>
+						<#if response.result.topic.trafficWarnEnabled()>
+							<a href="javascript:void();" data-toggle="tooltip" title="关闭预警?" onclick="updateTopicTrafficWarnShow(1,${response.result.topic.id})">已开启</a>
+						<#else>
+							<a href="javascript:void();" data-toggle="tooltip" title="开启预警?" onclick="updateTopicTrafficWarnShow(0)">已关闭</a>
+						</#if>
+					</td>
+				</tr>
+				<tr>
 					<td>所属用户</td>
 					<td>生产者(producer group)</td>
 				</tr>
@@ -126,6 +136,8 @@
 	<div class="col-md-12">
 		<center><div id="topologyDiv" style="height:550px;width:100%;"></div></center>
 	</div>
+	<center><ul id="pagination" style="margin:0px;" data-url="${request.contextPath}/user/topic/${response.result.topic.id}/detail?tab=topology"></ul></center>
+	<#include "../inc/paginationNoNav.html">
 </div>
 <script>
 var curProducer;
@@ -441,10 +453,18 @@ $(function() {
 		                label: {
 		                    show: true,
 		                    formatter: function (){
-		                    	<#if response.result.topicTraffic??>
-			                    	return "${response.result.topicTraffic.countFormat}/分 ${response.result.topicTraffic.sizeFormat}/分";
-			                    <#else>
-		                    		return "";
+		                    	<#if response.result.producerHasTraffic>
+				                    <#if producer.traffic??>
+				                    	return "${producer.traffic.countFormat}/分 ${producer.traffic.sizeFormat}/分";
+				                    <#else>
+			                    		return "";
+			                    	</#if>
+		                    	<#else>
+		                    		<#if response.result.topicTraffic??>
+				                    	return "${response.result.topicTraffic.countFormat}/分 ${response.result.topicTraffic.sizeFormat}/分";
+				                    <#else>
+			                    		return "";
+			                    	</#if>
 		                    	</#if>
 		                    }
 		                },
@@ -466,7 +486,7 @@ $(function() {
 	myChart.on('click', function (params) {
 	    if(params.data._type){
 	    	if(params.data._type == 2){
-	    		location.href="${request.contextPath}/user/topic/${response.result.topic.id}/detail?tab=consume";
+	    		location.href="${request.contextPath}/user/topic/${response.result.topic.id}/detail?tab=consume&consumer=" + params.data._group;
 	    	} else {
 	    		if(params.data._stats == 1){
 	    			curProducer = params.data._group;
@@ -685,7 +705,6 @@ $(function() {
 	</div>
 </div>
 
-
 <#--修改topic trace-->
 <div id="updateTopicTraceModal" class="modal fade" tabindex="-1" data-width="400">
 	<div class="modal-dialog" style="width:400px;">
@@ -694,7 +713,7 @@ $(function() {
 				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
 				<h4 class="modal-title">${response.result.topic.name}</h4>
 			</div>
-			<form class="form-horizontal form-bordered form-row-stripped" id="addUserProducerModalForm">
+			<form class="form-horizontal form-bordered form-row-stripped" id="updateTopicTraceModalForm">
 				<div class="modal-body">
 					<div class="row">
 						<div class="col-md-12">
@@ -718,7 +737,42 @@ $(function() {
 			</form>
 		</div>
 	</div>
-</div> 
+</div>
+<!-- 开启/关闭topic流量预警 -->
+<div id="updateTopicTrafficWarnModal" class="modal fade" tabindex="-1" data-width="400">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+				<span class="h4">${response.result.topic.name}流量预警开关</span>
+				<span class="nostyleA" data-toggle="tooltip" data-placement="bottom" title="了解详情"><a href="/wiki/userGuide/monitorAndWarn#trafficMonitor" target=_blank class="glyphicon glyphicon-question-sign"></a></span>
+			</div>
+			<form class="form-horizontal form-bordered form-row-stripped" id="updateTopicTrafficWarnForm">
+				<div class="modal-body">
+					<div class="row">
+						<div class="col-md-12">
+							<div class="form-body">
+								<div class="form-group">
+									<div class="col-md-4"></div>
+									<div class="col-md-8">
+										<div class="form-control-static">
+											<b><span id='topicTrafficWarnSelect'></span> 流量预警 ?</b>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" data-dismiss="modal" class="btn" >取消</button>
+					<button type="button" id="updateTopicTrafficWarnBtn" class="btn btn-primary" onclick="updateTopicTrafficWarn()">确定</button>
+		</div>
+
+		</form>
+	</div>
+</div>
+</div>
 
 <script>
 	$(function () {
@@ -817,10 +871,6 @@ $(function() {
 		            	var content = "";
 		            	for(var i in data.result){
 		            		var user = data.result[i];
-		            		// admin跳过
-		            		if(user.type == 1){
-		            			continue;
-		            		}
 		            		var value = user.email.substring(0, user.email.indexOf("@"));
 		            		if(user.name && user.name != value){
 		            			value = user.name + "【" + value +"】";
@@ -910,6 +960,37 @@ function updateTopicTrace(){
 			    }
 	    }, 'json');
 }
+
+function updateTopicTrafficWarnShow(trafficWarnEnable) {
+	if(trafficWarnEnable == 1) {
+		$("#topicTrafficWarnSelect").html("关闭");
+		$("#topicTrafficWarnSelect").val(0);
+	} else {
+		$("#topicTrafficWarnSelect").html("开启");
+		$("#topicTrafficWarnSelect").val(1);
+	}
+	$('#updateTopicTrafficWarnModal').modal('show');
+}
+/**
+ * 更新预警配置
+ */
+function updateTopicTrafficWarn(){
+	disable("updateTopicTrafficWarnBtn");
+	$.post('${request.contextPath}/topic/update/trafficWarn/' + $("#currentTopicID").val(),
+			{
+				trafficWarnEnabled: $("#topicTrafficWarnSelect").val()
+			},
+			function(data){
+				if(data.status == 200){
+					toastr.success("申请成功！请耐心等待！");
+					reload(2000);
+				}else{
+					toastr.error("操作失败！"+data.message);
+					enable("updateTopicTrafficWarnBtn");
+				}
+			}, 'json');
+}
+
 $(function () {
 	<#if RequestParameters.from?? && RequestParameters.from == "alert">
 		$('#alertA').click();

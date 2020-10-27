@@ -31,6 +31,12 @@
 					</div>
 				</div>
 				<div class="form-group">
+					<label class="control-label col-md-3"> 限速: </label>
+			        <div class="col-md-6">
+			        	<input type="text" value="${response.result.permitsPerSecond!}" readonly="readonly" class="form-control" />
+					</div>
+				</div>
+				<div class="form-group">
 					<label class="control-label col-md-3"> 是否trace: </label>
 					<div class="col-md-6 checkbox">
 					    <input type="radio" value="0" disabled="disabled" <#if response.result.traceEnabled == 0>checked</#if>>否

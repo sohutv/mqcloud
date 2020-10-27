@@ -28,9 +28,9 @@ public interface TopicDao {
      * @param topic
      */
     @Options(useGeneratedKeys = true, keyProperty = "topic.id")
-    @Insert("insert into topic(cluster_id, name, queue_num, ordered, create_date, trace_enabled, info, delay_enabled, serializer) "
+    @Insert("insert into topic(cluster_id, name, queue_num, ordered, create_date, trace_enabled, info, delay_enabled, serializer, traffic_warn_enabled) "
             + "values(#{topic.clusterId},#{topic.name},#{topic.queueNum},#{topic.ordered},now(),#{topic.traceEnabled},"
-            + "#{topic.info}, #{topic.delayEnabled}, #{topic.serializer})")
+            + "#{topic.info}, #{topic.delayEnabled}, #{topic.serializer}, #{topic.trafficWarnEnabled})")
     public Integer insert(@Param("topic") Topic topic);
     
     /**
@@ -76,6 +76,14 @@ public interface TopicDao {
      */
     @Select("select * from topic where cluster_id = #{clusterId}")
     public List<Topic> selectByClusterId(@Param("clusterId") int clusterId);
+
+    /**
+     * 根据cluster_id查询开启了流量预警功能的topic
+     * @param clusterId
+     * @return List<Topic>
+     */
+    @Select("select * from topic where cluster_id = #{clusterId} and traffic_warn_enabled = 1")
+    public List<Topic> selectTrafficWarnEnabledTopic(@Param("clusterId") int clusterId);
     
     /**
      * 更新记录
@@ -135,8 +143,14 @@ public interface TopicDao {
      * @return
      */
     @Select("SELECT c.id cid,c.name consumer,t.id tid,t.name topic,t.cluster_id FROM consumer c, topic t "
-            + "where c.tid = t.id and c.consume_way = 0")
-    public List<TopicConsumer> selectTopicConsumer();
+            + "where c.tid = t.id and c.consume_way = #{consume_way}")
+    public List<TopicConsumer> selectTopicConsumer(@Param("consume_way") int consumeWay);
+    /**
+     * 获取指定topic的消费者
+     */
+    @Select("SELECT c.id cid,c.name consumer,t.id tid, t.name topic FROM topic t, consumer c "
+            + "where t.id = #{tid} and c.tid = t.id")
+    public List<TopicConsumer> selectTopicConsumerByTid(@Param("tid") long tid);
     
     /**
      * 更新记录
@@ -163,4 +177,12 @@ public interface TopicDao {
      */
     @Update("update topic set count = 0 where count > 0 and update_time < DATE_SUB(CURDATE(),INTERVAL #{dayAgo} DAY)")
     public Integer resetCount(@Param("dayAgo") int dayAgo);
+
+    /**
+     * 更新记录
+     * @param tid
+     * @param trafficWarnEnabled
+     */
+    @Update("update topic set traffic_warn_enabled=#{trafficWarnEnabled} where id=#{tid}")
+    public Integer updateTopicTrafficWarn(@Param("tid") long tid, @Param("trafficWarnEnabled") int trafficWarnEnabled);
 } 

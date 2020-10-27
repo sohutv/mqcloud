@@ -125,7 +125,7 @@ public class ProducerStatsTask {
                 List<UserProducer> userProducerList = getUserProducer(k);
                 if (userProducerList != null) {
                     String detailAlarmMessage = getDetailAlarmMessage(totalList, userProducerList.get(0).getTid(), k);
-                    alertService.sendWanMail(getUserMail(userProducerList), ALARM_TITLE, detailAlarmMessage);
+                    alertService.sendWarnMail(getUserMail(userProducerList), ALARM_TITLE, detailAlarmMessage);
                 } else {
                     logger.warn("can not get the relationship between user and producer！producer:{}", k);
                 }

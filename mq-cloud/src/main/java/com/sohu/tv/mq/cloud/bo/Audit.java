@@ -165,7 +165,8 @@ public class Audit {
         BATCH_ASSOCIATE(15, "批量关联", "batchAssociate"), 
         PAUSE_CONSUME(16, "暂停消费", "pauseConsume"), 
         RESUME_CONSUME(17, "恢复消费", "pauseConsume"),
-        LIMIT_CONSUME(18, "消费限速", "limitConsume"), 
+        LIMIT_CONSUME(18, "消费限速", "limitConsume"),
+        UPDATE_TOPIC_TRAFFIC_WARN(19, "修改Topic流量预警", "updateTopicTrafficWarn"),
         ;
 
         private Integer type;

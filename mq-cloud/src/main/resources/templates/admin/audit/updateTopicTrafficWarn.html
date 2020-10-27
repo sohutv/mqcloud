@@ -1,0 +1,89 @@
+<#if response.notOK>
+<div class="modal-body">
+    <div class="form-body">
+        <div class="form-group">
+            <div>异常数据</div>
+        </div>
+    </div>
+</div>
+<#else>
+<div class="modal-body">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="form-body">
+                <div class="form-group">
+                    <label class="control-label col-md-3"> Topic: </label>
+                    <div class="col-md-6">
+                        <input type="text" value="${response.result.topic.name}" readonly="readonly" class="form-control" />
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="control-label col-md-3"> 当前状态: </label>
+                    <div class="col-md-6">
+                        <div class="form-control-static"><span><#if response.result.topic.trafficWarnEnabled()>开启<#else>关闭</#if></span></div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="control-label col-md-3"> 修改为: </label>
+                    <div class="col-md-6">
+                        <div class="form-control-static"><span><#if response.result.trafficWarnEnabled == 1>开启<#else>关闭</#if></span></div>
+                    </div>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="control-label col-md-3"> 拒绝理由: </label>
+                <div class="col-md-6">
+                    <textarea type="text" id="updateTopicTrafficWarnRefuseReason" rows="3" class="form-control" placeholder="请填写"></textarea>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+<div class="modal-footer" id="auditTopicFooter">
+    <button type="button" data-dismiss="modal" class="btn" >取消</button>
+    <button type="button" class="btn btn-warning" id="disAgreeUpdateTopicTrafficWarnBtn" onclick="disAgreeUpdateTopicTrafficWarn()">拒绝</button>
+    <button type="button" class="btn btn-primary" id="agreeUpdateTopicTrafficWarnBtn" onclick="agreeUpdateTopicTrafficWarn()">同意</button>
+</div>
+
+<script>
+    function agreeUpdateTopicTrafficWarn(){
+        disable("agreeUpdateTopicTrafficWarnBtn");
+        $.post('${request.contextPath}/admin/audit/topic/update/trafficWarn',
+            {
+                aid: ${response.result.aid?c}
+            },
+            function(data){
+                if(data.status == 200){
+                    toastr.success("审核成功, 系统将自动刷新");
+                    reload(3000);
+                }else{
+                    toastr.error("审核失败！"+data.message);
+                    enable("agreeUpdateTopicTrafficWarnBtn");
+                }
+            }, 'json');
+    }
+    function disAgreeUpdateTopicTrafficWarn(){
+        var refuseReason = $("#updateTopicTrafficWarnRefuseReason").val();
+        if(!refuseReason){
+            alert("请填写拒绝理由");
+            return;
+        }
+        disable("disAgreeUpdateTopicTrafficWarnBtn");
+        $.post('${request.contextPath}/admin/audit/refuse',
+            {
+                aid: ${response.result.aid?c},
+                refuseReason: refuseReason
+            },
+            function(data){
+                if(data.status == 200){
+                    toastr.success("拒绝成功, 系统将自动刷新");
+                    reload(3000);
+                }else{
+                    toastr.error("拒绝失败！"+data.message);
+                    enable("disAgreeUpdateTopicTrafficWarnBtn");
+                }
+            }, 'json');
+    }
+</script>
+</#if>

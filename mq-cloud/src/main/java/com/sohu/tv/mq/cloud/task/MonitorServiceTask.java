@@ -50,4 +50,30 @@ public class MonitorServiceTask {
             }
         });
     }
+    
+    /**
+     * 每一小时监控一次
+     */
+    @Scheduled(cron = "23 13 * * * *")
+    @SchedulerLock(name = "monitorBroadcast", lockAtMostFor = 180000, lockAtLeastFor = 180000)
+    public void monitorBroadcast() {
+        taskExecutor.execute(new Runnable() {
+            public void run() {
+                if(sohuMonitorServiceList == null) {
+                    logger.warn("monitorBroadcast is null");
+                    return;
+                }
+                logger.info("monitorBroadcast start");
+                long start = System.currentTimeMillis();
+                for(MonitorService monitorService : sohuMonitorServiceList) {
+                    try {
+                        monitorService.monitorBroadCastConsumer();
+                    } catch (Exception e) {
+                        logger.error("monitorBroadcast err", e);
+                    }
+                }
+                logger.info("monitorBroadcast, use:{}ms", System.currentTimeMillis() - start);
+            }
+        });
+    }
 }

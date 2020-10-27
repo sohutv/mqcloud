@@ -2,7 +2,6 @@ package com.sohu.tv.mq.cloud.service.impl;
 
 import java.util.Properties;
 
-import javax.annotation.PostConstruct;
 import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
 
@@ -37,7 +36,6 @@ public class DefaultMailSender implements MailSender {
     /**
      * 初始化mail发送
      */
-    @PostConstruct
     public void init() {
         if(mqCloudConfigHelper == null) {
             logger.warn("init mail sender err, mqCloudConfigHelper is null!");

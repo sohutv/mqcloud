@@ -15,17 +15,22 @@ import org.springframework.context.annotation.Profile;
 
 import com.sohu.tv.mq.cloud.bo.Cluster;
 import com.sohu.tv.mq.cloud.service.ClusterService;
+import com.sohu.tv.mq.cloud.service.ConsumerService;
 import com.sohu.tv.mq.cloud.service.NameServerService;
+import com.sohu.tv.mq.cloud.service.TopicService;
 import com.sohu.tv.mq.cloud.task.AlarmConfigTask;
 import com.sohu.tv.mq.cloud.task.AutoAuditTask;
 import com.sohu.tv.mq.cloud.task.BrokerStoreStatTask;
 import com.sohu.tv.mq.cloud.task.ClusterMonitorTask;
 import com.sohu.tv.mq.cloud.task.ConsumeFailTask;
+import com.sohu.tv.mq.cloud.task.ConsumeFallBehindTask;
 import com.sohu.tv.mq.cloud.task.ConsumerStatsTask;
+import com.sohu.tv.mq.cloud.task.DeadMessageTask;
 import com.sohu.tv.mq.cloud.task.MonitorServiceTask;
 import com.sohu.tv.mq.cloud.task.ProducerStatsTask;
 import com.sohu.tv.mq.cloud.task.ServerStatusTask;
 import com.sohu.tv.mq.cloud.task.ServerWarningTask;
+import com.sohu.tv.mq.cloud.task.TrafficAnalysisTask;
 import com.sohu.tv.mq.cloud.task.TrafficTask;
 import com.sohu.tv.mq.cloud.task.monitor.MonitorService;
 import com.sohu.tv.mq.cloud.task.monitor.SohuMonitorListener;
@@ -49,6 +54,12 @@ public class TaskConfiguration {
     
     @Autowired
     private ClusterService clusterService;
+    
+    @Autowired
+    private TopicService topicService;
+    
+    @Autowired
+    private ConsumerService consumerService;
     
     @Bean
     @Profile({"online", "online-sohu"})
@@ -87,9 +98,9 @@ public class TaskConfiguration {
     
     @Bean
     @Profile({"online-sohu"})
-    public BrokerStoreStatTask brokerStoreStatTask() {
-        BrokerStoreStatTask brokerStoreStatTask = new BrokerStoreStatTask();
-        return brokerStoreStatTask;
+    public DeadMessageTask deadMessageTask() {
+        DeadMessageTask deadMessageTask = new DeadMessageTask();
+        return deadMessageTask;
     }
     
     @Bean
@@ -137,6 +148,26 @@ public class TaskConfiguration {
         return monitorServiceList(false, nameServerService, sohuMonitorListener, mqCloudConfigHelper);
     }
     
+    @Bean
+    @Profile({"online-sohu"})
+    public BrokerStoreStatTask brokerStoreStatTask() {
+        BrokerStoreStatTask brokerStoreStatTask = new BrokerStoreStatTask();
+        return brokerStoreStatTask;
+    }
+    
+    @Bean
+    @Profile({"online-sohu"})
+    public ConsumeFallBehindTask consumeFallBehindTask() {
+        ConsumeFallBehindTask consumeFallBehindTask = new ConsumeFallBehindTask();
+        return consumeFallBehindTask;
+    }
+
+    @Bean
+    @Profile({"online", "online-sohu"})
+    public TrafficAnalysisTask trafficAnalysisTask() {
+        return new TrafficAnalysisTask();
+    }
+
     private List<MonitorService> monitorServiceList(boolean online, NameServerService nameServerService, 
             SohuMonitorListener sohuMonitorListener, MQCloudConfigHelper mqCloudConfigHelper){
         if(clusterService.getAllMQCluster() == null) {
@@ -147,7 +178,8 @@ public class TaskConfiguration {
         for(Cluster mqCluster : clusterService.getAllMQCluster()) {
             if(online == mqCluster.online()) {
                 MonitorService monitorService = new MonitorService(nameServerService, mqCluster, sohuMonitorListener, 
-                        mqCloudConfigHelper);
+                        mqCloudConfigHelper, topicService);
+                monitorService.setConsumerService(consumerService);
                 list.add(monitorService);
             }
         }

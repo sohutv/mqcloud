@@ -48,7 +48,7 @@
 					<#else>
 						<#list response.result as consumerProgressVO>
 							<tr>
-								<#assign row = consumerProgressVO_index + 1> 
+								<#assign row = (pagination.result.currentPage - 1)*pagination.result.numOfPage + consumerProgressVO_index + 1> 
 								<td>${row}</td>
 		                    	<td><a style="cursor:pointer" data="${RequestParameters.consumer!}" title="查看消费详情" data-target="#consumeDetailModel${row}" data-toggle="modal" <#if consumerProgressVO.minLastTimestamp gt 0 && consumerProgressVO.minLastTimestamp lt long.MAX_VALUE>onclick="getQueueOwner('${consumerProgressVO.consumer.name}', '${consumerProgressVO.consumer.id}')"</#if>>${consumerProgressVO.consumer.name}</a></td>
 		                    	<#if consumerProgressVO.ownerList??>
@@ -403,7 +403,7 @@
 						<!-- 广播模式 -->
 						<#list resultExt.result as consumerProgressVO>
 							<tr>
-								<#assign row = consumerProgressVO_index + 1 + response.result?size> 
+								<#assign row = (pagination.result.currentPage - 1)*pagination.result.numOfPage + consumerProgressVO_index + 1 + response.result?size> 
 								<td>${row}</td>
 		                    	<td><a style="cursor:pointer" data="${RequestParameters.consumer!}" title="查看消费详情" data-target="#consumeDetailModel${row}b" data-toggle="modal">${consumerProgressVO.consumer.name}</a></td>
 		                    	<#if consumerProgressVO.ownerList??>
@@ -640,10 +640,8 @@
 		                    	</td>
 		                   	</tr>
 						</#list>
-						<#if hasMore>
-							<tr id="viewAll">
-		                    	<td colspan=10 align="center" class="pointer" onclick="leftPage()"><b>查看全部</b></td>
-		                	<tr>
+						<#if pagination.OK && pagination.result.totalPages gt 1>
+		                	<tr><td colspan=10 align="center"><ul id="pagination" style="margin:0px;" data-url="${request.contextPath}/user/topic/${RequestParameters.tid}/detail?tab=consume"></ul></td></tr>
 						</#if>
 					</#if>
                 </tbody>
@@ -1073,9 +1071,9 @@
 					</div>
 					<div class="form-body">
 						<div class="form-group">
-							<label class="control-label col-md-3" data-toggle="tooltip" title="每秒最多消费多少条消息，最小值为1"> TPS: </label>
+							<label class="control-label col-md-3" data-toggle="tooltip" title="消息流控，最小值为1"> TPS: </label>
 							<div class="col-md-6">
-								<input type="text" id="permitsPerSecondInput" data-toggle="tooltip" name="permitsPerSecond" value="${limitConsumeTps}" title="例如：${limitConsumeTps}代表每秒最多消费${limitConsumeTps}条消息" class="form-control" />
+								<input type="text" id="permitsPerSecondInput" data-toggle="tooltip" name="permitsPerSecond" value="${limitConsumeTps}" title="例如：${limitConsumeTps}代表每个实例每秒最多消费${limitConsumeTps}条消息" class="form-control" />
 							</div>
 						</div>
 					</div>
@@ -1088,7 +1086,7 @@
 		</div>
 	</div>
 </div>
-
+<#include "../inc/paginationNoNav.html">
 <script>
 /**
  * 限制消费速率
@@ -1347,10 +1345,6 @@ function initUserList(componentId){
 	            	var content = "";
 	            	for(var i in data.result){
 	            		var user = data.result[i];
-	            		// admin跳过
-	            		if(user.type == 1){
-	            			continue;
-	            		}
 	            		var value = user.email.substring(0, user.email.indexOf("@"));
 	            		if(user.name && user.name != value){
 	            			value = user.name + "【" + value +"】";
@@ -1711,20 +1705,6 @@ function resendMessage(){
     }, 'json');
 }
 
-/**
- * 获取剩余消费者
- */
-function leftPage(){
-	event.preventDefault();
-	post('${request.contextPath}/consumer/progress?begin=10&end=100',{
-		tid: ${RequestParameters.tid}
-	},
-    function(data){
-		$("#viewAll").after(data);
-		$("#viewAll").remove();
-    });
-}
-
 function updateConsumerTraceShow(cid, consumer, traceable){
 	$("#consumerH4").val(cid);
 	$("#consumerH4").html(consumer);
@@ -1754,11 +1734,16 @@ function updateConsumerTrace(){
 			    }
 	    }, 'json');
 }
-
 <#if response.OK>
 	$(function() {
 		lineChart("consume", function (){
 			$("#tid").val("${RequestParameters.tid}");
+			<#if RequestParameters.consumer??>
+				$("#_consumer").val("${RequestParameters.consumer}");
+			</#if>
+			<#if RequestParameters.currentPage??>
+				$("#currentPage").val(${RequestParameters.currentPage});
+			</#if>
 		});
 		<#if RequestParameters.consumer?? && RequestParameters.consumer != "">
 			$('a[data="${RequestParameters.consumer}"]').click();

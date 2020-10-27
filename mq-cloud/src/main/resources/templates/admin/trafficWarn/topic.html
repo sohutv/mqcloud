@@ -1,0 +1,326 @@
+<div class="main">
+    <div style="vertical-align: middle;margin-bottom:10px;">
+        <span><b>全局阈值:</b></span>
+    </div>
+    <table class="table table-striped table-hover">
+        <thead>
+        <tr class="text-center ">
+            <td data-toggle="tooltip" title="用于异常流量值判定,大于平均值乘以该参数则认为是异常流量,在统计分析中会被剔除">平均值系数</td>
+            <td data-toggle="tooltip" title="检测时，当前流量大于最大值平均值的增幅百分比，则预警">最大值的平均值增幅</td>
+            <td data-toggle="tooltip" title="检测时，当前流量大于最大值的增幅百分比，预警">最大值增幅</td>
+            <td data-toggle="tooltip" title="报警接收人">报警人</td>
+            <td>操作</td>
+        </tr>
+        </thead>
+        <tbody>
+        <#if !response.OK || !response.result.defaultConfig??>
+        <tr>
+            <td colspan="8"class="text-center" >
+                暂无数据
+            </td>
+        <tr>
+        <#else>
+            <#assign defaultConfig = response.result.defaultConfig>
+            <tr class="text-center ">
+                <td>
+                    <#if defaultConfig.avgMultiplier??>
+                        ${defaultConfig.avgMultiplier?string('#.##')}倍
+                    </#if>
+                </td>
+                <td>
+                    <#if defaultConfig.avgMaxPercentageIncrease??>
+                        ${defaultConfig.avgMaxPercentageIncrease?string('#.##')}%
+                    </#if>
+                </td>
+                <td>
+                    <#if defaultConfig.maxMaxPercentageIncrease??>
+                        ${defaultConfig.maxMaxPercentageIncrease?string('#.##')}%
+                    </#if>
+                </td>
+                <td>
+                    <#switch defaultConfig.alarmReceiver>
+                        <#case 0>生产者消费者及管理员<#break>
+                        <#case 1>生产者及管理员<#break>
+                        <#case 2>消费者及管理员<#break>
+                        <#case 3>仅管理员<#break>
+                        <#case 4>不报警<#break>
+                    </#switch>
+                </td>
+                <td><button type="button" onclick="updateAlarmConfig('${defaultConfig.topic}',false)" class="btn btn-success"><span class="glyphicon glyphicon-edit" aria-hidden="true"></span></button></td>
+            </tr>
+        </#if>
+        </tbody>
+    </table>
+    <div style="vertical-align: middle;margin-bottom:10px;">
+        <span><b>自定义阈值:</b></span>
+        <button type="button" onclick="addAlarmConfig()" class="btn btn-success"><span class="glyphicon glyphicon-plus" aria-hidden="true">配置</span></button>
+    </div>
+    <table class="table table-striped table-hover">
+        <thead>
+        <tr class="text-center ">
+            <td>序号</td>
+            <td>topic</td>
+            <td>平均值系数</td>
+            <td>最大值的平均值增幅</td>
+            <td>最大值增幅</td>
+            <td>报警人</td>
+            <td>操作</td>
+        </tr>
+        </thead>
+        <tbody>
+        <#if !response.OK || !response.result.customConfigList??>
+        <tr>
+            <td colspan="9"class="text-center" >
+                暂无数据
+            </td>
+        <tr>
+        <#else>
+        <#list response.result.customConfigList as alarmConfig>
+        <tr class="text-center ">
+            <td>${alarmConfig_index+1}</td>
+            <td>${alarmConfig.topic}</td>
+            <td>
+                <#if alarmConfig.avgMultiplier??>
+                    ${alarmConfig.avgMultiplier?string('#.##')}倍
+                </#if>
+            </td>
+            <td>
+                <#if alarmConfig.avgMaxPercentageIncrease??>
+                    ${alarmConfig.avgMaxPercentageIncrease?string('#.##')}%
+                </#if>
+            </td>
+            <td>
+                <#if alarmConfig.maxMaxPercentageIncrease??>
+                    ${alarmConfig.maxMaxPercentageIncrease?string('#.##')}%
+                </#if>
+            </td>
+            <td>
+                <#switch alarmConfig.alarmReceiver>
+                    <#case 0>生产者消费者及管理员<#break>
+                    <#case 1>生产者及管理员<#break>
+                    <#case 2>消费者及管理员<#break>
+                    <#case 3>仅管理员<#break>
+                    <#case 4>不报警<#break>
+                </#switch>
+            </td>
+            <td>
+                <button type="button" onclick="updateAlarmConfig('${alarmConfig.topic}',true)" class="btn btn-success"><span class="glyphicon glyphicon-edit" aria-hidden="true"></span></button>
+                <button type="button" onclick="deleteAlarmConfig('${alarmConfig.topic}')" class="btn btn-warning"><span class="glyphicon glyphicon-trash" aria-hidden="true"></span></button>
+            </td>
+        </tr>
+        </#list>
+    </#if>
+    </tbody>
+    </table>
+</div>
+<!-- 修改配置报警阈值 -->
+<div id="updateAlarmThresholdModal" class="modal fade" tabindex="-1" data-width="400">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                <h4 class="modal-title">报警阈值配置</h4>
+            </div>
+            <form class="form-horizontal form-bordered form-row-stripped" id="updateAlarmThresholdForm">
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="form-body">
+                                <div class="form-group" id="topicInputID">
+                                    <label class="control-label col-md-4"> topic: </label>
+                                    <div class="col-md-5">
+                                        <select id="topicSearchSelect" class="selectpicker" title="请选择" data-live-search-placeholder="搜索" name="topic" data-live-search="true"></select>
+                                    </div>
+                                </div>
+                                <div class="form-group" id="alarmReceiverInputID">
+                                    <label class="control-label col-md-4"> 接收报警: </label>
+                                    <div class="col-md-5">
+                                        <select id="alarmReceiverSelect" class="selectpicker" title="请选择" data-live-search-placeholder="搜索" name="alarmReceiver" data-live-search="true">
+                                            <option value="0">生产者消费者及管理员</option>
+                                            <option value="1">生产者及管理员</option>
+                                            <option value="2">消费者及管理员</option>
+                                            <option value="3">仅管理员</option>
+                                            <option value="4">不报警</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="form-group" id="avgMultiplierID">
+                                    <label class="control-label col-md-4"> 统计分析时异常流量剔除标准: </label>
+                                    <div class="col-md-6">
+                                        <div class="input-group">
+                                            <span class="input-group-addon">大于流量平均值</span>
+                                            <input type="text" id="avgMultiplierInput" name="avgMultiplier"
+                                                   data-toggle="modal" title="平均值系数,默认5倍" class="form-control" />
+                                            <span class="input-group-addon">倍</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="form-group" id="avgMaxPercentageIncreaseID">
+                                    <label class="control-label col-md-4"> 流量最大值平均值增幅阈值: </label>
+                                    <div class="col-md-6">
+                                        <div class="input-group">
+                                            <input type="text" id="avgMaxPercentageIncreaseInput" name="avgMaxPercentageIncrease"
+                                                   data-toggle="modal" title="最大值的平均值增幅,默认200%" class="form-control" />
+                                            <span class="input-group-addon">%</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="form-group" id="maxMaxPercentageIncreaseID">
+                                    <label class="control-label col-md-4"> 流量最大值增幅阈值: </label>
+                                    <div class="col-md-6">
+                                        <div class="input-group">
+                                            <input type="text" id="maxMaxPercentageIncreaseInput" name="maxMaxPercentageIncrease"
+                                                   data-toggle="modal" title="最大值增幅,默认30%" class="form-control" />
+                                            <span class="input-group-addon">%</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <input type="hidden" id="isAddAlarmRecord" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" data-dismiss="modal" class="btn" >取消</button>
+                    <button type="button" class="btn btn-primary" onclick="submitUpdateAlarmThreshold()" id="updateAlarmThresholdBtn">确定</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<!-- 删除提示 -->
+<div class="modal fade" id="deleteAlarmModal" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content message_align">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">×</span></button>
+                <h4 class="modal-title">确定要删除报警配置吗？</h4>
+            </div>
+            <form class="form-horizontal form-bordered form-row-stripped">
+                <div class="modal-body">
+                    <div class="row">
+                        <!-- 控件开始 -->
+                        <div class="col-md-12">
+                            <!-- form-body开始 -->
+                            <div class="form-body">
+                                <div class="form-group">
+                                    <label class="control-label col-md-3"> topic: </label>
+                                    <div class="col-md-5">
+                                        <input type="text" id="currentDeleteTopic" class="form-control" readonly="readonly"/>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" data-dismiss="modal" class="btn" >取消</button>
+                    <button type="button" id="deleteAlarmBtn" onclick="submitDeleteAlarm()" class="btn btn-primary">确定</button>
+                </div>
+
+            </form>
+        </div>
+    </div>
+</div>
+<script>
+    $(function () {
+        $("[data-toggle='tooltip']").tooltip({container: 'body'});
+        //初始化topic列表
+        $.get('${request.contextPath}/admin/trafficMonitor/topic/enabled',
+            function(data){
+                if(data.status == 200){
+                    var content = "";
+                    for(var i in data.result){
+                        var topic = data.result[i];
+                        content += "<option value='"+topic.name+"'>"+topic.name+"</option>";
+                    }
+                    $("#topicSearchSelect").html(content);
+                    $("#topicSearchSelect").selectpicker('refresh');
+                }else{
+                    toastr.error("数据获取失败！"+data.message);
+                }
+            }, 'json');
+    });
+    // 提交更新或添加请求
+    function submitUpdateAlarmThreshold(){
+        if($("#isAddAlarmRecord").val() == 0){
+            if(!$("#topicSearchSelect").val()){
+                alert("请选择topic");
+                return;
+            }
+            if(!$("#alarmReceiverSelect").val()){
+                alert("请选择报警接收人");
+                return;
+            }
+        }
+        disable("updateAlarmThresholdBtn");
+        $.post('${request.contextPath}/admin/trafficMonitor/config/add',
+            $("#updateAlarmThresholdForm").serialize(),
+            function(data){
+                if(data.status == 200){
+                    toastr.success("操作成功，即将刷新页面");
+                    reload(2000);
+                }else{
+                    toastr.error("操作失败！"+data.message);
+                    enable("updateAlarmThresholdBtn");
+                }
+            }, 'json');
+    }
+    //修改报警配置
+    function updateAlarmConfig(topicName, flag){
+        $.get('${request.contextPath}/admin/trafficMonitor/config/detail',
+            {
+                topicName:topicName
+            },
+            function(data){
+                if(data.status == 200){
+                    $("#isAddAlarmRecord").val(1); // 设置为修改状态
+                    $("#avgMultiplierInput").val(data.result.avgMultiplier == null ? '':data.result.avgMultiplier);
+                    $("#avgMaxPercentageIncreaseInput").val(data.result.avgMaxPercentageIncrease == null ? '':data.result.avgMaxPercentageIncrease);
+                    $("#maxMaxPercentageIncreaseInput").val(data.result.maxMaxPercentageIncrease == null ? '':data.result.maxMaxPercentageIncrease);
+                    $("#alarmReceiverSelect").val(data.result.alarmReceiver).trigger('change');
+                    //区分配置和默认配置
+                    if(flag){
+                        $("#topicSearchSelect").val(data.result.topic).trigger('change');
+                        $("#topicInputID").removeClass("hide");
+                    }else{//默认
+                        $("#topicInputID").addClass("hide");
+                        $("#topicSearchSelect").selectpicker('refresh');
+                    }
+                }else{
+                    toastr.error("数据获取失败！"+data.message);
+                }
+            }, 'json');
+        $("#updateAlarmThresholdModal").modal('show');
+    }
+    //删除报警配置
+    function deleteAlarmConfig(topic){
+        $("#currentDeleteTopic").val(topic);
+        $("#deleteAlarmModal").modal('show');
+    }
+    //提交删除请求
+    function submitDeleteAlarm(){
+        disable("deleteAlarmBtn");
+        $.post('${request.contextPath}/admin/trafficMonitor/config/delete',
+            {
+                topic : $("#currentDeleteTopic").val()
+            },
+            function(data){
+                if(data.status == 200){
+                    toastr.success("操作成功，即将刷新页面");
+                    reload(3000);
+                }else{
+                    toastr.error("数据获取失败！"+data.message);
+                    enable("deleteAlarmBtn");
+                }
+            }, 'json');
+    }
+    //添加报警
+    function addAlarmConfig(){
+        $("#isAddAlarmRecord").val(0);//判断当前是添加还是修改，0添加，1修改
+        $("#topicInputID").removeClass("hide");
+        $("#updateAlarmThresholdForm")[0].reset();
+        $("#topicSearchSelect").selectpicker('refresh');
+        $("#updateAlarmThresholdModal").modal('show');
+    }
+</script>

@@ -33,6 +33,7 @@ import com.sohu.tv.mq.cloud.bo.ConsumerBlock;
 import com.sohu.tv.mq.cloud.bo.ConsumerClientStat;
 import com.sohu.tv.mq.cloud.bo.ConsumerStat;
 import com.sohu.tv.mq.cloud.bo.Topic;
+import com.sohu.tv.mq.cloud.bo.TypedUndoneMsgs;
 import com.sohu.tv.mq.cloud.bo.User;
 import com.sohu.tv.mq.cloud.bo.UserConsumer;
 import com.sohu.tv.mq.cloud.dao.ConsumerStatDao;
@@ -117,10 +118,19 @@ public class SohuMonitorListener implements MonitorListener {
         if (accumulateTime < 0 && accumulateCount < 0) {
             return;
         }
-        // 发送报警
-        if (undoneMsgs.getUndoneMsgsDelayTimeMills() > accumulateTime
-                && undoneMsgs.getUndoneMsgsTotal() > accumulateCount) {
-            accumulateWarn(undoneMsgs);
+        if (undoneMsgs instanceof TypedUndoneMsgs) {
+            // 广播模式消费者堆积，无法检测堆积时间
+            if (!((TypedUndoneMsgs) undoneMsgs).isClustering()) {
+                if (undoneMsgs.getUndoneMsgsTotal() > accumulateCount) {
+                    accumulateWarn(undoneMsgs);
+                }
+            } else {
+                // 发送报警
+                if (undoneMsgs.getUndoneMsgsDelayTimeMills() > accumulateTime
+                        && undoneMsgs.getUndoneMsgsTotal() > accumulateCount) {
+                    accumulateWarn(undoneMsgs);
+                }
+            }
         }
     }
     
@@ -138,7 +148,7 @@ public class SohuMonitorListener implements MonitorListener {
 	        return;
 	    }
         String content = getAccumulateWarnContent(topicExt.getTopic(), undoneMsgs);
-        alertService.sendWanMail(topicExt.getReceiver(), "堆积", content);
+        alertService.sendWarnMail(topicExt.getReceiver(), "堆积", content);
 	}
 	
 	/**
@@ -212,9 +222,11 @@ public class SohuMonitorListener implements MonitorListener {
         content.append(undoneMsgs.getUndoneMsgsTotal());
         content.append("，单个队列最大堆积消息量：");
         content.append(undoneMsgs.getUndoneMsgsSingleMQ());
-        content.append("，消费滞后时间(相对于broker最新消息时间)：");
-        content.append(undoneMsgs.getUndoneMsgsDelayTimeMills() / 1000f);
-        content.append("秒");
+        if (undoneMsgs.getUndoneMsgsDelayTimeMills() > 0) {
+            content.append("，消费滞后时间(相对于broker最新消息时间)：");
+            content.append(undoneMsgs.getUndoneMsgsDelayTimeMills() / 1000f);
+            content.append("秒");
+        }
         return content.toString();
     }
 
@@ -282,7 +294,7 @@ public class SohuMonitorListener implements MonitorListener {
         content.append(event.getMessageQueue().getTopic());
         content.append(" 队列:");
         content.append(event.getMessageQueue().getQueueId());
-        alertService.sendWanMail(topicExt.getReceiver(), "偏移量错误", content.toString());
+        alertService.sendWarnMail(topicExt.getReceiver(), "偏移量错误", content.toString());
     }
 
 	@Override
@@ -406,7 +418,7 @@ public class SohuMonitorListener implements MonitorListener {
         content.append("</b> 同时订阅了：<b>");
         content.append(topics);
         content.append("</b>。");
-        alertService.sendWanMail(null, "订阅错误", content.toString());
+        alertService.sendWarnMail(null, "订阅错误", content.toString());
     }
     
     /**
@@ -476,7 +488,7 @@ public class SohuMonitorListener implements MonitorListener {
             content.append("</tbody>");
             content.append("</table>");
             TopicExt topicExt = getUserEmail(tc.getTopic(), tc.getConsumer());
-            alertService.sendWanMail(topicExt.getReceiver(), "客户端阻塞", content.toString());
+            alertService.sendWarnMail(topicExt.getReceiver(), "客户端阻塞", content.toString());
         }
     }
 

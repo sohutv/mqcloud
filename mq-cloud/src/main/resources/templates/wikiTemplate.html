@@ -21,7 +21,11 @@
 				<#include "inc/wikiLeft.html">
 			</div>
 			<div class="col-md-10 markdown-body">
-				${response.result}
+				<#if response.OK>
+					${response.result}
+				<#else>
+					${response.message}
+				</#if>
 			</div>
 		</div>
     </div>

@@ -1,6 +1,6 @@
 ## 一、<span id="spring-boot">初始化之spring-boot方式</span>
 
-**老用户请先通过“我是老用户”入口关联消费者**
+**老用户请先通过首页“关联资源”入口关联消费者**
 
 ```
 @Configuration
@@ -245,18 +245,18 @@ consumer.shutdown();
 
    ```
    consumer.setEnableRateLimit(true);
-   consumer.setRate(200);
+   consumer.setRate(50);
    ```
 
-   rate的含义为每秒消费多少条消息，200即每秒消费200条消息，限速器默认是禁用的。
+   rate的含义为每秒消费多少条消息，50即每秒消费50条消息。
 
-   另外，客户端版本在4.6.4及以上，支持不重启服务的情况下，在MQCloud里进行动态开启(MQCloud设置的配置优先级高于本地)：
+   另外，客户端版本在4.6.5及以上，支持不重启服务的情况下，在MQCloud里进行动态开启(MQCloud设置的配置优先级高于本地)：
 
    ![](img/limitConsume.png)
 
 6. <span id="pauseConsumer">暂停消费？</span>
 
-   如果业务端遇到某些问题，需要暂停消息消费，在不重启服务时(客户端版本在4.6.4及以上)，可以在MQCloud里进行动态设置：
+   如果业务端遇到某些问题，需要暂停消息消费，在不重启服务时(客户端版本在4.6.5及以上)，可以在MQCloud里进行动态设置：
 
    ![](img/pauseConsume.png)
 

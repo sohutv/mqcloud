@@ -12,7 +12,7 @@ public class AuditTopicTraceVO {
     private Topic topic;
     // 审核id
     private long aid;
-    // topic di
+    // topic id
     private long tid;
     // trace启用
     private int traceEnabled;

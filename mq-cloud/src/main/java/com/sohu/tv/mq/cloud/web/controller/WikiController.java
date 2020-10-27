@@ -13,6 +13,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 
 import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper;
 import com.sohu.tv.mq.cloud.util.Result;
+import com.sohu.tv.mq.cloud.util.Status;
+import com.sohu.tv.mq.cloud.web.vo.UserInfo;
 import com.sohu.tv.mq.util.Version;
 import com.vladsch.flexmark.ext.tables.TablesExtension;
 import com.vladsch.flexmark.html.HtmlRenderer;
@@ -37,7 +39,12 @@ public class WikiController {
 
     @RequestMapping("/{path}/{filename}")
     public String subPages(@PathVariable String path, @PathVariable String filename,
-            Map<String, Object> map) throws Exception {
+            UserInfo userInfo, Map<String, Object> map) throws Exception {
+        // admin权限校验
+        if ("adminGuide".equals(path) && !userInfo.getUser().isAdmin()) {
+            Result.setResult(map, Result.getResult(Status.PERMISSION_DENIED_ERROR));
+            return "wikiTemplate";
+        }
         String html = markdown2html(path + "/" + filename, ".md");
         html = html.replace("${clientArtifactId}", mqCloudConfigHelper.getClientArtifactId());
         html = html.replace("${version}", Version.get());

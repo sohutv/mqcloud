@@ -16,6 +16,7 @@ import javax.validation.Valid;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.rocketmq.common.MQVersion;
+import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.admin.TopicOffset;
 import org.apache.rocketmq.common.admin.TopicStatsTable;
 import org.apache.rocketmq.common.message.MessageQueue;
@@ -63,6 +64,7 @@ import com.sohu.tv.mq.cloud.web.controller.param.AssociateProducerParam;
 import com.sohu.tv.mq.cloud.web.controller.param.TopicParam;
 import com.sohu.tv.mq.cloud.web.vo.IpSearchResultVO;
 import com.sohu.tv.mq.cloud.web.vo.UserInfo;
+import com.sohu.tv.mq.util.CommonUtil;
 
 /**
  * topic接口
@@ -408,6 +410,39 @@ public class TopicController extends ViewController {
     }
 
     /**
+     * 更新topic 流量预警开关
+     *
+     * @return
+     * @throws Exception
+     */
+    @ResponseBody
+    @RequestMapping(value = "/update/trafficWarn/{tid}", method = RequestMethod.POST)
+    public Result<?> updateTrafficWarn(UserInfo userInfo, @PathVariable long tid,
+                                 @RequestParam("trafficWarnEnabled") int trafficWarnEnabled) throws Exception {
+        // 校验topic是否存在
+        Result<Topic> topicResult = topicService.queryTopic(tid);
+        if (topicResult.isNotOK()) {
+            return Result.getWebResult(topicResult);
+        }
+        Topic topic = topicResult.getResult();
+        // 校验是否需要修改
+        if (topic.getTrafficWarnEnabled() == trafficWarnEnabled) {
+            return Result.getResult(Status.NO_NEED_MODIFY_ERROR);
+        }
+        // 构造审核记录
+        Audit audit = new Audit();
+        audit.setType(TypeEnum.UPDATE_TOPIC_TRAFFIC_WARN.getType());
+        audit.setUid(userInfo.getUser().getId());
+        // 保存记录
+        Result<?> result = auditService.saveAuditAndTopicTrafficWarn(audit, tid, trafficWarnEnabled);
+        if (result.isOK()) {
+            String tip = "当前状态:" + getTraceTip(topic.getTrafficWarnEnabled()) + ",修改为:" + getTraceTip(trafficWarnEnabled);
+            alertService.sendAuditMail(userInfo.getUser(), TypeEnum.UPDATE_TOPIC_TRAFFIC_WARN, tip);
+        }
+        return Result.getWebResult(result);
+    }
+
+    /**
      * 诊断链接
      * 
      * @return
@@ -540,7 +575,17 @@ public class TopicController extends ViewController {
         if (!userInfo.getUser().isAdmin()) {
             return Result.getResult(Status.PERMISSION_DENIED_ERROR).toJson();
         }
-        Result<Topic> topicResult = topicService.queryTopic(topic);
+        Result<Topic> topicResult = null;
+        if (CommonUtil.isRetryTopic(topic)) {
+            String topicConsumer = topic.substring(MixAll.RETRY_GROUP_TOPIC_PREFIX.length());
+            Result<Consumer> consumerResult = consumerService.queryConsumerByName(topicConsumer);
+            if (consumerResult.isNotOK()) {
+                return Result.getWebResult(consumerResult).toJson();
+            }
+            topicResult = topicService.queryTopic(consumerResult.getResult().getTid());
+        } else {
+            topicResult = topicService.queryTopic(topic);
+        }
         if (topicResult.isNotOK()) {
             return Result.getWebResult(topicResult).toJson();
         }

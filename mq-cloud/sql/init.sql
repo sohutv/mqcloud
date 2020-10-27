@@ -227,7 +227,7 @@ DROP TABLE IF EXISTS `common_config`;
 CREATE TABLE `common_config` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `key` varchar(64) DEFAULT NULL COMMENT '配置key',
-  `value` varchar(20000) NOT NULL COMMENT '配置值',
+  `value` varchar(20000) DEFAULT '' COMMENT '配置值',
   `comment` varchar(256) DEFAULT '' COMMENT '备注',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -453,6 +453,7 @@ CREATE TABLE `topic` (
   `create_date` date NOT NULL,
   `update_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   `serializer` int(4) NOT NULL DEFAULT '0' COMMENT '序列化器 0:Protobuf,1:String',
+  `traffic_warn_enabled` int(4) NOT NULL DEFAULT '0' COMMENT '0:不开启流量预警,1:开启流量预警',
   PRIMARY KEY (`id`),
   UNIQUE KEY `name` (`name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='topic表';
@@ -663,6 +664,9 @@ INSERT INTO `common_config`(`key`, `comment`) VALUES ('adminAccessKey', '管理�
 INSERT INTO `common_config`(`key`, `comment`) VALUES ('adminSecretKey', '管理员访问私钥(broker&nameserver使用)');
 INSERT INTO `common_config`(`key`, `value`, `comment`) VALUES ('machineRoom', '["默认"]', '机房列表');
 INSERT INTO `common_config`(`key`, `value`, `comment`) VALUES ('machineRoomColor', '["#95a5a6"]', '机房节点颜色');
+INSERT INTO `common_config`(`key`, `value`, `comment`) VALUES ('queryMessageFromSlave', 'true', '是否从slave查询消息');
+INSERT INTO `common_config`(`key`, `value`, `comment`) VALUES ('consumeFallBehindSize', '1073741824', '消费落后多少进行预警,单位byte');
+INSERT INTO `common_config`(`key`, `value`, `comment`) VALUES ('messageTypeLocation', 'classpath*:msg-type/*.class', '消息序列化方式为protostuf并且发送为自定义类型时，需要配置消息类型的class路径,例如 1:classpath*:msg-type/*.class 2：jar:file:///tmp/msgType.jar!/**/*.class 3：jar:http://127.0.0.1:8080/msgType.jar!/**/*.class');
 -- ----------------------------
 -- warn_config init
 -- ----------------------------
@@ -747,6 +751,19 @@ CREATE TABLE `consumer_config` (
   `update_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   UNIQUE KEY `consumer` (`consumer`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='客户端配置表';
+
+-- ----------------------------
+-- Table structure for `topic_traffic_stat`
+-- ----------------------------
+DROP TABLE IF EXISTS `topic_traffic_stat`;
+CREATE TABLE `topic_traffic_stat` (
+  `tid` int(11) NOT NULL COMMENT 'topic id',
+  `avg_max` bigint(20) NOT NULL COMMENT '指定天数内,每天流量最大值的平均值',
+  `max_max` bigint(20) NOT NULL COMMENT '指定天数内,去除异常点后流量的最大值',
+  `days` int(4) NOT NULL COMMENT '指定统计流量的天数',
+  `update_date` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (`tid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='topic流量统计表';
 
 -- ----------------------------
 -- `broker_config_group` record
@@ -971,3 +988,30 @@ insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynami
 insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) values(24, 'dLegerGroup', null, 'DLeger相关配置', null, 25, 0, null, 0);
 insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) values(24, 'dLegerPeers', null, 'DLeger相关配置', null, 26, 0, null, 0);
 insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) values(24, 'dLegerSelfId', null, 'DLeger相关配置', null, 27, 0, null, 0);
+
+-- ----------------------------
+-- Table structure for `topic_traffic_warn_config`
+-- ----------------------------
+DROP TABLE IF EXISTS `topic_traffic_warn_config`;
+CREATE TABLE `topic_traffic_warn_config` (
+  `avg_multiplier` float(11,3) DEFAULT '5.000' COMMENT '平均流量值的乘数阈值;流量统计时，大于该值乘以平均流量值认定为异常值而被剔除',
+  `avg_max_percentage_increase` float(11,3) DEFAULT '200.000' COMMENT '30天内每天流量最大值的平均值的百分比阈值；某时刻流量值大于最大值的平均值的增长阈值，则预警',
+  `max_max_percentage_increase` float(11,3) DEFAULT '30.000' COMMENT '30天内流量最大值的增幅百分比阈值；某时刻流量值若大于最大值的该增幅阈值，则预警',
+  `alarm_receiver` int(4) DEFAULT '0' COMMENT '告警接收人,0:生产者消费者及管理员,1:生产者和管理员,2:消费者和管理员,3:仅管理员,4:不告警',
+  `topic` varchar(64) DEFAULT '' COMMENT 'topic名称，为空代表默认配置，只有一条默认配置',
+  UNIQUE KEY `topic` (`topic`) USING BTREE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='topic流量预警阈值配置';
+
+-- ----------------------------
+-- topic_traffic_warn_config init
+-- ----------------------------
+INSERT INTO `topic_traffic_warn_config`(avg_multiplier,avg_max_percentage_increase,max_max_percentage_increase,alarm_receiver) VALUES (5, 200, 30, 0);
+
+-- ----------------------------
+-- Table structure for `audit_topic_traffic_warn`
+-- ----------------------------
+CREATE TABLE `audit_topic_traffic_warn` (
+  `aid` int(11) NOT NULL COMMENT '审核id',
+  `tid` int(11) NOT NULL COMMENT 'topic id',
+  `traffic_warn_enabled` int(11) NOT NULL COMMENT '0:不开启topic流量预警,1:开启topic流量预警'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='审核topic trafficWarn相关表';

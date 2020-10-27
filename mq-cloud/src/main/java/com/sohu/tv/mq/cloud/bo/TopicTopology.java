@@ -33,6 +33,9 @@ public class TopicTopology {
     private TopicTraffic totalTopicTraffic;
     // 总流量
     private ConsumerTraffic totalConsumerTraffic;
+    
+    // 生产者是否具有流量
+    private boolean producerHasTraffic;
 
     public long getUid() {
         return uid;
@@ -112,5 +115,13 @@ public class TopicTopology {
 
     public void setProducerFilterMap(Map<StatsProducer, List<UserProducer>> producerFilterMap) {
         this.producerFilterMap = producerFilterMap;
+    }
+
+    public boolean isProducerHasTraffic() {
+        return producerHasTraffic;
+    }
+
+    public void setProducerHasTraffic(boolean producerHasTraffic) {
+        this.producerHasTraffic = producerHasTraffic;
     }
 }

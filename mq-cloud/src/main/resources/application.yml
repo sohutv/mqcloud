@@ -59,4 +59,4 @@ mqcloud:
   producerClass:  RocketMQProducer
   consumerClass: RocketMQConsumer
   ticketKey: ticket #cas登录返回后的key，用户名密码可以忽略
-  autoAuditType: 5,6,7,8,12,13,16,17,18 #自动审核类型，值来自：com.sohu.tv.mq.cloud.bo.Audit.TypeEnum  
+  autoAuditType: 5,6,7,8,12,13,16,17,18,19 #自动审核类型，值来自：com.sohu.tv.mq.cloud.bo.Audit.TypeEnum

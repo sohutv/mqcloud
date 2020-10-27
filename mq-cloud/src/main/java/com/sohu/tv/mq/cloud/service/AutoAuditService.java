@@ -13,6 +13,7 @@ import com.sohu.tv.mq.cloud.bo.Audit.TypeEnum;
 import com.sohu.tv.mq.cloud.bo.User;
 import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper;
 import com.sohu.tv.mq.cloud.util.Result;
+import com.sohu.tv.mq.cloud.web.controller.admin.AdminMessageController;
 import com.sohu.tv.mq.cloud.web.controller.admin.AuditController;
 import com.sohu.tv.mq.cloud.web.vo.UserInfo;
 
@@ -41,6 +42,9 @@ public class AutoAuditService {
     
     @Autowired
     private ClusterService clusterService;
+    
+    @Autowired
+    private AdminMessageController adminMessageController;
 
     /**
      * 自动审核
@@ -113,7 +117,10 @@ public class AutoAuditService {
                         result = auditController.associateConsumer(userInfo, aid);
                         break;
                     case RESEND_MESSAGE:
-                        result = auditController.resendMessage(userInfo, aid);
+                        result = adminMessageController.resend(userInfo, aid);
+                        if (result.isOK()) {
+                            result = auditController.resendMessage(userInfo, aid);
+                        }
                         break;
                     case UPDATE_TOPIC_TRACE:
                         result = auditController.updateTopicTrace(userInfo, aid, clusterService.getTraceClusterId());
@@ -125,6 +132,9 @@ public class AutoAuditService {
                     case PAUSE_CONSUME:
                     case RESUME_CONSUME:
                         result = auditController.updateConsumerConfig(userInfo, aid);
+                        break;
+                    case UPDATE_TOPIC_TRAFFIC_WARN:
+                        result = auditController.updateTopicTrafficWarn(userInfo, aid);
                         break;
                 }
                 if (result != null) {

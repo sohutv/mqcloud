@@ -26,6 +26,7 @@ import org.apache.rocketmq.common.protocol.body.ConsumerRunningInfo;
 import org.apache.rocketmq.common.protocol.body.GroupList;
 import org.apache.rocketmq.common.protocol.body.ProcessQueueInfo;
 import org.apache.rocketmq.common.protocol.heartbeat.MessageModel;
+import org.apache.rocketmq.remoting.protocol.LanguageCode;
 import org.apache.rocketmq.tools.admin.MQAdminExt;
 import org.apache.rocketmq.tools.command.CommandUtil;
 import org.slf4j.Logger;
@@ -661,6 +662,47 @@ public class ConsumerService {
                 return cluster;
             }
         });
+    }
+    
+    /**
+     * 获取消费者状态（go客户端不支持getConsumeStatus，所以调用getConsumerRunningInfo）
+     * 
+     * @param mqAdmin
+     * @param topic
+     * @param consumer
+     * @param connection
+     * @return
+     */
+    public Map<MessageQueue, Long> fetchConsumerStatus(MQAdminExt mqAdmin, String topic, String consumer,
+            Connection connection) {
+        if (LanguageCode.GO == connection.getLanguage()) {
+            ConsumerRunningInfo info;
+            try {
+                info = mqAdmin.getConsumerRunningInfo(consumer, connection.getClientId(), false);
+            } catch (Exception e) {
+                logger.error("getConsumerRunningInfo topic:{},consumerGroup:{}", topic, consumer, e);
+                return null;
+            }
+            if (info == null) {
+                return null;
+            }
+            if (info.getMqTable() == null) {
+                return null;
+            }
+            Map<MessageQueue, Long> consumerOffsetMap = new HashMap<>();
+            for (MessageQueue messageQueue : info.getMqTable().keySet()) {
+                consumerOffsetMap.put(messageQueue, info.getMqTable().get(messageQueue).getCommitOffset());
+            }
+            return consumerOffsetMap;
+        }
+        try {
+            Map<String, Map<MessageQueue, Long>> consumerStatusTable = mqAdmin.getConsumeStatus(topic, consumer,
+                    connection.getClientId());
+            return consumerStatusTable.get(connection.getClientId());
+        } catch (Exception e) {
+            logger.error("getConsumeStatus topic:{},consumerGroup:{}", topic, consumer, e);
+            return null;
+        }
     }
 }
 

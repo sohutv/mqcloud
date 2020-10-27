@@ -17,14 +17,8 @@ pom.xml.versionsBackup
 .metadata
 .cache
 
+!**/msg-type/*.class
+
 # ignore idea files
 .idea
 *.iml
-
-!**/msg-type/*.class
-
-# ignore sohu module
-mq-client
-mq-cloud-common-sohu
-mq-compatible-test
-*-sohu.yml
