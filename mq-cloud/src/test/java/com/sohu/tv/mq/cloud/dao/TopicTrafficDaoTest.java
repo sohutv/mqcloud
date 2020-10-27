@@ -36,7 +36,7 @@ public class TopicTrafficDaoTest {
         List<TopicTraffic> result = topicTrafficDao.select(1, "20180626");
         Assert.assertNotNull(result);
     }
-    
+
     @Test
     public void testSelectByDateTime() {
         List<String> timeList = new ArrayList<String>();

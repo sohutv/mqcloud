@@ -78,4 +78,5 @@ public class TopicDaoTest {
         List<TopicConsumer> list = topicDao.selectTopicConsumerByTid(1809L);
         Assert.assertNotNull(list);
     }
+
 }
