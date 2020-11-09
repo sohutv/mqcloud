@@ -151,7 +151,7 @@ public class AlertService {
      * @return 成功返回true，否则返回false
      */
     private boolean sendWarnMailInternal(String email, String flag, String content) {
-        String title = "MQCloud" + flag + "预警";
+        String title = "MQCloud " + flag + "预警";
         if(mqCloudConfigHelper.isLocal()) {
             title = "local-" + title;
         }
