@@ -24,8 +24,13 @@
 			</#if>
 			<td>
 				<#if audit.typeEnum.getType() != 9>
-					<button type="button" class="btn btn-success" 
-						onclick="auditDetail(${audit.id}, ${audit.typeEnum.getType()}, '${audit.typeEnum.getName()}')">查看</button>
+					<#if audit.statusEnum.getStatus() == 0>
+						<button type="button" class="btn btn-primary" 
+							onclick="auditDetail(${audit.id}, ${audit.typeEnum.getType()}, '${audit.typeEnum.getName()}', true)">撤销</button>
+					<#else>
+						<button type="button" class="btn btn-success" 
+							onclick="auditDetail(${audit.id}, ${audit.typeEnum.getType()}, '${audit.typeEnum.getName()}', false)">查看</button>
+					</#if>
 				</#if>
 			</td>
 		</tr>

@@ -519,11 +519,33 @@ public class AuditService {
      */
     public Result<Integer> updateAudit(Audit audit) {
         Integer result = null;
-        ;
         try {
             result = auditDao.update(audit);
+            if(result == 0) {
+                return Result.getResult(Status.AUDITED);
+            }
         } catch (Exception e) {
             logger.error("updateAudit err, audit:{}", audit, e);
+            return Result.getDBErrorResult(e);
+        }
+        return Result.getResult(result);
+    }
+    
+    /**
+     * 更新
+     * 
+     * @param type
+     * @return status
+     */
+    public Result<Integer> updateAuditStatus(Audit audit) {
+        Integer result = null;
+        try {
+            result = auditDao.updateStatus(audit);
+            if(result == 0) {
+                return Result.getResult(Status.AUDITED);
+            }
+        } catch (Exception e) {
+            logger.error("updateAuditStatus err, audit:{}", audit, e);
             return Result.getDBErrorResult(e);
         }
         return Result.getResult(result);

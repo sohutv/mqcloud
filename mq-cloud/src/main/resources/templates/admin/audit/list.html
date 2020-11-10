@@ -135,5 +135,22 @@ function auditDetail(username, action, type, aid, status){
 			}
         });
 }
+
+function cancelAudit(aid){
+	disable("cancelBtn");
+	$.get('${request.contextPath}/audit/cancel',
+		{
+			aid: aid
+		},function(data){
+			if(data.status == 200){
+				toastr.success("撤消成功");  
+				reload(3000);
+		    }else{
+		    	toastr.error("撤消失败！"+data.message);  
+		    	enable("cancelBtn");
+		    }
+       	}
+	);
+}
 </script>
 

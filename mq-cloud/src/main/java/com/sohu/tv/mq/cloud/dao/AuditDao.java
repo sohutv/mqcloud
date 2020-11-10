@@ -40,10 +40,10 @@ public interface AuditDao {
      * @param audit
      */
     @Update("<script> update audit set auditor=#{audit.auditor} " +
-            "<if test=\"audit.status !=-1\">,status=#{audit.status} </if>" +
+            "<if test=\"audit.status != -1\">,status=#{audit.status} </if>" +
             "<if test=\"audit.refuseReason !=null\">,refuse_reason=#{audit.refuseReason} </if>" +
             "<if test=\"audit.auditor !=null\">,auditor=#{audit.auditor} </if>" +
-            " where id=#{audit.id} " +
+            " where id=#{audit.id} and status = 0 " +
             "</script>")
     public Integer update(@Param("audit") Audit audit);
     
@@ -54,4 +54,11 @@ public interface AuditDao {
      */
     @Select("select * from audit where uid = #{uid} order by id desc")
     public List<Audit> selectByUid(@Param("uid") long uid);
+    
+    /**
+     * 更新状态
+     * @param audit
+     */
+    @Update("update audit set status=#{audit.status} where id=#{audit.id} and status = 0")
+    public Integer updateStatus(@Param("audit") Audit audit);
 }

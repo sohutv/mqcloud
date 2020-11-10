@@ -12,11 +12,19 @@
 
 broker发生变更时（新增或下线），需要手动执行**刷新broker**功能来更新broker列表。
 
-## 三、<span id="ext">管理外部集群</span>
+## 三、<span id="upgradebroker">升级broker</span>
+
+![](img/upgradeBroker.png)
+
+在broker下线后，可以进行升级操作。升级的基本过程为：首先备份原安装目录文件，然后根据最新的安装包进行安装操作，最后将备份的数据及配置文件移动到最新的安装目录里。
+
+**注意：** 升级之前需要提前在[通用配置](./commonConfig)里**rocketmqFilePath**选项设置好待安装文件路径。
+
+## 四、<span id="ext">管理外部集群</span>
 
 mqcloud支持管理非mqcloud创建的broker，具体请参考[创建集群](https://github.com/sohutv/mqcloud/wiki/%E5%88%9B%E5%BB%BA%E9%9B%86%E7%BE%A4)。
 
-## 四、<span id="brokerList">broker列表</span>
+## 五、<span id="brokerList">broker列表</span>
 
 mqcloud支持的是一个master对应一个slave模式。管理员在列表页可以使用如下功能：
 
@@ -36,12 +44,12 @@ mqcloud支持的是一个master对应一个slave模式。管理员在列表页�
 
 5. 停写后的broker，点击**下线**按钮，可以实现关闭broker实例的功能。
 
-6. 下线后的broker，会出现**启动**按钮，点击即可直接启动该broker。
+6. 下线后的broker，会出现**启动**按钮和**升级**按钮，分别对应启动broker和升级broker两种功能。
 
    若broker下线后想从集群移除，需要执行**刷新broker**功能。
 
 7. online环境的mqcloud会对broker实例进行存活性监控，一旦探活失败，将会通过邮件通知管理员。
 
-## 五、<span id="clusterTraffic">集群流量</span>
+## 六、<span id="clusterTraffic">集群流量</span>
 
 mqcloud根据broker的流量进行聚合，得到了集群的流量情况，可以通过此图查看集群整体流量情况。

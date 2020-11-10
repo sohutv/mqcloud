@@ -73,7 +73,7 @@ public class AdminMessageController {
         // 校验状态是否合法
         Audit audit = auditResult.getResult();
         if (StatusEnum.INIT.getStatus() != audit.getStatus()) {
-            return Result.getResult(Status.PARAM_ERROR);
+            return getAuditStatusError(audit.getStatus());
         }
 
         // 查询审核记录
@@ -164,7 +164,7 @@ public class AdminMessageController {
         // 校验状态是否合法
         Audit audit = auditResult.getResult();
         if (StatusEnum.INIT.getStatus() != audit.getStatus()) {
-            return Result.getResult(Status.PARAM_ERROR);
+            return getAuditStatusError(audit.getStatus());
         }
 
         // 查询审核记录
@@ -231,5 +231,9 @@ public class AdminMessageController {
         } else {
             return Result.getResult(Status.AUDIT_MESSAGE_NOT_SEND_OK).setResult(resendMessageVO);
         }
+    }
+    
+    private Result<?> getAuditStatusError(int status){
+        return Result.getResult(Status.WEB_ERROR).setMessage("已"+StatusEnum.getNameByStatus(status));
     }
 }

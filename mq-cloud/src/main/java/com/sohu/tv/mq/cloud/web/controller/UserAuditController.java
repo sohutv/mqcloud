@@ -9,12 +9,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.sohu.tv.mq.cloud.bo.Audit;
 import com.sohu.tv.mq.cloud.bo.Audit.StatusEnum;
 import com.sohu.tv.mq.cloud.bo.Audit.TypeEnum;
 import com.sohu.tv.mq.cloud.service.AuditService;
 import com.sohu.tv.mq.cloud.util.Result;
+import com.sohu.tv.mq.cloud.util.Status;
 import com.sohu.tv.mq.cloud.web.vo.AuditVO;
 import com.sohu.tv.mq.cloud.web.vo.UserInfo;
 
@@ -68,6 +70,35 @@ public class UserAuditController extends ViewController {
         Result<?> result = auditService.detail(typeEnum, aid);
         setResult(map, result);
         return viewModule() + "/" + typeEnum.getView();
+    }
+    
+    /**
+     * 取消申请
+     * @param aid
+     * @param map
+     * @return
+     */
+    @ResponseBody
+    @RequestMapping("/cancel")
+    public Result<?> cancel(UserInfo userInfo, @RequestParam(value = "aid") long aid, Map<String, Object> map) {
+        logger.info("user:{} cancel audit:{}", userInfo, aid);
+        Result<Audit> auditResult = auditService.queryAudit(aid);
+        if (auditResult.isNotOK()) {
+            return auditResult;
+        }
+        Audit audit = auditResult.getResult();
+        // 权限校验
+        if (!userInfo.getUser().isAdmin() && userInfo.getUser().getId() != audit.getUid()) {
+            return Result.getResult(Status.PERMISSION_DENIED_ERROR);
+        }
+        // 状态校验
+        if (audit.getStatus() == StatusEnum.INIT.getStatus()) {
+            Audit updateAudit = new Audit();
+            updateAudit.setId(aid);
+            updateAudit.setStatus(StatusEnum.CANCEL.getStatus());
+            return auditService.updateAuditStatus(updateAudit);
+        }
+        return Result.getResult(Status.AUDITED);
     }
     
     @Override

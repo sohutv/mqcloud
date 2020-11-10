@@ -26,6 +26,8 @@ public class AdminDeployController extends AdminViewController {
     
     @Autowired
     private MQDeployer mqDeployer;
+
+    private static final String BACKUP_SUFFIX = ".backup";
     
     /**
      * 校验jdk
@@ -222,7 +224,41 @@ public class AdminDeployController extends AdminViewController {
         }
         return mqDeployer.shutdown(ip, port);
     }
-    
+
+    /**
+     * 备份数据
+     * @param ip
+     * @param dir
+     * @return
+     */
+    @RequestMapping(value="/backup", method=RequestMethod.POST)
+    public Result<?> backup(UserInfo ui, @RequestParam(name = "ip") String ip, @RequestParam(name="dir") String dir) {
+        logger.warn("backup, ip:{}, dir:{}, user:{}", ip, dir, ui);
+        Result<?> mvResult = mqDeployer.backup(ip, dir, dir + BACKUP_SUFFIX);
+        if(mvResult.isNotOK()) {
+            return mvResult;
+        }
+        return Result.getOKResult();
+    }
+
+    /**
+     * 恢复数据
+     * @param ip
+     * @param dir
+     * @return
+     */
+    @RequestMapping(value="/recover", method=RequestMethod.POST)
+    public Result<?> recover(UserInfo ui, @RequestParam(name="ip") String ip,
+                             @RequestParam(name="dir") String dir) {
+        logger.warn("recover, ip:{}, dir:{}, user:{}", ip, dir, ui);
+        // 恢复数据
+        Result<?> mvResult = mqDeployer.recover(ip, dir + BACKUP_SUFFIX, dir);
+        if(mvResult.isNotOK()) {
+            return mvResult;
+        }
+        return Result.getOKResult();
+    }
+
     @Override
     public String viewModule() {
         return "deploy";

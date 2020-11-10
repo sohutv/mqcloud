@@ -28,6 +28,7 @@ import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper;
 import com.sohu.tv.mq.cloud.util.Result;
 import com.sohu.tv.mq.cloud.util.SSHException;
 import com.sohu.tv.mq.cloud.util.Status;
+import com.sohu.tv.mq.cloud.util.DateUtil;
 
 /**
  * MQ部署
@@ -61,7 +62,7 @@ public class MQDeployer {
             + " >> %s/logs/startup.log 2>&1 &\" > %s/" + RUN_FILE;
     
     public static final String DATA_LOGS_DIR = "mkdir -p %s/data/config|mkdir -p %s/logs|";
-    
+
     // 部署broker时自动创建监控订阅组
     public static final String SUBSCRIPTIONGROUP_JSON = "echo '"
             + JSON.toJSONString(SubscriptionGroup.buildMonitorSubscriptionGroup()) 
@@ -500,6 +501,85 @@ public class MQDeployer {
                 return cluster;
             }
         });
+    }
+
+    /**
+     * 备份数据
+     * @param ip
+     * @param sourceDir
+     * @param destDir
+     * @return
+     */
+    public Result<?> backup(String ip, String sourceDir, String destDir) {
+        sourceDir = MQ_CLOUD_DIR + sourceDir;
+        destDir = MQ_CLOUD_DIR + destDir;
+        String comm = "mv " + sourceDir + " " + destDir;
+        SSHResult sshResult = null;
+        try {
+            sshResult = sshTemplate.execute(ip, new SSHCallback() {
+                public SSHResult call(SSHSession session) {
+                    SSHResult sshResult = session.executeCommand(comm);
+                    return sshResult;
+                }
+            });
+        } catch (SSHException e) {
+            logger.error("backup err, ip:{},sourceDir:{},destDir:{},comm:{}", ip, sourceDir, destDir, comm, e);
+            return Result.getWebErrorResult(e);
+        }
+        return wrapSSHResult(sshResult);
+    }
+
+    /**
+     * 移动备份数据到新安装目录
+     * @param ip
+     * @param backupDir
+     * @param destDir
+     * @return
+     */
+    public Result<?> recover(String ip, String backupDir, String destDir) {
+        backupDir = MQ_CLOUD_DIR + backupDir;
+        destDir = MQ_CLOUD_DIR + destDir;
+        String mvCommTemplate = "mv %s/%s %s/";
+        // 1. 移动mq.conf
+        String mvConfig = String.format(mvCommTemplate, backupDir, CONFIG_FILE, destDir);
+        // 2. 移动run.sh
+        String mvRun = String.format(mvCommTemplate, backupDir, RUN_FILE, destDir);
+        // 3. 移动data目录
+        String mvData = String.format(mvCommTemplate, backupDir, "data", destDir);
+        // 4. 创建logs目录
+        String createLogsDir = String.format("mkdir -p %s/logs", destDir);
+        // 顺序执行,各个命令之间没有依赖
+        String comm = new StringBuilder()
+                .append(mvConfig).append(" ; ")
+                .append(mvRun).append(" ; ")
+                .append(mvData).append(" ; ")
+                .append(createLogsDir).toString();
+        SSHResult sshResult = null;
+        try {
+            sshResult = sshTemplate.execute(ip, new SSHCallback() {
+                public SSHResult call(SSHSession session) {
+                    SSHResult sshResult = session.executeCommand(comm);
+                    return sshResult;
+                }
+            });
+        } catch (SSHException e) {
+            logger.error("backup err, ip:{},backupDir:{},destDir:{},comm:{}", ip, backupDir, destDir, comm, e);
+            return Result.getWebErrorResult(e);
+        }
+        // 5. 备份目录重命名
+        String renameBackupDirComm = "mv " + backupDir + " " + backupDir + DateUtil.getFormatNow(DateUtil.YMDHMS);
+        try {
+            sshResult = sshTemplate.execute(ip, new SSHCallback() {
+                public SSHResult call(SSHSession session) {
+                    SSHResult sshResult = session.executeCommand(renameBackupDirComm);
+                    return sshResult;
+                }
+            });
+        } catch (SSHException e) {
+            logger.error("renameBackupDir err, ip:{},comm:{}", ip, renameBackupDirComm, e);
+            return Result.getWebErrorResult(e);
+        }
+        return wrapSSHResult(sshResult);
     }
     
     /**

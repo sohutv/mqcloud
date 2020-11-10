@@ -244,6 +244,7 @@
 							</#if>
 							<#else>
 								<button title="启动broker" data-toggle="tooltip" type="button" id="${key}<#if bkey != "0">-s</#if>Btn" class="btn btn-sm btn-success" onclick="startupBroker('${brokerGroup[key][bkey].brokerAddr}', '${key}<#if bkey != "0">-s</#if>')">启动</button>
+								<button title="升级broker" type="button" class="btn btn-sm btn-success"  onclick="upgradeBroker('${brokerGroup[key][bkey].brokerAddr}', '${key}<#if bkey != "0">-s</#if>')" data-target="#upgradeBrokerModal" data-toggle="modal">升级</button>
 							</#if>
 							
 							<!-- 下线 -->
@@ -440,6 +441,100 @@
 	</div>
 </div>
 
+<!-- 升级部署broker -->
+<div id="upgradeBrokerModal" class="modal fade" tabindex="-1">
+	<div class="modal-dialog" style="width:1000px;">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+				<h4 class="modal-title">升级Broker</h4><b style="font-size:8px;"><i>请提前在通用配置里rocketmqFilePath配置项, 配置好待升级的安装包地址。如需修改broker配置,请在升级完毕后进行修改。</i></b>
+			</div>
+			<div class="modal-body">
+				<div class="row bs-wizard" style="border-bottom:0;">
+					<div id="upgradeBrokerBackup" class="col-xs-1 bs-wizard-step disabled">
+						<div class="text-center bs-wizard-stepnum">备份数据</div>
+						<div class="progress"><div class="progress-bar"></div></div>
+						<a href="#" class="bs-wizard-dot"></a>
+						<div class="bs-wizard-info text-center">备份原安装目录</div>
+					</div>
+
+					<div id="upgradeBrokerScp" class="col-xs-2 bs-wizard-step disabled">
+						<div class="text-center bs-wizard-stepnum">下载安装包</div>
+						<div class="progress"><div class="progress-bar"></div></div>
+						<a href="#" class="bs-wizard-dot"></a>
+						<div class="bs-wizard-info text-center">从仓库下载最新安装包到服务器/tmp下</div>
+					</div>
+
+					<div id="upgradeBrokerUnzip" class="col-xs-2 bs-wizard-step disabled">
+						<div class="text-center bs-wizard-stepnum">解压</div>
+						<div class="progress"><div class="progress-bar"></div></div>
+						<a href="#" class="bs-wizard-dot"></a>
+						<div class="bs-wizard-info text-center">解压到安装目录下</div>
+					</div>
+
+					<div id="upgradeBrokerRecover" class="col-xs-2 bs-wizard-step disabled">
+						<div class="text-center bs-wizard-stepnum">恢复数据</div>
+						<div class="progress"><div class="progress-bar"></div></div>
+						<a href="#" class="bs-wizard-dot"></a>
+						<div class="bs-wizard-info text-center">移动备份数据和配置文件至新的安装目录</div>
+					</div>
+
+					<div id="upgradeBrokerStartup" class="col-xs-3 bs-wizard-step disabled">
+						<div class="text-center bs-wizard-stepnum">启动</div>
+						<div class="progress"><div class="progress-bar"></div></div>
+						<a href="#" class="bs-wizard-dot"></a>
+						<div class="bs-wizard-info text-center">启动broker</div>
+					</div>
+					<div id="upgradeBrokerProgram" class="col-xs-2 bs-wizard-step disabled">
+						<div class="text-center bs-wizard-stepnum">完成</div>
+						<div class="progress"><div class="progress-bar"></div></div>
+						<a href="#" class="bs-wizard-dot"></a>
+						<div class="bs-wizard-info text-center">获取启动后的进程信息</div>
+					</div>
+				</div>
+				<form class="form-horizontal form-bordered form-row-stripped" id="upgradeBroker">
+					<div class="form-body">
+						<div class="form-group">
+							<label class="control-label col-md-3"> 机器: </label>
+							<div class="col-md-8">
+								<input type="text" id="upgradeBrokerAddr" name="ipAddr" class="form-control" readonly/>
+							</div>
+						</div>
+						<div class="form-group">
+							<label class="control-label col-md-3"> brokerName: </label>
+							<div class="col-md-8">
+								<input type="text" id="upgradeBrokerName" name="dir" class="form-control" readonly/>
+							</div>
+						</div>
+						<div class="form-group">
+							<label class="control-label col-md-3"> 所属集群: </label>
+							<div class="col-md-8">
+								<input type="text" value="${response.result.selectedMQCluster.name}" class="form-control" readonly/>
+							</div>
+						</div>
+						<div class="form-group">
+							<label class="control-label col-md-3"> 进程: </label>
+							<div class="col-md-8">
+								<textarea id="upgradeBrokerProgramInfo" type="text" rows="1" class="form-control" readonly></textarea>
+							</div>
+						</div>
+						<div class="form-group">
+							<label class="control-label col-md-3"> 提示: </label>
+							<div class="col-md-8">
+								<div class="form-control-static">如果升级过程遇到错误警告，请登录服务器解决后再<b>继续</b>执行</div>
+							</div>
+						</div>
+					</div>
+					<input type="hidden" id="upgradeBrokerIp" name="ip" value=""/>
+					<input type="hidden" id="upgradeBrokerListenPort" name="listenPort" value=""/>
+				</form>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-primary" id="upgradeBtn" data-toggle="modal" onclick="upgrade('upgradeBroker')"><span id="upgradeBrokerKey">一键升级<span></button>
+			</div>
+		</div>
+	</div>
+</div>
 
 <!-- broker统计 -->
 <div id="brokerTrafficModal" class="modal fade" tabindex="-1" data-width="400">
@@ -587,9 +682,10 @@
 
 <script>
 var installId = "";
+var upgradeId = "";
 var method = "";
 /**
- * 安装NameSrv
+ * 安装broker
  */
 function install(id){
 	installId = id;
@@ -626,6 +722,148 @@ function install(id){
 	}
 	disableStep("installBtn");
 }
+
+/**
+ * 升级broker
+ */
+function upgrade(id) {
+	upgradeId = id;
+	if($('#'+id+'Key').html() == "继续"){
+		setTimeout(method+'()', 500);
+	} else {
+		upgradeBackup();
+	}
+	disableStep("upgradeBtn");
+}
+
+/**
+ * 升级broker,第一步: 备份数据
+ */
+function upgradeBackup(){
+	var wizardId = upgradeId+"Backup";
+	active(wizardId);
+	$.post('${request.contextPath}/admin/deploy/backup',
+			$("#"+upgradeId).serialize(),
+			function(data){
+				if(data.status == 200){
+					complete(wizardId);
+					// 下载安装包
+					setTimeout('upgradeScp()', 1000);
+				} else {
+					toastr.error("备份数据出错！"+data.message);
+					warn(wizardId);
+					upgradeGoOn("upgradeBackup");
+				}
+			}, 'json');
+}
+
+/**
+ * 升级broker,第二步: 下载安装包
+ */
+function upgradeScp(){
+	var wizardId = upgradeId+"Scp";
+	active(wizardId);
+	$.post('${request.contextPath}/admin/deploy/scp',
+			$("#"+upgradeId).serialize(),
+			function(data){
+				if(data.status == 200){
+					complete(wizardId);
+					// 解压文件
+					setTimeout('upgradeUnzip()', 1000);
+				} else {
+					toastr.error("下载失败！"+data.message);
+					warn(wizardId);
+					upgradeGoOn("upgradeScp");
+				}
+			}, 'json');
+}
+/**
+ * 升级broker,第三步: 解压最新安装包到安装目录下
+ */
+function upgradeUnzip(){
+	var wizardId = upgradeId+"Unzip";
+	active(wizardId);
+	$.post('${request.contextPath}/admin/deploy/unzip',
+			$("#"+upgradeId).serialize(),
+			function(data){
+				if(data.status == 200){
+					complete(wizardId);
+					// 恢复数据
+					setTimeout('upgradeRecover()', 1000);
+				} else {
+					toastr.error("解压失败！"+data.message);
+					warn(wizardId);
+					upgradeGoOn("upgradeUnzip");
+				}
+			}, 'json');
+}
+
+/**
+ * 升级broker,第四步: 恢复数据
+ */
+function upgradeRecover(){
+	var wizardId = upgradeId+"Recover";
+	active(wizardId);
+	$.post('${request.contextPath}/admin/deploy/recover',
+			$("#"+upgradeId).serialize(),
+			function(data){
+				if(data.status == 200){
+					complete(wizardId);
+					if(confirm("升级成功，是否直接启动？")){
+						// 启动broker
+						upgradeStartup();
+					} else {
+						upgradeGoOn("upgradeStartup");
+					}
+				} else {
+					toastr.error("恢复数据出错！"+data.message);
+					warn(wizardId);
+					upgradeGoOn("upgradeRecover");
+				}
+			}, 'json');
+}
+
+/**
+ * 升级broker,第五步: 启动实例
+ */
+function upgradeStartup(){
+	var wizardId = upgradeId+"Startup";
+	active(wizardId);
+	$.post('${request.contextPath}/admin/deploy/startup',
+			$("#"+upgradeId).serialize(),
+			function(data){
+				if(data.status == 200){
+					complete(wizardId);
+					// 检测进程
+					setTimeout('upgradeCheckProgram()', 10000);
+				} else {
+					toastr.error("启动失败！"+data.message);
+					warn(wizardId);
+					upgradeGoOn("upgradeStartup");
+				}
+			}, 'json');
+}
+/**
+ * 升级broker,第六步: 检测启动的进程
+ */
+function upgradeCheckProgram(){
+	var wizardId = upgradeId+"Program";
+	active(wizardId);
+	$.post('${request.contextPath}/admin/deploy/check/program',
+			$("#"+upgradeId).serialize(),
+			function(data){
+				if(data.status == 200){
+					$("#"+upgradeId+"ProgramInfo").attr("rows", 5).html(data.result);
+					complete(wizardId);
+					alert("恭喜，升级完成啦！请及时刷新页面");
+				} else {
+					toastr.error("检查启动进程失败！"+data.message);
+					warn(wizardId);
+					upgradeGoOn("upgradeCheckProgram");
+				}
+			}, 'json');
+}
+
 /**
  * 继续
  */
@@ -634,6 +872,16 @@ function goOn(m){
 	active("installBtn");
 	method = m;
 }
+
+/**
+ * broker升级,继续
+ */
+function upgradeGoOn(m){
+	$("#"+upgradeId+"Key").html("继续");
+	active("upgradeBtn");
+	method = m;
+}
+
 /**
  * 校验jdk
  */
@@ -685,6 +933,7 @@ function checkPort(){
 		    }
        }, 'json');
 }
+
 /**
  * 目录校验
  */
@@ -894,6 +1143,14 @@ function addBroker(brokerName){
 	);
 	initServerList("brokerServerSelect");
 }
+
+function upgradeBroker(brokerAddr, brokerName) {
+    $("#upgradeBrokerAddr").val(brokerAddr).attr("readonly","readonly");
+	$("#upgradeBrokerName").val(brokerName).attr("readonly","readonly");
+	$("#upgradeBrokerIp").val(brokerAddr.split(":")[0]);
+	$("#upgradeBrokerListenPort").val(brokerAddr.split(":")[1]);
+}
+
 /**
  * 初始化server下拉列表
  */

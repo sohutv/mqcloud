@@ -250,7 +250,7 @@ public class AuditController extends AdminViewController {
         // 校验状态是否合法
         Audit audit = auditResult.getResult();
         if (StatusEnum.INIT.getStatus() != audit.getStatus()) {
-            return Result.getResult(Status.PARAM_ERROR);
+            return getAuditStatusError(audit.getStatus());
         }
 
         // 拒绝
@@ -545,7 +545,7 @@ public class AuditController extends AdminViewController {
         // 校验是否合法
         Audit audit = auditResult.getResult();
         if (StatusEnum.INIT.getStatus() != audit.getStatus()) {
-            return Result.getResult(Status.PARAM_ERROR);
+            return getAuditStatusError(audit.getStatus());
         }
 
         // 设置管理员
@@ -591,7 +591,7 @@ public class AuditController extends AdminViewController {
             return Result.getResult(Status.PARAM_ERROR);
         }
         if (StatusEnum.INIT.getStatus() != audit.getStatus()) {
-            return Result.getResult(Status.PARAM_ERROR);
+            return getAuditStatusError(audit.getStatus());
         }
 
         // 获取AuditTopic
@@ -645,7 +645,7 @@ public class AuditController extends AdminViewController {
         // 校验是否合法
         Audit audit = auditResult.getResult();
         if (StatusEnum.INIT.getStatus() != audit.getStatus()) {
-            return Result.getResult(Status.PARAM_ERROR);
+            return getAuditStatusError(audit.getStatus());
         }
 
         // 获取AuditConsumer
@@ -718,7 +718,7 @@ public class AuditController extends AdminViewController {
         // 校验状态是否合法
         Audit audit = auditResult.getResult();
         if (StatusEnum.INIT.getStatus() != audit.getStatus()) {
-            return Result.getResult(Status.PARAM_ERROR);
+            return getAuditStatusError(audit.getStatus());
         }
 
         // 获取AuditAssociateProducer
@@ -807,7 +807,7 @@ public class AuditController extends AdminViewController {
         // 校验状态是否合法
         Audit audit = auditResult.getResult();
         if (StatusEnum.INIT.getStatus() != audit.getStatus()) {
-            return Result.getResult(Status.PARAM_ERROR);
+            return getAuditStatusError(audit.getStatus());
         }
 
         // 获取AuditAssociateConsumer
@@ -857,7 +857,7 @@ public class AuditController extends AdminViewController {
         // 校验状态是否合法
         Audit audit = auditResult.getResult();
         if (StatusEnum.INIT.getStatus() != audit.getStatus()) {
-            return Result.getResult(Status.PARAM_ERROR);
+            return getAuditStatusError(audit.getStatus());
         }
 
         // 查询 topic删除审核记录
@@ -905,7 +905,7 @@ public class AuditController extends AdminViewController {
         // 校验状态是否合法
         Audit audit = auditResult.getResult();
         if (StatusEnum.INIT.getStatus() != audit.getStatus()) {
-            return Result.getResult(Status.PARAM_ERROR);
+            return getAuditStatusError(audit.getStatus());
         }
 
         // 查询 topic更新审核记录
@@ -955,7 +955,7 @@ public class AuditController extends AdminViewController {
         // 校验状态是否合法
         Audit audit = auditResult.getResult();
         if (StatusEnum.INIT.getStatus() != audit.getStatus()) {
-            return Result.getResult(Status.PARAM_ERROR);
+            return getAuditStatusError(audit.getStatus());
         }
 
         // 查询consumer删除审核记录
@@ -1009,7 +1009,7 @@ public class AuditController extends AdminViewController {
         // 校验状态是否合法
         Audit audit = auditResult.getResult();
         if (StatusEnum.INIT.getStatus() != audit.getStatus()) {
-            return Result.getResult(Status.PARAM_ERROR);
+            return getAuditStatusError(audit.getStatus());
         }
 
         // 查询userProducer删除审核记录
@@ -1063,7 +1063,7 @@ public class AuditController extends AdminViewController {
         // 校验状态是否合法
         Audit audit = auditResult.getResult();
         if (StatusEnum.INIT.getStatus() != audit.getStatus()) {
-            return Result.getResult(Status.PARAM_ERROR);
+            return getAuditStatusError(audit.getStatus());
         }
 
         // 查询userConsumer删除审核记录
@@ -1110,7 +1110,7 @@ public class AuditController extends AdminViewController {
         // 校验状态是否合法
         Audit audit = auditResult.getResult();
         if (StatusEnum.INIT.getStatus() != audit.getStatus()) {
-            return Result.getResult(Status.PARAM_ERROR);
+            return getAuditStatusError(audit.getStatus());
         }
 
         // 查询审核记录
@@ -1214,7 +1214,7 @@ public class AuditController extends AdminViewController {
         // 校验状态是否合法
         Audit audit = auditResult.getResult();
         if (StatusEnum.INIT.getStatus() != audit.getStatus()) {
-            return Result.getResult(Status.PARAM_ERROR);
+            return getAuditStatusError(audit.getStatus());
         }
 
         // 查询审核记录
@@ -1301,7 +1301,7 @@ public class AuditController extends AdminViewController {
         // 校验状态是否合法
         Audit audit = auditResult.getResult();
         if (StatusEnum.INIT.getStatus() != audit.getStatus()) {
-            return Result.getResult(Status.PARAM_ERROR);
+            return getAuditStatusError(audit.getStatus());
         }
 
         // 查询 topic更新审核记录
@@ -1354,7 +1354,7 @@ public class AuditController extends AdminViewController {
         // 校验状态是否合法
         Audit audit = auditResult.getResult();
         if (StatusEnum.INIT.getStatus() != audit.getStatus()) {
-            return Result.getResult(Status.PARAM_ERROR);
+            return getAuditStatusError(audit.getStatus());
         }
         // 查询 topic更新审核记录
         Result<AuditTopicTrafficWarn> result = auditTopicTrafficWarnService.queryAuditTopicTrafficWarn(aid);
@@ -1407,7 +1407,7 @@ public class AuditController extends AdminViewController {
         // 校验状态是否合法
         Audit audit = auditResult.getResult();
         if (StatusEnum.INIT.getStatus() != audit.getStatus()) {
-            return Result.getResult(Status.PARAM_ERROR);
+            return getAuditStatusError(audit.getStatus());
         }
 
         Result<UserTopicInfoVO> userTopicInfoVOResult = (Result<UserTopicInfoVO>) auditService
@@ -1505,7 +1505,7 @@ public class AuditController extends AdminViewController {
         // 校验状态是否合法
         Audit audit = auditResult.getResult();
         if (StatusEnum.INIT.getStatus() != audit.getStatus()) {
-            return Result.getResult(Status.PARAM_ERROR);
+            return getAuditStatusError(audit.getStatus());
         }
 
         // 查询审核记录
@@ -1536,7 +1536,11 @@ public class AuditController extends AdminViewController {
         }
         return Result.getResult(Status.DB_UPDATE_ERR_UPDATE_CONSUMER_CONFIG_OK);
     }
-
+    
+    private Result<?> getAuditStatusError(int status){
+        return Result.getResult(Status.WEB_ERROR).setMessage("已"+StatusEnum.getNameByStatus(status));
+    }
+    
     @Override
     public String viewModule() {
         return "audit";

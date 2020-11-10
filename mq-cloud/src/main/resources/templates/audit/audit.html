@@ -46,6 +46,10 @@
 			</div>
 			<form class="form-horizontal form-bordered form-row-stripped" id="auditDetailForm">
 			</form>
+			<div class="modal-footer" id="cancelDiv" style="display:none">
+				<button type="button" data-dismiss="modal" class="btn" >取消</button>
+				<button type="button" id="cancelBtn" class="btn btn-primary" onclick="cancelAudit()">撤销</button>
+			</div>
 		</div>
 	</div>
 </div>
@@ -58,7 +62,7 @@
 	       	}
 		);
 	}
-	function auditDetail(aid, type, action){
+	function auditDetail(aid, type, action, cancel){
 		$("#auditDetailAction").html(action);
 		$("#auditDetailForm").html("");
 		$.get('${request.contextPath}/audit/detail',
@@ -68,6 +72,28 @@
 			},function(data){
 				$("#auditDetailForm").html(data);
 				$("#auditDetailModal").modal('show');
+				if(cancel){
+					$("#cancelDiv").show();
+					$("#cancelBtn").attr("data", aid);
+				} else {
+					$("#cancelDiv").hide();
+				}
+	       	}
+		);
+	}
+	function cancelAudit(){
+		disable("cancelBtn");
+		$.get('${request.contextPath}/audit/cancel',
+			{
+				aid: $("#cancelBtn").attr("data")
+			},function(data){
+				if(data.status == 200){
+					toastr.success("撤消成功");  
+					modalHide(3000);
+			    }else{
+			    	toastr.error("撤消失败！"+data.message);  
+			    	enable("cancelBtn");
+			    }
 	       	}
 		);
 	}

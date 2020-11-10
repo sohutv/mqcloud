@@ -235,7 +235,7 @@ public abstract class AbstractConfig {
             traceRocketMQProducer.getProducer().setSendMsgTimeout(5000);
             traceRocketMQProducer.getProducer().setMaxMessageSize(traceDispatcher.getMaxMsgSize() - 10 * 1000);
             traceRocketMQProducer.setMqCloudDomain(mqCloudDomain);
-            traceRocketMQProducer.setInstanceName(String.valueOf(role()));
+            traceRocketMQProducer.setInstanceName(getGroup());
             // 启动trace producer
             traceRocketMQProducer.start();
             // 赋给TraceDispatcher

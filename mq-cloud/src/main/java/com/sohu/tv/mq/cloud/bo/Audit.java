@@ -105,7 +105,9 @@ public class Audit {
 
         INIT(0, "待审"), 
         AGREE(1, "同意"), 
-        REJECT(2, "驳回");
+        REJECT(2, "驳回"),
+        CANCEL(3, "撤销"),
+        ;
 
         private Integer status;
         private String name;

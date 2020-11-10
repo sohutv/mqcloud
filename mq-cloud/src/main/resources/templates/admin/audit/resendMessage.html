@@ -72,6 +72,7 @@
 </div>
 <div class="modal-footer">
 	<button type="button" data-dismiss="modal" class="btn" >取消</button>
+	<button type="button" id="cancelBtn" class="btn btn-warning" onclick="cancelAudit(${response.result.aid?c})">撤销</button>
 	<button type="button" class="btn btn-warning" id="disAgreeResendMessageBtn" onclick="disAgreeResendMessage()">拒绝</button>
 	<button type="button" class="btn btn-primary" data-toggle='tooltip' title="发送全部的消息(不包括已经已经发送成功的)" id="resendMessageBtn" onclick="resendMessage()">全部发送</button>
 	<button type="button" class="btn btn-primary" data-toggle='tooltip' title="全部发送成功才可以同意" id="agreeResendMessageBtn" onclick="agreeResendMessage()">同意</button>
