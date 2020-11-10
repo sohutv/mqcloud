@@ -88,7 +88,8 @@
 				aid: $("#cancelBtn").attr("data")
 			},function(data){
 				if(data.status == 200){
-					toastr.success("撤消成功");  
+					toastr.success("撤消成功");
+					enable("cancelBtn");
 					modalHide(3000);
 			    }else{
 			    	toastr.error("撤消失败！"+data.message);  
