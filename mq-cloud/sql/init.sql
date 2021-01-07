@@ -55,6 +55,7 @@ CREATE TABLE `audit_consumer` (
   `consumer` varchar(64) NOT NULL COMMENT '消费者名字',
   `consume_way` int(4) NOT NULL DEFAULT '0' COMMENT '0:集群消费,1:广播消费',
   `trace_enabled` int(4) NOT NULL DEFAULT '0' COMMENT '0:不开启trace,1:开启trace',
+  `permits_per_second` int(11) DEFAULT NULL COMMENT 'qps',
   UNIQUE KEY `tid` (`tid`,`consumer`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='审核消费者相关表';
 
