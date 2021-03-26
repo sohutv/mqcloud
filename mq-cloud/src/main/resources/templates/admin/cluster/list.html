@@ -1104,7 +1104,7 @@ function addBroker(brokerName){
 		    		});
 	    		}else{
 					$("#brokerName").bind('input propertychange', function(){
-						$("#dir").val("/opt/mqcloud/"+$("#brokerName").val());
+						$("#dir").val($("#brokerName").val());
 					});
 				}
 	    		if(!$("#rmqAddressServerDomain").val()){
