@@ -1102,7 +1102,11 @@ function addBroker(brokerName){
 		    			$("#storePathRootDir").val("/opt/mqcloud/"+$("#brokerName").val()+"/data");
 		    			$("#storePathCommitLog").val("/opt/mqcloud/"+$("#brokerName").val()+"/data/commitlog");
 		    		});
-	    		}
+	    		}else{
+					$("#brokerName").bind('input propertychange', function(){
+						$("#dir").val($("#brokerName").val());
+					});
+				}
 	    		if(!$("#rmqAddressServerDomain").val()){
 		    		$("#rmqAddressServerDomain").val('${mqcloudDomain}').attr("readonly","readonly");
 	    		}
