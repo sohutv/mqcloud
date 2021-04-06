@@ -256,6 +256,7 @@ public class AdminServerController extends AdminViewController {
     @RequestMapping("/preview")
     public String preview(@RequestParam("ip") String ip, Map<String, Object> map) {
         // 获取server信息
+        ip = ip.split(":")[0];
         ServerInfo serverInfo = serverDataService.queryServerInfo(ip);
         if (serverInfo == null) {
             return adminViewModule() + "/preview";

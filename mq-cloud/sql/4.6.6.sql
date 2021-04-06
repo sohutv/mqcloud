@@ -1,0 +1,1 @@
+INSERT INTO `common_config`(`key`, `value`, `comment`) VALUES ('slaveFallBehindSize', '10485760', 'slave的commitlog落后master多少进行预警,单位byte');

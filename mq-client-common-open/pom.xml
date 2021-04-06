@@ -6,11 +6,15 @@
 	<parent>
 		<groupId>com.sohu.tv</groupId>
 		<artifactId>mq</artifactId>
-		<version>4.6.5</version>
+		<version>4.7.1</version>
 	</parent>
 
 	<artifactId>mq-client-common-open</artifactId>
 	<packaging>jar</packaging>
+	
+	<properties>
+		<micrometer.version>1.3.11</micrometer.version>
+	</properties>
 
 	<dependencies>
 		<dependency>
@@ -32,6 +36,12 @@
 		<dependency>
 			<groupId>com.netflix.hystrix</groupId>
 			<artifactId>hystrix-core</artifactId>
+			<optional>true</optional>
+		</dependency>
+		<dependency>
+			<groupId>io.micrometer</groupId>
+			<artifactId>micrometer-core</artifactId>
+			<version>${micrometer.version}</version>
 			<optional>true</optional>
 		</dependency>
 	</dependencies>

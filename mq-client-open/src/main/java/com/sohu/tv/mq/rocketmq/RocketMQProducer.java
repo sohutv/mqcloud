@@ -17,6 +17,7 @@ import org.apache.rocketmq.common.message.Message;
 import com.sohu.index.tv.mq.common.Result;
 import com.sohu.tv.mq.common.AbstractConfig;
 import com.sohu.tv.mq.common.SohuSendMessageHook;
+import com.sohu.tv.mq.metric.MQMetricsExporter;
 import com.sohu.tv.mq.stats.StatsHelper;
 
 /**
@@ -70,6 +71,7 @@ public class RocketMQProducer extends AbstractConfig {
                 SohuSendMessageHook hook = new SohuSendMessageHook(producer);
                 statsHelper = hook.getStatsHelper();
                 statsHelper.setMqCloudDomain(getMqCloudDomain());
+                MQMetricsExporter.getInstance().add(statsHelper);
                 producer.getDefaultMQProducerImpl().registerSendMessageHook(hook);
             }
             producer.start();
@@ -616,7 +618,9 @@ public class RocketMQProducer extends AbstractConfig {
 
     public void shutdown() {
         producer.shutdown();
-        statsHelper.shutdown();
+        if (statsHelper != null) {
+            statsHelper.shutdown();
+        }
     }
 
     public DefaultMQProducer getProducer() {

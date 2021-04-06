@@ -27,6 +27,8 @@ public class ClientStats {
     private Map<String, InvokeStatsResult> detailInvoke;
     // 统计时间 需要*60000，才是毫秒
     private int statsTime;
+    // 总耗时
+    private long totalTime;
     
     // 异常集合
     private Map<String, Object> exceptionMap;
@@ -101,6 +103,14 @@ public class ClientStats {
 
     public void setExceptionMap(Map<String, Object> exceptionMap) {
         this.exceptionMap = exceptionMap;
+    }
+
+    public long getTotalTime() {
+        return totalTime;
+    }
+
+    public void setTotalTime(long totalTime) {
+        this.totalTime = totalTime;
     }
 
     @Override

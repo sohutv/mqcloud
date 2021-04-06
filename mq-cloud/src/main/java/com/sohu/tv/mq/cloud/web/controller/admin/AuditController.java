@@ -8,6 +8,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import javax.validation.Valid;
+
 import org.apache.rocketmq.common.protocol.body.Connection;
 import org.apache.rocketmq.common.protocol.body.ProducerConnection;
 import org.springframework.beans.BeanUtils;
@@ -70,6 +72,7 @@ import com.sohu.tv.mq.cloud.service.AuditTopicTrafficWarnService;
 import com.sohu.tv.mq.cloud.util.DateUtil;
 import com.sohu.tv.mq.cloud.util.Result;
 import com.sohu.tv.mq.cloud.util.Status;
+import com.sohu.tv.mq.cloud.web.controller.param.PaginationParam;
 import com.sohu.tv.mq.cloud.web.vo.AuditVO;
 import com.sohu.tv.mq.cloud.web.vo.ConnectionVO;
 import com.sohu.tv.mq.cloud.web.vo.TopicInfoVO;
@@ -169,19 +172,28 @@ public class AuditController extends AdminViewController {
      */
     @RequestMapping("/list")
     public String list(@RequestParam(value = "type", defaultValue = "-1") int type,
-            @RequestParam(value = "status", defaultValue = "0") int status, Map<String, Object> map) {
+            @RequestParam(value = "status", defaultValue = "0") int status, @Valid PaginationParam paginationParam, 
+            Map<String, Object> map) {
         // 设置返回视图及常量
         setView(map, "list");
         setResult(map, "status", Audit.StatusEnum.values());
         setResult(map, "type", Audit.TypeEnum.values());
+        Result.setResult(map, paginationParam);
 
         // 构造查询参数
         Audit audit = new Audit();
         audit.setType(type);
         audit.setStatus(status);
 
+        // 获取审核列表数量
+        Result<Integer> countResult = auditService.queryCount(audit);
+        if (!countResult.isOK()) {
+            return view();
+        }
+        paginationParam.caculatePagination(countResult.getResult());
         // 查询审核列表
-        Result<List<Audit>> auditListResult = auditService.queryAuditList(audit);
+        Result<List<Audit>> auditListResult = auditService.queryAuditListByPage(audit, paginationParam.getBegin(),
+                paginationParam.getNumOfPage());
         if (auditListResult.isEmpty()) {
             return view();
         }

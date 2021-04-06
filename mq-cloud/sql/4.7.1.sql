@@ -1,0 +1,1 @@
+alter table `broker_traffic` modify column `ip` varchar(255) NOT NULL COMMENT 'addr';

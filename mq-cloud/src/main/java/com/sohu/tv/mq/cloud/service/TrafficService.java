@@ -95,21 +95,8 @@ public abstract class TrafficService<T extends Traffic> {
             }
             
             // 处理流量
-            processBrokerTraffic(parseIp(masterAddr), traffic);
+            processBrokerTraffic(masterAddr, traffic);
         }
-    }
-    
-    /**
-     * 解析ip
-     * @param masterAddr
-     * @return
-     */
-    private String parseIp(String masterAddr) {
-        int idx = masterAddr.indexOf(":");
-        if (idx != -1) {
-            masterAddr = masterAddr.substring(0, idx);
-        }
-        return masterAddr;
     }
     
     /**

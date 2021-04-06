@@ -13,7 +13,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.pool2.impl.GenericKeyedObjectPool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -41,6 +41,9 @@ public class SSHTemplate {
 
     @Autowired
     private MQCloudConfigHelper mqCloudConfigHelper;
+    
+    @Autowired
+    private GenericKeyedObjectPool<String, Connection> sshPool;
 
     private static ThreadPoolExecutor taskPool = new ThreadPoolExecutor(
             200, 200, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>(1000),
@@ -78,69 +81,17 @@ public class SSHTemplate {
     public SSHResult execute(String ip, SSHCallback callback) throws SSHException {
         Connection conn = null;
         try {
-            conn = getConnection(ip);
+            conn = sshPool.borrowObject(ip);
             return callback.call(new SSHSession(conn, ip));
         } catch (Exception e) {
             throw new SSHException("SSH err: " + e.getMessage(), e);
         } finally {
-            close(conn);
+            close(ip, conn);
         }
     }
 
-    /**
-     * 获取连接并校验
-     * 
-     * @param ip
-     * @return Connection
-     * @throws Exception
-     */
-    private Connection getConnection(String ip) throws Exception {
-        Connection conn = buildConnection(ip);
-        // 如果private key不为空，优先使用private key验证
-        if (StringUtils.isNotBlank(mqCloudConfigHelper.getPrivateKey())) {
-            try {
-                if (conn.authenticateWithPublicKey(mqCloudConfigHelper.getServerUser(),
-                        mqCloudConfigHelper.getPrivateKey().toCharArray(), mqCloudConfigHelper.getServerPassword())) {
-                    return conn;
-                }
-            } catch (Exception e) {
-                logger.error("auth with publickKey err, try to user/passwd auth, serverUser:{}, privateKey:{}",
-                        mqCloudConfigHelper.getServerUser(), mqCloudConfigHelper.getPrivateKey(), e);
-            }
-        }
-        conn = buildConnection(ip);
-        // 其次使用用户名密码验证
-        if (conn.authenticateWithPassword(mqCloudConfigHelper.getServerUser(),
-                mqCloudConfigHelper.getServerPassword())) {
-            return conn;
-        }
-        throw new Exception("SSH authentication failed with [userName:" +
-                mqCloudConfigHelper.getServerUser() + ", password:" + mqCloudConfigHelper.getServerPassword()
-                + "]");
-    }
-    
-    /**
-     * 构建链接
-     * @param ip
-     * @return
-     * @throws IOException
-     */
-    private Connection buildConnection(String ip) throws IOException {
-        Connection conn = new Connection(ip, mqCloudConfigHelper.getServerPort());
-        conn.connect(null, mqCloudConfigHelper.getServerConnectTimeout(),
-                    mqCloudConfigHelper.getServerConnectTimeout());
-        return conn;
-    }
-
-    /**
-     * 获取调用命令后的返回结果
-     * 
-     * @param is 输入流
-     * @return 如果获取结果有异常或者无结果，那么返回null
-     */
-    private String getResult(InputStream is) {
-        final StringBuilder buffer = new StringBuilder();
-        LineProcessor lp = new DefaultLineProcessor() {
+    private DefaultLineProcessor generateDefaultLineProcessor(StringBuilder buffer) {
+        return new DefaultLineProcessor() {
             public void process(String line, int lineNum) throws Exception {
                 if (lineNum > 1) {
                     buffer.append(System.lineSeparator());
@@ -148,8 +99,6 @@ public class SSHTemplate {
                 buffer.append(line);
             }
         };
-        processStream(is, lp);
-        return buffer.length() > 0 ? buffer.toString() : null;
     }
 
     /**
@@ -169,9 +118,11 @@ public class SSHTemplate {
                 } catch (Exception e) {
                     logger.error("err line:" + line, e);
                 }
+                if (lineProcessor instanceof DefaultLineProcessor) {
+                    ((DefaultLineProcessor) lineProcessor).setLineNum(lineNum);
+                }
                 lineNum++;
             }
-            lineProcessor.finish();
         } catch (IOException e) {
             logger.error(e.getMessage(), e);
         } finally {
@@ -189,10 +140,10 @@ public class SSHTemplate {
         }
     }
 
-    private void close(Connection conn) {
+    private void close(String ip, Connection conn) {
         if (conn != null) {
             try {
-                conn.close();
+                sshPool.returnObject(ip, conn);
             } catch (Exception e) {
                 logger.error(e.getMessage(), e);
             }
@@ -285,15 +236,19 @@ public class SSHTemplate {
             Future<SSHResult> future = taskPool.submit(new Callable<SSHResult>() {
                 public SSHResult call() throws Exception {
                     session.execCommand(cmd);
+                    LineProcessor tmpLP = lineProcessor;
                     // 如果客户端需要进行行处理，则直接进行回调
-                    if (lineProcessor != null) {
-                        processStream(session.getStdout(), lineProcessor);
+                    if (tmpLP != null) {
+                        processStream(session.getStdout(), tmpLP);
                     } else {
-                        // 获取标准输出
-                        String rst = getResult(session.getStdout());
-                        if (rst != null) {
-                            return new SSHResult(true, rst);
+                        StringBuilder buffer = new StringBuilder();
+                        tmpLP = generateDefaultLineProcessor(buffer);
+                        processStream(session.getStdout(), tmpLP);
+                        if (buffer.length() > 0) {
+                            return new SSHResult(true, buffer.toString());
                         }
+                    }
+                    if(tmpLP.lineNum() == 0) {
                         // 返回为null代表可能有异常，需要检测标准错误输出，以便记录日志
                         SSHResult errResult = tryLogError(session.getStderr(), cmd);
                         if (errResult != null) {
@@ -315,7 +270,10 @@ public class SSHTemplate {
         }
 
         private SSHResult tryLogError(InputStream is, String cmd) {
-            String errInfo = getResult(is);
+            StringBuilder buffer = new StringBuilder();
+            LineProcessor lp = generateDefaultLineProcessor(buffer);
+            processStream(is, lp);
+            String errInfo = buffer.length() > 0 ? buffer.toString() : null;
             if (errInfo != null) {
                 logger.error("address " + address + " execute cmd:({}), err:{}", cmd, errInfo);
                 return new SSHResult(false, errInfo);
@@ -458,13 +416,22 @@ public class SSHTemplate {
         void process(String line, int lineNum) throws Exception;
 
         /**
-         * 所有的行处理完毕回调该方法
+         * 返回内容的行数，如果为0需要检测错误流
+         * @return
          */
-        void finish();
+        int lineNum();
     }
 
     public static abstract class DefaultLineProcessor implements LineProcessor {
-        public void finish() {
+        protected int lineNum;
+
+        @Override
+        public int lineNum() {
+            return lineNum;
+        }
+
+        public void setLineNum(int lineNum) {
+            this.lineNum = lineNum;
         }
     }
 }

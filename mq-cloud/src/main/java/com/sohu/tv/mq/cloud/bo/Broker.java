@@ -28,6 +28,9 @@ public class Broker {
     // 检测时间
     private Date checkTime;
 
+    // 最大偏移量 冗余字段
+    private long maxOffset;
+    
     public int getCid() {
         return cid;
     }
@@ -102,6 +105,18 @@ public class Broker {
         return DateUtil.getFormat(DateUtil.YMD_DASH_BLANK_HMS_COLON).format(getCheckTime());
     }
     
+    public long getMaxOffset() {
+        return maxOffset;
+    }
+
+    public void setMaxOffset(long maxOffset) {
+        this.maxOffset = maxOffset;
+    }
+    
+    public boolean isMaster() {
+        return brokerID == 0;
+    }
+
     @Override
     public String toString() {
         return "Broker [cid=" + cid + ", addr=" + addr + ", brokerID=" + brokerID + ", brokerName=" + brokerName

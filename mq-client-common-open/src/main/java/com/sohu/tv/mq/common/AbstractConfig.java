@@ -126,7 +126,8 @@ public abstract class AbstractConfig {
                     logger.warn("please register your {}:{} topic:{} in MQCloud first, times:{}",
                             role() == 1 ? "producer" : "consumer", group, topic, times++);
                 } else {
-                    logger.warn("fetch cluster info err:{}, times:{}", clusterInfoDTOResult.getMessage(), times++);
+                    logger.warn("fetch topic:{} group:{} cluster info err:{}, times:{}", getTopic(), group,
+                            clusterInfoDTOResult.getMessage(), times++);
                 }
                 try {
                     Thread.sleep(1000);

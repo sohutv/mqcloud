@@ -3,6 +3,8 @@ package com.sohu.tv.mq.cloud.bo;
 import java.util.Date;
 
 import org.apache.rocketmq.common.protocol.body.BrokerStatsData;
+
+import com.sohu.tv.mq.cloud.util.WebUtil;
 /**
  * 流量
  * @Description: 
@@ -71,13 +73,7 @@ public class Traffic {
     }
     
     public String getCountFormat() {
-        if(getCount() >= 100000000) {
-            return format(getCount() / 100000000F) + "亿";
-        }
-        if(getCount() >= 10000) {
-            return format(getCount() / 10000F) + "万";
-        }
-        return String.valueOf(getCount());
+        return WebUtil.countFormat(getCount());
     }
 
     public void setCount(long count) {
@@ -98,22 +94,9 @@ public class Traffic {
     }
     
     public String getSizeFormat() {
-        if(getSize() >= 1073741824) {
-            return format(getSize() / 1073741824F) + "g";
-        }
-        if(getSize() >= 1048576) {
-            return format(getSize() / 1048576F) + "m";
-        }
-        if(getSize() >= 1024) {
-            return format(getSize() / 1024F) + "k";
-        }
-        return getSize()+"b";
+        return WebUtil.sizeFormat(getSize());
     }
     
-    private String format(float value) {
-        return String.valueOf(Math.round(value*100)/100.0);
-    }
-
     public void setSize(long size) {
         this.size = size;
     }

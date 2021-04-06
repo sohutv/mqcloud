@@ -95,8 +95,8 @@
    2. group_id：consumerGroup，可以参考[消费详情](topic#consume)的consumer group。
    3. name_server_domain：NameServer的域名，不同的集群对应不同的id。
    5. model：消费方式
-      1. CLUSTERING：所有的消费者均分消息进行消费。
-      2. BROADCASTING：每个消费者会消费所有的消息。
+      1. CLUSTERING：所有的消费实例均分消息进行消费。
+      2. BROADCASTING：每个消费实例会消费所有的消息。
 
 3. 创建消费者实例
 

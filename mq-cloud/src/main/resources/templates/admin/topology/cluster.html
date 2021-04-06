@@ -140,7 +140,7 @@
 					                x: 500,
 					                y: 250,
 					                <#if clusterTopology.brokerGroupList??>
-					                _ip: '<#list clusterTopology.brokerGroupList as brokerGroup>${brokerGroup.master.serverInfo.ip},</#list>',
+					                _ip: '<#list clusterTopology.brokerGroupList as brokerGroup>${brokerGroup.master.addr},</#list>',
 					                </#if>
 					                _type: 'cluster',
 					                _cid: '${clusterTopology.cluster.id}',
@@ -224,7 +224,7 @@
 					                name: '${brokerGroup.brokerName}',
 					                x: ${brokerGroup_index * brokerX + brokerX / 2},
 					                y: 530,
-					                _ip: '${brokerGroup.master.serverInfo.ip}',
+					                _ip: '${brokerGroup.master.addr}',
 					                _type: 'broker',
 					                _cid: '${clusterTopology.cluster.id}',
 					                symbolSize: [60, 25]

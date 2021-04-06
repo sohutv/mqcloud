@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.protocol.body.ClusterInfo;
 import org.apache.rocketmq.common.protocol.body.SubscriptionGroupWrapper;
@@ -18,17 +19,23 @@ import org.springframework.stereotype.Component;
 import com.alibaba.fastjson.JSON;
 import com.sohu.tv.mq.cloud.bo.BrokerConfig;
 import com.sohu.tv.mq.cloud.bo.Cluster;
+import com.sohu.tv.mq.cloud.bo.StoreFiles;
+import com.sohu.tv.mq.cloud.bo.StoreFiles.StoreFile;
+import com.sohu.tv.mq.cloud.bo.StoreFiles.StoreFileType;
 import com.sohu.tv.mq.cloud.bo.SubscriptionGroup;
 import com.sohu.tv.mq.cloud.mq.MQAdminCallback;
 import com.sohu.tv.mq.cloud.mq.MQAdminTemplate;
+import com.sohu.tv.mq.cloud.service.SSHTemplate.DefaultLineProcessor;
 import com.sohu.tv.mq.cloud.service.SSHTemplate.SSHCallback;
 import com.sohu.tv.mq.cloud.service.SSHTemplate.SSHResult;
 import com.sohu.tv.mq.cloud.service.SSHTemplate.SSHSession;
+import com.sohu.tv.mq.cloud.util.DateUtil;
 import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper;
 import com.sohu.tv.mq.cloud.util.Result;
 import com.sohu.tv.mq.cloud.util.SSHException;
 import com.sohu.tv.mq.cloud.util.Status;
-import com.sohu.tv.mq.cloud.util.DateUtil;
+import com.sohu.tv.mq.cloud.web.vo.ScpDirVO;
+import com.sohu.tv.mq.cloud.web.vo.ScpVO;
 
 /**
  * MQ部署
@@ -62,6 +69,8 @@ public class MQDeployer {
             + " >> %s/logs/startup.log 2>&1 &\" > %s/" + RUN_FILE;
     
     public static final String DATA_LOGS_DIR = "mkdir -p %s/data/config|mkdir -p %s/logs|";
+    
+    public static final String MQ_AUTH = "/tmp/mqauth";
 
     // 部署broker时自动创建监控订阅组
     public static final String SUBSCRIPTIONGROUP_JSON = "echo '"
@@ -539,7 +548,7 @@ public class MQDeployer {
     public Result<?> recover(String ip, String backupDir, String destDir) {
         backupDir = MQ_CLOUD_DIR + backupDir;
         destDir = MQ_CLOUD_DIR + destDir;
-        String mvCommTemplate = "mv %s/%s %s/";
+        String mvCommTemplate = "sudo mv %s/%s %s/";
         // 1. 移动mq.conf
         String mvConfig = String.format(mvCommTemplate, backupDir, CONFIG_FILE, destDir);
         // 2. 移动run.sh
@@ -563,8 +572,13 @@ public class MQDeployer {
                 }
             });
         } catch (SSHException e) {
-            logger.error("backup err, ip:{},backupDir:{},destDir:{},comm:{}", ip, backupDir, destDir, comm, e);
+            logger.error("recover err, ip:{},backupDir:{},destDir:{},comm:{}", ip, backupDir, destDir, comm, e);
             return Result.getWebErrorResult(e);
+        }
+        // 检测执行结果
+        Result<?> mvResult = wrapSSHResult(sshResult);
+        if (mvResult.isNotOK()) {
+            return mvResult;
         }
         // 5. 备份目录重命名
         String renameBackupDirComm = "mv " + backupDir + " " + backupDir + DateUtil.getFormatNow(DateUtil.YMDHMS);
@@ -623,6 +637,418 @@ public class MQDeployer {
             return Result.getWebErrorResult(e);
         }
         return wrapSSHResult(sshResult);
+    }
+    
+    /**
+     * 机器互信
+     * @param sourceIp
+     * @param destIp
+     * @return
+     */
+    public Result<?> authentication(String sourceIp, String destIp) {
+        // 1.生产无密互信公私钥
+        SSHResult sshResult = null;
+        try {
+            sshResult = sshTemplate.execute(sourceIp, new SSHCallback() {
+                public SSHResult call(SSHSession session) {
+                    return session.executeCommand("[ ! -e '" + MQ_AUTH + "' ] && ssh-keygen -t rsa -f " + MQ_AUTH + " -N '' -q");
+                }
+            });
+        } catch (SSHException e) {
+            logger.error("ssh-keygen, sourceIp:{}", sourceIp, e);
+            return Result.getWebErrorResult(e);
+        }
+        if (!sshResult.isSuccess()) {
+            return Result.getResult(Status.PARAM_ERROR).setMessage(sshResult.getResult());
+        }
+        // 2.读取公钥
+        sshResult = null;
+        try {
+            sshResult = sshTemplate.execute(sourceIp, new SSHCallback() {
+                public SSHResult call(SSHSession session) {
+                    return session.executeCommand("cat " + MQ_AUTH + ".pub");
+                }
+            });
+        } catch (SSHException e) {
+            logger.error("cat " + MQ_AUTH + ".pub, sourceIp:{}", sourceIp, e);
+            return Result.getWebErrorResult(e);
+        }
+        if (!sshResult.isSuccess()) {
+            return Result.getResult(Status.PARAM_ERROR).setMessage(sshResult.getResult());
+        }
+        String pubKey = sshResult.getResult();
+        // 3.写入目标机器
+        sshResult = null;
+        try {
+            sshResult = sshTemplate.execute(destIp, new SSHCallback() {
+                public SSHResult call(SSHSession session) {
+                    return session.executeCommand("[ ! -e '/home/mqcloud/.ssh' ] && mkdir -p -m 700 /home/mqcloud/.ssh;"
+                            + "[ ! -e '/home/mqcloud/.ssh/authorized_keys' ] && touch /home/mqcloud/.ssh/authorized_keys && chmod 600 /home/mqcloud/.ssh/authorized_keys;"
+                            + "echo '" + pubKey + "' >> /home/mqcloud/.ssh/authorized_keys;");
+                }
+            });
+        } catch (SSHException e) {
+            logger.error("authorized_keys, sourceIp:{}, destIp:{}", sourceIp, destIp, e);
+            return Result.getWebErrorResult(e);
+        }
+        return wrapSSHResult(sshResult);
+    }
+    
+    /**
+     * 获取存储文件
+     * @param ip
+     * @param home
+     * @return
+     */
+    public Result<?> getStoreFileList(String ip, String home) {
+        String absoluteDir = MQ_CLOUD_DIR + home + "/data";
+        SSHResult sshResult = null;
+        StoreFiles storeFiles = new StoreFiles();
+        try {
+            sshResult = sshTemplate.execute(ip, new SSHCallback() {
+                public SSHResult call(SSHSession session) {
+                    return session.executeCommand("cd " + absoluteDir + ";find -type f | xargs du -b",
+                            new DefaultLineProcessor() {
+                                public void process(String line, int lineNum) throws Exception {
+                                    String[] tmpArray = line.split("\\s+");
+                                    if (tmpArray[1].startsWith(".")) {
+                                        tmpArray[1] = tmpArray[1].substring(1);
+                                    }
+                                    storeFiles.addStoreFile(tmpArray[1], NumberUtils.toLong(tmpArray[0]));
+                                }
+                            }, 60 * 1000);
+                }
+            });
+        } catch (SSHException e) {
+            logger.error("startup, ip:{},home:{}", ip, absoluteDir, e);
+            return Result.getWebErrorResult(e);
+        }
+        if (!sshResult.isSuccess()) {
+            return Result.getResult(Status.PARAM_ERROR).setMessage(sshResult.getResult());
+        }
+        if (storeFiles.getStoreEntryMap().size() == 0) {
+            return Result.getResult(Status.PARAM_ERROR).setMessage(ip + " " + absoluteDir + " 无数据");
+        }
+        storeFiles.sort();
+        return Result.getResult(storeFiles);
+    }
+    
+    /**
+     * 创建存储路径
+     * @param ip
+     * @param home
+     * @return
+     */
+    public Result<?> createStorePath(String ip, String home) {
+        String absoluteDir = MQ_CLOUD_DIR + home + "/data";
+        SSHResult sshResult = null;
+        try {
+            sshResult = sshTemplate.execute(ip, new SSHCallback() {
+                public SSHResult call(SSHSession session) {
+                    StringBuilder comm = new StringBuilder("mkdir -p ");
+                    for(StoreFileType storeFileType : StoreFileType.values()) {
+                        comm.append(absoluteDir);
+                        comm.append(storeFileType.getPath());
+                        comm.append(" ");
+                    }
+                    return session.executeCommand(comm.toString());
+                }
+            });
+        } catch (SSHException e) {
+            logger.error("startup, ip:{},home:{}", ip, absoluteDir, e);
+            return Result.getWebErrorResult(e);
+        }
+        return wrapSSHResult(sshResult);
+    }
+    
+    /**
+     * scp存储条目
+     * 
+     * @param ip
+     * @param home
+     * @return
+     */
+    public Result<?> scpStoreEntry(String sourceIp, String sourceHome, String destIp, String destHome,
+            StoreFile storeFile) {
+        if (storeFile.getSubEntryListSize() > 1) {
+            return scpStoreFolder(sourceIp, sourceHome, destIp, destHome, storeFile);
+        } else {
+            return scpStoreFile(sourceIp, sourceHome, destIp, destHome, storeFile);
+        }
+    }
+    
+    /**
+     * scp存储文件
+     * @param ip
+     * @param home
+     * @return
+     */
+    public Result<?> scpStoreFile(String sourceIp, String sourceHome, String destIp, String destHome,
+            StoreFile storeFile) {
+        long start = System.currentTimeMillis();
+        // 复制文件
+        String absoluteStorePath = storeFile.toAbsoluteStorePath();
+        String sourceFile = MQ_CLOUD_DIR + sourceHome + "/data" + absoluteStorePath;
+        String destFile = MQ_CLOUD_DIR + destHome + "/data" + absoluteStorePath;
+        SSHResult sshResult = null;
+        // 先创建需要的存储目录
+        if (storeFile.getParentName() != null) {
+            try {
+                sshResult = sshTemplate.execute(destIp, new SSHCallback() {
+                    public SSHResult call(SSHSession session) {
+                        return session.executeCommand("mkdir -p " + destFile.substring(0, destFile.lastIndexOf("/")));
+                    }
+                });
+            } catch (SSHException e) {
+                logger.error("mkdir destIp:{}, destHome:{}", destIp, destHome, e);
+                return Result.getWebErrorResult(e);
+            }
+            if (!sshResult.isSuccess()) {
+                return Result.getResult(Status.PARAM_ERROR).setMessage(sshResult.getResult());
+            }
+        }
+        // 复制文件
+        try {
+            sshResult = sshTemplate.execute(sourceIp, new SSHCallback() {
+                public SSHResult call(SSHSession session) {
+                    return session.executeCommand(
+                            "scp -o BatchMode=yes -o StrictHostKeyChecking=no -i " + MQ_AUTH + " -pq -l 819200 " + sourceFile 
+                            + " mqcloud@" + destIp + ":" + destFile,
+                            30 * 60 * 1000);
+                }
+            });
+        } catch (SSHException e) {
+            logger.error("scp, ip:{}, sourceHome:{}, destIp:{}, destHome:{}", sourceIp, sourceHome, destIp, destHome, e);
+            return Result.getWebErrorResult(e);
+        }
+        if (!sshResult.isSuccess()) {
+            return Result.getResult(Status.PARAM_ERROR).setMessage(sshResult.getResult());
+        }
+        // 源md5
+        try {
+            sshResult = sshTemplate.execute(sourceIp, new SSHCallback() {
+                public SSHResult call(SSHSession session) {
+                    return session.executeCommand("md5sum " + sourceFile, 60 * 1000);
+                }
+            });
+        } catch (SSHException e) {
+            logger.error("mkdir destIp:{}, destHome:{}", destIp, destHome, e);
+            return Result.getWebErrorResult(e);
+        }
+        if (!sshResult.isSuccess()) {
+            return Result.getResult(Status.PARAM_ERROR).setMessage(sshResult.getResult());
+        }
+        String sourceMD5 = sshResult.getResult().split("\\s+")[0];
+        // 目标md5
+        try {
+            sshResult = sshTemplate.execute(destIp, new SSHCallback() {
+                public SSHResult call(SSHSession session) {
+                    return session.executeCommand("md5sum " + destFile, 60 * 1000);
+                }
+            });
+        } catch (SSHException e) {
+            logger.error("mkdir destIp:{}, destHome:{}", destIp, destHome, e);
+            return Result.getWebErrorResult(e);
+        }
+        if (!sshResult.isSuccess()) {
+            return Result.getResult(Status.PARAM_ERROR).setMessage(sshResult.getResult());
+        }
+        String destMD5 = sshResult.getResult().split("\\s+")[0];
+        // md5不一致需要校验大小是否一致
+        if (!sourceMD5.equals(destMD5)) {
+            // 目标大小
+            try {
+                sshResult = sshTemplate.execute(destIp, new SSHCallback() {
+                    public SSHResult call(SSHSession session) {
+                        return session.executeCommand("du -b " + destFile);
+                    }
+                });
+            } catch (SSHException e) {
+                logger.error("mkdir destIp:{}, destHome:{}", destIp, destHome, e);
+                return Result.getWebErrorResult(e);
+            }
+        }
+        if (!sshResult.isSuccess()) {
+            return Result.getResult(Status.PARAM_ERROR).setMessage(sshResult.getResult());
+        }
+        String[] tmpArray = sshResult.getResult().split("\\s+");
+        long destSize = NumberUtils.toLong(tmpArray[0]);
+        // 结果封装
+        ScpVO scpVO = new ScpVO(sourceMD5, destMD5, System.currentTimeMillis() - start, storeFile.getSize(), destSize);
+        return Result.getResult(scpVO);
+    }
+    
+    /**
+     * scp存储路径
+     * @param ip
+     * @param home
+     * @return
+     */
+    public Result<?> scpStoreFolder(String sourceIp, String sourceHome, String destIp, String destHome,
+            StoreFile storeFile) {
+        long start = System.currentTimeMillis();
+        StoreFileType storeFileType = StoreFileType.findStoreFileType(storeFile.getType());
+        String sourceDataDir = MQ_CLOUD_DIR + sourceHome + "/data" + storeFileType.getPath();
+        String destDataDir = MQ_CLOUD_DIR + destHome + "/data" + storeFileType.getPath();
+        SSHResult sshResult = null;
+        // 复制目录
+        try {
+            sshResult = sshTemplate.execute(sourceIp, new SSHCallback() {
+                public SSHResult call(SSHSession session) {
+                    return session.executeCommand("cd " + sourceDataDir + ";tar cz " + storeFile.getName() + "|ssh -i " 
+                          + MQ_AUTH + " -q mqcloud@" + destIp + " \"tar xzm -C " + destDataDir + "\"", 30 * 60 * 1000);
+                }
+            });
+        } catch (SSHException e) {
+            logger.error("scp, ip:{}, sourceHome:{}, destIp:{}, destHome:{}", sourceIp, sourceHome, destIp, destHome, e);
+            return Result.getWebErrorResult(e);
+        }
+        if (!sshResult.isSuccess()) {
+            return Result.getResult(Status.PARAM_ERROR).setMessage(sshResult.getResult());
+        }
+        // 源md5
+        Map<String, ScpVO> scpVOMap = new HashMap<>();
+        sshResult = getMD5(scpVOMap, sourceIp, sourceDataDir + "/" + storeFile.getName(), true);
+        if (!sshResult.isSuccess()) {
+            return Result.getResult(Status.PARAM_ERROR).setMessage(sshResult.getResult());
+        }
+        // 目标md5
+        sshResult = getMD5(scpVOMap, destIp, destDataDir + "/" + storeFile.getName(), false);
+        if (!sshResult.isSuccess()) {
+            return Result.getResult(Status.PARAM_ERROR).setMessage(sshResult.getResult());
+        }
+        // md5不一致需要校验大小是否一致
+        boolean md5Equal = true;
+        for (ScpVO scpVO : scpVOMap.values()) {
+            if (!scpVO.isMD5OK()) {
+                md5Equal = false;
+                break;
+            }
+        }
+        boolean sizeEqual = true;
+        if (!md5Equal) {
+            // 源大小
+            sshResult = getSize(scpVOMap, sourceIp, sourceDataDir + "/" + storeFile.getName(), true);
+            if (!sshResult.isSuccess()) {
+                return Result.getResult(Status.PARAM_ERROR).setMessage(sshResult.getResult());
+            }
+            // 目标大小
+            sshResult = getSize(scpVOMap, destIp, destDataDir + "/" + storeFile.getName(), false);
+            if (!sshResult.isSuccess()) {
+                return Result.getResult(Status.PARAM_ERROR).setMessage(sshResult.getResult());
+            }
+            for (ScpVO scpVO : scpVOMap.values()) {
+                if (!scpVO.isSizeOK()) {
+                    sizeEqual = false;
+                    break;
+                }
+            }
+        }
+        // 结果封装
+        ScpDirVO scpDirVO = new ScpDirVO(md5Equal, sizeEqual, System.currentTimeMillis() - start, storeFile.getSize(), scpVOMap);
+        return Result.getResult(scpDirVO);
+    }
+    
+    /**
+     * 获取md5
+     * @param scpVOMap
+     * @param ip
+     * @param path
+     * @param source
+     * @return
+     */
+    private SSHResult getMD5(Map<String, ScpVO> scpVOMap, String ip, String path, boolean source) {
+        try {
+            return sshTemplate.execute(ip, new SSHCallback() {
+                public SSHResult call(SSHSession session) {
+                    return session.executeCommand("cd " + path + ";find -type f | xargs md5sum",
+                            new DefaultLineProcessor() {
+                                public void process(String line, int lineNum) throws Exception {
+                                    String[] tmpArray = line.split("\\s+");
+                                    if (tmpArray[1].startsWith(".")) {
+                                        tmpArray[1] = tmpArray[1].substring(1);
+                                    }
+                                    if(source) {
+                                        ScpVO scpVO = new ScpVO(tmpArray[0], null, 0, 0, 0);
+                                        scpVOMap.put(tmpArray[1], scpVO);
+                                    } else {
+                                        ScpVO scpVO = scpVOMap.get(tmpArray[1]);
+                                        if (scpVO != null) {
+                                            scpVO.setDestMD5(tmpArray[0]);
+                                        }
+                                    }
+                                }
+                            });
+                }
+            });
+        } catch (SSHException e) {
+            logger.error("md5 ip:{}, path:{}", ip, path, e);
+            return sshTemplate.new SSHResult(e);
+        }
+    }
+    
+    /**
+     * 获取md5
+     * @param scpVOMap
+     * @param ip
+     * @param path
+     * @param source
+     * @return
+     */
+    private SSHResult getSize(Map<String, ScpVO> scpVOMap, String ip, String path, boolean source) {
+        try {
+            return sshTemplate.execute(ip, new SSHCallback() {
+                public SSHResult call(SSHSession session) {
+                    return session.executeCommand("cd " + path + ";find -type f | xargs du -b",
+                            new DefaultLineProcessor() {
+                                public void process(String line, int lineNum) throws Exception {
+                                    String[] tmpArray = line.split("\\s+");
+                                    if (tmpArray[1].startsWith(".")) {
+                                        tmpArray[1] = tmpArray[1].substring(1);
+                                    }
+                                    ScpVO scpVO = scpVOMap.get(tmpArray[1]);
+                                    if (scpVO != null) {
+                                        if(source) {
+                                            scpVO.setSourceSize(NumberUtils.toLong(tmpArray[0]));
+                                        } else {
+                                            scpVO.setDestSize(NumberUtils.toLong(tmpArray[0]));
+                                        }
+                                    }
+                                }
+                            });
+                }
+            });
+        } catch (SSHException e) {
+            logger.error("du ip:{}, path:{}", ip, path, e);
+            return sshTemplate.new SSHResult(e);
+        }
+    }
+    
+    /**
+     * 判断目录是否存在
+     * @param ip
+     * @return
+     */
+    public Result<?> dirExist(String ip, String dir){
+        String destDir = MQ_CLOUD_DIR + dir + "/data";
+        String comm = "if [ -d \"" +destDir+ "\" ];then echo 1;else echo 0;fi";
+        SSHResult sshResult = null;
+        try {
+            sshResult = sshTemplate.execute(ip, new SSHCallback() {
+                public SSHResult call(SSHSession session) {
+                    SSHResult sshResult = session.executeCommand(comm);
+                    return sshResult;
+                }
+            });
+        } catch (SSHException e) {
+            logger.error("dirExist, ip:{},dir:{}", ip, destDir, e);
+            return Result.getWebErrorResult(e);
+        }
+        Result<?> result = wrapSSHResult(sshResult);
+        if(result.isOK() && "0".equals(result.getResult())) {
+            return Result.getResult(Status.DB_ERROR).setMessage("目录不存在");
+        }
+        return result;
     }
     
     /**

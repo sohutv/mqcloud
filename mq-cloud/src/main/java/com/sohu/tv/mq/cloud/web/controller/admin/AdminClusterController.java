@@ -365,6 +365,7 @@ public class AdminClusterController extends AdminViewController {
                 brokerStatVO.addDelayMessageOffset(messageDelayLevel, curOffset, maxOffset);
             }
         }
+        brokerStatVO.setCommitLogMaxOffset(NumberUtils.toLong(removeFromMap(stats, "commitLogMaxOffset")));
         // 其余指标
         brokerStatVO.setInfo(new TreeMap<String, String>(stats));
     }

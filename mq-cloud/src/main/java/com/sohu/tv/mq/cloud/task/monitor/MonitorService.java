@@ -33,6 +33,7 @@ import org.apache.rocketmq.common.protocol.body.ConsumerRunningInfo;
 import org.apache.rocketmq.common.protocol.body.TopicList;
 import org.apache.rocketmq.common.protocol.heartbeat.MessageModel;
 import org.apache.rocketmq.common.protocol.topic.OffsetMovedEvent;
+import org.apache.rocketmq.common.topic.TopicValidator;
 import org.apache.rocketmq.remoting.exception.RemotingException;
 import org.apache.rocketmq.tools.admin.DefaultMQAdminExt;
 import org.apache.rocketmq.tools.monitor.DeleteMsgsEvent;
@@ -41,13 +42,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.sohu.tv.mq.cloud.bo.Cluster;
-import com.sohu.tv.mq.cloud.bo.Consumer;
 import com.sohu.tv.mq.cloud.bo.NameServer;
-import com.sohu.tv.mq.cloud.bo.TopicConsumer;
 import com.sohu.tv.mq.cloud.bo.TypedUndoneMsgs;
 import com.sohu.tv.mq.cloud.service.ConsumerService;
 import com.sohu.tv.mq.cloud.service.NameServerService;
-import com.sohu.tv.mq.cloud.service.TopicService;
 import com.sohu.tv.mq.cloud.util.Jointer;
 import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper;
 import com.sohu.tv.mq.cloud.util.Result;
@@ -77,12 +75,10 @@ public class MonitorService {
     
     private boolean initialized;
     
-    private TopicService topicService;
-    
     private ConsumerService consumerService;
 
     public MonitorService(NameServerService nameServerService, Cluster mqCluster, SohuMonitorListener monitorListener,
-            MQCloudConfigHelper mqCloudConfigHelper, TopicService topicService) {
+            MQCloudConfigHelper mqCloudConfigHelper) {
         Result<List<NameServer>> nameServerListResult = nameServerService.query(mqCluster.getId());
         if(nameServerListResult.isEmpty()) {
             logger.error("monitor cluster:{} init err!", mqCluster);
@@ -91,7 +87,6 @@ public class MonitorService {
         this.nsAddr = Jointer.BY_SEMICOLON.join(nameServerListResult.getResult(), ns -> ns.getAddr());
         this.clusterName = mqCluster.getName();
         this.monitorListener = monitorListener;
-        this.topicService = topicService;
         
         this.defaultMQPullConsumer = new DefaultMQPullConsumer(MixAll.TOOLS_CONSUMER_GROUP);
         this.defaultMQPullConsumer.setInstanceName(instanceName());
@@ -116,7 +111,7 @@ public class MonitorService {
         try {
             this.defaultMQPushConsumer.setConsumeThreadMin(1);
             this.defaultMQPushConsumer.setConsumeThreadMax(1);
-            this.defaultMQPushConsumer.subscribe(MixAll.OFFSET_MOVED_EVENT, "*");
+            this.defaultMQPushConsumer.subscribe(TopicValidator.RMQ_SYS_OFFSET_MOVED_EVENT, "*");
             this.defaultMQPushConsumer.registerMessageListener(new MessageListenerConcurrently() {
                 
                 @Override
@@ -137,7 +132,7 @@ public class MonitorService {
                 }
             });
         } catch (MQClientException e) {
-            logger.error("consume topic:{}", MixAll.OFFSET_MOVED_EVENT, e);
+            logger.error("consume topic:{}", TopicValidator.RMQ_SYS_OFFSET_MOVED_EVENT, e);
         }
         try {
             start();
@@ -209,35 +204,6 @@ public class MonitorService {
         this.monitorListener.endRound();
         long spentTimeMills = System.currentTimeMillis() - beginTime;
         logger.info("{} monitor use: {}ms", clusterName, spentTimeMills);
-    }
-    
-    /**
-     * 检测广播模式消费者
-     * @param broadCastTopicConsumerList
-     */
-    public void monitorBroadCastConsumer() {
-        Result<List<TopicConsumer>> result = topicService.queryTopicConsumer(Consumer.BROADCAST);
-        List<TopicConsumer> broadCastTopicConsumerList = result.getResult();
-        if (broadCastTopicConsumerList == null) {
-            return;
-        }
-        for (TopicConsumer topicConsumer : broadCastTopicConsumerList) {
-            // test不检测
-            String tmpConsumer = topicConsumer.getConsumer().toLowerCase();
-            if (tmpConsumer.contains("test")) {
-                continue;
-            }
-            try {
-                // 链接在线检测
-                ConsumerConnection cc = getConsumerConnection(topicConsumer.getConsumer());
-                if (cc == null) {
-                    continue;
-                }
-                this.reportUndoneMsgs(topicConsumer.getConsumer(), cc);
-            } catch (Exception e) {
-                logger.warn("reportUndoneMsgs Exception", e);
-            }
-        }
     }
     
     private ConsumerConnection getConsumerConnection(String consumerGroup) {

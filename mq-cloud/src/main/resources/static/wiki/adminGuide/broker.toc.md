@@ -4,3 +4,4 @@
 - [四、管理外部集群](#ext)
 - [五、broker列表](#brokerList)
 - [六、集群流量](#clusterTraffic)
+- [七、数据迁移](#migrate)

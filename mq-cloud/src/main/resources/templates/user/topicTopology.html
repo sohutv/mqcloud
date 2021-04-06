@@ -18,11 +18,11 @@
 			<tbody>
 				<tr>
 					<td>topic:</td>
-					<td>${response.result.topic.name}</td>
+					<td><a href="javascript:void();" class="copied" data-toggle="tooltip" title="点击复制topic" data-clipboard-text="${response.result.topic.name}">${response.result.topic.name}</a></td>
 				</tr>
 				<tr>
 					<td>所属集群:</td>
-					<td>${response.result.topic.cluster.name}</td>
+					<td><a href="javascript:void();" class="copied" data-toggle="tooltip" title="点击复制集群路由地址" data-clipboard-text="http://${mqcloudDomain}/rocketmq/nsaddr-${response.result.topic.cluster.id}">${response.result.topic.cluster.name}</a></td>
 				</tr>
 				<tr>
 					<td>每个broker上的队列数:</td>
@@ -114,7 +114,7 @@
 							    	</#list>
 							    </#if>					    	
 						    </td>
-						    <td><a href="javacript:void();" id="alertA" data-toggle="tooltip" title="查看每个实例的生产状况" onclick="showProducerStats('${key.producer}')">${key.producer}</a></td>
+						    <td><a href="javacript:void();" class="copied" data-toggle="tooltip" title="点击复制生产者" data-clipboard-text="${key.producer}">${key.producer}</a></td>
 						</tr>
 					</#list>
 				<#else>
@@ -993,8 +993,13 @@ function updateTopicTrafficWarn(){
 
 
 $(function () {
-	<#if RequestParameters.from?? && RequestParameters.from == "alert">
-		$('#alertA').click();
+	<#if RequestParameters.from??>
+		showProducerStats('${RequestParameters.from}')
 	</#if>
+	
+	var clipboard = new ClipboardJS('.copied');
+	clipboard.on('success', function(e) {
+		toastr.success("复制成功");
+	});
 });
 </script>

@@ -64,27 +64,18 @@ function drawLineChart(lineName){
 				yAxis.labels = {};
 				if(yAxis.traffic){
 	                yAxis.labels.formatter = function() {
-						   if(this.value >= 1073741824){
-							   return format(this.value / 1073741824) +'g';
-						   }
-						   if(this.value >= 1048576){
-							   return format(this.value / 1048576) +'m';
-						   }
-						   if(this.value >= 1024){
-							   return format(this.value / 1024) +'k';
-						   }
-	                       return this.value;
+                       return formatSize(this.value);
 	                };
 				} else {
 					yAxis.labels.formatter = function() {
 						   if(this.value >= 100000000){
-							   return format(this.value / 100000000) +'亿';
+							   return formatNum(this.value / 100000000) +'亿';
 						   }
 						   if(this.value >= 10000){
-							   return format(this.value / 10000) +'万';
+							   return formatNum(this.value / 10000) +'万';
 						   }
 						   if(this.value >= 1000){
-							   return format(this.value / 1000) +'千';
+							   return formatNum(this.value / 1000) +'千';
 						   }
 	                       return this.value;
 	                };
@@ -105,13 +96,4 @@ function drawLineChart(lineName){
 			new Highcharts.Chart(chart);
 		}
 	}, 'json');
-}
-
-/**
- * 保留一位小数，舍弃0
- * @param num
- * @returns
- */
-function format(num){
-	return parseFloat(num.toFixed(1));
 }

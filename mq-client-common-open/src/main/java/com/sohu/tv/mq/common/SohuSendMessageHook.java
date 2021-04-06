@@ -18,18 +18,18 @@ import com.sohu.tv.mq.stats.StatsHelper;
  */
 public class SohuSendMessageHook implements SendMessageHook {
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
-
+    
     // 统计助手
     private StatsHelper statsHelper;
 
     public SohuSendMessageHook(DefaultMQProducer producer) {
         statsHelper = new StatsHelper();
+        // 获取生产者group
+        statsHelper.setProducer(producer.getProducerGroup());
         // 最大耗时，延后500毫秒
         statsHelper.init(producer.getSendMsgTimeout() + 500);
         // 客户端id
         statsHelper.setClientId(buildMQClientId(producer));
-        // 获取生产者group
-        statsHelper.setProducer(producer.getProducerGroup());
     }
 
     @Override

@@ -181,7 +181,7 @@ CREATE TABLE `audit_topic_trace` (
 -- ----------------------------
 DROP TABLE IF EXISTS `broker_traffic`;
 CREATE TABLE `broker_traffic` (
-  `ip` varchar(16) NOT NULL COMMENT 'ip',
+  `ip` varchar(255) NOT NULL COMMENT 'addr',
   `create_date` date NOT NULL COMMENT '数据收集天',
   `create_time` char(4) NOT NULL COMMENT '数据收集小时分钟,格式:HHMM',
   `cluster_id` int(11) NOT NULL COMMENT 'cluster_id',
@@ -668,6 +668,7 @@ INSERT INTO `common_config`(`key`, `value`, `comment`) VALUES ('machineRoomColor
 INSERT INTO `common_config`(`key`, `value`, `comment`) VALUES ('queryMessageFromSlave', 'true', '是否从slave查询消息');
 INSERT INTO `common_config`(`key`, `value`, `comment`) VALUES ('consumeFallBehindSize', '1073741824', '消费落后多少进行预警,单位byte');
 INSERT INTO `common_config`(`key`, `value`, `comment`) VALUES ('messageTypeLocation', 'classpath*:msg-type/*.class', '消息序列化方式为protostuf并且发送为自定义类型时，需要配置消息类型的class路径,例如 1:classpath*:msg-type/*.class 2：jar:file:///tmp/msgType.jar!/**/*.class 3：jar:http://127.0.0.1:8080/msgType.jar!/**/*.class');
+INSERT INTO `common_config`(`key`, `value`, `comment`) VALUES ('slaveFallBehindSize', '10485760', 'slave的commitlog落后master多少进行预警,单位byte');
 -- ----------------------------
 -- warn_config init
 -- ----------------------------

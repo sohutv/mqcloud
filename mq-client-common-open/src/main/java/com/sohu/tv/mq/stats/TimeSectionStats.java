@@ -182,12 +182,11 @@ public class TimeSectionStats {
     }
 
     /**
-     * 计算平均耗时
-     * 
+     * 计算总时间
      * @return
      */
-    public double avg() {
-        return timeSectionStatsSampler.avg();
+    public long totalTime() {
+        return timeSectionStatsSampler.totalTime();
     }
     
     public long[] getSnapshotData() {
@@ -273,22 +272,22 @@ public class TimeSectionStats {
         }
 
         /**
-         * 计算平均耗时
+         * 计算总耗时
          * 
          * @return
          */
-        public double avg() {
+        public long totalTime() {
             if (totalCount == 0) {
-                return -1;
+                return 0;
             }
-            double totalTime = 0;
+            long totalTime = 0;
             for (int i = 0; i < sampledData.length; ++i) {
                 if (sampledData[i] == 0) {
                     continue;
                 }
                 totalTime += sampledData[i] * time(i);
             }
-            return (long)(totalTime / totalCount * 10) / 10D;
+            return totalTime;
         }
     }
 }

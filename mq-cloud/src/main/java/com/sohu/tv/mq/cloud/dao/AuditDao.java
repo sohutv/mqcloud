@@ -25,6 +25,27 @@ public interface AuditDao {
             "<if test=\"audit.status !=-1\">and status=#{audit.status}</if>" +
             " order by id desc</script>")
     public List<Audit> select(@Param("audit") Audit audit);
+    
+    /**
+     * 分页查询
+     * @param audit
+     * @return
+     */
+    @Select("<script>select count(1) from audit where 1 = 1" +
+            "<if test=\"audit.type !=-1\"> and type=#{audit.type}</if>" +
+            "<if test=\"audit.status !=-1\">and status=#{audit.status}</if></script>")
+    public Integer selectByPageCount(@Param("audit") Audit audit);
+    
+    /**
+     * 分页查询
+     * @param audit
+     * @return
+     */
+    @Select("<script>select * from audit where 1 = 1" +
+            "<if test=\"audit.type !=-1\"> and type=#{audit.type}</if>" +
+            "<if test=\"audit.status !=-1\">and status=#{audit.status}</if>" +
+            " order by id desc limit #{m},#{n}</script>")
+    public List<Audit> selectByPage(@Param("audit") Audit audit, @Param("m") int offset, @Param("n") int size);
 
     /**
      * 按id查询

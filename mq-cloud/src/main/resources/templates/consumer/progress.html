@@ -6,6 +6,8 @@
 		margin: 0;
 		border: 0;
 		background-color: transparent;
+		white-space: pre-wrap;
+		overflow-y:hidden;
 	}
 </style>
 <div class="row">
@@ -30,7 +32,7 @@
 	                    <td>消费者(consumer group)</td>
 	                    <td data-toggle="tooltip" title="谁持有这个消费者">归属于</td>
 	                    <td>用途</td>
-	                    <td data-toggle="tooltip" title="集群：所有的消费者均分消息进行消费； 广播：每个消费者会消费所有消息">模式</td>
+	                    <td data-toggle="tooltip" title="集群：所有的消费实例均分消息进行消费； 广播：每个消费实例会消费所有消息">模式</td>
 	                    <td data-toggle="tooltip" title="消费者未消费的消息数量">堆积量</td>
 	                    <td data-toggle="tooltip" title="每秒消费的消息数">TPS</td>
 	                    <td data-toggle="tooltip" title="追踪状态">trace</td>
@@ -833,7 +835,7 @@
 						</div>	
 					</form>
 				</div>
-				<table id="dataTable" class="table table-striped table-hover" style="margin-top: 0px;word-break:break-all; word-wrap:break-all;">
+				<table id="dataTable" class="table table-striped table-hover" style="margin-top: 0px;word-break:break-all; word-wrap:break-all;table-layout:fixed;">
 					<colgroup>
 						<col width="50px">
 						<col width="110px">
@@ -1747,6 +1749,9 @@ function updateConsumerTrace(){
 		});
 		<#if RequestParameters.consumer?? && RequestParameters.consumer != "">
 			$('a[data="${RequestParameters.consumer}"]').click();
+			<#if RequestParameters.consumerId??>
+				showResetRetryMessageOffsetModel(${RequestParameters.consumerId}, "${RequestParameters.consumer}");
+			</#if>
 		</#if>
 	});
 </#if>
