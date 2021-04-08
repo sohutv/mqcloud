@@ -180,3 +180,34 @@ function parseDate(formatDate) {
 	var date = Date.parse(formatDate.replace(/-/g,'/'));
 	return date;
 }
+
+/**
+ * 格式化大小
+ * @param value
+ * @returns
+ */
+function formatSize(value) {
+	if (value >= 1073741824) {
+		return formatNum(value / 1073741824) + 'GB';
+	}
+	if (value >= 1048576) {
+		return formatNum(value / 1048576) + 'MB';
+	}
+	if (value >= 1024) {
+		return formatNum(value / 1024) + 'KB';
+	}
+	if(value == 0) {
+		return "0B";
+	}
+	return value + "B";
+}
+
+/**
+ * 保留一位小数，舍弃0
+ * 
+ * @param num
+ * @returns
+ */
+function formatNum(num){
+	return parseFloat(num.toFixed(1));
+}

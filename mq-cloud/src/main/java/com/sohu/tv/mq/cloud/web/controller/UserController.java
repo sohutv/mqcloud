@@ -52,6 +52,7 @@ import com.sohu.tv.mq.cloud.service.UserProducerService;
 import com.sohu.tv.mq.cloud.service.UserService;
 import com.sohu.tv.mq.cloud.util.DateUtil;
 import com.sohu.tv.mq.cloud.util.FreemarkerUtil;
+import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper;
 import com.sohu.tv.mq.cloud.util.Result;
 import com.sohu.tv.mq.cloud.util.SplitUtil;
 import com.sohu.tv.mq.cloud.util.Status;
@@ -109,6 +110,9 @@ public class UserController extends ViewController {
     
     @Autowired
     private AlertService alertService;
+    
+    @Autowired
+    private MQCloudConfigHelper mqCloudConfigHelper;
 
     /**
      * 退出登录
@@ -519,6 +523,7 @@ public class UserController extends ViewController {
         setResult(map, result);
         FreemarkerUtil.set("splitUtil", SplitUtil.class, map);
         setResult(map, "version", Version.get());
+        setResult(map, "mqcloudDomain", mqCloudConfigHelper.getDomain());
         return viewModule() + "/topicTopology";
     }
     

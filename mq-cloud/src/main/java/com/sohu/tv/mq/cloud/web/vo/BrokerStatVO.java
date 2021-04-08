@@ -6,6 +6,7 @@ import java.util.Map;
 
 import com.sohu.tv.mq.cloud.bo.CheckStatusEnum;
 import com.sohu.tv.mq.cloud.util.MessageDelayLevel;
+import com.sohu.tv.mq.cloud.util.WebUtil;
 
 /**
  * broker状态
@@ -31,6 +32,8 @@ public class BrokerStatVO {
     private Map<String, String> info;
 
     private DelayQueue delayQueue;
+    
+    private long commitLogMaxOffset;
 
     public Map<String, String> getInfo() {
         return info;
@@ -90,6 +93,18 @@ public class BrokerStatVO {
 
     public DelayQueue getDelayQueue() {
         return delayQueue;
+    }
+
+    public long getCommitLogMaxOffset() {
+        return commitLogMaxOffset;
+    }
+
+    public void setCommitLogMaxOffset(long commitLogMaxOffset) {
+        this.commitLogMaxOffset = commitLogMaxOffset;
+    }
+    
+    public String format(long size) {
+        return WebUtil.sizeFormat(size);
     }
 
     public void addDelayMessageOffset(MessageDelayLevel messageDelayLevel, long curOffset, long maxOffset) {

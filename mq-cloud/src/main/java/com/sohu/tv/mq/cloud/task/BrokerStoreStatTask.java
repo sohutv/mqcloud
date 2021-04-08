@@ -98,7 +98,7 @@ public class BrokerStoreStatTask {
             Date now = new Date();
             brokerStoreStat.setCreateDate(NumberUtils.toInt(DateUtil.formatYMD(now)));
             brokerStoreStat.setCreateTime(DateUtil.getFormat(DateUtil.HHMM).format(now));
-            brokerStoreStat.setBrokerIp(broker.getIp());
+            brokerStoreStat.setBrokerIp(broker.getAddr());
             brokerStoreStat.setClusterId(cluster.getId());
             // 数据存储
             brokerStoreStatService.save(brokerStoreStat);

@@ -56,7 +56,9 @@ public class StatsHelper implements StatsHelperMBean {
     private ExceptionStatsHelper exceptionStatsHelper;
     
     public static final int ONE_MINITE_IN_MILLIS = 60000;
-
+    // 暴露指标数据
+    private volatile ClientStats clientStats;
+    
     /**
      * 初始化
      * 
@@ -118,6 +120,10 @@ public class StatsHelper implements StatsHelperMBean {
     public void shutdown() {
         statsReporter.shutdown();
     }
+    
+    public ClientStats getClientStats() {
+        return clientStats;
+    }
 
     /**
      * 统计报告
@@ -173,8 +179,11 @@ public class StatsHelper implements StatsHelperMBean {
         public void report() {
             long start = System.currentTimeMillis();
             ConcurrentMap<String, InvokeStats> invokeStatsMap = statsHelper.invokeStatsMap;
+            // 指标数据
             if (invokeStatsMap.size() == 0) {
                 sampleStats.recordCost(System.currentTimeMillis() - start, new Date(start));
+                // 记录指标数据
+                statsHelper.clientStats = null;
                 return;
             }
             // 百分数采样
@@ -182,6 +191,8 @@ public class StatsHelper implements StatsHelperMBean {
             // 没有调用量不用统计
             if (statsHelper.timeSectionStats.getTotalCount() <= 0) {
                 sampleStats.recordCost(System.currentTimeMillis() - start, new Date(start));
+                // 记录指标数据
+                statsHelper.clientStats = null;
                 return;
             }
             // 客户端统计结果封装
@@ -205,17 +216,20 @@ public class StatsHelper implements StatsHelperMBean {
 
             // 百分数结果封装
             clientStats.setStatsTime((int) (System.currentTimeMillis() / ONE_MINITE_IN_MILLIS));
-            clientStats.setAvg(statsHelper.timeSectionStats.avg());
             clientStats.setPercent99(statsHelper.timeSectionStats.percentile(0.99));
             clientStats.setPercent90(statsHelper.timeSectionStats.percentile(0.9));
             clientStats.setCounts(statsHelper.timeSectionStats.getTotalCount());
+            clientStats.setTotalTime(statsHelper.timeSectionStats.totalTime());
+            if (clientStats.getCounts() > 0) {
+                clientStats.setAvg((long) (((double) clientStats.getTotalTime()) / clientStats.getCounts() * 10) / 10D);
+            }
             
             // 统计异常
             Map<String, Object> exceptionMap = statsHelper.exceptionStatsHelper.report();
             if(exceptionMap.size() > 0) {
                 clientStats.setExceptionMap(exceptionMap);
             }
-
+            statsHelper.clientStats = clientStats;
             // 发送结果
             String stats = JSON.toJSONString(clientStats);
             // 统计采样

@@ -142,6 +142,9 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware, Comm
     
     // 消息类型位置
     private String messageTypeLocation;
+    
+    // slave落后多少进行预警，单位byte
+    private Long slaveFallBehindSize = 0L; 
 
     @Autowired
     private CommonConfigService commonConfigService;
@@ -235,7 +238,7 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware, Comm
     }
 
     public String getTopicLink(long topicId, String linkText) {
-        return getHrefLink(getTopicLink(topicId) + "?from=alert", linkText);
+        return getHrefLink(getTopicLink(topicId) + "?from=" + linkText, linkText);
     }
 
     public String getTopicConsumeLink(long topicId) {
@@ -247,14 +250,22 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware, Comm
     }
     
     public String getTopicConsumeLink(long topicId, String linkText) {
-        return getHrefLink(getTopicConsumeLink(topicId) + "&consumer=" + linkText, linkText);
+        return getHrefLink(getTopicConsumeHref(topicId, linkText, -1), linkText);
+    }
+    
+    public String getTopicConsumeHref(long topicId, String consumer, long consumerId) {
+        String link = getTopicConsumeLink(topicId) + "&consumer=" + consumer;
+        if (consumerId > 0) {
+            link += "&consumerId=" + consumerId;
+        }
+        return link;
     }
     
     public String getTopicConsumeLink(String topic, String consumer) {
         return getHrefLink(getPrefix() + "topic/detail?topic=" + topic + "&consumer=" + consumer, consumer);
     }
 
-    private String getHrefLink(String link, String linkText) {
+    public String getHrefLink(String link, String linkText) {
         return "<a href='" + link + "'>" + linkText + "</a>";
     }
 
@@ -476,6 +487,14 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware, Comm
 
     public void setConsumeFallBehindSize(Long consumeFallBehindSize) {
         this.consumeFallBehindSize = consumeFallBehindSize;
+    }
+
+    public Long getSlaveFallBehindSize() {
+        return slaveFallBehindSize;
+    }
+
+    public void setSlaveFallBehindSize(Long slaveFallBehindSize) {
+        this.slaveFallBehindSize = slaveFallBehindSize;
     }
 
     public String getMessageTypeLocation() {

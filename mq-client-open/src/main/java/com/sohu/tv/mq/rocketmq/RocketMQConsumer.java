@@ -95,6 +95,9 @@ public class RocketMQConsumer extends AbstractConfig {
     
     // 关闭等待最大时间
     private long shutdownWaitMaxMillis = 30000;
+    
+    // 是否开启统计
+    private boolean enableStats = true;
 
     /**
      * 一个应用创建一个Consumer，由应用来维护此对象，可以设置为全局对象或者单例<br>
@@ -293,9 +296,10 @@ public class RocketMQConsumer extends AbstractConfig {
 
     /**
      * Batch consumption size
-     * 
+     * 不建议设置该值，采用默认即可
      * @param consumeMessageBatchMaxSize
      */
+    @Deprecated
     public void setConsumeMessageBatchMaxSize(int consumeMessageBatchMaxSize) {
         if (consumeMessageBatchMaxSize <= 0) {
             return;
@@ -337,10 +341,11 @@ public class RocketMQConsumer extends AbstractConfig {
     }
 
     /**
-     * 消费线程数，默认64
-     * 
+     * 消费线程数，默认20
+     * 该参数无用
      * @param num
      */
+    @Deprecated
     public void setConsumeThreadMax(int num) {
         if (num <= 0) {
             return;
@@ -592,7 +597,14 @@ public class RocketMQConsumer extends AbstractConfig {
         initRateLimiter(new TokenBucketRateLimiter(Constant.LIMIT_CONSUME_TPS));
     }
     
-    
+    public boolean isEnableStats() {
+        return enableStats;
+    }
+
+    public void setEnableStats(boolean enableStats) {
+        this.enableStats = enableStats;
+    }
+
     /**
      * 初始化限速器
      * @param rateLimiter

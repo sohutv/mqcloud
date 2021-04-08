@@ -20,7 +20,18 @@
 		border: 0;
 		background-color: transparent;
 	}
+	.fixedHeight {
+		max-height: 400px;
+		overflow-y: auto;
+	}
+	#theadTable tr td{
+		border: 0px;
+	}
 </style>
+<!--tree插件 -->
+<link href="${request.contextPath}/resources/treetable/jquery.treetable.css" rel="stylesheet">
+<link href="${request.contextPath}/resources/treetable/jquery.treetable.theme.default.css" rel="stylesheet">
+<script src="${request.contextPath}/resources/treetable/jquery.treetable.js"></script>
 <!-- 有集群 -->
 <div class="main">
 	<form class="form-inline" role="form">
@@ -46,6 +57,9 @@
 				<button type="button" data-placement="bottom" title="该功能用于将已有RocketMQ集群的topic的在线消费者写入consumer表中（可以执行多次，因为数据库有唯一索引）。" class="btn btn-success" onclick="initConsumer()" data-toggle="modal">consumer初始化</button>
 			</div>
 		</#if>
+		<div class="form-group" style="float:right;margin-right:3px;">
+			<button title="将broker数据迁移至远程机器" type="button" class="btn btn-success"  onclick="migrateBrokerData()" data-target="#migrateBrokerDataModal" data-toggle="modal">数据迁移</button>
+		</div>
 	</form>
 	<hr/>
 	<table class="table table-striped table-hover" style="margin-top: 0px">
@@ -57,8 +71,9 @@
 				<td>生产量/秒</td>
 				<td>消费量/秒</td>
 				<td>延时消息量</td>
+				<td data-toggle="tooltip" title="slave的commitlog落后于master多少">落后量</td>
 				<td>版本</td>
-				<td data-toggle="tooltip" title="MQCloud会定时监控broker是否存活">监控状态</td>
+				<td data-toggle="tooltip" title="MQCloud会定时监控broker是否存活">状态</td>
 				<td>监控时间</td>
 				<td>操作</td>
 			</tr>
@@ -144,8 +159,11 @@
 								</div>
 							</#if>
 							</td>
+							<td>0</td>
 						<#else>
 							<td data-toggle="tooltip" title="由于slave不会处理延时队列的消息，故一直为0">0</td>
+							<#assign fallbehindSize=brokerGroup[key]["0"].commitLogMaxOffset - brokerGroup[key][bkey].commitLogMaxOffset />
+							<td data-toggle="tooltip" title="${fallbehindSize}">${brokerGroup[key]["0"].format(fallbehindSize)}</td>
 						</#if>
 						<td>
 							<#if brokerGroup[key][bkey].version??>${brokerGroup[key][bkey].version}</#if>
@@ -244,7 +262,8 @@
 							</#if>
 							<#else>
 								<button title="启动broker" data-toggle="tooltip" type="button" id="${key}<#if bkey != "0">-s</#if>Btn" class="btn btn-sm btn-success" onclick="startupBroker('${brokerGroup[key][bkey].brokerAddr}', '${key}<#if bkey != "0">-s</#if>')">启动</button>
-								<button title="升级broker" type="button" class="btn btn-sm btn-success"  onclick="upgradeBroker('${brokerGroup[key][bkey].brokerAddr}', '${key}<#if bkey != "0">-s</#if>')" data-target="#upgradeBrokerModal" data-toggle="modal">升级</button>
+								<button title="在当前机器更新broker并保留数据" type="button" class="btn btn-sm btn-success"  onclick="upgradeBroker('${brokerGroup[key][bkey].brokerAddr}', '${key}<#if bkey != "0">-s</#if>')" data-target="#upgradeBrokerModal" data-toggle="modal">升级</button>
+								<button title="将当前机器broker数据迁移至远程机器" type="button" class="btn btn-sm btn-success"  onclick="migrateBrokerData('${brokerGroup[key][bkey].brokerAddr}', '${key}<#if bkey != "0">-s</#if>')" data-target="#migrateBrokerDataModal" data-toggle="modal">数据迁移</button>
 							</#if>
 							
 							<!-- 下线 -->
@@ -312,7 +331,7 @@
 		<div class="modal-content">
 			<div class="modal-header">
 				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-				<h4 class="modal-title">新建Broker</h4><b style="font-size:8px;"><i>请建好/opt/mqcloud目录并将其赋权给${username}用户：chown ${username}:${username} /opt/mqcloud</i></b>
+				<h4 class="modal-title">新建Broker</h4><b style="font-size:9px;"><i>请建好/opt/mqcloud目录并将其赋权给${username}用户：chown ${username}:${username} /opt/mqcloud</i></b>
 			</div>
 			<div class="modal-body">
 				<div class="row bs-wizard" style="border-bottom:0;">
@@ -447,7 +466,7 @@
 		<div class="modal-content">
 			<div class="modal-header">
 				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-				<h4 class="modal-title">升级Broker</h4><b style="font-size:8px;"><i>请提前在通用配置里rocketmqFilePath配置项, 配置好待升级的安装包地址。如需修改broker配置,请在升级完毕后进行修改。</i></b>
+				<h4 class="modal-title">升级Broker</h4><b style="font-size:9px;"><i>请提前在通用配置里rocketmqFilePath配置项, 配置好待升级的安装包地址。如需修改broker配置,请在升级完毕后进行修改。</i></b>
 			</div>
 			<div class="modal-body">
 				<div class="row bs-wizard" style="border-bottom:0;">
@@ -531,6 +550,144 @@
 			</div>
 			<div class="modal-footer">
 				<button type="button" class="btn btn-primary" id="upgradeBtn" data-toggle="modal" onclick="upgrade('upgradeBroker')"><span id="upgradeBrokerKey">一键升级<span></button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- 迁移broker数据 -->
+<div id="migrateBrokerDataModal" class="modal fade" tabindex="-1" data-backdrop="static" data-keyboard="false">
+	<div class="modal-dialog" style="width:1000px;">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+				<h4 class="modal-title" style="display:inline-block">迁移Broker数据</h4> <b style="font-size:9px;"><i>1.源broker请停写；2.目标broker部署好，但请勿启动。</i></b>
+			</div>
+			<div class="modal-body">
+				<div class="bs-wizard" style="border-bottom:0;margin-right: -15px;">
+	                <div id="migrateServer" class="col-xs-1 bs-wizard-step disabled">
+	                  <div class="text-center bs-wizard-stepnum">服务器选择</div>
+	                  <div class="progress"><div class="progress-bar"></div></div>
+	                  <a href="#" class="bs-wizard-dot"></a>
+	                  <div class="bs-wizard-info text-center">选择目标服务器</div>
+	                </div>
+	                
+	                <div id="migrateCheckDir" class="col-xs-1 bs-wizard-step disabled">
+	                  <div class="text-center bs-wizard-stepnum">目录校验</div>
+	                  <div class="progress"><div class="progress-bar"></div></div>
+	                  <a href="#" class="bs-wizard-dot"></a>
+	                  <div class="bs-wizard-info text-center">确保目标目录存在</div>
+	                </div>
+	                
+	                <div id="migrateCreateStorePath" class="col-xs-2 bs-wizard-step disabled">
+	                  <div class="text-center bs-wizard-stepnum">创建存储目录</div>
+	                  <div class="progress"><div class="progress-bar"></div></div>
+	                  <a href="#" class="bs-wizard-dot"></a>
+	                  <div class="bs-wizard-info text-center">在目标机器创建数据存储目录</div>
+	                </div>
+	                
+	                <div id="migrateAuth" class="col-xs-1 bs-wizard-step disabled">
+	                  <div class="text-center bs-wizard-stepnum">机器互信</div>
+	                  <div class="progress"><div class="progress-bar"></div></div>
+	                  <a href="#" class="bs-wizard-dot"></a>
+	                  <div class="bs-wizard-info text-center">源机器与目标机器互信</div>
+	                </div>
+	                
+	                <div id="migrateData" class="col-xs-2 bs-wizard-step disabled">
+	                  <div class="text-center bs-wizard-stepnum">源broker数据</div>
+	                  <div class="progress"><div class="progress-bar"></div></div>
+	                  <a href="#" class="bs-wizard-dot"></a>
+	                  <div class="bs-wizard-info text-center">获取源broker存储数据</div>
+	                </div>
+	                
+	                <div id="migrateScp" class="col-xs-2 bs-wizard-step disabled">
+	                  <div class="text-center bs-wizard-stepnum">数据传输</div>
+	                  <div class="progress"><div class="progress-bar"></div></div>
+	                  <a href="#" class="bs-wizard-dot"></a>
+	                  <div class="bs-wizard-info text-center">将源broker存储数据传输至目标broker</div>
+	                </div>
+	                
+					<div id="migrateProgressDiv" class="col-xs-2 progress disabled" style="left:-69px;z-index:1;margin:38px 0;height:15px;padding:0px;">
+					    <div class="progress-bar progress-bar-striped" role="progressbar" id="migrateProcessBar" style="background-color: #dcc98c">
+					      <span style="line-height:15px;"><b id="migrateSpeed">--</b>&nbsp;&nbsp;&nbsp;<b id="migrated">--</b>/<b id="migrateTotal">--</b></span>
+					    </div>
+				  	</div>
+				  	<div id="migrateFinish" class="col-xs-1 bs-wizard-step disabled" style="left:-96px;">
+				  		<div class="text-center bs-wizard-stepnum">完成</div>
+	                  	<a href="#" class="bs-wizard-dot"></a>
+	                </div>
+	            </div>
+	            <hr style="clear:both;">
+	            <h4>一：配置目标机器及目录</h4>
+				<form id="migrateForm" class="form-inline form-bordered form-row-stripped">
+					<div class="form-body">
+						<div class="form-group">
+							<label class="control-label"> 源机器: </label>
+							<div>
+								<select id="sourceIp" class="selectpicker" title="请选择" data-live-search-placeholder="搜索" name="sourceIp" data-live-search="true"></select>
+							</div>
+						</div>
+						<div class="form-group">
+							<label class="control-label"> 源broker安装目录: </label>
+							<div>
+								<input type="text" id="sourceHome" name="sourceHome" class="form-control"/>
+							</div>
+						</div>
+						<div class="form-group">
+							<label class="control-label"> 目标机器: </label>
+							<div>
+								<select id="destIp" class="selectpicker" title="请选择" data-live-search-placeholder="搜索" name="destIp" data-live-search="true"></select>
+							</div>
+						</div>
+						<div class="form-group">
+							<label class="control-label"> 目标broker安装目录: </label>
+							<div>
+								<input type="text" id="destHome" name="destHome" class="form-control"/>
+							</div>
+						</div>
+					</div>
+				</form>
+				<hr>
+				<h4>二：迁移数据文件</h4>
+				<table id="theadTable" class="treetable" style="margin-bottom: 0px;">
+					<colgroup>
+						<col>
+						<col width="50px">
+						<col width="70px">
+						<col width="67px">
+						<col width="65px">
+						<col width="17px">
+					</colgroup>
+			        <thead>
+			          <tr>
+			            <td>数据文件</td>
+			            <td data-toggle="tooltip" title="文件夹大小为其下文件大小之和">大小</td>
+			            <td data-toggle="tooltip" title="标识文件是否传输成功">传输状态</td>
+			            <td data-toggle="tooltip" title="标识源文件和目标文件md5是否一致">md5校验</td>
+			            <td data-toggle="tooltip" title="标识源文件和目标文件大小是否一致，若md5一致则不校验大小">大小校验</td>
+			            <td></td>
+			          </tr>
+			        </thead>
+			    </table>
+				<div id="migrateDiv" class="fixedHeight">
+				<table id="migrateTable" class="table table-striped table-hover treetable" style="margin-top: 0px">
+					<colgroup>
+						<col>
+						<col width="50px">
+						<col width="70px">
+						<col width="67px">
+						<col width="65px">
+					</colgroup>
+			        <tbody>
+			          <tr>
+			          	<td colspan=5 class="text-center">暂无数据</td>
+			          </tr>
+			        </tbody>
+				</table>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-primary" id="migrateBtn" data-toggle="modal" onclick="migrate()">一键迁移</button>
 			</div>
 		</div>
 	</div>
@@ -720,7 +877,7 @@ function install(id){
 	} else {
 		validateJDK();
 	}
-	disableStep("installBtn");
+	disableBtn("installBtn");
 }
 
 /**
@@ -733,7 +890,7 @@ function upgrade(id) {
 	} else {
 		upgradeBackup();
 	}
-	disableStep("upgradeBtn");
+	disableBtn("upgradeBtn");
 }
 
 /**
@@ -869,7 +1026,7 @@ function upgradeCheckProgram(){
  */
 function goOn(m){
 	$("#"+installId+"Install").html("继续");
-	active("installBtn");
+	enableBtn("installBtn");
 	method = m;
 }
 
@@ -878,7 +1035,7 @@ function goOn(m){
  */
 function upgradeGoOn(m){
 	$("#"+upgradeId+"Key").html("继续");
-	active("upgradeBtn");
+	enableBtn("upgradeBtn");
 	method = m;
 }
 
@@ -1149,10 +1306,22 @@ function addBroker(brokerName){
 }
 
 function upgradeBroker(brokerAddr, brokerName) {
-    $("#upgradeBrokerAddr").val(brokerAddr).attr("readonly","readonly");
-	$("#upgradeBrokerName").val(brokerName).attr("readonly","readonly");
+    $("#upgradeBrokerAddr").val(brokerAddr);
+	$("#upgradeBrokerName").val(brokerName);
 	$("#upgradeBrokerIp").val(brokerAddr.split(":")[0]);
 	$("#upgradeBrokerListenPort").val(brokerAddr.split(":")[1]);
+}
+
+function migrateBrokerData(brokerAddr, brokerName) {
+	if(brokerAddr){
+		var ip = brokerAddr.split(":")[0];		  
+		$("#sourceIp").html('<option selected="selected" value="'+ ip +'">'+ ip +'</option>');
+		$('#sourceIp').selectpicker('refresh');
+		$("#sourceHome").val(brokerName).attr("readonly", "readonly");
+	} else {
+		initServerList("sourceIp");
+	}
+	initServerList("destIp");
 }
 
 /**
@@ -1237,12 +1406,13 @@ $(function(){
 	$('#brokerServerSelect').on('hidden.bs.select', function(e) {
 		if(!$('#brokerServerSelect').val()){
 			disableStep("brokerServer");
+		} else {
+			complete("brokerServer");
 		}
 	});
 	$('#brokerServerSelect').on('changed.bs.select', function(e) {
 		$("#brokerIP1").val($(this).val());
 		$("#brokerIP2").val($(this).val());
-		complete("brokerServer");
 	});
 	
 	// fix bootstrap model & highcharts resize
@@ -1270,6 +1440,18 @@ $(function(){
 	<#if RequestParameters.brokerStoreIp?? && RequestParameters.brokerStoreIp != "">
 		showBrokerStoreStatModal('${RequestParameters.brokerStoreIp}');
 	</#if>
+	
+	// migrate server select change
+	$('#destIp').on('shown.bs.select', function(e) {
+		active("migrateServer");
+	});
+	$('#destIp').on('hidden.bs.select', function(e) {
+		if(!$('#destIp').val()){
+			disableStep("migrateServer");
+		} else {
+			complete("migrateServer");
+		}
+	});
 });
 
 function warn(id){
@@ -1284,13 +1466,15 @@ function active(id){
 function complete(id){
 	$("#"+id).removeClass("active").removeClass("warn").addClass("complete");
 }
+function disableBtn(id){
+	$("#"+id).attr("disabled", "disabled");
+}
+function enableBtn(id){
+	$("#"+id).removeAttr("disabled");
+}
 
 var brokerIp;
 function setIp(ip){
-	var idx = ip.indexOf(":");
-	if(idx != -1){
-		ip = ip.substring(0, idx);
-	}
 	brokerIp = ip;
 	$("#brokerTrafficChart").empty();
 }
@@ -1514,6 +1698,251 @@ function startupBroker(ipAddr, dir){
 		    	enable(dir+"Btn");
 		    }
        }, 'json');
+}
+
+/**
+ * 迁移broker数据
+ */
+function migrate(){
+	if(!$('#sourceIp').val()){
+		alert("请选择源服务器");
+		return;
+	}
+	if(!$('#sourceHome').val()){
+		alert("请填写源broker安装目录");
+		return;
+	}
+	if(!$('#destIp').val()){
+		alert("请选择目标服务器");
+		return;
+	}
+	if($('#destIp').val() == $("#sourceIp").val()){
+		alert("源服务器不能与目标服务器相同");
+		return;
+	}
+	if(!$('#destHome').val()){
+		alert("请填写目标broker安装目录");
+		return;
+	}
+	if($('#migrateBtn').html() == "继续"){
+		setTimeout(method+'()', 500);
+	} else {
+		checkDestDir();
+	}
+	disableBtn("migrateBtn");
+}
+
+/**
+ * 继续
+ */
+function migrateGoOn(m){
+	$("#migrateBtn").html("继续");
+	enableBtn("migrateBtn");
+	method = m;
+}
+/**
+ * 数据迁移第一步：目录校验
+ */
+function checkDestDir(){
+	active("migrateCheckDir");
+	$.post('${request.contextPath}/admin/deploy/check/dir/exist',
+		$("#migrateForm").serialize(),
+        function(data){
+            if(data.status == 200){
+            	complete("migrateCheckDir");
+        		setTimeout('createStorePath()', 500);
+		    } else {
+		    	toastr.error("校验失败！"+data.message);  
+		    	migrateGoOn("checkDestDir");
+		    	warn("migrateCheckDir");
+		    }
+       }, 'json');
+}
+/**
+ * 数据迁移第二步：在目标机器创建数据存储目录
+ */
+function createStorePath(){
+	active("migrateCreateStorePath");
+	$.post('${request.contextPath}/admin/deploy/create/store/path',
+		$("#migrateForm").serialize(),
+        function(data){
+            if(data.status == 200){
+            	complete("migrateCreateStorePath");
+        		setTimeout('authentication()', 500);
+		    } else {
+		    	toastr.error("创建失败！"+data.message);  
+		    	migrateGoOn("createStorePath");
+		    	warn("migrateCreateStorePath");
+		    }
+       }, 'json');
+}
+/**
+ * 数据迁移第三步：机器互信
+ */
+function authentication(){
+	active("migrateAuth");
+	$.post('${request.contextPath}/admin/deploy/authentication',
+		$("#migrateForm").serialize(),
+        function(data){
+            if(data.status == 200){
+            	complete("migrateAuth");
+        		setTimeout('getSourceStoreFile()', 500);
+		    } else {
+		    	toastr.error("互信失败！"+data.message);  
+		    	migrateGoOn("authentication");
+		    	warn("migrateAuth");
+		    }
+       }, 'json');
+}
+/**
+ * 数据迁移第四步：获取源数据文件
+ */
+function getSourceStoreFile(){
+	active("migrateData");
+	$.post('${request.contextPath}/admin/deploy/store/file',
+		$("#migrateForm").serialize(),
+        function(data){
+			$("#migrateTable tbody").html(data);
+       	}).fail(function(response) {
+    	   $("#migrateTable tbody").html("网络错误，请查看后台日志");
+    	   migrateGoOn("getSourceStoreFile");
+   		   warn("migrateData");
+       	});
+}
+/**
+ * 数据迁移第五步：真正文件迁移
+ */
+function migrateStroreFile(){
+	$("#sourceIp").attr("disabled", "disabled");
+	$("#sourceHome").attr("disabled", "disabled");
+	$("#destIp").attr("disabled", "disabled");
+	$("#destHome").attr("disabled", "disabled");
+	active("migrateScp");
+	$("#migrateProgressDiv").addClass("active");
+	var trs = $("#migrateTable tr[status='0']");
+	if(trs.length != 0) {
+		scpStroreFile(trs.eq(0));
+	} else {
+		active("migrateFinish");
+		$("#migrateProcessBar").width("100%");
+		$("#migrateProgressDiv").removeClass("active");
+		setTimeout('alert("迁移完成")', 1000);
+	}
+}
+
+function scpStroreFile(tr){
+	var pid = tr.attr("data-tt-parent-id");
+	var slashIndex = pid.indexOf("_");
+	// 展开二级foler
+	if(slashIndex != -1){
+		$("#migrateTable").treetable("expandNode", pid.substring(0, slashIndex));
+	}
+	// 展开父folder
+	$("#migrateTable").treetable("expandNode", pid);
+	var jsonData = {};
+	jsonData.sourceIp = $("#sourceIp").val();
+	jsonData.sourceHome = $("#sourceHome").val();
+	jsonData.destIp = $("#destIp").val();
+	jsonData.destHome = $("#destHome").val();
+	jsonData.storeFile = tr.data("json");
+    // 大于5M显示load标识
+    if(jsonData.storeFile.size > 5242880){
+    	tr.find("span.loading").addClass("mqloading");
+    }
+    // 有滚动条
+    if($("#migrateTable").height() > 400){
+	    var trOffset = tr.offset().top - $("#migrateDiv").offset().top;
+	    // 超过一半，滚动
+	    if(trOffset > 200){
+	    	//$("#migrateDiv").scrollTop($("#migrateDiv").scrollTop() + trOffset - 200);
+	    	$("#migrateDiv").stop(true, true).animate({scrollTop: $("#migrateDiv").scrollTop() + trOffset - 200}, 200);
+	    }
+    }
+	$.ajax({
+	    type: 'POST',
+	    url: '${request.contextPath}/admin/deploy/scp/storefile',
+	    data: JSON.stringify(jsonData),
+	    success: function(data) { 
+	    	var transferComponent = tr.find(".transComp");
+	    	tr.find("span.loading").removeClass("glyphicon-tag").removeClass("mqloading");
+            if(data.status == 200){
+            	tr.attr('status', '2');
+            	transferComponent.removeClass("glyphicon-remove").addClass("glyphicon-ok").attr("title", "传输成功");
+            	var md5Compo = tr.find(".md5Comp");
+            	if(data.result.md5OK){
+            		md5Compo.addClass("glyphicon-ok");
+            	} else {
+            		md5Compo.addClass("glyphicon-remove");
+            		if(data.result.sourceMD5){
+            			md5Compo.attr("title", data.result.sourceMD5 + "!=" + data.result.destMD5);
+            		}
+            		var sizeCompo = tr.find(".sizeComp");
+            		if(data.result.sizeOK){
+            			sizeCompo.addClass("glyphicon-ok").attr("title", "大小相同");
+            		} else {
+            			sizeCompo.addClass("glyphicon-remove");
+            			if(data.result.sourceSize){
+            				sizeCompo.attr("title", data.result.sourceSize + "!=" + data.result.destSize);
+            			}
+            		}
+            	}
+            	// 合并传输的单独处理
+            	if(tr.attr("date-type") == 'folder' && data.result.scpVOMap){
+            		$("#migrateTable tr[data-tt-parent-id='"+tr.attr("data-tt-id")+"']").each(function(){
+            			var file = $(this).find(".dataFile").eq(0).html();
+            			var rst = data.result.scpVOMap[file]
+            			if(rst){
+            				var md5Compo2 = $(this).find(".md5Comp");
+            				if(rst.md5OK){
+            					md5Compo2.addClass("glyphicon-ok");
+                        	} else {
+                        		md5Compo2.addClass("glyphicon-remove").attr("title", rst.sourceMD5 + "!=" + rst.destMD5);
+                        		var sizeCompo2 = $(this).find(".sizeComp");
+                        		if(rst.sizeOK){
+                        			sizeCompo2.addClass("glyphicon-ok").attr("title", "大小相同");
+                        		} else {
+                        			sizeCompo2.addClass("glyphicon-remove").attr("title", rst.sourceSize + "!=" + rst.destSize);
+                        		}
+                        	}
+            			} else {
+            				console.error("="+file+"="+data.result.scpVOMap);
+            			} 
+            		});
+            		// 展开folder
+            		if(!data.result.md5OK){
+	   		    		$("#migrateTable").treetable("expandNode", tr.attr("data-tt-id"));
+            		}
+            	}
+            	scpBytes += data.result.size;
+            	var percent = (scpBytes / totalBytes) * 100;
+            	$("#migrateProcessBar").width(formatNum(percent) + "%");
+				$("#migrateSpeed").html(data.result.humanReadableRate);
+				$("#migrated").html(formatSize(scpBytes));
+				migrateStroreFile();
+		    } else {
+		    	toastr.error("传输失败！"+data.message);
+		    	migrateGoOn("migrateStroreFile");
+		    	warn("migrateScp");
+		    	$("#migrateProgressDiv").removeClass("active");
+		    	transferComponent.addClass("glyphicon-remove").attr("title", data.message);
+		    	tr.find("span.loading").addClass("glyphicon-tag pointer").attr("title", "标记为已处理?");
+		    	// 展开folder
+		    	if(tr.hasClass("branch")){
+		    		$("#migrateTable").treetable("expandNode", tr.attr("data-tt-id"));
+		    	}
+		    }
+	    },
+	    contentType: "application/json",
+	    dataType: 'json'
+	});
+}
+
+function skip(id){
+	if($("#" + id).attr("status") == "0"){
+		$("#" + id).find(".transComp").removeClass("glyphicon-remove").addClass("glyphicon-ok");
+		$("#" + id).attr("status", "2");
+		alert($("#" + id).find(".dataFile").eq(0).html()+"标记为已处理");
+	}
 }
 </script>
 </#if>

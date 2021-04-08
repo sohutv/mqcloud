@@ -230,11 +230,11 @@
 								<div class="form-group">
 									<label class="control-label col-md-3" data-toggle="tooltip" title="序列化方式一旦选择，不可更改，请谨慎！"> 序列化方式: </label>
 									<div class="col-md-5 checkbox">
-										<label data-toggle="tooltip" title="优点：大多数情况下压缩比高，性能好。缺点：兼容性差，消费方须用Protobuf反序列化。如果此topic自己使用，建议选择此种方式序列化。">
-									    	<input type="radio" name="serializer" value="0">Protobuf</input>
+										<label data-toggle="tooltip" title="优点：大多数情况下压缩比高，性能好。缺点：兼容性差，消费方须用Protobuf反序列化。不推荐使用。">
+									    	<input type="radio" name="serializer" value="0"><span class="delete">Protobuf</span></input>
 									    </label>
 									    <label data-toggle="tooltip" title="优点：可以使用json或xml，跨语言。缺点：性能和压缩比不高。如果此topic别人消费，建议使用此种方式序列化。">
-									    	<input type="radio" name="serializer" value="1">String</input>
+									    	<input type="radio" name="serializer" value="1" checked="checked">String</input>
 										</label>
 									</div>
 								</div>
@@ -247,7 +247,7 @@
 								<div class="form-group">
 									<label class="control-label col-md-3">更多设置</label>
 									<div class="col-md-5 checkbox">
-									<span onclick="showExtendConfig(this)" class="pointer glyphicon glyphicon-chevron-down" aria-hidden="true"></span>
+									<span onclick="showExtendConfig(this)" class="pointer glyphicon mqcloudcollapse" aria-hidden="true">&nbsp;&nbsp;&nbsp;</span>
 									</div>
 								</div>
 								<!-- 以下选项默认隐藏 -->
@@ -340,10 +340,10 @@
 								<div class="form-group">
 									<label class="control-label col-md-3"> 消费方式: </label>
 									<div class="col-md-6 checkbox">
-										<label data-toggle="tooltip" title="所有的消费者均分消息进行消费">
+										<label data-toggle="tooltip" title="所有的消费实例均分消息进行消费">
 										    <input onclick="consumerWayChange(0)" type="radio" name="consumeWay" value="0" checked>集群消费
 										</label>
-									    <label data-toggle="tooltip" title="每个消费者会消费所有消息">
+									    <label data-toggle="tooltip" title="每个消费实例会消费所有消息">
 										    <input onclick="consumerWayChange(1)" type="radio" name="consumeWay" value="1">广播消费
 									    </label>
 									</div>
@@ -1121,12 +1121,12 @@ function consumerWayChange(type){
 }
 
 function showExtendConfig(obj){
-	if ($(obj).hasClass("glyphicon-chevron-down")){
+	if ($(obj).hasClass("mqcloudcollapse")){
 		$("#extendConfig").removeClass('hide');
-		$(obj).removeClass("glyphicon-chevron-down").addClass("glyphicon-chevron-up");
+		$(obj).removeClass("mqcloudcollapse").addClass("mqclouexpand");
 	} else {
 		$("#extendConfig").addClass('hide');
-		$(obj).removeClass("glyphicon-chevron-up").addClass("glyphicon-chevron-down");
+		$(obj).removeClass("mqclouexpand").addClass("mqcloudcollapse");
 		// 重置默认
 		$("input[name='traceEnabled'][value='1']").prop("checked",false);
 		$("input[name='traceEnabled'][value='0']").prop("checked",true);

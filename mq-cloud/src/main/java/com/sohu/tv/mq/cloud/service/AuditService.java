@@ -31,6 +31,7 @@ import com.sohu.tv.mq.cloud.bo.AuditResetOffset;
 import com.sohu.tv.mq.cloud.bo.AuditTopic;
 import com.sohu.tv.mq.cloud.bo.AuditTopicDelete;
 import com.sohu.tv.mq.cloud.bo.AuditTopicTrace;
+import com.sohu.tv.mq.cloud.bo.AuditTopicTrafficWarn;
 import com.sohu.tv.mq.cloud.bo.AuditTopicUpdate;
 import com.sohu.tv.mq.cloud.bo.AuditUserConsumerDelete;
 import com.sohu.tv.mq.cloud.bo.AuditUserProducerDelete;
@@ -39,19 +40,18 @@ import com.sohu.tv.mq.cloud.bo.Topic;
 import com.sohu.tv.mq.cloud.bo.User;
 import com.sohu.tv.mq.cloud.bo.UserConsumer;
 import com.sohu.tv.mq.cloud.bo.UserProducer;
-import com.sohu.tv.mq.cloud.bo.AuditTopicTrafficWarn;
 import com.sohu.tv.mq.cloud.dao.AuditConsumerConfigDao;
 import com.sohu.tv.mq.cloud.dao.AuditConsumerDeleteDao;
 import com.sohu.tv.mq.cloud.dao.AuditDao;
 import com.sohu.tv.mq.cloud.dao.AuditResetOffsetDao;
 import com.sohu.tv.mq.cloud.dao.AuditTopicDeleteDao;
 import com.sohu.tv.mq.cloud.dao.AuditTopicTraceDao;
+import com.sohu.tv.mq.cloud.dao.AuditTopicTrafficWarnDao;
 import com.sohu.tv.mq.cloud.dao.AuditTopicUpdateDao;
 import com.sohu.tv.mq.cloud.dao.AuditUserConsumerDeleteDao;
 import com.sohu.tv.mq.cloud.dao.AuditUserProducerDeleteDao;
 import com.sohu.tv.mq.cloud.dao.UserConsumerDao;
 import com.sohu.tv.mq.cloud.dao.UserProducerDao;
-import com.sohu.tv.mq.cloud.dao.AuditTopicTrafficWarnDao;
 import com.sohu.tv.mq.cloud.util.Result;
 import com.sohu.tv.mq.cloud.util.Status;
 import com.sohu.tv.mq.cloud.web.vo.AuditAssociateConsumerVO;
@@ -63,13 +63,13 @@ import com.sohu.tv.mq.cloud.web.vo.AuditResendMessageVO;
 import com.sohu.tv.mq.cloud.web.vo.AuditResetOffsetVO;
 import com.sohu.tv.mq.cloud.web.vo.AuditTopicDeleteVO;
 import com.sohu.tv.mq.cloud.web.vo.AuditTopicTraceVO;
+import com.sohu.tv.mq.cloud.web.vo.AuditTopicTrafficWarnVO;
 import com.sohu.tv.mq.cloud.web.vo.AuditTopicUpdateVO;
 import com.sohu.tv.mq.cloud.web.vo.AuditUserConsumerDeleteVO;
 import com.sohu.tv.mq.cloud.web.vo.AuditUserProducerDeleteVO;
 import com.sohu.tv.mq.cloud.web.vo.AuditVO;
 import com.sohu.tv.mq.cloud.web.vo.TopicInfoVO;
 import com.sohu.tv.mq.cloud.web.vo.UserTopicInfoVO;
-import com.sohu.tv.mq.cloud.web.vo.AuditTopicTrafficWarnVO;
 /**
  * audit服务
  * 
@@ -189,7 +189,41 @@ public class AuditService {
         try {
             auditList = auditDao.select(audit);
         } catch (Exception e) {
-            logger.error("queryNoAuditList err, type:{}", audit.getType(), e);
+            logger.error("queryAuditList err, type:{}", audit.getType(), e);
+            return Result.getDBErrorResult(e);
+        }
+        return Result.getResult(auditList);
+    }
+    
+    /**
+     * 查询列表
+     * 
+     * @param type
+     * @return status
+     */
+    public Result<Integer> queryCount(Audit audit) {
+        Integer count = null;
+        try {
+            count = auditDao.selectByPageCount(audit);
+        } catch (Exception e) {
+            logger.error("selectByPageCount err, type:{}", audit.getType(), e);
+            return Result.getDBErrorResult(e);
+        }
+        return Result.getResult(count);
+    }
+    
+    /**
+     * 查询列表
+     * 
+     * @param type
+     * @return status
+     */
+    public Result<List<Audit>> queryAuditListByPage(Audit audit, int offset, int size) {
+        List<Audit> auditList = null;
+        try {
+            auditList = auditDao.selectByPage(audit, offset, size);
+        } catch (Exception e) {
+            logger.error("queryAuditListByPage err, type:{}", audit.getType(), e);
             return Result.getDBErrorResult(e);
         }
         return Result.getResult(auditList);

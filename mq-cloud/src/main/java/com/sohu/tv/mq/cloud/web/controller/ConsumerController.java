@@ -60,6 +60,7 @@ import com.sohu.tv.mq.cloud.service.UserService;
 import com.sohu.tv.mq.cloud.service.VerifyDataService;
 import com.sohu.tv.mq.cloud.util.DateUtil;
 import com.sohu.tv.mq.cloud.util.FreemarkerUtil;
+import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper;
 import com.sohu.tv.mq.cloud.util.Result;
 import com.sohu.tv.mq.cloud.util.Status;
 import com.sohu.tv.mq.cloud.web.controller.param.AssociateConsumerParam;
@@ -108,6 +109,9 @@ public class ConsumerController extends ViewController {
     
     @Autowired
     private ConsumerConfigService consumerConfigService;
+    
+    @Autowired
+    private MQCloudConfigHelper mqCloudConfigHelper;
     
     /**
      * 消费进度
@@ -637,16 +641,22 @@ public class ConsumerController extends ViewController {
     private String getTopicConsumerTip(long tid, long cid) {
         StringBuilder sb = new StringBuilder();
         Result<Topic> topicResult = topicService.queryTopic(tid);
-        if(topicResult.isOK()) {
+        String topic = null;
+        if (topicResult.isOK()) {
+            topic = topicResult.getResult().getName();
             sb.append(" topic:<b>");
-            sb.append(topicResult.getResult().getName());
+            sb.append(topic);
             sb.append("</b>");
         }
         Result<Consumer> consumerResult = consumerService.queryById(cid);
-        if(consumerResult.isOK()) {
-            sb.append(" consumer:<b>");
-            sb.append(consumerResult.getResult().getName());
-            sb.append("</b>");
+        if (consumerResult.isOK()) {
+            String consumer = consumerResult.getResult().getName();
+            sb.append(" consumer:");
+            if (topic != null) {
+                sb.append(mqCloudConfigHelper.getTopicConsumeLink(topic, consumer));
+            } else {
+                sb.append(consumer);
+            }
         }
         return sb.toString();
     }
@@ -876,10 +886,10 @@ public class ConsumerController extends ViewController {
     private String getUpdateConsumerConfigTip(AuditConsumerConfig auditConsumerConfig) {
         StringBuilder sb = new StringBuilder();
         Result<Consumer> consumerResult = consumerService.queryById(auditConsumerConfig.getConsumerId());
-        if(consumerResult.isOK()) {
-            sb.append(" consumer:<b>");
-            sb.append(consumerResult.getResult().getName());
-            sb.append("</b>");
+        if (consumerResult.isOK()) {
+            Consumer consumer = consumerResult.getResult();
+            sb.append(" consumer:");
+            sb.append(mqCloudConfigHelper.getTopicConsumeLink(consumer.getTid(), consumer.getName()));
         }
         return sb.toString();
     }

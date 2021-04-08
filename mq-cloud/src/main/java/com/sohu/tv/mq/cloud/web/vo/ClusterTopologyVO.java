@@ -87,6 +87,7 @@ public class ClusterTopologyVO {
         private String brokerName;
         private ServerInfo serverInfo;
         private BrokerTraffic brokerTraffic;
+        private String addr;
 
         public int getBrokerID() {
             return brokerID;
@@ -118,6 +119,14 @@ public class ClusterTopologyVO {
 
         public void setBrokerTraffic(BrokerTraffic brokerTraffic) {
             this.brokerTraffic = brokerTraffic;
+        }
+
+        public String getAddr() {
+            return addr;
+        }
+
+        public void setAddr(String addr) {
+            this.addr = addr;
         }
     }
 }

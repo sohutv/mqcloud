@@ -4,14 +4,17 @@ import java.util.Map;
 
 import org.apache.commons.lang3.math.NumberUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.servlet.ModelAndView;
 
 import com.sohu.tv.mq.cloud.service.MQDeployer;
 import com.sohu.tv.mq.cloud.util.Result;
 import com.sohu.tv.mq.cloud.util.Status;
+import com.sohu.tv.mq.cloud.web.controller.param.StoreFileParam;
 import com.sohu.tv.mq.cloud.web.vo.UserInfo;
 
 /**
@@ -58,6 +61,15 @@ public class AdminDeployController extends AdminViewController {
         // 获取目录是否存在
         Result<?> dirResult = mqDeployer.dirWrite(ip, dir);
         return dirResult;
+    }
+    
+    /**
+     * 检查目录
+     * @return
+     */
+    @RequestMapping(value="/check/dir/exist", method=RequestMethod.POST)
+    public Result<?> checkDirExist(UserInfo ui, @RequestParam(name="destIp") String ip, @RequestParam(name="destHome") String dir) {
+        return mqDeployer.dirExist(ip, dir);
     }
     
     /**
@@ -257,6 +269,55 @@ public class AdminDeployController extends AdminViewController {
             return mvResult;
         }
         return Result.getOKResult();
+    }
+    
+    /**
+     * 机器互信
+     * @param sourceIp
+     * @param destIp
+     * @return
+     */
+    @RequestMapping("/authentication")
+    public Result<?> authentication(@RequestParam(name = "sourceIp") String sourceIp,
+            @RequestParam(name = "destIp") String destIp) {
+        return mqDeployer.authentication(sourceIp, destIp);
+    }
+    
+    /**
+     * 获取存储文件
+     * @param ip
+     * @param home
+     * @param map
+     * @return
+     */
+    @RequestMapping("/store/file")
+    public ModelAndView getSotreFileList(@RequestParam(name = "sourceIp") String ip,
+            @RequestParam(name = "sourceHome") String home, Map<String, Object> map) {
+        setResult(map, mqDeployer.getStoreFileList(ip, home));
+        return new ModelAndView("admin/cluster/storeFile");
+    }
+    
+    /**
+     * 创建存储路径
+     * @param destIp
+     * @param destHome
+     * @return
+     */
+    @RequestMapping("/create/store/path")
+    public Result<?> createStorePath(@RequestParam(name = "destIp") String destIp,
+            @RequestParam(name = "destHome") String destHome) {
+        return mqDeployer.createStorePath(destIp, destHome);
+    }
+    
+    /**
+     * scp传输文件
+     * @param storeFileParam
+     * @return
+     */
+    @RequestMapping("/scp/storefile")
+    public Result<?> scpStoreFile(@RequestBody StoreFileParam storeFileParam) {
+        return mqDeployer.scpStoreEntry(storeFileParam.getSourceIp(), storeFileParam.getSourceHome(),
+                storeFileParam.getDestIp(), storeFileParam.getDestHome(), storeFileParam.getStoreFile());
     }
 
     @Override

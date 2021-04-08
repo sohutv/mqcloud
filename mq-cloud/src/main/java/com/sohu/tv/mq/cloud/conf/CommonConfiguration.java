@@ -36,7 +36,10 @@ import com.sohu.tv.mq.cloud.mq.MQAdminPooledObjectFactory;
 import com.sohu.tv.mq.cloud.mq.SohuMQAdminFactory;
 import com.sohu.tv.mq.cloud.service.ClientStatsConsumer;
 import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper;
+import com.sohu.tv.mq.cloud.util.SSHPooledObjectFactory;
 import com.sohu.tv.mq.stats.dto.ClientStats;
+
+import ch.ethz.ssh2.Connection;
 
 /**
  * 通用配置
@@ -111,7 +114,7 @@ public class CommonConfiguration {
         LocalCache<String> localCache = new LocalCache<String>();
         localCache.setName("fetch");
         localCache.setSize(1000);
-        localCache.setExpireAfterAccess(120);
+        localCache.setExpireAfterWrite(120);
         localCache.init();
         return localCache;
     }
@@ -173,6 +176,27 @@ public class CommonConfiguration {
         mqAdminPooledObjectFactory.setSohuMQAdminFactory(sohuMQAdminFactory);
         GenericKeyedObjectPool<Cluster, MQAdminExt> genericKeyedObjectPool = new GenericKeyedObjectPool<Cluster, MQAdminExt>(
                 mqAdminPooledObjectFactory,
+                genericKeyedObjectPoolConfig);
+        return genericKeyedObjectPool;
+    }
+    
+    /**
+     * ssh连接池配置
+     * @return
+     */
+    @Bean
+    public GenericKeyedObjectPool<String, Connection> sshPool() {
+        GenericKeyedObjectPoolConfig genericKeyedObjectPoolConfig = new GenericKeyedObjectPoolConfig();
+        genericKeyedObjectPoolConfig.setTestWhileIdle(true);
+        genericKeyedObjectPoolConfig.setMaxTotalPerKey(5);
+        genericKeyedObjectPoolConfig.setMaxIdlePerKey(1);
+        genericKeyedObjectPoolConfig.setMinIdlePerKey(1);
+        genericKeyedObjectPoolConfig.setMaxWaitMillis(30000);
+        genericKeyedObjectPoolConfig.setTimeBetweenEvictionRunsMillis(20000);
+        SSHPooledObjectFactory sshPooledObjectFactory = new SSHPooledObjectFactory();
+        sshPooledObjectFactory.setMqCloudConfigHelper(mqCloudConfigHelper);
+        GenericKeyedObjectPool<String, Connection> genericKeyedObjectPool = new GenericKeyedObjectPool<>(
+                sshPooledObjectFactory,
                 genericKeyedObjectPoolConfig);
         return genericKeyedObjectPool;
     }

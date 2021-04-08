@@ -15,7 +15,8 @@ eureka:
     registerWithEureka: false
     fetchRegistry: false
 
-management: 
+management:
+  context-path: /actuator
   port: 8088
   security: 
     enabled: false

@@ -4,7 +4,7 @@
 			<label data-toggle="tooltip" title="支持排序，便于分组展示"> broker配置模板组: </label>
 		</div>
 		<div class="form-group">
-			<button type="button" class="btn btn-success" onclick="addBrokerConfigGroup()" data-target="#addBrokerConfigGroupModal" data-toggle="modal"><span class="glyphicon glyphicon-plus" aria-hidden="true"></span>&nbsp;配置模板组</button>
+			<button type="button" class="btn btn-success" onclick="addBrokerConfigGroup()" data-toggle="modal"><span class="glyphicon glyphicon-plus" aria-hidden="true"></span>&nbsp;配置模板组</button>
 		</div>
 	</form>
 	<hr/>
@@ -30,7 +30,7 @@
 						<td>${brokerConfigGroupVO.brokerConfigGroup.group!}</td>
 						<td>
 							<span onclick="modifyBrokerConfigGroupShow(${brokerConfigGroupVO.brokerConfigGroup.id}, '${brokerConfigGroupVO.brokerConfigGroup.group!}', ${brokerConfigGroupVO.brokerConfigGroup.order})" class="glyphicon glyphicon-pencil pointer" data-toggle="tooltip" title="修改" aria-hidden="true"></span>
-							<button type="button" class="btn btn-warning btn-xs" data-target="#delete" onclick="deleteBrokerConfigGroupShow(${brokerConfigGroupVO.brokerConfigGroup.id}, '${brokerConfigGroupVO.brokerConfigGroup.group!}')" data-toggle="modal" title="删除"><span class="glyphicon glyphicon-trash" aria-hidden="true"></span></button>
+							<button type="button" class="btn btn-warning btn-xs" onclick="deleteBrokerConfigGroupShow(${brokerConfigGroupVO.brokerConfigGroup.id}, '${brokerConfigGroupVO.brokerConfigGroup.group!}')" data-toggle="modal" title="删除"><span class="glyphicon glyphicon-trash" aria-hidden="true"></span></button>
 						</td>
 					</tr>
 				</#list>
@@ -44,7 +44,7 @@
 			<label data-toggle="tooltip" title="便于在查看broker线上配置和部署broker时使用"> broker配置模板: </label>
 		</div>
 		<div class="form-group">
-			<button type="button" class="btn btn-success" onclick="addBrokerConfig()" data-target="#addBrokerConfigModal" data-toggle="modal"><span class="glyphicon glyphicon-plus" aria-hidden="true"></span>&nbsp;配置模板</button>
+			<button type="button" class="btn btn-success" onclick="addBrokerConfig()" data-toggle="modal"><span class="glyphicon glyphicon-plus" aria-hidden="true"></span>&nbsp;配置模板</button>
 		</div>
 	</form>
 	<hr/>
@@ -102,7 +102,7 @@
 						<td id="required${brokerConfig.id}">${brokerConfig.required?string('<b style="color:red">是</b>','否')}</td>
 						<td>
 							<span onclick="modifyBrokerConfigShow(${brokerConfigGroupVO.brokerConfigGroup.id}, ${brokerConfig.id})" class="glyphicon glyphicon-pencil pointer" data-toggle="tooltip" title="修改" aria-hidden="true"></span>
-							<button type="button" class="btn btn-warning btn-xs" data-target="#delete" onclick="deleteBrokerConfigShow(${brokerConfig.id}, '${brokerConfig.key}')" data-toggle="modal" title="删除"><span class="glyphicon glyphicon-trash" aria-hidden="true"></span></button>
+							<button type="button" class="btn btn-warning btn-xs" onclick="deleteBrokerConfigShow(${brokerConfig.id}, '${brokerConfig.key}')" data-toggle="modal" title="删除"><span class="glyphicon glyphicon-trash" aria-hidden="true"></span></button>
 							<input class="pointer" type="checkbox" style="vertical-align: -2px" value="${brokerConfig.id}" <#if !brokerConfig.canSelect>disabled=true<#else><#if brokerConfig.required>checked='checked' onclick="return false;"</#if></#if> />
 						</td>
 					</tr>
@@ -180,7 +180,7 @@
 		    			<td>${brokerConfig.dynamicModify?string('<b>是</b>','否')}</td>
 		    			<td>
 							<span onclick="modifyClusterConfigShow(${brokerConfig.id})" class="glyphicon glyphicon-pencil pointer" data-toggle="tooltip" title="修改" aria-hidden="true"></span>
-							<button type="button" class="btn btn-warning btn-xs" data-target="#delete" onclick="deleteClusterConfigShow(${brokerConfig.id}, '${brokerConfig.key}')" data-toggle="modal" title="删除"><span class="glyphicon glyphicon-trash" aria-hidden="true"></span></button>
+							<button type="button" class="btn btn-warning btn-xs" onclick="deleteClusterConfigShow(${brokerConfig.id}, '${brokerConfig.key}')" data-toggle="modal" title="删除"><span class="glyphicon glyphicon-trash" aria-hidden="true"></span></button>
 						</td>
 		    		</tr>
 		    	</#list>

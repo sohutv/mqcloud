@@ -233,6 +233,7 @@ public class AdminTopologyController extends AdminViewController {
                 BrokerStat brokerStat = new BrokerStat();
                 brokerStat.setBrokerID(broker.getBrokerID());
                 brokerStat.setBrokerName(broker.getBrokerName());
+                brokerStat.setAddr(broker.getAddr());
                 // 获取服务器信息
                 ServerInfo serverInfo = findServerInfo(serverInfoList, broker.getIp());
                 if (serverInfo != null) {
@@ -304,9 +305,7 @@ public class AdminTopologyController extends AdminViewController {
             if (broker.getBrokerID() != 0) {
                 continue;
             }
-            String addr = broker.getAddr();
-            String ip = addr.split(":")[0];
-            ips.add(ip);
+            ips.add(broker.getAddr());
         }
         // 获取日期
         Date now = new Date();

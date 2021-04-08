@@ -13,8 +13,10 @@ import org.slf4j.Logger;
 
 import com.alibaba.fastjson.JSON;
 import com.sohu.index.tv.mq.common.BatchConsumerCallback.MQMessage;
+import com.sohu.tv.mq.metric.MQMetricsExporter;
 import com.sohu.tv.mq.serializable.MessageSerializer;
 import com.sohu.tv.mq.serializable.MessageSerializerEnum;
+import com.sohu.tv.mq.stats.ConsumeStats;
 import com.sohu.tv.mq.util.CommonUtil;
 /**
  * 消息消费公共逻辑抽取
@@ -31,10 +33,17 @@ public class MessageConsumer {
     
     private Logger logger;
     
+    // 消费统计
+    private ConsumeStats consumeStats;
+    
     public MessageConsumer(RocketMQConsumer rocketMQConsumer) {
         this.rocketMQConsumer = rocketMQConsumer;
         logger = rocketMQConsumer.getLogger();
         consumerStrategy = new ConsumerStrategy();
+        if (rocketMQConsumer.isEnableStats()) {
+            consumeStats = new ConsumeStats(rocketMQConsumer.getGroup());
+            MQMetricsExporter.getInstance().add(consumeStats);
+        }
     }
 
     /**
@@ -44,9 +53,16 @@ public class MessageConsumer {
      * @return
      */
     public ConsumeConcurrentlyStatus consumeMessage(List<MessageExt> msgs, ConsumeConcurrentlyContext context) {
+        long start = System.currentTimeMillis();
         ConsumeStatus consumeStatus = consumerStrategy.chooseConsumer().consume(msgs);
         if (ConsumeStatus.FAIL == consumeStatus && rocketMQConsumer.isReconsume()) {
+            if (consumeStats != null) {
+                consumeStats.incrementException();
+            }
             return ConsumeConcurrentlyStatus.RECONSUME_LATER;
+        }
+        if (consumeStats != null) {
+            consumeStats.increment(System.currentTimeMillis() - start);
         }
         return ConsumeConcurrentlyStatus.CONSUME_SUCCESS;
     }

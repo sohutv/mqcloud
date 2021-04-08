@@ -2,6 +2,8 @@ package com.sohu.tv.mq.cloud.bo;
 
 import java.util.Date;
 
+import com.sohu.tv.mq.cloud.util.WebUtil;
+
 /**
  * broker流量
  * 
@@ -108,66 +110,35 @@ public class BrokerTraffic {
     }
 
     public String getGetSizeFormat() {
-        return sizeFormat(getSize);
+        return WebUtil.sizeFormat(getSize);
     }
 
     public String getPutSizeFormat() {
-        return sizeFormat(putSize);
+        return WebUtil.sizeFormat(putSize);
     }
 
     public String getGetCountFormat() {
-        return countFormat(getCount);
+        return WebUtil.countFormat(getCount);
     }
 
     public String getPutCountFormat() {
-        return countFormat(putCount);
+        return WebUtil.countFormat(putCount);
     }
     
     public String getAvgGetSizeFormat() {
-        return sizeFormat(avgGetSize);
+        return WebUtil.sizeFormat(avgGetSize);
     }
 
     public String getAvgPutSizeFormat() {
-        return sizeFormat(avgPutSize);
+        return WebUtil.sizeFormat(avgPutSize);
     }
 
     public String getAvgGetCountFormat() {
-        return countFormat(avgGetCount);
+        return WebUtil.countFormat(avgGetCount);
     }
 
     public String getAvgPutCountFormat() {
-        return countFormat(avgPutCount);
-    }
-
-    private String countFormat(long value) {
-        if (value >= 100000000) {
-            return format(value / 100000000F) + "亿";
-        }
-        if (value >= 10000) {
-            return format(value / 10000F) + "万";
-        }
-        return format(value);
-    }
-
-    private String sizeFormat(long value) {
-        if (value >= 1073741824) {
-            return format(value / 1073741824F) + "g";
-        }
-        if (value >= 1048576) {
-            return format(value / 1048576F) + "m";
-        }
-        if (value >= 1024) {
-            return format(value / 1024F) + "k";
-        }
-        return format(value) + "b";
-    }
-
-    private String format(float value) {
-        long v = (long) (value * 10);
-        if (v % 10 == 0) {
-            return String.valueOf(v / 10);
-        }
-        return String.valueOf(v / 10.0);
+        return WebUtil.countFormat(avgPutCount);
     }
 
     public long getAvgPutCount() {

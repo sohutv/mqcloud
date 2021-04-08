@@ -9,6 +9,7 @@ import org.apache.rocketmq.tools.command.CommandUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.interceptor.TransactionAspectSupport;
@@ -61,6 +62,10 @@ public class UserConsumerService {
             if(result.isNotOK()) {
                 throw new RuntimeException("create consumer:"+consumer.getName()+" on cluster err!");
             }
+        } catch (DuplicateKeyException e) {
+            logger.warn("duplicate key:{}", consumer);
+            TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+            return Result.getResult(Status.DB_DUPLICATE_KEY).setMessage(consumer.getName() + "已存在");
         } catch (Exception e) {
             logger.error("insert err, userConsumer:{}", userConsumer, e);
             TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();

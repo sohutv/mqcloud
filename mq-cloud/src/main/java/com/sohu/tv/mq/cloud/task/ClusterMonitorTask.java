@@ -6,11 +6,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.lang3.math.NumberUtils;
+import org.apache.rocketmq.common.protocol.body.KVTable;
 import org.apache.rocketmq.tools.admin.MQAdminExt;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
+
 import com.sohu.tv.mq.cloud.bo.Broker;
 import com.sohu.tv.mq.cloud.bo.CheckStatusEnum;
 import com.sohu.tv.mq.cloud.bo.Cluster;
@@ -23,6 +26,7 @@ import com.sohu.tv.mq.cloud.service.ClusterService;
 import com.sohu.tv.mq.cloud.service.NameServerService;
 import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper;
 import com.sohu.tv.mq.cloud.util.Result;
+import com.sohu.tv.mq.cloud.util.WebUtil;
 
 import net.javacrumbs.shedlock.core.SchedulerLock;
 
@@ -87,10 +91,10 @@ public class ClusterMonitorTask {
     }
 
     /**
-     * 每7分钟监控一次
+     * 每5分钟监控一次
      */
-    @Scheduled(cron = "50 */7 * * * *")
-    @SchedulerLock(name = "brokerMonitor", lockAtMostFor = 345000, lockAtLeastFor = 345000)
+    @Scheduled(cron = "50 */5 * * * *")
+    @SchedulerLock(name = "brokerMonitor", lockAtMostFor = 240000, lockAtLeastFor = 240000)
     public void brokerMonitor() {
         if(clusterService.getAllMQCluster() == null) {
             logger.warn("brokerMonitor mqcluster is null");
@@ -100,17 +104,24 @@ public class ClusterMonitorTask {
         long start = System.currentTimeMillis();
         // 缓存报警信息
         Map<Cluster, List<String>> alarmMap = new HashMap<Cluster, List<String>>();
+        // 缓存broker状态信息
+        Map<Cluster, List<Broker>> clusterMap = new HashMap<>();
         for (Cluster mqCluster : clusterService.getAllMQCluster()) {
             List<String> alarmList = alarmMap.get(mqCluster);
             if (alarmList == null) {
                 alarmList = new ArrayList<String>();
                 alarmMap.put(mqCluster, alarmList);
             }
-            monitorBroker(mqCluster, alarmList);
+            List<Broker> brokerList = monitorBroker(mqCluster, alarmList);
+            if (brokerList != null && !brokerList.isEmpty()) {
+                clusterMap.put(mqCluster, brokerList);
+            }
         }
         if (!alarmMap.isEmpty()) {
             handleAlarmMessage(alarmMap, 1, BROKER_ERROR_TITLE);
         }
+        // broker偏移量预警
+        brokerFallBehindWarn(clusterMap);
         logger.info("monitor broker end! use:{}ms", System.currentTimeMillis() - start);
     }
 
@@ -160,17 +171,18 @@ public class ClusterMonitorTask {
      * 
      * @param mqCluster
      */
-    private void monitorBroker(Cluster mqCluster, List<String> alarmList) {
+    private List<Broker> monitorBroker(Cluster mqCluster, List<String> alarmList) {
         Result<List<Broker>> brokerListResult = brokerService.query(mqCluster.getId());
         if (brokerListResult.isEmpty()) {
-            return;
+            return null;
         }
+        List<Broker> brokerList = brokerListResult.getResult();
         mqAdminTemplate.execute(new MQAdminCallback<Void>() {
             public Void callback(MQAdminExt mqAdmin) throws Exception {
-                List<Broker> brokerList = brokerListResult.getResult();
                 for (Broker broker : brokerList) {
                     try {
-                        mqAdmin.fetchBrokerRuntimeStats(broker.getAddr());
+                        KVTable kvTable = mqAdmin.fetchBrokerRuntimeStats(broker.getAddr());
+                        broker.setMaxOffset(NumberUtils.toLong(kvTable.getTable().get("commitLogMaxOffset")));
                         brokerService.update(mqCluster.getId(), broker.getAddr(), CheckStatusEnum.OK);
                     } catch (Exception e) {
                         brokerService.update(mqCluster.getId(), broker.getAddr(), CheckStatusEnum.FAIL);
@@ -190,6 +202,7 @@ public class ClusterMonitorTask {
                 return null;
             }
         });
+        return brokerList;
     }
 
     /**
@@ -259,6 +272,94 @@ public class ClusterMonitorTask {
             sendAlertMessage(alarmTitle, content.toString());
             alertService.sendPhone(alarmTitle, smsBuilder.toString());
         }
+    }
+    
+    /**
+     * broker最大offset预警
+     * 
+     * @param clusterMap
+     */
+    private void brokerFallBehindWarn(Map<Cluster, List<Broker>> clusterMap) {
+        if (clusterMap.isEmpty()) {
+            return;
+        }
+        StringBuilder warnMessage = new StringBuilder();
+        for (Cluster cluster : clusterMap.keySet()) {
+            List<Broker> brokerList = clusterMap.get(cluster);
+            for (Broker broker : brokerList) {
+                // slave跳过
+                if (!broker.isMaster()) {
+                    continue;
+                }
+                // 获取slave
+                Broker slave = findSlave(broker, brokerList);
+                if (slave == null) {
+                    continue;
+                }
+                // 获取slave落后字节
+                long fallBehindOffset = broker.getMaxOffset() - slave.getMaxOffset();
+                if (fallBehindOffset <= mqCloudConfigHelper.getSlaveFallBehindSize()) {
+                    continue;
+                }
+                warnMessage.append("<tr>");
+                // 集群
+                warnMessage.append("<td>");
+                warnMessage.append(cluster.getName());
+                warnMessage.append("</td>");
+                // broker
+                warnMessage.append("<td>");
+                warnMessage.append(mqCloudConfigHelper.getHrefLink(
+                        mqCloudConfigHelper.getBrokerMonitorLink(cluster.getId()), broker.getBrokerName()));
+                warnMessage.append("</td>");
+                // 偏移量
+                warnMessage.append("<td title='" + fallBehindOffset + "'>");
+                warnMessage.append(WebUtil.sizeFormat(fallBehindOffset));
+                warnMessage.append("</td>");
+
+                // 目标阈值
+                warnMessage.append("<td title='" + mqCloudConfigHelper.getSlaveFallBehindSize() + "'>");
+                warnMessage.append(WebUtil.sizeFormat(mqCloudConfigHelper.getSlaveFallBehindSize()));
+                warnMessage.append("</td>");
+
+                warnMessage.append("</tr>");
+            }
+        }
+        if (warnMessage.length() <= 0) {
+            return;
+        }
+        StringBuilder tableBuilder = new StringBuilder("<table border=1>");
+        tableBuilder.append("<thead>");
+        tableBuilder.append("<tr>");
+        tableBuilder.append("<td>");
+        tableBuilder.append("集群");
+        tableBuilder.append("</td>");
+        tableBuilder.append("<td>");
+        tableBuilder.append("broker");
+        tableBuilder.append("</td>");
+        tableBuilder.append("<td>");
+        tableBuilder.append("落后量");
+        tableBuilder.append("</td>");
+        tableBuilder.append("<td>");
+        tableBuilder.append("阈值");
+        tableBuilder.append("</td>");
+        tableBuilder.append("</tr>");
+        tableBuilder.append("</thead>");
+        tableBuilder.append("<tbody>");
+        tableBuilder.append(warnMessage);
+        tableBuilder.append("</tbody>");
+        sendAlertMessage("slave同步落后", tableBuilder.toString());
+    }
+    
+    private Broker findSlave(Broker master, List<Broker> brokerList) {
+        for (Broker broker : brokerList) {
+            if (broker.isMaster()) {
+                continue;
+            }
+            if (master.getBrokerName().equals(broker.getBrokerName())) {
+                return broker;
+            }
+        }
+        return null;
     }
 
     /**

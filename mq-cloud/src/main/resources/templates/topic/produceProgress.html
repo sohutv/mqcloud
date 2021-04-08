@@ -35,7 +35,7 @@
 							<#list v as mq, offset>
 									<#if loop == 1>
 										<tr onclick="toggleTR('${k}')" style="cursor:pointer">
-										<td id='${k}' _rowspan="${v?size+1}"><span id="${k}_span" class="glyphicon glyphicon-chevron-down" aria-hidden="true"></span> ${k}</td>
+										<td id='${k}' _rowspan="${v?size+1}"><span id="${k}_span" class="mqcloudcollapse">&nbsp;&nbsp;&nbsp;</span> ${k}</td>
 										<#assign loop+=1>
 										<td>全部</td>
 			                    		<#assign totalOffset=0>
@@ -103,11 +103,11 @@ function toggleTR(clz){
 	if($("tr."+clz).is(':visible')){
 		$("tr."+clz).hide();
 		$("#"+clz).removeAttr("rowspan");
-		$("#"+clz+"_span").removeClass("glyphicon-chevron-up").addClass("glyphicon-chevron-down");
+		$("#"+clz+"_span").removeClass("mqclouexpand").addClass("mqcloudcollapse");
 	} else {
 		$("tr."+clz).show();
 		$("#"+clz).attr("rowspan", $("#"+clz).attr("_rowspan"));
-		$("#"+clz+"_span").removeClass("glyphicon-chevron-down").addClass("glyphicon-chevron-up");
+		$("#"+clz+"_span").removeClass("mqcloudcollapse").addClass("mqclouexpand");
 	}
 }
 <#if response.OK>

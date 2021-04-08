@@ -231,8 +231,8 @@ public class InvokeStats {
     public static class InvokeStatsResult {
         // 最大耗时
         private int maxTime;
-        // 平均耗时
-        private double avgTime;
+        // 总耗时
+        private long totalTime;
         // 调用次数
         private int times;
         // 异常集合
@@ -240,12 +240,8 @@ public class InvokeStats {
 
         public void init(TimeStats timeStats) {
             setMaxTime((int)timeStats.getMaxTimeReference().get());
-            double time = timeStats.getTime().get();
-            long count = timeStats.getCount().get();
-            // 保留一位小数
-            double rst = (long)(time / count * 10) / 10D;
-            setAvgTime(rst);
-            setTimes((int) count);
+            totalTime = timeStats.getTime().get();
+            times = (int) timeStats.getCount().get();
         }
 
         public void init(ExceptionStats exceptionStats) {
@@ -266,13 +262,14 @@ public class InvokeStats {
         public void setMaxTime(int maxTime) {
             this.maxTime = maxTime;
         }
-
-        public double getAvgTime() {
-            return avgTime;
+        
+        public long totalTime() {
+            return totalTime;
         }
 
-        public void setAvgTime(double avgTime) {
-            this.avgTime = avgTime;
+        public double getAvgTime() {
+            // 保留一位小数
+            return (long)((double)totalTime / times * 10) / 10D;
         }
 
         public int getTimes() {
@@ -293,7 +290,7 @@ public class InvokeStats {
 
         @Override
         public String toString() {
-            return "InvokeStatsResult [maxTime=" + maxTime + ", avgTime=" + avgTime + ", times=" + times
+            return "InvokeStatsResult [maxTime=" + maxTime + ", totalTime=" + totalTime + ", times=" + times
                     + ", exceptionMap=" + exceptionMap + "]";
         }
     }

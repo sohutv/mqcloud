@@ -17,7 +17,6 @@ import com.sohu.tv.mq.cloud.bo.Cluster;
 import com.sohu.tv.mq.cloud.service.ClusterService;
 import com.sohu.tv.mq.cloud.service.ConsumerService;
 import com.sohu.tv.mq.cloud.service.NameServerService;
-import com.sohu.tv.mq.cloud.service.TopicService;
 import com.sohu.tv.mq.cloud.task.AlarmConfigTask;
 import com.sohu.tv.mq.cloud.task.AutoAuditTask;
 import com.sohu.tv.mq.cloud.task.BrokerStoreStatTask;
@@ -54,9 +53,6 @@ public class TaskConfiguration {
     
     @Autowired
     private ClusterService clusterService;
-    
-    @Autowired
-    private TopicService topicService;
     
     @Autowired
     private ConsumerService consumerService;
@@ -178,7 +174,7 @@ public class TaskConfiguration {
         for(Cluster mqCluster : clusterService.getAllMQCluster()) {
             if(online == mqCluster.online()) {
                 MonitorService monitorService = new MonitorService(nameServerService, mqCluster, sohuMonitorListener, 
-                        mqCloudConfigHelper, topicService);
+                        mqCloudConfigHelper);
                 monitorService.setConsumerService(consumerService);
                 list.add(monitorService);
             }
