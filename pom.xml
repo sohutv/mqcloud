@@ -6,7 +6,7 @@
 	<artifactId>mq</artifactId>
 	<packaging>pom</packaging>
 	<name>mq</name>
-	<version>4.7.1</version>
+	<version>${mq.version}</version>
 
 	<modules>
 		<module>mq-client-common-open</module>
@@ -16,6 +16,7 @@
 	</modules>
 
 	<properties>
+		<mq.version>4.7.2-SNAPSHOT</mq.version>
 		<slf4j.version>1.7.5</slf4j.version>
 		<junit.version>4.13.1</junit.version>
 		<rocketmq.version>4.7.1</rocketmq.version>
@@ -120,7 +121,7 @@
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
-	
+
 	<repositories>
 	    <repository>
 	        <id>github.repo</id>
@@ -174,7 +175,7 @@
 					</execution>
 				</executions>
 			</plugin>
-			
+
 			<!-- github repo -->
 			<plugin>
                 <artifactId>maven-deploy-plugin</artifactId>

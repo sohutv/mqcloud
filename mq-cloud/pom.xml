@@ -5,12 +5,12 @@
 	<parent>
 		<groupId>com.sohu.tv</groupId>
 		<artifactId>mq</artifactId>
-		<version>4.7.1</version>
+		<version>${mq.version}</version>
 	</parent>
 
 	<artifactId>mq-cloud</artifactId>
 	<packaging>war</packaging>
-	
+
 	<!-- spring boot dependency -->
 	<dependencyManagement>
 		<dependencies>
@@ -105,7 +105,7 @@
 			<artifactId>ganymed-ssh2</artifactId>
 			<version>${ganymed-ssh.version}</version>
 		</dependency>
-		
+
 		<!-- mail -->
 		<dependency>
 		    <groupId>com.sun.mail</groupId>
@@ -122,7 +122,7 @@
 			<artifactId>junit</artifactId>
 			<scope>test</scope>
 		</dependency>
-		
+
 		<!--markdown to html-->
 		<dependency>
 		    <groupId>com.vladsch.flexmark</groupId>
@@ -136,7 +136,7 @@
 		    <version>${flexmark.version}</version>
 		</dependency>
 		<!--markdown to html end-->
-		
+
 		<dependency>
 		    <groupId>com.google.guava</groupId>
 		  	<artifactId>guava</artifactId>
