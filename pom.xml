@@ -129,10 +129,6 @@
 	    <repository>
 	        <id>github.repo</id>
 	        <url>https://raw.github.com/sohutv/mvn_repo/master</url>
-	        <snapshots>
-	            <enabled>true</enabled>
-	            <updatePolicy>always</updatePolicy>
-	        </snapshots>
 	    </repository>
 	</repositories>
 
