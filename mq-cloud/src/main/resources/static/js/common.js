@@ -74,26 +74,23 @@ function stopLoading(){
 // post
 function post(url, data, callback, dataType){
 	loading();
-	if(dataType){
-		$.post(
-			url, 
-			data,
-	       	function(data){
-				stopLoading();
-				callback(data);
-		    },
-		    dataType
-	    );
-	} else {
-		$.post(
-			url, 
-			data,
-	       	function(data){
-				stopLoading();
-				callback(data);
-		    }
-	    );
+	if(!dataType){
+		dataType = "html";
 	}
+	$.ajax({
+	    type: 'POST',
+	    url: url,
+	    data: data,
+	    success: function(data) { 
+			stopLoading();
+			callback(data);
+	    },
+		error : function(XMLHttpRequest, err, e){
+			stopLoading();
+			toastr.error("网络异常("+XMLHttpRequest.status+"):"+err); 
+		},
+		dataType: dataType
+	});
 }
 
 

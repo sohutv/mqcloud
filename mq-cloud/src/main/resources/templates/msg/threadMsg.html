@@ -1,22 +1,13 @@
 <#if response.OK>
 	<tbody>
 		<tr data="${response.result.offsetMsgId}" dataIdx="1">
-			<td id="${response.result.msgId}" date-data="${response.result.storeTimestamp?c}">1</td>
 			<td>${response.result.bornHostString}</td>
 			<td data-tooltip="true" title="存储时间:${response.result.storeTimestamp?number_to_datetime?string("yyyy-MM-dd HH:mm:ss.SSS")}">${response.result.bornTimestamp?number_to_datetime?string("yyyy-MM-dd HH:mm:ss.SSS")}</td>
 			<td data-tooltip="true" title="偏移量:${response.result.queueOffset}">${response.result.broker!}:${response.result.queueId}</td>
 			<td data-tooltip="true" title="序列化方式:<#if response.result.messageBodySerializer??>${response.result.messageBodySerializer.getName()}(${response.result.messageBodyTypeString!})<#else>${response.result.messageBodyTypeString!}</#if>"><#if response.result.decodedBody?length gt 1000><pre>${response.result.decodedBody}</pre><#else>${response.result.decodedBody}</#if></td>
-			<td>${response.result.keys!}</td>
-			<td>${response.result.tags!}</td>
-			<#if traceEnabled>
-				<td class="text-center" style="padding:0px;"><img style="cursor:pointer;" src="${request.contextPath}/img/trace.png" data-tooltip="true" title="查看追踪信息" onclick="traceNoTime('${response.result.msgId}')"></td>
-			<#else>
-				<td class="text-center"><span class="glyphicon glyphicon-eye-open" data-tooltip="true" title="查看消息轨迹" style="cursor:pointer;" onclick=track(${response.result.toJson()}) data-target="#trackModal" data-toggle="modal"></span></td>
-			</#if>
 		</tr>
 	</tbody>
 	<script>
-		initMultiSelect("tbody");
 		$(function() {
 	        $('[data-tooltip="true"]').tooltip({
 	            container: 'body'
@@ -25,9 +16,6 @@
 	</script>
 <#else>
 	<tbody>
-		<tr class="no_more_data"><td colspan=8 class="text-center">查询异常！${response.message}</td></tr>
+		<tr class="no_more_data"><td colspan=4 class="text-center">查询异常！${response.message}</td></tr>
 	</tbody>
 </#if>
-<script>
-	$("#pager").hide();
-</script>

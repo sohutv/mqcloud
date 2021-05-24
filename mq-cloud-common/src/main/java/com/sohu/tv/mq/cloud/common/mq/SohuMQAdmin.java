@@ -1,18 +1,27 @@
 package com.sohu.tv.mq.cloud.common.mq;
 
 import java.lang.reflect.Field;
+import java.util.List;
 
 import org.apache.rocketmq.client.exception.MQBrokerException;
 import org.apache.rocketmq.client.exception.MQClientException;
 import org.apache.rocketmq.client.impl.factory.MQClientInstance;
 import org.apache.rocketmq.client.producer.SendResult;
+import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.message.Message;
+import org.apache.rocketmq.common.protocol.RequestCode;
+import org.apache.rocketmq.common.protocol.ResponseCode;
+import org.apache.rocketmq.common.protocol.body.ConsumerRunningInfo;
 import org.apache.rocketmq.common.protocol.body.TopicList;
+import org.apache.rocketmq.common.protocol.header.GetConsumerRunningInfoRequestHeader;
+import org.apache.rocketmq.common.protocol.route.BrokerData;
+import org.apache.rocketmq.common.protocol.route.TopicRouteData;
 import org.apache.rocketmq.remoting.RPCHook;
 import org.apache.rocketmq.remoting.exception.RemotingConnectException;
 import org.apache.rocketmq.remoting.exception.RemotingException;
 import org.apache.rocketmq.remoting.exception.RemotingSendRequestException;
 import org.apache.rocketmq.remoting.exception.RemotingTimeoutException;
+import org.apache.rocketmq.remoting.protocol.RemotingCommand;
 import org.apache.rocketmq.tools.admin.DefaultMQAdminExt;
 import org.apache.rocketmq.tools.admin.DefaultMQAdminExtImpl;
 
@@ -97,6 +106,7 @@ public abstract class SohuMQAdmin extends DefaultMQAdminExt {
 
     /**
      * 获取broker存储统计
+     * 
      * @param brokerAddr
      * @return
      * @throws RemotingConnectException
@@ -107,7 +117,7 @@ public abstract class SohuMQAdmin extends DefaultMQAdminExt {
      */
     public abstract BrokerStoreStat getBrokerStoreStats(String brokerAddr) throws RemotingConnectException,
             RemotingSendRequestException, RemotingTimeoutException, MQClientException, InterruptedException;
-    
+
     /**
      * 从broker获取瞬时统计
      * 
@@ -124,4 +134,101 @@ public abstract class SohuMQAdmin extends DefaultMQAdminExt {
     public abstract BrokerMomentStatsData getMomentStatsInBroker(String brokerAddr, String statsName, long minValue)
             throws RemotingConnectException, RemotingSendRequestException, RemotingTimeoutException,
             MQClientException, InterruptedException;
+
+    /**
+     * 获取消费线程指标
+     * 
+     * @param addr
+     * @param consumerGroup
+     * @param clientId
+     * @param timeoutMillis
+     * @return
+     * @throws RemotingException
+     * @throws MQClientException
+     * @throws InterruptedException
+     * @throws NoSuchFieldException
+     * @throws SecurityException
+     * @throws IllegalArgumentException
+     * @throws IllegalAccessException
+     */
+    public ConsumerRunningInfo getConsumeThreadMetrics(String consumerGroup, String clientId,
+            final long timeoutMillis) throws RemotingException, MQClientException, InterruptedException,
+            NoSuchFieldException, SecurityException, IllegalArgumentException, IllegalAccessException {
+        return getConsumeMetrics(consumerGroup, clientId, "_thread_metric", timeoutMillis);
+    }
+    
+    /**
+     * 获取消费失败指标
+     * 
+     * @param addr
+     * @param consumerGroup
+     * @param clientId
+     * @param timeoutMillis
+     * @return
+     * @throws RemotingException
+     * @throws MQClientException
+     * @throws InterruptedException
+     * @throws NoSuchFieldException
+     * @throws SecurityException
+     * @throws IllegalArgumentException
+     * @throws IllegalAccessException
+     */
+    public ConsumerRunningInfo getConsumeFailedMetrics(String consumerGroup, String clientId,
+            final long timeoutMillis) throws RemotingException, MQClientException, InterruptedException,
+            NoSuchFieldException, SecurityException, IllegalArgumentException, IllegalAccessException {
+        return getConsumeMetrics(consumerGroup, clientId, "_failed_metric", timeoutMillis);
+    }
+    
+    /**
+     * 获取消费指标
+     * 
+     * @param addr
+     * @param consumerGroup
+     * @param clientId
+     * @param timeoutMillis
+     * @return
+     * @throws RemotingException
+     * @throws MQClientException
+     * @throws InterruptedException
+     * @throws NoSuchFieldException
+     * @throws SecurityException
+     * @throws IllegalArgumentException
+     * @throws IllegalAccessException
+     */
+    public ConsumerRunningInfo getConsumeMetrics(String consumerGroup, String clientId, String command,
+            final long timeoutMillis) throws RemotingException, MQClientException, InterruptedException,
+            NoSuchFieldException, SecurityException, IllegalArgumentException, IllegalAccessException {
+        String topic = MixAll.RETRY_GROUP_TOPIC_PREFIX + consumerGroup;
+        TopicRouteData topicRouteData = this.examineTopicRouteInfo(topic);
+        List<BrokerData> brokerDatas = topicRouteData.getBrokerDatas();
+        if (brokerDatas != null) {
+            for (BrokerData brokerData : brokerDatas) {
+                String addr = brokerData.selectBrokerAddr();
+                if (addr != null) {
+                    GetConsumerRunningInfoRequestHeader requestHeader = new GetConsumerRunningInfoRequestHeader();
+                    requestHeader.setConsumerGroup(consumerGroup);
+                    requestHeader.setClientId(clientId);
+                    RemotingCommand request = RemotingCommand.createRequestCommand(
+                            RequestCode.GET_CONSUMER_RUNNING_INFO, requestHeader);
+                    request.addExtField(command, "true");
+                    RemotingCommand response = getMQClientInstance().getMQClientAPIImpl().getRemotingClient()
+                            .invokeSync(MixAll.brokerVIPChannel(isVipChannelEnabled(), addr), request, timeoutMillis);
+                    assert response != null;
+                    switch (response.getCode()) {
+                        case ResponseCode.SUCCESS: {
+                            byte[] body = response.getBody();
+                            if (body != null) {
+                                ConsumerRunningInfo info = ConsumerRunningInfo.decode(body, ConsumerRunningInfo.class);
+                                return info;
+                            }
+                        }
+                        default:
+                            break;
+                    }
+                    throw new MQClientException(response.getCode(), response.getRemark());
+                }
+            }
+        }
+        return null;
+    }
 }

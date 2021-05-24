@@ -3,6 +3,8 @@ package com.sohu.tv.mq.rocketmq;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.net.HttpURLConnection;
 import java.util.List;
 import java.util.concurrent.Executors;
@@ -29,6 +31,7 @@ import org.apache.rocketmq.common.ServiceState;
 import org.apache.rocketmq.common.ServiceThread;
 import org.apache.rocketmq.common.consumer.ConsumeFromWhere;
 import org.apache.rocketmq.common.message.MessageExt;
+import org.apache.rocketmq.common.protocol.RequestCode;
 import org.apache.rocketmq.common.protocol.heartbeat.MessageModel;
 import org.apache.rocketmq.common.utils.HttpTinyClient;
 import org.apache.rocketmq.common.utils.HttpTinyClient.HttpResult;
@@ -40,6 +43,8 @@ import com.sohu.index.tv.mq.common.ConsumerCallback;
 import com.sohu.tv.mq.common.AbstractConfig;
 import com.sohu.tv.mq.dto.ConsumerConfigDTO;
 import com.sohu.tv.mq.dto.DTOResult;
+import com.sohu.tv.mq.metric.ConsumeStatManager;
+import com.sohu.tv.mq.netty.SohuClientRemotingProcessor;
 import com.sohu.tv.mq.rocketmq.limiter.LeakyBucketRateLimiter;
 import com.sohu.tv.mq.rocketmq.limiter.RateLimiter;
 import com.sohu.tv.mq.rocketmq.limiter.SwitchableRateLimiter;
@@ -57,7 +62,7 @@ import com.sohu.tv.mq.util.Constant;
 public class RocketMQConsumer extends AbstractConfig {
 
     // 支持一批消息消费
-    private BatchConsumerCallback<?, MessageExt> batchConsumerCallback;
+    private BatchConsumerCallback<?> batchConsumerCallback;
 
     /**
      * 消费者
@@ -98,7 +103,7 @@ public class RocketMQConsumer extends AbstractConfig {
     
     // 是否开启统计
     private boolean enableStats = true;
-
+    
     /**
      * 一个应用创建一个Consumer，由应用来维护此对象，可以设置为全局对象或者单例<br>
      * ConsumerGroupName需要由应用来保证唯一
@@ -122,6 +127,8 @@ public class RocketMQConsumer extends AbstractConfig {
         } else {
             initTokenBucketRateLimiter();
         }
+        // 注册线程统计
+        ConsumeStatManager.getInstance().register(getGroup());
     }
 
     public void start() {
@@ -156,6 +163,8 @@ public class RocketMQConsumer extends AbstractConfig {
             initScheduleTask();
             // 消费者启动
             consumer.start();
+            // init after start
+            initAfterStart();
             logger.info("topic:{} group:{} start", topic, group);
         } catch (MQClientException e) {
             logger.error(e.getMessage(), e);
@@ -260,6 +269,17 @@ public class RocketMQConsumer extends AbstractConfig {
         consumer.shutdown();
         rateLimiter.shutdown();
         clientConfigScheduledExecutorService.shutdown();
+    }
+    
+    /**
+     * 启动后，初始化某些逻辑
+     */
+    public void initAfterStart() {
+        // 注册私有处理器
+        MQClientInstance mqClientInstance = consumer.getDefaultMQPushConsumerImpl().getmQClientFactory();
+        mqClientInstance.getMQClientAPIImpl().getRemotingClient()
+                .registerProcessor(RequestCode.GET_CONSUMER_RUNNING_INFO,
+                        new SohuClientRemotingProcessor(mqClientInstance), null);
     }
     
     private int getPullRequestSize(LinkedBlockingQueue<PullRequest> q) {
@@ -428,11 +448,11 @@ public class RocketMQConsumer extends AbstractConfig {
     }
 
     @SuppressWarnings("unchecked")
-    public <T> BatchConsumerCallback<T, MessageExt> getBatchConsumerCallback() {
-        return (BatchConsumerCallback<T, MessageExt>) batchConsumerCallback;
+    public <T> BatchConsumerCallback<T> getBatchConsumerCallback() {
+        return (BatchConsumerCallback<T>) batchConsumerCallback;
     }
 
-    @SuppressWarnings({"rawtypes", "unchecked"})
+    @SuppressWarnings({"rawtypes"})
     public void setBatchConsumerCallback(BatchConsumerCallback batchConsumerCallback) {
         this.batchConsumerCallback = batchConsumerCallback;
     }
@@ -621,7 +641,23 @@ public class RocketMQConsumer extends AbstractConfig {
     }
 
     public void initConsumerParameterTypeClass() {
-        consumerParameterTypeClass = _getConsumerParameterTypeClass();
+        consumerParameterTypeClass = detectConsumerParameterTypeClass();
+    }
+    
+    /**
+     * 获取消费者参数类型
+     * @return
+     */
+    private Class<?> detectConsumerParameterTypeClass() {
+        try {
+            if(getConsumerCallback() != null) {
+                return _getConsumerParameterTypeClass();
+            }
+            return _getBatchConsumerParameterTypeClass();
+        } catch (Throwable e) {
+            logger.warn("ignore, detect consumer parameter type failed:{}", e.toString());
+        }
+        return null;
     }
     
     /**
@@ -649,6 +685,47 @@ public class RocketMQConsumer extends AbstractConfig {
             }
             logger.info("consumer:{}'s parameterTypeClass:{}", getGroup(), parameterTypes[0].getName());
             return parameterTypes[0];
+        }
+        return null;
+    }
+    
+    /**
+     * 获取消费者参数类型
+     * @return
+     */
+    private Class<?> _getBatchConsumerParameterTypeClass() {
+        Method[] methods = getBatchConsumerCallback().getClass().getMethods();
+        for (Method method : methods) {
+            if (!"call".equals(method.getName())) {
+                continue;
+            }
+            if (!Modifier.isPublic(method.getModifiers())) {
+                continue;
+            }
+            if (!method.getReturnType().equals(Void.TYPE)) {
+                continue;
+            }
+            Class<?>[] parameterTypes = method.getParameterTypes();
+            if (parameterTypes.length != 1) {
+                continue;
+            }
+            if (List.class != parameterTypes[0]) {
+                continue;
+            }
+            
+            Type[] interfaceTypes = getBatchConsumerCallback().getClass().getGenericInterfaces();
+            Type type;
+            if (interfaceTypes.length == 0) {
+                type = getBatchConsumerCallback().getClass().getGenericSuperclass();
+            } else {
+                type = interfaceTypes[0];
+            }
+            Class<?> clz = null;
+            if (ParameterizedType.class.isAssignableFrom(type.getClass())) {
+                clz = (Class<?>)(((ParameterizedType) type).getActualTypeArguments())[0];
+            }
+            logger.info("consumer:{}'s parameterTypeClass:{}", getGroup(), clz);
+            return clz;
         }
         return null;
     }

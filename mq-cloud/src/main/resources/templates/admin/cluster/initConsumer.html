@@ -18,7 +18,7 @@
 	<tbody>
 		<#if response.notOK>
 			<tr>
-				<td colspan=5 class="text-center"><if response.exception??><b>异常:</b> ${response.exception.class.name},</if><b>提醒:</b> ${response.message}</td>
+				<td colspan=5 class="text-center"><#if response.exception??><b>异常:</b> ${response.exception.class.name},</#if><b>提醒:</b> ${response.message}</td>
 			</tr>
 		<#else>
 			<#if response.empty>

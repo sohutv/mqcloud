@@ -145,6 +145,11 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware, Comm
     
     // slave落后多少进行预警，单位byte
     private Long slaveFallBehindSize = 0L; 
+    
+    // 线程统计支持版本
+    private String threadMetricSupportedVersion;
+    // 消费失败统计支持版本
+    private String consumeFailedMetricSupportedVersion;
 
     @Autowired
     private CommonConfigService commonConfigService;
@@ -250,13 +255,20 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware, Comm
     }
     
     public String getTopicConsumeLink(long topicId, String linkText) {
-        return getHrefLink(getTopicConsumeHref(topicId, linkText, -1), linkText);
+        return getTopicConsumeLink(topicId, linkText, 0);
     }
     
-    public String getTopicConsumeHref(long topicId, String consumer, long consumerId) {
+    public String getTopicConsumeLink(long topicId, String linkText, long time) {
+        return getHrefLink(getTopicConsumeHref(topicId, linkText, -1, time), linkText);
+    }
+    
+    public String getTopicConsumeHref(long topicId, String consumer, long consumerId, long time) {
         String link = getTopicConsumeLink(topicId) + "&consumer=" + consumer;
         if (consumerId > 0) {
             link += "&consumerId=" + consumerId;
+        }
+        if (time > 0) {
+            link += "&time=" + time;
         }
         return link;
     }
@@ -501,6 +513,30 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware, Comm
         return messageTypeLocation;
     }
 
+    public String getThreadMetricSupportedVersion() {
+        return threadMetricSupportedVersion;
+    }
+
+    public void setThreadMetricSupportedVersion(String threadMetricSupportedVersion) {
+        this.threadMetricSupportedVersion = threadMetricSupportedVersion;
+    }
+
+    public String getConsumeFailedMetricSupportedVersion() {
+        return consumeFailedMetricSupportedVersion;
+    }
+
+    public void setConsumeFailedMetricSupportedVersion(String consumeFailedMetricSupportedVersion) {
+        this.consumeFailedMetricSupportedVersion = consumeFailedMetricSupportedVersion;
+    }
+    
+    public boolean threadMetricSupported(String version) {
+        return version.compareTo(threadMetricSupportedVersion) >= 0;
+    }
+
+    public boolean consumeFailedMetricSupported(String version) {
+        return version.compareTo(consumeFailedMetricSupportedVersion) >= 0;
+    }
+    
     public String getMachineRoomColor(String room) {
         if (room == null || machineRoom == null) {
             if(machineRoomColor != null) {

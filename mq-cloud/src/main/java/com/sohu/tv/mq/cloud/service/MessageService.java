@@ -195,8 +195,6 @@ public class MessageService {
     public Result<DecodedMessage> queryMessage(Cluster cluster, String topic, String msgId) {
         return mqAdminTemplate.execute(new MQAdminCallback<Result<DecodedMessage>>() {
             public Result<DecodedMessage> callback(MQAdminExt mqAdmin) throws Exception {
-                // 获取broker集群信息
-                ClusterInfo clusterInfo = mqAdmin.examineBrokerClusterInfo();
                 // 获取消息
                 MessageExt messageExt = mqAdmin.viewMessage(topic, msgId);
                 byte[] bytes = messageExt.getBody();
@@ -209,6 +207,8 @@ public class MessageService {
                         mqCloudConfigHelper.getClassList().contains(topic)) {
                     Thread.currentThread().setContextClassLoader(messageTypeClassLoader);
                 }
+                // 获取broker集群信息
+                ClusterInfo clusterInfo = mqAdmin.examineBrokerClusterInfo();
                 return Result.getResult(toDecodedMessage(messageExt, clusterInfo));
             }
 

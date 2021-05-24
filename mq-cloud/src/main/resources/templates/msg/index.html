@@ -470,6 +470,40 @@ function drawTrackTopology(){
 	myTrackChart = echarts.init(dom);
 	myTrackChart.setOption(trackOption, true);
 }
+
+var prevSearchType = "key";
+function changeSearchType(type){
+	// 无改变
+	if(prevSearchType == type){
+		return;
+	}
+	$("."+type).show();
+	if(prevSearchType) {
+		$("."+prevSearchType).hide();
+	}
+	prevSearchType = type;
+	
+	$("#pager").hide();
+	hideAndResetBrokerSelect();
+	if("trace" == type){
+		// 清空数据
+		$("#traceDataTable tbody").remove();
+		$("#traceDataTable").append("<tbody><tr class='no_more_data'><td colspan=9 class='text-center'>暂无数据</td></tr></tbody>");
+		$("#traceDataTable input").remove();
+		$("#resendMessageBtn").addClass("disabled");
+		$("#dataTable").addClass("hide");
+		$("#traceDataTable").removeClass("hide");
+	} else {
+		// 清空数据
+		$("#dataTable tbody").remove();
+		$("#dataTable").append("<tbody><tr class='no_more_data'><td colspan=8 class='text-center'>暂无数据</td></tr></tbody>");
+		$("#dataTable input").remove();
+		$("#dataTable").removeClass("hide");
+		$("#traceDataTable").addClass("hide");
+		$("#resendMessageBtn").removeClass("disabled");
+	}
+}
+
 $(function(){
 	$("[data-toggle='tooltip']").tooltip({container: 'body'});
  	$(".selectpicker").selectpicker({
@@ -492,6 +526,10 @@ $(function(){
 	$("#consumerSelect").selectpicker({
 		width : 250
  	});
+	// 搜索trace
+	<#if RequestParameters.msgId??>
+		trace('${RequestParameters.msgId}', false, ${RequestParameters.time});
+	</#if>
 });
 function setTrackOption(msg){
 	trackOption = {
@@ -621,39 +659,6 @@ function setTrackOption(msg){
 	        }
 	    ]
 	};
-}
-
-var prevSearchType = "key";
-function changeSearchType(type){
-	// 无改变
-	if(prevSearchType == type){
-		return;
-	}
-	$("."+type).show();
-	if(prevSearchType) {
-		$("."+prevSearchType).hide();
-	}
-	prevSearchType = type;
-	
-	$("#pager").hide();
-	hideAndResetBrokerSelect();
-	if("trace" == type){
-		// 清空数据
-		$("#traceDataTable tbody").remove();
-		$("#traceDataTable").append("<tbody><tr class='no_more_data'><td colspan=9 class='text-center'>暂无数据</td></tr></tbody>");
-		$("#traceDataTable input").remove();
-		$("#resendMessageBtn").addClass("disabled");
-		$("#dataTable").addClass("hide");
-		$("#traceDataTable").removeClass("hide");
-	} else {
-		// 清空数据
-		$("#dataTable tbody").remove();
-		$("#dataTable").append("<tbody><tr class='no_more_data'><td colspan=8 class='text-center'>暂无数据</td></tr></tbody>");
-		$("#dataTable input").remove();
-		$("#dataTable").removeClass("hide");
-		$("#traceDataTable").addClass("hide");
-		$("#resendMessageBtn").removeClass("disabled");
-	}
 }
 
 function timeChange(id){
@@ -859,16 +864,27 @@ function traceNoTime(msgId){
 	trace(msgId, false);
 }
 
-function trace(msgId, hasTime){
+function trace(msgId, hasTime, time){
 	var searchType = $('#searchCondition option:selected').val();
 	var start;
 	var end;
-	if(hasTime){
-		start = $("#" + searchType + "StartTimePicker").val();
-		end = $("#" + searchType + "EndTimePicker").val();
+	if(!time){
+		if(hasTime){
+			start = $("#" + searchType + "StartTimePicker").val();
+			end = $("#" + searchType + "EndTimePicker").val();
+		} else {
+			start = $("#" + msgId).attr("date-data") - 60 * 60 * 1000;
+			end = Number($("#" + msgId).attr("date-data")) + 60 * 60 * 1000;
+			var now = new Date().getTime();
+			if(end > now){
+				end = now;
+			}
+			start = formatDateYMDHM(start);
+			end = formatDateYMDHM(end);
+		}
 	} else {
-		start = $("#" + msgId).attr("date-data") - 60 * 60 * 1000;
-		end = Number($("#" + msgId).attr("date-data")) + 60 * 60 * 1000;
+		start = time - 60 * 60 * 1000;
+		end = time + 60 * 60 * 1000;
 		var now = new Date().getTime();
 		if(end > now){
 			end = now;

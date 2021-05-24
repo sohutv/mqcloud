@@ -13,6 +13,7 @@ public class QueueOwnerVO {
     private int queueId;
     private String clientId;
     private String topic;
+    private String ip;
     public String getBrokerName() {
         return brokerName;
     }
@@ -37,7 +38,12 @@ public class QueueOwnerVO {
     public void setTopic(String topic) {
         this.topic = topic;
     }
-    
+    public String getIp() {
+        return ip;
+    }
+    public void setIp(String ip) {
+        this.ip = ip;
+    }
     public int getTopicType() {
         if(CommonUtil.isRetryTopic(topic)) {
             return 1;

@@ -116,7 +116,7 @@
 			<#else>
 				<#list response.result.consumerStat as consumerStat>
 				<tr>
-					<td>${consumerStat.consumerGroup}</td>
+					<td>${consumerStat.consumerGroup!}</td>
 					<td><a href="${request.contextPath}/user/topic/${consumerStat.tid}/detail?tab=consume">${consumerStat.topic!}</a></td>
 					<td>${consumerStat.updatetime?string("yyyy-MM-dd HH:mm:ss")}</td>
 					<td>

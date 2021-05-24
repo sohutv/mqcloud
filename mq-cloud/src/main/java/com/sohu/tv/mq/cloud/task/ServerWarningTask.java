@@ -54,7 +54,7 @@ public class ServerWarningTask {
     @Autowired
     private MQCloudConfigHelper mqCloudConfigHelper;
 
-    @Scheduled(cron = "13 */6 * * * *")
+    @Scheduled(cron = "20 */6 * * * *")
     @SchedulerLock(name = "serverMachineMonitor", lockAtMostFor = 240000, lockAtLeastFor = 240000)
     public void serverMachineMonitor() {
         long start = System.currentTimeMillis();

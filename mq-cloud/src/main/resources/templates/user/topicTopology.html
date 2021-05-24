@@ -59,9 +59,9 @@
 					<td>
 						<#if response.result.own && !response.result.topic.cluster.isEnableTrace()>
 							<#if response.result.topic.traceEnabled()>
-								<span style="cursor:pointer" class="glyphicon glyphicon-eye-open" data-toggle="tooltip" title="关闭trace?" onclick="updateTopicTraceShow(1)"></span>
+								<a href="#"><span class="glyphicon glyphicon-eye-open" data-toggle="tooltip" title="关闭trace?" onclick="updateTopicTraceShow(1)"></span></a>
 							<#else>
-								<span style="cursor:pointer" class="glyphicon glyphicon-eye-close" data-toggle="tooltip" title="开启trace?" onclick="updateTopicTraceShow(0)"></span>
+								<a href="#"><span class="glyphicon glyphicon-eye-close" data-toggle="tooltip" title="开启trace?" onclick="updateTopicTraceShow(0)"></span></a>
 							</#if>
 						<#else>
 							<#if response.result.topic.traceEnabled()>
@@ -103,8 +103,8 @@
 							    		,
 							    		</#if>
 							    		<span onclick="prepareDeleteUserProducer(${producer.id})" data-toggle="tooltip" title="移除${producer.username}?" id="producer_${producer.id}" class="producer_delete pointer">${producer.username}</span>
-								    	</#list>
-							    	<span class="glyphicon glyphicon-plus-sign pointer" data-toggle="tooltip" title="授权其他用户查看${response.result.topic.name}?" onclick="associateUserProducer('${key.producer}')"></span>
+								    </#list>
+							    	<a href="#"><span class="glyphicon glyphicon-plus-sign" data-toggle="tooltip" title="授权其他用户查看${response.result.topic.name}?" onclick="associateUserProducer('${key.producer}')"></span></a>
 							    <#else>
 							    	<#list producers as producer>
 							    		<#if producer_index != 0>

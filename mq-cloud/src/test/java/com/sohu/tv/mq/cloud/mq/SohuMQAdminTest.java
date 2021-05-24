@@ -6,6 +6,7 @@ import java.util.Map;
 import org.apache.rocketmq.client.producer.SendResult;
 import org.apache.rocketmq.client.producer.SendStatus;
 import org.apache.rocketmq.common.message.Message;
+import org.apache.rocketmq.common.protocol.body.ConsumerRunningInfo;
 import org.apache.rocketmq.tools.admin.MQAdminExt;
 import org.junit.Assert;
 import org.junit.Test;
@@ -57,4 +58,21 @@ public class SohuMQAdminTest {
         Assert.assertEquals(SendStatus.SEND_OK, sendResult.getSendStatus());
     }
 
+    @Test
+    public void testGetConsumeThreadMetrics() {
+        String consumerGroup = "basic-apitest-topic-consumer";
+        String clientId = "127.0.0.1@5372@3";
+        long timeoutMillis = 5000;
+        ConsumerRunningInfo consumerRunningInfo  = mqAdminTemplate.execute(new DefaultCallback<ConsumerRunningInfo>() {
+            public ConsumerRunningInfo callback(MQAdminExt mqAdmin) throws Exception {
+                SohuMQAdmin sohuMQAdmin = (SohuMQAdmin) mqAdmin;
+                return sohuMQAdmin.getConsumeThreadMetrics(consumerGroup, clientId, timeoutMillis);
+            }
+
+            public Cluster mqCluster() {
+                return clusterService.getMQClusterById(3);
+            }
+        });
+        System.out.println(consumerRunningInfo);
+    }
 }

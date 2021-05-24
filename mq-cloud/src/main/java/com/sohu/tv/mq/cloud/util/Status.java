@@ -1,4 +1,5 @@
 package com.sohu.tv.mq.cloud.util;
+
 /**
  * 返回状态
  * @Description: 

@@ -3,14 +3,18 @@
 		<tbody>
 			<#list response.result as msg>
 				<tr data="${msg.offsetMsgId}" dataIdx="${msg_index + 1}">
-					<td <#if traceEnabled>data-tooltip="true" title="查看${msg.msgId}的trace信息"</#if>><#if traceEnabled><a href="#" onclick="traceHasTime('${msg.msgId}')"></#if>${msg_index + 1}<#if traceEnabled></a></#if></td>
+					<td>${msg_index + 1}</td>
 					<td>${msg.bornHostString}</td>
 					<td data-tooltip="true" title="存储时间:${msg.storeTimestamp?number_to_datetime?string("yyyy-MM-dd HH:mm:ss.SSS")}">${msg.bornTimestamp?number_to_datetime?string("yyyy-MM-dd HH:mm:ss.SSS")}</td>
 					<td data-tooltip="true" title="偏移量:${msg.queueOffset}">${msg.broker!}:${msg.queueId}</td>
 					<td data-tooltip="true" title="序列化方式:<#if msg.messageBodySerializer??>${msg.messageBodySerializer.getName()}(${msg.messageBodyTypeString!})<#else>${msg.messageBodyTypeString!}</#if>"><#if msg.decodedBody?length gt 1000><pre>${msg.decodedBody}</pre><#else>${msg.decodedBody}</#if></td>
 					<td>${msg.keys!}</td>
 					<td>${msg.tags!}</td>
-					<td class="text-center"><span class="glyphicon glyphicon-eye-open" style="cursor:pointer;" onclick=track(${msg.toJson()}) data-target="#trackModal" data-toggle="modal"></span></td>
+					<#if traceEnabled>
+						<td class="text-center" style="padding:0px;"><img style="cursor:pointer;" src="${request.contextPath}/img/trace.png" data-tooltip="true" title="查看追踪信息" onclick="traceHasTime('${msg.msgId}')"></td>
+					<#else>
+						<td class="text-center"><span class="glyphicon glyphicon-eye-open" data-tooltip="true" title="查看消息轨迹" style="cursor:pointer;" onclick=track(${msg.toJson()}) data-target="#trackModal" data-toggle="modal"></span></td>
+					</#if>
 				</tr>
 			</#list>
 		</tbody>

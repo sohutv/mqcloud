@@ -40,6 +40,7 @@ import com.sohu.tv.mq.cloud.bo.AuditAssociateConsumer;
 import com.sohu.tv.mq.cloud.bo.AuditConsumer;
 import com.sohu.tv.mq.cloud.bo.AuditConsumerConfig;
 import com.sohu.tv.mq.cloud.bo.AuditResetOffset;
+import com.sohu.tv.mq.cloud.bo.ClientVersion;
 import com.sohu.tv.mq.cloud.bo.Cluster;
 import com.sohu.tv.mq.cloud.bo.ConsumeStatsExt;
 import com.sohu.tv.mq.cloud.bo.Consumer;
@@ -51,6 +52,7 @@ import com.sohu.tv.mq.cloud.bo.User;
 import com.sohu.tv.mq.cloud.bo.UserConsumer;
 import com.sohu.tv.mq.cloud.service.AlertService;
 import com.sohu.tv.mq.cloud.service.AuditService;
+import com.sohu.tv.mq.cloud.service.ClientVersionService;
 import com.sohu.tv.mq.cloud.service.ClusterService;
 import com.sohu.tv.mq.cloud.service.ConsumerConfigService;
 import com.sohu.tv.mq.cloud.service.ConsumerService;
@@ -71,6 +73,7 @@ import com.sohu.tv.mq.cloud.web.controller.param.UserConsumerParam;
 import com.sohu.tv.mq.cloud.web.vo.ConsumerProgressVO;
 import com.sohu.tv.mq.cloud.web.vo.QueueOwnerVO;
 import com.sohu.tv.mq.cloud.web.vo.UserInfo;
+import com.sohu.tv.mq.metric.StackTraceMetric;
 import com.sohu.tv.mq.util.CommonUtil;
 import com.sohu.tv.mq.util.Constant;
 /**
@@ -112,6 +115,9 @@ public class ConsumerController extends ViewController {
     
     @Autowired
     private MQCloudConfigHelper mqCloudConfigHelper;
+    
+    @Autowired
+    private ClientVersionService clientVersionService;
     
     /**
      * 消费进度
@@ -703,7 +709,8 @@ public class ConsumerController extends ViewController {
             for(MessageQueue messageQueue : consumerRunningInfo.getMqTable().keySet()) {
                 QueueOwnerVO queueOwnerVO = new QueueOwnerVO();
                 BeanUtils.copyProperties(messageQueue, queueOwnerVO);
-                queueOwnerVO.setClientId(ip);
+                queueOwnerVO.setClientId(clientId);
+                queueOwnerVO.setIp(ip);
                 queueConsumerVOList.add(queueOwnerVO);
             }
         }
@@ -920,6 +927,96 @@ public class ConsumerController extends ViewController {
         }
         Collections.sort(connList);
         return Result.getResult(connList);
+    }
+    
+    /**
+     * 线程指标
+     * @param userInfo
+     * @param clientId
+     * @param consumer
+     * @param map
+     * @return
+     * @throws Exception
+     */
+    @RequestMapping("/threadMetrics")
+    public String threadMetrics(UserInfo userInfo, @RequestParam("clientId") String clientId,
+            @RequestParam(value = "consumer") String consumer, Map<String, Object> map) throws Exception {
+        String view = viewModule() + "/threadMetrics";
+        // 获取消费者
+        Result<Consumer> consumerResult = consumerService.queryConsumerByName(consumer);
+        if (consumerResult.isNotOK()) {
+            setResult(map, consumerResult);
+            return view;
+        }
+        Result<Topic> topicResult = topicService.queryTopic(consumerResult.getResult().getTid());
+        if (topicResult.isNotOK()) {
+            setResult(map, topicResult);
+            return view;
+        }
+        // 判断客户端版本
+        Result<ClientVersion> cvResult = clientVersionService.query(topicResult.getResult().getName(), consumer);
+        if (cvResult.isNotOK() || !mqCloudConfigHelper.threadMetricSupported(cvResult.getResult().getVersion())) {
+            setResult(map, Result.getResult(Status.PARAM_ERROR)
+                    .setMessage("请升级mq-client至" + mqCloudConfigHelper.getThreadMetricSupportedVersion() + "及以上版本"));
+            return view;
+        }
+        Cluster cluster = clusterService.getMQClusterById(topicResult.getResult().getClusterId());
+        // 获取线程指标
+        Result<List<StackTraceMetric>> result = consumerService.getConsumeThreadMetrics(cluster, clientId, consumer);
+        // 排序
+        List<StackTraceMetric> threadMetricList = result.getResult();
+        if (threadMetricList != null) {
+            Collections.sort(threadMetricList, (o1, o2) -> {
+                return (int) (o1.getStartTime() - o2.getStartTime());
+            });
+        }
+        setResult(map, result);
+        return view;
+    }
+    
+    /**
+     * 消费失败指标
+     * @param userInfo
+     * @param clientId
+     * @param consumer
+     * @param map
+     * @return
+     * @throws Exception
+     */
+    @RequestMapping("/failedMetrics")
+    public String failedMetrics(UserInfo userInfo, @RequestParam("clientId") String clientId,
+            @RequestParam(value = "consumer") String consumer, Map<String, Object> map) throws Exception {
+        String view = viewModule() + "/failedMetrics";
+        // 获取消费者
+        Result<Consumer> consumerResult = consumerService.queryConsumerByName(consumer);
+        if (consumerResult.isNotOK()) {
+            setResult(map, consumerResult);
+            return view;
+        }
+        Result<Topic> topicResult = topicService.queryTopic(consumerResult.getResult().getTid());
+        if (topicResult.isNotOK()) {
+            setResult(map, topicResult);
+            return view;
+        }
+        // 判断客户端版本
+        Result<ClientVersion> cvResult = clientVersionService.query(topicResult.getResult().getName(), consumer);
+        if (cvResult.isNotOK() || !mqCloudConfigHelper.threadMetricSupported(cvResult.getResult().getVersion())) {
+            setResult(map, Result.getResult(Status.PARAM_ERROR)
+                    .setMessage("请升级mq-client至" + mqCloudConfigHelper.getConsumeFailedMetricSupportedVersion() + "及以上版本"));
+            return view;
+        }
+        Cluster cluster = clusterService.getMQClusterById(topicResult.getResult().getClusterId());
+        // 获取线程指标
+        Result<List<StackTraceMetric>> result = consumerService.getConsumeFailedMetrics(cluster, clientId, consumer);
+        // 排序
+        List<StackTraceMetric> threadMetricList = result.getResult();
+        if (threadMetricList != null) {
+            Collections.sort(threadMetricList, (o1, o2) -> {
+                return (int) (o1.getStartTime() - o2.getStartTime());
+            });
+        }
+        setResult(map, result);
+        return view;
     }
     
     @Override

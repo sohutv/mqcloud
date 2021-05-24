@@ -11,6 +11,11 @@ public interface RateLimiter {
      * 限速，达到速度将阻塞当前线程
      */
     void limit() throws InterruptedException;
+    
+    /**
+     * 限速，达到速度将阻塞当前线程
+     */
+    void limit(int permits) throws InterruptedException;
 
     /**
      * 获取速率

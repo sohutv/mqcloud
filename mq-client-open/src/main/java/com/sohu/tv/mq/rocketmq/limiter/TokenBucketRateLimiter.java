@@ -185,6 +185,11 @@ public class TokenBucketRateLimiter implements RateLimiter {
     public void limit() throws InterruptedException {
         acquire();
     }
+    
+    @Override
+    public void limit(int permits) throws InterruptedException {
+        acquire(permits);
+    }
 
     @Override
     public void setRate(int rateInSecs) {

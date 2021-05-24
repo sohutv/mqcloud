@@ -10,6 +10,7 @@ import org.junit.Test;
 
 import com.sohu.index.tv.mq.common.BatchConsumerCallback;
 import com.sohu.index.tv.mq.common.ConsumerCallback;
+import com.sohu.index.tv.mq.common.MQMessage;
 
 public class RocketMQConsumerJsonTest {
 
@@ -41,9 +42,9 @@ public class RocketMQConsumerJsonTest {
     @Test
     public void testBatch() throws InterruptedException {
         consumer.setConsumeMessageBatchMaxSize(32);
-        consumer.setBatchConsumerCallback(new BatchConsumerCallback<String, MessageExt>(){
-            public void call(List<MQMessage<String, MessageExt>> batchMessage) throws Exception {
-                for(MQMessage<String, MessageExt> mqMessage : batchMessage) {
+        consumer.setBatchConsumerCallback(new BatchConsumerCallback<String>(){
+            public void call(List<MQMessage<String>> batchMessage) throws Exception {
+                for(MQMessage<String> mqMessage : batchMessage) {
                     counter.incrementAndGet();
                     System.out.println("msg:" + mqMessage.getMessage() + ",msgExt:" + mqMessage.getMessageExt());
                 }
