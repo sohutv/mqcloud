@@ -38,23 +38,6 @@ public class BrokerService {
     private ClusterService clusterService;
 
     /**
-     * 保存记录
-     * 
-     * @param broker
-     * @return
-     */
-    public Result<?> save(Broker broker) {
-        Integer result = null;
-        try {
-            result = brokerDao.insert(broker);
-        } catch (Exception e) {
-            logger.error("insert err, broker:{}", broker, e);
-            return Result.getDBErrorResult(e);
-        }
-        return Result.getResult(result);
-    }
-
-    /**
      * 查询集群的broker
      * 
      * @return Result<List<Broker>>

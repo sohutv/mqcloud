@@ -83,15 +83,17 @@
 			<#assign brokerGroup=response.result.brokerGroup />
 			<#assign i = 0>
 			<#list brokerGroup?keys as key>
+				<#assign rowspaned = false>
 				<#list brokerGroup[key]?keys as bkey>
 					<tr>
 						<#assign i = i + 1>
-						<#if bkey == "0">
-							<#if sohu>
+						<#if !rowspaned>
+							<#if sohu && bkey == "0">
 								<td rowspan=${brokerGroup[key]?size}><a onclick="showBrokerStoreStatModal('${brokerGroup[key][bkey].brokerAddr}')" data-toggle="tooltip" title="查看master存储性能" href="#">${key}</a></td>
 							<#else>
 								<td rowspan=${brokerGroup[key]?size}>${key}</td>
 							</#if>
+							<#assign rowspaned = true>
 						</#if>
 						<td>
 							<#if bkey == "0">
@@ -162,8 +164,12 @@
 							<td>0</td>
 						<#else>
 							<td data-toggle="tooltip" title="由于slave不会处理延时队列的消息，故一直为0">0</td>
-							<#assign fallbehindSize=brokerGroup[key]["0"].commitLogMaxOffset - brokerGroup[key][bkey].commitLogMaxOffset />
-							<td data-toggle="tooltip" title="${fallbehindSize}">${brokerGroup[key]["0"].format(fallbehindSize)}</td>
+							<#if brokerGroup[key]["0"]??>
+								<#assign fallbehindSize=brokerGroup[key]["0"].commitLogMaxOffset - brokerGroup[key][bkey].commitLogMaxOffset />
+								<td data-toggle="tooltip" title="${fallbehindSize}">${brokerGroup[key]["0"].format(fallbehindSize)}</td>
+							<#else>
+								<td data-toggle="tooltip">0</td>
+							</#if>
 						</#if>
 						<td>
 							<#if brokerGroup[key][bkey].version??>${brokerGroup[key][bkey].version}</#if>
@@ -261,9 +267,9 @@
 								<button title="slave可以直接进行关闭" type="button" class="btn btn-sm btn-success" data-target="#brokerOfflineModal${i}" onclick="program('${brokerGroup[key][bkey].brokerAddr}', 'brokerOfflineProgram${i}')" data-toggle="modal">下线</button>
 							</#if>
 							<#else>
-								<button title="启动broker" data-toggle="tooltip" type="button" id="${key}<#if bkey != "0">-s</#if>Btn" class="btn btn-sm btn-success" onclick="startupBroker('${brokerGroup[key][bkey].brokerAddr}', '${key}<#if bkey != "0">-s</#if>')">启动</button>
-								<button title="在当前机器更新broker并保留数据" type="button" class="btn btn-sm btn-success"  onclick="upgradeBroker('${brokerGroup[key][bkey].brokerAddr}', '${key}<#if bkey != "0">-s</#if>')" data-target="#upgradeBrokerModal" data-toggle="modal">升级</button>
-								<button title="将当前机器broker数据迁移至远程机器" type="button" class="btn btn-sm btn-success"  onclick="migrateBrokerData('${brokerGroup[key][bkey].brokerAddr}', '${key}<#if bkey != "0">-s</#if>')" data-target="#migrateBrokerDataModal" data-toggle="modal">数据迁移</button>
+								<button title="启动broker" data-toggle="tooltip" type="button" id="${key}<#if bkey != "0">-s</#if>Btn" class="btn btn-sm btn-success" onclick="startupBroker('${brokerGroup[key][bkey].brokerAddr}', '${key}<#if bkey != "0">-s</#if>', '${brokerGroup[key][bkey].baseDir!}')">启动</button>
+								<button title="在当前机器更新broker并保留数据" type="button" class="btn btn-sm btn-success"  onclick="upgradeBroker('${brokerGroup[key][bkey].brokerAddr}', '${key}<#if bkey != "0">-s</#if>', '${brokerGroup[key][bkey].baseDir!}')" data-target="#upgradeBrokerModal" data-toggle="modal">升级</button>
+								<button title="将当前机器broker数据迁移至远程机器" type="button" class="btn btn-sm btn-success"  onclick="migrateBrokerData('${brokerGroup[key][bkey].brokerAddr}', '${brokerGroup[key][bkey].baseDir!}')" data-target="#migrateBrokerDataModal" data-toggle="modal">数据迁移</button>
 							</#if>
 							
 							<!-- 下线 -->
@@ -331,7 +337,7 @@
 		<div class="modal-content">
 			<div class="modal-header">
 				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-				<h4 class="modal-title">新建Broker</h4><b style="font-size:9px;"><i>请建好/opt/mqcloud目录并将其赋权给${username}用户：chown ${username}:${username} /opt/mqcloud</i></b>
+				<h4 class="modal-title">新建Broker</h4>
 			</div>
 			<div class="modal-body">
 				<div class="row bs-wizard" style="border-bottom:0;">
@@ -415,6 +421,12 @@
 							</div>
 						</div>
 						<div class="form-group">
+							<label class="control-label col-md-3" data-toggle="tooltip" title="安装broker的绝对路径(不包含broker自身)"> 安装路径: </label>
+					        <div class="col-md-8">
+								<input type="text" id="baseDir" name="baseDir" value="/opt/mqcloud/" class="form-control"/>
+							</div>
+						</div>
+						<div class="form-group">
 							<label class="control-label col-md-3"> 进程: </label>
 					        <div class="col-md-8">
 								<textarea id="brokerProgramInfo" type="text" rows="1" class="form-control" readonly></textarea>
@@ -423,7 +435,7 @@
 						<div class="form-group">
 							<label class="control-label col-md-3"> 提示: </label>
 					        <div class="col-md-8">
-								<div class="form-control-static">如果安装遇到错误警告，请登录服务器解决后再<b>继续</b>执行</div>
+								<div class="form-control-static">如果安装遇到错误警告，请解决后再点<b>继续</b>执行。实际安装路径:<b id="realPath"></b></div>
 							</div>
 						</div>
 					</div>
@@ -522,7 +534,7 @@
 						<div class="form-group">
 							<label class="control-label col-md-3"> brokerName: </label>
 							<div class="col-md-8">
-								<input type="text" id="upgradeBrokerName" name="dir" class="form-control" readonly/>
+								<input type="text" id="upgradeBrokerName" name="brokerName" class="form-control" readonly/>
 							</div>
 						</div>
 						<div class="form-group">
@@ -544,6 +556,7 @@
 							</div>
 						</div>
 					</div>
+					<input type="hidden" id="upgradeDir" name="dir" value=""/>
 					<input type="hidden" id="upgradeBrokerIp" name="ip" value=""/>
 					<input type="hidden" id="upgradeBrokerListenPort" name="listenPort" value=""/>
 				</form>
@@ -628,7 +641,7 @@
 							</div>
 						</div>
 						<div class="form-group">
-							<label class="control-label"> 源broker安装目录: </label>
+							<label class="control-label"> 源broker绝对路径: </label>
 							<div>
 								<input type="text" id="sourceHome" name="sourceHome" class="form-control"/>
 							</div>
@@ -640,7 +653,7 @@
 							</div>
 						</div>
 						<div class="form-group">
-							<label class="control-label"> 目标broker安装目录: </label>
+							<label class="control-label"> 目标broker绝对路径: </label>
 							<div>
 								<input type="text" id="destHome" name="destHome" class="form-control"/>
 							</div>
@@ -869,6 +882,11 @@ function install(id){
 		}
 		if($('#fileReservedTime').length > 0 && !$('#fileReservedTime').val()){
 			alert("请填写数据保留时间");
+			return;
+		}
+		var baseDir = $('#baseDir').val();
+		if(!baseDir || baseDir.charAt(baseDir.length-1) != "/" || baseDir.charAt(0) != "/"){
+			alert("请填写安装的绝对路径，并以/结尾");
 			return;
 		}
 	}
@@ -1253,17 +1271,28 @@ function addBroker(brokerName){
 	            $("#brokerClusterName").val('${response.result.selectedMQCluster.name}').attr("readonly","readonly");
 	    		$("#brokerIP1").attr("readonly","readonly");
 	    		$("#brokerIP2").attr("readonly","readonly");
-	    		if(!$("#storePathRootDir").val() && !$("#storePathCommitLog").val()){
-		    		$("#brokerName").bind('input propertychange', function(){
-		    			$("#dir").val($("#brokerName").val());
-		    			$("#storePathRootDir").val("/opt/mqcloud/"+$("#brokerName").val()+"/data");
-		    			$("#storePathCommitLog").val("/opt/mqcloud/"+$("#brokerName").val()+"/data/commitlog");
-		    		});
-	    		}else{
-					$("#brokerName").bind('input propertychange', function(){
-						$("#dir").val($("#brokerName").val());
-					});
-				}
+	    		$("#storePathRootDir").attr("readonly","readonly");
+	    		$("#storePathCommitLog").attr("readonly","readonly");
+				$("#brokerName").bind('input propertychange', function(){
+					if(brokerName){
+						$("#dir").val($("#baseDir").val()+$("#brokerName").val() + "-s");
+					} else {
+						$("#dir").val($("#baseDir").val()+$("#brokerName").val());
+					}
+					$("#realPath").html($("#dir").val());
+	    			$("#storePathRootDir").val($("#dir").val()+"/data");
+	    			$("#storePathCommitLog").val($("#dir").val()+"/data/commitlog");
+				});
+				$("#baseDir").bind('input propertychange', function(){
+					if(brokerName){
+						$("#dir").val($("#baseDir").val()+$("#brokerName").val() + "-s");
+					} else {
+						$("#dir").val($("#baseDir").val()+$("#brokerName").val());
+					}
+					$("#realPath").html($("#dir").val());
+	    			$("#storePathRootDir").val($("#dir").val()+"/data");
+	    			$("#storePathCommitLog").val($("#dir").val()+"/data/commitlog");
+				});
 	    		if(!$("#rmqAddressServerDomain").val()){
 		    		$("#rmqAddressServerDomain").val('${mqcloudDomain}').attr("readonly","readonly");
 	    		}
@@ -1272,13 +1301,13 @@ function addBroker(brokerName){
 	    		}
 	    		if(brokerName){
 	    			$("#brokerName").val(brokerName);
-	    			$("#dir").val(brokerName+"-s");
-	    			if(!$("#storePathRootDir").val()){
-		    			$("#storePathRootDir").val("/opt/mqcloud/"+brokerName+"-s/data");
-		    		}
-	    			if(!$("#storePathCommitLog").val()){
-		    			$("#storePathCommitLog").val("/opt/mqcloud/"+brokerName+"-s/data/commitlog");
-		    		}
+	    			$("#brokerName").attr("readonly","readonly");
+	    			// 设置路径
+	    			$("#dir").val($("#baseDir").val()+brokerName+"-s");
+	    			$("#realPath").html($("#dir").val());
+	    			$("#storePathRootDir").val($("#dir").val() + "/data");
+	    			$("#storePathCommitLog").val($("#dir").val() + "/data/commitlog");
+	    			
 	    			$("#brokerId").val(1);
 	    			$('input[name="brokerRole"]').each(function(){
 	    				if($(this).val() == 'ASYNC_MASTER' || $(this).val() == 'SYNC_MASTER'){
@@ -1305,11 +1334,12 @@ function addBroker(brokerName){
 	initServerList("brokerServerSelect");
 }
 
-function upgradeBroker(brokerAddr, brokerName) {
+function upgradeBroker(brokerAddr, brokerName, baseDir) {
     $("#upgradeBrokerAddr").val(brokerAddr);
 	$("#upgradeBrokerName").val(brokerName);
 	$("#upgradeBrokerIp").val(brokerAddr.split(":")[0]);
 	$("#upgradeBrokerListenPort").val(brokerAddr.split(":")[1]);
+	$("#upgradeDir").val(baseDir);
 }
 
 function migrateBrokerData(brokerAddr, brokerName) {
@@ -1684,8 +1714,8 @@ function modifyBrokerConfig(){
 /**
  * 启动实例
  */
-function startupBroker(ipAddr, dir){
-	disable(dir+"Btn");
+function startupBroker(ipAddr, brokerName, dir){
+	disable(brokerName+"Btn");
 	$.post('${request.contextPath}/admin/deploy/startup/broker',{
 		ipAddr: ipAddr,
 		dir: dir
@@ -1709,7 +1739,11 @@ function migrate(){
 		return;
 	}
 	if(!$('#sourceHome').val()){
-		alert("请填写源broker安装目录");
+		alert("请填写源broker绝对路径");
+		return;
+	}
+	if($('#sourceHome').val().indexOf("/") != 0){
+		alert("源broker的安装路径不是绝对路径!");
 		return;
 	}
 	if(!$('#destIp').val()){
@@ -1721,7 +1755,11 @@ function migrate(){
 		return;
 	}
 	if(!$('#destHome').val()){
-		alert("请填写目标broker安装目录");
+		alert("请填写目标broker绝对路径");
+		return;
+	}
+	if($('#destHome').val().indexOf("/") != 0){
+		alert("目标broker的安装路径不是绝对路径!");
 		return;
 	}
 	if($('#migrateBtn').html() == "继续"){

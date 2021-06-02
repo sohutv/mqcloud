@@ -8,7 +8,6 @@ import java.util.Properties;
 import javax.annotation.PostConstruct;
 
 import org.apache.commons.lang3.math.NumberUtils;
-import org.apache.rocketmq.tools.admin.MQAdminExt;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -160,13 +159,11 @@ public class ClusterService {
     /**
      * 更新fileReservedTime
      * 
-     * @param mqAdmin
+     * @param properties
      * @param cid
-     * @param brokerAddr
      * @throws Exception
      */
-    public void updateFileReservedTime(MQAdminExt mqAdmin, int cid, String brokerAddr) throws Exception {
-        Properties properties = mqAdmin.getBrokerConfig(brokerAddr);
+    public void updateFileReservedTime(Properties properties, int cid) throws Exception {
         String fileReservedTime = properties.getProperty("fileReservedTime");
         update(cid, NumberUtils.toInt(fileReservedTime));
     }

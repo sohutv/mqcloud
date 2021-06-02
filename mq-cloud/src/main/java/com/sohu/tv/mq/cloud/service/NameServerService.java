@@ -33,11 +33,21 @@ public class NameServerService {
      * @return 返回Result
      */
     public Result<?> save(int cid, String addr) {
+        return save(cid, addr, null);
+    }
+    
+    /**
+     * 保存记录
+     * 
+     * @param nameServer
+     * @return 返回Result
+     */
+    public Result<?> save(int cid, String addr, String baseDir) {
         Integer result = null;
         try {
-            result = nameServerDao.insert(cid, addr);
+            result = nameServerDao.insert(cid, addr, baseDir);
         } catch (Exception e) {
-            logger.error("insert err, cid:{}, addr:{}", cid, addr, e);
+            logger.error("insert err, cid:{}, addr:{}, baseDir:{}", cid, addr, baseDir, e);
             return Result.getDBErrorResult(e);
         }
         return Result.getResult(result);

@@ -86,7 +86,7 @@
 		<div class="modal-content">
 			<div class="modal-header">
 				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-				<h4 class="modal-title">新建NameServer</h4><b style="font-size:8px;"><i>请建好/opt/mqcloud目录并将其赋权给${username}用户：chown ${username}:${username} /opt/mqcloud</i></b>
+				<h4 class="modal-title">新建NameServer</h4>
 			</div>
 			<div class="modal-body">
 				<div class="row bs-wizard" style="border-bottom:0;">
@@ -164,11 +164,9 @@
 							</div>
 						</div>
 						<div class="form-group">
-							<label class="control-label col-md-3"> 安装路径: </label>
+							<label class="control-label col-md-3" data-toggle="tooltip" title="NameServer在服务器上的绝对路径(包含NameServer自身)"> 安装路径: </label>
 					        <div class="col-md-8">
-								<input type="text" value="/opt/mqcloud/ns" class="form-control" readonly/>
-								<input type="hidden" name="dir" value="ns"/>
-								<input type="hidden" name="brokerName" value="ns"/>
+								<input type="text" name="dir" value="/opt/mqcloud/ns" class="form-control"/>
 							</div>
 						</div>
 						<div class="form-group">

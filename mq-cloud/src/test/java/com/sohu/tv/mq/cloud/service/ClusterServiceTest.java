@@ -1,6 +1,7 @@
 package com.sohu.tv.mq.cloud.service;
 
 import java.util.List;
+import java.util.Properties;
 
 import org.apache.rocketmq.tools.admin.MQAdminExt;
 import org.junit.Test;
@@ -47,7 +48,8 @@ public class ClusterServiceTest {
             public void invoke(MQAdminExt mqAdmin) throws Exception {
                 List<Broker> brokerList = brokerListResult.getResult();
                 for (Broker broker : brokerList) {
-                    clusterService.updateFileReservedTime(mqAdmin, cid, broker.getAddr());
+                    Properties properties = mqAdmin.getBrokerConfig(broker.getAddr());
+                    clusterService.updateFileReservedTime(properties, cid);
                 }
             }
         });

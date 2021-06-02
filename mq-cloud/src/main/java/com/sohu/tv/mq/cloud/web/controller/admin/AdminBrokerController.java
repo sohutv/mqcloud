@@ -106,8 +106,11 @@ public class AdminBrokerController extends AdminViewController {
                         broker.setBrokerID(brokerId.intValue());
                         broker.setCid(cid);
                         list.add(broker);
+                        Properties properties = mqAdmin.getBrokerConfig(broker.getAddr());
+                        String rocketmqHome = properties.getProperty("rocketmqHome");
+                        broker.setBaseDir(rocketmqHome);
                         // 更新集群数据文件保留时间
-                        clusterService.updateFileReservedTime(mqAdmin, cid, broker.getAddr());
+                        clusterService.updateFileReservedTime(properties, cid);
                     }
                 }
                 return Result.getResult(list);

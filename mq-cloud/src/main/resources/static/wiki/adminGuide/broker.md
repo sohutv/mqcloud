@@ -8,7 +8,15 @@
 
 ![](img/add_master.png)
 
-由于broker支持的配置项繁多，mqcloud开发配置模板来支持这些配置项，甚至支持自定义配置项，可以参考[配置模板](./brokerConfig)使用。
+由于broker支持的配置项繁多，mqcloud开发配置模板来支持这些配置项，甚至支持自定义配置项，可以参考[配置模板](./brokerConfig)使用，以下几项重点说明一下：
+
+* 安装路径：即broker的上级目录的绝对路径，需以/结尾。
+* 实际安装路径：
+  * master: 安装路径 + brokerName
+  * slave: 安装路径 + brokerName-s
+* storePathRootDir和storePathCommitLog不可修改，统一放到实际安装路径的data目录下。
+
+*安装路径选项是为了支持部署多个broker到同一个服务器的不同硬盘上*。
 
 broker发生变更时（新增或下线），需要手动执行**刷新broker**功能来更新broker列表。
 
@@ -84,9 +92,9 @@ data
 说一下几个参数含义：
 
 1. 源机器：需要迁移数据的机器。
-2. 源broker安装目录：需要迁移数据的broker安装目录。
+2. 源broker绝对路径：需要迁移数据的broker安装目录的绝对路径。
 3. 目标机器：需要将数据迁移到的机器。
-4. 目标broker安装目录：需要将数据迁移到的broker安装目录。
+4. 目标broker绝对路径：需要将数据迁移到的broker安装目录的绝对路径。
 
 说一下迁移过程：
 
@@ -127,7 +135,7 @@ data
 1. 源broker（即需要迁移数据的broker）请停止写入。
 2. 目标broker请先部署好，但是请勿启动。
 
-迁移过程其实就是将`源broker:/opt/mqcloud/broker安装目录/data`下的数据通过ssh协议传输到`目标broker:/opt/mqcloud/broker安装目录/data`下。
+迁移过程其实就是将`源broker:data目录`下的数据通过ssh协议传输到`目标broker:data目录`下。
 
 为什么不采用linux的rsync？因为只需要传输一次即可。
 
