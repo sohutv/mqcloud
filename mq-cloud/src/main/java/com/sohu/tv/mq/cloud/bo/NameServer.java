@@ -19,6 +19,8 @@ public class NameServer {
     private int checkStatus;
     // 检测时间
     private Date checkTime;
+    // 安装路径
+    private String baseDir;
 
     public int getCid() {
         return cid;
@@ -66,5 +68,13 @@ public class NameServer {
 
     public String getCheckStatusDesc() {
         return CheckStatusEnum.getCheckStatusEnumByStatus(getCheckStatus()).getDesc();
+    }
+
+    public String getBaseDir() {
+        return baseDir;
+    }
+
+    public void setBaseDir(String baseDir) {
+        this.baseDir = baseDir;
     }
 }

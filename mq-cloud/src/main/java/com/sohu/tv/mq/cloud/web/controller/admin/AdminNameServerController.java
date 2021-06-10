@@ -141,7 +141,7 @@ public class AdminNameServerController extends AdminViewController {
         logger.warn("startup, ip:{}, dir:{}, user:{}", ip, dir, ui);
         Result<?> result = mqDeployer.startup(ip, dir);
         if (result.isOK()) {
-            nameServerService.save(cid, ip + ":" + port);
+            nameServerService.save(cid, ip + ":" + port, dir);
         }
         return result;
     }

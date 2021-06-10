@@ -9,6 +9,10 @@
 		white-space: pre-wrap;
 		overflow-y:hidden;
 	}
+	#threadMetricsBody td,#threadMessageModal td,#failedMetricsBody td,#failedMessageModal td{
+		font-weight: normal;
+		font-size:12px;
+	}
 </style>
 <div class="row">
 	<br/>
@@ -62,7 +66,7 @@
 									    		</#if>
 									    		<span onclick="prepareDeleteUserConsumer(${user.id},'${user.name!user.getEmailName()}',${consumerProgressVO.consumer.id})" data-toggle="tooltip" title="移除${user.name!user.getEmailName()}?" class="producer_delete pointer">${user.name!user.getEmailName()}</span>
 				                    		</#list>
-		                    				<span class="glyphicon glyphicon-plus-sign pointer" data-toggle="tooltip" title="授权其他用户查看${consumerProgressVO.consumer.name}?" onclick="associateUserConsumer(${consumerProgressVO.consumer.id},'${consumerProgressVO.consumer.name}')"></span>
+		                    				<a href="#"><span class="glyphicon glyphicon-plus-sign pointer" data-toggle="tooltip" title="授权其他用户查看${consumerProgressVO.consumer.name}?" onclick="associateUserConsumer(${consumerProgressVO.consumer.id},'${consumerProgressVO.consumer.name}')"></span></a>
 			                    		<#else>
 		                    				<#list consumerProgressVO.ownerList as user>
 			                    				<#if user_index != 0>
@@ -83,7 +87,7 @@
 											<#if consumerProgressVO.ownerList?? && (consumerProgressVO.ownerList?seq_contains(userInfo.user) || userInfo.user.type == 1)><span style="cursor:pointer" data-toggle="tooltip" title="修改用途" onclick="showUpdateInfo(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', '${consumerProgressVO.consumer.info!}')"></#if>${consumerProgressVO.consumer.info}<#if consumerProgressVO.ownerList?? && (consumerProgressVO.ownerList?seq_contains(userInfo.user) || userInfo.user.type == 1)></span></#if>
 										<#else>
 											<#if consumerProgressVO.ownerList?? && (consumerProgressVO.ownerList?seq_contains(userInfo.user) || userInfo.user.type == 1)>
-												<span class="glyphicon glyphicon-pencil pointer" onclick="showUpdateInfo(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', '${consumerProgressVO.consumer.info!}')" data-toggle="tooltip" title="添加用途" aria-hidden="true"></span>
+												<a href="#"><span class="glyphicon glyphicon-pencil pointer" onclick="showUpdateInfo(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', '${consumerProgressVO.consumer.info!}')" data-toggle="tooltip" title="添加用途" aria-hidden="true"></span></a>
 				                    		</#if>
 										</#if>
 									</#if>
@@ -95,9 +99,9 @@
 	                    			<#if topic.traceEnabled()>
 		                    			<#if (consumerProgressVO.ownerList?? && consumerProgressVO.ownerList?seq_contains(userInfo.user)) || userInfo.user.type == 1>
 			                    			<#if consumerProgressVO.consumer.traceEnabled()>
-			                    				<span style="cursor:pointer" class="glyphicon glyphicon-eye-open" data-toggle="tooltip" title="关闭trace?" onclick="updateConsumerTraceShow(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', 1)"></span>
+			                    				<a href="#"><span style="cursor:pointer" class="glyphicon glyphicon-eye-open" data-toggle="tooltip" title="关闭trace?" onclick="updateConsumerTraceShow(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', 1)"></span></a>
 			                    			<#else>
-			                    				<span style="cursor:pointer" class="glyphicon glyphicon-eye-close" data-toggle="tooltip" title="开启trace?" onclick="updateConsumerTraceShow(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', 0)"></span>
+			                    				<a href="#"><span style="cursor:pointer" class="glyphicon glyphicon-eye-close" data-toggle="tooltip" title="开启trace?" onclick="updateConsumerTraceShow(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', 0)"></span></a>
 			                    			</#if>
 		                    			<#else>
 		                    				<#if consumerProgressVO.consumer.traceEnabled()><span class="glyphicon glyphicon-eye-open"></span><#else><span class="glyphicon glyphicon-eye-close"></span></#if>
@@ -118,12 +122,12 @@
 		                    	<td>
 		                    		<#if (consumerProgressVO.ownerList?? && consumerProgressVO.ownerList?seq_contains(userInfo.user)) || userInfo.user.type == 1>
 			                    		<#if consumerProgressVO.offsetMap??>
-				                    		<span title="跳过堆积的消息，直接消费至最新的消息" class="glyphicon glyphicon-fast-forward pointer" data-target="#skipAccumulationModel${row}" data-toggle="modal"></span>
-				                    		<span title="消费过去一段时间至现在的消息" class="glyphicon glyphicon-backward pointer" data-target="#resetOffSetModel${row}" data-toggle="modal"></span>
+				                    		<a href="#"><span title="跳过堆积的消息，直接消费至最新的消息" class="glyphicon glyphicon-fast-forward" data-target="#skipAccumulationModel${row}" data-toggle="modal"></span></a>
+				                    		<a href="#"><span title="消费过去一段时间至现在的消息" class="glyphicon glyphicon-backward" data-target="#resetOffSetModel${row}" data-toggle="modal"></span></a>
 				                    		<#if consumerProgressVO.consumerConfig?? && consumerProgressVO.consumerConfig.pause?? && consumerProgressVO.consumerConfig.pause>
-				                    			<span title="恢复消费" class="glyphicon glyphicon-play pointer" onclick="showPauseConsumeConfigModel(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', false<#if consumerProgressVO.consumerConfig?? && consumerProgressVO.consumerConfig.pauseClientId??>,'${consumerProgressVO.consumerConfig.pauseClientId}'</#if>)" data-toggle="modal"></span>
+				                    			<a href="#"><span title="恢复消费" class="glyphicon glyphicon-play" onclick="showPauseConsumeConfigModel(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', false<#if consumerProgressVO.consumerConfig?? && consumerProgressVO.consumerConfig.pauseClientId??>,'${consumerProgressVO.consumerConfig.pauseClientId}'</#if>)" data-toggle="modal"></span></a>
 				                    		<#else>
-				                    			<span title="暂停消费【客户端需要升级至最新版本】" class="glyphicon glyphicon-pause pointer" onclick="showPauseConsumeConfigModel(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', true<#if consumerProgressVO.consumerConfig?? && consumerProgressVO.consumerConfig.pauseClientId??>,'${consumerProgressVO.consumerConfig.pauseClientId}'</#if>)" data-toggle="modal"></span>
+				                    			<a href="#"><span title="暂停消费【客户端需要升级至最新版本】" class="glyphicon glyphicon-pause" onclick="showPauseConsumeConfigModel(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', true<#if consumerProgressVO.consumerConfig?? && consumerProgressVO.consumerConfig.pauseClientId??>,'${consumerProgressVO.consumerConfig.pauseClientId}'</#if>)" data-toggle="modal"></span></a>
 				                    		</#if>
 				                    		<#if consumerProgressVO.consumerConfig?? && consumerProgressVO.consumerConfig.enableRateLimit?? && consumerProgressVO.consumerConfig.enableRateLimit>
 			                    				<img title="解除消费限速" width="22" height="24" style="display:inline-block;" src="${request.contextPath}/img/rateLimiter2.png" class="pointer" onclick="showLimitConsumeConfigModel(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', true, <#if consumerProgressVO.consumerConfig.permitsPerSecond??>${consumerProgressVO.consumerConfig.permitsPerSecond}<#else>${limitConsumeTps}</#if>)" data-toggle="modal"></img>
@@ -135,8 +139,8 @@
 		                    		</#if>
 		                    		<#if consumerProgressVO.offsetMap??>
 		                    		<!-- 详情 -->
-		                    		<div id="consumeDetailModel${row}" class="modal fade" tabindex="-1" aria-hidden="true">
-										<div class="modal-dialog" style="width:700px">
+		                    		<div id="consumeDetailModel${row}" class="modal fade" tabindex="-1" aria-hidden="true" style="overflow-y: auto;">
+										<div class="modal-dialog" style="width:800px">
 											<div class="modal-content">
 												<div class="modal-header">
 													<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
@@ -148,8 +152,8 @@
 															<tr>
 																<td class="warning" colspan=7>死消息Topic：<b style="color:red" data-toggle="tooltip" 
 																title="消费失败达到最大重试次数(16)后，将会进入此topic，不再重试">${consumerProgressVO.dlqTopic}</b>
-																	&nbsp;&nbsp;&nbsp;<span title="搜索死消息" class="glyphicon glyphicon-search" style="cursor:pointer;" 
-																	onclick="initOffsetMsgModal('dlq', ${row}, '${consumerProgressVO.dlqTopic}','${consumerProgressVO.dlqMaxOffset?c}')" data-target="#msgSearchModal" data-toggle="modal"></span>
+																	&nbsp;&nbsp;&nbsp;<a href="#"><span title="搜索死消息" class="glyphicon glyphicon-search" style="cursor:pointer;" 
+																	onclick="initOffsetMsgModal('dlq', ${row}, '${consumerProgressVO.dlqTopic}','${consumerProgressVO.dlqMaxOffset?c}', false)" data-target="#msgSearchModal" data-toggle="modal"></span></a>
 																</td>
 															</tr>
 															<tr>
@@ -193,10 +197,10 @@
 															<tr>
 																<td class="warning" colspan=7>重试Topic：<b style="color:red" data-toggle="tooltip" 
 																title="消费失败的消息，会重新发回到此topic，以便重试消费">${consumerProgressVO.retryTopic}</b>
-																&nbsp;&nbsp;&nbsp;<span title="搜索重试消息" class="glyphicon glyphicon-search" style="cursor:pointer;" 
-																onclick="initOffsetMsgModal('retry', ${row}, '${consumerProgressVO.retryTopic}','${consumerProgressVO.retryMaxOffset?c}')" data-target="#msgSearchModal" data-toggle="modal"></span>
-																&nbsp;&nbsp;&nbsp;<span title="跳过重试消息" class="glyphicon glyphicon-fast-forward" style="cursor:pointer;" 
-																onclick="showResetRetryMessageOffsetModel(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}')" data-toggle="modal"></span>
+																&nbsp;&nbsp;&nbsp;<a href="#"><span id="${consumerProgressVO.consumer.name}" title="搜索重试消息" class="glyphicon glyphicon-search"
+																onclick="initOffsetMsgModal('retry', ${row}, '${consumerProgressVO.retryTopic}','${consumerProgressVO.retryMaxOffset?c}', ${consumerProgressVO.consumer.traceEnabled()?c})" data-target="#msgSearchModal" data-toggle="modal"></span></a>
+																&nbsp;&nbsp;&nbsp;<a href="#"><span title="跳过重试消息" class="glyphicon glyphicon-fast-forward" 
+																onclick="showResetRetryMessageOffsetModel(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}')" data-toggle="modal"></span></a>
 																</td>
 															</tr>
 															<tr>
@@ -239,7 +243,7 @@
 												<table class="table table-striped table-hover" style="margin-top: 0px">
 													<thead>
 														<tr>
-															<td class="warning" colspan=7>Topic：<b>${consumerProgressVO.topic}</td>
+															<td class="warning" colspan=8>Topic：<b>${consumerProgressVO.topic}</td>
 														</tr>
 														<tr>
 															<td>客户端</td>
@@ -249,6 +253,7 @@
 															<td>消费者偏移量</td>
 															<td>堆积量</td>
 															<td>消费到</td>
+															<td>操作</td>
 														</tr>
 													</thead>
 													<tbody>
@@ -273,6 +278,10 @@
 																		${v.lastTimestamp?number_to_datetime?string("yyyy-MM-dd HH:mm:ss")}
 																	</td>
 																</#if>
+																<td>
+																	<a href="#" data-toggle="tooltip" title="消费线程诊断" onclick="showThreadMetricsForClustering('0_${consumerProgressVO.consumer.id}_${k.brokerName}_${k.queueId}', '${consumerProgressVO.consumer.name}')"><span class="glyphicon glyphicon-wrench"></span></a>
+																	<a href="#" data-toggle="tooltip" title="消费异常诊断" onclick="showFailedMetricsForClustering('0_${consumerProgressVO.consumer.id}_${k.brokerName}_${k.queueId}', '${consumerProgressVO.consumer.name}')"><span class="glyphicon glyphicon-exclamation-sign"></span></a>
+																</td>
 															</tr>
 														</#list>
 													</tbody>
@@ -417,7 +426,7 @@
 									    		</#if>
 									    		<span onclick="prepareDeleteUserConsumer(${user.id},'${user.name!user.getEmailName()}',${consumerProgressVO.consumer.id})" data-toggle="tooltip" title="移除${user.name!user.getEmailName()}?" class="producer_delete pointer">${user.name!user.getEmailName()}</span>
 				                    		</#list>
-		                    				<span class="glyphicon glyphicon-plus-sign pointer" data-toggle="tooltip" title="授权其他用户查看${consumerProgressVO.consumer.name}?" onclick="associateUserConsumer(${consumerProgressVO.consumer.id},'${consumerProgressVO.consumer.name}')"></span>
+		                    				<a href="#"><span class="glyphicon glyphicon-plus-sign" data-toggle="tooltip" title="授权其他用户查看${consumerProgressVO.consumer.name}?" onclick="associateUserConsumer(${consumerProgressVO.consumer.id},'${consumerProgressVO.consumer.name}')"></span></a>
 		                    			<#else>
 		                    				<#list consumerProgressVO.ownerList as user>
 		                    					<#if user_index != 0>
@@ -438,7 +447,7 @@
 											<#if consumerProgressVO.ownerList?? && (consumerProgressVO.ownerList?seq_contains(userInfo.user) || userInfo.user.type == 1)><span style="cursor:pointer" data-toggle="tooltip" title="修改用途" onclick="showUpdateInfo(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', '${consumerProgressVO.consumer.info!}')"></#if>${consumerProgressVO.consumer.info}<#if consumerProgressVO.ownerList?? && (consumerProgressVO.ownerList?seq_contains(userInfo.user) || userInfo.user.type == 1)></span></#if>
 										<#else>
 											<#if consumerProgressVO.ownerList?? && (consumerProgressVO.ownerList?seq_contains(userInfo.user) || userInfo.user.type == 1)>
-				                    			<span class="glyphicon glyphicon-pencil pointer" onclick="showUpdateInfo(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', '${consumerProgressVO.consumer.info!}')" data-toggle="tooltip" title="添加用途" aria-hidden="true"></span>
+				                    			<a href="#"><span class="glyphicon glyphicon-pencil" onclick="showUpdateInfo(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', '${consumerProgressVO.consumer.info!}')" data-toggle="tooltip" title="添加用途" aria-hidden="true"></span></a>
 				                    		</#if>
 										</#if>
 									</#if>
@@ -459,12 +468,12 @@
 		                    	<td>
 		                    		<#if (consumerProgressVO.ownerList?? && consumerProgressVO.ownerList?seq_contains(userInfo.user)) || userInfo.user.type == 1>
 			                    		<#if consumerProgressVO.offsetMap??>
-				                    		<span title="跳过堆积的消息，直接消费至最新的消息" class="glyphicon glyphicon-fast-forward pointer" data-target="#skipAccumulationModel${row}b" data-toggle="modal"></span>
-				                    		<span title="消费过去一段时间至现在的消息" class="glyphicon glyphicon-backward pointer" data-target="#resetOffSetModel${row}b" data-toggle="modal"></span>
+				                    		<a href="#"><span title="跳过堆积的消息，直接消费至最新的消息" class="glyphicon glyphicon-fast-forward pointer" data-target="#skipAccumulationModel${row}b" data-toggle="modal"></span></a>
+				                    		<a href="#"><span title="消费过去一段时间至现在的消息" class="glyphicon glyphicon-backward pointer" data-target="#resetOffSetModel${row}b" data-toggle="modal"></span></a>
 			                    			<#if consumerProgressVO.consumerConfig?? && consumerProgressVO.consumerConfig.pause?? && consumerProgressVO.consumerConfig.pause>
-						               			<span title="恢复消费" class="glyphicon glyphicon-play pointer" onclick="showPauseConsumeConfigModel(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', false<#if consumerProgressVO.consumerConfig?? && consumerProgressVO.consumerConfig.pauseClientId??>,'${consumerProgressVO.consumerConfig.pauseClientId}'</#if>)" data-toggle="modal"></span>
+						               			<a href="#"><span title="恢复消费" class="glyphicon glyphicon-play pointer" onclick="showPauseConsumeConfigModel(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', false<#if consumerProgressVO.consumerConfig?? && consumerProgressVO.consumerConfig.pauseClientId??>,'${consumerProgressVO.consumerConfig.pauseClientId}'</#if>)" data-toggle="modal"></span></a>
 						               		<#else>
-						               			<span title="暂停消费" class="glyphicon glyphicon-pause pointer" onclick="showPauseConsumeConfigModel(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', true<#if consumerProgressVO.consumerConfig?? && consumerProgressVO.consumerConfig.pauseClientId??>,'${consumerProgressVO.consumerConfig.pauseClientId}'</#if>)" data-toggle="modal"></span>
+						               			<a href="#"><span title="暂停消费" class="glyphicon glyphicon-pause pointer" onclick="showPauseConsumeConfigModel(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', true<#if consumerProgressVO.consumerConfig?? && consumerProgressVO.consumerConfig.pauseClientId??>,'${consumerProgressVO.consumerConfig.pauseClientId}'</#if>)" data-toggle="modal"></span></a>
 						               		</#if>
 						               		<#if consumerProgressVO.consumerConfig?? && consumerProgressVO.consumerConfig.enableRateLimit?? && consumerProgressVO.consumerConfig.enableRateLimit>
 						           				<img title="解除消费限速" width="22" height="24" style="display:inline-block;" src="${request.contextPath}/img/rateLimiter2.png" class="pointer" onclick="showLimitConsumeConfigModel(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', true, <#if consumerProgressVO.consumerConfig.permitsPerSecond??>${consumerProgressVO.consumerConfig.permitsPerSecond}<#else>${limitConsumeTps}</#if>)" data-toggle="modal"></img>
@@ -476,7 +485,7 @@
 		                    		</#if>
 		                    		<#if consumerProgressVO.offsetMap??>
 		                    		<!-- 详情 -->
-		                    		<div id="consumeDetailModel${row}b" class="modal fade" tabindex="-1" aria-hidden="true">
+		                    		<div id="consumeDetailModel${row}b" class="modal fade" tabindex="-1" aria-hidden="true" style="overflow-y: auto;">
 										<div class="modal-dialog" style="width:700px">
 											<div class="modal-content">
 												<div class="modal-header">
@@ -497,7 +506,11 @@
 													<tbody>
 														<#list consumerProgressVO.consumeStatsList as consumeStats>
 															<tr>
-																<td rowspan=${consumeStats.offsetTable?size+1}>${consumeStats.clientId}</td>
+																<td rowspan=${consumeStats.offsetTable?size+1} align="center">
+																	${consumeStats.clientId}
+																	<br><a href="#" onclick="showThreadMetrics('${consumeStats.clientId}','${consumerProgressVO.consumer.name}')"><span data-toggle="tooltip" title="消费线程诊断" class="glyphicon glyphicon-wrench"></span></a>
+																	<a href="#" onclick="showFailedMetrics('${consumeStats.clientId}','${consumerProgressVO.consumer.name}')"><span  data-toggle="tooltip" title="消费异常诊断" class="glyphicon glyphicon-exclamation-sign"></span></a>
+																</td>
 															</tr>
 															<#list consumeStats.offsetTable as mq,offset>
 															<tr>
@@ -510,7 +523,11 @@
 																	${offset.consumerOffset?string(",###")}
 																</td>
 																<td>
-																	${offset.brokerOffset - offset.consumerOffset}
+																	<#if offset.brokerOffset gt offset.consumerOffset>
+																		${offset.brokerOffset - offset.consumerOffset}
+																	<#else>
+																		0
+																	</#if>
 																</td>
 															</tr>
 															</#list>
@@ -814,6 +831,8 @@
 		  	    			<input type="hidden" id="toTopic" name="toTopic" value="">
 		  	    			<input type="hidden" id="toMessageParam" name="toMessageParam">
 		  	    			<input type="hidden" id="toAppend" name="toAppend" value="false">
+		  	    			<input type="hidden" id="traceEnabled" name="traceEnabled" value="false">
+		  	    			<input type="hidden" id="topicId" name="topicId" value="${topic.id}">
 		  	    			
 		  	    			<!-- 时间段查询 -->
 							<button type="button" data-toggle='tooltip' title="按时间段查询" onclick="searchMessage(false)" class="btn btn-search time" style="display:none;"><span class="glyphicon glyphicon-search" aria-hidden="true"></span></button>
@@ -1085,6 +1104,89 @@
 				<button type="button" data-dismiss="modal" class="btn" >取消</button>
 				<button type="button" id="limitConsumeBtn" class="btn btn-primary" onclick="limitConsume()">确定</button>
 			</div>
+		</div>
+	</div>
+</div>
+<!-- 线程指标 -->
+<div id="threadMetricsModal" class="modal fade" tabindex="-1" data-width="400" style="overflow-y: auto;">
+	<div class="modal-dialog" style="width:1100px;">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+				<span class="h4"><span id="clientIdSpan"></span>线程状况</span>
+				<span id="consumerGroup" style="display:none"></span>
+				<a href="#"><span id="refreshA" class="glyphicon glyphicon-refresh" data-toggle="tooltip" title="刷新" onclick="threadMetrics()"></span></a>
+			</div>
+			<table class="table table-striped table-hover" style="margin-top: 0px;word-break:break-all; word-wrap:break-all;">
+				<colgroup>
+					<col width="45px">
+					<col>
+					<col width="260px">
+				</colgroup>
+				<thead>
+					<tr>
+						<td>序号</td>
+						<td>线程堆栈</td>
+						<td>消息ID列表</td>
+					</tr>
+				</thead>
+				<tbody id="threadMetricsBody">
+				</tbody>
+			</table>
+		</div>
+	</div>
+</div>
+<!-- 消费失败指标 -->
+<div id="failedMetricsModal" class="modal fade" tabindex="-1" data-width="400" style="overflow-y: auto;">
+	<div class="modal-dialog" style="width:1100px;">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+				<span class="h4"><span id="failedClientIdSpan"></span>异常堆栈</span>
+				<span id="failedConsumerGroup" style="display:none"></span>
+			</div>
+			<table class="table table-striped table-hover" style="margin-top: 0px;word-break:break-all; word-wrap:break-all;">
+				<colgroup>
+					<col width="45px">
+					<col>
+					<col width="260px">
+				</colgroup>
+				<thead>
+					<tr>
+						<td>序号</td>
+						<td>异常堆栈</td>
+						<td>消息ID列表</td>
+					</tr>
+				</thead>
+				<tbody id="failedMetricsBody">
+				</tbody>
+			</table>
+		</div>
+	</div>
+</div>
+<!-- 消息 -->
+<div id="threadMessageModal" class="modal fade" tabindex="-1" data-width="400">
+	<div class="modal-dialog" style="width:1050px;">
+		<div class="modal-content">
+			<table id="threadMessageTable" class="table" style="margin-top: 0px;word-break:break-all; word-wrap:break-all;table-layout:fixed;">
+				<colgroup>
+					<col width="130px">
+					<col width="190px">
+					<col width="100px">
+					<col>
+				</colgroup>
+				<thead>
+					<tr>
+						<td>客户端</td>
+						<td>发送时间</td>
+						<td>broker:队列</td>
+						<td>消息</td>
+					</tr>
+				</thead>
+				<tbody>
+					<tr class="no_more_data"><td colspan=4 class="text-center">暂无数据</td></tr>
+				</tbody>
+			</table>
 		</div>
 	</div>
 </div>
@@ -1429,7 +1531,7 @@ function brokerNameSelectChange(obj){
 }
 var maxAllOffset = '';
 var minAllOffset = '';
-function initOffsetMsgModal(type, index, topic, maxOffset){
+function initOffsetMsgModal(type, index, topic, maxOffset, traceEnabled){
 	// 清空数据
 	$("#dataTable tbody").html("<tr class='no_more_data'><td colspan=5 class='text-center'>暂无数据</td></tr>");
 	$("#dataTable input").remove();
@@ -1447,6 +1549,7 @@ function initOffsetMsgModal(type, index, topic, maxOffset){
 	$("#offsetStart").val(start);
 	$("#offsetEnd").val(maxOffset);
 	$("#toKey").val("");
+	$("#traceEnabled").val(traceEnabled);
 	
 	if(type == "dlq") {
 		$("#dataTable").addClass("tr-pointer");
@@ -1602,7 +1705,8 @@ function getQueueOwner(consumer, consumerId){
         		if(prevContent){
         			prevContent += ","
         		}
-	        	$(id).html(prevContent + data.result[i].clientId);
+        		$(id).attr("clientId", data.result[i].clientId);
+	        	$(id).html(prevContent + data.result[i].ip);
         	}
 	    }else{
 	    	toastr.error("获取客户端失败！"+data.message);  
@@ -1736,27 +1840,8 @@ function updateConsumerTrace(){
 			    }
 	    }, 'json');
 }
-<#if response.OK>
-	$(function() {
-		lineChart("consume", function (){
-			$("#tid").val("${RequestParameters.tid}");
-			<#if RequestParameters.consumer??>
-				$("#_consumer").val("${RequestParameters.consumer}");
-			</#if>
-			<#if RequestParameters.currentPage??>
-				$("#currentPage").val(${RequestParameters.currentPage});
-			</#if>
-		});
-		<#if RequestParameters.consumer?? && RequestParameters.consumer != "">
-			$('a[data="${RequestParameters.consumer}"]').click();
-			<#if RequestParameters.consumerId??>
-				showResetRetryMessageOffsetModel(${RequestParameters.consumerId}, "${RequestParameters.consumer}");
-			</#if>
-		</#if>
-	});
-</#if>
 
-// 更改搜素选项
+//更改搜素选项
 var prevSearchType = "key";
 function changeSearchType(type){
 	// 无改变
@@ -1778,6 +1863,31 @@ function changeSearchType(type){
 	$("#dataTable").removeClass("hide");
 	$("#resendMessageBtn").removeClass("disabled");
 }
+
+<#if response.OK>
+	$(function() {
+		lineChart("consume", function (){
+			$("#tid").val("${RequestParameters.tid}");
+			<#if RequestParameters.consumer??>
+				$("#_consumer").val("${RequestParameters.consumer}");
+			</#if>
+			<#if RequestParameters.currentPage??>
+				$("#currentPage").val(${RequestParameters.currentPage});
+			</#if>
+		});
+		<#if RequestParameters.consumer?? && RequestParameters.consumer != "">
+			$('a[data="${RequestParameters.consumer}"]').click();
+			<#if RequestParameters.consumerId??>
+				showResetRetryMessageOffsetModel(${RequestParameters.consumerId}, "${RequestParameters.consumer}");
+			<#elseif RequestParameters.time??>
+				$("#msgSearchModal").on('show.bs.modal', function () {
+					searchByTime(${RequestParameters.time});
+				})
+				$("#${RequestParameters.consumer}").click();
+			</#if>
+		</#if>
+	});
+</#if>
 
 function hideAndResetBrokerSelect(){
 	$("#moreSearchCondition").addClass('hide');
@@ -1817,4 +1927,109 @@ function timeChange(id){
 }
 //初始化key查询方式的时间
 timeChange('keyStartTime');
+
+
+function showThreadMetricsForClustering(ipId, consumer){
+	var clientId = $("#"+ipId).attr("clientId");
+	if(!clientId){
+		alert("客户端链接不存在");
+		return;
+	}
+	showThreadMetrics(clientId, consumer);
+}
+
+function showThreadMetrics(clientId, consumer){
+	$("#clientIdSpan").html(clientId);
+	$("#consumerGroup").html(consumer);
+	$("#threadMetricsBody").html("<tr><td colspan='3' align='center'>暂无数据</td><tr>");
+	$('#threadMetricsModal').modal('show');
+	threadMetrics();
+}
+
+function threadMetrics(){
+	$("#refreshA").removeClass("glyphicon-refresh").addClass("glyphicon-repeat");
+	$.post('${request.contextPath}/consumer/threadMetrics',
+		{
+			clientId: $("#clientIdSpan").html(),
+			consumer: $("#consumerGroup").html()
+		},
+		function(data){
+			$("#refreshA").removeClass("glyphicon-repeat").addClass("glyphicon-refresh");
+			$("#threadMetricsBody").html(data);
+	});
+}
+
+function toggleThreadStack(comp){
+	$(comp).nextAll().toggle(250);
+	if($(comp).children("span").hasClass("mqcloudcollapse")){
+		$(comp).children("span").removeClass("mqcloudcollapse").addClass("mqclouexpand");
+	} else {
+		$(comp).children("span").removeClass("mqclouexpand").addClass("mqcloudcollapse");
+	}
+}
+
+function showThreadMessage(msgId){
+	$('#threadMessageModal').modal('show');
+	$.post('${request.contextPath}/topic/message/thread/message',
+		{
+			cid: ${topic.clusterId},
+			topic: '${topic.name}',
+			msgId: msgId
+		},
+		function(data){
+			$("#threadMessageTable tbody").remove();
+	       	$("#threadMessageTable").append(data);
+	});
+}
+
+// 按照时间查询
+function searchByTime(time){
+	var start = time - 60 * 60 * 1000;
+	var end = time + 60 * 60 * 1000;
+	var now = new Date().getTime();
+	if(end > now){
+		end = now;
+	}
+	start = formatDateYMDHM(start);
+	end = formatDateYMDHM(end);
+	// 修改时间
+	$("#timeStartTimePicker").val(start);
+	$("#timeEndTimePicker").val(end);
+	timeChange('timeStartTime');
+	timeChange('timeEndTime');
+	// 更改查询方式为时间
+	$("#searchCondition").selectpicker('val', "time");
+	$("#searchCondition").selectpicker('refresh');
+	changeSearchType('time');
+	// 查询时间
+	searchMessage(false);
+}
+
+function showFailedMetricsForClustering(ipId, consumer){
+	var clientId = $("#"+ipId).attr("clientId");
+	if(!clientId){
+		alert("客户端链接不存在");
+		return;
+	}
+	showFailedMetrics(clientId, consumer);
+}
+
+function showFailedMetrics(clientId, consumer){
+	$("#failedClientIdSpan").html(clientId);
+	$("#failedConsumerGroup").html(consumer);
+	$("#failedMetricsBody").html("<tr><td colspan='3' align='center'>暂无数据</td><tr>");
+	$('#failedMetricsModal').modal('show');
+	failedMetrics();
+}
+
+function failedMetrics(){
+	$.post('${request.contextPath}/consumer/failedMetrics',
+		{
+			clientId: $("#failedClientIdSpan").html(),
+			consumer: $("#failedConsumerGroup").html()
+		},
+		function(data){
+			$("#failedMetricsBody").html(data);
+	});
+}
 </script>

@@ -1,0 +1,40 @@
+<#if response.notOK>
+	<tr><td colspan="3" align="center">${response.message}</td><tr>
+<#else>
+	<#if response.empty>
+		<tr><td colspan="3" align="center">没有正在消费的线程</td><tr>
+	<#else>
+		<#list response.result as threadMetric>
+			<tr>
+				<td>
+					${threadMetric_index + 1}
+				</td>
+				<td>
+					${threadMetric.name!} id:${threadMetric.id!} 状态:<span style="font-weight:bold;color:red;">${threadMetric.state!}</span> 消费时间:<span style="font-weight:bold;color:red;">${threadMetric.formattedStartTime!}</span>
+					<#if threadMetric.stackTraceArray??>
+						<#assign shouldShow = true>
+						<#list threadMetric.stackTraceArray as stackTrace>
+							<#if shouldShow>
+								<#if stackTrace.className?contains("com.sohu.tv.mq.rocketmq.MessageConsumer")>
+									<#assign shouldShow = false>
+								</#if>
+								<#if shouldShow>
+									<div style="font-weight:bold;">&nbsp;&nbsp;&nbsp;&nbsp;${stackTrace.className!}.${stackTrace.methodName!}(${stackTrace.fileName!}:<#if stackTrace.nativeMethod>native<#else>${stackTrace.lineNumber!}</#if>)</div>
+								<#else>
+									<div onclick="toggleThreadStack(this)" style="cursor:pointer"><span class="mqcloudcollapse">&nbsp;&nbsp;&nbsp;&nbsp;</span>${stackTrace.className!}.${stackTrace.methodName!}(${stackTrace.fileName!}:<#if stackTrace.nativeMethod>native<#else>${stackTrace.lineNumber!}</#if>)</div>
+								</#if>
+							<#else>
+								<div style="display:none;">&nbsp;&nbsp;&nbsp;&nbsp;${stackTrace.className!}.${stackTrace.methodName!}(${stackTrace.fileName!}:<#if stackTrace.nativeMethod>native<#else>${stackTrace.lineNumber!}</#if>)</div>
+							</#if>
+						</#list>
+					</#if>
+				</td>
+				<td>
+					<#list threadMetric.msgIdList as msgId>
+						<a href="#" onclick="showThreadMessage('${msgId}')">${msgId}</a><br>
+					</#list>
+				</td>
+			</tr>
+		</#list>
+	</#if>
+</#if>

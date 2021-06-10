@@ -34,6 +34,8 @@ public class BrokerStatVO {
     private DelayQueue delayQueue;
     
     private long commitLogMaxOffset;
+    
+    private String baseDir;
 
     public Map<String, String> getInfo() {
         return info;
@@ -105,6 +107,14 @@ public class BrokerStatVO {
     
     public String format(long size) {
         return WebUtil.sizeFormat(size);
+    }
+
+    public String getBaseDir() {
+        return baseDir;
+    }
+
+    public void setBaseDir(String baseDir) {
+        this.baseDir = baseDir;
     }
 
     public void addDelayMessageOffset(MessageDelayLevel messageDelayLevel, long curOffset, long maxOffset) {

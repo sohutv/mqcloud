@@ -33,10 +33,11 @@ public class ConsumerRetryTrafficService extends HourTrafficService{
             // 验证报警频率
             if (alarmConfigBridingService.needWarn("consumerFail", topicConsumer.getTopic(), topicConsumer.getConsumer())) {
                 alertService.sendWarnMail(email, "消费失败", "topic:<b>" + topicConsumer.getTopic() + "</b> 消费者:<b>"
-                        + mqCloudConfigHelper.getTopicConsumeLink(topicConsumer.getTid(), topicConsumer.getConsumer())
+                        + mqCloudConfigHelper.getTopicConsumeLink(topicConsumer.getTid(), topicConsumer.getConsumer(),
+                                System.currentTimeMillis())
                         + "</b> 消费失败量:" + topicTraffic.getCount() 
                         + ", <a href='" + mqCloudConfigHelper.getTopicConsumeHref(topicConsumer.getTid(),
-                                topicConsumer.getConsumer(), topicConsumer.getCid())
+                                topicConsumer.getConsumer(), topicConsumer.getCid(), 0)
                         + "'>跳过重试消息</a>?");
             }
         }

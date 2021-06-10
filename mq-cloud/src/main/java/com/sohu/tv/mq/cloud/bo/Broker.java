@@ -31,6 +31,9 @@ public class Broker {
     // 最大偏移量 冗余字段
     private long maxOffset;
     
+    // 安装路径
+    private String baseDir;
+    
     public int getCid() {
         return cid;
     }
@@ -117,9 +120,18 @@ public class Broker {
         return brokerID == 0;
     }
 
+    public String getBaseDir() {
+        return baseDir;
+    }
+
+    public void setBaseDir(String baseDir) {
+        this.baseDir = baseDir;
+    }
+
     @Override
     public String toString() {
         return "Broker [cid=" + cid + ", addr=" + addr + ", brokerID=" + brokerID + ", brokerName=" + brokerName
-                + " createTime=" + createTime + ", checkStatus=" + checkStatus + ", checkTime=" + checkTime + "]";
+                + " createTime=" + createTime + ", checkStatus=" + checkStatus + ", checkTime=" + checkTime 
+                + ", baseDir=" + baseDir + "]";
     }
 }

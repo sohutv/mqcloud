@@ -6,7 +6,11 @@
 					<td data-tooltip="true" title="msgId:${msg.msgId}">${msg_index + 1 + response.result.mqc.prevSize}</td>
 					<td>${msg.bornHostString}</td>
 					<td data-tooltip="true" title="存储时间:${msg.storeTimestamp?number_to_datetime?string("yyyy-MM-dd HH:mm:ss.SSS")}">${msg.bornTimestamp?number_to_datetime?string("yyyy-MM-dd HH:mm:ss.SSS")}</td>
-					<td>${msg.reconsumeTimes}</td>
+					<#if RequestParameters.traceEnabled?? && RequestParameters.traceEnabled == "true">
+						<td data-tooltip="true" title="点击查看追踪信息"><a href="${request.contextPath}/user/topic/${RequestParameters.topicId}/detail?tab=msg&msgId=${msg.msgId}&time=${msg.storeTimestamp?c}" target=_blank><b>${msg.reconsumeTimes}</b></a></td>
+					<#else>
+						<td>${msg.reconsumeTimes}</td>
+					</#if>
 					<td data-tooltip="true" title="序列化方式:<#if msg.messageBodySerializer??>${msg.messageBodySerializer.getName()}(${msg.messageBodyTypeString!})<#else>${msg.messageBodyTypeString!}</#if>"><#if msg.decodedBody?length gt 1000><pre>${msg.decodedBody}</pre><#else>${msg.decodedBody}</#if></td>
 				</tr>
 			</#list>

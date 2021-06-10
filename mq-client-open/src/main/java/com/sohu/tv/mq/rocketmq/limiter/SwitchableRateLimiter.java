@@ -25,6 +25,14 @@ public class SwitchableRateLimiter implements RateLimiter {
             rateLimiter.limit();
         }
     }
+    
+
+    @Override
+    public void limit(int permits) throws InterruptedException {
+        if (enabled) {
+            rateLimiter.limit(permits);
+        }
+    }
 
     @Override
     public void setRate(int rateInSecs) {

@@ -1,0 +1,40 @@
+<#if response.notOK>
+	<tr><td colspan="3" align="center">${response.message}</td><tr>
+<#else>
+	<#if response.empty>
+		<tr><td colspan="3" align="center">没有异常堆栈</td><tr>
+	<#else>
+		<#list response.result as stackTraceMetric>
+			<tr>
+				<td>
+					${stackTraceMetric_index + 1}
+				</td>
+				<td>
+					${stackTraceMetric.formattedStartTime!} ${stackTraceMetric.name!} <span style="font-weight:bold;color:red;">${stackTraceMetric.errorClass!}:${stackTraceMetric.message!}</span>
+					<#if stackTraceMetric.stackTraceArray??>
+						<#assign shouldShow = true>
+						<#list stackTraceMetric.stackTraceArray as stackTrace>
+							<#if shouldShow>
+								<#if stackTrace.className?contains("com.sohu.tv.mq.rocketmq.MessageConsumer")>
+									<#assign shouldShow = false>
+								</#if>
+								<#if shouldShow>
+									<div style="font-weight:bold;">&nbsp;&nbsp;&nbsp;&nbsp;${stackTrace.className!}.${stackTrace.methodName!}(${stackTrace.fileName!}:<#if stackTrace.nativeMethod>native<#else>${stackTrace.lineNumber!}</#if>)</div>
+								<#else>
+									<div onclick="toggleThreadStack(this)" style="cursor:pointer"><span class="mqcloudcollapse">&nbsp;&nbsp;&nbsp;&nbsp;</span>${stackTrace.className!}.${stackTrace.methodName!}(${stackTrace.fileName!}:<#if stackTrace.nativeMethod>native<#else>${stackTrace.lineNumber!}</#if>)</div>
+								</#if>
+							<#else>
+								<div style="display:none;">&nbsp;&nbsp;&nbsp;&nbsp;${stackTrace.className!}.${stackTrace.methodName!}(${stackTrace.fileName!}:<#if stackTrace.nativeMethod>native<#else>${stackTrace.lineNumber!}</#if>)</div>
+							</#if>
+						</#list>
+					</#if>
+				</td>
+				<td>
+					<#list stackTraceMetric.msgIdList as msgId>
+						<a href="#" onclick="showThreadMessage('${msgId}')">${msgId}</a><br>
+					</#list>
+				</td>
+			</tr>
+		</#list>
+	</#if>
+</#if>

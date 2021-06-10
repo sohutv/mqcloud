@@ -51,11 +51,9 @@ public class MQDeployer {
     
     public static final String NS_SUB_GROUP = "nsaddr-%s";
     
-    public static final String MQ_CLOUD_DIR = "/opt/mqcloud/";
+    public static final String MQ_CLOUD_CONFIG_INIT_FLAG = "/home/mqcloud/.mq_cloud_inited";
     
-    public static final String MQ_CLOUD_CONFIG_INIT_FLAG = MQ_CLOUD_DIR + ".mq_cloud_inited";
-    
-    public static final String MQ_CLOUD_OS_SH = MQ_CLOUD_DIR + "%s/bin/os.sh";
+    public static final String MQ_CLOUD_OS_SH = "%s/bin/os.sh";
     
     public static final String TMP_DIR = "/tmp/";
     
@@ -168,8 +166,8 @@ public class MQDeployer {
      * @return
      */
     public Result<?> dirWrite(String ip, String dir){
-        String destDir = MQ_CLOUD_DIR + dir;
-        String comm = "if [ ! -d \"" +destDir+ "\" ];then mkdir -p " + destDir +";else echo 0;fi";
+        String comm = "if [ ! -d \"" + dir + "\" ];then sudo mkdir -p " + dir + " && sudo chown mqcloud:mqcloud " + dir
+                + ";else echo 0;fi";
         SSHResult sshResult = null;
         try {
             sshResult = sshTemplate.execute(ip, new SSHCallback() {
@@ -179,7 +177,7 @@ public class MQDeployer {
                 }
             });
         } catch (SSHException e) {
-            logger.error("isNotUsed, ip:{},dir:{}", ip, destDir, e);
+            logger.error("isNotUsed, ip:{},dir:{}", ip, dir, e);
             return Result.getWebErrorResult(e);
         }
         Result<?> result = wrapSSHResult(sshResult);
@@ -219,8 +217,7 @@ public class MQDeployer {
      * @return
      */
     public Result<?> unzip(String ip, String dest){
-        String destDir = MQ_CLOUD_DIR + dest;
-        return unzip(ip, destDir, TMP_DIR + MQCloudConfigHelper.ROCKETMQ_FILE);
+        return unzip(ip, dest, TMP_DIR + MQCloudConfigHelper.ROCKETMQ_FILE);
     }
     
     /**
@@ -249,8 +246,7 @@ public class MQDeployer {
      * @param ip
      * @return
      */
-    public Result<?> configNameServer(String ip, int port, String nsHome){
-        String absoluteDir = MQ_CLOUD_DIR + nsHome;
+    public Result<?> configNameServer(String ip, int port, String absoluteDir){
         String absoluteConfig = absoluteDir + "/" + CONFIG_FILE;
         String mqConf = "echo \"kvConfigPath="+absoluteDir+"/data/kvConfig.json\" >> " + absoluteConfig + "|"
                 + "echo \"listenPort="+port+"\" >> " + absoluteConfig + "|";
@@ -283,7 +279,7 @@ public class MQDeployer {
     public Result<?> configBroker(Map<String, Object> param){
         String clusterName = param.get("brokerClusterName").toString();
         Cluster cluster = clusterService.getMQClusterByName(clusterName);
-        String absoluteDir = MQ_CLOUD_DIR + param.get("dir");
+        String absoluteDir = param.get("dir").toString();
         String absoluteConfig = absoluteDir + "/" + CONFIG_FILE;
         String brokerIp = param.get("ip").toString();
         // 1.基础配置
@@ -520,9 +516,7 @@ public class MQDeployer {
      * @return
      */
     public Result<?> backup(String ip, String sourceDir, String destDir) {
-        sourceDir = MQ_CLOUD_DIR + sourceDir;
-        destDir = MQ_CLOUD_DIR + destDir;
-        String comm = "mv " + sourceDir + " " + destDir;
+        String comm = "sudo mv " + sourceDir + " " + destDir;
         SSHResult sshResult = null;
         try {
             sshResult = sshTemplate.execute(ip, new SSHCallback() {
@@ -535,7 +529,12 @@ public class MQDeployer {
             logger.error("backup err, ip:{},sourceDir:{},destDir:{},comm:{}", ip, sourceDir, destDir, comm, e);
             return Result.getWebErrorResult(e);
         }
-        return wrapSSHResult(sshResult);
+        Result<?> result = wrapSSHResult(sshResult);
+        // 创建新目录
+        if (result.isOK()) {
+            dirWrite(ip, sourceDir);
+        }
+        return result;
     }
 
     /**
@@ -546,8 +545,6 @@ public class MQDeployer {
      * @return
      */
     public Result<?> recover(String ip, String backupDir, String destDir) {
-        backupDir = MQ_CLOUD_DIR + backupDir;
-        destDir = MQ_CLOUD_DIR + destDir;
         String mvCommTemplate = "sudo mv %s/%s %s/";
         // 1. 移动mq.conf
         String mvConfig = String.format(mvCommTemplate, backupDir, CONFIG_FILE, destDir);
@@ -581,7 +578,7 @@ public class MQDeployer {
             return mvResult;
         }
         // 5. 备份目录重命名
-        String renameBackupDirComm = "mv " + backupDir + " " + backupDir + DateUtil.getFormatNow(DateUtil.YMDHMS);
+        String renameBackupDirComm = "sudo mv " + backupDir + " " + backupDir + DateUtil.getFormatNow(DateUtil.YMDHMS);
         try {
             sshResult = sshTemplate.execute(ip, new SSHCallback() {
                 public SSHResult call(SSHSession session) {
@@ -601,8 +598,7 @@ public class MQDeployer {
      * @param ip
      * @return
      */
-    public Result<?> startup(String ip, String home){
-        String absoluteDir = MQ_CLOUD_DIR + home;
+    public Result<?> startup(String ip, String absoluteDir){
         SSHResult sshResult = null;
         try {
             sshResult = sshTemplate.execute(ip, new SSHCallback() {
@@ -701,7 +697,7 @@ public class MQDeployer {
      * @return
      */
     public Result<?> getStoreFileList(String ip, String home) {
-        String absoluteDir = MQ_CLOUD_DIR + home + "/data";
+        String absoluteDir = home + "/data";
         SSHResult sshResult = null;
         StoreFiles storeFiles = new StoreFiles();
         try {
@@ -740,7 +736,7 @@ public class MQDeployer {
      * @return
      */
     public Result<?> createStorePath(String ip, String home) {
-        String absoluteDir = MQ_CLOUD_DIR + home + "/data";
+        String absoluteDir = home + "/data";
         SSHResult sshResult = null;
         try {
             sshResult = sshTemplate.execute(ip, new SSHCallback() {
@@ -788,8 +784,8 @@ public class MQDeployer {
         long start = System.currentTimeMillis();
         // 复制文件
         String absoluteStorePath = storeFile.toAbsoluteStorePath();
-        String sourceFile = MQ_CLOUD_DIR + sourceHome + "/data" + absoluteStorePath;
-        String destFile = MQ_CLOUD_DIR + destHome + "/data" + absoluteStorePath;
+        String sourceFile = sourceHome + "/data" + absoluteStorePath;
+        String destFile = destHome + "/data" + absoluteStorePath;
         SSHResult sshResult = null;
         // 先创建需要的存储目录
         if (storeFile.getParentName() != null) {
@@ -888,8 +884,8 @@ public class MQDeployer {
             StoreFile storeFile) {
         long start = System.currentTimeMillis();
         StoreFileType storeFileType = StoreFileType.findStoreFileType(storeFile.getType());
-        String sourceDataDir = MQ_CLOUD_DIR + sourceHome + "/data" + storeFileType.getPath();
-        String destDataDir = MQ_CLOUD_DIR + destHome + "/data" + storeFileType.getPath();
+        String sourceDataDir = sourceHome + "/data" + storeFileType.getPath();
+        String destDataDir = destHome + "/data" + storeFileType.getPath();
         SSHResult sshResult = null;
         // 复制目录
         try {
@@ -1030,7 +1026,7 @@ public class MQDeployer {
      * @return
      */
     public Result<?> dirExist(String ip, String dir){
-        String destDir = MQ_CLOUD_DIR + dir + "/data";
+        String destDir = dir + "/data";
         String comm = "if [ -d \"" +destDir+ "\" ];then echo 1;else echo 0;fi";
         SSHResult sshResult = null;
         try {

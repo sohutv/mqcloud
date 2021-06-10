@@ -37,8 +37,12 @@ public interface NameServerDao {
      * 
      * @param notice
      */
-    @Insert("insert into name_server(cid,addr) values(#{cid},#{addr})")
-    public Integer insert(@Param("cid") int cid, @Param("addr") String addr);
+    @Insert("<script>insert into name_server(cid,addr"
+            + "<if test=\"baseDir != null\">,base_dir</if> "
+            + ") values(#{cid},#{addr}"
+            + "<if test=\"baseDir != null\">,#{baseDir}</if> "
+            + ")</script>")
+    public Integer insert(@Param("cid") int cid, @Param("addr") String addr, @Param("baseDir") String baseDir);
     
     /**
      * 更新

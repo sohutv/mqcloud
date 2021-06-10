@@ -83,6 +83,7 @@ public class ClientVersion {
     public void setOwners(Set<User> owners) {
         this.owners = owners;
     }
+    
     @Override
     public String toString() {
         return "ClientVersion [topic=" + topic + ", client=" + client + ", role=" + role + ", version=" + version

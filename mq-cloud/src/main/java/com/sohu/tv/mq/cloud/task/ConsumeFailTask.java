@@ -24,9 +24,9 @@ public class ConsumeFailTask {
     private TaskExecutor taskExecutor;
     
     /**
-     * 每小时的3分55监控一次
+     * 消费失败监控
      */
-    @Scheduled(cron = "55 03 * * * *")
+    @Scheduled(cron = "55 */6 * * * *")
     @SchedulerLock(name = "consumeFailTask", lockAtMostFor = 180000, lockAtLeastFor = 180000)
     public void consumeFailTask() {
         taskExecutor.execute(new Runnable() {

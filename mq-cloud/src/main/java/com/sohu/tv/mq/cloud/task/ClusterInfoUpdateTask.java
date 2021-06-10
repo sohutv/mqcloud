@@ -1,6 +1,7 @@
 package com.sohu.tv.mq.cloud.task;
 
 import java.util.List;
+import java.util.Properties;
 
 import org.apache.rocketmq.tools.admin.MQAdminExt;
 import org.slf4j.Logger;
@@ -53,7 +54,8 @@ public class ClusterInfoUpdateTask {
                     List<Broker> brokerList = brokerListResult.getResult();
                     for (Broker broker : brokerList) {
                         try {
-                            clusterService.updateFileReservedTime(mqAdmin, mqCluster.getId(), broker.getAddr());
+                            Properties properties = mqAdmin.getBrokerConfig(broker.getAddr());
+                            clusterService.updateFileReservedTime(properties, mqCluster.getId());
                         } catch (Exception e) {
                             logger.warn("fetch broker:{} config", broker.getAddr(), e);
                         }

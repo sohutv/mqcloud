@@ -65,6 +65,21 @@ public class ClientVersionService {
     }
     
     /**
+     * 查询某个客户端版本
+     * @return
+     */
+    public Result<ClientVersion> query(String topic, String consumer){
+        ClientVersion clientVersion = null;
+        try {
+            clientVersion = clientVersionDao.selectClientVersion(topic, consumer, ClientVersion.CONSUMER);
+        } catch (Exception e) {
+            logger.error("query topic:{} consumer:{}", topic, consumer, e);
+            return Result.getDBErrorResult(e);
+        }
+        return Result.getResult(clientVersion);
+    }
+    
+    /**
      * 设置客户端归属的用户
      * @param list
      */

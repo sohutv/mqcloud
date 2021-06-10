@@ -27,4 +27,10 @@ public interface ClientVersionDao {
      */
     @Select("select * from client_version order by update_time desc")
     public List<ClientVersion> selectAll();
+    
+    /**
+     * 查询某个client
+     */
+    @Select("select * from client_version where topic = #{topic} and role = #{role} and client = #{client}")
+    public ClientVersion selectClientVersion(@Param("topic") String topic, @Param("client") String client, @Param("role") int role);
 }

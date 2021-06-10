@@ -206,8 +206,36 @@ public class TopicMessageController extends ViewController {
             @RequestParam("topic") String topic,
             @RequestParam("cid") int cid,
             @RequestParam(name = "msgId") String msgId,
+            @RequestParam(name = "messageParam") String messageParam,
             Map<String, Object> map) throws Exception {
         String view = viewModule() + "/idSearch";
+        Cluster cluster = clusterService.getMQClusterById(cid);
+        msgId = msgId.trim();
+        // 消息查询
+        Result<?> result = messageService.queryMessage(cluster, topic, msgId);
+        setResult(map, result);
+        MessageQueryCondition messageQueryCondition = parseParam(0L, 1L, null, messageParam, false);
+        if(messageQueryCondition != null) {
+            setTraceEnabled(map, messageQueryCondition.getTopic());
+        }
+        return view;
+    }
+    
+    /**
+     * 查询线程消息
+     * 
+     * @return
+     * @throws Exception
+     */
+    @RequestMapping("/thread/message")
+    public String threadMessage(UserInfo userInfo,
+            HttpServletRequest request,
+            HttpServletResponse response,
+            @RequestParam("topic") String topic,
+            @RequestParam("cid") int cid,
+            @RequestParam(name = "msgId") String msgId,
+            Map<String, Object> map) throws Exception {
+        String view = viewModule() + "/threadMsg";
         Cluster cluster = clusterService.getMQClusterById(cid);
         msgId = msgId.trim();
         // 消息查询
@@ -537,8 +565,6 @@ public class TopicMessageController extends ViewController {
             @RequestParam("endTime") Long endTime,
             @RequestParam(name = "key", required = false) String key,
             @RequestParam("toAppend") boolean append,
-            @RequestParam("toBrokerName") String toBrokerName,
-            @RequestParam("toQueue") int toQueue,
             @RequestParam(name = "toMessageParam", required = false) String messageParam,
             Map<String, Object> map) throws Exception {
         String view = viewModule() + "/retrySearchTime";
@@ -547,6 +573,9 @@ public class TopicMessageController extends ViewController {
             key = null;
         } else {
             key = key.trim();
+        }
+        if (endTime > System.currentTimeMillis()) {
+            endTime = System.currentTimeMillis();
         }
         MessageQueryCondition messageQueryCondition = null;
         if (StringUtils.isEmpty(messageParam)) {
@@ -591,6 +620,9 @@ public class TopicMessageController extends ViewController {
             Map<String, Object> map) throws Exception {
         String view = viewModule() + "/retrySearchKey";
         Cluster cluster = clusterService.getMQClusterById(cid);
+        if (endTime > System.currentTimeMillis()) {
+            endTime = System.currentTimeMillis();
+        }
         // 时间点
         if (beginTime == 0 || endTime == 0 || beginTime > endTime) {
             setResult(map, Result.getResult(Status.PARAM_ERROR));

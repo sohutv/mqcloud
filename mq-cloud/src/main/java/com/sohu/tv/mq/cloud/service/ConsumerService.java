@@ -6,6 +6,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
@@ -37,10 +38,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.interceptor.TransactionAspectSupport;
 
+import com.alibaba.fastjson.JSON;
 import com.sohu.tv.mq.cloud.bo.Cluster;
 import com.sohu.tv.mq.cloud.bo.ConsumeStatsExt;
 import com.sohu.tv.mq.cloud.bo.Consumer;
 import com.sohu.tv.mq.cloud.bo.Topic;
+import com.sohu.tv.mq.cloud.common.mq.SohuMQAdmin;
 import com.sohu.tv.mq.cloud.dao.ConsumerDao;
 import com.sohu.tv.mq.cloud.dao.UserConsumerDao;
 import com.sohu.tv.mq.cloud.mq.DefaultCallback;
@@ -51,6 +54,7 @@ import com.sohu.tv.mq.cloud.util.DateUtil;
 import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper;
 import com.sohu.tv.mq.cloud.util.Result;
 import com.sohu.tv.mq.cloud.util.Status;
+import com.sohu.tv.mq.metric.StackTraceMetric;
 /**
  * consumer服务
  * @Description: 
@@ -703,6 +707,84 @@ public class ConsumerService {
             logger.error("getConsumeStatus topic:{},consumerGroup:{}", topic, consumer, e);
             return null;
         }
+    }
+    
+    /**
+     * 获取线程指标
+     * 
+     * @param clientId
+     * @param consumerGroup
+     * @return
+     */
+    public Result<List<StackTraceMetric>> getConsumeThreadMetrics(Cluster cluster, String clientId, String consumerGroup) {
+        return mqAdminTemplate.execute(new DefaultCallback<Result<List<StackTraceMetric>>>() {
+            public Result<List<StackTraceMetric>> callback(MQAdminExt mqAdmin) throws Exception {
+                SohuMQAdmin sohuMQAdmin = (SohuMQAdmin) mqAdmin;
+                ConsumerRunningInfo consumerRunningInfo = sohuMQAdmin.getConsumeThreadMetrics(consumerGroup, clientId,
+                        1000);
+                if (consumerRunningInfo == null) {
+                    return Result.getResult(Status.NO_RESULT);
+                }
+                Properties properties = consumerRunningInfo.getProperties();
+                if (properties == null) {
+                    return Result.getResult(Status.NO_RESULT);
+                }
+                String threadMetricListString = (String) properties.get("threadMetricList");
+                if (threadMetricListString == null) {
+                    return Result.getResult(Status.NO_RESULT);
+                }
+                List<StackTraceMetric> list = JSON.parseArray(threadMetricListString, StackTraceMetric.class);
+                return Result.getResult(list);
+            }
+
+            public Result<List<StackTraceMetric>> exception(Exception e) {
+                logger.error("getConsumeThreadMetrics consumer:{} err:{}", consumerGroup, e.getMessage());
+                return Result.getWebErrorResult(e);
+            }
+
+            public Cluster mqCluster() {
+                return cluster;
+            }
+        });
+    }
+    
+    /**
+     * 获取消费失败指标
+     * 
+     * @param clientId
+     * @param consumerGroup
+     * @return
+     */
+    public Result<List<StackTraceMetric>> getConsumeFailedMetrics(Cluster cluster, String clientId, String consumerGroup) {
+        return mqAdminTemplate.execute(new DefaultCallback<Result<List<StackTraceMetric>>>() {
+            public Result<List<StackTraceMetric>> callback(MQAdminExt mqAdmin) throws Exception {
+                SohuMQAdmin sohuMQAdmin = (SohuMQAdmin) mqAdmin;
+                ConsumerRunningInfo consumerRunningInfo = sohuMQAdmin.getConsumeFailedMetrics(consumerGroup, clientId,
+                        1000);
+                if (consumerRunningInfo == null) {
+                    return Result.getResult(Status.NO_RESULT);
+                }
+                Properties properties = consumerRunningInfo.getProperties();
+                if (properties == null) {
+                    return Result.getResult(Status.NO_RESULT);
+                }
+                String threadMetricListString = (String) properties.get("failedMetricList");
+                if (threadMetricListString == null) {
+                    return Result.getResult(Status.NO_RESULT);
+                }
+                List<StackTraceMetric> list = JSON.parseArray(threadMetricListString, StackTraceMetric.class);
+                return Result.getResult(list);
+            }
+
+            public Result<List<StackTraceMetric>> exception(Exception e) {
+                logger.error("getConsumeThreadMetrics consumer:{} err:{}", consumerGroup, e.getMessage());
+                return Result.getWebErrorResult(e);
+            }
+
+            public Cluster mqCluster() {
+                return cluster;
+            }
+        });
     }
 }
 

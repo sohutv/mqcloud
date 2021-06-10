@@ -12,8 +12,12 @@ import org.apache.rocketmq.common.message.MessageExt;
 import org.slf4j.Logger;
 
 import com.alibaba.fastjson.JSON;
-import com.sohu.index.tv.mq.common.BatchConsumerCallback.MQMessage;
+import com.sohu.index.tv.mq.common.MQMessage;
+import com.sohu.tv.mq.metric.ConsumeStatManager;
+import com.sohu.tv.mq.metric.ConsumeThreadStat;
 import com.sohu.tv.mq.metric.MQMetricsExporter;
+import com.sohu.tv.mq.metric.MessageExceptionMetric;
+import com.sohu.tv.mq.metric.MessageMetric;
 import com.sohu.tv.mq.serializable.MessageSerializer;
 import com.sohu.tv.mq.serializable.MessageSerializerEnum;
 import com.sohu.tv.mq.stats.ConsumeStats;
@@ -93,6 +97,17 @@ public class MessageConsumer {
     }
     
     /**
+     * 获取许可
+     */
+    private void acquirePermit(int permits) {
+        try {
+            rocketMQConsumer.getRateLimiter().limit(permits);
+        } catch (InterruptedException e) {
+            logger.warn("acquirePermit error", e.getMessage());
+        }
+    }
+    
+    /**
      * 消费状态
      * 
      * @author yongfeigao
@@ -121,29 +136,39 @@ public class MessageConsumer {
      * @date 2019年10月21日
      * @param <T>
      */
-    private abstract class AbstractConsumer <T> implements IConsumer {
+    private abstract class AbstractConsumer<T> implements IConsumer {
         
         /**
          * 消费逻辑
          */
         public ConsumeStatus consume(List<MessageExt> msgs) {
             // 解析消息
-            List<MQMessage<T, MessageExt>> messageList = parse(msgs);
+            List<MQMessage<T>> messageList = parse(msgs);
             if (messageList == null || messageList.isEmpty()) {
                 return ConsumeStatus.OK;
             }
-            // 消费消息
-            for (MQMessage<T, MessageExt> mqMessage : messageList) {
-                try {
-                    // 获取许可
-                    acquirePermit();
-                    consume(mqMessage.getMessage(), mqMessage.getMessageExt());
-                } catch (Throwable e) {
-                    logger.error("consume topic:{} consumer:{} msgId:{} bornTimestamp:{}",
-                            rocketMQConsumer.getTopic(), rocketMQConsumer.getGroup(),
-                            mqMessage.getMessageExt().getMsgId(), mqMessage.getMessageExt().getBornTimestamp(), e);
-                    return ConsumeStatus.FAIL;
+            // 设置消费线程统计
+            ConsumeThreadStat metric = ConsumeStatManager.getInstance()
+                    .getConsumeThreadMetrics(rocketMQConsumer.getGroup());
+            try {
+                metric.set(buildThreadConsumeMetric(messageList));
+                // 消费消息
+                for (MQMessage<T> mqMessage : messageList) {
+                    try {
+                        // 获取许可
+                        acquirePermit();
+                        consume(mqMessage.getMessage(), mqMessage.getMessageExt());
+                    } catch (Throwable e) {
+                        logger.error("consume topic:{} consumer:{} msgId:{} bornTimestamp:{}",
+                                rocketMQConsumer.getTopic(), rocketMQConsumer.getGroup(),
+                                mqMessage.getMessageExt().getMsgId(), mqMessage.getMessageExt().getBornTimestamp(), e);
+                        ConsumeStatManager.getInstance().getConsumeFailedMetrics(rocketMQConsumer.getGroup())
+                                .set(buildMessageExceptionMetric(mqMessage, e));
+                        return ConsumeStatus.FAIL;
+                    }
                 }
+            } finally {
+                metric.remove();
             }
             return ConsumeStatus.OK;
         }
@@ -153,11 +178,11 @@ public class MessageConsumer {
          * @param msgs
          * @return
          */
-        protected List<MQMessage<T, MessageExt>> parse(List<MessageExt> msgs){
+        protected List<MQMessage<T>> parse(List<MessageExt> msgs){
             if (msgs == null || msgs.isEmpty()) {
                 return null;
             }
-            List<MQMessage<T, MessageExt>> msgList = new ArrayList<>(msgs.size());
+            List<MQMessage<T>> msgList = new ArrayList<>(msgs.size());
             for (MessageExt me : msgs) {
                 byte[] bytes = me.getBody();
                 try {
@@ -184,12 +209,12 @@ public class MessageConsumer {
         }
         
         @SuppressWarnings("unchecked")
-        private MQMessage<T, MessageExt> buildMQMessage(MessageExt me) throws Exception {
+        private MQMessage<T> buildMQMessage(MessageExt me) throws Exception {
             byte[] bytes = me.getBody();
             // 无序列化器直接返回
             if (rocketMQConsumer.getMessageSerializer() == null) {
                 debugLog("null-serializer", me.getMsgId(), bytes.getClass().getName(), null);
-                return (MQMessage<T, MessageExt>) new MQMessage<>(bytes, me);
+                return (MQMessage<T>) new MQMessage<>(bytes, me);
             }
             // 反序列化
             T message = deserialize(me);
@@ -207,17 +232,17 @@ public class MessageConsumer {
             // 消费类型为String，采用JSON转换
             if (consumerParameterTypeClass == String.class) {
                 debugLog("String-consumerParameterType", me.getMsgId(), message.getClass().getName(), "String");
-                return (MQMessage<T, MessageExt>) new MQMessage<>(JSON.toJSONString(message), me);
+                return (MQMessage<T>) new MQMessage<>(JSON.toJSONString(message), me);
             }
             // 消息为String，采用JSON转换
             if (message instanceof String) {
                 debugLog("String-Message", me.getMsgId(), "String", consumerParameterTypeClass.getName());
-                return (MQMessage<T, MessageExt>) new MQMessage<>(
+                return (MQMessage<T>) new MQMessage<>(
                         JSON.parseObject(message.toString(), consumerParameterTypeClass), me);
             }
             debugLog("unknown", me.getMsgId(), message.getClass().getName(), consumerParameterTypeClass.getName());
             // 消费类型和消息都不是String，并且消息与消费类型不匹配，此时可能会类转换异常
-            return (MQMessage<T, MessageExt>) new MQMessage<>(message, me);
+            return (MQMessage<T>) new MQMessage<>(message, me);
         }
         
         private void debugLog(String flag, String msgId, String msgType, String consumerType) {
@@ -276,6 +301,56 @@ public class MessageConsumer {
          * @throws Exception
          */
         public abstract void consume(T message, MessageExt msgExt) throws Exception;
+        
+        /**
+         * 构建线程消费统计
+         * @param messageList
+         */
+        protected MessageMetric buildThreadConsumeMetric(List<MQMessage<T>> messageList) {
+            List<String> idList = new ArrayList<>(messageList.size());
+            messageList.forEach(message -> {
+                idList.add(message.buildOffsetMsgId());
+            });
+            MessageMetric messageMetric = new MessageMetric();
+            messageMetric.setStartTime(System.currentTimeMillis());
+            messageMetric.setMsgIdList(idList);
+            return messageMetric;
+        }
+        
+        /**
+         * 构建异常消费统计
+         * @param messageList
+         */
+        protected MessageExceptionMetric buildMessageExceptionMetric(List<MQMessage<T>> messageList, Throwable e) {
+            List<String> idList = new ArrayList<>(messageList.size());
+            messageList.forEach(message -> {
+                idList.add(message.buildOffsetMsgId());
+            });
+            MessageExceptionMetric messageMetric = buildMessageExceptionMetric(e);
+            messageMetric.setMsgIdList(idList);
+            return messageMetric;
+        }
+        
+        /**
+         * 构建异常消费统计
+         * @param messageList
+         */
+        protected MessageExceptionMetric buildMessageExceptionMetric(MQMessage<T> mqMessage, Throwable e) {
+            List<String> idList = new ArrayList<>(1);
+            idList.add(mqMessage.buildOffsetMsgId());
+            MessageExceptionMetric messageMetric = buildMessageExceptionMetric(e);
+            messageMetric.setMsgIdList(idList);
+            return messageMetric;
+        }
+        
+        protected MessageExceptionMetric buildMessageExceptionMetric(Throwable e) {
+            MessageExceptionMetric messageMetric = new MessageExceptionMetric();
+            messageMetric.setStartTime(System.currentTimeMillis());
+            messageMetric.setThreadId(Thread.currentThread().getId());
+            messageMetric.setThreadName(Thread.currentThread().getName());
+            messageMetric.setException(e);
+            return messageMetric;
+        }
     }
     
     /**
@@ -330,16 +405,25 @@ public class MessageConsumer {
     private class _BatchConsumerCallback extends AbstractConsumer<Object> {
 
         public ConsumeStatus consume(List<MessageExt> msgs) {
-            List<MQMessage<Object, MessageExt>> msgList = parse(msgs);
+            List<MQMessage<Object>> msgList = parse(msgs);
             if (msgList == null || msgList.isEmpty()) {
                 return ConsumeStatus.OK;
             }
+            // 设置消费线程统计
+            ConsumeThreadStat metric = ConsumeStatManager.getInstance().getConsumeThreadMetrics(rocketMQConsumer.getGroup());
             try {
+                metric.set(buildThreadConsumeMetric(msgList));
+                // 获取许可
+                acquirePermit(msgList.size());
                 rocketMQConsumer.getBatchConsumerCallback().call(msgList);
             } catch (Throwable e) {
                 logger.error("topic:{} consumer:{} msgSize:{}", 
                         rocketMQConsumer.getTopic(), rocketMQConsumer.getGroup(), msgList.size(), e);
+                ConsumeStatManager.getInstance().getConsumeFailedMetrics(rocketMQConsumer.getGroup())
+                        .set(buildMessageExceptionMetric(msgList, e));
                 return ConsumeStatus.FAIL;
+            } finally {
+                metric.remove();
             }
             return ConsumeStatus.OK;
         }

@@ -303,6 +303,7 @@ public class AdminClusterController extends AdminViewController {
                             // 公共逻辑 拼接BrokerStatVO
                             BrokerStatVO brokerStatVO = new BrokerStatVO();
                             brokerStatVO.setBrokerAddr(broker.getAddr());
+                            brokerStatVO.setBaseDir(broker.getBaseDir());
                             brokerStatMap.put(String.valueOf(broker.getBrokerID()), brokerStatVO);
                             // 监控结果
                             brokerStatVO.setCheckStatus(broker.getCheckStatus());

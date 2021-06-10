@@ -147,6 +147,11 @@ public class LeakyBucketRateLimiter implements RateLimiter {
     public void limit() throws InterruptedException {
         drip();
     }
+    
+    @Override
+    public void limit(int permits) throws InterruptedException {
+        
+    }
 
     @Override
     public void setRate(int rateInSecs) {

@@ -6,7 +6,7 @@
 	<artifactId>mq</artifactId>
 	<packaging>pom</packaging>
 	<name>mq</name>
-	<version>4.7.1</version>
+	<version>4.7.2</version>
 
 	<modules>
 		<module>mq-client-common-open</module>
@@ -122,13 +122,13 @@
 	</dependencies>
 	
 	<repositories>
+		<repository>
+            <id>aliyun.repo</id>
+            <url>http://maven.aliyun.com/nexus/content/groups/public/</url>
+        </repository>
 	    <repository>
 	        <id>github.repo</id>
 	        <url>https://raw.github.com/sohutv/mvn_repo/master</url>
-	        <snapshots>
-	            <enabled>true</enabled>
-	            <updatePolicy>always</updatePolicy>
-	        </snapshots>
 	    </repository>
 	</repositories>
 
