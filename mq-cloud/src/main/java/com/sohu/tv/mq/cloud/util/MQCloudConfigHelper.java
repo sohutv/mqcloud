@@ -105,6 +105,9 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware, Comm
     private String mailUsername;
 
     private String mailPassword;
+
+    private Boolean mailUseSSL;
+
     // ms
     private int mailTimeout;
     // 是否开启注册
@@ -133,19 +136,19 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware, Comm
 
     // 机房颜色
     private List<String> machineRoomColor;
-    
+
     // 从slave查询消息
     private Boolean queryMessageFromSlave;
-    
+
     // 消费落后多少进行预警,单位byte
     private Long consumeFallBehindSize = 0L;
-    
+
     // 消息类型位置
     private String messageTypeLocation;
-    
+
     // slave落后多少进行预警，单位byte
-    private Long slaveFallBehindSize = 0L; 
-    
+    private Long slaveFallBehindSize = 0L;
+
     // 线程统计支持版本
     private String threadMetricSupportedVersion;
     // 消费失败统计支持版本
@@ -209,7 +212,7 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware, Comm
     public boolean isLocal() {
         return "local".equals(profile) || "local-sohu".equals(profile);
     }
-    
+
     public boolean isSohu() {
         return profile.contains("sohu");
     }
@@ -249,19 +252,19 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware, Comm
     public String getTopicConsumeLink(long topicId) {
         return getTopicLink(topicId) + "?tab=consume";
     }
-    
+
     public String getTopicProduceLink(long topicId, String linkText) {
         return getHrefLink(getTopicLink(topicId) + "?tab=produce", linkText);
     }
-    
+
     public String getTopicConsumeLink(long topicId, String linkText) {
         return getTopicConsumeLink(topicId, linkText, 0);
     }
-    
+
     public String getTopicConsumeLink(long topicId, String linkText, long time) {
         return getHrefLink(getTopicConsumeHref(topicId, linkText, -1, time), linkText);
     }
-    
+
     public String getTopicConsumeHref(long topicId, String consumer, long consumerId, long time) {
         String link = getTopicConsumeLink(topicId) + "&consumer=" + consumer;
         if (consumerId > 0) {
@@ -272,7 +275,7 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware, Comm
         }
         return link;
     }
-    
+
     public String getTopicConsumeLink(String topic, String consumer) {
         return getHrefLink(getPrefix() + "topic/detail?topic=" + topic + "&consumer=" + consumer, consumer);
     }
@@ -288,7 +291,7 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware, Comm
     public String getServerLink(String ip) {
         return getHrefLink(getPrefix() + "admin/server/list?ip=" + ip, ip);
     }
-    
+
     public String getBrokerStoreLink(int cid, String ip) {
         return getHrefLink(getPrefix() + "admin/cluster/list?cid=" + cid + "&brokerStoreIp=" + ip, ip);
     }
@@ -405,6 +408,10 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware, Comm
         return mailPassword;
     }
 
+    public Boolean getMailUseSSL() {
+        return mailUseSSL;
+    }
+
     public void setMailHost(String mailHost) {
         this.mailHost = mailHost;
     }
@@ -427,6 +434,10 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware, Comm
 
     public void setMailTimeout(int mailTimeout) {
         this.mailTimeout = mailTimeout;
+    }
+
+    public void setMailUseSSL(Boolean mailUseSSL) {
+        this.mailUseSSL = mailUseSSL;
     }
 
     public String getIgnoreTopic() {
