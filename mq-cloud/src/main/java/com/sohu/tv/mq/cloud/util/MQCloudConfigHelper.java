@@ -105,6 +105,9 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware, Comm
     private String mailUsername;
 
     private String mailPassword;
+
+    private Boolean mailUseSSL;
+
     // ms
     private int mailTimeout;
     // 是否开启注册
@@ -405,6 +408,10 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware, Comm
         return mailPassword;
     }
 
+    public Boolean getMailUseSSL() {
+        return mailUseSSL;
+    }
+
     public void setMailHost(String mailHost) {
         this.mailHost = mailHost;
     }
@@ -427,6 +434,10 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware, Comm
 
     public void setMailTimeout(int mailTimeout) {
         this.mailTimeout = mailTimeout;
+    }
+
+    public void setMailUseSSL(Boolean mailUseSSL) {
+        this.mailUseSSL = mailUseSSL;
     }
 
     public String getIgnoreTopic() {
