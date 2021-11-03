@@ -38,6 +38,8 @@ public class UserService {
 
     private Logger logger = LoggerFactory.getLogger(this.getClass());
 
+    private static final String MONITOR_CACHE_KEY = "monitor";
+
     @Autowired
     private UserDao userDao;
 
@@ -65,6 +67,7 @@ public class UserService {
     public Result<User> save(User user) {
         try {
             userDao.insert(user);
+            mqLocalCache.cleanUp(MONITOR_CACHE_KEY);
         } catch (DuplicateKeyException e) {
             logger.warn("duplicate key:{}", user);
             return Result.getResult(Status.DB_DUPLICATE_KEY);
@@ -141,6 +144,7 @@ public class UserService {
             if(user.getEmail() != null) {
                 userLocalCache.cleanUp(user.getEmail());
             }
+            mqLocalCache.cleanUp(MONITOR_CACHE_KEY);
         } catch (Exception e) {
             logger.error("update err, user:{}", user, e);
             return Result.getDBErrorResult(e);
@@ -273,12 +277,12 @@ public class UserService {
      * @param user
      */
     public String queryMonitorEmail() {
-        Object email = mqLocalCache.get("monitor");
+        Object email = mqLocalCache.get(MONITOR_CACHE_KEY);
         if (email == null) {
             List<User> userList = queryMonitorUser();
             if (userList != null && userList.size() > 0) {
                 email = Jointer.BY_COMMA.join(userList, u -> u.getEmail());
-                mqLocalCache.put("monitor", email);
+                mqLocalCache.put(MONITOR_CACHE_KEY, email);
             }
         }
         if (email == null) {
