@@ -42,16 +42,32 @@ public abstract class AbstractCommand<T> extends HystrixCommand<T> {
                 .andThreadPoolPropertiesDefaults(HystrixThreadPoolProperties.Setter().withCoreSize(poolSize)));
         this.alerter = alerter;
     }
+    
+    /**
+     * 构建(信号量隔离)
+     * 
+     * @param groupKey
+     * @param commandKey
+     * @param timeout 超时时间
+     */
+    public AbstractCommand(String groupKey, String commandKey, int timeout, Alerter alerter) {
+        super(Setter.withGroupKey(HystrixCommandGroupKey.Factory.asKey(groupKey + "-semaphore"))
+                .andCommandKey(HystrixCommandKey.Factory.asKey(commandKey + "-semaphore"))
+                .andCommandPropertiesDefaults(HystrixCommandProperties.Setter().withExecutionIsolationStrategy(
+                        HystrixCommandProperties.ExecutionIsolationStrategy.SEMAPHORE)
+                        .withFallbackIsolationSemaphoreMaxConcurrentRequests(100)
+                        .withExecutionIsolationSemaphoreMaxConcurrentRequests(50)
+                        .withExecutionTimeoutInMilliseconds(timeout)));
+        this.alerter = alerter;
+    }
 
     protected T run() throws Exception {
         try {
             return invoke();
         } catch (Exception e) {
-            logger.error("send err! "+getCommandGroup().name() + "-" +
-                    getCommandKey().name() + ":" +
-                    invokeErrorInfo(),
-                    e);
-            throw new RuntimeException(e);
+            logger.error("group:{} command:{} param:{}", getCommandGroup().name(), getCommandKey().name(),
+                    invokeErrorInfo(), e);
+            throw e;
         }
     }
 
@@ -77,7 +93,7 @@ public abstract class AbstractCommand<T> extends HystrixCommand<T> {
         // 判断熔断器是否打开
         if (super.isCircuitBreakerOpen()) {
             if (null != alerter) {
-                String info = "group:" + getCommandGroup().name() + " command:" + getCommandKey().name() + " err!";
+                String info = "group:" + getCommandGroup().name() + " command:" + getCommandKey().name() + " circuitBreakerOpen!";
                 alerter.alert(info);
             }
         }

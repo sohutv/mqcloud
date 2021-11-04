@@ -57,6 +57,7 @@ import com.sohu.tv.mq.cloud.service.AuditService;
 import com.sohu.tv.mq.cloud.service.AuditTopicDeleteService;
 import com.sohu.tv.mq.cloud.service.AuditTopicService;
 import com.sohu.tv.mq.cloud.service.AuditTopicTraceService;
+import com.sohu.tv.mq.cloud.service.AuditTopicTrafficWarnService;
 import com.sohu.tv.mq.cloud.service.AuditTopicUpdateService;
 import com.sohu.tv.mq.cloud.service.AuditUserConsumerDeleteService;
 import com.sohu.tv.mq.cloud.service.AuditUserProducerDeleteService;
@@ -68,7 +69,6 @@ import com.sohu.tv.mq.cloud.service.UserConsumerService;
 import com.sohu.tv.mq.cloud.service.UserMessageService;
 import com.sohu.tv.mq.cloud.service.UserProducerService;
 import com.sohu.tv.mq.cloud.service.UserService;
-import com.sohu.tv.mq.cloud.service.AuditTopicTrafficWarnService;
 import com.sohu.tv.mq.cloud.util.DateUtil;
 import com.sohu.tv.mq.cloud.util.Result;
 import com.sohu.tv.mq.cloud.util.Status;
@@ -1144,6 +1144,7 @@ public class AuditController extends AdminViewController {
             ConsumerConfig consumerConfig = new ConsumerConfig();
             consumerConfig.setConsumer(consumer.getName());
             consumerConfig.setRetryMessageResetTo(resetTo.getTime());
+            consumerConfig.setRetryMessageSkipKey(auditResetOffset.getMessageKey());
             Result<?> result = consumerConfigService.save(consumerConfig);
             if (result.isNotOK()) {
                 return Result.getWebResult(result);

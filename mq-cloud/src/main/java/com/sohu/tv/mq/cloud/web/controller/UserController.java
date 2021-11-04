@@ -32,11 +32,14 @@ import com.sohu.tv.mq.cloud.bo.Consumer;
 import com.sohu.tv.mq.cloud.bo.ConsumerTraffic;
 import com.sohu.tv.mq.cloud.bo.StatsProducer;
 import com.sohu.tv.mq.cloud.bo.Topic;
+import com.sohu.tv.mq.cloud.bo.TopicStat;
 import com.sohu.tv.mq.cloud.bo.TopicTopology;
 import com.sohu.tv.mq.cloud.bo.TopicTraffic;
 import com.sohu.tv.mq.cloud.bo.Traffic;
 import com.sohu.tv.mq.cloud.bo.User;
 import com.sohu.tv.mq.cloud.bo.UserProducer;
+import com.sohu.tv.mq.cloud.bo.UserWarn;
+import com.sohu.tv.mq.cloud.dao.UserWarnCount;
 import com.sohu.tv.mq.cloud.mq.DefaultCallback;
 import com.sohu.tv.mq.cloud.mq.MQAdminTemplate;
 import com.sohu.tv.mq.cloud.service.AlertService;
@@ -50,6 +53,7 @@ import com.sohu.tv.mq.cloud.service.TopicService;
 import com.sohu.tv.mq.cloud.service.TopicTrafficService;
 import com.sohu.tv.mq.cloud.service.UserProducerService;
 import com.sohu.tv.mq.cloud.service.UserService;
+import com.sohu.tv.mq.cloud.service.UserWarnService;
 import com.sohu.tv.mq.cloud.util.DateUtil;
 import com.sohu.tv.mq.cloud.util.FreemarkerUtil;
 import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper;
@@ -113,6 +117,9 @@ public class UserController extends ViewController {
     
     @Autowired
     private MQCloudConfigHelper mqCloudConfigHelper;
+    
+    @Autowired
+    private UserWarnService userWarnService;
 
     /**
      * 退出登录
@@ -659,7 +666,72 @@ public class UserController extends ViewController {
             }
         }
     }
-
+    
+    /**
+     * 获取用户的topic状况
+     * 
+     * @return
+     * @throws Exception
+     */
+    @ResponseBody
+    @RequestMapping("/topic/stat")
+    public Result<?> topicStat(UserInfo userInfo) throws Exception {
+        List<Integer> traceClusterIdList = clusterService.getTraceClusterIdList();
+        Result<TopicStat> rst = topicService.queryTopicStat(userInfo.getUser(), traceClusterIdList);
+        return Result.getWebResult(rst);
+    }
+    
+    /**
+     * 用户警告
+     * @param userInfo
+     * @param paginationParam
+     * @param map
+     * @return
+     * @throws Exception
+     */
+    @RequestMapping("/warn/list")
+    public String warn(UserInfo userInfo, @Valid PaginationParam paginationParam, Map<String, Object> map)
+            throws Exception {
+        // 设置返回视图
+        String view = viewModule() + "/warnList";
+        // 设置分页参数
+        setPagination(map, paginationParam);
+        // 获取警告数量
+        long uid = userInfo.getUser().getId();
+        Result<Integer> countResult = userWarnService.queryUserWarnCount(uid);
+        if (!countResult.isOK()) {
+            return view();
+        }
+        paginationParam.caculatePagination(countResult.getResult());
+        // 获取警告列表
+        Result<List<UserWarn>> result = userWarnService.queryUserWarnList(uid, paginationParam.getBegin(),
+                paginationParam.getNumOfPage());
+        setResult(map, result.getResult());
+        return view;
+    }
+    
+    /**
+     * 用户警告详情
+     * @param userInfo
+     * @param paginationParam
+     * @param map
+     * @return
+     * @throws Exception
+     */
+    @ResponseBody
+    @RequestMapping("/warn/detail")
+    public Result<UserWarn> warn(UserInfo userInfo, @RequestParam("wid") long wid, Map<String, Object> map)
+            throws Exception {
+        return userWarnService.queryWarnInfo(wid);
+    }
+    
+    @ResponseBody
+    @RequestMapping("/warn/count")
+    public Result<List<UserWarnCount>> warn(UserInfo userInfo, @RequestParam("days") int days, Map<String, Object> map)
+            throws Exception {
+        return userWarnService.queryUserWarnCount(userInfo.getUser().getId(), days);
+    }
+    
     @Override
     public String viewModule() {
         return "user";

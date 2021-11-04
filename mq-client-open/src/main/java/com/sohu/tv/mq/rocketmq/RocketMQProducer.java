@@ -2,6 +2,14 @@ package com.sohu.tv.mq.rocketmq;
 
 import java.util.Collection;
 import java.util.Map;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 
 import org.apache.rocketmq.client.exception.MQClientException;
 import org.apache.rocketmq.client.producer.DefaultMQProducer;
@@ -13,7 +21,9 @@ import org.apache.rocketmq.client.producer.TransactionMQProducer;
 import org.apache.rocketmq.client.trace.AsyncTraceDispatcher;
 import org.apache.rocketmq.client.trace.hook.SendMessageTraceHookImpl;
 import org.apache.rocketmq.common.message.Message;
+import org.apache.rocketmq.remoting.exception.RemotingException;
 
+import com.sohu.index.tv.mq.common.MQMessage;
 import com.sohu.index.tv.mq.common.Result;
 import com.sohu.tv.mq.common.AbstractConfig;
 import com.sohu.tv.mq.common.SohuSendMessageHook;
@@ -36,6 +46,14 @@ public class RocketMQProducer extends AbstractConfig {
     
     // 发送顺序消息使用
     private MessageQueueSelector messageQueueSelector;
+    
+    // 默认重试次数
+    private int defaultRetryTimes = 1;
+    
+    // 重试发送线程池
+    private ExecutorService retrySenderExecutor;
+    
+    private Consumer<Result<SendResult>> resendResultConsumer;
     
     /**
      * 同样消息的Producer，归为同一个Group，应用必须设置，并保证命名唯一
@@ -75,6 +93,24 @@ public class RocketMQProducer extends AbstractConfig {
                 producer.getDefaultMQProducerImpl().registerSendMessageHook(hook);
             }
             producer.start();
+            // 初始化重试线程池
+            if (defaultRetryTimes > 0 && retrySenderExecutor == null) {
+                retrySenderExecutor = new ThreadPoolExecutor(
+                        Runtime.getRuntime().availableProcessors(),
+                        Runtime.getRuntime().availableProcessors(),
+                        1000 * 60,
+                        TimeUnit.MILLISECONDS,
+                        new ArrayBlockingQueue<>(100),
+                        new ThreadFactory() {
+                            private AtomicInteger threadIndex = new AtomicInteger(0);
+
+                            @Override
+                            public Thread newThread(Runnable r) {
+                                return new Thread(r,
+                                        getGroup() + "-retrySenderExecutor-" + this.threadIndex.incrementAndGet());
+                            }
+                        });
+            }
             logger.info("topic:{} group:{} start", topic, group);
         } catch (MQClientException e) {
             logger.error(e.getMessage(), e);
@@ -190,12 +226,22 @@ public class RocketMQProducer extends AbstractConfig {
             SendResult sendResult = producer.send(message);
             return new Result<SendResult>(true, sendResult);
         } catch (Exception e) {
-            logger.error(e.getMessage(), e);
-            if(statsHelper != null) {
-                statsHelper.recordException(e);
-            }
-            return new Result<SendResult>(false, e);
+            return processException(e);
         }
+    }
+    
+    /**
+     * 异常处理
+     * 
+     * @param e
+     * @return
+     */
+    public Result<SendResult> processException(Exception e) {
+        logger.error(e.getMessage(), e);
+        if (statsHelper != null) {
+            statsHelper.recordException(e);
+        }
+        return new Result<SendResult>(false, e);
     }
     
     /**
@@ -615,11 +661,160 @@ public class RocketMQProducer extends AbstractConfig {
             return new Result<SendResult>(false, e);
         }
     }
+    
+    /**
+     * 发送消息
+     *
+     * @param message 消息
+     * @return 发送结果
+     */
+    @SuppressWarnings("rawtypes")
+    public Result<SendResult> send(MQMessage mqMessage) {
+        // 无body，序列化
+        if (mqMessage.getBody() == null) {
+            try {
+                mqMessage.setBody(getMessageSerializer().serialize(mqMessage.getMessage()));
+            } catch (Exception e) {
+                logger.error(e.getMessage(), e);
+                return new Result<SendResult>(false, e);
+            }
+        }
+        // 设置属性
+        mqMessage.setTopic(getTopic());
+        mqMessage.resetRetryTimes(this.defaultRetryTimes);
+        // 消息发送
+        try {
+            SendResult sendResult = producer.send(mqMessage.getInnerMessage());
+            if (mqMessage.isExceptionForTest()) {
+                logger.info("send ok: msgId:{} offsetMsgId:{}", sendResult.getMsgId(), sendResult.getOffsetMsgId());
+                throw new RemotingException("exceptionForTest");
+            }
+            return new Result<SendResult>(true, sendResult);
+        } catch (MQClientException e) {
+            return processException(e);
+        } catch (Exception e) {
+            // 重试
+            if (mqMessage.getRetryTimes() > 0 && resend(mqMessage)) {
+                return new Result<SendResult>(false, e).setRetrying(true);
+            } else {
+                return processException(e);
+            }
+        }
+    }
+    
+    /**
+     * 重试发送
+     * 
+     * @param message
+     * @return
+     */
+    @SuppressWarnings("rawtypes")
+    private boolean resend(MQMessage mqMessage) {
+        try {
+            retrySenderExecutor.execute(() -> {
+                Result<SendResult> result = null;
+                try {
+                    result = _resend(mqMessage);
+                } catch (Throwable e) {
+                    result = new Result<>(false, new MQClientException(e.toString(), e));
+                }
+                result.setMqMessage(mqMessage);
+                // 处理重发消息结果
+                processResendResult(result);
+            });
+            return true;
+        } catch (RejectedExecutionException e) {
+            logger.warn("reject retryPublish...");
+            return false;
+        }
+    }
+
+    /**
+     * 重试发送
+     * 
+     * @param message
+     * @return
+     */
+    @SuppressWarnings("rawtypes")
+    private Result<SendResult> _resend(MQMessage mqMessage) {
+        Exception exception = null;
+        // 循环重试发送
+        for (int i = 1; i <= mqMessage.getRetryTimes(); ++i) {
+            try {
+                SendResult sendResult = producer.send(mqMessage.getInnerMessage());
+                Result<SendResult> result = new Result<>(true, sendResult);
+                result.setRetriedTimes(i);
+                return result;
+            } catch (Exception e) {
+                exception = e;
+            }
+        }
+        // 发送失败，记录结果
+        if (statsHelper != null) {
+            statsHelper.recordException(exception);
+        }
+        Result<SendResult> result = new Result<>(false, exception);
+        result.setRetriedTimes(mqMessage.getRetryTimes());
+        return result;
+    }
+    
+    /**
+     * 处理重发结果
+     * 
+     * @param result
+     */
+    private void processResendResult(Result<SendResult> result) {
+        // 有重试消费者
+        if (resendResultConsumer != null) {
+            try {
+                resendResultConsumer.accept(result);
+            } catch (Exception e) {
+                logger.error("resendResultConsumer consume:{} error", result, e);
+            }
+        }
+        // 无重试消费者记录日志
+        if (!result.isSuccess()) {
+            logger.error("retryTimes:{} message:{} error!", result.getRetriedTimes(),
+                    result.getMqMessage().getMessage(), result.getException());
+        } else {
+            if (logger.isDebugEnabled()) {
+                logger.debug("retryTimes:{} message:{} success", result.getRetriedTimes(),
+                        result.getMqMessage().getMessage());
+            }
+        }
+    }
+    
+    public int getDefaultRetryTimes() {
+        return defaultRetryTimes;
+    }
+
+    public void setDefaultRetryTimes(int defaultRetryTimes) {
+        this.defaultRetryTimes = defaultRetryTimes;
+    }
+
+    public ExecutorService getRetrySenderExecutor() {
+        return retrySenderExecutor;
+    }
+
+    public void setRetrySenderExecutor(ExecutorService retrySenderExecutor) {
+        this.retrySenderExecutor = retrySenderExecutor;
+    }
+
+    public Consumer<Result<SendResult>> getResendResultConsumer() {
+        return resendResultConsumer;
+    }
+
+    public void setResendResultConsumer(Consumer<Result<SendResult>> resendResultConsumer) {
+        this.resendResultConsumer = resendResultConsumer;
+    }
 
     public void shutdown() {
         producer.shutdown();
         if (statsHelper != null) {
             statsHelper.shutdown();
+        }
+        if (retrySenderExecutor != null) {
+            retrySenderExecutor.shutdown();
         }
     }
 

@@ -1,0 +1,24 @@
+<table border=1>
+	<thead>
+		<tr>
+			<td>producer</td>
+			<td>时间</td>
+			<td>client</td>
+			<td>broker</td>
+			<td>异常</td>
+		</tr>
+	</thead>
+	<tbody>
+		<#list list as producerStat>
+			<tr>
+				<#if producerStat_index==0>
+					<td rowspan=${list?size}>${link}</td>
+				</#if>
+			    <td>${producerStat.createDate} ${producerStat.createTime}</td>
+			    <td>${producerStat.client}</td>
+			    <td>${producerStat.broker}</td>
+			    <td>${producerStat.exception!}</td>
+			</tr>
+		</#list>
+	</tbody>
+</table>

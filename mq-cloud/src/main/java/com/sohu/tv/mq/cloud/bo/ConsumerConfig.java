@@ -11,6 +11,8 @@ public class ConsumerConfig {
     private String consumer;
     // 重试消息跳过
     private Long retryMessageResetTo;
+    // 重试消息跳过的key
+    private String retryMessageSkipKey;
 
     // 消费暂停
     private Boolean pause;
@@ -68,6 +70,14 @@ public class ConsumerConfig {
         this.pauseClientId = pauseClientId;
     }
 
+    public String getRetryMessageSkipKey() {
+        return retryMessageSkipKey;
+    }
+
+    public void setRetryMessageSkipKey(String retryMessageSkipKey) {
+        this.retryMessageSkipKey = retryMessageSkipKey;
+    }
+
     @Override
     public int hashCode() {
         final int prime = 31;
@@ -78,6 +88,7 @@ public class ConsumerConfig {
         result = prime * result + ((pauseClientId == null) ? 0 : pauseClientId.hashCode());
         result = prime * result + ((permitsPerSecond == null) ? 0 : permitsPerSecond.hashCode());
         result = prime * result + ((retryMessageResetTo == null) ? 0 : retryMessageResetTo.hashCode());
+        result = prime * result + ((retryMessageSkipKey == null) ? 0 : retryMessageSkipKey.hashCode());
         return result;
     }
 
@@ -120,13 +131,19 @@ public class ConsumerConfig {
                 return false;
         } else if (!retryMessageResetTo.equals(other.retryMessageResetTo))
             return false;
+        if (retryMessageSkipKey == null) {
+            if (other.retryMessageSkipKey != null)
+                return false;
+        } else if (!retryMessageSkipKey.equals(other.retryMessageSkipKey))
+            return false;
         return true;
     }
 
     @Override
     public String toString() {
-        return "ConsumerConfig [consumer=" + consumer + ", retryMessageResetTo=" + retryMessageResetTo + ", pause="
-                + pause + ", pauseClientId=" + pauseClientId + ", enableRateLimit=" + enableRateLimit + ", permitsPerSecond="
-                + permitsPerSecond + "]";
+        return "ConsumerConfig [consumer=" + consumer + ", retryMessageResetTo=" + retryMessageResetTo
+                + ", retryMessageSkipKey=" + retryMessageSkipKey + ", pause=" + pause + ", pauseClientId="
+                + pauseClientId + ", enableRateLimit=" + enableRateLimit + ", permitsPerSecond=" + permitsPerSecond
+                + "]";
     }
 }

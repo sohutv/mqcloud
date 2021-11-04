@@ -313,13 +313,20 @@ public class UserService {
      * 
      * @param user
      */
+    @SuppressWarnings("unchecked")
     public List<User> queryMonitorUser() {
-        try {
-            return userDao.selectMonitor();
-        } catch (Exception e) {
-            logger.error("queryMonitor err", e);
+        List<User> monitors = (List<User>) mqLocalCache.get("monitors");
+        if (monitors == null) {
+            try {
+                monitors = userDao.selectMonitor();
+            } catch (Exception e) {
+                logger.error("queryMonitor err", e);
+            }
         }
-        return null;
+        if (monitors != null && monitors.size() > 0) {
+            mqLocalCache.put("monitors", monitors);
+        }
+        return monitors;
     }
     
     

@@ -165,9 +165,11 @@ public class ConsumerProgressVO {
 
     private long getMaxOffset(Map<MessageQueue, OffsetWrapper> offsetMap) {
         long maxOffset = 0;
-        for (OffsetWrapper offsetWrapper : offsetMap.values()) {
-            if (maxOffset < offsetWrapper.getBrokerOffset()) {
-                maxOffset = offsetWrapper.getBrokerOffset();
+        if (offsetMap != null) {
+            for (OffsetWrapper offsetWrapper : offsetMap.values()) {
+                if (maxOffset < offsetWrapper.getBrokerOffset()) {
+                    maxOffset = offsetWrapper.getBrokerOffset();
+                }
             }
         }
         return maxOffset;
@@ -175,9 +177,11 @@ public class ConsumerProgressVO {
 
     public long getDlqMaxOffset() {
         long maxOffset = 0;
-        for (TopicOffset topicOffset : dlqOffsetMap.values()) {
-            if (maxOffset < topicOffset.getMaxOffset()) {
-                maxOffset = topicOffset.getMaxOffset();
+        if (dlqOffsetMap != null) {
+            for (TopicOffset topicOffset : dlqOffsetMap.values()) {
+                if (maxOffset < topicOffset.getMaxOffset()) {
+                    maxOffset = topicOffset.getMaxOffset();
+                }
             }
         }
         return maxOffset;

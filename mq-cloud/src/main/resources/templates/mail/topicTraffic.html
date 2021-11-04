@@ -1,0 +1,18 @@
+topic: ${topic} 检测到流量异常:
+<br>
+<table border=1>
+	<thead>
+		<tr>
+			<th>时间</th>
+			<th>详情</th>
+		</tr>
+	</thead>
+	<tbody>
+		<#list list as checkResult>
+		<tr>
+			<td>${checkResult.time}</td>
+			<td>${checkResult.warnInfo}</td>
+		</tr>
+		</#list>
+	</tbody>
+</table>

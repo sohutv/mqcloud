@@ -62,6 +62,9 @@ import com.sohu.tv.mq.cloud.util.Result;
 import com.sohu.tv.mq.cloud.util.Status;
 import com.sohu.tv.mq.cloud.web.controller.param.AssociateProducerParam;
 import com.sohu.tv.mq.cloud.web.controller.param.TopicParam;
+import com.sohu.tv.mq.cloud.web.vo.BrokersQueueOffsetVO;
+import com.sohu.tv.mq.cloud.web.vo.BrokersQueueOffsetVO.BrokerQueueOffset;
+import com.sohu.tv.mq.cloud.web.vo.BrokersQueueOffsetVO.QueueOffset;
 import com.sohu.tv.mq.cloud.web.vo.IpSearchResultVO;
 import com.sohu.tv.mq.cloud.web.vo.UserInfo;
 import com.sohu.tv.mq.util.CommonUtil;
@@ -171,18 +174,52 @@ public class TopicController extends ViewController {
         TopicStatsTable topicStatsTable = topicService.stats(topic);
         // 对topic状态进行排序
         HashMap<MessageQueue, TopicOffset> offsetTable = topicStatsTable.getOffsetTable();
-        Map<String, TreeMap<MessageQueue, TopicOffset>> topicOffsetMap = new TreeMap<String, TreeMap<MessageQueue, TopicOffset>>();
-        for (MessageQueue mq : offsetTable.keySet()) {
-            TreeMap<MessageQueue, TopicOffset> offsetMap = topicOffsetMap.get(mq.getBrokerName());
-            if (offsetMap == null) {
-                offsetMap = new TreeMap<MessageQueue, TopicOffset>();
-                topicOffsetMap.put(mq.getBrokerName(), offsetMap);
-            }
-            offsetMap.put(mq, offsetTable.get(mq));
-        }
-        setResult(map, topicOffsetMap);
-        setResult(map, "topic", topic);
+        BrokersQueueOffsetVO brokersQueueOffsetVO = toBrokersQueueOffsetVO(offsetTable);
+        brokersQueueOffsetVO.setTopic(topic.getName());
+        brokersQueueOffsetVO.setTopicId(topic.getId());
+        setResult(map, brokersQueueOffsetVO);
         return view;
+    }
+    
+    private BrokersQueueOffsetVO toBrokersQueueOffsetVO(HashMap<MessageQueue, TopicOffset> offsetTable) {
+        // 合并&排序
+        Map<String, TreeMap<MessageQueue, TopicOffset>> topicOffsetMap = new TreeMap<>();
+        for (MessageQueue mq : offsetTable.keySet()) {
+            topicOffsetMap.computeIfAbsent(mq.getBrokerName(), broker->{
+                return new TreeMap<MessageQueue, TopicOffset>();
+            }).put(mq, offsetTable.get(mq));
+        }
+        // 转换
+        List<BrokerQueueOffset> brokerQueueOffsetList = new ArrayList<>();
+        for(String broker : topicOffsetMap.keySet()) {
+            BrokerQueueOffset brokerQueueOffset = new BrokerQueueOffset();
+            brokerQueueOffset.setBroker(broker);
+            brokerQueueOffset.setQueueOffsetList(toQueueOffsetList(topicOffsetMap.get(broker)));
+            brokerQueueOffset.calculate();
+            brokerQueueOffsetList.add(brokerQueueOffset);
+        }
+        BrokersQueueOffsetVO brokersQueueOffsetVO = new BrokersQueueOffsetVO();
+        brokersQueueOffsetVO.setBrokerQueueOffsetList(brokerQueueOffsetList);
+        return brokersQueueOffsetVO;
+    }
+    
+    /**
+     * 转换为 QueueOffset
+     * @param offSetMap
+     * @return
+     */
+    private List<QueueOffset> toQueueOffsetList(TreeMap<MessageQueue, TopicOffset> offSetMap) {
+        List<QueueOffset> list = new ArrayList<>();
+        for(MessageQueue messageQueue : offSetMap.keySet()) {
+            TopicOffset topicOffset = offSetMap.get(messageQueue);
+            QueueOffset queueOffset = new QueueOffset();
+            queueOffset.setQueueId(messageQueue.getQueueId());
+            queueOffset.setMaxOffset(topicOffset.getMaxOffset());
+            queueOffset.setMinOffset(topicOffset.getMinOffset());
+            queueOffset.setLastUpdateTimestamp(topicOffset.getLastUpdateTimestamp());
+            list.add(queueOffset);
+        }
+        return list;
     }
 
     /**

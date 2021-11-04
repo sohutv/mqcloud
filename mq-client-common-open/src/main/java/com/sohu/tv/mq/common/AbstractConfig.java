@@ -122,12 +122,14 @@ public abstract class AbstractConfig {
                 logger.error("http err, topic:{},group:{}", topic, group, e);
             }
             if (clusterInfoDTO == null) {
-                if (clusterInfoDTOResult.getStatus() == 201) {
-                    logger.warn("please register your {}:{} topic:{} in MQCloud first, times:{}",
-                            role() == 1 ? "producer" : "consumer", group, topic, times++);
-                } else {
-                    logger.warn("fetch topic:{} group:{} cluster info err:{}, times:{}", getTopic(), group,
-                            clusterInfoDTOResult.getMessage(), times++);
+                if (clusterInfoDTOResult != null) {
+                    if (clusterInfoDTOResult.getStatus() == 201) {
+                        logger.warn("please register your {}:{} topic:{} in MQCloud first, times:{}",
+                                role() == 1 ? "producer" : "consumer", group, topic, times++);
+                    } else {
+                        logger.warn("fetch topic:{} group:{} cluster info err:{}, times:{}", getTopic(), group,
+                                clusterInfoDTOResult.getMessage(), times++);
+                    }
                 }
                 try {
                     Thread.sleep(1000);

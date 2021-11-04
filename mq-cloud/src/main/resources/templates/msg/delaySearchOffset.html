@@ -6,7 +6,7 @@
 					<td>${msg_index + 1 + response.result.mqc.prevSize}</td>
 					<td><a target=_blank href="http://mq.tv.sohuno.com/topic/detail?topic=${msg.realTopic}<#if msg.consumer??>&consumer=${msg.realConsumer}</#if>"><#if msg.consumer??>${msg.consumer}<#else>${msg.realTopic}</#if></a></td>
 					<td>${msg.bornHostString}</td>
-					<td data-tooltip="true" title="存储时间:${msg.storeTimestamp?number_to_datetime?string("yyyy-MM-dd HH:mm:ss.SSS")}">${msg.bornTimestamp?number_to_datetime?string("yyyy-MM-dd HH:mm:ss.SSS")}</td>
+					<td data-tooltip="true" title="起始时间:${msg.bornTimestamp?number_to_datetime?string("yyyy-MM-dd HH:mm:ss.SSS")}">${msg.storeTimestamp?number_to_datetime?string("yyyy-MM-dd HH:mm:ss.SSS")}</td>
 					<td data-tooltip="true" title="偏移量:${msg.queueOffset}">${msg.broker!}:${msg.queueId}</td>
 					<td data-tooltip="true" title="序列化方式:<#if msg.messageBodySerializer??>${msg.messageBodySerializer.getName()}(${msg.messageBodyTypeString!})<#else>${msg.messageBodyTypeString!}</#if>"><#if msg.decodedBody?length gt 1000><pre>${msg.decodedBody}</pre><#else>${msg.decodedBody}</#if></td>
 					<td>${msg.keys!}</td>

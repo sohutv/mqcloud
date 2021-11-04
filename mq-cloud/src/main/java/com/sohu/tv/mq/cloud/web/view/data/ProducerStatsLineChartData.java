@@ -230,13 +230,15 @@ public class ProducerStatsLineChartData implements LineChartData {
                                 warn = true;
                             }
                         }
-                        if(warn) {
+                        if(warn || pts.getException() != null) {
                             Map<String, Object> markerMap = new HashMap<String, Object>();
-                            searchMap.get("");
                             markerMap.put("symbol", "circle");
                             markerMap.put("fillColor", "red");
                             markerMap.put("enabled", true);
                             countMap.put("marker", markerMap);
+                            if (pts.getException() != null) {
+                                countMap.put("dt", pts.getException());
+                            }
                         }
                         // 设置详细信息
                         Map<Long, List<ProducerStat>> map = (Map<Long, List<ProducerStat>>) lineChart.getDataMap();

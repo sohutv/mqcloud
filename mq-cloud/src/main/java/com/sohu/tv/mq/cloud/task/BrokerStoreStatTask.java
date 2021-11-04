@@ -2,7 +2,9 @@ package com.sohu.tv.mq.cloud.task;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.commons.lang3.math.NumberUtils;
 import org.slf4j.Logger;
@@ -12,6 +14,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 
 import com.sohu.tv.mq.cloud.bo.Broker;
 import com.sohu.tv.mq.cloud.bo.Cluster;
+import com.sohu.tv.mq.cloud.bo.UserWarn.WarnType;
 import com.sohu.tv.mq.cloud.common.model.BrokerStoreStat;
 import com.sohu.tv.mq.cloud.service.AlertService;
 import com.sohu.tv.mq.cloud.service.BrokerService;
@@ -74,6 +77,7 @@ public class BrokerStoreStatTask {
     }
 
     private int fetchAndSaveStoreStat(List<Broker> brokerList) {
+        int size = 0;
         List<BrokerStoreStat> brokerStoreStatList = new ArrayList<BrokerStoreStat>(brokerList.size());
         for (Broker broker : brokerList) {
             // 非master跳过
@@ -102,11 +106,18 @@ public class BrokerStoreStatTask {
             brokerStoreStat.setClusterId(cluster.getId());
             // 数据存储
             brokerStoreStatService.save(brokerStoreStat);
+            ++size;
+            if (brokerStoreStat.getMax() < 500 && brokerStoreStat.getPercent99() < 400) {
+                continue;
+            }
+            brokerStoreStat.setClusterName(clusterService.getMQClusterById(brokerStoreStat.getClusterId()).getName());
+            brokerStoreStat.setBrokerStoreLink(mqCloudConfigHelper.getBrokerStoreLink(brokerStoreStat.getClusterId(),
+                    brokerStoreStat.getBrokerIp()));
             brokerStoreStatList.add(brokerStoreStat);
         }
         // 预警
         warn(brokerStoreStatList);
-        return brokerStoreStatList.size();
+        return size;
     }
 
     /**
@@ -115,43 +126,12 @@ public class BrokerStoreStatTask {
      * @param brokerStoreStatList
      */
     public void warn(List<BrokerStoreStat> brokerStoreStatList) {
-        StringBuilder content = new StringBuilder();
-        for (BrokerStoreStat brokerStoreStat : brokerStoreStatList) {
-            if (brokerStoreStat.getMax() < 500 && brokerStoreStat.getPercent99() < 400) {
-                continue;
-            }
-            content.append("<tr>");
-            content.append("<td>");
-            content.append(clusterService.getMQClusterById(brokerStoreStat.getClusterId()).getName());
-            content.append("</td>");
-            content.append("<td>");
-            content.append(mqCloudConfigHelper.getBrokerStoreLink(brokerStoreStat.getClusterId(),
-                    brokerStoreStat.getBrokerIp()));
-            content.append("</td>");
-            content.append("<td>");
-            content.append(brokerStoreStat.getAvg());
-            content.append("ms</td>");
-            content.append("<td>");
-            content.append(brokerStoreStat.getPercent90());
-            content.append("ms</td>");
-            content.append("<td>");
-            content.append(brokerStoreStat.getPercent99());
-            content.append("ms</td>");
-            content.append("<td>");
-            content.append(brokerStoreStat.getMax());
-            content.append("ms</td>");
-            content.append("<td>");
-            content.append(brokerStoreStat.getCount());
-            content.append("</td>");
-            content.append("</tr>");
-        }
-        if (content.length() <= 0) {
+        if (brokerStoreStatList.size() == 0) {
             return;
         }
-        String header = "<table border=1><thead><tr><th>集群</th><th>broker</th><th>avg</th><th>90%</th><th>99%</th>"
-                + "<th>max</th><th>写入量</th></tr></thead><tbody>";
-        String footer = "</tbody></table>";
-        alertService.sendWarnMail(null, "BrokerStore", header + content.toString() + footer);
+        Map<String, Object> paramMap = new HashMap<>();
+        paramMap.put("list", brokerStoreStatList);
+        alertService.sendWarn(null, WarnType.BROKER_STORE_SLOW, paramMap);
     }
 
     /**

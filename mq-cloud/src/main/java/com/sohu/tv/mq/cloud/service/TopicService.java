@@ -29,6 +29,7 @@ import com.sohu.tv.mq.cloud.bo.AuditTopic;
 import com.sohu.tv.mq.cloud.bo.Cluster;
 import com.sohu.tv.mq.cloud.bo.Topic;
 import com.sohu.tv.mq.cloud.bo.TopicConsumer;
+import com.sohu.tv.mq.cloud.bo.TopicStat;
 import com.sohu.tv.mq.cloud.bo.TopicTraffic;
 import com.sohu.tv.mq.cloud.bo.User;
 import com.sohu.tv.mq.cloud.bo.UserProducer;
@@ -177,6 +178,34 @@ public class TopicService {
             return Result.getDBErrorResult(e);
         }
         return Result.getResult(count);
+    }
+    
+    /**
+     * 按照用户查询topic状况
+     * 
+     * @param Result<TopicStat>
+     */
+    public Result<TopicStat> queryTopicStat(User user, List<Integer> traceClusterIds) {
+        if(user.isAdmin()) {
+            return queryTopicStat(0, traceClusterIds);
+        } 
+        return queryTopicStat(user.getId(), traceClusterIds);
+    }
+    
+    /**
+     * 按照uid查询topic状况
+     * 
+     * @param Result<TopicStat>
+     */
+    public Result<TopicStat> queryTopicStat(long uid, List<Integer> traceClusterIds) {
+        TopicStat topicStat = null;
+        try {
+            topicStat = topicDao.selectTopicStat(uid, traceClusterIds);
+        } catch (Exception e) {
+            logger.error("queryTopicStat err, uid:{}", uid, e);
+            return Result.getDBErrorResult(e);
+        }
+        return Result.getResult(topicStat);
     }
     
     /**

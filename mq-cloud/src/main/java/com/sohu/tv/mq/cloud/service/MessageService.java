@@ -514,7 +514,7 @@ public class MessageService {
                     topicConfig.setTopicName(messageQueryCondition.getTopic());
                     topicConfig.setWriteQueueNums(queueData.getWriteQueueNums());
                     topicConfig.setReadQueueNums(queueData.getReadQueueNums());
-                    topicConfig.setTopicSysFlag(queueData.getTopicSynFlag());
+                    topicConfig.setTopicSysFlag(queueData.getTopicSysFlag());
                 } else if (messageQueryCondition.getTopic().equals("SCHEDULE_TOPIC_XXXX")) {
                     topicConfig = new TopicConfig();
                     topicConfig.setTopicName("SCHEDULE_TOPIC_XXXX");

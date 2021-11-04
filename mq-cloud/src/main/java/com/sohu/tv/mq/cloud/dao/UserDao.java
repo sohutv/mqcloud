@@ -46,6 +46,7 @@ public interface UserDao {
             + "<if test=\"user.name != null\">,name=#{user.name}</if>"
             + "<if test=\"user.type != -1\">,type=#{user.type}</if>"
             + "<if test=\"user.receiveNotice != -1\">,receive_notice=#{user.receiveNotice}</if>"
+            + "<if test=\"user.receivePhoneNotice != -1\">,receive_phone_notice=#{user.receivePhoneNotice}</if>"
             + " where id = #{user.id}</script>")
     public Integer update(@Param("user") User user);
     

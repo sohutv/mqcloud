@@ -9,6 +9,8 @@ public class AuditResetOffset {
     private long consumerId;
     // null:重置为最大offset,时间戳:重置为某时间点(yyyy-MM-dd#HH:mm:ss:SSS)
     private String offset;
+    
+    private String messageKey;
 
     public long getAid() {
         return aid;
@@ -42,9 +44,17 @@ public class AuditResetOffset {
         this.offset = offset;
     }
 
+    public String getMessageKey() {
+        return messageKey;
+    }
+
+    public void setMessageKey(String messageKey) {
+        this.messageKey = messageKey;
+    }
+
     @Override
     public String toString() {
         return "AuditResetOffset [aid=" + aid + ", tid=" + tid + ", consumerId=" + consumerId + ", offset=" + offset
-                + "]";
+                + ", messageKey=" + messageKey + "]";
     }
 }

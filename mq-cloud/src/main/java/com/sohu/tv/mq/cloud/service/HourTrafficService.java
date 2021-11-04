@@ -14,7 +14,6 @@ import com.sohu.tv.mq.cloud.bo.Traffic;
 import com.sohu.tv.mq.cloud.bo.User;
 import com.sohu.tv.mq.cloud.mq.DefaultInvoke;
 import com.sohu.tv.mq.cloud.mq.MQAdminTemplate;
-import com.sohu.tv.mq.cloud.util.Jointer;
 import com.sohu.tv.mq.cloud.util.Result;
 
 /**
@@ -59,11 +58,7 @@ public abstract class HourTrafficService extends TrafficService<Traffic> {
                     if (topicTraffic.getCount() > 0) {
                         Result<List<User>> userListResult = userConsumerService.queryUserByConsumer(
                                 topicConsumer.getTid(), topicConsumer.getCid());
-                        String email = null;
-                        if (userListResult.isNotEmpty()) {
-                            email = Jointer.BY_COMMA.join(userListResult.getResult(), u -> u.getEmail());
-                        }
-                        alert(topicTraffic, topicConsumer, email);
+                        alert(topicTraffic, topicConsumer, userListResult.getResult());
                         // 打印报警信息
                         logger.warn("alert! consumer fail topic:{}, consumer:{}, consumerFailCount:{}",
                                 topicConsumer.getTopic(), topicConsumer.getConsumer(), topicTraffic.getCount());
@@ -78,7 +73,7 @@ public abstract class HourTrafficService extends TrafficService<Traffic> {
         return topicConsumerList.size();
     }
     
-    protected abstract void alert(TopicHourTraffic topicTraffic, TopicConsumer topicConsumer, String email);
+    protected abstract void alert(TopicHourTraffic topicTraffic, TopicConsumer topicConsumer, List<User> userList);
 
     public Result<Integer> delete(Date date) {
         throw new UnsupportedOperationException();

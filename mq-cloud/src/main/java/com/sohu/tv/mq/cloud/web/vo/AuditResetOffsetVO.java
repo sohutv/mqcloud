@@ -16,6 +16,7 @@ public class AuditResetOffsetVO {
     private String offset;
     private String topic;
     private String consumer;
+    private String messageKey;
     public long getAid() {
         return aid;
     }
@@ -51,5 +52,11 @@ public class AuditResetOffsetVO {
     }
     public void setConsumer(String consumer) {
         this.consumer = consumer;
+    }
+    public String getMessageKey() {
+        return messageKey;
+    }
+    public void setMessageKey(String messageKey) {
+        this.messageKey = messageKey;
     }
 }

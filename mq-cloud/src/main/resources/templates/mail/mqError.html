@@ -1,0 +1,20 @@
+<table border=1>
+	<thead>
+		<tr>
+			<td>集群</td>
+			<td>异常信息</td>
+		</tr>
+	</thead>
+	<tbody>
+		<#list list as clusterStat> 
+		<#list clusterStat.stats as stat>
+		<tr>
+			<#if stat_index==0>
+			<td rowspan=${clusterStat.stats?size}><a href='${clusterStat.clusterLink}'>${clusterStat.clusterName}</a></td>
+			</#if>
+			<td>${stat}</td>
+		</tr>
+		</#list>
+		</#list>
+	</tbody>
+</table>

@@ -11,9 +11,10 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.sohu.index.tv.mq.common.ConsumerCallback;
+import com.sohu.tv.mq.rocketmq.consumer.SingleMessageConsumer;
 import com.sohu.tv.mq.serializable.DefaultMessageSerializer;
 import com.sohu.tv.mq.serializable.StringSerializer;
-
+@SuppressWarnings("rawtypes")
 public class MessageConsumerTest {
     DefaultMessageSerializer<Object> defaultMessageSerializer = new DefaultMessageSerializer<>();
     StringSerializer<Object> stringSerializer = new StringSerializer<>();
@@ -43,28 +44,28 @@ public class MessageConsumerTest {
 
     @Test
     public void testProtostuffSerializer() throws Exception {
-        MessageConsumer messageConsumer = new MessageConsumer(personConsumer);
+        SingleMessageConsumer<?> messageConsumer = new SingleMessageConsumer(personConsumer);
         messageConsumer.consumeMessage(getProtostuffMessageList(), (ConsumeConcurrentlyContext) null);
         messageConsumer.consumeMessage(getStringMessageList(), (ConsumeConcurrentlyContext) null);
     }
     
     @Test
     public void testStringSerializer() throws Exception {
-        MessageConsumer messageConsumer = new MessageConsumer(stringConsumer);
+        SingleMessageConsumer<?> messageConsumer = new SingleMessageConsumer(personConsumer);
         messageConsumer.consumeMessage(getProtostuffMessageList(), (ConsumeConcurrentlyContext) null);
         messageConsumer.consumeMessage(getStringMessageList(), (ConsumeConcurrentlyContext) null);
     }
     
     @Test
     public void testMapSerializer() throws Exception {
-        MessageConsumer messageConsumer = new MessageConsumer(mapConsumer);
+        SingleMessageConsumer<?> messageConsumer = new SingleMessageConsumer(personConsumer);
         messageConsumer.consumeMessage(getProtostuffMapMessageList(), (ConsumeConcurrentlyContext) null);
         messageConsumer.consumeMessage(getStringMapMessageList(), (ConsumeConcurrentlyContext) null);
     }
     
     @Test
     public void testErrorSerializer() throws Exception {
-        MessageConsumer messageConsumer = new MessageConsumer(errorConsumer);
+        SingleMessageConsumer<?> messageConsumer = new SingleMessageConsumer(personConsumer);
         messageConsumer.consumeMessage(getProtostuffMapMessageList(), (ConsumeConcurrentlyContext) null);
         messageConsumer.consumeMessage(getStringMapMessageList(), (ConsumeConcurrentlyContext) null);
     }

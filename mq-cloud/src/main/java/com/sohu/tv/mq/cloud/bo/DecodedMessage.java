@@ -2,12 +2,9 @@ package com.sohu.tv.mq.cloud.bo;
 
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
-import java.nio.ByteBuffer;
 
 import org.apache.rocketmq.common.MixAll;
-import org.apache.rocketmq.common.message.MessageDecoder;
 import org.apache.rocketmq.common.message.MessageExt;
-import org.apache.rocketmq.common.sysflag.MessageSysFlag;
 
 import com.alibaba.fastjson.JSONObject;
 import com.sohu.tv.mq.serializable.MessageSerializerEnum;
@@ -25,6 +22,8 @@ public class DecodedMessage extends MessageExt {
     private String broker;
     private String realTopic;
     private String consumer;
+    // broker端的msgid
+    private String offsetMsgId;
     
     // 消息体类型
     private MessageBodyType messageBodyType;
@@ -97,21 +96,29 @@ public class DecodedMessage extends MessageExt {
         return sb.toString();
     }
     
-    /**
-     * 获取offsetMsgId
-     * @return
-     */
-    public String getOffsetMsgId() {
-        int msgIdLength = (getSysFlag() & MessageSysFlag.STOREHOSTADDRESS_V6_FLAG) == 0 ? 4 + 4 + 8 : 16 + 4 + 8;
-        ByteBuffer byteBufferMsgId = ByteBuffer.allocate(msgIdLength);
-        return MessageDecoder.createMessageId(byteBufferMsgId, getStoreHostBytes(), getCommitLogOffset());
-    }
+//    /**
+//     * 获取offsetMsgId
+//     * @return
+//     */
+//    public String getOffsetMsgId() {
+//        int msgIdLength = (getSysFlag() & MessageSysFlag.STOREHOSTADDRESS_V6_FLAG) == 0 ? 4 + 4 + 8 : 16 + 4 + 8;
+//        ByteBuffer byteBufferMsgId = ByteBuffer.allocate(msgIdLength);
+//        return MessageDecoder.createMessageId(byteBufferMsgId, getStoreHostBytes(), getCommitLogOffset());
+//    }
 
     @Override
     public String toString() {
         return super.toString();
     }
     
+    public String getOffsetMsgId() {
+        return offsetMsgId;
+    }
+
+    public void setOffsetMsgId(String offsetMsgId) {
+        this.offsetMsgId = offsetMsgId;
+    }
+
     public MessageBodyType getMessageBodyType() {
         return messageBodyType;
     }

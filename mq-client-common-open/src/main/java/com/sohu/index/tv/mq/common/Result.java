@@ -22,7 +22,15 @@ public class Result<T> implements Serializable {
     /**
      * 异常信息
      */
-    private Exception exception;
+    private Throwable exception;
+    
+    // 正在重试
+    private boolean retrying;
+    
+    // 重试过的次数
+    private int retriedTimes;
+    
+    private MQMessage<?> mqMessage;
     
     public Result(boolean isSuccess) {
         this.isSuccess = isSuccess;
@@ -33,7 +41,7 @@ public class Result<T> implements Serializable {
         this.result = result;
     }
 
-    public Result(boolean isSuccess, Exception exception) {
+    public Result(boolean isSuccess, Throwable exception) {
         this.isSuccess = isSuccess;
         this.exception = exception;
     }
@@ -55,15 +63,42 @@ public class Result<T> implements Serializable {
     }
 
     public Exception getException() {
-        return exception;
+        return (Exception) exception;
     }
 
-    public void setException(Exception exception) {
+    public void setException(Throwable exception) {
         this.exception = exception;
+    }
+
+    public boolean isRetrying() {
+        return retrying;
+    }
+
+    public Result<T> setRetrying(boolean retrying) {
+        this.retrying = retrying;
+        return this;
+    }
+
+    public int getRetriedTimes() {
+        return retriedTimes;
+    }
+
+    public void setRetriedTimes(int retriedTimes) {
+        this.retriedTimes = retriedTimes;
+    }
+
+    @SuppressWarnings("unchecked")
+    public <R> MQMessage<R> getMqMessage() {
+        return (MQMessage<R>) mqMessage;
+    }
+
+    public void setMqMessage(MQMessage<?> mqMessage) {
+        this.mqMessage = mqMessage;
     }
 
     @Override
     public String toString() {
-        return "Result [isSuccess=" + isSuccess + ", result=" + result + ", exception=" + exception + "]";
+        return "Result [isSuccess=" + isSuccess + ", result=" + result + ", exception=" + exception + ", retrying="
+                + retrying + ", retriedTimes=" + retriedTimes + "]";
     }
 }

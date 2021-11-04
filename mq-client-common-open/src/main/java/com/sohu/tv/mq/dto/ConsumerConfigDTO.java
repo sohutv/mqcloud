@@ -17,6 +17,9 @@ public class ConsumerConfigDTO {
     // 消费限速
     private Boolean enableRateLimit;
     private Double permitsPerSecond;
+    
+    // 重试消息跳过的key
+    private String retryMessageSkipKey;
 
     public Long getRetryMessageResetTo() {
         return retryMessageResetTo;
@@ -58,9 +61,18 @@ public class ConsumerConfigDTO {
         this.pauseClientId = pauseClientId;
     }
 
+    public String getRetryMessageSkipKey() {
+        return retryMessageSkipKey;
+    }
+
+    public void setRetryMessageSkipKey(String retryMessageSkipKey) {
+        this.retryMessageSkipKey = retryMessageSkipKey;
+    }
+
     @Override
     public String toString() {
         return "ConsumerConfigDTO [retryMessageResetTo=" + retryMessageResetTo + ", pause=" + pause + ", pauseClientId="
-                + pauseClientId + ", enableRateLimit=" + enableRateLimit + ", permitsPerSecond=" + permitsPerSecond + "]";
+                + pauseClientId + ", enableRateLimit=" + enableRateLimit + ", permitsPerSecond=" + permitsPerSecond
+                + ", retryMessageSkipKey=" + retryMessageSkipKey + "]";
     }
 }

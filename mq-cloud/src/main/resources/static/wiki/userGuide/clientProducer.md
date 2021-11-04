@@ -111,6 +111,48 @@ producer.shutdown();
 
    但是，消费者需要注意，需要单独设置setMessageSerializer(null)，否则消费消息会反序列化失败。
 
+5. 发送消息如何进行<b id="asynRetry">异步重试</b>？
+
+   *注：与[RocketMQ自身的重试](#retry)是不一样的，因为RocketMQ默认的重试机制是同步的，并存在超时而无法完成重试的可能。* 
+
+   MQCloud在消息发送失败时，提供了异步重试api：
+
+   ```
+   Result<SendResult> sendResult = producer.send(MQMessage.build(msg).setKeys(key));
+   if (!result.isSuccess && !result.isRetrying()) { // 发送失败并且没有正在重试认为失败
+       System.out.println("发送失败");
+   }
+   ```
+
+   另外，如果需要知道异步重试的结果，可以在producer初始化时进行如下设置：
+
+   ```
+   producer.setResendResultConsumer(result -> {
+       if (!result.isSuccess) {
+           logger.info("重试次数:{},消息:{}", result.getRetriedTimes(), result.getMqMessage());
+           // 可以在这里增加重试失败的消息处理逻辑
+       }
+   });
+   ```
+
+   默认的重试次数为一次，可以通过如下api修改默认重试次数：
+
+   ```
+   producer.setDefaultRetryTimes(2)
+   ```
+
+   当然，如果想针对某条消息单独设置重试次数，可以参考如下，会覆盖默认重试次数：
+
+   ```
+   MQMessage.build(msg).setRetryTimes(3)
+   ```
+
+   异步重试使用的线程数默认为cpu核数，任务阻塞队列为100，如果想修改可以在producer.start之前，调用如下api修改：
+
+   ```
+   producer.setRetrySenderExecutor(ExecutorService retrySenderExecutor)
+   ```
+
 ## 五、<span id="produceOrderMessage">发送有序消息示例</span>
 
 ```

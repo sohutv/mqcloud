@@ -36,6 +36,7 @@ import com.sohu.tv.mq.cloud.bo.Topic;
 import com.sohu.tv.mq.cloud.bo.TypedUndoneMsgs;
 import com.sohu.tv.mq.cloud.bo.User;
 import com.sohu.tv.mq.cloud.bo.UserConsumer;
+import com.sohu.tv.mq.cloud.bo.UserWarn.WarnType;
 import com.sohu.tv.mq.cloud.dao.ConsumerStatDao;
 import com.sohu.tv.mq.cloud.service.AlarmConfigBridingService;
 import com.sohu.tv.mq.cloud.service.AlertService;
@@ -47,71 +48,73 @@ import com.sohu.tv.mq.cloud.util.DateUtil;
 import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper;
 import com.sohu.tv.mq.cloud.util.Result;
 import com.sohu.tv.mq.util.CommonUtil;
+
 /**
  * 监控搜狐实现
+ * 
  * @author yongfeigao
- *
  */
 @Component
 public class SohuMonitorListener implements MonitorListener {
-	private final Logger log = LoggerFactory.getLogger(this.getClass());
-	
+    private final Logger log = LoggerFactory.getLogger(this.getClass());
+
     @Autowired
-	private ConsumerStatDao consumerStatDao;
-    
+    private ConsumerStatDao consumerStatDao;
+
     @Autowired
     private UserConsumerService userConsumerService;
-    
+
     @Autowired
     private TopicService topicService;
-    
+
     @Autowired
     private AlertService alertService;
-    
+
     @Autowired
     private UserService userService;
-    
+
     @Autowired
     private AlarmConfigBridingService alarmConfigBridingService;
-    
+
     private long time;
-    
+
     @Autowired
     private MQCloudConfigHelper mqCloudConfigHelper;
 
     @Autowired
     private ConsumerClientStatService consumerClientStatService;
-    
-	@Override
-	public void beginRound() {
-		time = System.currentTimeMillis();
-		log.info("monitor begin");
-	}
 
-	@Override
-	public void reportUndoneMsgs(UndoneMsgs undoneMsgs) {
+    @Override
+    public void beginRound() {
+        time = System.currentTimeMillis();
+        log.info("monitor begin");
+    }
+
+    @Override
+    public void reportUndoneMsgs(UndoneMsgs undoneMsgs) {
         String topic = undoneMsgs.getTopic();
         // 忽略topic
-        if(mqCloudConfigHelper.isIgnoreTopic(topic)) {
+        if (mqCloudConfigHelper.isIgnoreTopic(topic)) {
             return;
         }
         try {
-            //保存堆积消息的consumer的状态
-            consumerStatDao.saveConsumerStat(undoneMsgs.getConsumerGroup(), topic, 
-                    (int)undoneMsgs.getUndoneMsgsTotal(), 
-                    (int)undoneMsgs.getUndoneMsgsSingleMQ(), 
+            // 保存堆积消息的consumer的状态
+            consumerStatDao.saveConsumerStat(undoneMsgs.getConsumerGroup(), topic,
+                    (int) undoneMsgs.getUndoneMsgsTotal(),
+                    (int) undoneMsgs.getUndoneMsgsSingleMQ(),
                     undoneMsgs.getUndoneMsgsDelayTimeMills());
         } catch (Exception e) {
-            log.error("save {}",undoneMsgs ,e);
+            log.error("save {}", undoneMsgs, e);
         }
-        veriftAccumulateAlarm(undoneMsgs);     
-	}
-	
-	/**
-	 * 校验是否发送报警邮件
-	 * @param topic
-	 * @param undoneMsgs
-	 */
+        veriftAccumulateAlarm(undoneMsgs);
+    }
+
+    /**
+     * 校验是否发送报警邮件
+     * 
+     * @param topic
+     * @param undoneMsgs
+     */
     private void veriftAccumulateAlarm(UndoneMsgs undoneMsgs) {
         long accumulateTime = alarmConfigBridingService.getAccumulateTime(undoneMsgs.getConsumerGroup());
         long accumulateCount = alarmConfigBridingService.getAccumulateCount(undoneMsgs.getConsumerGroup());
@@ -133,63 +136,63 @@ public class SohuMonitorListener implements MonitorListener {
             }
         }
     }
-    
-	/**
-	 * 堆积报警
-	 * @param undoneMsgs
-	 */
-	public void accumulateWarn(UndoneMsgs undoneMsgs) {
-	    // 验证报警频率
+
+    /**
+     * 堆积报警
+     * 
+     * @param undoneMsgs
+     */
+    public void accumulateWarn(UndoneMsgs undoneMsgs) {
+        // 验证报警频率
         if (!alarmConfigBridingService.needWarn("accumulate", undoneMsgs.getTopic(), undoneMsgs.getConsumerGroup())) {
             return;
         }
-	    TopicExt topicExt = getUserEmail(undoneMsgs.getTopic(), undoneMsgs.getConsumerGroup());
-	    if(topicExt == null) {
-	        return;
-	    }
-        String content = getAccumulateWarnContent(topicExt.getTopic(), undoneMsgs);
-        alertService.sendWarnMail(topicExt.getReceiver(), "堆积", content);
-	}
-	
-	/**
-	 * 获取用户邮件地址
-	 * @param topic
-	 * @param userID
-	 * @return
-	 */
-	private TopicExt getUserEmail(String topic, String consumerGroup) {
-	    // 获取topic
+        List<User> users = getUsers(undoneMsgs.getTopic(), undoneMsgs.getConsumerGroup());
+        if (users == null) {
+            return;
+        }
+        Map<String, Object> paramMap = new HashMap<>();
+        paramMap.put("topic", undoneMsgs.getTopic());
+        paramMap.put("consumerLink",
+                mqCloudConfigHelper.getTopicConsumeLink(undoneMsgs.getTopic(), undoneMsgs.getConsumerGroup()));
+        paramMap.put("undoneMsgsTotal", undoneMsgs.getUndoneMsgsTotal());
+        paramMap.put("undoneMsgsSingleMQ", undoneMsgs.getUndoneMsgsSingleMQ());
+        paramMap.put("resource", undoneMsgs.getConsumerGroup());
+        if (undoneMsgs.getUndoneMsgsDelayTimeMills() > 0) {
+            paramMap.put("undoneMsgsDelayTime", (int) (undoneMsgs.getUndoneMsgsDelayTimeMills() / 1000f));
+        }
+        alertService.sendWarn(users, WarnType.CONSUME_UNDONE, paramMap);
+    }
+
+    /**
+     * 获取用户
+     * 
+     * @param topic
+     * @param userID
+     * @return
+     */
+    private List<User> getUsers(String topic, String consumerGroup) {
+        // 获取topic
         Result<Topic> topicResult = topicService.queryTopic(topic);
-        if(topicResult.isNotOK()) {
+        if (topicResult.isNotOK()) {
             return null;
         }
-        TopicExt topicExt = new TopicExt();
-        topicExt.setTopic(topicResult.getResult());
         // 获取用户
         Set<Long> userID = getUserID(topicResult.getResult().getId(), consumerGroup);
-        String receiver = null;
         // 获取用户id
-        if(!userID.isEmpty()) {
+        if (!userID.isEmpty()) {
             // 获取用户信息
             Result<List<User>> userListResult = userService.query(userID);
-            StringBuilder sb = new StringBuilder();
-            if(userListResult.isNotEmpty()) {
-                for(User u : userListResult.getResult()) {
-                    sb.append(u.getEmail());
-                    sb.append(",");
-                }
-            }
-            if(sb.length() > 0) {
-                sb.deleteCharAt(sb.length() - 1);
-                receiver = sb.toString();
+            if (userListResult.isNotEmpty()) {
+                return userListResult.getResult();
             }
         }
-        topicExt.setReceiver(receiver);
-        return topicExt;
-	}
-	
-	/**
+        return null;
+    }
+
+    /**
      * 获取用户ID
+     * 
      * @param topic
      * @param consuemrGroup
      * @return
@@ -198,78 +201,54 @@ public class SohuMonitorListener implements MonitorListener {
         // 获取用户id
         Set<Long> uidList = new HashSet<Long>();
         Result<List<UserConsumer>> udListResult = userConsumerService.queryByNameAndTid(tid, consuemrGroup);
-        if(udListResult.isNotEmpty()) {   
-            for(UserConsumer uc : udListResult.getResult()) {
+        if (udListResult.isNotEmpty()) {
+            for (UserConsumer uc : udListResult.getResult()) {
                 uidList.add(uc.getUid());
-            }    
+            }
         }
         return uidList;
     }
-    
-	/**
-	 * 获取堆积预警信息
-	 * @param topic
-	 * @param undoneMsgs
-	 * @return
-	 */
-    private String getAccumulateWarnContent(Topic topic, UndoneMsgs undoneMsgs) {
-        StringBuilder content = new StringBuilder("详细如下:<br><br>");
-        content.append("topic：<b>");
-        content.append(topic.getName());
-        content.append("</b> 的消费者：<b>");
-        content.append(mqCloudConfigHelper.getTopicConsumeLink(topic.getId(), undoneMsgs.getConsumerGroup()));
-        content.append("</b> 检测到堆积，总堆积消息量：");
-        content.append(undoneMsgs.getUndoneMsgsTotal());
-        content.append("，单个队列最大堆积消息量：");
-        content.append(undoneMsgs.getUndoneMsgsSingleMQ());
-        if (undoneMsgs.getUndoneMsgsDelayTimeMills() > 0) {
-            content.append("，消费滞后时间(相对于broker最新消息时间)：");
-            content.append(undoneMsgs.getUndoneMsgsDelayTimeMills() / 1000f);
-            content.append("秒");
-        }
-        return content.toString();
+
+    @Override
+    public void reportFailedMsgs(FailedMsgs failedMsgs) {
     }
 
-	@Override
-	public void reportFailedMsgs(FailedMsgs failedMsgs) {
-	}
-
-	@Override
-	public void reportDeleteMsgsEvent(DeleteMsgsEvent deleteMsgsEvent) {
-		try {
-			log.warn("receive offset event:{}", deleteMsgsEvent);
-			OffsetMovedEvent event = deleteMsgsEvent.getOffsetMovedEvent(); 
-			String consumerGroup = event.getConsumerGroup();
-			if(MixAll.TOOLS_CONSUMER_GROUP.equals(consumerGroup)) {
-			    return;
-			}
-			// 保存consume状态
-			ConsumerStat consumerStat = new ConsumerStat();
+    @Override
+    public void reportDeleteMsgsEvent(DeleteMsgsEvent deleteMsgsEvent) {
+        try {
+            log.warn("receive offset event:{}", deleteMsgsEvent);
+            OffsetMovedEvent event = deleteMsgsEvent.getOffsetMovedEvent();
+            String consumerGroup = event.getConsumerGroup();
+            if (MixAll.TOOLS_CONSUMER_GROUP.equals(consumerGroup)) {
+                return;
+            }
+            // 保存consume状态
+            ConsumerStat consumerStat = new ConsumerStat();
             consumerStat.setConsumerGroup(consumerGroup);
             consumerStat.setTopic(event.getMessageQueue().getTopic());
             consumerStatDao.saveSimpleConsumerStat(consumerStat);
             int id = consumerStat.getId();
-            
+
             // 保存block状态
-			long time = deleteMsgsEvent.getEventTimestamp();
-			String broker = event.getMessageQueue().getBrokerName();
-			int qid = event.getMessageQueue().getQueueId();
-			consumerStatDao.saveSomeConsumerBlock(id, broker, qid, time);
-			
-			// 预警
+            long time = deleteMsgsEvent.getEventTimestamp();
+            String broker = event.getMessageQueue().getBrokerName();
+            int qid = event.getMessageQueue().getQueueId();
+            consumerStatDao.saveSomeConsumerBlock(id, broker, qid, time);
+
+            // 预警
             offsetMoveWarn(deleteMsgsEvent);
-		} catch (Exception e) {
-			log.error("receive offset event:{}", deleteMsgsEvent, e);
-		}
-	}
-	
-	/**
+        } catch (Exception e) {
+            log.error("receive offset event:{}", deleteMsgsEvent, e);
+        }
+    }
+
+    /**
      * 偏移量预警
      */
     public void offsetMoveWarn(DeleteMsgsEvent deleteMsgsEvent) {
         OffsetMovedEvent event = deleteMsgsEvent.getOffsetMovedEvent();
-        TopicExt topicExt = getUserEmail(event.getMessageQueue().getTopic(), event.getConsumerGroup());
-        if(topicExt == null) {
+        List<User> users = getUsers(event.getMessageQueue().getTopic(), event.getConsumerGroup());
+        if (users == null) {
             return;
         }
         // 验证报警频率
@@ -277,85 +256,79 @@ public class SohuMonitorListener implements MonitorListener {
                 event.getConsumerGroup())) {
             return;
         }
-        StringBuilder content = new StringBuilder("详细如下:<br><br>");
-        content.append("消费者：<b>");
-        content.append(mqCloudConfigHelper.getTopicConsumeLink(topicExt.getTopic().getId(), event.getConsumerGroup()));
-        content.append("</b> 偏移量错误，broker时间：<b>");
-        content.append(DateUtil.getFormat(DateUtil.YMD_DASH_BLANK_HMS_COLON).format(
+        String topic = event.getMessageQueue().getTopic();
+        Map<String, Object> paramMap = new HashMap<>();
+        paramMap.put("consumerLink", mqCloudConfigHelper.getTopicConsumeLink(topic, event.getConsumerGroup()));
+        paramMap.put("broker", event.getMessageQueue().getBrokerName());
+        paramMap.put("topic", topic);
+        paramMap.put("queue", event.getMessageQueue().getQueueId());
+        paramMap.put("brokerTime", DateUtil.getFormat(DateUtil.YMD_DASH_BLANK_HMS_COLON).format(
                 new Date(deleteMsgsEvent.getEventTimestamp())));
-        content.append("</b> ，请求偏移量：<b>");
-        content.append(event.getOffsetRequest());
-        content.append("</b>，broker偏移量：<b>");
-        content.append(event.getOffsetNew());
-        content.append("</b>。队列信息如下：<br>");
-        content.append("broker:");
-        content.append(event.getMessageQueue().getBrokerName());
-        content.append(" topic:");
-        content.append(event.getMessageQueue().getTopic());
-        content.append(" 队列:");
-        content.append(event.getMessageQueue().getQueueId());
-        alertService.sendWarnMail(topicExt.getReceiver(), "偏移量错误", content.toString());
+        paramMap.put("requestOffset", event.getOffsetRequest());
+        paramMap.put("brokerOffset", event.getOffsetNew());
+        paramMap.put("resource", event.getConsumerGroup());
+        alertService.sendWarn(users, WarnType.CONSUME_OFFSET_MOVED, paramMap);
     }
 
-	@Override
-	public void reportConsumerRunningInfo(
-			TreeMap<String, ConsumerRunningInfo> criTable) {
-		if(criTable == null || criTable.size() == 0) {
-			return;
-		}
-		String consumerGroup = criTable.firstEntry().getValue().getProperties().getProperty("consumerGroup");
-		try {
-			// 分析订阅关系
-			boolean result = ConsumerRunningInfo.analyzeSubscription(criTable);
-			if (!result) {
-				log.warn("ConsumerGroup: {}, Subscription different", consumerGroup);
-				//同一个ConsumerGroup订阅了不同的topic，进行记录
-				Set<SubscriptionData> set = new HashSet<SubscriptionData>();
-				for(ConsumerRunningInfo info : criTable.values()) {
-					set.addAll(info.getSubscriptionSet());
-				}
-				StringBuilder sb = new StringBuilder();
-				Set<String> uniqSet = new HashSet<String>();
-				for(SubscriptionData s : set) {
-					if(CommonUtil.isRetryTopic(s.getTopic())) {
-						continue;
-					}
-					String tmp = s.getTopic()+":"+s.getSubString();
-					if(uniqSet.add(tmp)) {
-					    sb.append(tmp);
-					    sb.append(";");
-					}
-				}
-				String sbscription = sb.toString();
-				ConsumerStat consumerStat = new ConsumerStat();
-				consumerStat.setConsumerGroup(consumerGroup);
-				consumerStat.setSbscription(sbscription);
-				consumerStatDao.saveSimpleConsumerStat(consumerStat);
-				subscriptionWarn(consumerGroup, sbscription);
-			}
-		} catch (NumberFormatException e) {
-			log.warn("num parse err");
-		} catch (Exception e) {
-			log.error("save subscription:{}", criTable, e);
-		}
+    @Override
+    public void reportConsumerRunningInfo(
+            TreeMap<String, ConsumerRunningInfo> criTable) {
+        if (criTable == null || criTable.size() == 0) {
+            return;
+        }
+        String consumerGroup = criTable.firstEntry().getValue().getProperties().getProperty("consumerGroup");
+        try {
+            // 分析订阅关系
+            boolean result = ConsumerRunningInfo.analyzeSubscription(criTable);
+            if (!result) {
+                log.warn("ConsumerGroup: {}, Subscription different", consumerGroup);
+                // 同一个ConsumerGroup订阅了不同的topic，进行记录
+                Set<SubscriptionData> set = new HashSet<SubscriptionData>();
+                for (ConsumerRunningInfo info : criTable.values()) {
+                    set.addAll(info.getSubscriptionSet());
+                }
+                StringBuilder sb = new StringBuilder();
+                Set<String> uniqSet = new HashSet<String>();
+                for (SubscriptionData s : set) {
+                    if (CommonUtil.isRetryTopic(s.getTopic())) {
+                        continue;
+                    }
+                    String tmp = s.getTopic() + ":" + s.getSubString();
+                    if (uniqSet.add(tmp)) {
+                        sb.append(tmp);
+                        sb.append(";");
+                    }
+                }
+                String sbscription = sb.toString();
+                ConsumerStat consumerStat = new ConsumerStat();
+                consumerStat.setConsumerGroup(consumerGroup);
+                consumerStat.setSbscription(sbscription);
+                consumerStatDao.saveSimpleConsumerStat(consumerStat);
+                subscriptionWarn(consumerGroup, sbscription);
+            }
+        } catch (NumberFormatException e) {
+            log.warn("num parse err");
+        } catch (Exception e) {
+            log.error("save subscription:{}", criTable, e);
+        }
 
-		// 分析客户端卡主的情况
-		Map<TopicConsumer, List<ConsumerBlock>> map = new HashMap<TopicConsumer, List<ConsumerBlock>>();
-		for(String clientId : criTable.keySet()) {
-		    ConsumerRunningInfo info = criTable.get(clientId);
+        // 分析客户端卡主的情况
+        Map<TopicConsumer, List<ConsumerBlock>> map = new HashMap<TopicConsumer, List<ConsumerBlock>>();
+        for (String clientId : criTable.keySet()) {
+            ConsumerRunningInfo info = criTable.get(clientId);
             String property = info.getProperties().getProperty(ConsumerRunningInfo.PROP_CONSUME_TYPE);
             if (property == null) {
                 property = ((ConsumeType) info.getProperties().get(ConsumerRunningInfo.PROP_CONSUME_TYPE)).name();
             }
             // 只能分析push的情况
-            if(ConsumeType.valueOf(property) != ConsumeType.CONSUME_PASSIVELY) {
+            if (ConsumeType.valueOf(property) != ConsumeType.CONSUME_PASSIVELY) {
                 return;
             }
 
             String orderProperty = info.getProperties().getProperty(ConsumerRunningInfo.PROP_CONSUME_ORDERLY);
             boolean orderMsg = Boolean.parseBoolean(orderProperty);
             // 只分析非一致性消费
-            if(orderMsg) {
+            if (orderMsg) {
                 return;
             }
 
@@ -373,7 +346,7 @@ public class SohuMonitorListener implements MonitorListener {
                 tc.setTopic(mq.getTopic());
                 tc.setConsumer(consumerGroup);
                 List<ConsumerBlock> consumerBlockList = map.get(tc);
-                if(consumerBlockList == null) {
+                if (consumerBlockList == null) {
                     consumerBlockList = new ArrayList<ConsumerBlock>();
                     map.put(tc, consumerBlockList);
                 }
@@ -385,26 +358,26 @@ public class SohuMonitorListener implements MonitorListener {
                 consumerBlockList.add(cb);
             }
         }
-		
-		if(map.size() <= 0) {
-		    return;
-		}
-		for(TopicConsumer tc : map.keySet()) {
-		    ConsumerStat consumerStat = new ConsumerStat();
-		    consumerStat.setConsumerGroup(tc.getConsumer());
-		    consumerStat.setTopic(tc.getTopic());
-		    consumerStatDao.saveSimpleConsumerStat(consumerStat);
-		    int id = consumerStat.getId();
-		    List<ConsumerBlock> list = map.get(tc);
-		    for(ConsumerBlock cb : list) {
-		        consumerStatDao.saveConsumerBlock(id, cb.getInstance(), cb.getBroker(), cb.getQid(), cb.getBlockTime());
-		    }
-		}
+
+        if (map.size() <= 0) {
+            return;
+        }
+        for (TopicConsumer tc : map.keySet()) {
+            ConsumerStat consumerStat = new ConsumerStat();
+            consumerStat.setConsumerGroup(tc.getConsumer());
+            consumerStat.setTopic(tc.getTopic());
+            consumerStatDao.saveSimpleConsumerStat(consumerStat);
+            int id = consumerStat.getId();
+            List<ConsumerBlock> list = map.get(tc);
+            for (ConsumerBlock cb : list) {
+                consumerStatDao.saveConsumerBlock(id, cb.getInstance(), cb.getBroker(), cb.getQid(), cb.getBlockTime());
+            }
+        }
         // 报警
         blockWarn(map);
-	}
-	
-	/**
+    }
+
+    /**
      * 订阅报警
      */
     public void subscriptionWarn(String consumerGroup, String topics) {
@@ -412,15 +385,13 @@ public class SohuMonitorListener implements MonitorListener {
         if (!alarmConfigBridingService.needWarn("subscribe", topics, consumerGroup)) {
             return;
         }
-        StringBuilder content = new StringBuilder("详细如下:<br><br>");
-        content.append("消费者：<b>");
-        content.append(consumerGroup);
-        content.append("</b> 同时订阅了：<b>");
-        content.append(topics);
-        content.append("</b>。");
-        alertService.sendWarnMail(null, "订阅错误", content.toString());
+        Map<String, Object> paramMap = new HashMap<>();
+        paramMap.put("topics", topics);
+        paramMap.put("consumer", consumerGroup);
+        paramMap.put("resource", consumerGroup);
+        alertService.sendWarn(null, WarnType.CONSUME_SUBSCRIBE_ERROR, paramMap);
     }
-    
+
     /**
      * 客户端阻塞预警
      */
@@ -443,57 +414,32 @@ public class SohuMonitorListener implements MonitorListener {
             }
             // 是否报警
             Iterator<ConsumerBlock> iterator = list.iterator();
-            while(iterator.hasNext()) {
+            while (iterator.hasNext()) {
                 ConsumerBlock consumerBlock = iterator.next();
-                if(consumerBlock.getBlockTime() < blockTime) {
+                if (consumerBlock.getBlockTime() < blockTime) {
                     iterator.remove();
                 }
             }
-            if(list.size() <= 0) {
+            if (list.size() <= 0) {
                 continue;
             }
             
-            StringBuilder content = new StringBuilder("详细如下:<br><br>");
-            content.append("topic: <b>");
-            content.append(tc.getTopic());
-            content.append("</b> 的消费者：");
-            content.append(mqCloudConfigHelper.getTopicConsumeLink(topicResult.getResult().getId(), tc.getConsumer()));
-            content.append(" 检测到阻塞: <br>");
-            content.append("<table border=1>");
-            content.append("<thead>");
-            content.append("<tr>");
-            content.append("<th>clientId</th>");
-            content.append("<th>broker</th>");
-            content.append("<th>队列</th>");
-            content.append("<th>阻塞时间</th>");
-            content.append("</tr>");
-            content.append("</thead>");
-            content.append("<tbody>");
-            for (ConsumerBlock cb : list) {
-                content.append("<tr>");
-                content.append("<td>");
-                content.append(cb.getInstance());
-                content.append("</td>");
-                content.append("<td>");
-                content.append(cb.getBroker());
-                content.append("</td>");
-                content.append("<td>");
-                content.append(cb.getQid());
-                content.append("</td>");
-                content.append("<td>");
-                content.append(cb.getBlockTime() / 1000f);
-                content.append("秒</td>");
-                content.append("</tr>");
+            List<User> users = getUsers(tc.getTopic(), tc.getConsumer());
+            if (users == null) {
+                continue;
             }
-            content.append("</tbody>");
-            content.append("</table>");
-            TopicExt topicExt = getUserEmail(tc.getTopic(), tc.getConsumer());
-            alertService.sendWarnMail(topicExt.getReceiver(), "客户端阻塞", content.toString());
+            Map<String, Object> paramMap = new HashMap<>();
+            paramMap.put("topic", tc.getTopic());
+            paramMap.put("concumserLink", mqCloudConfigHelper.getTopicConsumeLink(topicResult.getResult().getId(), tc.getConsumer()));
+            paramMap.put("list", list);
+            paramMap.put("resource", tc.getConsumer());
+            alertService.sendWarn(users, WarnType.CONSUME_BLOCK, paramMap);
         }
     }
 
     /**
      * 保存consumer-client信息
+     * 
      * @param consumerGroup
      * @param cc
      */
@@ -517,44 +463,32 @@ public class SohuMonitorListener implements MonitorListener {
         }
     }
 
-	@Override
-	public void endRound() {
-		long use = System.currentTimeMillis() - time;
-		log.info("monitor end use:{}ms", use);
-	}
-	
-	private class TopicExt {
-	    private Topic topic;
-	    private String receiver;
-        public Topic getTopic() {
-            return topic;
-        }
-        public void setTopic(Topic topic) {
-            this.topic = topic;
-        }
-        public String getReceiver() {
-            return receiver;
-        }
-        public void setReceiver(String receiver) {
-            this.receiver = receiver;
-        }
-	}
-	
-	private class TopicConsumer {
+    @Override
+    public void endRound() {
+        long use = System.currentTimeMillis() - time;
+        log.info("monitor end use:{}ms", use);
+    }
+
+    private class TopicConsumer {
         private String topic;
         private String consumer;
+
         public String getTopic() {
             return topic;
         }
+
         public void setTopic(String topic) {
             this.topic = topic;
         }
+
         public String getConsumer() {
             return consumer;
         }
+
         public void setConsumer(String consumer) {
             this.consumer = consumer;
         }
+
         @Override
         public int hashCode() {
             final int prime = 31;
@@ -564,6 +498,7 @@ public class SohuMonitorListener implements MonitorListener {
             result = prime * result + ((topic == null) ? 0 : topic.hashCode());
             return result;
         }
+
         @Override
         public boolean equals(Object obj) {
             if (this == obj)
@@ -587,6 +522,7 @@ public class SohuMonitorListener implements MonitorListener {
                 return false;
             return true;
         }
+
         private SohuMonitorListener getOuterType() {
             return SohuMonitorListener.this;
         }

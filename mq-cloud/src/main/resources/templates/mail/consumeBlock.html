@@ -1,0 +1,22 @@
+topic:<b>${topic}</b>的消费者：${concumserLink} 检测到阻塞:
+<br>
+<table border=1>
+	<thead>
+		<tr>
+			<th>clientId</th>
+			<th>broker</th>
+			<th>队列</th>
+			<th>阻塞时间</th>
+		</tr>
+	</thead>
+	<tbody>
+		<#list list as consumerBlock>
+		<tr>
+			<td>${consumerBlock.instance}</td>
+			<td>${consumerBlock.broker}</td>
+			<td>${consumerBlock.qid}</td>
+			<td>${consumerBlock.blockTimeInSecs}秒</td>
+		</tr>
+		</#list>
+	</tbody>
+</table>

@@ -36,11 +36,14 @@ public class User {
     // 更新日期
     private Date updateTime;
     
-    // 接收通知 1：不接收，2：接收
+    // 接收通知 0：不接收，1：接收
     private int receiveNotice = -1;
     
     // 密码
     private String password;
+    
+    // 接收手机通知 0：不接收，1：接收
+    private int receivePhoneNotice = -1;
 
     public long getId() {
         return id;
@@ -112,6 +115,18 @@ public class User {
 
     public void setReceiveNotice(int receiveNotice) {
         this.receiveNotice = receiveNotice;
+    }
+
+    public int getReceivePhoneNotice() {
+        return receivePhoneNotice;
+    }
+
+    public void setReceivePhoneNotice(int receivePhoneNotice) {
+        this.receivePhoneNotice = receivePhoneNotice;
+    }
+    
+    public boolean receivePhoneNotice() {
+        return 1 == receivePhoneNotice;
     }
 
     public String getPassword() {

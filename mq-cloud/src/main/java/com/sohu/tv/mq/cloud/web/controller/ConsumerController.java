@@ -797,6 +797,9 @@ public class ConsumerController extends ViewController {
         String message = "重试堆积跳过申请成功！请耐心等待！";
         audit.setUid(userInfo.getUser().getId());
         // 构造重置对象
+        if (StringUtils.isEmpty(userConsumerParam.getMessageKey())) {
+            userConsumerParam.setMessageKey(null);
+        }
         AuditResetOffset auditResetOffset = new AuditResetOffset();
         BeanUtils.copyProperties(userConsumerParam, auditResetOffset);
         // 保存记录
@@ -1013,6 +1016,12 @@ public class ConsumerController extends ViewController {
         if (threadMetricList != null) {
             Collections.sort(threadMetricList, (o1, o2) -> {
                 return (int) (o1.getStartTime() - o2.getStartTime());
+            });
+            // 过滤html标签
+            threadMetricList.forEach(stackTraceMetric -> {
+                if (stackTraceMetric.getMessage() != null) {
+                    stackTraceMetric.setMessage(HtmlUtils.htmlEscape(stackTraceMetric.getMessage()));
+                }
             });
         }
         setResult(map, result);

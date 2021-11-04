@@ -33,6 +33,14 @@
 			        	</#if>
 					</div>
 				</div>
+				<#if response.result.messageKey??>
+					<div class="form-group">
+						<label class="control-label col-md-3"> 消息key: </label>
+				        <div class="col-md-6">
+							<input type="text" value="${response.result.messageKey}" readonly="readonly" class="form-control" />
+						</div>
+					</div>
+				</#if>
 			</div>
 		</div>
 	</div>

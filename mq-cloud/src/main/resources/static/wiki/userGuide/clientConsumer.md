@@ -47,20 +47,16 @@ consumer.shutdown();
 
 ## 四、<span id="consumerCallback">消费回调代码</span>
 
+*注意：如下各种消费代码若抛出异常，则消息将发回rocketmq，进入重试队列。* 
+
 1. <span id="consumeJson">json消费回调代码</span>
 
    ```
    ConsumerCallback consumerCallback = new ConsumerCallback<String, MessageExt>() {
        public void call(String t, MessageExt k) {
-               try {
-                   // 打印日志
-                   logger.info("msg:{}, msgExt:{}", t, k);
-                   // 消费逻辑
-               } catch (Exception e) {
-                   logger.error("consume err, msgid:{}, msg:{}", k.getMsgId(), t, e);
-                   // 如果需要重新消费，这里需要把异常抛出，消费失败的消息将发回rocketmq，重试消费
-                   throw e;
-               }
+           // 打印日志，以便校验是否收到日志
+           logger.info("msgExt:{},msg:{}", k, t);
+           // 消费逻辑
        }
    }
    ```
@@ -70,15 +66,9 @@ consumer.shutdown();
    ```
    ConsumerCallback consumerCallback = new ConsumerCallback<Video, MessageExt>() {
        public void call(Video t, MessageExt k) {
-               try {
-                   // 打印日志
-                   logger.info("msg:{}, msgExt:{}", t, k);
-                   // 消费逻辑
-               } catch (Exception e) {
-                   logger.error("consume err, msgid:{}, msg:{}", k.getMsgId(), t, e);
-                   // 如果需要重新消费，这里需要把异常抛出，消费失败的消息将发回rocketmq，重试消费
-                   throw e;
-               }
+           // 打印日志，以便校验是否收到日志
+           logger.info("msgExt:{},msg:{}", k, t);
+           // 消费逻辑
        }
    }
    ```
@@ -88,15 +78,9 @@ consumer.shutdown();
    ```
    ConsumerCallback consumerCallback = new ConsumerCallback<Map<String, Object>, MessageExt>() {
        public void call(Map<String, Object> t, MessageExt k) {
-               try {
-                   // 打印日志
-                   logger.info("msg:{}, msgExt:{}", t, k);
-                   // 消费逻辑
-               } catch (Exception e) {
-                   logger.error("consume err, msgid:{}, msg:{}", k.getMsgId(), t, e);
-                   // 如果需要重新消费，这里需要把异常抛出，消费失败的消息将发回rocketmq，重试消费
-                   throw e;
-               }
+           // 打印日志，以便校验是否收到日志
+           logger.info("msgExt:{},msg:{}", k, t);
+           // 消费逻辑
        }
    }
    ```
@@ -107,20 +91,24 @@ consumer.shutdown();
    // 设置批量消费最大消息数
    consumer.setConsumeMessageBatchMaxSize(32);
    // 设置批量消费BatchConsumerCallback
-   consumer.setBatchConsumerCallback(new BatchConsumerCallback<String, MessageExt>(){
-       public void call(List<MQMessage<String, MessageExt>> batchMessage) throws Exception {
-           MQMessage<String, MessageExt> tmpMessage = null;
+   consumer.setBatchConsumerCallback(new BatchConsumerCallback<String, ConsumeConcurrentlyContext>(){
+       public void call(List<MQMessage<String>> batchMessage, ConsumeConcurrentlyContext context) throws Exception {
+           int index = 0;
            try {
-               for(MQMessage<String, MessageExt> mqMessage : batchMessage) {
-                   tmpMessage = mqMessage;
+               for(; index < batchMessage.size(); ++index) {
+                   MQMessage<String> mqMessage = batchMessage.get(index);
                    // 打印日志
-                   logger.info("msg:{}, msgExt:{}", mqMessage.getMessage(), mqMessage.getMessageExt());
+                   logger.info("msgExt:{},msg:{}",  mqMessage.getMessageExt(), mqMessage.getMessage());
                    // 消费逻辑
                }
            } catch (Exception e) {
-               logger.error("consume err, msgid:{}, msg:{}", tmpMessage.getMessageExt().getMsgId(), tmpMessage.getMessage(), e);
-               // 如果需要重新消费，这里需要把异常抛出。注意：抛出异常后这批消息将重新消费
-               throw e;
+               logger.error("consume err, msgid:{}, msg:{}", batchMessage.get(index).getMessageExt().getMsgId(), batchMessage.get(index).getMessage(), e);
+               // 异常处理尤为重要，这里涉及到哪些消息需要重试的问题，分为如下两种情况：
+               // ① 若再次将异常抛出，那么本批消息将整体重新消费
+               // throw e; 
+               // ② 若不抛出异常，设置上ackIndex参数并返回，则ackIndex之后的消息将重新消费
+               // context.setAckIndex(index);
+               // return;
            }
        }
    });
@@ -162,41 +150,13 @@ consumer.shutdown();
 
    5.`pullInterval(默认为0)`：控制每个队列每隔多长时间从broker拉取一次消息，默认不停拉取。
 
-2. 如何控制消费并发量？
-
-   1.可以通过如下参数控制消费的线程数：
+2. 如何控制消费线程数？
 
    `consumeThreadMin(默认为20)`和`consumeThreadMax(默认为64)`，默认至少有20个消费线程。
 
    例如，将`consumeThreadMin`和`consumeThreadMax`同时设置为1，这样就变成单线程消费了。
 
-   2.可以通过如下参数控制多少条消息作为一批被某个线程消费：
-
-   `consumeMessageBatchMaxSize(默认为1)`，默认表示每条消息需要一个线程来处理。
-
-   **若非有必要不建议修改此值，因为可能产生重复消费。比如修改为3，那么一个线程可以处理3条消息，假如前2条消费成功，第3条消费失败，此时如果抛出异常，将导致这3条再次重新消费。**
-
-   *原因是由于rocketmq针对一批消息使用同一个标识来判断是否消费成功。*
-
-   *当然，如果不依赖rocketmq的消息重试机制可以不用关心这个问题。*
-
-3. 每秒消费最多1000条消息，该如何实现？
-
-   假设broker数量为2，每个broker上8个队列，总队列数为16。
-
-   ```
-   pullThresholdForQueue=1000/16≈63
-   pullBatchSize=20
-   pullInterval=300
-   ```
-
-   释义：这样每个队列每秒拉取20*(1000/300)=60条消息，总缓存消息1000条。
-
-   如果不想计算队列数量怎么办？
-
-   可以设置`pullThresholdForTopic=1000`，但是这个不是很准确，因为需要计算队列数，进行均分。
-
-4. <span id="orderConsumer">如何实现顺序消费？</span>
+3. <span id="orderConsumer">如何实现顺序消费？</span>
 
    以下内容部分摘自rocketmq开发手册。
 
@@ -234,7 +194,7 @@ consumer.shutdown();
    * 队列热点问题，个别队列由于哈希不均导致消息过多，消费速度跟不上，产生消息堆积问题。
    * 遇到消息失败的消息，无法跳过，当前队列消费只能暂停。
 
-5. <span id="limitConsumer">匀速消费？</span>
+4. <span id="limitConsumer">匀速消费？</span>
 
    如果有如下需求：
 
@@ -254,9 +214,101 @@ consumer.shutdown();
 
    ![](img/limitConsume.png)
 
-6. <span id="pauseConsumer">暂停消费？</span>
+5. <span id="pauseConsumer">暂停消费？</span>
 
    如果业务端遇到某些问题，需要暂停消息消费，在不重启服务时(客户端版本在4.6.5及以上)，可以在MQCloud里进行动态设置：
 
    ![](img/pauseConsume.png)
+
+6. <span id="idempotent">幂等消费</span>
+
+   RocketMQ默认不支持幂等消费，MQCloud采用redis来保障全局唯一，实现了幂等消费(只支持集群模式)。
+
+   如果需要使用幂等功能需要依赖redis客户端，类似如下：
+
+   ```
+   <dependency>
+       <groupId>redis.clients</groupId>
+       <artifactId>jedis</artifactId>
+       <version>3.3.0</version>
+   </dependency>
+   ```
+
+   在消费者启动之前，增加如下代码即可：
+
+   ```
+   consumer.setRedis(RedisBuilder.build(jedisCluster, 2100));
+   ```
+
+   其中第一个参数是jedis实例（可以为集群或单个），第二个参数为jedis超时的最大时间，更多构建方法请参考`RedisBuilder`。 
+
+   默认情况下，MQCloud采用RocketMQ发送消息时客户端的Message ID来进行去重，其组成如下：
+
+   ```
+   ip+pid+类加载器hash+系统时间戳+自增序号
+   ```
+
+   即无论是否在在同一jvm内，并发生成，也不存在重复的可能。
+
+   **但是不建议使用它作为唯一键进行去重，因为相同的消息对应的Message ID可能不同。**
+
+   所以建议在发送消息时设置幂等id来保障唯一性，如下：
+
+   ```
+   MQMessage<String> message = MQMessage.build("message").setKeys("k1").setIdempotentID("1102123");
+   Result<SendResult> result = producer.send(message);
+   ```
+
+   比如订单业务，建议使用订单号作为幂等id。
+
+   这里的幂等是有时间窗口的，默认为3分钟，即3分钟内的重复消息只会消费一条，可以修改这个时间窗口：
+
+   ```
+   consumer.setDeduplicateWindowSeconds(600);
+   ```
+
+   由于幂等实现依赖了redis，为了防止redis故障影响业务方，MQCloud使用了Hystrix隔离了redis操作。
+
+   即当redis故障时，幂等逻辑将失效，消费业务将不受影响，继续消费。
+
+   这里说明一点，MQCloud实现的幂等逻辑的同时保障消息不丢失，所以如下情况幂等逻辑将失效：
+
+   1. redis故障、调用异常、超时等。
+   2. 消费失败的消息（其将进入重试队列，为了保障消费成功，此种消息不再执行去重）。
+   3. 消费时间超过幂等时间窗口的消息。
+
+7. <span id="retry">重试队列</span>
+
+   消费消息时，如果抛出异常，则消息会进入重试队列，在消费详情可以看到重试队列：
+
+   ![](img/retry.png)
+
+   重试队列的名称以%RETRY%开头，点击搜索按钮可以查找重试的消息，并支持跳过重试的消息。
+
+   进入重试队列的消息将以如下衰减频率进行重试消费：
+
+   | 第几次重试 | 距上次重试的间隔时间 |
+   | ----- | ---------- |
+   | 1     | 10秒        |
+   | 2     | 30秒        |
+   | 3     | 1分钟        |
+   | 4     | 2分钟        |
+   | 5     | 3分钟        |
+   | 6     | 4分钟        |
+   | 7     | 5分钟        |
+   | 8     | 6分钟        |
+   | 9     | 7分钟        |
+   | 10    | 8分钟        |
+   | 11    | 9分钟        |
+   | 12    | 10分钟       |
+   | 13    | 20分钟       |
+   | 14    | 30分钟       |
+   | 15    | 1小时        |
+   | 16    | 2小时        |
+
+   即进入重试队列的消息在总共4小时46分内进行16次重试后（任何一次成功将结束重试机制），仍然失败，将会进入死信队列，死信队列的名称以%DLQ%开头，类似如下：
+
+   ![](img/dead.png)
+
+   点击搜索按钮可以查找哪些消息变成了死消息，并可以重新发送消费。
 

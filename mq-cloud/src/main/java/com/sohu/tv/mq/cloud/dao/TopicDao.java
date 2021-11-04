@@ -12,6 +12,7 @@ import org.apache.ibatis.annotations.Update;
 
 import com.sohu.tv.mq.cloud.bo.Topic;
 import com.sohu.tv.mq.cloud.bo.TopicConsumer;
+import com.sohu.tv.mq.cloud.bo.TopicStat;
 import com.sohu.tv.mq.cloud.bo.TopicTraffic;
 
 /**
@@ -68,6 +69,19 @@ public interface TopicDao {
             + "<if test=\"topic != null\"> and name like '%${topic}%' </if>"
             + "</script>")
     public Integer selectByUidCount(@Param("topic") String topic, @Param("uid") long uid, @Param("traceClusterIds") List<Integer> traceClusterIds);
+    
+    /**
+     * 根据uid查询topic状况
+     * @param uid
+     * @param traceClusterIds
+     * @return
+     */
+    @Select("<script>select count(1) size, sum(count) count from topic t where 1=1 "
+            + "<if test=\"uid != 0\"> and id in (select tid from user_producer where uid = #{uid} union select tid from user_consumer where uid = #{uid})"
+            + "<if test=\"traceClusterIds.size > 0\"> and cluster_id not in <foreach collection=\"traceClusterIds\" item=\"id\" separator=\",\" open=\"(\" close=\")\">#{id}</foreach></if>"
+            + "</if>"
+            + "</script>")
+    public TopicStat selectTopicStat(@Param("uid") long uid, @Param("traceClusterIds") List<Integer> traceClusterIds);
     
     /**
      * 根据cluster_id查询topic

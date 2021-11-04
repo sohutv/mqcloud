@@ -1,0 +1,26 @@
+<table border=1>
+	<thead>
+		<tr>
+			<th>集群</th>
+			<th>broker</th>
+			<th>avg</th>
+			<th>90%</th>
+			<th>99%</th>
+			<th>max</th>
+			<th>写入量</th>
+		</tr>
+	</thead>
+	<tbody>
+		<#list list as brokerStoreStat>
+		<tr>
+			<td>${brokerStoreStat.clusterName}</td>
+			<td>${brokerStoreStat.brokerStoreLink}</td>
+			<td>${brokerStoreStat.getAvg()}ms</td>
+			<td>${brokerStoreStat.getPercent90()}ms</td>
+			<td>${brokerStoreStat.getPercent99()}ms</td>
+			<td>${brokerStoreStat.getMax()}ms</td>
+			<td>${brokerStoreStat.getCount()}</td>
+		</tr>
+		</#list>
+	</tbody>
+</table>

@@ -34,7 +34,7 @@
                }
            },
            onPageClicked: function (event, originalEvent, type, page) {
-        	   window.location.href = $('#pagination').attr("data-url")+"&currentPage="+page;
+	        	window.location.href = $('#pagination').attr("data-url")+"&currentPage="+page;
            },
            itemContainerClass: function (type, page, current) {
        	   		return (page === current) ? "active" : "pointer-cursor";

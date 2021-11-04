@@ -13,6 +13,7 @@
 				<td>姓名</td>
 				<td>邮箱</td>
 				<td>手机</td>
+				<td>手机预警</td>
 				<td>角色</td>
 				<td>创建时间</td>
 				<td>更新时间</td>
@@ -33,6 +34,7 @@
 						<td>${user.name!}</td>
 						<td>${user.email}</td>
 						<td>${user.mobile!}</td>
+						<td><#if user.receivePhoneNotice()>开启<#else>关闭</#if></td>
 						<td><#if user.type == 0>普通用户<#else>管理员</#if></td>
 						<td>${user.createDate?string("yyyy-MM-dd")}</td>
 						<td>${user.updateTime?string("yyyy-MM-dd HH:mm:ss")}</td>
