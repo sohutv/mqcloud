@@ -816,6 +816,7 @@ public class RocketMQProducer extends AbstractConfig {
         if (retrySenderExecutor != null) {
             retrySenderExecutor.shutdown();
         }
+        super.shutdown();
     }
 
     public DefaultMQProducer getProducer() {

@@ -662,6 +662,7 @@ INSERT INTO `common_config`(`key`, `value`, `comment`) VALUES ('mailPassword', '
 INSERT INTO `common_config`(`key`, `value`, `comment`) VALUES ('mailPort', '25', '邮件服务器端口');
 INSERT INTO `common_config`(`key`, `value`, `comment`) VALUES ('mailProtocol', 'smtp', '邮件服务器通信协议');
 INSERT INTO `common_config`(`key`, `value`, `comment`) VALUES ('mailTimeout', '10000', '邮件服务器超时时间');
+INSERT INTO `common_config`(`key`, `value`, `comment`) VALUES ('mailUseSSL', 'false', '邮件是否使用SSL');
 INSERT INTO `common_config`(`key`, `value`, `comment`) VALUES ('isOpenRegister', '1', '是否开启注册功能：0-不开启，1-开启');
 INSERT INTO `common_config`(`key`, `value`, `comment`) VALUES ('rocketmqFilePath', 'classpath:static/software/rocketmq.zip', 'rocketmq安装文件路径，支持以下三种资源加载方式,例如 1:classpath:static/software/rocketmq.zip 2：file:///tmp/rocketmq.zip 3：http://127.0.0.1:8080/software/rocketmq.zip');
 INSERT INTO `common_config`(`key`, `comment`) VALUES ('privateKey', '私钥');
@@ -995,9 +996,9 @@ insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynami
 insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) values(24, 'dLegerGroup', null, 'DLeger相关配置', null, 25, 0, null, 0);
 insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) values(24, 'dLegerPeers', null, 'DLeger相关配置', null, 26, 0, null, 0);
 insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) values(24, 'dLegerSelfId', null, 'DLeger相关配置', null, 27, 0, null, 0);
-insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) values(24, 'enableScheduleMessageStats', 'true', '开启schedule队列消息统计', null, 28, 0, null, 0);
-insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) values(24, 'isEnableBatchPush', 'false', 'DLedger批量复制', null, 29, 0, null, 0);
-insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) values(24, 'autoDeleteUnusedStats', 'false', '删除topic或订阅时一起删除相关统计', null, 30, 0, null, 0);
+insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) values(24, 'enableScheduleMessageStats', 'true', '开启schedule队列消息统计', null, 28, 1, null, 0);
+insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) values(24, 'isEnableBatchPush', 'false', 'DLedger批量复制', null, 29, 0, null, 1);
+insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) values(24, 'autoDeleteUnusedStats', 'false', '删除topic或订阅时一起删除相关统计', null, 30, 1, null, 0);
 
 -- ----------------------------
 -- Table structure for `topic_traffic_warn_config`

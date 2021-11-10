@@ -8,7 +8,6 @@ import java.lang.reflect.Type;
 import java.net.HttpURLConnection;
 import java.util.List;
 import java.util.concurrent.Executors;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
@@ -23,7 +22,6 @@ import org.apache.rocketmq.client.consumer.listener.MessageListenerOrderly;
 import org.apache.rocketmq.client.exception.MQClientException;
 import org.apache.rocketmq.client.impl.consumer.DefaultMQPushConsumerImpl;
 import org.apache.rocketmq.client.impl.consumer.PullMessageService;
-import org.apache.rocketmq.client.impl.consumer.PullRequest;
 import org.apache.rocketmq.client.impl.factory.MQClientInstance;
 import org.apache.rocketmq.client.trace.AsyncTraceDispatcher;
 import org.apache.rocketmq.client.trace.hook.ConsumeMessageTraceHookImpl;
@@ -103,9 +101,6 @@ public class RocketMQConsumer extends AbstractConfig {
     
     private Class<?> consumerParameterTypeClass;
     
-    // 关闭等待最大时间
-    private long shutdownWaitMaxMillis = 10000;
-    
     // 是否开启统计
     private boolean enableStats = true;
     
@@ -146,6 +141,8 @@ public class RocketMQConsumer extends AbstractConfig {
         }
         // 注册线程统计
         ConsumeStatManager.getInstance().register(getGroup());
+        // 关闭最大等待时间
+        getConsumer().setAwaitTerminationMillisWhenShutdown(10000);
     }
 
     public void start() {
@@ -266,28 +263,11 @@ public class RocketMQConsumer extends AbstractConfig {
         // 2.接着标记拉取线程停止，不直接关闭是为了把拉下来的消息消费完毕。
         PullMessageService pull = innerConsumer.getmQClientFactory().getPullMessageService();
         pull.makeStop();
-        // 3.根据拉取任务数是否与处理队列数相等，来判断消息是否已经消费完毕；超过30秒则不再等待
-        long start = System.currentTimeMillis();
-        LinkedBlockingQueue<PullRequest> q = getField(PullMessageService.class, "pullRequestQueue", pull);
-        int pullRequestSize = getPullRequestSize(q);
-        while (pullRequestSize != innerConsumer.getRebalanceImpl().getProcessQueueTable().size()) {
-            long use = System.currentTimeMillis() - start;
-            if (use > getShutdownWaitMaxMillis()) {
-                logger.warn("{} shutdown too long, use:{}ms, break!!, pullRequestQueueSize:{} processQueueTableSize:{}",
-                        getGroup(), use, pullRequestSize, innerConsumer.getRebalanceImpl().getProcessQueueTable().size());
-                break;
-            }
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-                logger.warn("ignore interrupted!!");
-            }
-            pullRequestSize = getPullRequestSize(q);
-        }
         // 4.如下为正常关闭流程
         consumer.shutdown();
         rateLimiter.shutdown();
         clientConfigScheduledExecutorService.shutdown();
+        super.shutdown();
     }
     
     /**
@@ -299,19 +279,6 @@ public class RocketMQConsumer extends AbstractConfig {
         mqClientInstance.getMQClientAPIImpl().getRemotingClient()
                 .registerProcessor(RequestCode.GET_CONSUMER_RUNNING_INFO,
                         new SohuClientRemotingProcessor(mqClientInstance), null);
-    }
-    
-    private int getPullRequestSize(LinkedBlockingQueue<PullRequest> q) {
-        if (q == null) {
-            return 0;
-        }
-        int size = 0;
-        for (PullRequest pullRequest : q) {
-            if (getGroup().equals(pullRequest.getConsumerGroup())) {
-                ++size;
-            }
-        }
-        return size;
     }
     
     /**
@@ -636,12 +603,8 @@ public class RocketMQConsumer extends AbstractConfig {
         return false;
     }
     
-    public long getShutdownWaitMaxMillis() {
-        return shutdownWaitMaxMillis;
-    }
-
+    @Deprecated
     public void setShutdownWaitMaxMillis(long shutdownWaitMaxMillis) {
-        this.shutdownWaitMaxMillis = shutdownWaitMaxMillis;
     }
 
     /**
