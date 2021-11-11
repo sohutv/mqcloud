@@ -9,14 +9,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import com.sohu.tv.mq.cloud.bo.Cluster;
-import com.sohu.tv.mq.cloud.bo.Topic;
-import com.sohu.tv.mq.cloud.bo.TopicTraffic;
-import com.sohu.tv.mq.cloud.bo.TopicTrafficCheckResult;
-import com.sohu.tv.mq.cloud.bo.TopicTrafficStat;
-import com.sohu.tv.mq.cloud.bo.TopicTrafficWarnConfig;
-import com.sohu.tv.mq.cloud.bo.User;
-import com.sohu.tv.mq.cloud.util.Jointer;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,6 +16,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
+import com.sohu.tv.mq.cloud.bo.Cluster;
+import com.sohu.tv.mq.cloud.bo.Topic;
+import com.sohu.tv.mq.cloud.bo.TopicTraffic;
+import com.sohu.tv.mq.cloud.bo.TopicTrafficCheckResult;
+import com.sohu.tv.mq.cloud.bo.TopicTrafficStat;
+import com.sohu.tv.mq.cloud.bo.TopicTrafficWarnConfig;
+import com.sohu.tv.mq.cloud.bo.User;
+import com.sohu.tv.mq.cloud.bo.UserWarn.WarnType;
 import com.sohu.tv.mq.cloud.dao.TopicTrafficStatDao;
 import com.sohu.tv.mq.cloud.util.DateUtil;
 import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper;
@@ -64,7 +64,7 @@ public class TopicTrafficStatService {
 
     @Autowired
     private TopicTrafficStatDao topicTrafficStatDao;
-
+    
     /**
      * 保存topic统计流量
      * @param topicTrafficStat
@@ -268,41 +268,18 @@ public class TopicTrafficStatService {
         if (CollectionUtils.isEmpty(checkResultList) || !config.isAlert()) {
             return;
         }
-        StringBuilder content = new StringBuilder("详细如下:<br><br>");
-        content.append("topic: <b>");
-        content.append(mqCloudConfigHelper.getTopicProduceLink(topic.getId(), topic.getName()));
-        content.append(" 检测到流量异常: <br>");
-        content.append("<table border=1>");
-        content.append("<thead>");
-        content.append("<tr>");
-        content.append("<th>时间</th>");
-        content.append("<th>详情</th>");
-        content.append("</tr>");
-        content.append("</thead>");
-        content.append("<tbody>");
-        for (TopicTrafficCheckResult checkResult : checkResultList) {
-            String warnTime = checkResult.getTime();
-            String warnInfo = checkResult.getWarnInfo();
-            content.append("<tr>");
-            content.append("<td>");
-            content.append(warnTime);
-            content.append("</td>");
-            content.append("<td>");
-            content.append(warnInfo);
-            content.append("</td>");
-            content.append("</tr>");
-        }
-        content.append("</tbody>");
-        content.append("</table>");
-        // 根据配置发送给不同的报警接收人
-        String email = getAlarmReceiverEmails(config.getAlarmReceiver(), topic.getId());
-        alertService.sendWarnMail(email, "topic流量", content.toString());
+        Set<User> userSet = getAlarmReceiver(config.getAlarmReceiver(), topic.getId());
+        Map<String, Object> paramMap = new HashMap<>();
+        paramMap.put("topic", mqCloudConfigHelper.getTopicProduceLink(topic.getId(), topic.getName()));
+        paramMap.put("list", checkResultList);
+        paramMap.put("resource", topic.getName());
+        alertService.sendWarn(userSet, WarnType.TOPIC_TRAFFIC, paramMap);
     }
 
     /**
      * 获取报警人
      */
-    private String getAlarmReceiverEmails(int alarmType, long topicId) {
+    private Set<User> getAlarmReceiver(int alarmType, long topicId) {
         Set<User> userSet = new HashSet<>();
         Result<List<User>> producerUserListResult = null;
         Result<List<User>> consumerUserListResult = null;
@@ -327,7 +304,6 @@ public class TopicTrafficStatService {
         if (consumerUserListResult != null && consumerUserListResult.isNotEmpty()) {
             userSet.addAll(consumerUserListResult.getResult());
         }
-        String email = Jointer.BY_COMMA.join(userSet, u -> u.getEmail());
-        return email;
+        return userSet;
     }
 }

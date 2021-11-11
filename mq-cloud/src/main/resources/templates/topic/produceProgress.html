@@ -30,56 +30,36 @@
 		                    </td>
 		                <tr>
 					<#else>
-						<#list response.result as k, v>
-							<#assign loop=1>
-							<#list v as mq, offset>
-									<#if loop == 1>
-										<tr onclick="toggleTR('${k}')" style="cursor:pointer">
-										<td id='${k}' _rowspan="${v?size+1}"><span id="${k}_span" class="mqcloudcollapse">&nbsp;&nbsp;&nbsp;</span> ${k}</td>
-										<#assign loop+=1>
-										<td>全部</td>
-			                    		<#assign totalOffset=0>
-			                    		<#assign minOffset = offset.minOffset>
-			                    		<#assign maxOffset=0>
-			                    		<#assign maxLastUpdateTimestamp=0>
-			                    		<#list v as mqInner, offsetInner>
-			                    			<#if minOffset gt offsetInner.minOffset>
-			                    				<#assign minOffset = offsetInner.minOffset>
-			                    			</#if>
-			                    			<#if maxOffset lt offsetInner.maxOffset>
-			                    				<#assign maxOffset = offsetInner.maxOffset>
-			                    			</#if>
-			                    			<#assign totalOffset += offsetInner.maxOffset - offsetInner.minOffset>
-			                    			<#if maxLastUpdateTimestamp lt offsetInner.lastUpdateTimestamp>
-			                    				<#assign maxLastUpdateTimestamp = offsetInner.lastUpdateTimestamp>
-			                    			</#if>
-			                    		</#list>
-										<td>${minOffset?string(",###")}</td>
-			                    		<td>${maxOffset?string(",###")}</td>
-			                    		<td>${totalOffset?string(",###")}</td>
-			                    		<td>
-				                    		<#if maxLastUpdateTimestamp <= 0>
-				                    			暂无
-				                    		<#else>
-					                    		${maxLastUpdateTimestamp?number_to_datetime?string("yyyy-MM-dd HH:mm:ss")}
-				                    		</#if>
-			                    		</td>
-			                    		</tr>
-									</#if>
-									<tr class="${k}" style="display:none;">
-				                    	<td>${mq.queueId}</td>
-				                    	<td>${offset.minOffset}</td>
-				                    	<td>${offset.maxOffset}</td>
-				                    	<td>${offset.maxOffset - offset.minOffset}</td>
-				                    	<td>
-				                    		<#if offset.lastUpdateTimestamp <= 0>
-				                    			暂无
-				                    		<#else>
-					                    		${offset.lastUpdateTimestamp?number_to_datetime?string("yyyy-MM-dd HH:mm:ss")}
-				                    		</#if>
-				                    	</td>
-			                   		</tr>
-							</#list>
+						<#list response.result.brokerQueueOffsetList as brokerQueueOffset>
+							<tr onclick="toggleTR('${brokerQueueOffset.broker}')" style="cursor:pointer">
+								<td id='${brokerQueueOffset.broker}' _rowspan="${brokerQueueOffset.queueOffsetList?size+1}"><span id="${brokerQueueOffset.broker}_span" class="mqcloudcollapse">&nbsp;&nbsp;&nbsp;</span> ${brokerQueueOffset.broker}</td>
+								<td>全部</td>
+								<td>${brokerQueueOffset.minOffset?string(",###")}</td>
+	                    		<td>${brokerQueueOffset.maxOffset?string(",###")}</td>
+	                    		<td>${brokerQueueOffset.messageCount?string(",###")}</td>
+	                    		<td>
+		                    		<#if brokerQueueOffset.lastUpdateTimestamp <= 0>
+		                    			暂无
+		                    		<#else>
+			                    		${brokerQueueOffset.lastUpdateTimestamp?number_to_datetime?string("yyyy-MM-dd HH:mm:ss")}
+		                    		</#if>
+	                    		</td>
+                    		</tr>
+                    		<#list brokerQueueOffset.queueOffsetList as queueOffset>
+                    			<tr class="${brokerQueueOffset.broker}" style="display:none;">
+			                    	<td>${queueOffset.queueId}</td>
+			                    	<td>${queueOffset.minOffset}</td>
+			                    	<td>${queueOffset.maxOffset}</td>
+			                    	<td>${queueOffset.maxOffset - queueOffset.minOffset}</td>
+			                    	<td>
+			                    		<#if queueOffset.lastUpdateTimestamp <= 0>
+			                    			暂无
+			                    		<#else>
+				                    		${queueOffset.lastUpdateTimestamp?number_to_datetime?string("yyyy-MM-dd HH:mm:ss")}
+			                    		</#if>
+			                    	</td>
+		                   		</tr>
+                    		</#list>
 						</#list>
 					</#if>
                 </tbody>
@@ -91,7 +71,7 @@
 <div class="row">
 <div class="col-md-12">
 	<div class="border-top"></div>
-	<div style="float:left;margin:10px 5px;"><h5><b>${topic.name}</b> 生产流量图</h5></div>
+	<div style="float:left;margin:10px 5px;"><h5><b>${response.result.topic!}</b> 生产流量图</h5></div>
 	<div id="produce_search" style="float:right;margin:10px 0px;"></div>
 </div>
 </div>
@@ -113,7 +93,7 @@ function toggleTR(clz){
 <#if response.OK>
 $(function() {
 	lineChart("produce", function (){
-		$("#tid").val("${topic.id}");
+		$("#tid").val("${response.result.topicId}");
 	}, function chartToolTip(chart){
 		if(!chart){
 			statMap = null;

@@ -3,6 +3,7 @@ package com.sohu.tv.mq.rocketmq;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
+import org.apache.rocketmq.client.consumer.listener.ConsumeConcurrentlyContext;
 import org.apache.rocketmq.common.message.MessageExt;
 import org.junit.After;
 import org.junit.Before;
@@ -40,10 +41,11 @@ public class RocketMQConsumerJsonTest {
     }
     
     @Test
+    @SuppressWarnings("deprecation")
     public void testBatch() throws InterruptedException {
         consumer.setConsumeMessageBatchMaxSize(32);
-        consumer.setBatchConsumerCallback(new BatchConsumerCallback<String>(){
-            public void call(List<MQMessage<String>> batchMessage) throws Exception {
+        consumer.setBatchConsumerCallback(new BatchConsumerCallback<String, ConsumeConcurrentlyContext>(){
+            public void call(List<MQMessage<String>> batchMessage, ConsumeConcurrentlyContext context) throws Exception {
                 for(MQMessage<String> mqMessage : batchMessage) {
                     counter.incrementAndGet();
                     System.out.println("msg:" + mqMessage.getMessage() + ",msgExt:" + mqMessage.getMessageExt());

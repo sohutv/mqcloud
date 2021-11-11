@@ -861,18 +861,20 @@
 						<col width="190px">
 						<col width="100px">
 						<col>
+						<col width="200px">
 					</colgroup>
 					<thead>
 						<tr>
 							<td>序号</td>
 							<td>客户端</td>
-							<td>发送时间</td>
+							<td>重试时间</td>
 							<td id="cosumeTimes">消费次数</td>
 							<td>消息</td>
+							<td>key</td>
 						</tr>
 					</thead>
 					<tbody>
-						<tr class="no_more_data"><td colspan=5 class="text-center">暂无数据</td></tr>
+						<tr class="no_more_data"><td colspan=6 class="text-center">暂无数据</td></tr>
 					</tbody>
 				</table>
 				<ul class="pager" id="pager" style="display:none;">
@@ -942,6 +944,12 @@
 									<label class="control-label col-md-3"> 跳至: </label>
 									<div class="col-md-7">
 										<input type="text" id="resetRetryMessageOffsetDate" class="Wdate form-control" onclick="WdatePicker({ dateFmt: 'yyyy-MM-dd HH:mm:ss',maxDate:'%y-%M-%d',minDate:'%y-%M-%d'})" style="width:100%;height:34px;cursor:pointer;" readonly="readonly">
+									</div>
+								</div>
+								<div class="form-group">
+									<label class="control-label col-md-3"> 消息key: </label>
+									<div class="col-md-7">
+										<input type="text" id="resetRetryMessageKey" class="form-control" placeholder="完整的key，可不填">
 									</div>
 								</div>
 							</div>
@@ -1315,7 +1323,8 @@ function resetRetryOffset(btn){
 		tid: ${RequestParameters.tid},
 		consumerId: $("#resetRetryMessageOffsetConsumerId").val(),
 		offset: resetOffsetTo,
-		cid: $("#toCid").val()
+		cid: $("#toCid").val(),
+		messageKey: $("#resetRetryMessageKey").val()
 	},function(data){
         if(data.status == 200){
 			toastr.success(data.message);  
@@ -1533,7 +1542,7 @@ var maxAllOffset = '';
 var minAllOffset = '';
 function initOffsetMsgModal(type, index, topic, maxOffset, traceEnabled){
 	// 清空数据
-	$("#dataTable tbody").html("<tr class='no_more_data'><td colspan=5 class='text-center'>暂无数据</td></tr>");
+	$("#dataTable tbody").html("<tr class='no_more_data'><td colspan=6 class='text-center'>暂无数据</td></tr>");
 	$("#dataTable input").remove();
 	$("#toTopic").val(topic);
 	$("#pager").hide();
@@ -1858,7 +1867,7 @@ function changeSearchType(type){
 	hideAndResetBrokerSelect();
 	// 清空数据
 	$("#dataTable tbody").remove();
-	$("#dataTable").append("<tbody><tr class='no_more_data'><td colspan=5 class='text-center'>暂无数据</td></tr></tbody>");
+	$("#dataTable").append("<tbody><tr class='no_more_data'><td colspan=6 class='text-center'>暂无数据</td></tr></tbody>");
 	$("#dataTable input").remove();
 	$("#dataTable").removeClass("hide");
 	$("#resendMessageBtn").removeClass("disabled");

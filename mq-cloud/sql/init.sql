@@ -91,7 +91,8 @@ CREATE TABLE `audit_reset_offset` (
   `aid` int(11) NOT NULL COMMENT '审核id',
   `tid` int(11) NOT NULL COMMENT 'topic id',
   `consumer_id` int(11) DEFAULT NULL COMMENT 'consumer id',
-  `offset` varchar(64) DEFAULT NULL COMMENT 'null:重置为最大offset,时间戳:重置为某时间点(yyyy-MM-dd#HH:mm:ss:SSS)'
+  `offset` varchar(64) DEFAULT NULL COMMENT 'null:重置为最大offset,时间戳:重置为某时间点(yyyy-MM-dd#HH:mm:ss:SSS)',
+  `message_key` varchar(360) DEFAULT NULL COMMENT '消息key'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='审核offset相关表';
 
 -- ----------------------------
@@ -485,8 +486,9 @@ CREATE TABLE `user` (
   `type` int(4) NOT NULL DEFAULT '0' COMMENT '0:普通用户,1:管理员',
   `create_date` date NOT NULL,
   `update_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-  `receive_notice` int(4) NOT NULL DEFAULT '0' COMMENT '是否接收各种通知,0:不接收,1:接收',
+  `receive_notice` int(4) NOT NULL DEFAULT '0' COMMENT '管理员是否接收邮件通知,0:不接收,1:接收',
   `password` varchar(256) COMMENT '登录方式采用用户名密码验证时使用',
+  `receive_phone_notice` int(4) NOT NULL DEFAULT '0' COMMENT '用户是否接收手机通知,0:不接收,1:接收',
   PRIMARY KEY (`id`),
   UNIQUE KEY `email` (`email`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='用户表';
@@ -753,6 +755,7 @@ CREATE TABLE `consumer_config` (
   `enable_rate_limit` tinyint(4) DEFAULT NULL COMMENT '0:不限速,1:限速',
   `pause` tinyint(4) DEFAULT NULL COMMENT '0:不暂停,1:暂停',
   `pause_client_id` varchar(255) DEFAULT NULL COMMENT '暂停的客户端Id',
+  `retry_message_skip_key` varchar(360) DEFAULT NULL COMMENT '消息key',
   `update_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   UNIQUE KEY `consumer` (`consumer`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='客户端配置表';
@@ -993,6 +996,9 @@ insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynami
 insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) values(24, 'dLegerGroup', null, 'DLeger相关配置', null, 25, 0, null, 0);
 insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) values(24, 'dLegerPeers', null, 'DLeger相关配置', null, 26, 0, null, 0);
 insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) values(24, 'dLegerSelfId', null, 'DLeger相关配置', null, 27, 0, null, 0);
+insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) values(24, 'enableScheduleMessageStats', 'true', '开启schedule队列消息统计', null, 28, 1, null, 0);
+insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) values(24, 'isEnableBatchPush', 'false', 'DLedger批量复制', null, 29, 0, null, 1);
+insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) values(24, 'autoDeleteUnusedStats', 'false', '删除topic或订阅时一起删除相关统计', null, 30, 1, null, 0);
 
 -- ----------------------------
 -- Table structure for `topic_traffic_warn_config`
@@ -1020,3 +1026,26 @@ CREATE TABLE `audit_topic_traffic_warn` (
   `tid` int(11) NOT NULL COMMENT 'topic id',
   `traffic_warn_enabled` int(11) NOT NULL COMMENT '0:不开启topic流量预警,1:开启topic流量预警'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='审核topic trafficWarn相关表';
+
+-- ----------------------------
+-- Table structure for `user_warn`
+-- ----------------------------
+DROP TABLE IF EXISTS `user_warn`;
+CREATE TABLE `user_warn` (
+  `uid` int(11) NOT NULL,
+  `type` int(4) NOT NULL COMMENT '警告类型',
+  `resource` varchar(100) DEFAULT NULL COMMENT '警告资源:topic,producer等',
+  `create_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `wid` int(11) NOT NULL,
+  KEY `ut` (`uid`, `create_time`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='用户警告表';
+
+-- ----------------------------
+-- Table structure for `warn_info`
+-- ----------------------------
+DROP TABLE IF EXISTS `warn_info`;
+CREATE TABLE `warn_info` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `content` text DEFAULT NULL COMMENT '警告内容',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='警告信息表';

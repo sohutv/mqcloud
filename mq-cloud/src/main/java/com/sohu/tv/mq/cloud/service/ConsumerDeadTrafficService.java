@@ -1,10 +1,16 @@
 package com.sohu.tv.mq.cloud.service;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.sohu.tv.mq.cloud.bo.TopicConsumer;
 import com.sohu.tv.mq.cloud.bo.TopicHourTraffic;
+import com.sohu.tv.mq.cloud.bo.User;
+import com.sohu.tv.mq.cloud.bo.UserWarn.WarnType;
 import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper;
 
 /**
@@ -21,11 +27,14 @@ public class ConsumerDeadTrafficService extends HourTrafficService {
 
     @Autowired
     private MQCloudConfigHelper mqCloudConfigHelper;
-
-    protected void alert(TopicHourTraffic topicTraffic, TopicConsumer topicConsumer, String email) {
-        alertService.sendWarnMail(email, "死消费", "topic:<b>" + topicConsumer.getTopic() + "</b> 消费者:<b>"
-                + mqCloudConfigHelper.getTopicConsumeLink(topicConsumer.getTid(), topicConsumer.getConsumer())
-                + "</b> 死消息量:" + topicTraffic.getCount());
+    
+    protected void alert(TopicHourTraffic topicTraffic, TopicConsumer topicConsumer, List<User> userList) {
+        Map<String, Object> paramMap = new HashMap<>();
+        paramMap.put("topic", topicConsumer.getTopic());
+        paramMap.put("consumer", mqCloudConfigHelper.getTopicConsumeLink(topicConsumer.getTid(), topicConsumer.getConsumer()));
+        paramMap.put("count", topicTraffic.getCount());
+        paramMap.put("resource", topicConsumer.getConsumer());
+        alertService.sendWarn(userList, WarnType.DEAD_MESSAGE, paramMap);
     }
 
     protected String getCountKey() {

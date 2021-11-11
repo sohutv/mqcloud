@@ -11,6 +11,8 @@ public class UserConsumerParam {
     private String offset;
 
     private long cid;
+    
+    private String messageKey;
 
     public long getTid() {
         return tid;
@@ -44,9 +46,17 @@ public class UserConsumerParam {
         this.cid = cid;
     }
 
+    public String getMessageKey() {
+        return messageKey;
+    }
+
+    public void setMessageKey(String messageKey) {
+        this.messageKey = messageKey;
+    }
+
     @Override
     public String toString() {
-        return "UserConsumerParam [tid=" + tid + ", consumerId=" + consumerId
-                + ", offset=" + offset + ", cid=" + cid + "]";
+        return "UserConsumerParam [tid=" + tid + ", consumerId=" + consumerId + ", offset=" + offset + ", cid=" + cid
+                + ", messageKey=" + messageKey + "]";
     }
 }

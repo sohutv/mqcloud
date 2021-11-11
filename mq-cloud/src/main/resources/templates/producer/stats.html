@@ -46,7 +46,11 @@ $(function() {
 						}
 						s += "</font></td>";
 					});
-					s += "</tr></table>";
+					if(this.points[this.points.length - 1].point.dt){
+						s += "</tr><tr><td colspan="+(this.points.length+1)+">"+this.points[this.points.length - 1].point.dt+"</td></tr></table>";
+					} else {
+						s += "</tr></table>";
+					}
 					var statId = this.points[this.points.length - 1].point.id;
 					if(statId){
 						var stats = statMap[statId];

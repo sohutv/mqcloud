@@ -14,8 +14,10 @@ public interface AuditResetOffsetDao {
      */
     @Insert("<script>insert into audit_reset_offset(aid,tid,consumer_id"
             +"<if test=\"of.offset != null\">,offset</if>"
+            +"<if test=\"of.messageKey != null\">,message_key</if>"
             + ") values(#{of.aid},#{of.tid},#{of.consumerId}"
             +"<if test=\"of.offset != null\">,#{of.offset}</if>"
+            +"<if test=\"of.messageKey != null\">,#{of.messageKey}</if>"
             + ")</script>")
     public Integer insert(@Param("of") AuditResetOffset auditResetOffset);
 

@@ -46,7 +46,9 @@ public class ConsumeStats {
         sampleExecutorService = Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {
             @Override
             public Thread newThread(Runnable r) {
-                return new Thread(r, "ConsumeStats-" + consumer);
+            	Thread thread = new Thread(r, "ConsumeStats-" + consumer);
+            	thread.setDaemon(true);
+            	return thread;
             }
         });
         sampleExecutorService.scheduleWithFixedDelay(new Runnable() {

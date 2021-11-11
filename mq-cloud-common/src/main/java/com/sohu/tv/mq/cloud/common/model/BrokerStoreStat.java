@@ -27,6 +27,10 @@ public class BrokerStoreStat {
     private int createDate;
     // 创建时间
     private String createTime;
+    
+    private String clusterName;
+    
+    private String brokerStoreLink;
 
     public int getClusterId() {
         return clusterId;
@@ -106,5 +110,21 @@ public class BrokerStoreStat {
 
     public void setBrokerIp(String brokerIp) {
         this.brokerIp = brokerIp;
+    }
+
+    public String getClusterName() {
+        return clusterName;
+    }
+
+    public void setClusterName(String clusterName) {
+        this.clusterName = clusterName;
+    }
+
+    public String getBrokerStoreLink() {
+        return brokerStoreLink;
+    }
+
+    public void setBrokerStoreLink(String brokerStoreLink) {
+        this.brokerStoreLink = brokerStoreLink;
     }
 }

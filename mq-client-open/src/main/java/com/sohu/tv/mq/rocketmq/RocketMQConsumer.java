@@ -8,7 +8,6 @@ import java.lang.reflect.Type;
 import java.net.HttpURLConnection;
 import java.util.List;
 import java.util.concurrent.Executors;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
@@ -23,7 +22,6 @@ import org.apache.rocketmq.client.consumer.listener.MessageListenerOrderly;
 import org.apache.rocketmq.client.exception.MQClientException;
 import org.apache.rocketmq.client.impl.consumer.DefaultMQPushConsumerImpl;
 import org.apache.rocketmq.client.impl.consumer.PullMessageService;
-import org.apache.rocketmq.client.impl.consumer.PullRequest;
 import org.apache.rocketmq.client.impl.factory.MQClientInstance;
 import org.apache.rocketmq.client.trace.AsyncTraceDispatcher;
 import org.apache.rocketmq.client.trace.hook.ConsumeMessageTraceHookImpl;
@@ -45,10 +43,15 @@ import com.sohu.tv.mq.dto.ConsumerConfigDTO;
 import com.sohu.tv.mq.dto.DTOResult;
 import com.sohu.tv.mq.metric.ConsumeStatManager;
 import com.sohu.tv.mq.netty.SohuClientRemotingProcessor;
+import com.sohu.tv.mq.rocketmq.consumer.BatchMessageConsumer;
+import com.sohu.tv.mq.rocketmq.consumer.IMessageConsumer;
+import com.sohu.tv.mq.rocketmq.consumer.SingleMessageConsumer;
+import com.sohu.tv.mq.rocketmq.consumer.deduplicate.DeduplicateSingleMessageConsumer;
 import com.sohu.tv.mq.rocketmq.limiter.LeakyBucketRateLimiter;
 import com.sohu.tv.mq.rocketmq.limiter.RateLimiter;
 import com.sohu.tv.mq.rocketmq.limiter.SwitchableRateLimiter;
 import com.sohu.tv.mq.rocketmq.limiter.TokenBucketRateLimiter;
+import com.sohu.tv.mq.rocketmq.redis.IRedis;
 import com.sohu.tv.mq.util.Constant;
 
 /**
@@ -62,7 +65,7 @@ import com.sohu.tv.mq.util.Constant;
 public class RocketMQConsumer extends AbstractConfig {
 
     // 支持一批消息消费
-    private BatchConsumerCallback<?> batchConsumerCallback;
+    private BatchConsumerCallback<?, ?> batchConsumerCallback;
 
     /**
      * 消费者
@@ -98,11 +101,20 @@ public class RocketMQConsumer extends AbstractConfig {
     
     private Class<?> consumerParameterTypeClass;
     
-    // 关闭等待最大时间
-    private long shutdownWaitMaxMillis = 30000;
-    
     // 是否开启统计
     private boolean enableStats = true;
+    
+    // 重试消息跳过的key
+    private String retryMessageSkipKey;
+    
+    // 消费去重
+    private boolean deduplicate;
+    
+    // 消费去重窗口时间，默认3分钟
+    private int deduplicateWindowSeconds = 3 * 60 + 10;
+    
+    // 幂等消费用的redis
+    private IRedis redis;
     
     /**
      * 一个应用创建一个Consumer，由应用来维护此对象，可以设置为全局对象或者单例<br>
@@ -129,6 +141,8 @@ public class RocketMQConsumer extends AbstractConfig {
         }
         // 注册线程统计
         ConsumeStatManager.getInstance().register(getGroup());
+        // 关闭最大等待时间
+        getConsumer().setAwaitTerminationMillisWhenShutdown(10000);
     }
 
     public void start() {
@@ -141,7 +155,7 @@ public class RocketMQConsumer extends AbstractConfig {
             consumer.subscribe(topic, subExpression);
 
             // 构建消费者对象
-            final MessageConsumer messageConsumer = new MessageConsumer(this);
+            final IMessageConsumer<?> messageConsumer = getMessageConsumer();
             // 注册顺序或并发消费
             if (consumeOrderly) {
                 consumer.registerMessageListener(new MessageListenerOrderly() {
@@ -228,6 +242,8 @@ public class RocketMQConsumer extends AbstractConfig {
                             setRate(rate);
                         }
                     }
+                    // 更新重试消息跳过的key
+                    setRetryMessageSkipKey(consumerConfigDTO.getRetryMessageSkipKey());
                 } catch (Throwable ignored) {
                     logger.warn("skipRetryMessage err:{}", ignored);
                 }
@@ -247,28 +263,11 @@ public class RocketMQConsumer extends AbstractConfig {
         // 2.接着标记拉取线程停止，不直接关闭是为了把拉下来的消息消费完毕。
         PullMessageService pull = innerConsumer.getmQClientFactory().getPullMessageService();
         pull.makeStop();
-        // 3.根据拉取任务数是否与处理队列数相等，来判断消息是否已经消费完毕；超过30秒则不再等待
-        long start = System.currentTimeMillis();
-        LinkedBlockingQueue<PullRequest> q = getField(PullMessageService.class, "pullRequestQueue", pull);
-        int pullRequestSize = getPullRequestSize(q);
-        while (pullRequestSize != innerConsumer.getRebalanceImpl().getProcessQueueTable().size()) {
-            long use = System.currentTimeMillis() - start;
-            if (use > getShutdownWaitMaxMillis()) {
-                logger.warn("{} shutdown too long, use:{}ms, break!!, pullRequestQueueSize:{} processQueueTableSize:{}",
-                        getGroup(), use, pullRequestSize, innerConsumer.getRebalanceImpl().getProcessQueueTable().size());
-                break;
-            }
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-                logger.warn("ignore interrupted!!");
-            }
-            pullRequestSize = getPullRequestSize(q);
-        }
         // 4.如下为正常关闭流程
         consumer.shutdown();
         rateLimiter.shutdown();
         clientConfigScheduledExecutorService.shutdown();
+        super.shutdown();
     }
     
     /**
@@ -280,19 +279,6 @@ public class RocketMQConsumer extends AbstractConfig {
         mqClientInstance.getMQClientAPIImpl().getRemotingClient()
                 .registerProcessor(RequestCode.GET_CONSUMER_RUNNING_INFO,
                         new SohuClientRemotingProcessor(mqClientInstance), null);
-    }
-    
-    private int getPullRequestSize(LinkedBlockingQueue<PullRequest> q) {
-        if (q == null) {
-            return 0;
-        }
-        int size = 0;
-        for (PullRequest pullRequest : q) {
-            if (getGroup().equals(pullRequest.getConsumerGroup())) {
-                ++size;
-            }
-        }
-        return size;
     }
     
     /**
@@ -324,7 +310,10 @@ public class RocketMQConsumer extends AbstractConfig {
         if (consumeMessageBatchMaxSize <= 0) {
             return;
         }
-        consumer.setConsumeMessageBatchMaxSize(consumeMessageBatchMaxSize);
+        // 批量消息消费才允许设置
+        if (consumerCallback == null && batchConsumerCallback != null) {
+            consumer.setConsumeMessageBatchMaxSize(consumeMessageBatchMaxSize);
+        }
     }
 
     public void setConsumeFromWhere(ConsumeFromWhere consumeFromWhere) {
@@ -448,8 +437,8 @@ public class RocketMQConsumer extends AbstractConfig {
     }
 
     @SuppressWarnings("unchecked")
-    public <T> BatchConsumerCallback<T> getBatchConsumerCallback() {
-        return (BatchConsumerCallback<T>) batchConsumerCallback;
+    public <T, C> BatchConsumerCallback<T, C> getBatchConsumerCallback() {
+        return (BatchConsumerCallback<T, C>) batchConsumerCallback;
     }
 
     @SuppressWarnings({"rawtypes"})
@@ -535,8 +524,28 @@ public class RocketMQConsumer extends AbstractConfig {
     }
 
     public void setRetryMessageResetTo(long retryMessageResetTo) {
-        logger.info("topic:{}'s consumer:{} retryMessageReset {}->{}", getTopic(), getGroup(), this.retryMessageResetTo, retryMessageResetTo);
+        logger.info("topic:{}'s consumer:{} retryMessageReset {}->{}", getTopic(), getGroup(), this.retryMessageResetTo,
+                retryMessageResetTo);
         this.retryMessageResetTo = retryMessageResetTo;
+    }
+
+    public String getRetryMessageSkipKey() {
+        return retryMessageSkipKey;
+    }
+
+    public void setRetryMessageSkipKey(String retryMessageSkipKey) {
+        if (this.retryMessageSkipKey == retryMessageSkipKey) {
+            return;
+        }
+        if (this.retryMessageSkipKey != null && this.retryMessageSkipKey.equals(retryMessageSkipKey)) {
+            return;
+        }
+        if (retryMessageSkipKey != null && retryMessageSkipKey.equals(this.retryMessageSkipKey)) {
+            return;
+        }
+        logger.info("topic:{}'s consumer:{} retryMessageSkipKey {}->{}", getTopic(), getGroup(),
+                this.retryMessageSkipKey, retryMessageSkipKey);
+        this.retryMessageSkipKey = retryMessageSkipKey;
     }
     
     /**
@@ -594,12 +603,8 @@ public class RocketMQConsumer extends AbstractConfig {
         return false;
     }
     
-    public long getShutdownWaitMaxMillis() {
-        return shutdownWaitMaxMillis;
-    }
-
+    @Deprecated
     public void setShutdownWaitMaxMillis(long shutdownWaitMaxMillis) {
-        this.shutdownWaitMaxMillis = shutdownWaitMaxMillis;
     }
 
     /**
@@ -636,7 +641,7 @@ public class RocketMQConsumer extends AbstractConfig {
         this.rateLimiter = switchableRateLimiter;
     }
     
-    protected Class<?> getConsumerParameterTypeClass() {
+    public Class<?> getConsumerParameterTypeClass() {
         return consumerParameterTypeClass;
     }
 
@@ -728,5 +733,47 @@ public class RocketMQConsumer extends AbstractConfig {
             return clz;
         }
         return null;
+    }
+    
+    private IMessageConsumer<?> getMessageConsumer() {
+        if (getConsumerCallback() != null) {
+            if (getRedis() != null) {
+                if (MessageModel.CLUSTERING.equals(consumer.getMessageModel())) {
+                    return new DeduplicateSingleMessageConsumer<>(this);
+                } else {
+                    logger.warn("consume message model is broadcasting, cannot use deduplication!");
+                }
+            }
+            return new SingleMessageConsumer<>(this);
+        }
+        return new BatchMessageConsumer<>(this);
+    }
+
+    public boolean isDeduplicate() {
+        return deduplicate;
+    }
+
+    public void setDeduplicate(boolean deduplicate) {
+        this.deduplicate = deduplicate;
+    }
+
+    public int getDeduplicateWindowSeconds() {
+        return deduplicateWindowSeconds;
+    }
+
+    public void setDeduplicateWindowSeconds(int deduplicateWindowSeconds) {
+        this.deduplicateWindowSeconds = deduplicateWindowSeconds;
+    }
+
+    public IRedis getRedis() {
+        return redis;
+    }
+
+    /**
+     * 设置redis实例，用于幂等消费，请用 @RedisBuilder 构建 @IRedis 实例
+     * @param redis
+     */
+    public void setRedis(IRedis redis) {
+        this.redis = redis;
     }
 }

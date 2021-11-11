@@ -1,0 +1,20 @@
+<table border=1>
+	<thead>
+		<tr>
+			<td>集群</td>
+			<td>broker</td>
+			<td>落后量</td>
+			<td>阈值</td>
+		</tr>
+	</thead>
+	<tbody>
+		<#list list as slaveFallBehind>
+		<tr>
+			<td>${slaveFallBehind.clusterName}</td>
+			<td>${slaveFallBehind.brokerLink}</td>
+			<td title='${slaveFallBehind.fallBehindOffset}'>${slaveFallBehind.fallBehindOffsetFormat}</td>
+			<td title='${slaveFallBehind.slaveFallBehindSize}'>${slaveFallBehind.slaveFallBehindSizeFormat}</td>
+		</tr>
+		</#list>
+	</tbody>
+</table>

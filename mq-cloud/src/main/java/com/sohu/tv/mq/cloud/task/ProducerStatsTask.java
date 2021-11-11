@@ -13,9 +13,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
+
 import com.sohu.tv.mq.cloud.bo.ProducerTotalStat;
 import com.sohu.tv.mq.cloud.bo.User;
 import com.sohu.tv.mq.cloud.bo.UserProducer;
+import com.sohu.tv.mq.cloud.bo.UserWarn.WarnType;
 import com.sohu.tv.mq.cloud.service.AlertService;
 import com.sohu.tv.mq.cloud.service.ProducerStatService;
 import com.sohu.tv.mq.cloud.service.ProducerTotalStatService;
@@ -24,6 +26,7 @@ import com.sohu.tv.mq.cloud.service.UserService;
 import com.sohu.tv.mq.cloud.util.DateUtil;
 import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper;
 import com.sohu.tv.mq.cloud.util.Result;
+
 import net.javacrumbs.shedlock.core.SchedulerLock;
 
 /**
@@ -35,8 +38,6 @@ import net.javacrumbs.shedlock.core.SchedulerLock;
 public class ProducerStatsTask {
 
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
-
-    private static final String ALARM_TITLE = "客户端异常";
 
     @Autowired
     private ProducerTotalStatService producerTotalStatService;
@@ -58,7 +59,7 @@ public class ProducerStatsTask {
 
     @Autowired
     private UserService userService;
-
+    
     /**
      * 删除统计表数据
      */
@@ -119,15 +120,19 @@ public class ProducerStatsTask {
             size = list.size();
             // 按生产者分组
             Map<String, List<ProducerTotalStat>> groupedMap = group(list);
-            for (String k : groupedMap.keySet()) {
-                List<ProducerTotalStat> totalList = groupedMap.get(k);
+            for (String producer : groupedMap.keySet()) {
+                List<ProducerTotalStat> totalList = groupedMap.get(producer);
                 // 获取发送者列表
-                List<UserProducer> userProducerList = getUserProducer(k);
+                List<UserProducer> userProducerList = getUserProducer(producer);
                 if (userProducerList != null) {
-                    String detailAlarmMessage = getDetailAlarmMessage(totalList, userProducerList.get(0).getTid(), k);
-                    alertService.sendWarnMail(getUserMail(userProducerList), ALARM_TITLE, detailAlarmMessage);
+                    List<User> users = getWarnUser(userProducerList);
+                    Map<String, Object> paramMap = new HashMap<>();
+                    paramMap.put("link", mqCloudConfigHelper.getTopicLink(userProducerList.get(0).getTid(), producer));
+                    paramMap.put("list", totalList);
+                    paramMap.put("resource", producer);
+                    alertService.sendWarn(users, WarnType.PRODUCE_EXCEPTION, paramMap);
                 } else {
-                    logger.warn("can not get the relationship between user and producer！producer:{}", k);
+                    logger.warn("can not get the relationship between user and producer！producer:{}", producer);
                 }
             }
         }
@@ -135,57 +140,6 @@ public class ProducerStatsTask {
                 (System.currentTimeMillis() - start));
     }
 
-    /**
-     * 拼接报警信息详情
-     * 
-     * @param totalList
-     * @param tid
-     * @param k
-     */
-    private String getDetailAlarmMessage(List<ProducerTotalStat> totalList, long tid, String k) {
-        int rowSpan = totalList.size();
-        StringBuilder sb = new StringBuilder();
-        sb.append("<table border=1>");
-        sb.append("<thead><tr><td>producer</td><td>时间</td><td>client</td><td>broker</td><td>异常</td></tr></thead>");
-        sb.append("<tbody>");
-        sb.append("<tr>");
-        // producer
-        sb.append("<td rowspan=" + rowSpan + ">");
-        sb.append(mqCloudConfigHelper.getTopicLink(tid, k));
-        sb.append("</td>");
-        for (int i = 0; i < rowSpan; ++i) {
-            ProducerTotalStat producerTotalStat = totalList.get(i);
-            if (i > 0) {
-                sb.append("<tr>");
-            }
-            // 时间
-            sb.append("<td>");
-            sb.append(producerTotalStat.getCreateDate() + " " + producerTotalStat.getCreateTime());
-            sb.append("</td>");
-            // client
-            sb.append("<td>");
-            sb.append(producerTotalStat.getClient());
-            sb.append("</td>");
-            // broker
-            sb.append("<td>");
-            sb.append(producerTotalStat.getBroker());
-            sb.append("</td>");
-            // 异常信息
-            sb.append("<td>");
-            if(producerTotalStat.getException() != null) {
-                sb.append(producerTotalStat.getException());
-            }
-            sb.append("</td>");
-            if (i > 0) {
-                sb.append("</tr>");
-            }
-        }
-        sb.append("</tr>");
-        sb.append("</tbody>");
-        sb.append("</table>");
-        return sb.toString();
-    }
-    
     /**
      * 获取topic id
      * 
@@ -206,7 +160,7 @@ public class ProducerStatsTask {
      * @param userIdSet
      * @return
      */
-    private String getUserMail(List<UserProducer> userProducerList) {
+    private List<User> getWarnUser(List<UserProducer> userProducerList) {
         if (userProducerList == null) {
             return null;
         }
@@ -214,24 +168,15 @@ public class ProducerStatsTask {
         for (UserProducer userProducer : userProducerList) {
             userIDSet.add(userProducer.getUid());
         }
-        String receiver = null;
         // 获取用户id
         if (!userIDSet.isEmpty()) {
             // 获取用户信息
             Result<List<User>> userListResult = userService.query(userIDSet);
-            StringBuilder sb = new StringBuilder();
             if (userListResult.isNotEmpty()) {
-                for (User u : userListResult.getResult()) {
-                    sb.append(u.getEmail());
-                    sb.append(",");
-                }
-            }
-            if (sb.length() > 0) {
-                sb.deleteCharAt(sb.length() - 1);
-                receiver = sb.toString();
+                return userListResult.getResult();
             }
         }
-        return receiver;
+        return null;
     }
 
     /**

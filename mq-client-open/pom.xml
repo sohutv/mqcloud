@@ -6,7 +6,7 @@
 	<parent>
 		<groupId>com.sohu.tv</groupId>
 		<artifactId>mq</artifactId>
-		<version>4.7.2</version>
+		<version>4.9.1</version>
 	</parent>
 
 	<artifactId>mq-client-open</artifactId>
@@ -20,6 +20,11 @@
 		<dependency>
 			<groupId>com.netflix.hystrix</groupId>
 			<artifactId>hystrix-core</artifactId>
+			<optional>true</optional>
+		</dependency>
+		<dependency>
+			<groupId>redis.clients</groupId>
+			<artifactId>jedis</artifactId>
 			<optional>true</optional>
 		</dependency>
 		<dependency>

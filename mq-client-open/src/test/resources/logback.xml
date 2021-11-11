@@ -12,19 +12,19 @@
     </appender>
     
     <logger name="RocketmqCommon" additivity="false">
-        <level value="${client.logLevel}"/>
+        <level value="info"/>
         <appender-ref ref="console"/>
     </logger>
 
 
     <logger name="RocketmqRemoting" additivity="false">
-        <level value="${client.logLevel}"/>
+        <level value="info"/>
         <appender-ref ref="console"/>
     </logger>
 
 
     <logger name="RocketmqClient" additivity="false">
-        <level value="warn"/>
+        <level value="info"/>
         <appender-ref ref="console"/>
     </logger>
     

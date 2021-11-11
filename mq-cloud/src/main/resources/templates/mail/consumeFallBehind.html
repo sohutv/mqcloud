@@ -1,0 +1,30 @@
+<table border=1>
+	<thead>
+		<tr>
+			<th>broker</th>
+			<th>地址</th>
+			<th>broker内存阈值</th>
+			<th>topic</th>
+			<th>队列</th>
+			<th>consumer</th>
+			<th>落后大小</th>
+		</tr>
+	</thead>
+	<tbody>
+		<#list list as brokerFallBehind> 
+		<#list brokerFallBehind.list as consumerFallBehind>
+		<tr>
+			<#if consumerFallBehind_index==0>
+			<td rowspan=${brokerFallBehind.list?size}>${brokerFallBehind.broker}</td>
+			<td rowspan=${brokerFallBehind.list?size}>${brokerFallBehind.addr}</td>
+			<td rowspan=${brokerFallBehind.list?size}>${brokerFallBehind.maxAccessMessageInMemoryFormat}</td>
+			</#if>
+			<td>${consumerFallBehind.topic}</td>
+			<td>${consumerFallBehind.queue}</td>
+			<td>${consumerFallBehind.consumerLink}</td>
+			<td>${consumerFallBehind.accumulatedFormat}</td>
+		</tr>
+		</#list> 
+		</#list>
+	</tbody>
+</table>

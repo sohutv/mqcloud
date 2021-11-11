@@ -69,6 +69,8 @@ public abstract class AbstractConfig {
 
     // 是否设置了instanceName
     protected String instanceName;
+    
+    protected SohuAsyncTraceDispatcher traceDispatcher;
 
     public AbstractConfig(String group, String topic) {
         this.topic = topic;
@@ -122,12 +124,14 @@ public abstract class AbstractConfig {
                 logger.error("http err, topic:{},group:{}", topic, group, e);
             }
             if (clusterInfoDTO == null) {
-                if (clusterInfoDTOResult.getStatus() == 201) {
-                    logger.warn("please register your {}:{} topic:{} in MQCloud first, times:{}",
-                            role() == 1 ? "producer" : "consumer", group, topic, times++);
-                } else {
-                    logger.warn("fetch topic:{} group:{} cluster info err:{}, times:{}", getTopic(), group,
-                            clusterInfoDTOResult.getMessage(), times++);
+                if (clusterInfoDTOResult != null) {
+                    if (clusterInfoDTOResult.getStatus() == 201) {
+                        logger.warn("please register your {}:{} topic:{} in MQCloud first, times:{}",
+                                role() == 1 ? "producer" : "consumer", group, topic, times++);
+                    } else {
+                        logger.warn("fetch topic:{} group:{} cluster info err:{}, times:{}", getTopic(), group,
+                                clusterInfoDTOResult.getMessage(), times++);
+                    }
                 }
                 try {
                     Thread.sleep(1000);
@@ -231,7 +235,7 @@ public abstract class AbstractConfig {
             TraceRocketMQProducer traceRocketMQProducer = new TraceRocketMQProducer(
                     CommonUtil.buildTraceTopicProducer(traceTopic), traceTopic);
             // 初始化TraceDispatcher
-            SohuAsyncTraceDispatcher traceDispatcher = new SohuAsyncTraceDispatcher(traceTopic);
+            traceDispatcher = new SohuAsyncTraceDispatcher(traceTopic);
             // 设置producer属性
             traceRocketMQProducer.getProducer().setSendMsgTimeout(5000);
             traceRocketMQProducer.getProducer().setMaxMessageSize(traceDispatcher.getMaxMsgSize() - 10 * 1000);
@@ -315,5 +319,11 @@ public abstract class AbstractConfig {
 
     public String getInstanceName() {
         return instanceName;
+    }
+    
+    public void shutdown(){
+    	if(traceDispatcher != null){
+    		traceDispatcher.shutdown();
+    	}
     }
 }

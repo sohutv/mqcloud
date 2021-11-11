@@ -1,8 +1,10 @@
 package com.sohu.tv.mq.cloud.task;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.Pair;
@@ -12,7 +14,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 
 import com.sohu.tv.mq.cloud.bo.Broker;
+import com.sohu.tv.mq.cloud.bo.BrokerFallBehind;
+import com.sohu.tv.mq.cloud.bo.BrokerFallBehind.ConsumerFallBehind;
 import com.sohu.tv.mq.cloud.bo.Cluster;
+import com.sohu.tv.mq.cloud.bo.UserWarn.WarnType;
 import com.sohu.tv.mq.cloud.common.model.BrokerMomentStatsData;
 import com.sohu.tv.mq.cloud.common.model.BrokerMomentStatsItem;
 import com.sohu.tv.mq.cloud.service.AlarmConfigBridingService;
@@ -51,7 +56,7 @@ public class ConsumeFallBehindTask {
 
     @Autowired
     private MQCloudConfigHelper mqCloudConfigHelper;
-    
+
     @Autowired
     private AlarmConfigBridingService alarmConfigBridingService;
 
@@ -121,31 +126,20 @@ public class ConsumeFallBehindTask {
      * @param fallBehindList
      */
     private void warn(List<Pair<Broker, BrokerMomentStatsData>> fallBehindList) {
-        // 过滤掉内置consumer
+        List<BrokerFallBehind> brokerFallBehindList = new ArrayList<>();
         for (Pair<Broker, BrokerMomentStatsData> pair : fallBehindList) {
-            BrokerMomentStatsData brokerMomentStatsData = pair.getObject2();
-            List<BrokerMomentStatsItem> list = brokerMomentStatsData.getBrokerMomentStatsItemList();
-            Iterator<BrokerMomentStatsItem> brokerMomentStatsItemIterator = list.iterator();
-            while (brokerMomentStatsItemIterator.hasNext()) {
-                BrokerMomentStatsItem brokerMomentStatsItem = brokerMomentStatsItemIterator.next();
-                String[] split = brokerMomentStatsItem.getKey().split("@");
-                // 内置consumer不检测
-                if (MixAll.TOOLS_CONSUMER_GROUP.equals(split[2])) {
-                    brokerMomentStatsItemIterator.remove();
-                }
-            }
-        }
-        // 预警信息拼装
-        StringBuilder content = new StringBuilder();
-        for (Pair<Broker, BrokerMomentStatsData> pair : fallBehindList) {
-            Broker broker = pair.getObject1();
             BrokerMomentStatsData brokerMomentStatsData = pair.getObject2();
             List<BrokerMomentStatsItem> list = brokerMomentStatsData.getBrokerMomentStatsItemList();
             Iterator<BrokerMomentStatsItem> iterator = list.iterator();
-            // 过滤掉超频的消费者
             while (iterator.hasNext()) {
                 BrokerMomentStatsItem brokerMomentStatsItem = iterator.next();
                 String[] split = brokerMomentStatsItem.getKey().split("@");
+                // 内置consumer不检测
+                if (MixAll.TOOLS_CONSUMER_GROUP.equals(split[2])) {
+                    iterator.remove();
+                    continue;
+                }
+                // 过滤掉超频的消费者
                 if (!alarmConfigBridingService.needWarn("consumerFallBehind", split[1], split[2])) {
                     iterator.remove();
                 }
@@ -153,64 +147,32 @@ public class ConsumeFallBehindTask {
             if (list.size() <= 0) {
                 continue;
             }
-            content.append("<tr>");
-            content.append("<td rowspan=" + list.size() + ">");
-            content.append(broker.getBrokerName());
-            content.append("</td>");
-            content.append("<td rowspan=" + list.size() + ">");
-            content.append(broker.getAddr());
-            content.append("</td>");
-            content.append("<td rowspan=" + list.size() + ">");
-            content.append(parseToG(brokerMomentStatsData.getMaxAccessMessageInMemory()));
-            content.append("</td>");
+            Broker broker = pair.getObject1();
+            BrokerFallBehind brokerFallBehind = new BrokerFallBehind();
+            brokerFallBehind.setBroker(broker.getBrokerName());
+            brokerFallBehind.setAddr(broker.getAddr());
+            brokerFallBehind.setMaxAccessMessageInMemory(brokerMomentStatsData.getMaxAccessMessageInMemory());
+            brokerFallBehindList.add(brokerFallBehind);
+            List<ConsumerFallBehind> consumerFallBehindList = new ArrayList<>();
             for (int i = 0; i < list.size(); ++i) {
                 BrokerMomentStatsItem brokerMomentStatsItem = list.get(i);
                 String[] split = brokerMomentStatsItem.getKey().split("@");
-                if (i != 0) {
-                    content.append("<tr>");
-                }
-                content.append("<td>");
-                content.append(split[1]);
-                content.append("</td>");
-                content.append("<td>");
-                content.append(split[0]);
-                content.append("</td>");
-                content.append("<td>");
-                content.append(mqCloudConfigHelper.getTopicConsumeLink(split[1], split[2]));
-                content.append("</td>");
-                content.append("<td>");
-                content.append(parse(brokerMomentStatsItem.getValue()));
-                content.append("</td>");
-                content.append("</tr>");
+                ConsumerFallBehind consumerFallBehind = brokerFallBehind.new ConsumerFallBehind();
+                consumerFallBehind.setQueue(split[0]);
+                consumerFallBehind.setTopic(split[1]);
+                consumerFallBehind.setConsumer(split[2]);
+                consumerFallBehind.setAccumulated(brokerMomentStatsItem.getValue());
+                consumerFallBehind.setConsumerLink(mqCloudConfigHelper.getTopicConsumeLink(split[1], split[2]));
+                consumerFallBehindList.add(consumerFallBehind);
             }
+            brokerFallBehind.setList(consumerFallBehindList);
         }
-        if (content.length() <= 0) {
+        if (brokerFallBehindList.size() == 0) {
             return;
         }
-        String header = "<table border=1><thead><tr><th>broker</th><th>地址</th><th>broker内存阈值</th><th>topic</th><th>队列</th>"
-                + "<th>consumer</th><th>落后大小</th></tr></thead><tbody>";
-        String footer = "</tbody></table>";
-        alertService.sendWarnMail(null, "消费落后", header + content.toString() + footer);
-    }
-
-    private String parseToG(long bytes) {
-        return format((double) bytes / (1024L * 1024L * 1024L)) + "G";
-    }
-
-    private String parse(long bytes) {
-        if (bytes < 1024) {
-            return bytes + "B";
-        }
-        if (bytes < 1024L * 1024L) {
-            return format((double) bytes / 1024L) + "K";
-        }
-        if (bytes < 1024L * 1024L * 1024L) {
-            return format((double) bytes / (1024L * 1024L)) + "M";
-        }
-        return parseToG(bytes);
-    }
-
-    private float format(double v) {
-        return (int)(v * 100) / 100.0f;
+        // 发送并保持邮件预警
+        Map<String, Object> paramMap = new HashMap<>();
+        paramMap.put("list", brokerFallBehindList);
+        alertService.sendWarn(null, WarnType.CONSUME_FALL_BEHIND, paramMap);
     }
 }

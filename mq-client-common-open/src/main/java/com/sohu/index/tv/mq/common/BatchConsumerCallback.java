@@ -10,12 +10,13 @@ import java.util.List;
  * @param <T> msg obj
  * @param MessageExt
  */
-public interface BatchConsumerCallback<T> {
+public interface BatchConsumerCallback<T, C> {
 
     /**
      * 订阅回调方法
-     *
-     * @return
+     * @param batchMessage
+     * @param context @ConsumeConcurrentlyContext or @ConsumeOrderlyContext
+     * @throws Exception
      */
-    void call(List<MQMessage<T>> batchMessage) throws Exception;
+    void call(List<MQMessage<T>> batchMessage, C context) throws Exception;
 }

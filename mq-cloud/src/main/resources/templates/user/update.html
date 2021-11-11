@@ -36,6 +36,17 @@
 											class="form-control" />
 									</div>
 								</div>
+								<div class="form-group">
+									<label class="control-label col-md-3"> 手机预警: </label>
+									<div class="col-md-5 checkbox">
+										<label data-toggle="tooltip" title="开启后，除了邮件预警外还会发送到手机">
+										    <input type="radio" id="receivePhoneNotice" name="receivePhoneNotice" value="1" <#if userInfo.user.receivePhoneNotice()>checked</#if>>开启
+										</label>
+										<label>
+										    <input type="radio" name="receivePhoneNotice" value="0" <#if !userInfo.user.receivePhoneNotice()>checked</#if>>关闭
+										</label>
+									</div>
+								</div>
 								<input type="hidden" name="type" value="${userInfo.user.type}"/>
 								<input type="hidden" name="id" value="${userInfo.user.id}"/>
 							</div>
@@ -126,7 +137,14 @@
 	                         message: '请输入正确的手机号码'
 	                     }
                     }
-                }
+                },
+                receivePhoneNotice: {
+                	validators: {
+                        notEmpty: {
+                            message: '请选择是否开启手机预警'
+                        }
+                    }
+                },
             }
         }).on('success.form.bv', function(e) {
             // 阻止默认事件提交
