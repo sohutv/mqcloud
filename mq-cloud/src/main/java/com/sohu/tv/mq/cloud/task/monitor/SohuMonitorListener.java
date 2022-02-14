@@ -277,6 +277,10 @@ public class SohuMonitorListener implements MonitorListener {
             return;
         }
         String consumerGroup = criTable.firstEntry().getValue().getProperties().getProperty("consumerGroup");
+        if (consumerGroup == null) {
+            log.warn("consumerGroup is null, runningInfo={}", criTable.firstEntry().getValue().formatString());
+            return;
+        }
         try {
             // 分析订阅关系
             boolean result = ConsumerRunningInfo.analyzeSubscription(criTable);

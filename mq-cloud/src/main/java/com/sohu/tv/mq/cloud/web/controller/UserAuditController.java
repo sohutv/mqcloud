@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import javax.validation.Valid;
+
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -17,6 +19,7 @@ import com.sohu.tv.mq.cloud.bo.Audit.TypeEnum;
 import com.sohu.tv.mq.cloud.service.AuditService;
 import com.sohu.tv.mq.cloud.util.Result;
 import com.sohu.tv.mq.cloud.util.Status;
+import com.sohu.tv.mq.cloud.web.controller.param.PaginationParam;
 import com.sohu.tv.mq.cloud.web.vo.AuditVO;
 import com.sohu.tv.mq.cloud.web.vo.UserInfo;
 
@@ -39,9 +42,19 @@ public class UserAuditController extends ViewController {
      * @throws Exception
      */
     @RequestMapping("/list")
-    public String list(UserInfo userInfo, Map<String, Object> map) throws Exception {
+    public String list(UserInfo userInfo, @Valid PaginationParam paginationParam, Map<String, Object> map) throws Exception {
         String view = viewModule() + "/list";
-        Result<List<Audit>> auditListResult = auditService.queryAuditList(userInfo.getUser().getId());
+        // 设置分页参数
+        setPagination(map, paginationParam);
+        // 获取警告数量
+        long uid = userInfo.getUser().getId();
+        Result<Integer> countResult = auditService.queryAuditCount(uid);
+        if (!countResult.isOK()) {
+            return view();
+        }
+        paginationParam.caculatePagination(countResult.getResult());
+        Result<List<Audit>> auditListResult = auditService.queryAuditList(uid, paginationParam.getBegin(),
+                paginationParam.getNumOfPage());
         // 拼装VO
         List<Audit> auditList = auditListResult.getResult();
         List<AuditVO> auditVOList = new ArrayList<AuditVO>(auditList.size());
