@@ -1,0 +1,85 @@
+<div id="switchUserModal" class="modal fade" tabindex="-1" data-width="400">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+				<h4 class="modal-title">切换身份</h4>
+			</div>
+			<form class="form-horizontal form-bordered form-row-stripped" id="switchUserForm">
+				<div class="modal-body">
+					<div class="row">
+						<div class="col-md-12">
+							<div class="form-body">
+								<div class="form-group">
+									<label class="control-label col-md-3"> 选择用户: </label>
+							        <div class="col-md-5">
+			    						<select id="switchUserSelect" class="selectpicker" title="请选择" data-live-search-placeholder="搜索" name="user" data-live-search="true"></select> 	  			
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" data-dismiss="modal" class="btn" >取消</button>
+					<button type="button" class="btn btn-primary" id="switchUserBtn" onclick="switchUser()">确定</button>
+				</div>
+			</form>
+		</div>
+	</div>
+</div>
+<script>
+	$(function(){
+		$('#switchUserSelect').selectpicker({
+		    width: '300px'
+		});
+		$('#switchUserModal').on('shown.bs.modal', function() {
+			initSwitchUserList();
+		});
+	});
+	
+	/**
+	 * 初始化user下拉列表
+	 */
+	function initSwitchUserList(){
+		$.post('${request.contextPath}/user/list',
+		        function(data){
+		            if(data.status == 200){
+		            	var content = "";
+		            	for(var i in data.result){
+		            		var user = data.result[i];
+		            		var value = user.email.substring(0, user.email.indexOf("@"));
+		            		if(user.name && user.name != value){
+		            			value = user.name + "【" + value +"】";
+		            		}
+		            		content += "<option value='"+user.id+"'>"+value+"</option>";	
+		            	}
+		        		$("#switchUserSelect").html(content);
+		        		$("#switchUserSelect").selectpicker('refresh');
+				    }else{
+				    	toastr.error("数据获取失败！"+data.message);  
+				    }
+	        }, 'json');
+	}
+	
+	function switchUser(){
+		if(!$("#switchUserSelect").val()){
+			alert("请选择欲切换的用户");
+			return;
+		}
+		disable("switchUserBtn");
+		$.post('${request.contextPath}/user/switch',
+				{
+					uid: $("#switchUserSelect").val()
+				},
+		        function(data){
+		            if(data.status == 200){
+		            	toastr.success("切换成功！即将刷新页面！");  	            	
+		            	reload(2000);            	
+				    }else{
+				    	toastr.error("操作失败！"+data.message);  
+				    	enable("switchUserBtn");
+				    }
+		    }, 'json');
+	}
+</script>

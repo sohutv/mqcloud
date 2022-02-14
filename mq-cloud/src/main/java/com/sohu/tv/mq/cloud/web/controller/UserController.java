@@ -39,7 +39,8 @@ import com.sohu.tv.mq.cloud.bo.Traffic;
 import com.sohu.tv.mq.cloud.bo.User;
 import com.sohu.tv.mq.cloud.bo.UserProducer;
 import com.sohu.tv.mq.cloud.bo.UserWarn;
-import com.sohu.tv.mq.cloud.dao.UserWarnCount;
+import com.sohu.tv.mq.cloud.bo.UserWarnCount;
+import com.sohu.tv.mq.cloud.common.util.CipherHelper;
 import com.sohu.tv.mq.cloud.mq.DefaultCallback;
 import com.sohu.tv.mq.cloud.mq.MQAdminTemplate;
 import com.sohu.tv.mq.cloud.service.AlertService;
@@ -120,6 +121,9 @@ public class UserController extends ViewController {
     
     @Autowired
     private UserWarnService userWarnService;
+    
+    @Autowired
+    private CipherHelper cipherHelper;
 
     /**
      * 退出登录
@@ -256,18 +260,17 @@ public class UserController extends ViewController {
         // 获取一分钟之前的topic流量数据
         Date oneMinuteAgo = new Date(System.currentTimeMillis() - 60000);
         String time = DateUtil.getFormat(DateUtil.HHMM).format(oneMinuteAgo);
-        String date = DateUtil.formatYMD(oneMinuteAgo);
         Result<List<TopicTraffic>> topicTrafficListResult = Result
                 .getResult(new ArrayList<TopicTraffic>(topicList.size()));
         if (!tidList.isEmpty()) {
-            Result<List<TopicTraffic>> trafficListResult = topicTrafficService.query(tidList, date, time);
+            Result<List<TopicTraffic>> trafficListResult = topicTrafficService.query(tidList, oneMinuteAgo, time);
             if (trafficListResult.isNotEmpty()) {
                 topicTrafficListResult.getResult().addAll(trafficListResult.getResult());
             }
         }
         if (!delayTidList.isEmpty()) {
             Result<List<TopicTraffic>> delayTrafficListResult = delayMessageService.query(delayTidList,
-                    Integer.parseInt(date), time);
+                    DateUtil.format(oneMinuteAgo), time);
             if (delayTrafficListResult.isNotEmpty()) {
                 topicTrafficListResult.getResult().addAll(delayTrafficListResult.getResult());
             }
@@ -303,7 +306,7 @@ public class UserController extends ViewController {
             }
             List<Long> cidList = consumerMap.get(topic.getId());
             // 查询consumer流量
-            Result<List<ConsumerTraffic>> consumerTrafficListResult = consumerTrafficService.query(cidList, date, time);
+            Result<List<ConsumerTraffic>> consumerTrafficListResult = consumerTrafficService.query(cidList, oneMinuteAgo, time);
             if (consumerTrafficListResult.isEmpty()) {
                 continue;
             }
@@ -413,14 +416,13 @@ public class UserController extends ViewController {
             // 获取一分钟之前的流量数据
             Date oneMinuteAgo = new Date(System.currentTimeMillis() - 60000);
             String time = DateUtil.getFormat(DateUtil.HHMM).format(oneMinuteAgo);
-            String date = DateUtil.formatYMD(oneMinuteAgo);
             List<Long> tidList = new ArrayList<Long>(1);
             tidList.add(topic.getId());
             Result<List<TopicTraffic>> topicTrafficListResult = null;
             if (topic.delayEnabled()) {
-                topicTrafficListResult = delayMessageService.query(tidList, Integer.parseInt(date), time);
+                topicTrafficListResult = delayMessageService.query(tidList, DateUtil.format(oneMinuteAgo), time);
             } else {
-                topicTrafficListResult = topicTrafficService.query(tidList, date, time);
+                topicTrafficListResult = topicTrafficService.query(tidList, oneMinuteAgo, time);
             }
 
             if (topicTrafficListResult.isNotEmpty()) {
@@ -436,7 +438,7 @@ public class UserController extends ViewController {
                 for (Consumer c : consumerList) {
                     cidList.add(c.getId());
                 }
-                Result<List<ConsumerTraffic>> consumerTrafficListResult = consumerTrafficService.query(cidList, date,
+                Result<List<ConsumerTraffic>> consumerTrafficListResult = consumerTrafficService.query(cidList, oneMinuteAgo,
                         time);
                 if (consumerTrafficListResult.isNotEmpty()) {
                     for (Consumer c : consumerList) {
@@ -500,8 +502,12 @@ public class UserController extends ViewController {
                             if (rst.isOK()) {
                                 Integer count = rst.getResult();
                                 if (count != null && count > 0) {
-                                    statsProducer.copyTraffic(result.getResult().getTopicTraffic());
-                                    statsProducer.getTraffic().setCount(count);
+                                    if (result.getResult().getTopicTraffic() != null) {
+                                        statsProducer.copyTraffic(result.getResult().getTopicTraffic());
+                                    }
+                                    if (statsProducer.getTraffic() != null) {
+                                        statsProducer.getTraffic().setCount(count);
+                                    }
                                 }
                             }
                         }
@@ -512,15 +518,15 @@ public class UserController extends ViewController {
             // 获取总流量
             Result<TopicTraffic> topicTrafficResult = null;
             if (topic.delayEnabled()) {
-                topicTrafficResult = delayMessageService.query(topic.getId(), Integer.parseInt(date));
+                topicTrafficResult = delayMessageService.query(topic.getId(), DateUtil.format(oneMinuteAgo));
             } else {
-                topicTrafficResult = topicTrafficService.queryTotalTraffic(topic.getId(), date);
+                topicTrafficResult = topicTrafficService.queryTotalTraffic(topic.getId(), oneMinuteAgo);
             }
             if (topicTrafficResult.isOK()) {
                 result.getResult().setTotalTopicTraffic(topicTrafficResult.getResult());
             }
             if (cidList != null && cidList.size() > 0) {
-                Result<ConsumerTraffic> consumerTrafficResult = consumerTrafficService.queryTotalTraffic(cidList, date);
+                Result<ConsumerTraffic> consumerTrafficResult = consumerTrafficService.queryTotalTraffic(cidList, oneMinuteAgo);
                 if (consumerTrafficResult.isOK()) {
                     result.getResult().setTotalConsumerTraffic(consumerTrafficResult.getResult());
                 }
@@ -730,6 +736,33 @@ public class UserController extends ViewController {
     public Result<List<UserWarnCount>> warn(UserInfo userInfo, @RequestParam("days") int days, Map<String, Object> map)
             throws Exception {
         return userWarnService.queryUserWarnCount(userInfo.getUser().getId(), days);
+    }
+    
+    /**
+     * 切换用户
+     * 
+     * @param userInfo
+     * @param toUser
+     * @param response
+     * @return
+     */
+    @ResponseBody
+    @RequestMapping("/switch")
+    public Result<?> switchUser(UserInfo userInfo, @RequestParam("uid") long uid, HttpServletResponse response) {
+        if (!userInfo.getUser().isAdmin()) {
+            logger.warn("user:{} is not admin", userInfo.getUser().getEmail());
+            return Result.getResult(Status.PERMISSION_DENIED_ERROR);
+        }
+        if (userInfo.getUser().getId() != uid) {
+            Result<User> userResult = userService.query(uid);
+            if (userResult.isOK()) {
+                User user = userResult.getResult();
+                // 设置到cookie中
+                WebUtil.setLoginCookie(response, cipherHelper.encrypt(user.getEmail()));
+                logger.info("{} switch to {}", userInfo.getUser().getEmail(), user.getEmail());
+            }
+        }
+        return Result.getOKResult();
     }
     
     @Override
