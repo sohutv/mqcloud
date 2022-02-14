@@ -9,6 +9,7 @@ import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 
 import com.sohu.tv.mq.cloud.bo.UserWarn;
+import com.sohu.tv.mq.cloud.bo.UserWarnCount;
 
 /**
  * 用户警告

@@ -13,8 +13,8 @@ import org.springframework.util.CollectionUtils;
 
 import com.sohu.tv.mq.cloud.bo.User;
 import com.sohu.tv.mq.cloud.bo.UserWarn;
+import com.sohu.tv.mq.cloud.bo.UserWarnCount;
 import com.sohu.tv.mq.cloud.bo.UserWarn.WarnType;
-import com.sohu.tv.mq.cloud.dao.UserWarnCount;
 import com.sohu.tv.mq.cloud.dao.UserWarnDao;
 import com.sohu.tv.mq.cloud.util.Result;
 

@@ -12,8 +12,8 @@ import org.springframework.test.context.junit4.SpringRunner;
 
 import com.sohu.tv.mq.cloud.Application;
 import com.sohu.tv.mq.cloud.bo.UserWarn;
+import com.sohu.tv.mq.cloud.bo.UserWarnCount;
 import com.sohu.tv.mq.cloud.bo.UserWarn.WarnType;
-import com.sohu.tv.mq.cloud.dao.UserWarnCount;
 import com.sohu.tv.mq.cloud.util.Result;
 
 @RunWith(SpringRunner.class)
