@@ -24,10 +24,10 @@ public class DeadMessageTask {
     private TaskExecutor taskExecutor;
     
     /**
-     * 每小时的3分33监控一次
+     * 每10分钟监控一次
      */
-    @Scheduled(cron = "33 03 * * * *")
-    @SchedulerLock(name = "deadMessageTask", lockAtMostFor = 180000, lockAtLeastFor = 180000)
+    @Scheduled(cron = "15 */10 * * * *")
+    @SchedulerLock(name = "deadMessageTask", lockAtMostFor = 600000, lockAtLeastFor = 600000)
     public void deadMessageTask() {
         taskExecutor.execute(new Runnable() {
             public void run() {
