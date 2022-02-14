@@ -33,7 +33,7 @@ public class TopicTrafficDaoTest {
     
     @Test
     public void testQuery() {
-        List<TopicTraffic> result = topicTrafficDao.select(1, "20180626");
+        List<TopicTraffic> result = topicTrafficDao.select(1, DateUtil.parse(DateUtil.YMD, "20180626"));
         Assert.assertNotNull(result);
     }
 
@@ -52,7 +52,7 @@ public class TopicTrafficDaoTest {
         timeList.add("1719");
         List<Integer> list = new ArrayList<>();
         list.add(1);
-        List<TopicTraffic> result = topicTrafficDao.selectByDateTime("2018-07-31", timeList, list);
+        List<TopicTraffic> result = topicTrafficDao.selectByDateTime(DateUtil.parse(DateUtil.YMD, "20180731"), timeList, list);
         Assert.assertNotNull(result);
     }
 
@@ -70,7 +70,7 @@ public class TopicTrafficDaoTest {
         timeList.add("1621");
         timeList.add("1622");
         timeList.add("1622");
-        List<TopicTraffic> res = topicTrafficDao.selectByCreateDateAndTime(700, "2020-08-21", timeList);
+        List<TopicTraffic> res = topicTrafficDao.selectByCreateDateAndTime(700, DateUtil.parse(DateUtil.YMD, "20180731"), timeList);
         System.out.println(res.size());
         for(TopicTraffic topicTraffic : res) {
             System.out.println(topicTraffic.getCreateTime());

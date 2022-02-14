@@ -28,6 +28,7 @@ import com.sohu.tv.mq.cloud.bo.AuditConsumerDelete;
 import com.sohu.tv.mq.cloud.bo.AuditResendMessage;
 import com.sohu.tv.mq.cloud.bo.AuditResendMessageConsumer;
 import com.sohu.tv.mq.cloud.bo.AuditResetOffset;
+import com.sohu.tv.mq.cloud.bo.AuditTimespanMessageConsume;
 import com.sohu.tv.mq.cloud.bo.AuditTopic;
 import com.sohu.tv.mq.cloud.bo.AuditTopicDelete;
 import com.sohu.tv.mq.cloud.bo.AuditTopicTrace;
@@ -40,16 +41,7 @@ import com.sohu.tv.mq.cloud.bo.Topic;
 import com.sohu.tv.mq.cloud.bo.User;
 import com.sohu.tv.mq.cloud.bo.UserConsumer;
 import com.sohu.tv.mq.cloud.bo.UserProducer;
-import com.sohu.tv.mq.cloud.dao.AuditConsumerConfigDao;
-import com.sohu.tv.mq.cloud.dao.AuditConsumerDeleteDao;
 import com.sohu.tv.mq.cloud.dao.AuditDao;
-import com.sohu.tv.mq.cloud.dao.AuditResetOffsetDao;
-import com.sohu.tv.mq.cloud.dao.AuditTopicDeleteDao;
-import com.sohu.tv.mq.cloud.dao.AuditTopicTraceDao;
-import com.sohu.tv.mq.cloud.dao.AuditTopicTrafficWarnDao;
-import com.sohu.tv.mq.cloud.dao.AuditTopicUpdateDao;
-import com.sohu.tv.mq.cloud.dao.AuditUserConsumerDeleteDao;
-import com.sohu.tv.mq.cloud.dao.AuditUserProducerDeleteDao;
 import com.sohu.tv.mq.cloud.dao.UserConsumerDao;
 import com.sohu.tv.mq.cloud.dao.UserProducerDao;
 import com.sohu.tv.mq.cloud.util.Result;
@@ -70,6 +62,7 @@ import com.sohu.tv.mq.cloud.web.vo.AuditUserProducerDeleteVO;
 import com.sohu.tv.mq.cloud.web.vo.AuditVO;
 import com.sohu.tv.mq.cloud.web.vo.TopicInfoVO;
 import com.sohu.tv.mq.cloud.web.vo.UserTopicInfoVO;
+
 /**
  * audit服务
  * 
@@ -96,24 +89,6 @@ public class AuditService {
 
     @Autowired
     private AuditConsumerService auditConsumerService;
-
-    @Autowired
-    private AuditTopicDeleteDao auditTopicDeleteDao;
-
-    @Autowired
-    private AuditConsumerDeleteDao auditConsumerDeleteDao;
-
-    @Autowired
-    private AuditResetOffsetDao auditResetOffsetDao;
-
-    @Autowired
-    private AuditTopicUpdateDao auditTopicUpdateDao;
-
-    @Autowired
-    private AuditUserProducerDeleteDao auditUserProducerDeleteDao;
-
-    @Autowired
-    private AuditUserConsumerDeleteDao auditUserConsumerDeleteDao;
 
     @Autowired
     private AuditResendMessageService auditResendMessageService;
@@ -152,9 +127,6 @@ public class AuditService {
     private ConsumerService consumerService;
 
     @Autowired
-    private AuditTopicTraceDao auditTopicTraceDao;
-
-    @Autowired
     private AuditTopicTraceService auditTopicTraceService;
 
     @Autowired
@@ -165,18 +137,15 @@ public class AuditService {
 
     @Autowired
     private UserConsumerDao userConsumerDao;
-    
-    @Autowired
-    private AuditConsumerConfigService auditConsumerConfigService;
-    
-    @Autowired
-    private AuditConsumerConfigDao auditConsumerConfigDao;
 
     @Autowired
-    private AuditTopicTrafficWarnDao auditTopicTrafficWarnDao;
+    private AuditConsumerConfigService auditConsumerConfigService;
 
     @Autowired
     private AuditTopicTrafficWarnService auditTopicTrafficWarnService;
+
+    @Autowired
+    private AuditTimespanMessageConsumeService auditTimespanMessageConsumeService;
 
     /**
      * 查询列表
@@ -194,7 +163,7 @@ public class AuditService {
         }
         return Result.getResult(auditList);
     }
-    
+
     /**
      * 查询列表
      * 
@@ -211,7 +180,7 @@ public class AuditService {
         }
         return Result.getResult(count);
     }
-    
+
     /**
      * 查询列表
      * 
@@ -394,7 +363,7 @@ public class AuditService {
             count = auditDao.insert(audit);
             // 如果保存成功，保存auditTopic
             if (count != null && count > 0) {
-                auditTopicDeleteDao.insert(audit.getId(), tid, topic);
+                auditTopicDeleteService.save(audit.getId(), tid, topic);
             }
         } catch (DuplicateKeyException e) {
             logger.warn("duplicate key:{}", audit);
@@ -422,7 +391,7 @@ public class AuditService {
             count = auditDao.insert(audit);
             // 如果保存成功，保存auditTopic
             if (count != null && count > 0) {
-                auditTopicTraceDao.insert(audit.getId(), tid, traceEnabled);
+                auditTopicTraceService.save(audit.getId(), tid, traceEnabled);
             }
         } catch (Exception e) {
             logger.error("insert err, audit:{}", audit, e);
@@ -447,7 +416,7 @@ public class AuditService {
             count = auditDao.insert(audit);
             // 如果保存成功，保存auditTopic
             if (count != null && count > 0) {
-                auditTopicTrafficWarnDao.insert(audit.getId(), tid, trafficWarnEnabled);
+                auditTopicTrafficWarnService.save(audit.getId(), tid, trafficWarnEnabled);
             }
         } catch (Exception e) {
             logger.error("insert err, audit:{}", audit, e);
@@ -472,7 +441,7 @@ public class AuditService {
             // 如果保存成功，保存auditTopicUpdate
             if (count != null && count > 0) {
                 auditTopicUpdate.setAid(audit.getId());
-                auditTopicUpdateDao.insert(auditTopicUpdate);
+                auditTopicUpdateService.save(auditTopicUpdate);
             }
         } catch (Exception e) {
             logger.error("insert err, audit:{}", audit, e);
@@ -494,7 +463,7 @@ public class AuditService {
         try {
             count = auditDao.insert(audit);
             if (count != null && count > 0) {
-                auditConsumerDeleteDao.insert(audit.getId(), cid, consumer, topic);
+                auditConsumerDeleteService.save(audit.getId(), cid, consumer, topic);
             }
         } catch (Exception e) {
             logger.error("insert err, audit:{}", audit, e);
@@ -518,7 +487,7 @@ public class AuditService {
             count = auditDao.insert(audit);
             if (count != null && count > 0) {
                 auditResetOffset.setAid(audit.getId());
-                auditResetOffsetDao.insert(auditResetOffset);
+                auditResetOffsetService.save(auditResetOffset);
             }
         } catch (Exception e) {
             logger.error("insert err, audit:{}", audit, e);
@@ -526,6 +495,31 @@ public class AuditService {
             return Result.getDBErrorResult(e);
         }
         return Result.getResult(audit);
+    }
+
+    /**
+     * 保存审核以及时间段消息消费
+     * 
+     * @param audit
+     * @param topicParam
+     * @return
+     */
+    @Transactional
+    public Result<?> saveAuditAndAuditTimespanMessageConsume(Audit audit,
+            AuditTimespanMessageConsume auditTimespanMessageConsume) {
+        Long count = null;
+        try {
+            count = auditDao.insert(audit);
+            if (count != null && count > 0) {
+                auditTimespanMessageConsume.setAid(audit.getId());
+                auditTimespanMessageConsumeService.save(auditTimespanMessageConsume);
+            }
+        } catch (Exception e) {
+            logger.error("insert err, audit:{}", audit, e);
+            TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+            return Result.getDBErrorResult(e);
+        }
+        return Result.getOKResult();
     }
 
     /**
@@ -555,7 +549,7 @@ public class AuditService {
         Integer result = null;
         try {
             result = auditDao.update(audit);
-            if(result == 0) {
+            if (result == 0) {
                 return Result.getResult(Status.AUDITED);
             }
         } catch (Exception e) {
@@ -564,7 +558,7 @@ public class AuditService {
         }
         return Result.getResult(result);
     }
-    
+
     /**
      * 更新
      * 
@@ -575,7 +569,7 @@ public class AuditService {
         Integer result = null;
         try {
             result = auditDao.updateStatus(audit);
-            if(result == 0) {
+            if (result == 0) {
                 return Result.getResult(Status.AUDITED);
             }
         } catch (Exception e) {
@@ -600,7 +594,7 @@ public class AuditService {
         try {
             count = auditDao.insert(audit);
             if (count != null && count > 0) {
-                auditUserProducerDeleteDao.insert(audit.getId(), pid, producer, topic, uid);
+                auditUserProducerDeleteService.save(audit.getId(), pid, producer, topic, uid);
             }
         } catch (Exception e) {
             logger.error("insert err, audit:{}", audit, e);
@@ -616,7 +610,7 @@ public class AuditService {
         try {
             count = auditDao.insert(audit);
             if (count != null && count > 0) {
-                auditUserConsumerDeleteDao.insert(audit.getId(), ucid, consumer, topic, uid);
+                auditUserConsumerDeleteService.save(audit.getId(), ucid, consumer, topic, uid);
             }
         } catch (Exception e) {
             logger.error("insert err, audit:{}", audit, e);
@@ -661,15 +655,32 @@ public class AuditService {
      * @param type
      * @return status
      */
-    public Result<List<Audit>> queryAuditList(long uid) {
+    public Result<List<Audit>> queryAuditList(long uid, int offset, int size) {
         List<Audit> auditList = null;
         try {
-            auditList = auditDao.selectByUid(uid);
+            auditList = auditDao.selectByUid(uid, offset, size);
         } catch (Exception e) {
             logger.error("queryAuditList err, uid:{}", uid, e);
             return Result.getDBErrorResult(e);
         }
         return Result.getResult(auditList);
+    }
+    
+    /**
+     * 查询用户审核量
+     * 
+     * @param uid
+     * @return
+     */
+    public Result<Integer> queryAuditCount(long uid) {
+        Integer count = null;
+        try {
+            count = auditDao.selectCountByUid(uid);
+        } catch (Exception e) {
+            logger.error("queryAuditCount err, uid:{}", uid, e);
+            return Result.getDBErrorResult(e);
+        }
+        return Result.getResult(count);
     }
 
     /**
@@ -718,6 +729,8 @@ public class AuditService {
                 return getConsumerConfig(aid);
             case UPDATE_TOPIC_TRAFFIC_WARN:
                 return getUpdateTopicTrafficWarnResult(aid);
+            case TIMESPAN_MESSAGE_CONSUME:
+                return getTimespanMessageConsumeResult(aid);
         }
         return null;
     }
@@ -1444,7 +1457,7 @@ public class AuditService {
         }
         return Result.getOKResult();
     }
-    
+
     /**
      * 获取消费者配置
      * 
@@ -1497,6 +1510,16 @@ public class AuditService {
     }
 
     /**
+     * 获取时间段消费
+     *
+     * @param aid
+     * @return Result
+     */
+    private Result<?> getTimespanMessageConsumeResult(long aid) {
+        return auditTimespanMessageConsumeService.query(aid);
+    }
+
+    /**
      * 保存审核以及消费者配置
      * 
      * @return
@@ -1508,7 +1531,7 @@ public class AuditService {
             count = auditDao.insert(audit);
             if (count != null && count > 0) {
                 auditConsumerConfig.setAid(audit.getId());
-                auditConsumerConfigDao.insert(auditConsumerConfig);
+                auditConsumerConfigService.save(auditConsumerConfig);
             }
         } catch (Exception e) {
             logger.error("insert err, audit:{}", audit, e);

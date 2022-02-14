@@ -128,7 +128,7 @@ public abstract class TrafficService<T extends Traffic> {
      * @param date
      * @return Result<List<T>>
      */
-    public abstract Result<List<T>> query(long id, String date);
+    public abstract Result<List<T>> query(long id, Date date);
 
     /**
      * 查询数据
@@ -137,7 +137,7 @@ public abstract class TrafficService<T extends Traffic> {
      * @param date
      * @return Result<List<T>>
      */
-    public abstract Result<List<T>> query(List<Long> idList, String date);
+    public abstract Result<List<T>> query(List<Long> idList, Date date);
 
     /**
      * 查询数据
@@ -147,7 +147,7 @@ public abstract class TrafficService<T extends Traffic> {
      * @param time
      * @return Result<List<T>>
      */
-    public abstract Result<List<T>> query(List<Long> idList, String date, String time);
+    public abstract Result<List<T>> query(List<Long> idList, Date date, String time);
     
     /**
      * 处理traffic数据

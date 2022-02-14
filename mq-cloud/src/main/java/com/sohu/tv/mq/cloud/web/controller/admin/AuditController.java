@@ -30,6 +30,7 @@ import com.sohu.tv.mq.cloud.bo.AuditConsumerConfig;
 import com.sohu.tv.mq.cloud.bo.AuditConsumerDelete;
 import com.sohu.tv.mq.cloud.bo.AuditResendMessage;
 import com.sohu.tv.mq.cloud.bo.AuditResetOffset;
+import com.sohu.tv.mq.cloud.bo.AuditTimespanMessageConsume;
 import com.sohu.tv.mq.cloud.bo.AuditTopic;
 import com.sohu.tv.mq.cloud.bo.AuditTopicDelete;
 import com.sohu.tv.mq.cloud.bo.AuditTopicTrace;
@@ -54,6 +55,7 @@ import com.sohu.tv.mq.cloud.service.AuditConsumerService;
 import com.sohu.tv.mq.cloud.service.AuditResendMessageService;
 import com.sohu.tv.mq.cloud.service.AuditResetOffsetService;
 import com.sohu.tv.mq.cloud.service.AuditService;
+import com.sohu.tv.mq.cloud.service.AuditTimespanMessageConsumeService;
 import com.sohu.tv.mq.cloud.service.AuditTopicDeleteService;
 import com.sohu.tv.mq.cloud.service.AuditTopicService;
 import com.sohu.tv.mq.cloud.service.AuditTopicTraceService;
@@ -155,12 +157,15 @@ public class AuditController extends AdminViewController {
 
     @Autowired
     private AuditTopicTraceService auditTopicTraceService;
-    
+
     @Autowired
     private AuditConsumerConfigService auditConsumerConfigService;
 
     @Autowired
     private AuditTopicTrafficWarnService auditTopicTrafficWarnService;
+
+    @Autowired
+    private AuditTimespanMessageConsumeService auditTimespanMessageConsumeService;
 
     /**
      * 审核主列表
@@ -172,7 +177,7 @@ public class AuditController extends AdminViewController {
      */
     @RequestMapping("/list")
     public String list(@RequestParam(value = "type", defaultValue = "-1") int type,
-            @RequestParam(value = "status", defaultValue = "0") int status, @Valid PaginationParam paginationParam, 
+            @RequestParam(value = "status", defaultValue = "0") int status, @Valid PaginationParam paginationParam,
             Map<String, Object> map) {
         // 设置返回视图及常量
         setView(map, "list");
@@ -334,6 +339,9 @@ public class AuditController extends AdminViewController {
                 case UPDATE_TOPIC_TRAFFIC_WARN:
                     msg = getUpdateTopicTrafficWarnMessage(aid);
                     break;
+                case TIMESPAN_MESSAGE_CONSUME:
+                    msg = getTimespanMessageConsumeResult(aid);
+                    break;
             }
             StringBuilder sb = new StringBuilder("您");
             if (audit.getCreateTime() != null) {
@@ -357,6 +365,21 @@ public class AuditController extends AdminViewController {
             return updateResult;
         }
         return Result.getResult(Status.PARAM_ERROR);
+    }
+
+    /**
+     * 获取时间段消费
+     *
+     * @param aid
+     * @return Result
+     */
+    private String getTimespanMessageConsumeResult(long aid) {
+        Result<AuditTimespanMessageConsume> result = auditTimespanMessageConsumeService.query(aid);
+        if (result.isNotOK()) {
+            return null;
+        }
+        return result.getResult().getTopic() + "(" + result.getResult().getStartFormat() + ","
+                + result.getResult().getEndFormat() + ")";
     }
 
     /**
@@ -546,7 +569,7 @@ public class AuditController extends AdminViewController {
      * @return
      */
     @ResponseBody
-    @RequestMapping(value = "/become/admin", method = RequestMethod.POST)
+    @RequestMapping(value = "/becomeAdmin", method = RequestMethod.POST)
     public Result<?> becomeAdmin(UserInfo userInfo,
             @RequestParam("aid") long aid) {
         // 获取audit
@@ -646,8 +669,8 @@ public class AuditController extends AdminViewController {
      * @return
      */
     @ResponseBody
-    @RequestMapping(value = "/consumer/create", method = RequestMethod.POST)
-    public Result<?> createConsumer(UserInfo userInfo,
+    @RequestMapping(value = "/addConsumer", method = RequestMethod.POST)
+    public Result<?> addConsumer(UserInfo userInfo,
             @RequestParam("aid") long aid) {
         // 获取audit
         Result<Audit> auditResult = auditService.queryAudit(aid);
@@ -702,7 +725,7 @@ public class AuditController extends AdminViewController {
         if (consumerConfigResult.isNotOK()) {
             logger.error("save consumer{} rate limit error", auditConsumer.getConsumer());
         }
-        
+
         // 更新申请状态
         boolean updateOK = agreeAndTip(audit, userInfo.getUser().getEmail(), consumer.getName());
         if (updateOK) {
@@ -719,7 +742,7 @@ public class AuditController extends AdminViewController {
      * @return
      */
     @ResponseBody
-    @RequestMapping(value = "/producer/associate", method = RequestMethod.POST)
+    @RequestMapping(value = "/associateProducer", method = RequestMethod.POST)
     public Result<?> associateProducer(UserInfo userInfo,
             @RequestParam("aid") long aid) {
         // 获取audit
@@ -808,7 +831,7 @@ public class AuditController extends AdminViewController {
      * @return
      */
     @ResponseBody
-    @RequestMapping(value = "/consumer/associate", method = RequestMethod.POST)
+    @RequestMapping(value = "/associateConsumer", method = RequestMethod.POST)
     public Result<?> associateConsumer(UserInfo userInfo,
             @RequestParam("aid") long aid) {
         // 获取audit
@@ -858,7 +881,7 @@ public class AuditController extends AdminViewController {
      * @return
      */
     @ResponseBody
-    @RequestMapping(value = "/topic/delete", method = RequestMethod.POST)
+    @RequestMapping(value = "/deleteTopic", method = RequestMethod.POST)
     public Result<?> deleteTopic(UserInfo userInfo,
             @RequestParam("aid") long aid) {
         // 获取audit
@@ -906,7 +929,7 @@ public class AuditController extends AdminViewController {
      * @return
      */
     @ResponseBody
-    @RequestMapping(value = "/topic/update", method = RequestMethod.POST)
+    @RequestMapping(value = "/updateTopic", method = RequestMethod.POST)
     public Result<?> updateTopic(UserInfo userInfo,
             @RequestParam("aid") long aid) {
         // 获取audit
@@ -956,7 +979,7 @@ public class AuditController extends AdminViewController {
      * @return
      */
     @ResponseBody
-    @RequestMapping(value = "/consumer/delete", method = RequestMethod.POST)
+    @RequestMapping(value = "/deleteConsumer", method = RequestMethod.POST)
     public Result<?> deleteConsumer(UserInfo userInfo,
             @RequestParam("aid") long aid) {
         // 获取audit
@@ -1011,7 +1034,7 @@ public class AuditController extends AdminViewController {
      * @return
      */
     @ResponseBody
-    @RequestMapping(value = "/userProducer/delete", method = RequestMethod.POST)
+    @RequestMapping(value = "/deleteUserProducer", method = RequestMethod.POST)
     public Result<?> deleteUserProducer(UserInfo userInfo, @RequestParam("aid") long aid) {
         // 获取audit
         Result<Audit> auditResult = auditService.queryAudit(aid);
@@ -1065,7 +1088,7 @@ public class AuditController extends AdminViewController {
      * @return
      */
     @ResponseBody
-    @RequestMapping(value = "/userConsumer/delete", method = RequestMethod.POST)
+    @RequestMapping(value = "/deleteUserConsumer", method = RequestMethod.POST)
     public Result<?> deleteUserConsumer(UserInfo userInfo, @RequestParam("aid") long aid) {
         // 获取audit
         Result<Audit> auditResult = auditService.queryAudit(aid);
@@ -1112,7 +1135,7 @@ public class AuditController extends AdminViewController {
      * @throws ParseException
      */
     @ResponseBody
-    @RequestMapping(value = "/reset/offset", method = RequestMethod.POST)
+    @RequestMapping(value = "/resetOffset", method = RequestMethod.POST)
     public Result<?> resetOffset(UserInfo userInfo, @RequestParam("aid") long aid) throws ParseException {
         // 获取audit
         Result<Audit> auditResult = auditService.queryAudit(aid);
@@ -1217,7 +1240,7 @@ public class AuditController extends AdminViewController {
      * @return
      */
     @ResponseBody
-    @RequestMapping(value = "/resend/message", method = RequestMethod.POST)
+    @RequestMapping(value = "/resendMessage", method = RequestMethod.POST)
     public Result<?> resendMessage(UserInfo userInfo, @RequestParam("aid") long aid) {
         // 获取audit
         Result<Audit> auditResult = auditService.queryAudit(aid);
@@ -1302,7 +1325,7 @@ public class AuditController extends AdminViewController {
      * @return
      */
     @ResponseBody
-    @RequestMapping(value = "/topic/update/trace", method = RequestMethod.POST)
+    @RequestMapping(value = "/updateTopicTrace", method = RequestMethod.POST)
     public Result<?> updateTopicTrace(UserInfo userInfo,
             @RequestParam("aid") long aid,
             @RequestParam("traceClusterId") int traceClusterId) {
@@ -1356,9 +1379,9 @@ public class AuditController extends AdminViewController {
      * @return
      */
     @ResponseBody
-    @RequestMapping(value = "/topic/update/trafficWarn", method = RequestMethod.POST)
+    @RequestMapping(value = "/updateTopicTrafficWarn", method = RequestMethod.POST)
     public Result<?> updateTopicTrafficWarn(UserInfo userInfo,
-                                      @RequestParam("aid") long aid) {
+            @RequestParam("aid") long aid) {
         // 获取audit
         Result<Audit> auditResult = auditService.queryAudit(aid);
         if (auditResult.isNotOK()) {
@@ -1409,7 +1432,7 @@ public class AuditController extends AdminViewController {
      */
     @SuppressWarnings({"unchecked"})
     @ResponseBody
-    @RequestMapping(value = "/batch/associate", method = RequestMethod.POST)
+    @RequestMapping(value = "/batchAssociate", method = RequestMethod.POST)
     public Result<?> batchAssociate(UserInfo userInfo,
             @RequestParam("aid") long aid) {
         // 获取audit
@@ -1467,7 +1490,7 @@ public class AuditController extends AdminViewController {
         }
         return Result.getResult(Status.DB_UPDATE_ERR_ASSOCIATE_PRODUCER_OK);
     }
-    
+
     /**
      * 获取提示消息
      * 
@@ -1500,6 +1523,20 @@ public class AuditController extends AdminViewController {
     }
     
     /**
+     * 暂停消息
+     * 
+     * @param aid
+     * @param map
+     * @return
+     * @throws ParseException
+     */
+    @ResponseBody
+    @RequestMapping(value = "/pauseConsume", method = RequestMethod.POST)
+    public Result<?> pauseConsume(UserInfo userInfo, @RequestParam("aid") long aid) throws ParseException {
+        return updateConsumerConfig(userInfo, aid);
+    }
+
+    /**
      * 更新客户端配置
      * 
      * @param aid
@@ -1508,7 +1545,7 @@ public class AuditController extends AdminViewController {
      * @throws ParseException
      */
     @ResponseBody
-    @RequestMapping(value = "/update/consumer/config", method = RequestMethod.POST)
+    @RequestMapping(value = "/limitConsume", method = RequestMethod.POST)
     public Result<?> updateConsumerConfig(UserInfo userInfo, @RequestParam("aid") long aid) throws ParseException {
         // 获取audit
         Result<Audit> auditResult = auditService.queryAudit(aid);
@@ -1549,11 +1586,65 @@ public class AuditController extends AdminViewController {
         }
         return Result.getResult(Status.DB_UPDATE_ERR_UPDATE_CONSUMER_CONFIG_OK);
     }
-    
-    private Result<?> getAuditStatusError(int status){
-        return Result.getResult(Status.WEB_ERROR).setMessage("已"+StatusEnum.getNameByStatus(status));
+
+    private Result<?> getAuditStatusError(int status) {
+        return Result.getResult(Status.WEB_ERROR).setMessage("已" + StatusEnum.getNameByStatus(status));
     }
-    
+
+    /**
+     * 消费时间段消息
+     * 
+     * @param aid
+     * @param map
+     * @return
+     * @throws ParseException
+     */
+    @ResponseBody
+    @RequestMapping(value = "/timespanMessageConsume", method = RequestMethod.POST)
+    public Result<?> timespanMessageConsume(UserInfo userInfo, @RequestParam("aid") long aid) throws ParseException {
+        // 获取audit
+        Result<Audit> auditResult = auditService.queryAudit(aid);
+        if (auditResult.isNotOK()) {
+            return auditResult;
+        }
+        // 校验状态是否合法
+        Audit audit = auditResult.getResult();
+        if (StatusEnum.INIT.getStatus() != audit.getStatus()) {
+            return getAuditStatusError(audit.getStatus());
+        }
+        // 查询审核记录
+        Result<AuditTimespanMessageConsume> result = auditTimespanMessageConsumeService.query(aid);
+        if (result.isNotOK()) {
+            return result;
+        }
+        AuditTimespanMessageConsume auditTimespanMessageConsume = result.getResult();
+        // 获取consumer
+        Result<Consumer> consResult = consumerService.queryConsumerByName(auditTimespanMessageConsume.getConsumer());
+        if (consResult.isNotOK()) {
+            return consResult;
+        }
+        // 获取topic
+        Result<Topic> topicResult = topicService.queryTopic(consResult.getResult().getTid());
+        if (topicResult.isNotOK()) {
+            return topicResult;
+        }
+        // 获取cluster
+        Cluster cluster = clusterService.getMQClusterById(topicResult.getResult().getClusterId());
+        // 消费
+        Result<?> consumeResult = consumerService.consumeTimespanMessage(cluster, auditTimespanMessageConsume);
+        if (consumeResult.isNotOK()) {
+            return Result.getWebResult(consumeResult);
+        }
+        String tip = auditTimespanMessageConsume.getTopic() + "(" + auditTimespanMessageConsume.getStartFormat() + ","
+                + auditTimespanMessageConsume.getEndFormat() + ")";
+        // 更新申请状态
+        boolean updateOK = agreeAndTip(audit, userInfo.getUser().getEmail(), tip);
+        if (updateOK) {
+            return Result.getOKResult();
+        }
+        return Result.getResult(Status.DB_UPDATE_ERR_CONSUME_TIMESPAN_MESSAGE_OK);
+    }
+
     @Override
     public String viewModule() {
         return "audit";

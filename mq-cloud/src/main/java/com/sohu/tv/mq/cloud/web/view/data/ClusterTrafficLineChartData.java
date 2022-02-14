@@ -105,19 +105,17 @@ public class ClusterTrafficLineChartData implements LineChartData {
         
         // 解析参数
         Date date = getDate(searchMap, DATE_FIELD);
-        String dateStr = DateUtil.formatYMD(date);
         int clusterId = getIntValue(searchMap, CLUSTER_ID_FIELD);
         
         //获取流量
-        Result<List<BrokerTraffic>> result = brokerTrafficService.queryClusterTraffic(clusterId, dateStr);
+        Result<List<BrokerTraffic>> result = brokerTrafficService.queryClusterTraffic(clusterId, date);
         if (!result.isOK()) {
             return lineChartList;
         }
 
         Date dayBefore = new Date(date.getTime() - 24*60*60*1000);
         //获取前一天流量
-        Result<List<BrokerTraffic>> resultDayBefore = brokerTrafficService.queryClusterTraffic(clusterId, 
-                DateUtil.formatYMD(dayBefore));
+        Result<List<BrokerTraffic>> resultDayBefore = brokerTrafficService.queryClusterTraffic(clusterId, dayBefore);
         
         // 构造曲线图对象
         LineChart lineChart = new LineChart();

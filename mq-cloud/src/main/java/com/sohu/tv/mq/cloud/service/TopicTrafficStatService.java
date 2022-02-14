@@ -166,7 +166,7 @@ public class TopicTrafficStatService {
             }
         }
         // 获取当天时间
-        String date = DateUtil.getFormatNow(DateUtil.YMD_DASH);
+        Date date = new Date();
         for (Topic topic : topicList) {
             Result<List<TopicTraffic>> topicTrafficResult = topicTrafficService.queryRangeTraffic(topic.getId(), date);
             if (topicTrafficResult.isNotEmpty()) {
@@ -214,7 +214,7 @@ public class TopicTrafficStatService {
             }
         }
         // 当天时间
-        String date = DateUtil.getFormatNow(DateUtil.YMD_DASH);
+        Date date = new Date();
         // 5分钟前时间间隔
         List<String> timeList = getBeforeTimes(FIVE_MIN_BEFORE);
         for (Topic topic : topicList) {

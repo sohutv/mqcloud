@@ -11,7 +11,6 @@ import org.springframework.test.context.junit4.SpringRunner;
 
 import com.sohu.tv.mq.cloud.Application;
 import com.sohu.tv.mq.cloud.bo.ServerInfoExt;
-import com.sohu.tv.mq.cloud.util.DateUtil;
 import com.sohu.tv.mq.cloud.util.Result;
 
 @RunWith(SpringRunner.class)
@@ -23,7 +22,7 @@ public class ServerDataServiceTest {
 
     @Test
     public void testQueryAllServerStat() {
-        List<ServerInfoExt> serverStatList = serverDataService.queryAllServer(DateUtil.formatYMDNow());
+        List<ServerInfoExt> serverStatList = serverDataService.queryAllServer(new Date());
         System.out.println(serverStatList);
     }
     

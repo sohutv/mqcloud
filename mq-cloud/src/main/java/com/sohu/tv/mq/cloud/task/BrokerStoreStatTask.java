@@ -6,7 +6,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.commons.lang3.math.NumberUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -100,7 +99,7 @@ public class BrokerStoreStatTask {
             }
             // 数据组装
             Date now = new Date();
-            brokerStoreStat.setCreateDate(NumberUtils.toInt(DateUtil.formatYMD(now)));
+            brokerStoreStat.setCreateDate(DateUtil.format(now));
             brokerStoreStat.setCreateTime(DateUtil.getFormat(DateUtil.HHMM).format(now));
             brokerStoreStat.setBrokerIp(broker.getAddr());
             brokerStoreStat.setClusterId(cluster.getId());

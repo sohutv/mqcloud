@@ -6,13 +6,17 @@
 	<parent>
 		<groupId>com.sohu.tv</groupId>
 		<artifactId>mq</artifactId>
-		<version>4.9.1</version>
+		<version>4.9.2</version>
 	</parent>
 
 	<artifactId>mq-cloud-common</artifactId>
 	<packaging>jar</packaging>
 
 	<dependencies>
+		<dependency>
+			<groupId>com.sohu.tv</groupId>
+			<artifactId>mq-client-common-open</artifactId>
+		</dependency>
 		<dependency>
 			<groupId>commons-codec</groupId>
 			<artifactId>commons-codec</artifactId>

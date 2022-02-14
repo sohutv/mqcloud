@@ -3,7 +3,6 @@ package com.sohu.tv.mq.cloud.service;
 import java.util.Date;
 import java.util.List;
 
-import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.rocketmq.tools.admin.MQAdminExt;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -62,11 +61,10 @@ public class BrokerStoreStatService {
      */
     public Result<List<BrokerStoreStat>> query(String brokerIp, Date date) {
         List<BrokerStoreStat> result = null;
-        int dt = NumberUtils.toInt(DateUtil.formatYMD(date));
         try {
-            result = brokerStoreStatDao.selectByDate(brokerIp, dt);
+            result = brokerStoreStatDao.selectByDate(brokerIp, DateUtil.format(date));
         } catch (Exception e) {
-            logger.error("query err, brokerIp:{}, date:{}, dt:{}", brokerIp, date, dt, e);
+            logger.error("query err, brokerIp:{}, date:{}", brokerIp, date, e);
             return Result.getDBErrorResult(e);
         }
         return Result.getResult(result);
@@ -79,12 +77,11 @@ public class BrokerStoreStatService {
      * @return 返回Result
      */
     public Result<Integer> delete(Date date) {
-        int dt = NumberUtils.toInt(DateUtil.formatYMD(date));
         Integer result = null;
         try {
-            result = brokerStoreStatDao.delete(dt);
+            result = brokerStoreStatDao.delete(DateUtil.format(date));
         } catch (Exception e) {
-            logger.error("delete err, date:{}, dt:{}", date, dt, e);
+            logger.error("delete err, date:{}", date, e);
             return Result.getDBErrorResult(e);
         }
         return Result.getResult(result);

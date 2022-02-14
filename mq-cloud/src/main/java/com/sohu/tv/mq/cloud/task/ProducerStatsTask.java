@@ -8,7 +8,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.commons.lang3.math.NumberUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -104,9 +103,8 @@ public class ProducerStatsTask {
         taskExecutor.execute(new Runnable() {
             public void run() {
                 Date date = new Date();
-                int dt = NumberUtils.toInt(DateUtil.formatYMD(date));
                 String time = DateUtil.getFormat(DateUtil.HHMM).format(new Date(date.getTime() - 5 * 60 * 1000));
-                producerExcetpion(dt, time);
+                producerExcetpion(DateUtil.format(date), time);
             }
         });
     }

@@ -3,7 +3,6 @@ package com.sohu.tv.mq.cloud.service;
 import java.util.Date;
 import java.util.List;
 
-import org.apache.commons.lang3.math.NumberUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -52,11 +51,10 @@ public class ProducerStatService {
      */
     public Result<List<ProducerStat>> query(String producer, Date date) {
         List<ProducerStat> result = null;
-        int dt = NumberUtils.toInt(DateUtil.formatYMD(date));
         try {
-            result = producerStatDao.selectByDate(producer, dt);
+            result = producerStatDao.selectByDate(producer, DateUtil.format(date));
         } catch (Exception e) {
-            logger.error("query err, producer:{}, date:{}, dt:{}", producer, date, dt, e);
+            logger.error("query err, producer:{}, date:{}", producer, date, e);
             return Result.getDBErrorResult(e);
         }
         return Result.getResult(result);
@@ -87,12 +85,11 @@ public class ProducerStatService {
      * @return 返回Result
      */
     public Result<Integer> delete(Date date) {
-        int dt = NumberUtils.toInt(DateUtil.formatYMD(date));
         Integer result = null;
         try {
-            result = producerStatDao.delete(dt);
+            result = producerStatDao.delete(DateUtil.format(date));
         } catch (Exception e) {
-            logger.error("delete err, date:{}, dt:{}", date, dt, e);
+            logger.error("delete err, date:{}", date, e);
             return Result.getDBErrorResult(e);
         }
         return Result.getResult(result);

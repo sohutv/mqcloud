@@ -28,7 +28,7 @@ public interface BrokerTrafficDao {
             + "<if test=\"brokerTraffic.getCount != 0\">,get_count</if> "
             + "<if test=\"brokerTraffic.getSize != 0\">,get_size</if> "
             + ") values( "
-            + "#{brokerTraffic.ip},now(),#{brokerTraffic.createTime},#{brokerTraffic.clusterId} "
+            + "#{brokerTraffic.ip},CURDATE(),#{brokerTraffic.createTime},#{brokerTraffic.clusterId} "
             + "<if test=\"brokerTraffic.putCount != 0\">,#{brokerTraffic.putCount}</if> "
             + "<if test=\"brokerTraffic.putSize != 0\">,#{brokerTraffic.putSize}</if> "
             + "<if test=\"brokerTraffic.getCount != 0\">,#{brokerTraffic.getCount}</if> "
@@ -46,7 +46,7 @@ public interface BrokerTrafficDao {
      * @param date
      * @return
      */
-    @Delete("delete from broker_traffic where create_date < #{createDate}")
+    @Delete("delete from broker_traffic where create_date < #{createDate,jdbcType=DATE}")
     public Integer delete(@Param("createDate") Date date);
     
     /**
@@ -55,8 +55,8 @@ public interface BrokerTrafficDao {
      * @param createDate
      * @return
      */
-    @Select("select * from broker_traffic where ip=#{ip} and create_date=#{createDate}")
-    public List<BrokerTraffic> select(@Param("ip") String ip, @Param("createDate") String createDate);
+    @Select("select * from broker_traffic where ip=#{ip} and create_date=#{createDate,jdbcType=DATE}")
+    public List<BrokerTraffic> select(@Param("ip") String ip, @Param("createDate") Date createDate);
     
     /**
      * 获取流量
@@ -66,10 +66,10 @@ public interface BrokerTrafficDao {
      */
     @Select("select cluster_id, create_date, create_time, sum(put_count) put_count, "
             + "sum(put_size) put_size, sum(get_count) get_count, sum(get_size) get_size from broker_traffic "
-            + "where create_date=#{createDate} and cluster_id = #{clusterId} "
+            + "where create_date=#{createDate,jdbcType=DATE} and cluster_id = #{clusterId} "
             + "group by cluster_id, create_date, create_time")
     public List<BrokerTraffic> selectClusterTraffic(@Param("clusterId") int clusterId, 
-            @Param("createDate") String createDate);
+            @Param("createDate") Date createDate);
     
     /**
      * 获取流量
@@ -79,11 +79,11 @@ public interface BrokerTrafficDao {
      * @return
      */
     @Select("<script>select ip, cluster_id, sum(put_count) put_count, sum(put_size) put_size, sum(get_count) get_count, sum(get_size) get_size "
-            + "from broker_traffic where create_date=#{createDate} "
+            + "from broker_traffic where create_date=#{createDate,jdbcType=DATE} "
             + "and create_time in <foreach collection=\"createTimes\" item=\"tm\" separator=\",\" open=\"(\" close=\")\">#{tm}</foreach> "
             + "and ip in <foreach collection=\"ips\" item=\"ip\" separator=\",\" open=\"(\" close=\")\">#{ip}</foreach> "
             + "group by ip</script>")
-    public List<BrokerTraffic> selectTrafficList(@Param("createDate") String createDate, 
+    public List<BrokerTraffic> selectTrafficList(@Param("createDate") Date createDate, 
             @Param("createTimes") List<String> createTimes, 
             @Param("ips") List<String> ips);
     
@@ -99,10 +99,10 @@ public interface BrokerTrafficDao {
             + "max(get_count) get_count, avg(get_count) avg_get_count, "
             + "max(get_size) get_size, avg(get_size) avg_get_size from "
             + "(select sum(put_count) put_count, sum(put_size) put_size, sum(get_count) get_count, sum(get_size) get_size "
-            + "from broker_traffic where create_date=#{createDate} "
+            + "from broker_traffic where create_date=#{createDate,jdbcType=DATE} "
             + "and ip in <foreach collection=\"ips\" item=\"ip\" separator=\",\" open=\"(\" close=\")\">#{ip}</foreach> "
             + "and create_time >= #{beginTime} group by create_time) tmp</script>")
-    public BrokerTraffic selectTrafficStatistic(@Param("createDate") String createDate, 
+    public BrokerTraffic selectTrafficStatistic(@Param("createDate") Date createDate, 
             @Param("ips") List<String> ips, @Param("beginTime") String beginTime);
     
     /**
@@ -116,7 +116,7 @@ public interface BrokerTrafficDao {
             + "max(put_size) put_size, avg(put_size) avg_put_size, "
             + "max(get_count) get_count, avg(get_count) avg_get_count, "
             + "max(get_size) get_size, avg(get_size) avg_get_size "
-            + "from broker_traffic where create_date=#{createDate} and ip = #{ip} and create_time >= #{beginTime}")
-    public BrokerTraffic selectTrafficStatisticByIp(@Param("createDate") String createDate, 
+            + "from broker_traffic where create_date=#{createDate,jdbcType=DATE} and ip = #{ip} and create_time >= #{beginTime}")
+    public BrokerTraffic selectTrafficStatisticByIp(@Param("createDate") Date createDate, 
             @Param("ip") String ip, @Param("beginTime") String beginTime);
 }

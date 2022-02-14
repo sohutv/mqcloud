@@ -6,7 +6,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.apache.commons.lang3.math.NumberUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -93,7 +92,7 @@ public class ClientStatsConsumer implements MemoryMQConsumer<ClientStats> {
         producerTotalStat.setProducer(clientStats.getProducer());
         producerTotalStat.setStatTime(clientStats.getStatsTime());
         Date now = new Date();
-        producerTotalStat.setCreateDate(NumberUtils.toInt(DateUtil.formatYMD(now)));
+        producerTotalStat.setCreateDate(DateUtil.format(now));
         producerTotalStat.setCreateTime(DateUtil.getFormat(DateUtil.HHMM).format(now));
         if(clientStats.getExceptionMap() != null && clientStats.getExceptionMap().size() > 0) {
             producerTotalStat.setException(JSON.toJSONString(clientStats.getExceptionMap()));

@@ -127,7 +127,7 @@ public class TopicTrafficService extends TrafficService<TopicTraffic> {
     }
 
     @Override
-    public Result<List<TopicTraffic>> query(long id, String date) {
+    public Result<List<TopicTraffic>> query(long id, Date date) {
         List<TopicTraffic> list = null;
         try {
             list = topicTrafficDao.select(id, date);
@@ -138,7 +138,7 @@ public class TopicTrafficService extends TrafficService<TopicTraffic> {
         return Result.getResult(list);
     }
 
-    public Result<TopicTraffic> queryTotalTraffic(long id, String date) {
+    public Result<TopicTraffic> queryTotalTraffic(long id, Date date) {
         TopicTraffic topicTraffic = null;
         try {
             topicTraffic = topicTrafficDao.selectTotalTraffic(id, date);
@@ -150,12 +150,12 @@ public class TopicTrafficService extends TrafficService<TopicTraffic> {
     }
 
     @Override
-    public Result<List<TopicTraffic>> query(List<Long> idList, String date) {
+    public Result<List<TopicTraffic>> query(List<Long> idList, Date date) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public Result<List<TopicTraffic>> query(List<Long> idList, String date, String time) {
+    public Result<List<TopicTraffic>> query(List<Long> idList, Date date, String time) {
         List<TopicTraffic> list = null;
         try {
             list = topicTrafficDao.selectByIdListDateTime(idList, date, time);
@@ -172,7 +172,7 @@ public class TopicTrafficService extends TrafficService<TopicTraffic> {
      * @param createDate
      * @return
      */
-    public Result<List<TopicTraffic>> queryRangeTraffic(long tid, String createDate) {
+    public Result<List<TopicTraffic>> queryRangeTraffic(long tid, Date createDate) {
         List<TopicTraffic> list = null;
         try {
             list = topicTrafficDao.selectRangeTraffic(tid, createDate);
@@ -190,7 +190,7 @@ public class TopicTrafficService extends TrafficService<TopicTraffic> {
      * @param createTimeList
      * @return
      */
-    public Result<List<TopicTraffic>> queryRangeTraffic(long tid, String createDate, List<String> createTimeList) {
+    public Result<List<TopicTraffic>> queryRangeTraffic(long tid, Date createDate, List<String> createTimeList) {
         List<TopicTraffic> list = null;
         try {
             list = topicTrafficDao.selectByCreateDateAndTime(tid, createDate, createTimeList);
@@ -207,7 +207,7 @@ public class TopicTrafficService extends TrafficService<TopicTraffic> {
      * @param timeList
      * @return
      */
-    public Result<List<TopicTraffic>> query(String date, List<String> timeList, List<Integer> clusterIdList) {
+    public Result<List<TopicTraffic>> query(Date date, List<String> timeList, List<Integer> clusterIdList) {
         List<TopicTraffic> list = null;
         try {
             list = topicTrafficDao.selectByDateTime(date, timeList, clusterIdList);

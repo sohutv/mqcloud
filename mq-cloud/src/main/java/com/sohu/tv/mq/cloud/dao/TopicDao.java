@@ -1,6 +1,7 @@
 package com.sohu.tv.mq.cloud.dao;
 
 import java.util.Collection;
+import java.util.Date;
 import java.util.List;
 
 import org.apache.ibatis.annotations.Delete;
@@ -189,8 +190,8 @@ public interface TopicDao {
      * 
      * @param day
      */
-    @Update("update topic set count = 0 where count > 0 and update_time < DATE_SUB(CURDATE(),INTERVAL #{dayAgo} DAY)")
-    public Integer resetCount(@Param("dayAgo") int dayAgo);
+    @Update("update topic set count = 0 where count > 0 and update_time < #{dayAgo}")
+    public Integer resetCount(@Param("dayAgo") Date dayAgo);
 
     /**
      * 更新记录
@@ -199,4 +200,11 @@ public interface TopicDao {
      */
     @Update("update topic set traffic_warn_enabled=#{trafficWarnEnabled} where id=#{tid}")
     public Integer updateTopicTrafficWarn(@Param("tid") long tid, @Param("trafficWarnEnabled") int trafficWarnEnabled);
+    
+    /**
+     * 查询非trace topic
+     * @return List<Topic>
+     */
+    @Select("select * from topic t where cluster_id not in (select id from cluster where trace_enabled = 1)")
+    public List<Topic> selectNoneTraceableTopic();
 } 

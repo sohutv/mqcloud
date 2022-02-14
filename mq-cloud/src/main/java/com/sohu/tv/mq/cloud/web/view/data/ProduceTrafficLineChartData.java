@@ -7,13 +7,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
-import com.sohu.tv.mq.cloud.bo.TopicTrafficCheckResult;
-import com.sohu.tv.mq.cloud.bo.TopicTrafficStat;
-import com.sohu.tv.mq.cloud.bo.TopicTrafficWarnConfig;
-import com.sohu.tv.mq.cloud.service.TopicTrafficStatService;
-import com.sohu.tv.mq.cloud.service.TopicTrafficWarnConfigService;
-import com.sohu.tv.mq.cloud.service.TrafficSimpleStatStrategy;
-import com.sohu.tv.mq.cloud.service.TrafficStatCheckStrategy;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,10 +14,17 @@ import org.springframework.stereotype.Component;
 
 import com.sohu.tv.mq.cloud.bo.Topic;
 import com.sohu.tv.mq.cloud.bo.TopicTraffic;
+import com.sohu.tv.mq.cloud.bo.TopicTrafficCheckResult;
+import com.sohu.tv.mq.cloud.bo.TopicTrafficStat;
+import com.sohu.tv.mq.cloud.bo.TopicTrafficWarnConfig;
 import com.sohu.tv.mq.cloud.bo.Traffic;
 import com.sohu.tv.mq.cloud.service.DelayMessageService;
 import com.sohu.tv.mq.cloud.service.TopicService;
 import com.sohu.tv.mq.cloud.service.TopicTrafficService;
+import com.sohu.tv.mq.cloud.service.TopicTrafficStatService;
+import com.sohu.tv.mq.cloud.service.TopicTrafficWarnConfigService;
+import com.sohu.tv.mq.cloud.service.TrafficSimpleStatStrategy;
+import com.sohu.tv.mq.cloud.service.TrafficStatCheckStrategy;
 import com.sohu.tv.mq.cloud.util.DateUtil;
 import com.sohu.tv.mq.cloud.util.Result;
 import com.sohu.tv.mq.cloud.web.view.SearchHeader;
@@ -132,7 +132,6 @@ public class ProduceTrafficLineChartData implements LineChartData {
         
         // 解析参数
         Date date = getDate(searchMap, DATE_FIELD);
-        String dateStr = DateUtil.formatYMD(date);
         Long tid = getLongValue(searchMap, TID_FIELD);
         
         if (tid == null || tid <= 0) {
@@ -143,14 +142,14 @@ public class ProduceTrafficLineChartData implements LineChartData {
             return lineChartList;
         }
         //获取topic流量
-        Result<List<TopicTraffic>> result = getTopicTraffic(topicResult.getResult(), dateStr);
+        Result<List<TopicTraffic>> result = getTopicTraffic(topicResult.getResult(), date);
         if (!result.isOK()) {
             return lineChartList;
         }
 
         Date dayBefore = new Date(date.getTime() - 24*60*60*1000);
         //获取前一天topic流量
-        Result<List<TopicTraffic>> resultDayBefore = getTopicTraffic(topicResult.getResult(), DateUtil.formatYMD(dayBefore));
+        Result<List<TopicTraffic>> resultDayBefore = getTopicTraffic(topicResult.getResult(), dayBefore);
         
         // 构造曲线图对象
         LineChart lineChart = new LineChart();
@@ -370,12 +369,12 @@ public class ProduceTrafficLineChartData implements LineChartData {
      * @param dateStr
      * @return
      */
-    private Result<List<TopicTraffic>> getTopicTraffic(Topic topic, String dateStr) {
+    private Result<List<TopicTraffic>> getTopicTraffic(Topic topic, Date date) {
         Result<List<TopicTraffic>> result = null;
         if (topic.delayEnabled()) {
-            result = delayMessageService.selectDelayMessageTraffic(topic.getId(), Integer.parseInt(dateStr));
+            result = delayMessageService.selectDelayMessageTraffic(topic.getId(), DateUtil.format(date));
         } else {
-            result = topicTrafficService.query(topic.getId(), dateStr);
+            result = topicTrafficService.query(topic.getId(), date);
         }
         return result;
     }

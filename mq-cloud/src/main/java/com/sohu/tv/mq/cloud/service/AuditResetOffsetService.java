@@ -24,6 +24,18 @@ public class AuditResetOffsetService {
     private AuditResetOffsetDao auditResetOffsetDao;
     
     /**
+     * 保存
+     */
+    public void save(AuditResetOffset auditResetOffset) {
+        try {
+            auditResetOffsetDao.insert(auditResetOffset);
+        } catch (Exception e) {
+            logger.error("insert err {}", auditResetOffset, e);
+            throw e;
+        }
+    }
+    
+    /**
      * 按照aid查询
      * 
      * @param Result<AuditResetOffset>

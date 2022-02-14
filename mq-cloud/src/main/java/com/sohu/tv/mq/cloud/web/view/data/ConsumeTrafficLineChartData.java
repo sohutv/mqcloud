@@ -142,7 +142,6 @@ public class ConsumeTrafficLineChartData implements LineChartData {
         
         // 解析参数
         Date date = getDate(searchMap, DATE_FIELD);
-        String dateStr = DateUtil.formatYMD(date);
         Long tid = getLongValue(searchMap, TID_FIELD);
         
         // 获取request
@@ -160,7 +159,7 @@ public class ConsumeTrafficLineChartData implements LineChartData {
             return lineChartList;
         } 
         //获取topic流量
-        Result<List<TopicTraffic>> result = getTopicTraffic(topicTopology.getTopic(), dateStr);
+        Result<List<TopicTraffic>> result = getTopicTraffic(topicTopology.getTopic(), date);
         if (!result.isOK()) {
             return lineChartList;
         }
@@ -172,7 +171,7 @@ public class ConsumeTrafficLineChartData implements LineChartData {
         filterConsumer(searchMap, topicTopology);
         
         // 生成消费者数据
-        LineChart lineChart2 = getConsumerLineChart(searchMap, dateStr, topicTopology, trafficMap);
+        LineChart lineChart2 = getConsumerLineChart(searchMap, date, topicTopology, trafficMap);
         if (lineChart2 != null) {
             lineChartList.add(lineChart2);
         }
@@ -261,7 +260,7 @@ public class ConsumeTrafficLineChartData implements LineChartData {
      * @param topic
      * @return
      */
-    private LineChart getConsumerLineChart(Map<String, Object> searchMap, String date, TopicTopology topicTopology, 
+    private LineChart getConsumerLineChart(Map<String, Object> searchMap, Date date, TopicTopology topicTopology, 
             Map<String, Traffic> producerTrafficMap) {
         List<Consumer> consumerList = topicTopology.getConsumerList();
         List<Long> idList = new ArrayList<Long>();
@@ -369,12 +368,12 @@ public class ConsumeTrafficLineChartData implements LineChartData {
      * @param dateStr
      * @return
      */
-    private Result<List<TopicTraffic>> getTopicTraffic(Topic topic, String dateStr) {
+    private Result<List<TopicTraffic>> getTopicTraffic(Topic topic, Date date) {
         Result<List<TopicTraffic>> result = null;
         if (topic.delayEnabled()) {
-            result = delayMessageService.selectDelayMessageTraffic(topic.getId(), Integer.parseInt(dateStr));
+            result = delayMessageService.selectDelayMessageTraffic(topic.getId(), DateUtil.format(date));
         } else {
-            result = topicTrafficService.query(topic.getId(), dateStr);
+            result = topicTrafficService.query(topic.getId(), date);
         }
         return result;
     }

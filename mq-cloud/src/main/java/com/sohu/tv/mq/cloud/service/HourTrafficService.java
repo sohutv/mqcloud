@@ -83,15 +83,15 @@ public abstract class HourTrafficService extends TrafficService<Traffic> {
         return null;
     }
 
-    public Result<List<Traffic>> query(long id, String date) {
+    public Result<List<Traffic>> query(long id, Date date) {
         throw new UnsupportedOperationException();
     }
 
-    public Result<List<Traffic>> query(List<Long> idList, String date) {
+    public Result<List<Traffic>> query(List<Long> idList, Date date) {
         throw new UnsupportedOperationException();
     }
 
-    public Result<List<Traffic>> query(List<Long> idList, String date, String time) {
+    public Result<List<Traffic>> query(List<Long> idList, Date date, String time) {
         throw new UnsupportedOperationException();
     }
 }

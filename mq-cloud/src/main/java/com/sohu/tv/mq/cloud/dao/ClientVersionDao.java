@@ -18,7 +18,7 @@ public interface ClientVersionDao {
      * 保存记录
      */
     @Insert("insert into client_version(topic, client, role, version, create_date) "
-            + "values(#{cv.topic},#{cv.client},#{cv.role},#{cv.version},now()) "
+            + "values(#{cv.topic},#{cv.client},#{cv.role},#{cv.version},CURDATE()) "
             + "on duplicate key update version=values(version), update_time = now()")
     public Integer insert(@Param("cv") ClientVersion clientVersion);
 

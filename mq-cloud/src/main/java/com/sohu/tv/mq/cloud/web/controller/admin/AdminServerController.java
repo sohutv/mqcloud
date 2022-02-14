@@ -89,7 +89,7 @@ public class AdminServerController extends AdminViewController {
     @RequestMapping("/list")
     public String list(Map<String, Object> map) {
         setView(map, "list");
-        List<ServerInfoExt> serverStatList = serverDataService.queryAllServer(DateUtil.formatYMDNow());
+        List<ServerInfoExt> serverStatList = serverDataService.queryAllServer(new Date());
         setResult(map, serverStatList);
         setResult(map, "username", mqCloudConfigHelper.getServerUser());
         setResult(map, "password", mqCloudConfigHelper.getServerPassword());
@@ -211,8 +211,11 @@ public class AdminServerController extends AdminViewController {
     public String overview(@RequestParam("ip") String ip,
             @RequestParam(value = "date", required = false) String date,
             Map<String, Object> map) {
+        Date queryDate = null;
         if (date == null) {
-            date = DateUtil.formatYMDNow();
+            queryDate = new Date();
+        } else {
+            queryDate = DateUtil.parse(DateUtil.YMD_DASH, date);
         }
         // 获取服务器静态信息
         ServerInfo info = serverDataService.queryServerInfo(ip);
@@ -239,7 +242,7 @@ public class AdminServerController extends AdminViewController {
             }
         }
         // 获取服务器状态
-        List<ServerStatus> list = serverDataService.queryServerStat(ip, date);
+        List<ServerStatus> list = serverDataService.queryServerStat(ip, queryDate);
         map.put("date", date);
         setDataToMap(list, map);
         return adminViewModule() + "/overview";
@@ -263,9 +266,8 @@ public class AdminServerController extends AdminViewController {
         }
         setResult(map, "server", serverInfo);
         // 获取统计信息
-        String date = DateUtil.formatYMDNow();
         String time = DateUtil.getFormat(DateUtil.HHMM).format(new Date(System.currentTimeMillis() - 60 * 60 * 1000));
-        List<ServerStatus> list = serverDataService.queryServerStatByIp(ip, date, time);
+        List<ServerStatus> list = serverDataService.queryServerStatByIp(ip, new Date(), time);
         ServerMetic serverMetic = new ServerMetic(list);
         setResult(map, serverMetic);
         return adminViewModule() + "/preview";
@@ -528,7 +530,8 @@ public class AdminServerController extends AdminViewController {
     public String cpu(@RequestParam("ip") String ip,
             @RequestParam("date") String date,
             Map<String, Object> map) {
-        List<ServerStatus> list = serverDataService.queryServerStat(ip, date);
+        Date queryDate = DateUtil.parse(DateUtil.YMD_DASH, date);
+        List<ServerStatus> list = serverDataService.queryServerStat(ip, queryDate);
         Map<String, CpuChart> subcpuMap = new TreeMap<String, CpuChart>();
         // x轴坐标
         List<String> xAxis = new ArrayList<String>();
@@ -578,7 +581,8 @@ public class AdminServerController extends AdminViewController {
     public String net(@RequestParam("ip") String ip,
             @RequestParam("date") String date,
             Map<String, Object> map) {
-        List<ServerStatus> list = serverDataService.queryServerStat(ip, date);
+        Date queryDate = DateUtil.parse(DateUtil.YMD_DASH, date);
+        List<ServerStatus> list = serverDataService.queryServerStat(ip, queryDate);
         Map<String, NetChart> subnetMap = new TreeMap<String, NetChart>();
         // x轴坐标
         List<String> xAxis = new ArrayList<String>();
@@ -637,7 +641,8 @@ public class AdminServerController extends AdminViewController {
     public String disk(@RequestParam("ip") String ip,
             @RequestParam("date") String date,
             Map<String, Object> map) {
-        List<ServerStatus> list = serverDataService.queryServerStat(ip, date);
+        Date queryDate = DateUtil.parse(DateUtil.YMD_DASH, date);
+        List<ServerStatus> list = serverDataService.queryServerStat(ip, queryDate);
         DiskChart readChart = new DiskChart();
         DiskChart writeChart = new DiskChart();
         DiskChart busyChart = new DiskChart();

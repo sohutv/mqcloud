@@ -2,6 +2,7 @@ package com.sohu.tv.mq.cloud.service;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Date;
 import java.util.List;
 import java.util.Set;
 
@@ -38,6 +39,7 @@ import com.sohu.tv.mq.cloud.dao.TopicDao;
 import com.sohu.tv.mq.cloud.mq.DefaultCallback;
 import com.sohu.tv.mq.cloud.mq.MQAdminCallback;
 import com.sohu.tv.mq.cloud.mq.MQAdminTemplate;
+import com.sohu.tv.mq.cloud.util.DateUtil;
 import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper;
 import com.sohu.tv.mq.cloud.util.Result;
 import com.sohu.tv.mq.cloud.util.Status;
@@ -353,6 +355,20 @@ public class TopicService {
             topicList = topicDao.selectAll();
         } catch (Exception e) {
             logger.error("queryAllTopic err", e);
+            return Result.getDBErrorResult(e);
+        }
+        return Result.getResult(topicList);
+    }
+    
+    /**
+     * 查询非追踪的topic
+     */
+    public Result<List<Topic>> queryNoneTraceableTopic() {
+        List<Topic> topicList = null;
+        try {
+            topicList = topicDao.selectNoneTraceableTopic();
+        } catch (Exception e) {
+            logger.error("queryNoneTraceableTopic err", e);
             return Result.getDBErrorResult(e);
         }
         return Result.getResult(topicList);
@@ -686,7 +702,9 @@ public class TopicService {
     public Result<Integer> resetCount(int dayAgo) {
         Integer result = null;
         try {
-            result = topicDao.resetCount(dayAgo);
+            Date dt = new Date(System.currentTimeMillis() - dayAgo * 24 * 60 * 60 * 1000);
+            dt = DateUtil.parseYMD(DateUtil.formatYMD(dt));
+            result = topicDao.resetCount(dt);
         } catch (Exception e) {
             logger.error("resetCount err, dayAgo:{}", dayAgo, e);
             return Result.getDBErrorResult(e);

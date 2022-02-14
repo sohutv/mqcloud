@@ -40,8 +40,8 @@ public interface ConsumerTrafficDao {
      * @param createDate
      * @return
      */
-    @Select("select * from consumer_traffic where consumer_id=#{consumerId} and create_date=#{createDate}")
-    public List<ConsumerTraffic> select(@Param("consumerId") long consumerId, @Param("createDate") String createDate);
+    @Select("select * from consumer_traffic where consumer_id=#{consumerId} and create_date=#{createDate,jdbcType=DATE}")
+    public List<ConsumerTraffic> select(@Param("consumerId") long consumerId, @Param("createDate") Date createDate);
     
     /**
      * 获取consumer日流量
@@ -49,10 +49,10 @@ public interface ConsumerTrafficDao {
      * @param createDate
      * @return
      */
-    @Select("<script>select sum(count) count,sum(size) size from consumer_traffic where create_date=#{createDate} and consumer_id in "
+    @Select("<script>select sum(count) count,sum(size) size from consumer_traffic where create_date=#{createDate,jdbcType=DATE} and consumer_id in "
             + "<foreach collection=\"idList\" item=\"id\" separator=\",\" open=\"(\" close=\")\">#{id}</foreach>"
             + "</script>")
-    public ConsumerTraffic selectTotalTraffic(@Param("idList") List<Long> idList, @Param("createDate") String createDate);
+    public ConsumerTraffic selectTotalTraffic(@Param("idList") List<Long> idList, @Param("createDate") Date createDate);
 
     /**
      * 获取consumer流量
@@ -61,11 +61,11 @@ public interface ConsumerTrafficDao {
      * @param createDate
      * @return
      */
-    @Select("<script>select * from consumer_traffic where create_date=#{createDate} and consumer_id in "
+    @Select("<script>select * from consumer_traffic where create_date=#{createDate,jdbcType=DATE} and consumer_id in "
             + "<foreach collection=\"idList\" item=\"id\" separator=\",\" open=\"(\" close=\")\">#{id}</foreach>"
             + "</script>")
     public List<ConsumerTraffic> selectByIdList(@Param("idList") List<Long> idList,
-            @Param("createDate") String createDate);
+            @Param("createDate") Date createDate);
 
     /**
      * 获取consumer流量
@@ -75,9 +75,9 @@ public interface ConsumerTrafficDao {
      * @return
      */
     @Select("<script>select * from consumer_traffic "
-            + "where create_date=#{createDate} and create_time = #{createTime} and consumer_id in  "
+            + "where create_date=#{createDate,jdbcType=DATE} and create_time = #{createTime} and consumer_id in  "
             + "<foreach collection=\"idList\" item=\"id\" separator=\",\" open=\"(\" close=\")\">#{id}</foreach>"
             + "</script>")
     public List<ConsumerTraffic> selectByIdListDateTime(@Param("idList") List<Long> idList,
-            @Param("createDate") String createDate, @Param("createTime") String createTime);
+            @Param("createDate") Date createDate, @Param("createTime") String createTime);
 }
