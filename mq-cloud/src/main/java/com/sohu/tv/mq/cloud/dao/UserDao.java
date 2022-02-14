@@ -47,6 +47,7 @@ public interface UserDao {
             + "<if test=\"user.type != -1\">,type=#{user.type}</if>"
             + "<if test=\"user.receiveNotice != -1\">,receive_notice=#{user.receiveNotice}</if>"
             + "<if test=\"user.receivePhoneNotice != -1\">,receive_phone_notice=#{user.receivePhoneNotice}</if>"
+            + "<if test=\"user.gid != -1\">,gid=#{user.gid}</if>"
             + " where id = #{user.id}</script>")
     public Integer update(@Param("user") User user);
     
@@ -150,4 +151,11 @@ public interface UserDao {
      */
     @Select("select * from user where id in (select distinct uid from user_producer where tid = #{tid})")
     public List<User> selectProducerUserListByTid(@Param("tid") long tid);
+    
+    /**
+     * 查询用户记录
+     * @param gid
+     */
+    @Select("select * from user where gid = #{gid}")
+    public List<User> selectByGid(@Param("gid") long groupId);
 }

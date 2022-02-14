@@ -101,15 +101,14 @@ public class AdminTopologyController extends AdminViewController {
     public String traffic(@RequestParam("ips") String ips, Map<String, Object> map) {
         // 获取日期
         Date now = new Date();
-        String date = DateUtil.getFormat(DateUtil.YMD_DASH).format(now);
         // 获取前60分钟数据
         String time = DateUtil.getFormat(DateUtil.HHMM).format(new Date(System.currentTimeMillis() - 60 * 60 * 1000));
         String[] ipArray = ips.split(",");
         if(ipArray.length == 1) {
-            setResult(map, brokerTrafficService.queryTrafficStatistic(date, ips, time));
+            setResult(map, brokerTrafficService.queryTrafficStatistic(now, ipArray[0], time));
         } else {
             List<String> ipList = Arrays.asList(ips.split(","));
-            setResult(map, brokerTrafficService.queryTrafficStatistic(date, ipList, time));
+            setResult(map, brokerTrafficService.queryTrafficStatistic(now, ipList, time));
         }
         return adminViewModule() + "/traffic";
     }
@@ -309,7 +308,6 @@ public class AdminTopologyController extends AdminViewController {
         }
         // 获取日期
         Date now = new Date();
-        String date = DateUtil.getFormat(DateUtil.YMD_DASH).format(now);
         // 获取前5分钟数据
         int timeSize = 5;
         List<String> times = new ArrayList<>(timeSize);
@@ -318,7 +316,7 @@ public class AdminTopologyController extends AdminViewController {
             String time = DateUtil.getFormat(DateUtil.HHMM).format(now);
             times.add(time);
         }
-        Result<List<BrokerTraffic>> brokerTrafficListResult = brokerTrafficService.queryTraffic(date, times, ips);
+        Result<List<BrokerTraffic>> brokerTrafficListResult = brokerTrafficService.queryTraffic(now, times, ips);
         if (brokerTrafficListResult.isEmpty()) {
             return null;
         }

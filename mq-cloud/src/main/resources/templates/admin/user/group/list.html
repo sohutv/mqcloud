@@ -1,0 +1,7 @@
+<#if response.empty>
+	<li class="list-group-item"><p class="list-group-item-text">暂无数据</p></li> 
+<#else>
+	<#list response.result as userGroup>
+		<a href="#" id="A${userGroup.id}" data-id="${userGroup.id}" onclick="getGroupMember(${userGroup.id})" class="list-group-item list-group-item-action"><span class="list-group-item-text" id="userGroup${userGroup.id}">${userGroup.name}</span><span data-toggle='tooltip' title="修改用户组" onclick="updateUserGroupShow(${userGroup.id});event.stopPropagation();" style="float:right;cursor:pointer;" class="glyphicon glyphicon-edit" aria-hidden="true"></span></a> 
+	</#list>
+</#if>
