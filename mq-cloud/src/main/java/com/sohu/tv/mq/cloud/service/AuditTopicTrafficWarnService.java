@@ -1,12 +1,13 @@
 package com.sohu.tv.mq.cloud.service;
 
-import com.sohu.tv.mq.cloud.bo.AuditTopicTrafficWarn;
-import com.sohu.tv.mq.cloud.dao.AuditTopicTrafficWarnDao;
-import com.sohu.tv.mq.cloud.util.Result;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import com.sohu.tv.mq.cloud.bo.AuditTopicTrafficWarn;
+import com.sohu.tv.mq.cloud.dao.AuditTopicTrafficWarnDao;
+import com.sohu.tv.mq.cloud.util.Result;
 
 /**
  * topic流量预警审核service
@@ -20,6 +21,19 @@ public class AuditTopicTrafficWarnService {
 
     @Autowired
     private AuditTopicTrafficWarnDao auditTopicTrafficWarnDao;
+    
+    /**
+     * 保存
+     */
+    public Result<?> save(long aid, long tid, int trafficWarnEnabled) {
+        try {
+            auditTopicTrafficWarnDao.insert(aid, tid, trafficWarnEnabled);
+        } catch (Exception e) {
+            logger.error("insert err, aid:{} tid:{}", aid, tid, e);
+            throw e;
+        }
+        return Result.getOKResult();
+    }
 
     /**
      * 按照aid查询

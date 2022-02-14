@@ -101,7 +101,4 @@ public interface ConsumerStatDao {
 			"FROM consumer_block " +
 			"ORDER BY updatetime desc")
 	public List<ConsumerBlock> getConsumerBlock();
-	
-	@Select("select count(1) FROM consumer_block where csid = #{csid} and updatetime > DATE_SUB(NOW(), INTERVAL 60 MINUTE)")
-    public Integer getConsumerBlockByCsid(@Param("csid") int csid);
 }

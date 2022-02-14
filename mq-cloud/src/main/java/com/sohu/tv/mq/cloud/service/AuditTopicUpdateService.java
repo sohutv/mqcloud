@@ -24,6 +24,18 @@ public class AuditTopicUpdateService {
     private AuditTopicUpdateDao auditTopicUpdateDao;
     
     /**
+     * 保存
+     */
+    public void save(AuditTopicUpdate auditTopicUpdate) {
+        try {
+            auditTopicUpdateDao.insert(auditTopicUpdate);
+        } catch (Exception e) {
+            logger.error("insert err {}", auditTopicUpdate, e);
+            throw e;
+        }
+    }
+    
+    /**
      * 按照aid查询AuditTopicUpdate
      * 
      * @param Result<AuditTopicUpdate>

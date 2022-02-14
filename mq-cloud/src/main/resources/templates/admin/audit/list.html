@@ -88,10 +88,10 @@
 						<td>${audit.auditor!}</td>
 						<td>
 							<#if audit.statusEnum.getStatus() == 0>
-							<button type="button" class="btn btn-success" onclick="auditDetail('<#if audit.user??>${audit.user.name!audit.user.emailName}<#else>${audit.uid}</#if>', '${audit.typeEnum.getName()}', '${audit.typeEnum.getType()}', '${audit.id?c}', '${audit.statusEnum.getStatus()}')" 
+							<button type="button" class="btn btn-success" onclick="auditDetail('<#if audit.user??>${audit.user.name!audit.user.emailName}<#else>${audit.uid}</#if>', '${audit.typeEnum.getName()}', '${audit.typeEnum.getType()}', '${audit.typeEnum.getView()}', '${audit.id?c}', '${audit.statusEnum.getStatus()}')" 
 							data-target="#auditDetailModal" data-toggle="modal"><span class="glyphicon glyphicon-pencil" aria-hidden="true">审核</span></button>
 							<#else>
-							<button type="button" class="btn btn-success" onclick="auditDetail('<#if audit.user??>${audit.user.name!audit.user.emailName}<#else>${audit.uid}</#if>', '${audit.typeEnum.getName()}', '${audit.typeEnum.getType()}', '${audit.id?c}', '${audit.statusEnum.getStatus()}')" 
+							<button type="button" class="btn btn-success" onclick="auditDetail('<#if audit.user??>${audit.user.name!audit.user.emailName}<#else>${audit.uid}</#if>', '${audit.typeEnum.getName()}', '${audit.typeEnum.getType()}', '${audit.typeEnum.getView()}', '${audit.id?c}', '${audit.statusEnum.getStatus()}')" 
 							data-target="#auditDetailModal" data-toggle="modal">查看</button>
 							</#if>
 						</td>
@@ -111,7 +111,11 @@
 				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
 				<h4 class="modal-title"><b id="auditDetailUser"></b>申请<b id="auditDetailAction"></b></h4>
 			</div>
-			<form class="form-horizontal form-bordered form-row-stripped" id="auditDetailForm">
+			<form class="form-horizontal form-bordered form-row-stripped" id="auditForm">
+				<input type="hidden" id="auditView">
+				<input type="hidden" id="auditId" name="aid">
+				<div id="auditDetailDiv">
+				</div>
 			</form>
 		</div>
 	</div>
@@ -119,7 +123,9 @@
 
 
 <script>
-function auditDetail(username, action, type, aid, status){
+function auditDetail(username, action, type, view, aid, status){
+	$("#auditView").val(view);
+	$("#auditId").val(aid);
 	$("#auditDetailUser").html(username);
 	$("#auditDetailAction").html(action);
 	$.get('${request.contextPath}/admin/audit/detail',
@@ -128,9 +134,9 @@ function auditDetail(username, action, type, aid, status){
 			aid: aid
 		},
         function(data){
-			$("#auditDetailForm").html(data);
+			$("#auditDetailDiv").html(data);
 			if(status != 0){
-				$(".modal-footer").hide();
+				$(".custom").hide();
 				if(typeof hideAudit == "function"){
 					hideAudit();
 				}
@@ -138,11 +144,11 @@ function auditDetail(username, action, type, aid, status){
         });
 }
 
-function cancelAudit(aid){
+function cancelAudit(){
 	disable("cancelBtn");
 	$.get('${request.contextPath}/audit/cancel',
 		{
-			aid: aid
+			aid: $("#auditId").val()
 		},function(data){
 			if(data.status == 200){
 				toastr.success("撤消成功");  
@@ -153,6 +159,43 @@ function cancelAudit(aid){
 		    }
        	}
 	);
+}
+function refuse(){
+	var refuseReason = $("#refuseReason").val();
+	if(!refuseReason){
+		alert("请填写拒绝理由");
+		return;
+	}
+	disable("refuseBtn");
+	$.post('${request.contextPath}/admin/audit/refuse',
+		{
+			aid: $("#auditId").val(),
+			refuseReason: refuseReason
+		},
+        function(data){
+            if(data.status == 200){
+            	toastr.success("拒绝成功, 系统将自动刷新");
+            	reload(3000);
+		    }else{
+		    	toastr.error("拒绝失败！"+data.message);
+		    	enable("refuseBtn");
+		    }
+       }, 'json');
+}
+function agree(){
+	disable("agreeBtn");
+	$.post('${request.contextPath}/admin/audit/' + $("#auditView").val(),
+		$("#auditForm").serialize()
+		,
+        function(data){
+            if(data.status == 200){
+            	toastr.success("审核成功, 系统将自动刷新");
+            	reload(3000);
+		    }else{
+		    	toastr.error("审核失败！"+data.message);
+		    	enable("agreeBtn");
+		    }
+       }, 'json');
 }
 </script>
 

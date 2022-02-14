@@ -23,6 +23,19 @@ public class AuditConsumerConfigService {
     private AuditConsumerConfigDao auditConsumerConfigDao;
 
     /**
+     * 保存
+     */
+    public Result<?> save(AuditConsumerConfig auditConsumerConfig) {
+        try {
+            auditConsumerConfigDao.insert(auditConsumerConfig);
+        } catch (Exception e) {
+            logger.error("insert err {}", auditConsumerConfig, e);
+            throw e;
+        }
+        return Result.getOKResult();
+    }
+    
+    /**
      * 按照aid查询
      * 
      * @param Result<AuditConsumerConfig>

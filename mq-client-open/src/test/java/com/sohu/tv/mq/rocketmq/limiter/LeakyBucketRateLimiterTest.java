@@ -7,8 +7,6 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import org.junit.Test;
 
-import com.sohu.tv.mq.rocketmq.limiter.LeakyBucketRateLimiter;
-
 public class LeakyBucketRateLimiterTest {
 
     private LeakyBucketRateLimiter leakyBucketRateLimiter = new LeakyBucketRateLimiter("test", 10, 1, TimeUnit.SECONDS);

@@ -6,6 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
 import com.sohu.tv.mq.cloud.bo.AuditUserProducerDelete;
 import com.sohu.tv.mq.cloud.dao.AuditUserProducerDeleteDao;
 import com.sohu.tv.mq.cloud.util.Result;
@@ -24,6 +25,19 @@ public class AuditUserProducerDeleteService {
 
     @Autowired
     private AuditUserProducerDeleteDao auditUserProducerDeleteDao;
+    
+    /**
+     * 保存
+     */
+    public void save(long aid, long pid, String producer, String topic, long uid) {
+        try {
+            auditUserProducerDeleteDao.insert(aid, pid, producer, topic, uid);
+        } catch (Exception e) {
+            logger.error("insert err {}", topic, e);
+            throw e;
+        }
+    }
+
 
     /**
      * 按照aid查询AuditUserProducerDeleteDao

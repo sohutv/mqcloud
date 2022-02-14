@@ -68,60 +68,19 @@
 					</table>
 				</div>
 			</div>
-			<div class="form-group">
+			<div class="form-group custom">
 				<label class="control-label col-md-2"> 拒绝理由: </label>
 				<div class="col-md-10">
-					<textarea type="text" id="batchAssociateRefuseReason" rows="3" class="form-control" placeholder="请填写"></textarea>
+					<textarea type="text" id="refuseReason" rows="3" class="form-control" placeholder="请填写"></textarea>
 				</div>
 			</div>
 		</div>
 	</div>
 </div>
-<div class="modal-footer" id="auditTopicFooter">
+<div class="modal-footer custom">
 	<button type="button" data-dismiss="modal" class="btn" >取消</button>
-	<button type="button" id="cancelBtn" class="btn btn-warning" onclick="cancelAudit(${response.result.aid?c})">撤销</button>
-	<button type="button" class="btn btn-warning" id="disAgreeBatchAssociateBtn" onclick="disAgreeBatchAssociate()">拒绝</button>
-	<button type="button" class="btn btn-primary" id="agreeBatchAssociateBtn" onclick="agreeBatchAssociate()">同意</button>
+	<button type="button" id="cancelBtn" class="btn btn-warning" onclick="cancelAudit()">撤销</button>
+	<button type="button" class="btn btn-warning" id="refuseBtn" onclick="refuse()">拒绝</button>
+	<button type="button" class="btn btn-primary" id="agreeBtn" onclick="agree()">同意</button>
 </div>
-
-<script>
-function agreeBatchAssociate(){
-	disable("agreeBatchAssociateBtn");
-	$.post('${request.contextPath}/admin/audit/batch/associate',
-		{
-			aid: ${response.result.aid?c}
-		},
-        function(data){
-            if(data.status == 200){
-            	toastr.success("审核成功, 系统将自动刷新");
-            	reload(3000);
-		    }else{
-		    	toastr.error("审核失败！"+data.message);
-		    	enable("agreeBatchAssociateBtn");
-		    }
-       }, 'json');
-}
-function disAgreeBatchAssociate(){
-	var refuseReason = $("#batchAssociateRefuseReason").val();
-	if(!refuseReason){
-		alert("请填写拒绝理由");
-		return;
-	}
-	disable("disAgreeBatchAssociateBtn");
-	$.post('${request.contextPath}/admin/audit/refuse',
-		{
-			aid: ${response.result.aid?c},
-			refuseReason: refuseReason
-		},
-        function(data){
-            if(data.status == 200){
-            	toastr.success("拒绝成功, 系统将自动刷新");
-            	reload(3000);
-		    }else{
-		    	toastr.error("拒绝失败！"+data.message);
-		    	enable("disAgreeBatchAssociateBtn");
-		    }
-       }, 'json');
-}
-</script>
 </#if>

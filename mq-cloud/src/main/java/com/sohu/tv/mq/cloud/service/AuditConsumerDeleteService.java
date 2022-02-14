@@ -24,6 +24,18 @@ public class AuditConsumerDeleteService {
     private AuditConsumerDeleteDao auditConsumerDeleteDao;
     
     /**
+     * 保存
+     */
+    public void save(long aid, long cid, String consumer, String topic) {
+        try {
+            auditConsumerDeleteDao.insert(aid, cid, consumer, topic);
+        } catch (Exception e) {
+            logger.error("insert err {}", topic, e);
+            throw e;
+        }
+    }
+    
+    /**
      * 按照aid查询AuditConsumerDeleteDao
      * 
      * @param Result<AuditConsumerDelete>
