@@ -1,0 +1,48 @@
+<#if response.notOK>
+<div class="modal-body">
+	<div class="form-body">
+		<div class="form-group">
+			<div>异常数据</div>
+		</div>
+	</div>
+</div>
+<#else>
+<div class="modal-body">
+	<div class="row">
+		<div class="col-md-12">
+			<div class="form-body">
+				<div class="form-group">
+					<label class="control-label col-md-3"> Topic: </label>
+			        <div class="col-md-6">
+						<input type="text" value="${response.result.topic}" readonly="readonly" class="form-control" />
+					</div>
+				</div>
+				<div class="form-group">
+					<label class="control-label col-md-3"> 消费者: </label>
+			        <div class="col-md-6">
+						<input type="text" value="${response.result.consumer}" readonly="readonly" class="form-control" />
+					</div>
+				</div>
+				<div class="form-group">
+					<label class="control-label col-md-3"> 开始时间: </label>
+			        <div class="col-md-6">
+						<input type="text" value="${response.result.startFormat}" readonly="readonly" class="form-control" />
+					</div>
+				</div>
+				<div class="form-group">
+					<label class="control-label col-md-3"> 结束时间: </label>
+			        <div class="col-md-6">
+						<input type="text" value="${response.result.endFormat}" readonly="readonly" class="form-control" />
+					</div>
+				</div>
+				<div class="form-group">
+					<label class="control-label col-md-3"> 客户端: </label>
+			        <div class="col-md-6">
+						<input type="text" value="${response.result.clientId}" readonly="readonly" class="form-control" />
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+</#if>

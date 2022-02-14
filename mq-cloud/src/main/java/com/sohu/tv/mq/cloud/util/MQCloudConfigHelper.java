@@ -153,6 +153,8 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware, Comm
     private String threadMetricSupportedVersion;
     // 消费失败统计支持版本
     private String consumeFailedMetricSupportedVersion;
+    
+    private String consumeTimespanMessageSupportedVersion;
 
     @Autowired
     private CommonConfigService commonConfigService;
@@ -540,12 +542,24 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware, Comm
         this.consumeFailedMetricSupportedVersion = consumeFailedMetricSupportedVersion;
     }
     
+    public String getConsumeTimespanMessageSupportedVersion() {
+        return consumeTimespanMessageSupportedVersion;
+    }
+
+    public void setConsumeTimespanMessageSupportedVersion(String consumeTimespanMessageSupportedVersion) {
+        this.consumeTimespanMessageSupportedVersion = consumeTimespanMessageSupportedVersion;
+    }
+    
     public boolean threadMetricSupported(String version) {
         return version.compareTo(threadMetricSupportedVersion) >= 0;
     }
 
     public boolean consumeFailedMetricSupported(String version) {
         return version.compareTo(consumeFailedMetricSupportedVersion) >= 0;
+    }
+    
+    public boolean consumeTimespanMessageSupported(String version) {
+        return version.compareTo(consumeTimespanMessageSupportedVersion) >= 0;
     }
     
     public String getMachineRoomColor(String room) {

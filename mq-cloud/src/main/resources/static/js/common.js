@@ -24,6 +24,21 @@ function modalHide(timeout, fun){
 	}
 }
 
+function modalHideId(id, timeout, fun){
+	if(timeout && timeout > 0) {
+		if(fun){
+			setTimeout("modalHideId('"+id+"',0,"+fun+")",timeout);
+		} else {
+			setTimeout("modalHideId('"+id+"')",timeout);
+		}
+	} else {
+		$('#' + id).modal('hide');
+		if(fun){
+			fun();
+		}
+	}
+}
+
 function reload(timeout){
 	if(timeout && timeout > 0) {
 		setTimeout("reload()", timeout);
