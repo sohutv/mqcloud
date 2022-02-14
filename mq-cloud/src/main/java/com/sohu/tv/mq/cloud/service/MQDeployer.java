@@ -284,7 +284,8 @@ public class MQDeployer {
         String brokerIp = param.get("ip").toString();
         // 1.基础配置
         String comm = String.format(DATA_LOGS_DIR, absoluteDir, absoluteDir)
-                + "echo -e \""
+                + "mkdir -p " + param.get("storePathRootDir") + "/consumequeue " + param.get("storePathCommitLog")
+                + "|echo -e \""
                 + map2String(param, cluster.getId())
                 + "\" > " + absoluteConfig + "|"
                 + String.format(RUN_CONFIG, absoluteDir, "mqbroker", absoluteDir, absoluteDir, absoluteDir);
