@@ -28,13 +28,19 @@ public class ConsumerDeadTrafficService extends HourTrafficService {
     @Autowired
     private MQCloudConfigHelper mqCloudConfigHelper;
     
+    @Autowired
+    private AlarmConfigBridingService alarmConfigBridingService;
+    
     protected void alert(TopicHourTraffic topicTraffic, TopicConsumer topicConsumer, List<User> userList) {
-        Map<String, Object> paramMap = new HashMap<>();
-        paramMap.put("topic", topicConsumer.getTopic());
-        paramMap.put("consumer", mqCloudConfigHelper.getTopicConsumeLink(topicConsumer.getTid(), topicConsumer.getConsumer()));
-        paramMap.put("count", topicTraffic.getCount());
-        paramMap.put("resource", topicConsumer.getConsumer());
-        alertService.sendWarn(userList, WarnType.DEAD_MESSAGE, paramMap);
+        // 验证报警频率
+        if (alarmConfigBridingService.needWarn("consumerDead", topicConsumer.getTopic(), topicConsumer.getConsumer())) {
+            Map<String, Object> paramMap = new HashMap<>();
+            paramMap.put("topic", topicConsumer.getTopic());
+            paramMap.put("consumer", mqCloudConfigHelper.getTopicConsumeLink(topicConsumer.getTid(), topicConsumer.getConsumer()));
+            paramMap.put("count", topicTraffic.getCount());
+            paramMap.put("resource", topicConsumer.getConsumer());
+            alertService.sendWarn(userList, WarnType.DEAD_MESSAGE, paramMap);
+        }
     }
 
     protected String getCountKey() {
