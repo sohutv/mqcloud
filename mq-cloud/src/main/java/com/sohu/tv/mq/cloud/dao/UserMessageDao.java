@@ -20,15 +20,22 @@ public interface UserMessageDao {
      * 查询未读消息
      * @return
      */
-    @Select("select * from user_message where uid = #{uid} and status = 0 order by id desc")
-    public List<UserMessage> select(@Param("uid")long uid);
+    @Select("select count(1) from user_message where uid = #{uid} and status = 0")
+    public Integer selectUnreadCount(@Param("uid")long uid);
+    
+    /**
+     * 查询消息数量
+     * @return
+     */
+    @Select("select count(1) from user_message where uid = #{uid}")
+    public Integer selectCount(@Param("uid") long uid);
     
     /**
      * 查询所有消息
      * @return
      */
-    @Select("select * from user_message where uid = #{uid} order by id desc")
-    public List<UserMessage> selectAll(@Param("uid")long uid);
+    @Select("select * from user_message where uid = #{uid} order by id desc limit #{m},#{n}")
+    public List<UserMessage> select(@Param("uid")long uid, @Param("m") int m, @Param("n") int size);
     
     /**
      * 插入

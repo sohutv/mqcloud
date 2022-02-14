@@ -1,7 +1,21 @@
 <div class="main">
 	<form class="form-inline" role="form">
 		<div class="form-group">
-			<label> 用户列表: </label>
+			<label for="userGroupSelect"> 用户组: </label>
+			<select name="type" id="userGroupSelect" class="form-control select2_category">
+				<option value="-1" <#if RequestParameters.gid == "-1">selected="selected"</#if>>全部</option>
+				<option value="0" <#if RequestParameters.gid == "0">selected="selected"</#if>>未分组</option>
+				<#if userGroupList??>
+					<#list userGroupList as userGroup>
+						<option value="${userGroup.id}" <#if userGroup.id == RequestParameters.gid?number>selected="selected"</#if>>${userGroup.name}</option>
+					</#list>
+				</#if>
+			</select>
+		</div>
+		<div class="form-group">
+			<button type="button" class="btn btn-success" data-target="#modifyUserGroupModal" data-toggle="modal"><span class="glyphicon glyphicon-cog" aria-hidden="true"></span>&nbsp;用户组管理</button>
+		</div>
+		<div class="form-group">
 			<button type="button" class="btn btn-success" data-target="#addUserModal" data-toggle="modal"><span class="glyphicon glyphicon-plus" aria-hidden="true"></span>&nbsp;用户</button>
 		</div>
 	</form>
@@ -15,6 +29,7 @@
 				<td>手机</td>
 				<td>手机预警</td>
 				<td>角色</td>
+				<td>用户组</td>
 				<td>创建时间</td>
 				<td>更新时间</td>
 				<td>操作</td>
@@ -23,7 +38,7 @@
 		<tbody>
             <#if response.empty>
 			     <tr>
-                    <td colspan="7"class="text-center" >
+                    <td colspan="10" class="text-center">
                     	暂无数据
                     </td>
                 <tr>
@@ -36,6 +51,7 @@
 						<td>${user.mobile!}</td>
 						<td><#if user.receivePhoneNotice()>开启<#else>关闭</#if></td>
 						<td><#if user.type == 0>普通用户<#else>管理员</#if></td>
+						<td>${user.groupName!}</td>
 						<td>${user.createDate?string("yyyy-MM-dd")}</td>
 						<td>${user.updateTime?string("yyyy-MM-dd HH:mm:ss")}</td>
 						<td>
@@ -158,6 +174,81 @@
 		</div>
 	</div>
 </div>
+
+<!-- 用户组管理 -->
+<div id="modifyUserGroupModal" class="modal fade" tabindex="-1">
+	<div class="modal-dialog" style="width:800px;">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+				<h4 class="modal-title">用户组管理</h4>
+			</div>
+			<div class="modal-content" style="height:500px;overflow-y:scroll;overflow-x:hidden;">
+				<div class="row" style="padding-left:16px;">
+					<div class="col-sm-4" style="padding-left:0px;">
+						<ul class="list-group" style="margin-bottom:0px;">
+							<li class="list-group-item btn-success"><h5 class="list-group-item-heading">用户组<span data-toggle='tooltip' title="新增用户组" onclick="updateUserGroupShow(0)" style="float:right;cursor:pointer;" class="glyphicon glyphicon-plus" aria-hidden="true"></span></h5></li> 
+						</ul>
+						<ul class="list-group" id="userGroup">
+							<li class="list-group-item"><p class="list-group-item-text">暂无数据</p></li> 
+						</ul>
+					</div>
+					<div class="col-sm-4" style="padding-left:0px;">
+						<ul class="list-group" style="margin-bottom:0px;">
+							<li class="list-group-item btn-success"><h5 class="list-group-item-heading">组员</h5></li> 
+						</ul>
+						<ul class="list-group" id="groupMembers">
+							<li class="list-group-item"><p class="list-group-item-text">暂无数据</p></li> 
+						</ul>
+					</div>
+					<div class="col-sm-4" style="padding-left:0px;">
+						<ul class="list-group" style="margin-bottom:0px;">
+							<li class="list-group-item btn-success"><h5 class="list-group-item-heading">用户</h5></li> 
+							<li class="list-group-item"><input class="form-control" id="userSearch" type="text" placeholder="搜索"></li> 
+						</ul>
+						<ul class="list-group" id="users">
+							<li class="list-group-item"><p class="list-group-item-text">暂无数据</p></li> 
+						</ul>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- 增加用户组 -->
+<div id="updateUserGroupModal" class="modal fade" tabindex="-1">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" onclick="hideMsgSearchModal()" aria-hidden="true">&times;</button>
+				<h4 class="modal-title"><span id="userGroupAction"></span>用户组</h4>
+			</div>
+            <form class="form-horizontal form-bordered form-row-stripped" id="updateUserGroupForm" onsubmit="return false">
+            	<input type="hidden" id="userGroupId" name="id" value="0">
+				<div class="modal-body">
+					<div class="row">
+						<div class="col-md-12">
+							<div class="form-body">
+								<div class="form-group">
+									<label class="control-label col-md-4"> 用户组: </label>
+									<div class="col-md-5">
+										<input type="text" id="userGroupInput" name="name" value="" placeholder="组名" class="form-control" />
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" data-dismiss="modal" class="btn" >取消</button>
+					<button type="button" class="btn btn-primary" id="updateUserGroupBtn" onclick="updateUserGroup()">确定</button>
+				</div>
+			</form>
+		</div>
+	</div>
+</div>
+
 <script>
 function monitor(t, uid){
 	var flag = 0;
@@ -179,6 +270,18 @@ function monitor(t, uid){
 }
 $(function(){
 	$("[data-toggle='modal']").tooltip();
+	$('#modifyUserGroupModal').on('shown.bs.modal', function() {
+		getAllGroup();
+	});
+	$("#userSearch").on("keyup", function() {
+	    var value = $(this).val().toLowerCase();
+	    $("#users li").filter(function() {
+	      $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
+	    });
+	});
+});
+$('#userGroupSelect').on('change',function(){
+	window.location.href = "${request.contextPath}/admin/user/list?gid="+$(this).val();
 });
 // 添加用户
 function addUser(){
@@ -230,5 +333,108 @@ function updateUserPasswordCommit(){
 			    	enable("updateUserPasswordBtn");
 			    }
 	        }, 'json');
+}
+// 获取用户组
+function getAllGroup(){
+	$.get('${request.contextPath}/admin/user/group/list',
+       function(data){
+		$("#userGroup").html(data);
+		$("#userGroup a:first-child").click();
+     });
+}
+// 获取组员
+function getGroupMember(gid){
+	$("#A"+gid).addClass("active").siblings().removeClass("active");
+	$.get('${request.contextPath}/admin/user/group/members',
+		{
+			gid : gid
+		},
+        function(data){
+			$("#groupMembers").html(data);
+        });
+	getNoGroupUsers();
+}
+// 获取未分组用户
+function getNoGroupUsers(){
+	$.get('${request.contextPath}/admin/user/group/members?gid=0',
+        function(data){
+			$("#users").html(data);
+        });
+}
+// 显示更新用户组
+function updateUserGroupShow(id){
+	$("#userGroupId").val(id);
+	if(id > 0){
+		$("#userGroupAction").html("修改");
+		$("#userGroupInput").val($("#userGroup" + id).html());
+	} else {
+		$("#userGroupAction").html("新增");
+		$("#userGroupInput").val("");
+	}
+	$("#updateUserGroupModal").modal('show');
+}
+// 更新用户组
+function updateUserGroup(){
+	disable("updateUserGroupBtn");
+	$.post('${request.contextPath}/admin/user/group/update',
+		$("#updateUserGroupForm").serialize(),
+        function(data){
+	    	enable("updateUserGroupBtn");
+            if(data.status == 200){
+				var gid = $("#userGroupId").val();
+				if(gid == 0){
+					toastr.success("操作成功，系统将自动刷新");  
+					modalHideId("updateUserGroupModal", 1000, 'getAllGroup');
+				} else {
+					toastr.success("操作成功");
+					modalHideId("updateUserGroupModal", 1000);
+					$("#userGroup" + $("#userGroupId").val()).html($("#userGroupInput").val());
+				}
+		    }else{
+		    	toastr.error("操作失败！"+data.message);  
+		    }
+        }, 'json');
+}
+// 从用户组移除
+function removeFromUserGroup(uid){
+	var gid = $("#userGroup a.active").attr("data-id");
+	if(!gid){
+		alert("请先选择用户组");
+		return;
+	}
+	$.post('${request.contextPath}/admin/user/update/group',
+		{
+			uid: uid,
+			gid: 0
+		},
+        function(data){
+            if(data.status == 200){
+				toastr.success("操作成功");
+				getGroupMember(gid);
+		    }else{
+		    	toastr.error("操作失败！"+data.message);  
+		    }
+        }, 'json');
+}
+// 添加到用户组
+function addToUserGroup(uid){
+	var gid = $("#userGroup a.active").attr("data-id");
+	if(!gid){
+		alert("请先选择用户组");
+		return;
+	}
+	$.post('${request.contextPath}/admin/user/update/group',
+		{
+			uid: uid,
+			gid: gid
+		},
+        function(data){
+            if(data.status == 200){
+				toastr.success("操作成功");
+				getGroupMember(gid);
+		    }else{
+		    	toastr.error("操作失败！"+data.message);  
+		    }
+        }, 'json');	
 }
 </script>

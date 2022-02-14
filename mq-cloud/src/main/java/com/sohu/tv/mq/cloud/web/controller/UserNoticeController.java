@@ -1,8 +1,9 @@
 package com.sohu.tv.mq.cloud.web.controller;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+
+import javax.validation.Valid;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -14,8 +15,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import com.sohu.tv.mq.cloud.bo.UserMessage;
 import com.sohu.tv.mq.cloud.service.UserMessageService;
 import com.sohu.tv.mq.cloud.util.Result;
-import com.sohu.tv.mq.cloud.util.Status;
-import com.sohu.tv.mq.cloud.web.vo.MessageVO;
+import com.sohu.tv.mq.cloud.web.controller.param.PaginationParam;
 import com.sohu.tv.mq.cloud.web.vo.UserInfo;
 
 /**
@@ -32,27 +32,15 @@ public class UserNoticeController extends ViewController {
     private UserMessageService userMessageService;
     
     /**
-     * 获取未读消息
+     * 获取未读消息数量
      * @return
      * @throws Exception
      */
     @ResponseBody
     @RequestMapping
-    public Result<List<MessageVO>> index(UserInfo userInfo) throws Exception {
-        Result<List<UserMessage>> userMessageListResult = userMessageService.queryUnread(userInfo.getUser().getId());
-        if(userMessageListResult.isEmpty()) {
-            return Result.getResult(Status.NO_RESULT);
-        }
-        List<UserMessage> userMessageList = userMessageListResult.getResult();
-        List<MessageVO> msgList = new ArrayList<>(userMessageList.size());
-        for(UserMessage userMessage : userMessageList) {
-            MessageVO messageVO = new MessageVO();
-            messageVO.setId(userMessage.getId());
-            messageVO.setText(userMessage.getMessage());
-            messageVO.setReadStatus(userMessage.getStatus());
-            msgList.add(messageVO);
-        }
-        return Result.getResult(msgList);
+    public Result<?> index(UserInfo userInfo) throws Exception {
+        Result<Integer> countResult = userMessageService.queryUnread(userInfo.getUser().getId());
+        return Result.getWebResult(countResult);
     }
     
     /**
@@ -60,13 +48,23 @@ public class UserNoticeController extends ViewController {
      * @return
      * @throws Exception
      */
-    @RequestMapping("/all")
-    public String all(UserInfo userInfo, Map<String, Object> map) throws Exception {
-        Result<List<UserMessage>> userMessageListResult = userMessageService.queryAll(userInfo.getUser().getId());
+    @RequestMapping("/list")
+    public String list(UserInfo userInfo, @Valid PaginationParam paginationParam, Map<String, Object> map)
+            throws Exception {
+        // 设置分页参数
+        setPagination(map, paginationParam);
+        // 获取警告数量
+        long uid = userInfo.getUser().getId();
+        Result<Integer> countResult = userMessageService.queryCount(uid);
+        if (!countResult.isOK()) {
+            return view();
+        }
+        paginationParam.caculatePagination(countResult.getResult());
+        Result<List<UserMessage>> userMessageListResult = userMessageService.queryList(uid, paginationParam.getBegin(),
+                paginationParam.getNumOfPage());
         setResult(map, userMessageListResult);
-        return viewModule() + "/all";
+        return viewModule() + "/list";
     }
-    
     
     /**
      * 标记为已读
