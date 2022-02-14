@@ -5,6 +5,7 @@ import java.util.List;
 
 import com.alibaba.fastjson.JSON;
 import com.sohu.tv.mq.cloud.util.CompressUtil;
+import com.sohu.tv.mq.util.CommonUtil;
 
 /**
  * 消息查询条件
@@ -237,5 +238,9 @@ public class MessageQueryCondition {
 
     public void setQueueId(Integer queueId) {
         this.queueId = queueId;
+    }
+    
+    public boolean useStoreTime() {
+        return CommonUtil.isDeadTopic(topic) || CommonUtil.isRetryTopic(topic);
     }
 }
