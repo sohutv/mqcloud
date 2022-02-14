@@ -263,7 +263,7 @@ public class TopicController extends ViewController {
     @ResponseBody
     @RequestMapping("/list")
     public Result<?> list(UserInfo userInfo) throws Exception {
-        Result<List<Topic>> topicListResult = topicService.queryAllTopic();
+        Result<List<Topic>> topicListResult = topicService.queryNoneTraceableTopic();
         return Result.getWebResult(topicListResult);
     }
 
@@ -465,6 +465,11 @@ public class TopicController extends ViewController {
         // 校验是否需要修改
         if (topic.getTrafficWarnEnabled() == trafficWarnEnabled) {
             return Result.getResult(Status.NO_NEED_MODIFY_ERROR);
+        }
+        // 校验当前用户是否拥有权限
+        Result<UserProducer> userProducerResult = userProducerService.findUserProducer(userInfo.getUser().getId(), tid);
+        if (userProducerResult.isNotOK() && !userInfo.getUser().isAdmin()) {
+            return Result.getResult(Status.PERMISSION_DENIED_ERROR);
         }
         // 构造审核记录
         Audit audit = new Audit();
