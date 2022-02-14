@@ -55,7 +55,7 @@ spring:
       log-abandoned: true
       
 mqcloud: 
-  repositoryUrl: https://raw.github.com/sohutv/mvn_repo/master
+  repositoryUrl: https://私有仓库/nexus/content/groups/public
   clientArtifactId: mq-client-open
   producerClass:  RocketMQProducer
   consumerClass: RocketMQConsumer
