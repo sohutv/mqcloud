@@ -133,10 +133,6 @@
             <id>aliyun.repo</id>
             <url>http://maven.aliyun.com/nexus/content/groups/public/</url>
         </repository>
-	    <repository>
-	        <id>github.repo</id>
-	        <url>https://raw.github.com/sohutv/mvn_repo/master</url>
-	    </repository>
 	</repositories>
 
 	<distributionManagement>
@@ -181,38 +177,6 @@
 					</execution>
 				</executions>
 			</plugin>
-			
-			<!-- github repo -->
-			<plugin>
-                <artifactId>maven-deploy-plugin</artifactId>
-                <configuration>
-                    <altDeploymentRepository>internal.repo::default::file://${project.build.directory}/mvn-repo</altDeploymentRepository>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>com.github.github</groupId>
-                <artifactId>site-maven-plugin</artifactId>
-                <configuration>
-                    <message>mqcloud for ${project.version}</message>
-                    <noJekyll>true</noJekyll>
-                    <outputDirectory>${project.build.directory}/mvn-repo</outputDirectory>
-                    <branch>refs/heads/master</branch>
-                    <merge>true</merge>
-                    <includes>
-                        <include>**/*</include>
-                    </includes>
-                    <repositoryName>mvn_repo</repositoryName>
-                    <repositoryOwner>sohutv</repositoryOwner>
-                </configuration>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>site</goal>
-                        </goals>
-                        <phase>deploy</phase>
-                    </execution>
-                </executions>
-        	</plugin>
 		</plugins>
 	</build>
 </project>
