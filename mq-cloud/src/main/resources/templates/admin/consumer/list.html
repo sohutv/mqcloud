@@ -1,0 +1,377 @@
+<div class="main">
+	<form class="form-inline" role="form" action="${request.contextPath}/admin/consumer/list">
+		<div class="form-group">
+			<label for="cid"> 集群: </label>
+			<div class="form-group">
+				<select id="cid" class="selectpicker" title="搜索集群" data-live-search-placeholder="输入搜索内容" name="cid" data-live-search="true"></select>
+			</div>
+		</div>
+		<div class="form-group">
+			<label for="gid"> 组织: </label>
+			<div class="form-group">
+				<select id="gid" class="selectpicker" title="搜索组织" data-live-search-placeholder="输入搜索内容" name="gid" data-live-search="true"></select>
+			</div>
+		</div>
+		<div class="form-group">
+			<label for="uid"> 人员: </label>
+			<div class="form-group">
+				<select id="uid" class="selectpicker" title="搜索人员" data-live-search-placeholder="输入搜索内容" name="uid" data-live-search="true"></select>
+			</div>
+		</div>
+		<div class="form-group">
+			<label for="noneConsumerFlows"> 当日无消费量: </label>
+			<div class="form-group">
+				<select id="noneConsumerFlows" class="selectpicker" title="搜索" data-live-search-placeholder="输入搜索内容" name="noneConsumerFlows" data-live-search="false">
+					<option value="" selected="selected">全部</option>
+					<option value=true>是</option>
+				</select>
+			</div>
+		</div>
+    <button type="submit" class="btn btn-search"><span class="glyphicon glyphicon-search" aria-hidden="true"></span></button>
+	</form>
+	<hr/>
+	<table class="table table-striped table-hover" style="margin-top: 0px;word-break:break-all; word-wrap:break-all;">
+		<thead>
+			<colgroup>
+				<col width="8%">
+				<col width="20%">
+				<col width="20%">
+				<col width="12%">
+				<col width="8%">
+				<col width="10%">
+				<col>
+			</colgroup>
+			<tr>
+				<td style="text-align:center;vertical-align:middle;">序号</td>
+				<td style="text-align:center;vertical-align:middle;">关联主题</td>
+				<td style="text-align:center;vertical-align:middle;">消费者名称</td>
+				<td style="text-align:center;vertical-align:middle;">消费者创建时间</td>
+				<td style="text-align:center;vertical-align:middle;" data-toggle="tooltip" title="当前时间前5分钟的消费量统计">消费量</td>
+				<td style="text-align:center;vertical-align:middle;">消费者描述</td>
+				<td style="text-align:center;vertical-align:middle;">操作</td>
+			</tr>
+		</thead>
+		<tbody>
+			<#if listResult.empty>
+				<tr>
+					<td colspan=10 style="text-align:center">
+						暂无数据
+					</td>
+				</tr>
+			<#else>
+				<#list listResult.result as manager>
+					<tr>
+						<td style="text-align:center;vertical-align:middle;">${manager.index}</td>
+						<td style="text-align:center;vertical-align:middle;">${manager.topic.name!}</td>
+						<td style="text-align:center;vertical-align:middle;"><a title="查看详情" href="${request.contextPath}/user/topic/${manager.topic.id}/detail?tab=consume&consumer=${manager.consumer.name}">${manager.consumer.name!}</a></td>
+						<td style="text-align:center;vertical-align:middle;">${manager.consumer.createDate?string("yyyy-MM-dd")}</td>
+						<td style="text-align:center;vertical-align:middle;">${manager.lastFiveMinusConsumerFlow}</td>
+						<td style="text-align:center;vertical-align:middle;">${manager.consumer.info!}</td>
+						<td style="text-align:center;vertical-align:middle;">
+							<button type="button" class="btn btn-sm btn-success" title="属性修改" data-target="#editConsumerModel" data-toggle="modal" onclick="loadTopicEdit('${manager.consumer.id}');"><span class="glyphicon glyphicon-cog" aria-hidden="true"></span></button>
+							<button type="button" class="btn btn-sm btn-success" title="检查consumer" data-target="#consumerDeleteCheck" data-toggle="modal" onclick="loadDeleteCheck('${manager.consumer.id}','${manager.topic.id}','${manager.consumer.name!}','${manager.topic.name!}');"><span class="glyphicon glyphicon-check" aria-hidden="true"></span></button>
+						</td>
+					</tr>
+				</#list>
+			</#if>
+		</tbody>
+	</table>
+<ul id="pagination" data-url="${request.contextPath}/admin/consumer/list?${queryParams.queryStr!}" style="float:right"></ul>
+<#include "../../inc/pagination.html">
+</div>
+
+
+<div id="editConsumerModel" class="modal fade" tabindex="-1" data-width="400">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+				<h4 class="modal-title">属性修改</h4>
+			</div>
+			<div class="form-group">
+				<form class="form-horizontal form-bordered form-row-stripped" id="consumerTypeEdit">
+					<div class="form-body">
+						<label class="control-label col-md-4"> 消费者消费模式: </label>
+						<input type="hidden" name="editId" id="editId" class="form-control" />
+						<label class="checkbox-inline" title="每条消息只能被消费者组内某个实例消费">
+							<input type="radio" name="Consumertype" value="0"><span>集群消费</span></input>
+						</label>
+						<label class="checkbox-inline" title="每条消息将被消费者组内所有实例消费">
+							<input type="radio" name="Consumertype" value="1" ><span>广播消费</span></input>
+						</label>
+					</div>
+				</form>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-default" data-dismiss="modal">
+					关闭
+				</button>
+				<button type="button" id="editAttribute" class="btn btn-primary" onclick="EditType()">
+					保存
+				</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<div id="consumerDeleteCheck" class="modal fade" tabindex="-1" data-width="500">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+				<h4 class="modal-title">删除校验</h4>
+			</div>
+			<form class="form-horizontal form-bordered form-row-stripped" id="addTopicForm">
+				<div class="modal-body">
+					<div class="row">
+						<div class="col-md-12">
+							<div class="form-body">
+								<div class="form-group">
+									<label class="control-label col-md-4"> 当前消费者名称: </label>
+									<div class="col-md-7">
+										<input type="hidden" name="cid" id="c_check_id" class="form-control" />
+										<div class="form-control-static" style="border:0;border-radius:5px;background-color:rgba(241,241,241,.98);padding-left:10px">
+											<span id="cName" style="word-break:break-all;text-align: center"></span>
+										</div>
+									</div>
+								</div>
+								<div class="form-group">
+									<label class="control-label col-md-4"> 当前关联Topic: </label>
+									<div class="col-md-7">
+										<div class="form-control-static" style="border:0;border-radius:5px;background-color:rgba(241,241,241,.98);padding-left:10px">
+											<span id="rtopic" style="word-break:break-all;text-align: center"></span>
+										</div>
+										<input type="hidden" name="tid" id="t_check_id" class="form-control" />
+									</div>
+								</div>
+								<div class="form-group">
+									<label class="control-label col-md-4"> topic是否唯一关联:  </label>
+									<div class="col-md-5">
+										<div class="form-control-static" style="border:0;border-radius:5px;background-color:rgba(241,241,241,.98);padding-left:10px">
+											<span id="onlyRelation" style="word-break:break-all;text-align: center"></span>
+										</div>
+									</div>
+								</div>
+								<div class="form-group">
+									<label class="control-label col-md-4"> 近30天消费消息量:   </label>
+									<div class="col-md-5">
+										<div class="form-control-static" style="border:0;border-radius:5px;background-color:rgba(241,241,241,.98);padding-left:10px">
+											<span id="monFlow" style="word-break:break-all;text-align: center"></span>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-default" data-dismiss="modal">
+						关闭
+					</button>
+					<button type="button" id="excuteDelete" class="btn btn-primary" onclick="excuteDeleteConsumer()">
+						去删除
+					</button>
+				</div>
+			</form>
+		</div>
+	</div>
+</div>
+
+
+<script>
+
+	$(function(){
+		$('#cid').selectpicker({
+			width: '130px'
+		});
+		initClusterList("cid");
+		$('#gid').selectpicker({
+			width: '130px'
+		});
+		initGroupList("gid");
+		$('#uid').selectpicker({
+			width: '220px'
+		});
+		initUserList("uid")
+		$('#noneConsumerFlows').selectpicker({
+			width: '100px'
+		});
+		initConsumerFlows("noneConsumerFlows")
+	});
+
+	/**
+	 * 初始化集群下拉列表
+	 */
+	function initClusterList(showCluserList){
+		$.get('${request.contextPath}/admin/topicManager/getAllCluser',
+				function(data){
+					if(data.result.status == 200){
+						var content = "";
+						content += "<option value= >"+'全部'+"</option>";
+						for(var i in data.result.result){
+							var cluser = data.result.result[i];
+							content += "<option value='"+cluser.id+"'>"+cluser.name+"</option>";
+						}
+						$("#"+showCluserList).html(content);
+						$("#"+showCluserList).selectpicker('refresh');
+						<#if queryParams.queryStr?? && queryParams.cid??>
+								$('#' + showCluserList).selectpicker('val', '${queryParams.cid}');
+					</#if>
+					}else{
+						toastr.error("数据获取失败！"+data.message);
+					}
+				}, 'json');
+	}
+
+	/**
+	 * 初始化组织下拉列表
+	 */
+	function initGroupList(ShowGroupList){
+		$.get('${request.contextPath}/admin/topicManager/getAllGroup',
+				function(data){
+					if(data.result.status == 200){
+						var content = "";
+						content += "<option value= >"+'全部'+"</option>";
+						for(var i in data.result.result){
+							var group = data.result.result[i];
+							content += "<option value='"+group.id+"'>"+group.name+"</option>";
+						}
+						$("#"+ShowGroupList).html(content);
+						$("#"+ShowGroupList).selectpicker('refresh');
+						<#if queryParams.queryStr?? && queryParams.gid??>
+								$('#' + ShowGroupList).selectpicker('val', '${queryParams.gid}');
+					</#if>
+					}else{
+						toastr.error("数据获取失败！"+data.message);
+					}
+				}, 'json');
+	}
+
+	/**
+	 * 初始化用户下拉列表
+	 */
+	function initUserList(userShowList){
+		$.post('${request.contextPath}/user/list',
+				function(data){
+					if(data.status == 200){
+						var content = "";
+						content += "<option value= >"+'全部'+"</option>";
+						for(var i in data.result){
+							var user = data.result[i];
+							var value = user.email.substring(0, user.email.indexOf("@"));
+							if(user.name && user.name != value){
+								value = user.name + "【" + value +"】";
+							}
+							content += "<option value='"+user.id+"'>"+value+"</option>";
+						}
+						$("#"+userShowList).html(content);
+						$("#"+userShowList).selectpicker('refresh');
+						<#if queryParams.queryStr?? && queryParams.uid??>
+								$('#' + userShowList).selectpicker('val', '${queryParams.uid}');
+					</#if>
+					}else{
+						toastr.error("数据获取失败！"+data.message);
+					}
+				}, 'json');
+	}
+
+
+	function initConsumerFlows(consumerStatus) {
+		<#if queryParams.queryStr??  && queryParams.noneConsumerFlows??>
+				$('#' + consumerStatus).selectpicker('val', '${queryParams.noneConsumerFlows?c}');
+		</#if>
+	}
+
+	function excuteDeleteConsumer(){
+		var cName =$("#cName").html() ;
+		let tid = $("#t_check_id").val();
+		window.location.href="${request.contextPath}/user/topic/"+tid + "/detail?tab=consume&consumer=" +cName;
+	}
+
+	function loadTopicEdit(cid){
+		$("#editId").val(cid);
+		$.get('${request.contextPath}/admin/consumer/getAttributes',
+		{cid: cid},function (data){
+					if(data.result.status == 200){
+						var type = data.result.result;
+						if (type != -1){
+							$(":radio[name='Consumertype'][value='" + type + "']").prop("checked", "checked");
+						}
+					}
+		}, 'json');
+	}
+
+	function EditType(){
+		var id = $("#editId").val();
+		var type =  $("input[name=Consumertype]:checked").val();
+		$.post('${request.contextPath}/admin/consumer/updateAttributes',
+				{
+					cid: id,
+					consumeWay: type
+				},
+				function(data){
+					if(data.result.status == 200){
+						toastr.success("修改成功, 系统将自动刷新");
+						reload();
+					}else{
+						toastr.error("修改成功！"+data.message);
+						enable("nameServerDeleteBtn");
+					}
+				}, 'json');
+	}
+
+	function loadDeleteCheck(cid,tid,cname,tname){
+		$("#cName").html(cname);
+		$("#rtopic").html(tname);
+		$("#c_check_id").val(cid);
+		$("#t_check_id").val(tid);
+		$.get('${request.contextPath}/admin/consumer/getConsumerState',
+				{
+					cid: cid,
+					tid: tid
+				},
+			function (data){
+				var flows = data.result.result.recentMonConMsgNum;
+				$("#monFlow").html(format(flows));
+				var only = data.result.result.onlyRelation;
+				if(only == 0){
+					$("#onlyRelation").html('是');
+				}else {
+					$("#onlyRelation").html('否');
+				}
+
+		}, 'json');
+	}
+
+	function format(value){
+		if(value >= 100000000){
+			return formatNum(value / 100000000) +'亿';
+		}
+		if(value >= 10000){
+			return formatNum(value / 10000) +'万';
+		}
+		if(value >= 1000){
+			return formatNum(value / 1000) +'千';
+		}
+		return value;
+	}
+
+	function excuteDeleteConsumer1(){
+		disable("excuteDelete");
+		var id = $("#c_check_id").val();
+		$.post('${request.contextPath}/admin/consumer/deleteConsumer',
+				{
+					cid: id
+				},
+				function(data){
+					if(data.result.status == 200){
+						toastr.success("删除成功, 系统将自动刷新");
+						reload(3000);
+					}else{
+						toastr.error("删除失败！"+data.message);
+						enable("nameServerDeleteBtn");
+					}
+				}, 'json');
+	}
+</script>
+

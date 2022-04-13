@@ -2,10 +2,7 @@ package com.sohu.tv.mq.cloud.dao;
 
 import java.util.List;
 
-import org.apache.ibatis.annotations.Insert;
-import org.apache.ibatis.annotations.Options;
-import org.apache.ibatis.annotations.Param;
-import org.apache.ibatis.annotations.Select;
+import org.apache.ibatis.annotations.*;
 
 import com.sohu.tv.mq.cloud.bo.ConsumerBlock;
 import com.sohu.tv.mq.cloud.bo.ConsumerStat;

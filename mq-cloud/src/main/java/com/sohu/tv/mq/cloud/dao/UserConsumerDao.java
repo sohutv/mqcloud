@@ -61,7 +61,7 @@ public interface UserConsumerDao {
     
     /**
      * 查询记录
-     * @param consumer
+     * @param
      */
     @Select("select * from user_consumer where tid = #{tid} and consumer_id in "
             + "(select id from consumer where name = #{name})")
@@ -116,8 +116,24 @@ public interface UserConsumerDao {
     /**
      * 根据uid和consumerId查询
      * @param uid
-     * @param consumerId
+     * @param
      */
     @Select("select distinct tid from user_consumer where uid = #{uid} and consumer_id =#{cid}")
     public List<Long> selectTidByUidAndConsumerId(@Param("uid")long uid, @Param("cid")long cid);
+
+    /**
+     * 根据uid查询
+     * @param uid
+     */
+    @Select("select distinct tid from user_consumer where uid = #{uid} ")
+    List<Long> selectTidListByUid(@Param(value = "uid") long uid);
+
+    /**
+     * 根据gid查询
+     * @param gid
+     */
+    @Select("<script>select distinct tid from user_consumer where "
+            +  " uid in (select id from user where gid = #{gid})"
+            + "</script>")
+    List<Long> selectTidListByGid(@Param(value = "gid")long gid);
 }

@@ -26,7 +26,9 @@ import org.apache.rocketmq.tools.admin.DefaultMQAdminExt;
 import org.apache.rocketmq.tools.admin.DefaultMQAdminExtImpl;
 
 import com.sohu.tv.mq.cloud.common.model.BrokerMomentStatsData;
+import com.sohu.tv.mq.cloud.common.model.BrokerRateLimitData;
 import com.sohu.tv.mq.cloud.common.model.BrokerStoreStat;
+import com.sohu.tv.mq.cloud.common.model.UpdateSendMsgRateLimitRequestHeader;
 import com.sohu.tv.mq.util.Constant;
 
 /**
@@ -104,6 +106,17 @@ public abstract class SohuMQAdmin extends DefaultMQAdminExt {
         MQClientInstance mqClientInstance = (MQClientInstance) field.get(defaultMQAdminExtImpl);
         return mqClientInstance;
     }
+    
+    public long getTimeoutMillis() throws Exception {
+        // 反射获取defaultMQAdminExtImpl实例
+        Field defaultMQAdminExtImplField = DefaultMQAdminExt.class.getDeclaredField("defaultMQAdminExtImpl");
+        defaultMQAdminExtImplField.setAccessible(true);
+        DefaultMQAdminExtImpl defaultMQAdminExtImpl = (DefaultMQAdminExtImpl) defaultMQAdminExtImplField.get(this);
+        // 反射获取mqClientInstance实例
+        Field field = DefaultMQAdminExtImpl.class.getDeclaredField("timeoutMillis");
+        field.setAccessible(true);
+        return (long) field.get(defaultMQAdminExtImpl);
+    }
 
     /**
      * 获取broker存储统计
@@ -116,8 +129,7 @@ public abstract class SohuMQAdmin extends DefaultMQAdminExt {
      * @throws MQClientException
      * @throws InterruptedException
      */
-    public abstract BrokerStoreStat getBrokerStoreStats(String brokerAddr) throws RemotingConnectException,
-            RemotingSendRequestException, RemotingTimeoutException, MQClientException, InterruptedException;
+    public abstract BrokerStoreStat getBrokerStoreStats(String brokerAddr) throws Exception;
 
     /**
      * 从broker获取瞬时统计
@@ -132,9 +144,7 @@ public abstract class SohuMQAdmin extends DefaultMQAdminExt {
      * @throws MQClientException
      * @throws InterruptedException
      */
-    public abstract BrokerMomentStatsData getMomentStatsInBroker(String brokerAddr, String statsName, long minValue)
-            throws RemotingConnectException, RemotingSendRequestException, RemotingTimeoutException,
-            MQClientException, InterruptedException;
+    public abstract BrokerMomentStatsData getMomentStatsInBroker(String brokerAddr, String statsName, long minValue) throws Exception;
 
     /**
      * 获取消费线程指标
@@ -250,9 +260,7 @@ public abstract class SohuMQAdmin extends DefaultMQAdminExt {
      * @throws IllegalAccessException
      */
     public void consumeTimespanMessage(String clientId, String topic, String group, long startTimestamp,
-            long endTimestamp, long timeoutMillis)
-            throws RemotingException, MQClientException, InterruptedException, NoSuchFieldException, SecurityException,
-            IllegalArgumentException, IllegalAccessException {
+            long endTimestamp) throws Exception {
         TopicRouteData topicRouteData = this.examineTopicRouteInfo(topic);
         List<BrokerData> brokerDatas = topicRouteData.getBrokerDatas();
         if (brokerDatas != null) {
@@ -270,7 +278,7 @@ public abstract class SohuMQAdmin extends DefaultMQAdminExt {
                 request.addExtField(Constant.COMMAND_TIMESPAN_START, String.valueOf(startTimestamp));
                 request.addExtField(Constant.COMMAND_TIMESPAN_END, String.valueOf(endTimestamp));
                 RemotingCommand response = getMQClientInstance().getMQClientAPIImpl().getRemotingClient().invokeSync(
-                        MixAll.brokerVIPChannel(isVipChannelEnabled(), addr), request, timeoutMillis);
+                        MixAll.brokerVIPChannel(isVipChannelEnabled(), addr), request, getTimeoutMillis());
                 assert response != null;
                 switch (response.getCode()) {
                     case ResponseCode.SUCCESS: {
@@ -283,4 +291,9 @@ public abstract class SohuMQAdmin extends DefaultMQAdminExt {
             }
         }
     }
+    
+    public abstract BrokerRateLimitData fetchSendMessageRateLimitInBroker(String brokerAddr) throws Exception;
+
+    public abstract void updateSendMessageRateLimit(String brokerAddr,
+            UpdateSendMsgRateLimitRequestHeader updateSendMsgRateLimitRequestHeader) throws Exception;
 }

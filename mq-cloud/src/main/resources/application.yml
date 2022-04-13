@@ -39,7 +39,7 @@ spring:
     settings:
       number_format: computer
   jackson: 
-    default-property-inclusion: non-null
+    default-property-inclusion: NON_NULL
   datasource: 
     tomcat: 
       max-wait: 60000
@@ -64,3 +64,9 @@ mqcloud:
   threadMetricSupportedVersion: 4.7.2
   consumeFailedMetricSupportedVersion: 4.7.2
   consumeTimespanMessageSupportedVersion: 4.9.2
+
+login:
+  class: com.sohu.tv.mq.cloud.service.impl.DefaultLoginService
+
+rocketmq:
+  customized: true

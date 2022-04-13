@@ -40,7 +40,7 @@ public class ConsumerRetryTrafficService extends HourTrafficService{
             if (alarmConfigBridingService.needWarn("consumerFail", topicConsumer.getTopic(), topicConsumer.getConsumer())) {
                 Map<String, Object> paramMap = new HashMap<>();
                 paramMap.put("topic", topicConsumer.getTopic());
-                paramMap.put("consumer",mqCloudConfigHelper.getTopicConsumeLink(topicConsumer.getTid(), 
+                paramMap.put("consumer",mqCloudConfigHelper.getTopicConsumeHrefLink(topicConsumer.getTid(),
                         topicConsumer.getConsumer(), System.currentTimeMillis()));
                 paramMap.put("count", topicTraffic.getCount());
                 paramMap.put("link", mqCloudConfigHelper.getTopicConsumeHref(topicConsumer.getTid(),

@@ -26,7 +26,7 @@ public class ConsumerStat {
 	private Date updatetime;
 	//阻塞情况
 	private List<ConsumerBlock> blockList;
-	private long tid;
+	private String consumerLink;
 	public int getId() {
 		return id;
 	}
@@ -81,13 +81,16 @@ public class ConsumerStat {
 	public void setBlockList(List<ConsumerBlock> blockList) {
 		this.blockList = blockList;
 	}
-	public long getTid() {
-        return tid;
-    }
-    public void setTid(long tid) {
-        this.tid = tid;
-    }
-    @Override
+
+	public String getConsumerLink() {
+		return consumerLink;
+	}
+
+	public void setConsumerLink(String consumerLink) {
+		this.consumerLink = consumerLink;
+	}
+
+	@Override
 	public String toString() {
 		return "ConsumerStat [id=" + id + ", consumerGroup=" + consumerGroup
 				+ ", topic=" + topic + ", undoneMsgCount=" + undoneMsgCount

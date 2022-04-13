@@ -1,10 +1,11 @@
 package com.sohu.tv.mq.cloud.web.vo;
 
-import java.util.List;
-
 import com.sohu.tv.mq.cloud.bo.Consumer;
 import com.sohu.tv.mq.cloud.bo.Topic;
 import com.sohu.tv.mq.cloud.bo.User;
+import com.sohu.tv.mq.cloud.util.Result;
+
+import java.util.List;
 /**
  * consumer删除申请
  * @Description: 
@@ -20,6 +21,8 @@ public class AuditConsumerDeleteVO {
     private Consumer consumer;
     
     private long aid;
+
+    private Result<?> clientIdListResult;
     
     public Topic getTopic() {
         return topic;
@@ -44,5 +47,13 @@ public class AuditConsumerDeleteVO {
     }
     public void setAid(long aid) {
         this.aid = aid;
+    }
+
+    public Result<?> getClientIdListResult() {
+        return clientIdListResult;
+    }
+
+    public void setClientIdListResult(Result<?> clientIdListResult) {
+        this.clientIdListResult = clientIdListResult;
     }
 }

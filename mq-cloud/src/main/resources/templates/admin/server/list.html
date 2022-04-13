@@ -1,3 +1,8 @@
+<style type="text/css">
+	.popover{
+		max-width: 500px;
+	}
+</style>
 <div class="main">
 	<form class="form-inline" role="form">
 		<div class="form-group">
@@ -11,12 +16,10 @@
 		<thead>
 			<colgroup>
 			  <col width='20px'>
+			  <col width='46px'>
 			  <col width='110px'>
 			  <col>
 			  <col width='120px'>
-			  <col>
-			  <col>
-			  <col>
 			  <col>
 			  <col>
 			  <col>
@@ -29,17 +32,15 @@
 			</colgroup>
 			<tr>
 				<td><input class="pointer" type="checkbox" name="monitor" id="checkAll" onclick="checkAll(this)" data-toggle="tooltip" title="单击全选或反选"/></td>
+				<td>序号</td>
 				<td>ip</td>
 				<td data-toggle="tooltip" title="cpu核数">cpu</td>
 				<td data-toggle="tooltip" title="使用/总内存">内存</td>
 				<td data-toggle="tooltip" title="一分钟load">load</td>
-				<td data-toggle="tooltip" title="磁盘读速率 单位K/s">ior</td>
-				<td data-toggle="tooltip" title="磁盘写速率 单位K/s">iow</td>
 				<td data-toggle="tooltip" title="磁盘io速率 交互次数/s">iops</td>
-				<td data-toggle="tooltip" title="磁盘io带宽使用百分比">iobusy</td>
-				<td data-toggle="tooltip" title="网络入流量 单位K/s">入网</td>
-				<td data-toggle="tooltip" title="网络出流量 单位k/s">出网</td>
 				<td data-toggle="tooltip" title="tcp estab连接数">连接</td>
+				<td data-toggle="tooltip" title="该服务器归属于哪个RocketMQ集群">集群</td>
+				<td data-toggle="tooltip" title="该服务器的部署">部署</td>
 				<td>类型</td>
 				<td>机房</td>
 				<td>收集时间</td>
@@ -49,17 +50,23 @@
 		<tbody>
             <#if response.empty>
 			     <tr>
-                    <td colspan="16"class="text-center" >
+                    <td colspan="14" class="text-center" >
                     	暂无数据
                     </td>
                 <tr>
 			<#else>
 				<#list response.result as server>
+					<#if server.serverRoleVO??>
+						<#assign rowspan=server.serverRoleVO.roleVOList?size>
+					<#else>
+						<#assign rowspan=1>
+					</#if>
 					<tr>
-						<td><input class="pointer" type="checkbox" name="monitor" value="${server.ip}" onclick="checkThis(this)" /></td>
-						<td><a href="#" data="${server.ip}" onclick="setIp('${server.ip}')" data-target="#monitorModal" data-toggle="modal">${server.ip}</a></td>
-						<td>${server.cpus!}</td>
-						<td>
+						<td rowspan="${rowspan}"><input class="pointer" type="checkbox" name="monitor" value="${server.ip}" onclick="checkThis(this)" /></td>
+						<td rowspan="${rowspan}">${server_index + 1}</td>
+						<td rowspan="${rowspan}"><a href="#" onclick="setIp('${server.ip}')" data-target="#monitorModal" data-toggle="modal">${server.ip}</a></td>
+						<td rowspan="${rowspan}">${server.cpus!}</td>
+						<td rowspan="${rowspan}">
 							<#if server.mtotal != 0>
 								<div class="progress" style="margin-bottom:10px;">
 		                         	<div class="progress-bar progress-bar-info" aria-valuenow="60"  aria-valuemax="100" aria-valuemin="0" style="width:${(server.mtotal-server.mfree)*100.0/server.mtotal}%;">
@@ -68,32 +75,62 @@
 		        				</div>
 							</#if>
 						</td>
-						<td>${server.cload1?string(",###.##")}</td>
-						<td>${server.dread?string(",###.##")}</td>
-						<td>${server.dwrite?string(",###.##")}</td>
-						<td>${server.diops?string(",###.##")}</td>
-						<td>${server.dbusy?string("##.##")}%</td>
-						<td>${server.nin?string(",###.#")}</td>
-						<td>${server.nout?string(",###.#")}</td>
-						<td>${server.tuse?string(",###")}</td>
-						<td>
+						<td rowspan="${rowspan}">${server.cload1?string(",###.##")}</td>
+						<td rowspan="${rowspan}" style="color:#337ab7" data-html="true" data-trigger="hover" data-container="body"
+							data-toggle="popover" data-placement="top"
+							data-content="磁盘读速率：${server.dread?string(",###.##")}K/s<br>磁盘写速率：${server.dwrite?string(",###.##")}K/s<br>磁盘io带宽使用百分比：${server.dbusy?string("##.##")}%">
+							${server.diops?string(",###.##")}
+						</td>
+						<td rowspan="${rowspan}" style="color:#337ab7" data-html="true" data-trigger="hover" data-container="body"
+							data-toggle="popover" data-placement="top"
+							data-content="入网流量：${server.nin?string(",###.#")}K/s<br>出网流量：${server.nout?string(",###.#")}K/s">
+							${server.tuse?string(",###")}
+						</td>
+						<#if server.serverRoleVO??>
+							<td>
+								<a href="${request.contextPath}/admin/<#if server.serverRoleVO.firstRoleVO.broker>cluster<#else>nameserver</#if>/list?cid=${server.serverRoleVO.firstRoleVO.clusterId}" target="_blank">${server.serverRoleVO.firstRoleVO.clusterName}</a>
+							</td>
+							<td style="color:#337ab7" data-html="true" data-trigger="hover" data-container="body"
+								data-toggle="popover" data-placement="top"
+								data-content="端口：${server.serverRoleVO.firstRoleVO.port}<br>安装路径：${server.serverRoleVO.firstRoleVO.baseDir}">
+								${server.serverRoleVO.firstRoleVO.deployment}
+							</td>
+						<#else>
+							<td></td>
+							<td></td>
+						</#if>
+						<td rowspan="${rowspan}">
 							<#if server.machineType??>
 								${server.machineTypeName}
 							<#else>
 								<button type="button" data-toggle="tooltip" title="添加机器类型" onclick="updateServer('${server.ip}');" class="btn-xs btn-success"><span class="glyphicon glyphicon-plus" aria-hidden="true"></span></button>
 							</#if>
 						</td>
-						<td>${server.room!}</td>
-						<td>
+						<td rowspan="${rowspan}">${server.room!}</td>
+						<td rowspan="${rowspan}">
 						<#if server.cdate??>
 							${server.cdate!} ${server.ctime?substring(0,2)}:${server.ctime?substring(2)}
 						</#if>
 						</td>
-						<td>
+						<td rowspan="${rowspan}">
 							<button type="button" onclick="deleteServer('${server.ip}');" class="btn-xs btn-warning"><span class="glyphicon glyphicon-trash" aria-hidden="true"></span></button>
 							<button type="button" data-toggle="tooltip" title="修改预警阈值" onclick="updateServerWarnConfig('${server.ip}');" class="btn-xs btn-info"><span class="glyphicon glyphicon-bell" aria-hidden="true"></span></button>
 						</td>
 					</tr>
+					<#if server.serverRoleVO??>
+						<#list server.serverRoleVO.roleVOList as roleVO>
+							<#if roleVO_index gt 0>
+								<tr>
+									<td><a href="${request.contextPath}/admin/<#if roleVO.broker>cluster<#else>nameserver</#if>/list?cid=${roleVO.clusterId}" target="_blank">${roleVO.clusterName}</a></td>
+									<td style="color:#337ab7" data-html="true" data-trigger="hover" data-container="body"
+										data-toggle="popover" data-placement="top"
+										data-content="端口：${roleVO.port}<br>安装路径：${roleVO.baseDir}">
+										${roleVO.deployment}
+									</td>
+								</tr>
+							</#if>
+						</#list>
+					</#if>
 				</#list>
 			</#if>
 		</tbody>
@@ -184,7 +221,7 @@ mqcloud如果发现通用配置的privateKey不为空，将优先使用公钥验
 									<div class="form-group">
 										<div class="col-md-10" style="padding-left:90px">
 											<textarea id="toBeConfiguredIpList" type="text" name="ipList" rows="3" class="form-control" readonly></textarea>
-										</div
+										</div>
 									</div>
 								</fieldset>
 								<fieldset>
@@ -645,5 +682,7 @@ $(function(){
 		setIp("${RequestParameters.ip}");
 		$('a[data="${RequestParameters.ip}"]').click();
 	</#if>
+
+	$("[data-toggle='popover']").popover();
 });
 </script>

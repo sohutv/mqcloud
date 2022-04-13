@@ -14,6 +14,7 @@ import org.apache.rocketmq.tools.admin.MQAdminExt;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
@@ -26,12 +27,10 @@ import com.sohu.tv.mq.cloud.cache.LocalCache;
 import com.sohu.tv.mq.cloud.cache.LocalCacheStats;
 import com.sohu.tv.mq.cloud.common.Destroyable;
 import com.sohu.tv.mq.cloud.common.MemoryMQ;
-import com.sohu.tv.mq.cloud.common.mq.SohuMQAdmin;
 import com.sohu.tv.mq.cloud.common.service.LoginService;
 import com.sohu.tv.mq.cloud.common.service.SmsSender;
 import com.sohu.tv.mq.cloud.common.service.impl.AbstractLoginService;
 import com.sohu.tv.mq.cloud.common.util.CipherHelper;
-import com.sohu.tv.mq.cloud.mq.DefaultSohuMQAdmin;
 import com.sohu.tv.mq.cloud.mq.MQAdminPooledObjectFactory;
 import com.sohu.tv.mq.cloud.mq.SohuMQAdminFactory;
 import com.sohu.tv.mq.cloud.service.ClientStatsConsumer;
@@ -58,6 +57,10 @@ public class CommonConfiguration {
 
     @Autowired
     private MQCloudConfigHelper mqCloudConfigHelper;
+
+    // 登录类
+    @Value("${login.class}")
+    private String loginClass;
 
     /**
      * 配置用户缓存
@@ -137,33 +140,8 @@ public class CommonConfiguration {
         return mbeanExporter;
     }
     
-    /**
-     * mq admin class
-     * 
-     * @return
-     * @throws Exception
-     */
     @Bean
-    @Profile({"local", "online"})
-    public Class<?> mqAdminClass() throws Exception {
-        return DefaultSohuMQAdmin.class;
-    }
-    
-    /**
-     * mq admin class
-     * 
-     * @return
-     * @throws Exception
-     */
-    @Bean
-    @SuppressWarnings("unchecked")
-    @Profile({"local-sohu", "test-sohu", "test-online-sohu", "online-sohu"})
-    public Class<SohuMQAdmin> sohuMQAdminClass() throws Exception {
-        return (Class<SohuMQAdmin>) Class.forName("com.sohu.tv.mq.cloud.common.mq.SohuMQAdminExt");
-    }
-
-    @Bean
-    public GenericKeyedObjectPool<Cluster, MQAdminExt> mqPool(Class<SohuMQAdmin> adminClass) {
+    public GenericKeyedObjectPool<Cluster, MQAdminExt> mqPool() {
         GenericKeyedObjectPoolConfig genericKeyedObjectPoolConfig = new GenericKeyedObjectPoolConfig();
         genericKeyedObjectPoolConfig.setTestWhileIdle(true);
         genericKeyedObjectPoolConfig.setMaxTotalPerKey(1);
@@ -172,7 +150,7 @@ public class CommonConfiguration {
         genericKeyedObjectPoolConfig.setMaxWaitMillis(10000);
         genericKeyedObjectPoolConfig.setTimeBetweenEvictionRunsMillis(20000);
         MQAdminPooledObjectFactory mqAdminPooledObjectFactory = new MQAdminPooledObjectFactory();
-        SohuMQAdminFactory sohuMQAdminFactory = new SohuMQAdminFactory(mqCloudConfigHelper, adminClass);
+        SohuMQAdminFactory sohuMQAdminFactory = new SohuMQAdminFactory(mqCloudConfigHelper);
         mqAdminPooledObjectFactory.setSohuMQAdminFactory(sohuMQAdminFactory);
         GenericKeyedObjectPool<Cluster, MQAdminExt> genericKeyedObjectPool = new GenericKeyedObjectPool<Cluster, MQAdminExt>(
                 mqAdminPooledObjectFactory,
@@ -247,9 +225,8 @@ public class CommonConfiguration {
      * @throws Exception
      */
     @Bean
-    @Profile({"local-sohu", "test-sohu", "test-online-sohu", "online-sohu"})
-    public LoginService sohuLoginService() throws Exception {
-        Class<?> clz = Class.forName("com.sohu.tv.mq.cloud.common.service.impl.SohuLoginService");
+    public LoginService loginService() throws Exception {
+        Class<?> clz = Class.forName(loginClass);
         AbstractLoginService loginService = (AbstractLoginService) clz.newInstance();
         loginService.setCipherHelper(cipherHelper());
         loginService.setTicketKey(mqCloudConfigHelper.getTicketKey());
@@ -269,22 +246,5 @@ public class CommonConfiguration {
     public SmsSender smsSender() throws Exception {
         Class<?> clz = Class.forName("com.sohu.tv.mq.cloud.common.service.impl.DefaultSmsSender");
         return (SmsSender) clz.newInstance();
-    }
-
-    /**
-     * 登录服务配置
-     * 
-     * @return
-     * @throws UnsupportedEncodingException
-     */
-    @Bean
-    @Profile({"local", "online"})
-    public LoginService defaultLoginService() throws UnsupportedEncodingException {
-        AbstractLoginService loginService = new com.sohu.tv.mq.cloud.service.impl.DefaultLoginService();
-        loginService.setCipherHelper(cipherHelper());
-        loginService.setTicketKey(mqCloudConfigHelper.getTicketKey());
-        loginService.setOnline(mqCloudConfigHelper.isOnline());
-        loginService.init();
-        return loginService;
     }
 }

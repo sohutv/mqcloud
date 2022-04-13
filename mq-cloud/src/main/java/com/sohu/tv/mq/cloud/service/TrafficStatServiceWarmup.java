@@ -1,5 +1,6 @@
 package com.sohu.tv.mq.cloud.service;
 
+import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.core.annotation.Order;
@@ -16,8 +17,13 @@ public class TrafficStatServiceWarmup implements CommandLineRunner {
     @Autowired
     private TopicTrafficStatService topicTrafficStatService;
 
+    @Autowired
+    private MQCloudConfigHelper mqCloudConfigHelper;
+
     @Override
     public void run(String... strings) throws Exception {
-        topicTrafficStatService.trafficStatAll();
+        if (mqCloudConfigHelper.isOnline()) {
+            topicTrafficStatService.trafficStatAll();
+        }
     }
 }

@@ -1,50 +1,7 @@
 package com.sohu.tv.mq.cloud.service;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
-import java.util.TreeMap;
-import java.util.TreeSet;
-
-import org.apache.commons.lang3.StringUtils;
-import org.apache.rocketmq.client.exception.MQBrokerException;
-import org.apache.rocketmq.common.MQVersion;
-import org.apache.rocketmq.common.MixAll;
-import org.apache.rocketmq.common.admin.ConsumeStats;
-import org.apache.rocketmq.common.admin.OffsetWrapper;
-import org.apache.rocketmq.common.admin.TopicOffset;
-import org.apache.rocketmq.common.admin.TopicStatsTable;
-import org.apache.rocketmq.common.message.MessageQueue;
-import org.apache.rocketmq.common.protocol.body.Connection;
-import org.apache.rocketmq.common.protocol.body.ConsumeStatus;
-import org.apache.rocketmq.common.protocol.body.ConsumerConnection;
-import org.apache.rocketmq.common.protocol.body.ConsumerRunningInfo;
-import org.apache.rocketmq.common.protocol.body.GroupList;
-import org.apache.rocketmq.common.protocol.body.ProcessQueueInfo;
-import org.apache.rocketmq.common.protocol.heartbeat.MessageModel;
-import org.apache.rocketmq.remoting.protocol.LanguageCode;
-import org.apache.rocketmq.tools.admin.DefaultMQAdminExt;
-import org.apache.rocketmq.tools.admin.MQAdminExt;
-import org.apache.rocketmq.tools.command.CommandUtil;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.dao.DuplicateKeyException;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.interceptor.TransactionAspectSupport;
-
 import com.alibaba.fastjson.JSON;
-import com.sohu.tv.mq.cloud.bo.AuditTimespanMessageConsume;
-import com.sohu.tv.mq.cloud.bo.Cluster;
-import com.sohu.tv.mq.cloud.bo.ConsumeStatsExt;
-import com.sohu.tv.mq.cloud.bo.Consumer;
-import com.sohu.tv.mq.cloud.bo.Topic;
+import com.sohu.tv.mq.cloud.bo.*;
 import com.sohu.tv.mq.cloud.common.mq.SohuMQAdmin;
 import com.sohu.tv.mq.cloud.dao.ConsumerDao;
 import com.sohu.tv.mq.cloud.dao.UserConsumerDao;
@@ -58,6 +15,30 @@ import com.sohu.tv.mq.cloud.util.Result;
 import com.sohu.tv.mq.cloud.util.Status;
 import com.sohu.tv.mq.metric.StackTraceMetric;
 import com.sohu.tv.mq.util.Constant;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.rocketmq.client.exception.MQBrokerException;
+import org.apache.rocketmq.common.MQVersion;
+import org.apache.rocketmq.common.MixAll;
+import org.apache.rocketmq.common.admin.ConsumeStats;
+import org.apache.rocketmq.common.admin.OffsetWrapper;
+import org.apache.rocketmq.common.admin.TopicOffset;
+import org.apache.rocketmq.common.admin.TopicStatsTable;
+import org.apache.rocketmq.common.message.MessageQueue;
+import org.apache.rocketmq.common.protocol.body.*;
+import org.apache.rocketmq.common.protocol.heartbeat.MessageModel;
+import org.apache.rocketmq.remoting.protocol.LanguageCode;
+import org.apache.rocketmq.tools.admin.DefaultMQAdminExt;
+import org.apache.rocketmq.tools.admin.MQAdminExt;
+import org.apache.rocketmq.tools.command.CommandUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DuplicateKeyException;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.interceptor.TransactionAspectSupport;
+
+import java.util.*;
 
 /**
  * consumer服务
@@ -584,7 +565,12 @@ public class ConsumerService {
 
             public Result<ConsumerConnection> exception(Exception e) throws Exception {
                 logger.warn("cluster:{} consumerGroup:{} error:{}", mqCluster, consumerGroup, e.getMessage());
-                return Result.getDBErrorResult(e);
+                if (e instanceof MQBrokerException && 206 == ((MQBrokerException) e).getResponseCode()) {
+                    Result<ConsumerConnection> result = Result.getResult(Status.NO_ONLINE);
+                    result.setException(e);
+                    return result;
+                }
+                return Result.getRequestErrorResult(e);
             }
 
             public Cluster mqCluster() {
@@ -843,7 +829,7 @@ public class ConsumerService {
                 SohuMQAdmin sohuMQAdmin = (SohuMQAdmin) mqAdmin;
                 sohuMQAdmin.consumeTimespanMessage(auditTimespanMessageConsume.getClientId(),
                         auditTimespanMessageConsume.getTopic(), auditTimespanMessageConsume.getConsumer(),
-                        auditTimespanMessageConsume.getStart(), auditTimespanMessageConsume.getEnd(), 5000);
+                        auditTimespanMessageConsume.getStart(), auditTimespanMessageConsume.getEnd());
                 return Result.getOKResult();
             }
 

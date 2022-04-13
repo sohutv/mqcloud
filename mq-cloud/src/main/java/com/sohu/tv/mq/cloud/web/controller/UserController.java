@@ -1,16 +1,15 @@
 package com.sohu.tv.mq.cloud.web.controller;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import javax.servlet.http.HttpServletResponse;
-import javax.validation.Valid;
-
+import com.sohu.tv.mq.cloud.bo.*;
+import com.sohu.tv.mq.cloud.bo.Audit.TypeEnum;
+import com.sohu.tv.mq.cloud.common.util.CipherHelper;
+import com.sohu.tv.mq.cloud.mq.DefaultCallback;
+import com.sohu.tv.mq.cloud.mq.MQAdminTemplate;
+import com.sohu.tv.mq.cloud.service.*;
+import com.sohu.tv.mq.cloud.util.*;
+import com.sohu.tv.mq.cloud.web.controller.param.PaginationParam;
+import com.sohu.tv.mq.cloud.web.vo.*;
+import com.sohu.tv.mq.util.Version;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.rocketmq.common.protocol.body.ClusterInfo;
@@ -18,56 +17,12 @@ import org.apache.rocketmq.tools.admin.MQAdminExt;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.*;
 
-import com.sohu.tv.mq.cloud.bo.Audit;
-import com.sohu.tv.mq.cloud.bo.Audit.TypeEnum;
-import com.sohu.tv.mq.cloud.bo.AuditBatchAssociate;
-import com.sohu.tv.mq.cloud.bo.Cluster;
-import com.sohu.tv.mq.cloud.bo.Consumer;
-import com.sohu.tv.mq.cloud.bo.ConsumerTraffic;
-import com.sohu.tv.mq.cloud.bo.StatsProducer;
-import com.sohu.tv.mq.cloud.bo.Topic;
-import com.sohu.tv.mq.cloud.bo.TopicStat;
-import com.sohu.tv.mq.cloud.bo.TopicTopology;
-import com.sohu.tv.mq.cloud.bo.TopicTraffic;
-import com.sohu.tv.mq.cloud.bo.Traffic;
-import com.sohu.tv.mq.cloud.bo.User;
-import com.sohu.tv.mq.cloud.bo.UserProducer;
-import com.sohu.tv.mq.cloud.bo.UserWarn;
-import com.sohu.tv.mq.cloud.bo.UserWarnCount;
-import com.sohu.tv.mq.cloud.common.util.CipherHelper;
-import com.sohu.tv.mq.cloud.mq.DefaultCallback;
-import com.sohu.tv.mq.cloud.mq.MQAdminTemplate;
-import com.sohu.tv.mq.cloud.service.AlertService;
-import com.sohu.tv.mq.cloud.service.AuditService;
-import com.sohu.tv.mq.cloud.service.ClusterService;
-import com.sohu.tv.mq.cloud.service.ConsumerService;
-import com.sohu.tv.mq.cloud.service.ConsumerTrafficService;
-import com.sohu.tv.mq.cloud.service.DelayMessageService;
-import com.sohu.tv.mq.cloud.service.ProducerTotalStatService;
-import com.sohu.tv.mq.cloud.service.TopicService;
-import com.sohu.tv.mq.cloud.service.TopicTrafficService;
-import com.sohu.tv.mq.cloud.service.UserProducerService;
-import com.sohu.tv.mq.cloud.service.UserService;
-import com.sohu.tv.mq.cloud.service.UserWarnService;
-import com.sohu.tv.mq.cloud.util.DateUtil;
-import com.sohu.tv.mq.cloud.util.FreemarkerUtil;
-import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper;
-import com.sohu.tv.mq.cloud.util.Result;
-import com.sohu.tv.mq.cloud.util.SplitUtil;
-import com.sohu.tv.mq.cloud.util.Status;
-import com.sohu.tv.mq.cloud.util.WebUtil;
-import com.sohu.tv.mq.cloud.web.controller.param.PaginationParam;
-import com.sohu.tv.mq.cloud.web.vo.TopicInfoVO;
-import com.sohu.tv.mq.cloud.web.vo.TopicTrafficHolderVO;
-import com.sohu.tv.mq.cloud.web.vo.TopicTrafficVO;
-import com.sohu.tv.mq.cloud.web.vo.UserInfo;
-import com.sohu.tv.mq.util.Version;
+import javax.servlet.http.HttpServletResponse;
+import javax.validation.Valid;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * 用户接口
@@ -124,6 +79,12 @@ public class UserController extends ViewController {
     
     @Autowired
     private CipherHelper cipherHelper;
+
+    @Autowired
+    private UserFootprintService userFootprintService;
+
+    @Autowired
+    private UserFavoriteService userFavoriteService;
 
     /**
      * 退出登录
@@ -531,6 +492,18 @@ public class UserController extends ViewController {
                     result.getResult().setTotalConsumerTraffic(consumerTrafficResult.getResult());
                 }
             }
+
+            // 记录访问足迹
+            UserFootprint userFootprint = new UserFootprint();
+            userFootprint.setUid(userInfo.getUser().getId());
+            userFootprint.setTid(tid);
+            userFootprintService.save(userFootprint);
+
+            // 判断是否收藏
+            Result<UserFavorite> userFavoriteResult = userFavoriteService.query(userInfo.getUser().getId(), tid);
+            if (userFavoriteResult.isOK()) {
+                result.getResult().setFavoriteId(userFavoriteResult.getResult().getId());
+            }
         }
 
         setResult(map, result);
@@ -706,7 +679,7 @@ public class UserController extends ViewController {
         long uid = userInfo.getUser().getId();
         Result<Integer> countResult = userWarnService.queryUserWarnCount(uid);
         if (!countResult.isOK()) {
-            return view();
+            return view;
         }
         paginationParam.caculatePagination(countResult.getResult());
         // 获取警告列表
@@ -763,6 +736,139 @@ public class UserController extends ViewController {
             }
         }
         return Result.getOKResult();
+    }
+
+    /**
+     * 用户足迹
+     */
+    @RequestMapping("/footprint/list")
+    public String footprintList(UserInfo userInfo, @Valid PaginationParam paginationParam, Map<String, Object> map)
+            throws Exception {
+        // 设置返回视图
+        String view = viewModule() + "/footprintList";
+        // 默认设置一个空数据
+        Result.setResult(map, (Object) null);
+        // 设置分页参数
+        setPagination(map, paginationParam);
+        long uid = userInfo.getUser().getId();
+        Result<Integer> countResult = userFootprintService.queryCount(uid);
+        if (!countResult.isOK()) {
+            return view;
+        }
+        paginationParam.caculatePagination(countResult.getResult());
+        // 获取列表
+        Result<List<UserFootprint>> result = userFootprintService.queryByPage(uid, paginationParam.getBegin(),
+                paginationParam.getNumOfPage());
+        if (result.isEmpty()) {
+            return view;
+        }
+        // 获取topic id列表
+        List<UserFootprint> userFootprintList = result.getResult();
+        List<FootprintVO> footprintVOList = new ArrayList<>();
+        List<Long> idList = userFootprintList.stream().map(fp -> {
+            footprintVOList.add(new FootprintVO(fp.getTid(), fp.getUpdateTime()));
+            return fp.getTid();
+        }).collect(Collectors.toList());
+        Result<List<Topic>> topicListResult = topicService.queryTopicList(idList);
+        if (topicListResult.isEmpty()) {
+            return view;
+        }
+        // 转化为vo
+        footprintVOList.forEach(fp -> {
+            // 设置更新时间
+            topicListResult.getResult().forEach(topic -> {
+                if (topic.getId() == fp.getTid()) {
+                    fp.setTopic(topic.getName());
+                }
+            });
+        });
+        setResult(map, footprintVOList);
+        return view;
+    }
+
+    /**
+     * 用户收藏
+     */
+    @RequestMapping("/favorite/list")
+    public String favoriteList(UserInfo userInfo, @Valid PaginationParam paginationParam, Map<String, Object> map)
+            throws Exception {
+        // 设置返回视图
+        String view = viewModule() + "/favoriteList";
+        // 默认设置一个空数据
+        Result.setResult(map, (Object) null);
+        // 设置分页参数
+        setPagination(map, paginationParam);
+        long uid = userInfo.getUser().getId();
+        Result<Integer> countResult = userFavoriteService.queryCount(uid);
+        if (!countResult.isOK()) {
+            return view;
+        }
+        paginationParam.caculatePagination(countResult.getResult());
+        // 获取列表
+        Result<List<UserFavorite>> result = userFavoriteService.queryByPage(uid, paginationParam.getBegin(),
+                paginationParam.getNumOfPage());
+        if (result.isEmpty()) {
+            return view;
+        }
+        // 获取topic id列表
+        List<UserFavorite> userFavoriteList = result.getResult();
+        List<FavoriteVO> favoriteVOList = new ArrayList<>();
+        List<Long> idList = userFavoriteList.stream().map(uf -> {
+            favoriteVOList.add(new FavoriteVO(uf.getTid(), uf.getCreateTime()));
+            return uf.getTid();
+        }).collect(Collectors.toList());
+        Result<List<Topic>> topicListResult = topicService.queryTopicList(idList);
+        if (topicListResult.isEmpty()) {
+            return view;
+        }
+        // 转化为vo
+        favoriteVOList.forEach(ft -> {
+            // 设置更新时间
+            topicListResult.getResult().forEach(topic -> {
+                if (topic.getId() == ft.getTid()) {
+                    ft.setTopic(topic.getName());
+                }
+            });
+        });
+        setResult(map, favoriteVOList);
+        return view;
+    }
+
+    /**
+     * 收藏
+     * @param userInfo
+     * @param userParam
+     * @param tid
+     * @return
+     * @throws Exception
+     */
+    @ResponseBody
+    @RequestMapping(value = "/favorite", method = RequestMethod.POST)
+    public Result<?> favorite(UserInfo userInfo, @RequestParam("tid") long tid) throws Exception {
+        logger.info("user:{}, favorite:{}", userInfo.getUser().getEmail(), tid);
+        UserFavorite uf = new UserFavorite();
+        uf.setUid(userInfo.getUser().getId());
+        uf.setTid(tid);
+        return Result.getWebResult(userFavoriteService.save(uf));
+    }
+
+    /**
+     * 取消收藏
+     * @param userInfo
+     * @param userParam
+     * @param tid
+     * @return
+     * @throws Exception
+     */
+    @ResponseBody
+    @RequestMapping(value = "/unfavorite", method = RequestMethod.POST)
+    public Result<?> unfavorite(UserInfo userInfo, @RequestParam("tid") long tid) throws Exception {
+        logger.info("user:{}, unfavorite:{}", userInfo.getUser().getEmail(), tid);
+        Result<UserFavorite> result = userFavoriteService.query(userInfo.getUser().getId(), tid);
+        if (result.isNotOK()) {
+            return Result.getResult(Status.NO_RESULT);
+        }
+        return Result.getWebResult(userFavoriteService.delete(result.getResult().getId()));
     }
     
     @Override

@@ -101,7 +101,7 @@ public class BrokerStoreStatService {
             }
 
             public Result<BrokerStoreStat> exception(Exception e) throws Exception {
-                logger.warn("brokerAddr:{} error:{}", brokerAddr, e.getMessage());
+                logger.warn("brokerAddr:{} error:{}", brokerAddr, e.toString());
                 return Result.getDBErrorResult(e);
             }
 

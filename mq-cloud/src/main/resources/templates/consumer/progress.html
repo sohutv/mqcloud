@@ -295,7 +295,7 @@
 											<div class="modal-content">
 												<div class="modal-header">
 													<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-													<h4 class="modal-title"><b>确定跳过堆积的消息吗?</h4>
+													<h4 class="modal-title"><b>确定跳过堆积的消息吗?</b></h4>
 												</div>
 												<form class="form-horizontal form-bordered form-row-stripped">
 													<div class="modal-body">
@@ -332,7 +332,7 @@
 											<div class="modal-content">
 												<div class="modal-header">
 													<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-													<h4 class="modal-title"><b>消息回溯</h4>
+													<h4 class="modal-title"><b>消息回溯</b></h4>
 												</div>
 												<form class="form-horizontal form-bordered form-row-stripped">
 													<div class="modal-body">
@@ -376,7 +376,7 @@
 											<div class="modal-content">
 												<div class="modal-header">
 													<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-													<h4 class="modal-title"><b>确定删除消费者吗?</h4>
+													<h4 class="modal-title"><b>确定删除消费者吗?</b></h4>
 												</div>
 												<form class="form-horizontal form-bordered form-row-stripped">
 													<div class="modal-body">
@@ -543,7 +543,7 @@
 											<div class="modal-content">
 												<div class="modal-header">
 													<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-													<h4 class="modal-title"><b>确定跳过堆积的消息吗?</h4>
+													<h4 class="modal-title"><b>确定跳过堆积的消息吗?</b></h4>
 												</div>
 												<form class="form-horizontal form-bordered form-row-stripped">
 													<div class="modal-body">
@@ -580,7 +580,7 @@
 											<div class="modal-content">
 												<div class="modal-header">
 													<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-													<h4 class="modal-title"><b>消息回溯</h4>
+													<h4 class="modal-title"><b>消息回溯</b></h4>
 												</div>
 												<form class="form-horizontal form-bordered form-row-stripped">
 													<div class="modal-body">
@@ -624,7 +624,7 @@
 											<div class="modal-content">
 												<div class="modal-header">
 													<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-													<h4 class="modal-title"><b>确定删除消费者吗?</h4>
+													<h4 class="modal-title"><b>确定删除消费者吗?</b></h4>
 												</div>
 												<form class="form-horizontal form-bordered form-row-stripped">
 													<div class="modal-body">
@@ -930,7 +930,7 @@
 		<div class="modal-content">
 			<div class="modal-header">
 				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-				<h4 class="modal-title"><b>跳过重试消息</h4>
+				<h4 class="modal-title"><b>跳过重试消息</b></h4>
 			</div>
 			<form class="form-horizontal form-bordered form-row-stripped">
 				<div class="modal-body">
@@ -1769,6 +1769,15 @@ function getQueueOwner(consumer, consumerId){
         		}
         		$(id).attr("clientId", data.result[i].clientId);
 	        	$(id).html(prevContent + data.result[i].ip);
+	        	var prevTitle = $(id).attr("title");
+	        	if(prevTitle){
+	        		prevTitle += ","
+        		} else {
+        			prevTitle = "";
+        		}
+	        	$(id).attr("title", prevTitle + data.result[i].clientId);
+				$(id).attr("data-placement", "right");
+				$(id).tooltip({container: 'body'});
         	}
 	    }else{
 	    	toastr.error("获取客户端失败！"+data.message);  

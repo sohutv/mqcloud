@@ -54,6 +54,8 @@ public enum Status {
     DELETE_BROKER_CONFIG_FIRST(517, "请先删除配置组下的配置"),
     DB_UPDATE_ERR_UPDATE_CONSUMER_CONFIG_OK(518, "更新消费者配置成功,但是审核记录更新失败"),
     DB_UPDATE_ERR_CONSUME_TIMESPAN_MESSAGE_OK(519, "重新消费成功,但是审核记录更新失败"),
+    REQUEST_ERROR(520, "请求异常"),
+    BROKER_UNSUPPORTED_ERROR(521, "broker暂不支持"),
     
     // 6xx代表web请求异常
     WEB_ERROR(600, "请求错误"),

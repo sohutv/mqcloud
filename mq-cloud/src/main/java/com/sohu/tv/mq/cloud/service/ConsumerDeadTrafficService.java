@@ -36,7 +36,7 @@ public class ConsumerDeadTrafficService extends HourTrafficService {
         if (alarmConfigBridingService.needWarn("consumerDead", topicConsumer.getTopic(), topicConsumer.getConsumer())) {
             Map<String, Object> paramMap = new HashMap<>();
             paramMap.put("topic", topicConsumer.getTopic());
-            paramMap.put("consumer", mqCloudConfigHelper.getTopicConsumeLink(topicConsumer.getTid(), topicConsumer.getConsumer()));
+            paramMap.put("consumer", mqCloudConfigHelper.getTopicConsumeHrefLink(topicConsumer.getTid(), topicConsumer.getConsumer()));
             paramMap.put("count", topicTraffic.getCount());
             paramMap.put("resource", topicConsumer.getConsumer());
             alertService.sendWarn(userList, WarnType.DEAD_MESSAGE, paramMap);

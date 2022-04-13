@@ -91,6 +91,9 @@ public class BrokerStoreStatTask {
             // 流量抓取
             Result<BrokerStoreStat> result = brokerStoreStatService.fetchBrokerStoreStat(cluster,
                     broker.getAddr());
+            if (result.isNotOK()) {
+                continue;
+            }
             BrokerStoreStat brokerStoreStat = result.getResult();
             if (brokerStoreStat == null) {
                 logger.warn("broker:{} stat is null, msg:{}", broker.getAddr(),

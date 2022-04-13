@@ -18,7 +18,11 @@
 			<tbody>
 				<tr>
 					<td>topic:</td>
-					<td><a href="javascript:void();" class="copied" data-toggle="tooltip" title="点击复制topic" data-clipboard-text="${response.result.topic.name}">${response.result.topic.name}</a></td>
+					<td><a style="vertical-align: middle" href="javascript:void();" class="copied" data-toggle="tooltip" title="点击复制topic"
+						   data-clipboard-text="${response.result.topic.name}">${response.result.topic.name}</a>
+						<span id="favorite" style="vertical-align: middle;<#if response.result.favoriteId != 0>display: none;</#if>" class="glyphicon glyphicon-heart-empty pointer-cursor" data-toggle="tooltip" title="收藏" onclick="favorite()"></span>
+						<span id="unfavorite" style="vertical-align: middle;<#if response.result.favoriteId == 0>display: none;</#if>" class="glyphicon glyphicon-heart pointer-cursor" data-toggle="tooltip" title="取消收藏" onclick="unfavorite()"></span>
+					</td>
 				</tr>
 				<tr>
 					<td>所属集群:</td>
@@ -991,6 +995,44 @@ function updateTopicTrafficWarn(){
 			}, 'json');
 }
 
+/**
+ * 收藏
+ */
+function favorite(){
+	$.post('${request.contextPath}/user/favorite',
+			{
+				tid: ${response.result.topic.id}
+			},
+			function(data){
+				if(data.status == 200){
+					toastr.success("收藏成功");
+					$("#favorite").hide();
+					$("#unfavorite").show();
+				}else{
+					toastr.error("收藏失败！"+data.message);
+				}
+			}, 'json');
+}
+
+/**
+ * 取消收藏
+ * @param tid
+ */
+function unfavorite(){
+	$.post('${request.contextPath}/user/unfavorite',
+		{
+			tid: ${response.result.topic.id}
+		},
+		function(data){
+			if(data.status == 200){
+				toastr.success("取消收藏成功");
+				$("#unfavorite").hide();
+				$("#favorite").show();
+			}else{
+				toastr.error("取消收藏失败！"+data.message);
+			}
+		}, 'json');
+}
 
 $(function () {
 	<#if RequestParameters.from??>

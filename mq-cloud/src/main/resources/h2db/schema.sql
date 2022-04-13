@@ -427,6 +427,7 @@ CREATE TABLE IF NOT EXISTS `topic` (
   `update_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   `serializer` int(4) NOT NULL DEFAULT '0' COMMENT '序列化器 0:Protobuf,1:String',
   `traffic_warn_enabled` int(4) NOT NULL DEFAULT '0' COMMENT '0:不开启流量预警,1:开启流量预警',
+  `effective` int(4) NOT NULL DEFAULT '0' COMMENT '状态确认 0 未确认 1 确认',
   PRIMARY KEY (`id`),
   UNIQUE KEY `name` (`name`)
 );
@@ -725,3 +726,29 @@ CREATE TABLE IF NOT EXISTS `user_group` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `gname` (`name`)
 );
+
+-- ----------------------------
+-- Table structure for `user_footprint`
+-- ----------------------------
+CREATE TABLE IF NOT EXISTS `user_footprint` (
+    `id` int(11) NOT NULL AUTO_INCREMENT COMMENT 'id',
+    `uid` int(11) NOT NULL COMMENT 'user id',
+    `tid` int(11) NOT NULL COMMENT 'topic id',
+    `update_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '更新时间',
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `ft_utid` (`uid`, `tid`)
+);
+
+-- ----------------------------
+-- Table structure for `user_favorite`
+-- ----------------------------
+CREATE TABLE IF NOT EXISTS `user_favorite` (
+    `id` int(11) NOT NULL AUTO_INCREMENT COMMENT 'id',
+    `uid` int(11) NOT NULL COMMENT 'user id',
+    `tid` int(11) NOT NULL COMMENT 'topic id',
+    `create_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `fa_utid` (`uid`, `tid`)
+);
+
+alter table IF EXISTS  `topic` add column IF NOT EXISTS `effective` int(4) NOT NULL DEFAULT '0' COMMENT 'topic状态确认 0 未确认 1 确认';

@@ -1,16 +1,12 @@
 package com.sohu.tv.mq.cloud.web.controller.admin;
 
-import java.text.DecimalFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
-
-import javax.validation.Valid;
-
+import com.alibaba.fastjson.JSON;
+import com.sohu.tv.mq.cloud.bo.*;
+import com.sohu.tv.mq.cloud.service.*;
+import com.sohu.tv.mq.cloud.util.*;
+import com.sohu.tv.mq.cloud.web.controller.param.ServerAlarmConfigParam;
+import com.sohu.tv.mq.cloud.web.vo.MachineTypeVO;
+import com.sohu.tv.mq.cloud.web.vo.ServerRoleVO;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.springframework.beans.BeanUtils;
@@ -21,21 +17,9 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
-import com.alibaba.fastjson.JSON;
-import com.sohu.tv.mq.cloud.bo.ServerAlarmConfig;
-import com.sohu.tv.mq.cloud.bo.ServerInfo;
-import com.sohu.tv.mq.cloud.bo.ServerInfoExt;
-import com.sohu.tv.mq.cloud.bo.ServerStatus;
-import com.sohu.tv.mq.cloud.service.SSHTemplate;
-import com.sohu.tv.mq.cloud.service.ServerAlarmConfigService;
-import com.sohu.tv.mq.cloud.service.ServerDataService;
-import com.sohu.tv.mq.cloud.util.DateUtil;
-import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper;
-import com.sohu.tv.mq.cloud.util.MachineType;
-import com.sohu.tv.mq.cloud.util.Result;
-import com.sohu.tv.mq.cloud.util.Status;
-import com.sohu.tv.mq.cloud.web.controller.param.ServerAlarmConfigParam;
-import com.sohu.tv.mq.cloud.web.vo.MachineTypeVO;
+import javax.validation.Valid;
+import java.text.DecimalFormat;
+import java.util.*;
 
 /**
  * 服务器
@@ -59,6 +43,15 @@ public class AdminServerController extends AdminViewController {
 
     @Autowired
     private ServerAlarmConfigService serverAlarmConfigService;
+
+    @Autowired
+    private BrokerService brokerService;
+
+    @Autowired
+    private NameServerService nameServerService;
+
+    @Autowired
+    private ClusterService clusterService;
 
     /**
      * 新增
@@ -94,6 +87,30 @@ public class AdminServerController extends AdminViewController {
         setResult(map, "username", mqCloudConfigHelper.getServerUser());
         setResult(map, "password", mqCloudConfigHelper.getServerPassword());
         setResult(map, "machineRoom", mqCloudConfigHelper.getMachineRoom());
+
+        if (serverStatList.size() > 0) {
+            Map<String, ServerRoleVO> serverRoleVOMap = new HashMap<>();
+            // 获取broker信息
+            Result<List<Broker>> brokerListResult = brokerService.queryAll();
+            if (brokerListResult.isNotEmpty()) {
+                brokerListResult.getResult().forEach(broker -> {
+                    serverRoleVOMap.computeIfAbsent(broker.getIp(), k -> new ServerRoleVO()).addBroker(broker,
+                            clusterService.getMQClusterById(broker.getCid()));
+                });
+            }
+            // 获取nameserver信息
+            Result<List<NameServer>> nameServerListResult = nameServerService.queryAll();
+            if (nameServerListResult.isNotEmpty()) {
+                nameServerListResult.getResult().forEach(nameServer -> {
+                    serverRoleVOMap.computeIfAbsent(nameServer.getIp(), k -> new ServerRoleVO()).addNameServer(nameServer,
+                            clusterService.getMQClusterById(nameServer.getCid()));
+                });
+            }
+            // 设置到最终返回中
+            serverStatList.forEach(serverInfoExt -> {
+                serverInfoExt.setServerRoleVO(serverRoleVOMap.get(serverInfoExt.getIp()));
+            });
+        }
         return view();
     }
 

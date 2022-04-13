@@ -1,21 +1,28 @@
 package com.sohu.tv.mq.cloud.service;
 
-import java.util.List;
-import java.util.Properties;
-
+import com.sohu.tv.mq.cloud.bo.Broker;
+import com.sohu.tv.mq.cloud.bo.CheckStatusEnum;
+import com.sohu.tv.mq.cloud.bo.Cluster;
+import com.sohu.tv.mq.cloud.common.model.BrokerRateLimitData;
+import com.sohu.tv.mq.cloud.common.model.TopicRateLimit;
+import com.sohu.tv.mq.cloud.common.model.UpdateSendMsgRateLimitRequestHeader;
+import com.sohu.tv.mq.cloud.common.mq.SohuMQAdmin;
+import com.sohu.tv.mq.cloud.dao.BrokerDao;
+import com.sohu.tv.mq.cloud.mq.DefaultCallback;
+import com.sohu.tv.mq.cloud.mq.MQAdminTemplate;
+import com.sohu.tv.mq.cloud.util.Result;
+import com.sohu.tv.mq.cloud.util.Status;
+import org.apache.rocketmq.client.exception.MQClientException;
+import org.apache.rocketmq.remoting.protocol.RemotingSysResponseCode;
 import org.apache.rocketmq.tools.admin.MQAdminExt;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import com.sohu.tv.mq.cloud.bo.Broker;
-import com.sohu.tv.mq.cloud.bo.CheckStatusEnum;
-import com.sohu.tv.mq.cloud.bo.Cluster;
-import com.sohu.tv.mq.cloud.dao.BrokerDao;
-import com.sohu.tv.mq.cloud.mq.DefaultCallback;
-import com.sohu.tv.mq.cloud.mq.MQAdminTemplate;
-import com.sohu.tv.mq.cloud.util.Result;
+import java.util.Collections;
+import java.util.List;
+import java.util.Properties;
 
 /**
  * broker
@@ -167,6 +174,82 @@ public class BrokerService {
 
             public Result<Properties> exception(Exception e) {
                 logger.error("cid:{}, brokerAddr:{}, properties:{} updateBrokerConfig err", cid, brokerAddr, properties, e);
+                return Result.getDBErrorResult(e);
+            }
+        });
+    }
+
+    /**
+     * 获取发送消息限速情况
+     * @param cid
+     * @param brokerAddr
+     * @return
+     */
+    public Result<BrokerRateLimitData> fetchSendMessageRateLimitInBroker(int cid, String brokerAddr) {
+        return mqAdminTemplate.execute(new DefaultCallback<Result<BrokerRateLimitData>>() {
+            public Cluster mqCluster() {
+                return clusterService.getMQClusterById(cid);
+            }
+
+            public Result<BrokerRateLimitData> callback(MQAdminExt mqAdmin) throws Exception {
+                BrokerRateLimitData brokerRateLimitData =
+                        ((SohuMQAdmin) mqAdmin).fetchSendMessageRateLimitInBroker(brokerAddr);
+                if (brokerRateLimitData != null) {
+                    List<TopicRateLimit> list = brokerRateLimitData.getTopicRateLimitList();
+                    if (list != null) {
+                        Collections.sort(list, (t1, t2) -> {
+                            // 等待时长逆序
+                            if (t1.getLastNeedWaitMicrosecs() > t2.getLastNeedWaitMicrosecs()) {
+                                return -1;
+                            }
+                            if (t1.getLastNeedWaitMicrosecs() < t2.getLastNeedWaitMicrosecs()) {
+                                return 1;
+                            }
+                            // 限流时间逆序
+                            if (t1.getLastRateLimitTimestamp() > t2.getLastRateLimitTimestamp()) {
+                                return -1;
+                            }
+                            if (t1.getLastRateLimitTimestamp() < t2.getLastRateLimitTimestamp()) {
+                                return 1;
+                            }
+                            return 0;
+                        });
+                    }
+                }
+                return Result.getResult(brokerRateLimitData);
+            }
+
+            public Result<BrokerRateLimitData> exception(Exception e) {
+                logger.warn("cid:{}, brokerAddr:{}, fetchSendMessageRateLimitInBroker err:{}", cid, brokerAddr, e.toString());
+                // 判断是否支持
+                if (e instanceof MQClientException && ((MQClientException) e).getResponseCode() == RemotingSysResponseCode.REQUEST_CODE_NOT_SUPPORTED) {
+                    Result<BrokerRateLimitData> result = Result.getResult(Status.BROKER_UNSUPPORTED_ERROR);
+                    return result.setException(e);
+                }
+                return Result.getDBErrorResult(e);
+            }
+        });
+    }
+
+    /**
+     * 更新限速
+     * @param cid
+     * @param brokerAddr
+     * @param updateSendMsgRateLimitRequestHeader
+     */
+    public Result<?> updateSendMessageRateLimit(int cid, String brokerAddr, UpdateSendMsgRateLimitRequestHeader updateSendMsgRateLimitRequestHeader) {
+        return mqAdminTemplate.execute(new DefaultCallback<Result<Void>>() {
+            public Cluster mqCluster() {
+                return clusterService.getMQClusterById(cid);
+            }
+
+            public Result<Void> callback(MQAdminExt mqAdmin) throws Exception {
+                ((SohuMQAdmin) mqAdmin).updateSendMessageRateLimit(brokerAddr, updateSendMsgRateLimitRequestHeader);
+                return Result.getOKResult();
+            }
+
+            public Result<Void> exception(Exception e) {
+                logger.error("cid:{}, brokerAddr:{}, param:{} updateSendMessageRateLimit err", cid, brokerAddr, updateSendMsgRateLimitRequestHeader, e);
                 return Result.getDBErrorResult(e);
             }
         });

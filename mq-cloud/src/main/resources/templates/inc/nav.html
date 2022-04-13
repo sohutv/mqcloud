@@ -76,6 +76,11 @@
 								<i class="fa fa-user glyphicon glyphicon-edit"></i> 
 								<#if userInfo.user.name??>修改<#else>完善</#if>资料</a>
 							</li>
+							<li><a href="#" onclick="showFPList()" data-target="#fpModal" data-toggle="modal"><img
+											style="width:14px;height:16.8px;margin-right:4px;" src="${request.contextPath}/img/trace.png">我的足迹</a>
+							</li>
+							<li><a href="#" onclick="showFavoriteList()" data-target="#favoriteModal" data-toggle="modal"><i class="fa fa-user glyphicon glyphicon-heart"></i> 我的收藏</a>
+							</li>
 							<#if userInfo.user.type == 1>
 								<li><a target="_blank" href="${request.contextPath}/admin/audit/list"><i class="fa fa-user glyphicon glyphicon-cog"></i> 管理后台</a></li>
 								<li><a href="#" data-target="#switchUserModal" data-toggle="modal"><i class="glyphicon glyphicon-user"></i> 切换身份</a></li>
@@ -119,6 +124,8 @@
 	<#include "../user/ipSearch.html">
 	<#include "../user/message.html">
 	<#include "../user/switchUser.html">
+	<#include "../user/footprint.html">
+	<#include "../user/favorite.html">
 	<#include "../topic/add.html">
 	<#include "../consumer/add.html">
 	<#include "../consumer/associate.html">

@@ -1,34 +1,24 @@
 package com.sohu.tv.mq.rocketmq;
 
-import java.util.Collection;
-import java.util.Map;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Consumer;
-
+import com.sohu.index.tv.mq.common.MQMessage;
+import com.sohu.index.tv.mq.common.Result;
+import com.sohu.tv.mq.common.AbstractConfig;
+import com.sohu.tv.mq.common.MQRateLimitException;
+import com.sohu.tv.mq.common.SohuSendMessageHook;
+import com.sohu.tv.mq.metric.MQMetricsExporter;
+import com.sohu.tv.mq.stats.StatsHelper;
 import org.apache.rocketmq.client.exception.MQClientException;
-import org.apache.rocketmq.client.producer.DefaultMQProducer;
-import org.apache.rocketmq.client.producer.MessageQueueSelector;
-import org.apache.rocketmq.client.producer.SendCallback;
-import org.apache.rocketmq.client.producer.SendResult;
-import org.apache.rocketmq.client.producer.TransactionListener;
-import org.apache.rocketmq.client.producer.TransactionMQProducer;
+import org.apache.rocketmq.client.producer.*;
 import org.apache.rocketmq.client.trace.AsyncTraceDispatcher;
 import org.apache.rocketmq.client.trace.hook.SendMessageTraceHookImpl;
 import org.apache.rocketmq.common.message.Message;
 import org.apache.rocketmq.remoting.exception.RemotingException;
 
-import com.sohu.index.tv.mq.common.MQMessage;
-import com.sohu.index.tv.mq.common.Result;
-import com.sohu.tv.mq.common.AbstractConfig;
-import com.sohu.tv.mq.common.SohuSendMessageHook;
-import com.sohu.tv.mq.metric.MQMetricsExporter;
-import com.sohu.tv.mq.stats.StatsHelper;
+import java.util.Collection;
+import java.util.Map;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 
 /**
  * rocketmq producer 封装
@@ -54,6 +44,9 @@ public class RocketMQProducer extends AbstractConfig {
     private ExecutorService retrySenderExecutor;
     
     private Consumer<Result<SendResult>> resendResultConsumer;
+
+    // 限流发生时，是否暂停一会发送线程
+    private boolean suspendAWhileWhenRateLimited = false;
     
     /**
      * 同样消息的Producer，归为同一个Group，应用必须设置，并保证命名唯一
@@ -237,13 +230,21 @@ public class RocketMQProducer extends AbstractConfig {
      * @return
      */
     public Result<SendResult> processException(Exception e) {
-        logger.error(e.getMessage(), e);
+        logger.error("send error", e);
         if (statsHelper != null) {
             statsHelper.recordException(e);
         }
+        // 限流后暂停一会
+        if (suspendAWhileWhenRateLimited && MQRateLimitException.isRateLimited(e)) {
+            try {
+                TimeUnit.SECONDS.sleep(1);
+            } catch (InterruptedException interruptedException) {
+                logger.warn("suspendAWhileWhenRateLimited interrupted");
+            }
+        }
         return new Result<SendResult>(false, e);
     }
-    
+
     /**
      * 批量发送消息
      *
@@ -255,11 +256,7 @@ public class RocketMQProducer extends AbstractConfig {
             SendResult sendResult = producer.send(messages);
             return new Result<SendResult>(true, sendResult);
         } catch (Exception e) {
-            logger.error(e.getMessage(), e);
-            if(statsHelper != null) {
-                statsHelper.recordException(e);
-            }
-            return new Result<SendResult>(false, e);
+            return processException(e);
         }
     }
 
@@ -319,8 +316,7 @@ public class RocketMQProducer extends AbstractConfig {
             SendResult sendResult = producer.send(message, messageQueueSelector, arg);
             return new Result<SendResult>(true, sendResult);
         } catch (Exception e) {
-            logger.error(e.getMessage(), e);
-            return new Result<SendResult>(false, e);
+            return processException(e);
         }
     }
 
@@ -518,8 +514,7 @@ public class RocketMQProducer extends AbstractConfig {
             producer.sendOneway(message);
             return new Result<SendResult>(true);
         } catch (Exception e) {
-            logger.error(e.getMessage(), e);
-            return new Result<SendResult>(false, e);
+            return processException(e);
         }
     }
     
@@ -657,8 +652,7 @@ public class RocketMQProducer extends AbstractConfig {
             SendResult sendResult = ((TransactionMQProducer) producer).sendMessageInTransaction(message, arg);
             return new Result<SendResult>(true, sendResult);
         } catch (Exception e) {
-            logger.error(e.getMessage(), e);
-            return new Result<SendResult>(false, e);
+            return processException(e);
         }
     }
     

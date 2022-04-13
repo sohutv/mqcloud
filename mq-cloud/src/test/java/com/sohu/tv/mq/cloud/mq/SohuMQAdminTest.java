@@ -82,13 +82,12 @@ public class SohuMQAdminTest {
         String topic = MixAll.getDLQTopic("basic-apitest-topic-consumer");
         String group = "basic-apitest-topic-consumer";
         String clientId = "127.0.0.1@5476@5";
-        long timeoutMillis = 5000;
         long startTimestamp = 1637305200000L;
         long endTimestamp = 1637305500000L;
         mqAdminTemplate.execute(new MQAdminCallback<Void>() {
             public Void callback(MQAdminExt mqAdmin) throws Exception {
                 SohuMQAdmin sohuMQAdmin = (SohuMQAdmin) mqAdmin;
-                sohuMQAdmin.consumeTimespanMessage(clientId, topic, group, startTimestamp, endTimestamp, timeoutMillis);
+                sohuMQAdmin.consumeTimespanMessage(clientId, topic, group, startTimestamp, endTimestamp);
                 return null;
             }
             public Cluster mqCluster() {

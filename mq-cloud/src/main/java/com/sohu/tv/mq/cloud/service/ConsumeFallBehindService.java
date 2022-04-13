@@ -1,17 +1,19 @@
 package com.sohu.tv.mq.cloud.service;
 
-import org.apache.rocketmq.tools.admin.MQAdminExt;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
 import com.sohu.tv.mq.cloud.bo.Cluster;
 import com.sohu.tv.mq.cloud.common.model.BrokerMomentStatsData;
 import com.sohu.tv.mq.cloud.common.mq.SohuMQAdmin;
 import com.sohu.tv.mq.cloud.mq.MQAdminCallback;
 import com.sohu.tv.mq.cloud.mq.MQAdminTemplate;
 import com.sohu.tv.mq.cloud.util.Result;
+import com.sohu.tv.mq.cloud.util.Status;
+import org.apache.rocketmq.client.exception.MQClientException;
+import org.apache.rocketmq.remoting.protocol.RemotingSysResponseCode;
+import org.apache.rocketmq.tools.admin.MQAdminExt;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 /**
  * 消费落后查询
@@ -74,8 +76,13 @@ public class ConsumeFallBehindService {
 
             @Override
             public Result<BrokerMomentStatsData> exception(Exception e) throws Exception {
-                logger.error("getConsumeFallBehindData, cluster:{}, brokerAddr:{}, statsName:{}, minValue:{} error",
-                        cluster, brokerAddr, statsName, minValue, e);
+                logger.warn("getConsumeFallBehindData, cluster:{}, brokerAddr:{}, statsName:{}, minValue:{} error:{}",
+                        cluster, brokerAddr, statsName, minValue, e.toString());
+                // 判断是否支持
+                if (e instanceof MQClientException && ((MQClientException) e).getResponseCode() == RemotingSysResponseCode.REQUEST_CODE_NOT_SUPPORTED) {
+                    Result<BrokerMomentStatsData> result = Result.getResult(Status.BROKER_UNSUPPORTED_ERROR);
+                    return result.setException(e);
+                }
                 return Result.getDBErrorResult(e);
             }
         });

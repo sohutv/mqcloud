@@ -15,8 +15,6 @@
 
   ![mqcloud](mq-cloud/src/main/resources/static/wiki/intro/img/mqcloud.png)
 
-## RocketMQ版本说明
-为了支持更多的统计和监控，我们对rocketmq源码进行了少量修改，及部分bug修复和优化，建议采用[搜狐版本RocketMQ](https://github.com/sohutv/mqcloud/wiki/%E5%85%B6%E4%BB%96%E8%AF%B4%E6%98%8E#user-content-rocketmq)配合MQCloud使用，获取更佳体验。
 
 ## 特性概览
 

@@ -4,14 +4,7 @@
 
 ## 二、<span id="client">客户端依赖</span>
 
-使用rocketmq社区的[rocketmq-client-go](https://github.com/apache/rocketmq-client-go)，此版本为纯go语言实现。
-
-但是目前最新的release版本2.0.0依然有**部分bug或未实现**的功能，包括但不限于：
-
-* [消费者offset更正](https://github.com/apache/rocketmq-client-go/issues/555)代码未实现
-* [消费者offset重置](https://github.com/apache/rocketmq-client-go/issues/558)功能未实现
-
-尽管如此，依然值得期待，因为依赖C++版本的go，构建起来实在太麻烦了。
+使用rocketmq社区的[rocketmq-client-go](https://github.com/apache/rocketmq-client-go)，此版本为纯go语言实现，请使用最新版本2.2.1-rc2，之前的版本有某些bug，会导致生产或消费问题。
 
 ## 三、<span id="common">公共配置</span>
 
@@ -38,6 +31,14 @@
 
    1. 集群名
    2. NameServer路由地址，可以点击复制[topic详情页](topic#detail)的集群路由。
+
+4. 集群id
+
+   ```
+   consumer或者producer.WithInstance("pid or port"+"@集群id")
+   ```
+
+   集群id就是NameServer路由地址最后的数字。注意，必须追加集群id，否则跨集群时，使用一个通道导致异常。
 
 ## 四、<span id="produce">生产消息</span>
 

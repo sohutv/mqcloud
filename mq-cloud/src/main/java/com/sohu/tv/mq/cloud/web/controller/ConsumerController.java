@@ -1,18 +1,16 @@
 package com.sohu.tv.mq.cloud.web.controller;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeMap;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.validation.Valid;
-
+import com.sohu.tv.mq.cloud.bo.*;
+import com.sohu.tv.mq.cloud.bo.Audit.TypeEnum;
+import com.sohu.tv.mq.cloud.service.*;
+import com.sohu.tv.mq.cloud.util.*;
+import com.sohu.tv.mq.cloud.web.controller.param.*;
+import com.sohu.tv.mq.cloud.web.vo.ConsumerProgressVO;
+import com.sohu.tv.mq.cloud.web.vo.QueueOwnerVO;
+import com.sohu.tv.mq.cloud.web.vo.UserInfo;
+import com.sohu.tv.mq.metric.StackTraceMetric;
+import com.sohu.tv.mq.util.CommonUtil;
+import com.sohu.tv.mq.util.Constant;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.rocketmq.client.exception.MQBrokerException;
 import org.apache.rocketmq.common.MixAll;
@@ -27,57 +25,12 @@ import org.apache.rocketmq.common.protocol.body.ConsumerRunningInfo;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.HtmlUtils;
 
-import com.sohu.tv.mq.cloud.bo.Audit;
-import com.sohu.tv.mq.cloud.bo.Audit.TypeEnum;
-import com.sohu.tv.mq.cloud.bo.AuditAssociateConsumer;
-import com.sohu.tv.mq.cloud.bo.AuditConsumer;
-import com.sohu.tv.mq.cloud.bo.AuditConsumerConfig;
-import com.sohu.tv.mq.cloud.bo.AuditResetOffset;
-import com.sohu.tv.mq.cloud.bo.AuditTimespanMessageConsume;
-import com.sohu.tv.mq.cloud.bo.ClientVersion;
-import com.sohu.tv.mq.cloud.bo.Cluster;
-import com.sohu.tv.mq.cloud.bo.ConsumeStatsExt;
-import com.sohu.tv.mq.cloud.bo.Consumer;
-import com.sohu.tv.mq.cloud.bo.ConsumerConfig;
-import com.sohu.tv.mq.cloud.bo.MessageReset;
-import com.sohu.tv.mq.cloud.bo.Topic;
-import com.sohu.tv.mq.cloud.bo.TopicTopology;
-import com.sohu.tv.mq.cloud.bo.User;
-import com.sohu.tv.mq.cloud.bo.UserConsumer;
-import com.sohu.tv.mq.cloud.service.AlertService;
-import com.sohu.tv.mq.cloud.service.AuditService;
-import com.sohu.tv.mq.cloud.service.ClientVersionService;
-import com.sohu.tv.mq.cloud.service.ClusterService;
-import com.sohu.tv.mq.cloud.service.ConsumerConfigService;
-import com.sohu.tv.mq.cloud.service.ConsumerService;
-import com.sohu.tv.mq.cloud.service.TopicService;
-import com.sohu.tv.mq.cloud.service.UserConsumerService;
-import com.sohu.tv.mq.cloud.service.UserService;
-import com.sohu.tv.mq.cloud.service.VerifyDataService;
-import com.sohu.tv.mq.cloud.util.DateUtil;
-import com.sohu.tv.mq.cloud.util.FreemarkerUtil;
-import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper;
-import com.sohu.tv.mq.cloud.util.Result;
-import com.sohu.tv.mq.cloud.util.Status;
-import com.sohu.tv.mq.cloud.web.controller.param.AssociateConsumerParam;
-import com.sohu.tv.mq.cloud.web.controller.param.ConsumerConfigParam;
-import com.sohu.tv.mq.cloud.web.controller.param.ConsumerParam;
-import com.sohu.tv.mq.cloud.web.controller.param.PaginationParam;
-import com.sohu.tv.mq.cloud.web.controller.param.TimespanMessageConsumeParam;
-import com.sohu.tv.mq.cloud.web.controller.param.UserConsumerParam;
-import com.sohu.tv.mq.cloud.web.vo.ConsumerProgressVO;
-import com.sohu.tv.mq.cloud.web.vo.QueueOwnerVO;
-import com.sohu.tv.mq.cloud.web.vo.UserInfo;
-import com.sohu.tv.mq.metric.StackTraceMetric;
-import com.sohu.tv.mq.util.CommonUtil;
-import com.sohu.tv.mq.util.Constant;
+import javax.servlet.http.HttpServletRequest;
+import javax.validation.Valid;
+import java.util.*;
 
 /**
  * 消费者接口
@@ -122,6 +75,9 @@ public class ConsumerController extends ViewController {
 
     @Autowired
     private ClientVersionService clientVersionService;
+
+    @Autowired
+    private UserFootprintService userFootprintService;
 
     /**
      * 消费进度
@@ -185,6 +141,11 @@ public class ConsumerController extends ViewController {
 
         // 限速常量
         setResult(map, "limitConsumeTps", Constant.LIMIT_CONSUME_TPS);
+        // 记录访问足迹
+        UserFootprint userFootprint = new UserFootprint();
+        userFootprint.setUid(userInfo.getUser().getId());
+        userFootprint.setTid(tid);
+        userFootprintService.save(userFootprint);
         return view;
     }
 
@@ -687,7 +648,7 @@ public class ConsumerController extends ViewController {
         if (consumer != null) {
             sb.append(" consumer:");
             if (topic != null) {
-                sb.append(mqCloudConfigHelper.getTopicConsumeLink(topic, consumer));
+                sb.append(mqCloudConfigHelper.getTopicConsumeHrefLink(topic, consumer));
             } else {
                 sb.append(consumer);
             }
@@ -935,7 +896,7 @@ public class ConsumerController extends ViewController {
         if (consumerResult.isOK()) {
             Consumer consumer = consumerResult.getResult();
             sb.append(" consumer:");
-            sb.append(mqCloudConfigHelper.getTopicConsumeLink(consumer.getTid(), consumer.getName()));
+            sb.append(mqCloudConfigHelper.getTopicConsumeHrefLink(consumer.getTid(), consumer.getName()));
         }
         return sb.toString();
     }
@@ -953,9 +914,8 @@ public class ConsumerController extends ViewController {
         Cluster cluster = clusterService.getMQClusterById(cid);
         Result<ConsumerConnection> result = consumerService.examineConsumerConnectionInfo(group, cluster);
         if (result.isNotOK()) {
-            Exception e = result.getException();
-            if (e != null && e instanceof MQBrokerException && 206 == ((MQBrokerException) e).getResponseCode()) {
-                return Result.getResult(Status.NO_ONLINE);
+            if (Status.NO_ONLINE.getKey() == result.getStatus()) {
+                return result;
             }
             return Result.getWebResult(result);
         }

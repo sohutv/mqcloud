@@ -5,8 +5,11 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.rocketmq.common.protocol.body.Connection;
+import org.apache.rocketmq.common.protocol.body.ConsumerConnection;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
@@ -146,6 +149,9 @@ public class AuditService {
 
     @Autowired
     private AuditTimespanMessageConsumeService auditTimespanMessageConsumeService;
+
+    @Autowired
+    private ClusterService clusterService;
 
     /**
      * 查询列表
@@ -984,6 +990,16 @@ public class AuditService {
                 return userListResult;
             }
             auditConsumerDeleteVO.setUser(userListResult.getResult());
+        }
+        // 增加消费者链接校验
+        Result<ConsumerConnection> connectionResult = consumerService.examineConsumerConnectionInfo(consumer.getName(),
+                clusterService.getMQClusterById(auditConsumerDeleteVO.getTopic().getClusterId()));
+        if (connectionResult.isNotOK()) {
+            auditConsumerDeleteVO.setClientIdListResult(connectionResult);
+        } else {
+            List<String> connList = connectionResult.getResult().getConnectionSet().stream().map(
+                    conn -> conn.getClientId()).collect(Collectors.toList());
+            auditConsumerDeleteVO.setClientIdListResult(Result.getResult(connList));
         }
         return Result.getResult(auditConsumerDeleteVO);
     }

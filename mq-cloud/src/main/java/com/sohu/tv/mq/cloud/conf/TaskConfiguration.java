@@ -9,6 +9,7 @@ import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
@@ -93,7 +94,8 @@ public class TaskConfiguration {
     }
     
     @Bean
-    @Profile({"online-sohu"})
+    @Profile({"online", "online-sohu"})
+    @ConditionalOnProperty(name = "rocketmq.customized", havingValue = "true")
     public DeadMessageTask deadMessageTask() {
         DeadMessageTask deadMessageTask = new DeadMessageTask();
         return deadMessageTask;
@@ -145,14 +147,16 @@ public class TaskConfiguration {
     }
     
     @Bean
-    @Profile({"online-sohu"})
+    @Profile({"online", "online-sohu"})
+    @ConditionalOnProperty(name = "rocketmq.customized", havingValue = "true")
     public BrokerStoreStatTask brokerStoreStatTask() {
         BrokerStoreStatTask brokerStoreStatTask = new BrokerStoreStatTask();
         return brokerStoreStatTask;
     }
     
     @Bean
-    @Profile({"online-sohu"})
+    @Profile({"online", "online-sohu"})
+    @ConditionalOnProperty(name = "rocketmq.customized", havingValue = "true")
     public ConsumeFallBehindTask consumeFallBehindTask() {
         ConsumeFallBehindTask consumeFallBehindTask = new ConsumeFallBehindTask();
         return consumeFallBehindTask;

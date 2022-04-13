@@ -1,18 +1,5 @@
 package com.sohu.tv.mq.cloud.task;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-
-import org.apache.rocketmq.common.MixAll;
-import org.apache.rocketmq.common.Pair;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.scheduling.annotation.Scheduled;
-
 import com.sohu.tv.mq.cloud.bo.Broker;
 import com.sohu.tv.mq.cloud.bo.BrokerFallBehind;
 import com.sohu.tv.mq.cloud.bo.BrokerFallBehind.ConsumerFallBehind;
@@ -20,15 +7,18 @@ import com.sohu.tv.mq.cloud.bo.Cluster;
 import com.sohu.tv.mq.cloud.bo.UserWarn.WarnType;
 import com.sohu.tv.mq.cloud.common.model.BrokerMomentStatsData;
 import com.sohu.tv.mq.cloud.common.model.BrokerMomentStatsItem;
-import com.sohu.tv.mq.cloud.service.AlarmConfigBridingService;
-import com.sohu.tv.mq.cloud.service.AlertService;
-import com.sohu.tv.mq.cloud.service.BrokerService;
-import com.sohu.tv.mq.cloud.service.ClusterService;
-import com.sohu.tv.mq.cloud.service.ConsumeFallBehindService;
+import com.sohu.tv.mq.cloud.service.*;
 import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper;
 import com.sohu.tv.mq.cloud.util.Result;
-
 import net.javacrumbs.shedlock.core.SchedulerLock;
+import org.apache.rocketmq.common.MixAll;
+import org.apache.rocketmq.common.Pair;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Scheduled;
+
+import java.util.*;
 
 /**
  * 消费落后检测任务
@@ -162,7 +152,7 @@ public class ConsumeFallBehindTask {
                 consumerFallBehind.setTopic(split[1]);
                 consumerFallBehind.setConsumer(split[2]);
                 consumerFallBehind.setAccumulated(brokerMomentStatsItem.getValue());
-                consumerFallBehind.setConsumerLink(mqCloudConfigHelper.getTopicConsumeLink(split[1], split[2]));
+                consumerFallBehind.setConsumerLink(mqCloudConfigHelper.getTopicConsumeHrefLink(split[1], split[2]));
                 consumerFallBehindList.add(consumerFallBehind);
             }
             brokerFallBehind.setList(consumerFallBehindList);

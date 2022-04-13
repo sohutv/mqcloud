@@ -26,4 +26,10 @@ public interface ClusterDao {
     @Insert("insert into cluster values(#{cluster.id}, #{cluster.name}, #{cluster.vipChannelEnabled}, #{cluster.online}"
             + ", #{cluster.transactionEnabled}, #{cluster.traceEnabled})")
     public Integer insert(@Param("cluster")Cluster cluster);
+
+    @Select("<script>select * from cluster "
+            + "where id in  "
+            + "<foreach collection=\"list\" item=\"id\" separator=\",\" open=\"(\" close=\")\">#{id}</foreach>"
+            + "</script>")
+    public List<Cluster> selectClusterByCids(@Param("list") List<Long> list);
 }
