@@ -1,5 +1,6 @@
 package com.sohu.tv.mq.cloud.dao;
 
+import java.util.Date;
 import java.util.List;
 
 import org.apache.ibatis.annotations.Delete;
@@ -34,9 +35,9 @@ public interface ServerStatusDao {
      * @param ip
      * @return @ServerInfo
      */
-    @Select("select * from server s left join server_stat ss on ss.ip = s.ip and ss.cdate=#{cdate} and ss.ctime in "
-            + "(select max(ctime) from server_stat where ip = s.ip and cdate=#{cdate})")
-    public List<ServerInfoExt> queryAllServer(@Param("cdate") String date);
+    @Select("select * from server s left join server_stat ss on ss.ip = s.ip and ss.cdate=#{cdate,jdbcType=DATE} and ss.ctime in "
+            + "(select max(ctime) from server_stat where ip = s.ip and cdate=#{cdate,jdbcType=DATE})")
+    public List<ServerInfoExt> queryAllServer(@Param("cdate") Date date);
 
     /**
      * 查询服务器基本信息
@@ -89,9 +90,9 @@ public interface ServerStatusDao {
 	 * @param date
 	 * @return List<ServerStatus>
 	 */
-    @Select("select * from server_stat where ip=#{ip} and cdate=#{cdate}")
+    @Select("select * from server_stat where ip=#{ip} and cdate=#{cdate,jdbcType=DATE}")
 	public List<ServerStatus> queryServerStat(@Param("ip") String ip, 
-			@Param("cdate") String date);
+			@Param("cdate") Date date);
 	
 
 	/**
@@ -120,8 +121,8 @@ public interface ServerStatusDao {
 	 * @param date
 	 * @return
 	 */
-	@Delete("delete from server_stat where cdate < #{cdate}")
-	public Integer deleteServerStat(@Param("cdate") String date);
+	@Delete("delete from server_stat where cdate < #{cdate,jdbcType=DATE}")
+	public Integer deleteServerStat(@Param("cdate") Date date);
 	
 	/**
      * 删除数据
@@ -146,7 +147,7 @@ public interface ServerStatusDao {
      * @param date
      * @return List<ServerStatus>
      */
-    @Select("select * from server_stat where ip=#{ip} and cdate=#{cdate} and ctime >= #{beginTime}")
+    @Select("select * from server_stat where ip=#{ip} and cdate=#{cdate,jdbcType=DATE} and ctime >= #{beginTime}")
     public List<ServerStatus> queryServerStatByIp(@Param("ip") String ip, 
-            @Param("cdate") String date, @Param("beginTime") String beginTime);
+            @Param("cdate") Date date, @Param("beginTime") String beginTime);
 }

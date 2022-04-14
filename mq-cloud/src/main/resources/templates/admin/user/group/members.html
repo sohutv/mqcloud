@@ -1,0 +1,7 @@
+<#if response.empty>
+	<li class="list-group-item"><p class="list-group-item-text">暂无数据</p></li> 
+<#else>
+	<#list response.result as user>
+		<li class="list-group-item"><p class="list-group-item-text">${user.notBlankName()}(${user.emailName})<#if user.gid gt 0><span onclick="removeFromUserGroup(${user.id})" style="float:right;cursor:pointer;" class="glyphicon glyphicon-heart" aria-hidden="true"></span><#else><span onclick="addToUserGroup(${user.id})" style="float:right;cursor:pointer;" class="glyphicon glyphicon-heart-empty" aria-hidden="true"></span></#if></p></li> 
+	</#list>
+</#if>

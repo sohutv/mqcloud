@@ -128,7 +128,7 @@ public class TrafficTask {
 
                 int size = 0;
                 int update = 0;
-                Result<List<TopicTraffic>> result = topicTrafficService.query(DateUtil.formatYMD(now), timeList, onlineClusterList);
+                Result<List<TopicTraffic>> result = topicTrafficService.query(now, timeList, onlineClusterList);
                 if (result.isNotEmpty()) {
                     List<TopicTraffic> topicTrafficList = result.getResult();
                     size = topicTrafficList.size();

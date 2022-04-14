@@ -24,6 +24,18 @@ public class AuditTopicDeleteService {
     private AuditTopicDeleteDao auditTopicDeleteDao;
     
     /**
+     * 保存
+     */
+    public void save(long aid, long tid, String topic) {
+        try {
+            auditTopicDeleteDao.insert(aid, tid, topic);
+        } catch (Exception e) {
+            logger.error("insert err {}", topic, e);
+            throw e;
+        }
+    }
+    
+    /**
      * 按照aid查询AuditTopicDelete
      * 
      * @param Result<AuditTopicDelete>

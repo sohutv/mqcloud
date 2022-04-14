@@ -1,16 +1,12 @@
 package com.sohu.tv.mq.cloud.web.controller.admin;
 
-import java.text.DecimalFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
-
-import javax.validation.Valid;
-
+import com.alibaba.fastjson.JSON;
+import com.sohu.tv.mq.cloud.bo.*;
+import com.sohu.tv.mq.cloud.service.*;
+import com.sohu.tv.mq.cloud.util.*;
+import com.sohu.tv.mq.cloud.web.controller.param.ServerAlarmConfigParam;
+import com.sohu.tv.mq.cloud.web.vo.MachineTypeVO;
+import com.sohu.tv.mq.cloud.web.vo.ServerRoleVO;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.springframework.beans.BeanUtils;
@@ -21,21 +17,9 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
-import com.alibaba.fastjson.JSON;
-import com.sohu.tv.mq.cloud.bo.ServerAlarmConfig;
-import com.sohu.tv.mq.cloud.bo.ServerInfo;
-import com.sohu.tv.mq.cloud.bo.ServerInfoExt;
-import com.sohu.tv.mq.cloud.bo.ServerStatus;
-import com.sohu.tv.mq.cloud.service.SSHTemplate;
-import com.sohu.tv.mq.cloud.service.ServerAlarmConfigService;
-import com.sohu.tv.mq.cloud.service.ServerDataService;
-import com.sohu.tv.mq.cloud.util.DateUtil;
-import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper;
-import com.sohu.tv.mq.cloud.util.MachineType;
-import com.sohu.tv.mq.cloud.util.Result;
-import com.sohu.tv.mq.cloud.util.Status;
-import com.sohu.tv.mq.cloud.web.controller.param.ServerAlarmConfigParam;
-import com.sohu.tv.mq.cloud.web.vo.MachineTypeVO;
+import javax.validation.Valid;
+import java.text.DecimalFormat;
+import java.util.*;
 
 /**
  * 服务器
@@ -59,6 +43,15 @@ public class AdminServerController extends AdminViewController {
 
     @Autowired
     private ServerAlarmConfigService serverAlarmConfigService;
+
+    @Autowired
+    private BrokerService brokerService;
+
+    @Autowired
+    private NameServerService nameServerService;
+
+    @Autowired
+    private ClusterService clusterService;
 
     /**
      * 新增
@@ -89,11 +82,35 @@ public class AdminServerController extends AdminViewController {
     @RequestMapping("/list")
     public String list(Map<String, Object> map) {
         setView(map, "list");
-        List<ServerInfoExt> serverStatList = serverDataService.queryAllServer(DateUtil.formatYMDNow());
+        List<ServerInfoExt> serverStatList = serverDataService.queryAllServer(new Date());
         setResult(map, serverStatList);
         setResult(map, "username", mqCloudConfigHelper.getServerUser());
         setResult(map, "password", mqCloudConfigHelper.getServerPassword());
         setResult(map, "machineRoom", mqCloudConfigHelper.getMachineRoom());
+
+        if (serverStatList.size() > 0) {
+            Map<String, ServerRoleVO> serverRoleVOMap = new HashMap<>();
+            // 获取broker信息
+            Result<List<Broker>> brokerListResult = brokerService.queryAll();
+            if (brokerListResult.isNotEmpty()) {
+                brokerListResult.getResult().forEach(broker -> {
+                    serverRoleVOMap.computeIfAbsent(broker.getIp(), k -> new ServerRoleVO()).addBroker(broker,
+                            clusterService.getMQClusterById(broker.getCid()));
+                });
+            }
+            // 获取nameserver信息
+            Result<List<NameServer>> nameServerListResult = nameServerService.queryAll();
+            if (nameServerListResult.isNotEmpty()) {
+                nameServerListResult.getResult().forEach(nameServer -> {
+                    serverRoleVOMap.computeIfAbsent(nameServer.getIp(), k -> new ServerRoleVO()).addNameServer(nameServer,
+                            clusterService.getMQClusterById(nameServer.getCid()));
+                });
+            }
+            // 设置到最终返回中
+            serverStatList.forEach(serverInfoExt -> {
+                serverInfoExt.setServerRoleVO(serverRoleVOMap.get(serverInfoExt.getIp()));
+            });
+        }
         return view();
     }
 
@@ -211,8 +228,11 @@ public class AdminServerController extends AdminViewController {
     public String overview(@RequestParam("ip") String ip,
             @RequestParam(value = "date", required = false) String date,
             Map<String, Object> map) {
+        Date queryDate = null;
         if (date == null) {
-            date = DateUtil.formatYMDNow();
+            queryDate = new Date();
+        } else {
+            queryDate = DateUtil.parse(DateUtil.YMD_DASH, date);
         }
         // 获取服务器静态信息
         ServerInfo info = serverDataService.queryServerInfo(ip);
@@ -239,7 +259,7 @@ public class AdminServerController extends AdminViewController {
             }
         }
         // 获取服务器状态
-        List<ServerStatus> list = serverDataService.queryServerStat(ip, date);
+        List<ServerStatus> list = serverDataService.queryServerStat(ip, queryDate);
         map.put("date", date);
         setDataToMap(list, map);
         return adminViewModule() + "/overview";
@@ -263,9 +283,8 @@ public class AdminServerController extends AdminViewController {
         }
         setResult(map, "server", serverInfo);
         // 获取统计信息
-        String date = DateUtil.formatYMDNow();
         String time = DateUtil.getFormat(DateUtil.HHMM).format(new Date(System.currentTimeMillis() - 60 * 60 * 1000));
-        List<ServerStatus> list = serverDataService.queryServerStatByIp(ip, date, time);
+        List<ServerStatus> list = serverDataService.queryServerStatByIp(ip, new Date(), time);
         ServerMetic serverMetic = new ServerMetic(list);
         setResult(map, serverMetic);
         return adminViewModule() + "/preview";
@@ -528,7 +547,8 @@ public class AdminServerController extends AdminViewController {
     public String cpu(@RequestParam("ip") String ip,
             @RequestParam("date") String date,
             Map<String, Object> map) {
-        List<ServerStatus> list = serverDataService.queryServerStat(ip, date);
+        Date queryDate = DateUtil.parse(DateUtil.YMD_DASH, date);
+        List<ServerStatus> list = serverDataService.queryServerStat(ip, queryDate);
         Map<String, CpuChart> subcpuMap = new TreeMap<String, CpuChart>();
         // x轴坐标
         List<String> xAxis = new ArrayList<String>();
@@ -578,7 +598,8 @@ public class AdminServerController extends AdminViewController {
     public String net(@RequestParam("ip") String ip,
             @RequestParam("date") String date,
             Map<String, Object> map) {
-        List<ServerStatus> list = serverDataService.queryServerStat(ip, date);
+        Date queryDate = DateUtil.parse(DateUtil.YMD_DASH, date);
+        List<ServerStatus> list = serverDataService.queryServerStat(ip, queryDate);
         Map<String, NetChart> subnetMap = new TreeMap<String, NetChart>();
         // x轴坐标
         List<String> xAxis = new ArrayList<String>();
@@ -637,7 +658,8 @@ public class AdminServerController extends AdminViewController {
     public String disk(@RequestParam("ip") String ip,
             @RequestParam("date") String date,
             Map<String, Object> map) {
-        List<ServerStatus> list = serverDataService.queryServerStat(ip, date);
+        Date queryDate = DateUtil.parse(DateUtil.YMD_DASH, date);
+        List<ServerStatus> list = serverDataService.queryServerStat(ip, queryDate);
         DiskChart readChart = new DiskChart();
         DiskChart writeChart = new DiskChart();
         DiskChart busyChart = new DiskChart();

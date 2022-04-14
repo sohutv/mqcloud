@@ -85,8 +85,8 @@
 				<div class="form-group" id="opnionRadio">
 					<label class="control-label col-md-3"> 是否同意: </label>
 					<div class="col-md-6 checkbox">
-					    <input type="radio" name="creatTopicRadio" onclick="agree()" value="0">同意
-					    <input type="radio" name="creatTopicRadio" onclick="disAgree()" value="1">不同意
+					    <input type="radio" name="creatTopicRadio" onclick="agreeTopic()" value="0">同意
+					    <input type="radio" name="creatTopicRadio" onclick="disAgreeTopic()" value="1">不同意
 					</div>
 				</div>
 				<div class="form-group" style="display:none;" id="clusterDiv" >
@@ -136,7 +136,7 @@
 						</select>
 					</div>
 				</div>
-				<div id="refuseReasonDiv" class="form-group" style="display:none;">
+				<div id="refuseReasonDiv" class="form-group custom" style="display:none;">
 					<label class="control-label col-md-3"> 拒绝理由: </label>
 					<div class="col-md-6">
 						<textarea type="text" id="topicCreateRefuseReason" rows="3" class="form-control" placeholder="请填写"></textarea>
@@ -146,14 +146,14 @@
 		</div>
 	</div>
 </div>
-<div class="modal-footer" id="auditTopicFooter">
+<div class="modal-footer custom" id="auditTopicFooter">
 	<button type="button" data-dismiss="modal" class="btn" >取消</button>
 	<button type="button" id="cancelBtn" class="btn btn-warning" onclick="cancelAudit(${response.result.aid?c})">撤销</button>
 	<button type="button" class="btn btn-primary" id="auditAddTopicBtn" onclick="auditAddTopic()">确定</button>
 </div>
 
 <script>
-function agree(){
+function agreeTopic(){
 	if($("#clusterSelect").find("option").length == 0){
 		if ($("input[name='flag']").val() == 1){
 			alert("暂无测试集群支持事务功能，请添加新集群，或修改已有测试集群支持事务功能");
@@ -178,7 +178,7 @@ function agree(){
 		$("#traceDiv").show();
 	}
 }
-function disAgree(){
+function disAgreeTopic(){
 	$("#refuseReasonDiv").show();
 	$("#clusterDiv").hide();
 }

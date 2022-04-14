@@ -1,6 +1,7 @@
 package com.sohu.tv.mq.cloud.dao;
 
 import java.util.Collection;
+import java.util.Date;
 import java.util.List;
 
 import org.apache.ibatis.annotations.Delete;
@@ -189,8 +190,8 @@ public interface TopicDao {
      * 
      * @param day
      */
-    @Update("update topic set count = 0 where count > 0 and update_time < DATE_SUB(CURDATE(),INTERVAL #{dayAgo} DAY)")
-    public Integer resetCount(@Param("dayAgo") int dayAgo);
+    @Update("update topic set count = 0 where count > 0 and update_time < #{dayAgo}")
+    public Integer resetCount(@Param("dayAgo") Date dayAgo);
 
     /**
      * 更新记录
@@ -199,4 +200,73 @@ public interface TopicDao {
      */
     @Update("update topic set traffic_warn_enabled=#{trafficWarnEnabled} where id=#{tid}")
     public Integer updateTopicTrafficWarn(@Param("tid") long tid, @Param("trafficWarnEnabled") int trafficWarnEnabled);
-} 
+
+    /**
+     * 查询非trace topic
+     * @return List<Topic>
+     */
+    @Select("select * from topic t where cluster_id not in (select id from cluster where trace_enabled = 1)")
+    public List<Topic> selectNoneTraceableTopic();
+
+
+    /**
+     * 依据条件查询topic总数
+     * @param limitTids topic uid,gid限制条件
+     * @param cid 集群id
+     */
+    @Select("<script>select count(id) from topic where id in "
+            + "<foreach collection=\"limitTids\" item=\"tid\" separator=\",\" open=\"(\" close=\")\">#{tid}</foreach>"
+            +" <if test=\"cid != null\"> and cluster_id = #{cid} </if>"
+            + "</script>")
+    int queryTopicCountByLimit(@Param("limitTids") List<Long> limitTids, @Param("cid") Long cid);
+
+
+    /**
+     * 依据条件分页查询topic
+     * @param limitTids topic uid,gid限制条件
+     */
+    @Select("<script>select * from topic where id in "
+            + "<foreach collection=\"limitTids\" item=\"tid\" separator=\",\" open=\"(\" close=\")\">#{tid}</foreach> "
+            + "order by count desc "
+            + "</script>")
+    List<Topic> queryTopicDataByLimit(@Param("limitTids") List<Long> limitTids);
+
+    /**
+     * 返回没有消费者的主题
+     */
+    @Select("<script>" +
+            "select topic.id\n" +
+            "from topic\n" +
+            "left join consumer on topic.id = consumer.tid\n" +
+            "where consumer.id is null"
+            + "</script>")
+    List<Long> selectNoMatchTids();
+
+    /**
+     * 返回正常匹配消费者的主题
+     */
+    @Select("<script>" +
+            "select topic.id\n" +
+            "from topic\n" +
+            "inner join consumer on topic.id = consumer.tid\n"
+            + "</script>")
+    List<Long> selectActiveMatchTids();
+
+    /**
+     * 确认主题状态
+     */
+    @Update("update topic set effective= 1 where id=#{tid}")
+    void updateCheckStatus(@Param("tid") long tid);
+
+    /**
+     * 获取所有的排序后的Tids
+     */
+    @Select("<script>" +
+            "select id " +
+            "from topic " +
+            "where 1=1 "+
+            " <if test=\"cid != null\"> and cluster_id = #{cid} </if>"+
+            "order by count desc "
+            + "</script>")
+    List<Long> selectAllTidsByCid(@Param("cid") Long cid);
+}

@@ -311,9 +311,14 @@ public class MessageService {
                 }
                 messageQueryCondition.setSearchedSize(messageQueryCondition.getSearchedSize()
                         + pullResult.getMsgFoundList().size());
+                boolean useStoreTime = messageQueryCondition.useStoreTime();
                 for (MessageExt msg : pullResult.getMsgFoundList()) {
                     // 过滤不在时间范围的消息
-                    if (!offsetSearch && !messageQueryCondition.valid(msg.getBornTimestamp())) {
+                    long time = msg.getBornTimestamp();
+                    if (useStoreTime) {
+                        time = msg.getStoreTimestamp();
+                    }
+                    if (!offsetSearch && !messageQueryCondition.valid(time)) {
                         continue;
                     }
                     // 过滤不在当前offset查询条件内的消息
@@ -472,7 +477,7 @@ public class MessageService {
                             if (minOffset == 0) {
                                 maxOffset = 1;
                             } else {
-                                minOffset = maxOffset - 1;
+                                maxOffset = minOffset + 1;
                             }
                         }
                     } else {

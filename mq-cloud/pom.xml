@@ -5,7 +5,7 @@
 	<parent>
 		<groupId>com.sohu.tv</groupId>
 		<artifactId>mq</artifactId>
-		<version>4.9.1</version>
+		<version>4.9.2</version>
 	</parent>
 
 	<artifactId>mq-cloud</artifactId>
@@ -140,6 +140,18 @@
 		<dependency>
 		    <groupId>com.google.guava</groupId>
 		  	<artifactId>guava</artifactId>
+		</dependency>
+        <dependency>
+			<groupId>com.h2database</groupId>
+			<artifactId>h2</artifactId>
+			<scope>runtime</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-devtools</artifactId>
+			<optional>true</optional>
+			<scope>true</scope>
 		</dependency>
 	</dependencies>
 

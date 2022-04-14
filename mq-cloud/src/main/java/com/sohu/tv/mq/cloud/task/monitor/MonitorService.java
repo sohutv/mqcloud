@@ -322,7 +322,7 @@ public class MonitorService {
         }
 
         if (!infoMap.isEmpty()) {
-            this.monitorListener.reportConsumerRunningInfo(infoMap);
+            this.monitorListener.reportConsumerRunningInfo(consumerGroup, infoMap);
         }
     }
 

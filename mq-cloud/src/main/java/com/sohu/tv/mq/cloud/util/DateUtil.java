@@ -7,6 +7,8 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
+import org.apache.commons.lang3.math.NumberUtils;
+
 /**
  * 线程安全的日期工具类
  * 
@@ -82,11 +84,7 @@ public class DateUtil {
      * @return Date
      */
     public static Date parseYMD(String str) {
-        try {
-            return getFormat(YMD).parse(str);
-        } catch (ParseException e) {
-            throw new RuntimeException(e);
-        }
+        return parse(YMD, str);
     }
 
     /**
@@ -97,8 +95,21 @@ public class DateUtil {
     public static String formatYMD(Date date) {
         return getFormat(YMD).format(date);
     }
-
-    public static String formatYMDNow() {
-        return formatYMD(new Date());
+    
+    public static int format(Date date) {
+        return NumberUtils.toInt(formatYMD(date));
+    }
+    
+    /**
+     * 采用 @DateUtil.YMD_DASH 格式的SimpleDateFormat解析字符串
+     * @param str
+     * @return Date
+     */
+    public static Date parse(String formator, String str) {
+        try {
+            return getFormat(formator).parse(str);
+        } catch (ParseException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

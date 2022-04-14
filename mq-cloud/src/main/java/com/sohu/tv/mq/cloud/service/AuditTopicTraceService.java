@@ -24,6 +24,19 @@ public class AuditTopicTraceService {
     private AuditTopicTraceDao auditTopicTraceDao;
     
     /**
+     * 保存
+     */
+    public Result<?> save(long aid, long tid, int traceEnabled) {
+        try {
+            auditTopicTraceDao.insert(aid, tid, traceEnabled);
+        } catch (Exception e) {
+            logger.error("insert err, aid:{} tid:{}", aid, tid, e);
+            throw e;
+        }
+        return Result.getOKResult();
+    }
+    
+    /**
      * 按照aid查询AuditTopicTraceDao
      * 
      * @param Result<AuditTopicTrace>

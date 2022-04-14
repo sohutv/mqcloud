@@ -91,7 +91,7 @@ public class AutoAuditService {
                         result = auditController.deleteTopic(userInfo, aid);
                         break;
                     case NEW_CONSUMER:
-                        result = auditController.createConsumer(userInfo, aid);
+                        result = auditController.addConsumer(userInfo, aid);
                         break;
                     case DELETE_CONSUMER:
                         result = auditController.deleteConsumer(userInfo, aid);
@@ -135,6 +135,9 @@ public class AutoAuditService {
                         break;
                     case UPDATE_TOPIC_TRAFFIC_WARN:
                         result = auditController.updateTopicTrafficWarn(userInfo, aid);
+                        break;
+                    case TIMESPAN_MESSAGE_CONSUME:
+                        result = auditController.timespanMessageConsume(userInfo, aid);
                         break;
                 }
                 if (result != null) {

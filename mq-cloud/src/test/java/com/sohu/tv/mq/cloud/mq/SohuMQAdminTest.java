@@ -5,6 +5,7 @@ import java.util.Map;
 
 import org.apache.rocketmq.client.producer.SendResult;
 import org.apache.rocketmq.client.producer.SendStatus;
+import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.message.Message;
 import org.apache.rocketmq.common.protocol.body.ConsumerRunningInfo;
 import org.apache.rocketmq.tools.admin.MQAdminExt;
@@ -74,5 +75,29 @@ public class SohuMQAdminTest {
             }
         });
         System.out.println(consumerRunningInfo);
+    }
+    
+    @Test
+    public void testConsumeTimespanMessage() {
+        String topic = MixAll.getDLQTopic("basic-apitest-topic-consumer");
+        String group = "basic-apitest-topic-consumer";
+        String clientId = "127.0.0.1@5476@5";
+        long startTimestamp = 1637305200000L;
+        long endTimestamp = 1637305500000L;
+        mqAdminTemplate.execute(new MQAdminCallback<Void>() {
+            public Void callback(MQAdminExt mqAdmin) throws Exception {
+                SohuMQAdmin sohuMQAdmin = (SohuMQAdmin) mqAdmin;
+                sohuMQAdmin.consumeTimespanMessage(clientId, topic, group, startTimestamp, endTimestamp);
+                return null;
+            }
+            public Cluster mqCluster() {
+                return clusterService.getMQClusterById(5);
+            }
+            @Override
+            public Void exception(Exception e) throws Exception {
+                e.printStackTrace();
+                return null;
+            }
+        });
     }
 }

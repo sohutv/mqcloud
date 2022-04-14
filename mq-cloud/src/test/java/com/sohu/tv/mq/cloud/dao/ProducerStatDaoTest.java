@@ -1,6 +1,7 @@
 package com.sohu.tv.mq.cloud.dao;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 import org.apache.commons.lang3.math.NumberUtils;
@@ -35,10 +36,10 @@ public class ProducerStatDaoTest {
         Integer result = producerStatDao.insert(list);
         Assert.assertNotNull(result);
         
-        List<ProducerStat> rst = producerStatDao.selectByDate("aaa-producer", NumberUtils.toInt(DateUtil.formatYMDNow()));
+        List<ProducerStat> rst = producerStatDao.selectByDate("aaa-producer", NumberUtils.toInt(DateUtil.formatYMD(new Date())));
         Assert.assertNotNull(rst);
         
-        result = producerStatDao.delete(NumberUtils.toInt(DateUtil.formatYMDNow()));
+        result = producerStatDao.delete(NumberUtils.toInt(DateUtil.formatYMD(new Date())));
         Assert.assertNotNull(result);
     }
 

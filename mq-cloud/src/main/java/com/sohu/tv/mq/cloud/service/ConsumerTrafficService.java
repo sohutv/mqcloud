@@ -132,7 +132,7 @@ public class ConsumerTrafficService extends TrafficService<ConsumerTraffic> {
     }
 
     @Override
-    public Result<List<ConsumerTraffic>> query(long id, String date) {
+    public Result<List<ConsumerTraffic>> query(long id, Date date) {
         List<ConsumerTraffic> list = null;
         try {
             list = consumerTrafficDao.select(id, date);
@@ -144,7 +144,7 @@ public class ConsumerTrafficService extends TrafficService<ConsumerTraffic> {
     }
 
     @Override
-    public Result<List<ConsumerTraffic>> query(List<Long> idList, String date) {
+    public Result<List<ConsumerTraffic>> query(List<Long> idList, Date date) {
         if (idList == null || idList.size() == 0) {
             return Result.getResult(Status.NO_RESULT);
         }
@@ -158,7 +158,7 @@ public class ConsumerTrafficService extends TrafficService<ConsumerTraffic> {
         return Result.getResult(list);
     }
 
-    public Result<ConsumerTraffic> queryTotalTraffic(List<Long> idList, String date) {
+    public Result<ConsumerTraffic> queryTotalTraffic(List<Long> idList, Date date) {
         ConsumerTraffic consumerTraffic = null;
         try {
             consumerTraffic = consumerTrafficDao.selectTotalTraffic(idList, date);
@@ -170,7 +170,7 @@ public class ConsumerTrafficService extends TrafficService<ConsumerTraffic> {
     }
 
     @Override
-    public Result<List<ConsumerTraffic>> query(List<Long> idList, String date, String time) {
+    public Result<List<ConsumerTraffic>> query(List<Long> idList, Date date, String time) {
         if (idList == null || idList.size() == 0) {
             return Result.getResult(Status.NO_RESULT);
         }

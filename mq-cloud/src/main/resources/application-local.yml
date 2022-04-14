@@ -2,12 +2,10 @@ spring:
   application:
     name: sohu.mq-cloud.local
   datasource: 
-    tomcat: 
-      initial-size: 1
-      min-idle: 1
-      max-idle: 3
-      max-active: 3
-    mq: 
-      url: jdbc:mysql://127.0.0.1:3306/mq-cloud?useUnicode=true&characterEncoding=UTF-8
-      username: mqcloud
-      password: mqcloud
+    url: jdbc:h2:file:~/mqcloud.db;MODE=MySQL;database_to_upper=false;
+    driver-class-name: org.h2.Driver
+    schema: classpath:h2db/schema.sql
+    data: classpath:h2db/data.sql
+  h2:
+    console:
+      enabled: true

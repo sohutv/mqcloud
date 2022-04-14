@@ -2,6 +2,7 @@ package com.sohu.tv.mq.cloud.task;
 
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -22,7 +23,6 @@ import com.sohu.tv.mq.cloud.bo.UserWarn.WarnType;
 import com.sohu.tv.mq.cloud.service.AlertService;
 import com.sohu.tv.mq.cloud.service.ServerAlarmConfigService;
 import com.sohu.tv.mq.cloud.service.ServerDataService;
-import com.sohu.tv.mq.cloud.util.DateUtil;
 import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper;
 import com.sohu.tv.mq.cloud.util.Result;
 
@@ -65,7 +65,7 @@ public class ServerWarningTask {
         }
         String fetchDataTime = "";
         // 获取当前服务器状态
-        List<ServerInfoExt> serverStatusList = serverDataService.queryAllServer(DateUtil.formatYMDNow());
+        List<ServerInfoExt> serverStatusList = serverDataService.queryAllServer(new Date());
         List<ServerWarn> serverWarnList = new ArrayList<>();
         for (ServerInfoExt serverInfoExt : serverStatusList) {
             if (!isWarn(serverInfoExt, configMap)) {

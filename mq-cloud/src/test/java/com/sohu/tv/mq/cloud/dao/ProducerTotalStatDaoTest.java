@@ -42,13 +42,13 @@ public class ProducerTotalStatDaoTest {
     @Test
     public void testSelect() {
         List<ProducerTotalStat> list = producerTotalStatDao.selectByDate("aaa-producer", 
-                NumberUtils.toInt(DateUtil.formatYMDNow()));
+                NumberUtils.toInt(DateUtil.formatYMD(new Date())));
         Assert.assertNotNull(list);
     }
 
     @Test
     public void testDelete() {
-        Integer count = producerTotalStatDao.delete(NumberUtils.toInt(DateUtil.formatYMDNow()));
+        Integer count = producerTotalStatDao.delete(NumberUtils.toInt(DateUtil.formatYMD(new Date())));
         Assert.assertNotNull(count);
     }
 

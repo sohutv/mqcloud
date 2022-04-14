@@ -1,13 +1,12 @@
 package com.sohu.tv.mq.cloud.util;
 
-import java.lang.reflect.Field;
-import java.util.List;
-import java.util.Map;
-
-import javax.annotation.PostConstruct;
-
+import com.alibaba.fastjson.JSON;
+import com.sohu.tv.mq.cloud.bo.CommonConfig;
+import com.sohu.tv.mq.cloud.service.CommonConfigService;
+import com.sohu.tv.mq.util.CommonUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.ToStringBuilder;
+import org.apache.rocketmq.common.MixAll;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,9 +17,10 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.ApplicationEventPublisherAware;
 import org.springframework.stereotype.Component;
 
-import com.alibaba.fastjson.JSON;
-import com.sohu.tv.mq.cloud.bo.CommonConfig;
-import com.sohu.tv.mq.cloud.service.CommonConfigService;
+import javax.annotation.PostConstruct;
+import java.lang.reflect.Field;
+import java.util.List;
+import java.util.Map;
 
 /**
  * mqcloud配置
@@ -153,13 +153,15 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware, Comm
     private String threadMetricSupportedVersion;
     // 消费失败统计支持版本
     private String consumeFailedMetricSupportedVersion;
+    
+    private String consumeTimespanMessageSupportedVersion;
 
     @Autowired
     private CommonConfigService commonConfigService;
 
     private ApplicationEventPublisher publisher;
 
-    @PostConstruct
+	@PostConstruct
     public void init() throws IllegalArgumentException, IllegalAccessException {
         Result<List<CommonConfig>> result = commonConfigService.query();
         if (result.isEmpty()) {
@@ -213,14 +215,6 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware, Comm
         return "local".equals(profile) || "local-sohu".equals(profile);
     }
 
-    public boolean isSohu() {
-        return profile.contains("sohu");
-    }
-
-    public String getEnv() {
-        return profile;
-    }
-
     public String getDomain() {
         return domain;
     }
@@ -249,7 +243,7 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware, Comm
         return getHrefLink(getTopicLink(topicId) + "?from=" + linkText, linkText);
     }
 
-    public String getTopicConsumeLink(long topicId) {
+    public String getTopicConsumeHrefLink(long topicId) {
         return getTopicLink(topicId) + "?tab=consume";
     }
 
@@ -257,16 +251,16 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware, Comm
         return getHrefLink(getTopicLink(topicId) + "?tab=produce", linkText);
     }
 
-    public String getTopicConsumeLink(long topicId, String linkText) {
-        return getTopicConsumeLink(topicId, linkText, 0);
+    public String getTopicConsumeHrefLink(long topicId, String linkText) {
+        return getTopicConsumeHrefLink(topicId, linkText, 0);
     }
 
-    public String getTopicConsumeLink(long topicId, String linkText, long time) {
+    public String getTopicConsumeHrefLink(long topicId, String linkText, long time) {
         return getHrefLink(getTopicConsumeHref(topicId, linkText, -1, time), linkText);
     }
 
     public String getTopicConsumeHref(long topicId, String consumer, long consumerId, long time) {
-        String link = getTopicConsumeLink(topicId) + "&consumer=" + consumer;
+        String link = getTopicConsumeHrefLink(topicId) + "&consumer=" + consumer;
         if (consumerId > 0) {
             link += "&consumerId=" + consumerId;
         }
@@ -277,7 +271,21 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware, Comm
     }
 
     public String getTopicConsumeLink(String topic, String consumer) {
-        return getHrefLink(getPrefix() + "topic/detail?topic=" + topic + "&consumer=" + consumer, consumer);
+        if (CommonUtil.isRetryTopic(topic)) {
+            if (consumer == null) {
+                consumer = topic.replaceAll(MixAll.RETRY_GROUP_TOPIC_PREFIX, "");
+            }
+            topic = topic.replaceAll("%", "%25");
+        }
+        if (consumer != null) {
+            return getPrefix() + "topic/detail?topic=" + topic + "&consumer=" + consumer;
+        } else {
+            return getPrefix() + "topic/detail?topic=" + topic;
+        }
+    }
+
+    public String getTopicConsumeHrefLink(String topic, String consumer) {
+        return getHrefLink(getTopicConsumeLink(topic, consumer), consumer);
     }
 
     public String getHrefLink(String link, String linkText) {
@@ -540,12 +548,24 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware, Comm
         this.consumeFailedMetricSupportedVersion = consumeFailedMetricSupportedVersion;
     }
     
+    public String getConsumeTimespanMessageSupportedVersion() {
+        return consumeTimespanMessageSupportedVersion;
+    }
+
+    public void setConsumeTimespanMessageSupportedVersion(String consumeTimespanMessageSupportedVersion) {
+        this.consumeTimespanMessageSupportedVersion = consumeTimespanMessageSupportedVersion;
+    }
+    
     public boolean threadMetricSupported(String version) {
         return version.compareTo(threadMetricSupportedVersion) >= 0;
     }
 
     public boolean consumeFailedMetricSupported(String version) {
         return version.compareTo(consumeFailedMetricSupportedVersion) >= 0;
+    }
+    
+    public boolean consumeTimespanMessageSupported(String version) {
+        return version.compareTo(consumeTimespanMessageSupportedVersion) >= 0;
     }
     
     public String getMachineRoomColor(String room) {
@@ -596,7 +616,7 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware, Comm
         publisher.publishEvent(new MQCloudConfigEvent());
     }
 
-    /**
+	/**
      * 配置事件
      */
     public class MQCloudConfigEvent {

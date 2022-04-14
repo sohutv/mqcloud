@@ -1,6 +1,7 @@
 package com.sohu.tv.mq.cloud.bo;
 
 import com.sohu.tv.mq.cloud.util.MachineType;
+import com.sohu.tv.mq.cloud.web.vo.ServerRoleVO;
 
 /**
  * 服务与状态混合bo
@@ -22,6 +23,9 @@ public class ServerInfoExt extends ServerStatus {
     private Integer machineType;
     
     private String room;
+
+    // 服务器角色 broker or ns
+    private ServerRoleVO serverRoleVO;
 
     public String getHost() {
         return host;
@@ -77,6 +81,14 @@ public class ServerInfoExt extends ServerStatus {
 
     public void setRoom(String room) {
         this.room = room;
+    }
+
+    public ServerRoleVO getServerRoleVO() {
+        return serverRoleVO;
+    }
+
+    public void setServerRoleVO(ServerRoleVO serverRoleVO) {
+        this.serverRoleVO = serverRoleVO;
     }
 
     /***

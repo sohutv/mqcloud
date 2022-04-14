@@ -1,8 +1,8 @@
 package com.sohu.tv.mq.cloud.service;
 
-import java.util.Date;
-import java.util.List;
-
+import com.sohu.tv.mq.cloud.bo.Traffic;
+import com.sohu.tv.mq.cloud.cache.LocalCache;
+import com.sohu.tv.mq.cloud.util.Result;
 import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.protocol.body.BrokerStatsData;
 import org.apache.rocketmq.common.protocol.route.BrokerData;
@@ -12,9 +12,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import com.sohu.tv.mq.cloud.bo.Traffic;
-import com.sohu.tv.mq.cloud.cache.LocalCache;
-import com.sohu.tv.mq.cloud.util.Result;
+import java.util.Date;
+import java.util.List;
 
 /**
  * 流量服务
@@ -75,7 +74,7 @@ public abstract class TrafficService<T extends Traffic> {
                 } catch (Exception e) {
                     if(logger.isDebugEnabled()) {
                         logger.debug("fetch traffic, broker:{}, stat:{}, key:{}, err:{}", masterAddr, getCountKey(), statKey,
-                                e.getMessage());
+                                e.toString());
                     }
                     fetchLocalCache.put(key, ERROR);
                     continue;
@@ -128,7 +127,7 @@ public abstract class TrafficService<T extends Traffic> {
      * @param date
      * @return Result<List<T>>
      */
-    public abstract Result<List<T>> query(long id, String date);
+    public abstract Result<List<T>> query(long id, Date date);
 
     /**
      * 查询数据
@@ -137,7 +136,7 @@ public abstract class TrafficService<T extends Traffic> {
      * @param date
      * @return Result<List<T>>
      */
-    public abstract Result<List<T>> query(List<Long> idList, String date);
+    public abstract Result<List<T>> query(List<Long> idList, Date date);
 
     /**
      * 查询数据
@@ -147,7 +146,7 @@ public abstract class TrafficService<T extends Traffic> {
      * @param time
      * @return Result<List<T>>
      */
-    public abstract Result<List<T>> query(List<Long> idList, String date, String time);
+    public abstract Result<List<T>> query(List<Long> idList, Date date, String time);
     
     /**
      * 处理traffic数据

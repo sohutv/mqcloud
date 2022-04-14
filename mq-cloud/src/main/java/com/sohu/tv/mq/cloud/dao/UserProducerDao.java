@@ -1,5 +1,6 @@
 package com.sohu.tv.mq.cloud.dao;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
@@ -125,4 +126,34 @@ public interface UserProducerDao {
             + "(#{up.uid},#{up.tid},#{up.producer})"
             + "</foreach></script>")
     public Integer batchInsert(@Param("upList") List<UserProducer> userProducerList);
+
+    /**
+     * 根据uid查询topicId集合
+     * @param uid
+     */
+    @Select("<script> " +
+            "select distinct tid from user_producer where 1=1 " +
+            "<if test=\"uid != 0\"> and uid = #{uid} </if> " +
+            "</script>")
+    List<Long> selectTidListByUid(@Param("uid") long uid);
+
+    /**
+     * 根据gid查询topicId集合
+     * @param gid
+     */
+    @Select("<script> " +
+            "select distinct tid from user_producer where " +
+            " uid in (select id from user where gid = #{gid}) " +
+            "</script>")
+    List<Long> selectTidListByGid(@Param("gid") long gid);
+
+    /**
+     * 校验生产者是否存在
+     *
+     */
+    @Select("<script>select producer from user_producer where producer in "
+            + "<foreach collection=\"list\" item=\"name\" separator=\",\" open=\"(\" close=\")\">#{name}</foreach>"
+            + "limit 1"
+            + "</script>")
+    String checkExistByName(@Param("list") List<String> newArrayList);
 }

@@ -26,7 +26,10 @@ import org.apache.rocketmq.tools.admin.DefaultMQAdminExt;
 import org.apache.rocketmq.tools.admin.DefaultMQAdminExtImpl;
 
 import com.sohu.tv.mq.cloud.common.model.BrokerMomentStatsData;
+import com.sohu.tv.mq.cloud.common.model.BrokerRateLimitData;
 import com.sohu.tv.mq.cloud.common.model.BrokerStoreStat;
+import com.sohu.tv.mq.cloud.common.model.UpdateSendMsgRateLimitRequestHeader;
+import com.sohu.tv.mq.util.Constant;
 
 /**
  * sohu实现，为了添加扩展某些方法
@@ -103,6 +106,17 @@ public abstract class SohuMQAdmin extends DefaultMQAdminExt {
         MQClientInstance mqClientInstance = (MQClientInstance) field.get(defaultMQAdminExtImpl);
         return mqClientInstance;
     }
+    
+    public long getTimeoutMillis() throws Exception {
+        // 反射获取defaultMQAdminExtImpl实例
+        Field defaultMQAdminExtImplField = DefaultMQAdminExt.class.getDeclaredField("defaultMQAdminExtImpl");
+        defaultMQAdminExtImplField.setAccessible(true);
+        DefaultMQAdminExtImpl defaultMQAdminExtImpl = (DefaultMQAdminExtImpl) defaultMQAdminExtImplField.get(this);
+        // 反射获取mqClientInstance实例
+        Field field = DefaultMQAdminExtImpl.class.getDeclaredField("timeoutMillis");
+        field.setAccessible(true);
+        return (long) field.get(defaultMQAdminExtImpl);
+    }
 
     /**
      * 获取broker存储统计
@@ -115,8 +129,7 @@ public abstract class SohuMQAdmin extends DefaultMQAdminExt {
      * @throws MQClientException
      * @throws InterruptedException
      */
-    public abstract BrokerStoreStat getBrokerStoreStats(String brokerAddr) throws RemotingConnectException,
-            RemotingSendRequestException, RemotingTimeoutException, MQClientException, InterruptedException;
+    public abstract BrokerStoreStat getBrokerStoreStats(String brokerAddr) throws Exception;
 
     /**
      * 从broker获取瞬时统计
@@ -131,9 +144,7 @@ public abstract class SohuMQAdmin extends DefaultMQAdminExt {
      * @throws MQClientException
      * @throws InterruptedException
      */
-    public abstract BrokerMomentStatsData getMomentStatsInBroker(String brokerAddr, String statsName, long minValue)
-            throws RemotingConnectException, RemotingSendRequestException, RemotingTimeoutException,
-            MQClientException, InterruptedException;
+    public abstract BrokerMomentStatsData getMomentStatsInBroker(String brokerAddr, String statsName, long minValue) throws Exception;
 
     /**
      * 获取消费线程指标
@@ -154,9 +165,9 @@ public abstract class SohuMQAdmin extends DefaultMQAdminExt {
     public ConsumerRunningInfo getConsumeThreadMetrics(String consumerGroup, String clientId,
             final long timeoutMillis) throws RemotingException, MQClientException, InterruptedException,
             NoSuchFieldException, SecurityException, IllegalArgumentException, IllegalAccessException {
-        return getConsumeMetrics(consumerGroup, clientId, "_thread_metric", timeoutMillis);
+        return getConsumeMetrics(consumerGroup, clientId, Constant.COMMAND_THREAD_METRIC, timeoutMillis);
     }
-    
+
     /**
      * 获取消费失败指标
      * 
@@ -176,9 +187,9 @@ public abstract class SohuMQAdmin extends DefaultMQAdminExt {
     public ConsumerRunningInfo getConsumeFailedMetrics(String consumerGroup, String clientId,
             final long timeoutMillis) throws RemotingException, MQClientException, InterruptedException,
             NoSuchFieldException, SecurityException, IllegalArgumentException, IllegalAccessException {
-        return getConsumeMetrics(consumerGroup, clientId, "_failed_metric", timeoutMillis);
+        return getConsumeMetrics(consumerGroup, clientId, Constant.COMMAND_FAILED_METRIC, timeoutMillis);
     }
-    
+
     /**
      * 获取消费指标
      * 
@@ -210,7 +221,7 @@ public abstract class SohuMQAdmin extends DefaultMQAdminExt {
                     requestHeader.setClientId(clientId);
                     RemotingCommand request = RemotingCommand.createRequestCommand(
                             RequestCode.GET_CONSUMER_RUNNING_INFO, requestHeader);
-                    request.addExtField(command, "true");
+                    request.addExtField(command, Constant.COMMAND_TRUE);
                     RemotingCommand response = getMQClientInstance().getMQClientAPIImpl().getRemotingClient()
                             .invokeSync(MixAll.brokerVIPChannel(isVipChannelEnabled(), addr), request, timeoutMillis);
                     assert response != null;
@@ -231,4 +242,58 @@ public abstract class SohuMQAdmin extends DefaultMQAdminExt {
         }
         return null;
     }
+
+    /**
+     * 消费某个时间段的消息
+     * 
+     * @param topic
+     * @param group
+     * @param startTimestamp
+     * @param endTimestamp
+     * @param timeoutMillis
+     * @throws RemotingException
+     * @throws MQClientException
+     * @throws InterruptedException
+     * @throws NoSuchFieldException
+     * @throws SecurityException
+     * @throws IllegalArgumentException
+     * @throws IllegalAccessException
+     */
+    public void consumeTimespanMessage(String clientId, String topic, String group, long startTimestamp,
+            long endTimestamp) throws Exception {
+        TopicRouteData topicRouteData = this.examineTopicRouteInfo(topic);
+        List<BrokerData> brokerDatas = topicRouteData.getBrokerDatas();
+        if (brokerDatas != null) {
+            for (BrokerData brokerData : brokerDatas) {
+                String addr = brokerData.selectBrokerAddr();
+                if (addr == null) {
+                    continue;
+                }
+                GetConsumerRunningInfoRequestHeader requestHeader = new GetConsumerRunningInfoRequestHeader();
+                requestHeader.setConsumerGroup(group);
+                requestHeader.setClientId(clientId);
+                RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.GET_CONSUMER_RUNNING_INFO,
+                        requestHeader);
+                request.addExtField(Constant.COMMAND_TIMESPAN_TOPIC, topic);
+                request.addExtField(Constant.COMMAND_TIMESPAN_START, String.valueOf(startTimestamp));
+                request.addExtField(Constant.COMMAND_TIMESPAN_END, String.valueOf(endTimestamp));
+                RemotingCommand response = getMQClientInstance().getMQClientAPIImpl().getRemotingClient().invokeSync(
+                        MixAll.brokerVIPChannel(isVipChannelEnabled(), addr), request, getTimeoutMillis());
+                assert response != null;
+                switch (response.getCode()) {
+                    case ResponseCode.SUCCESS: {
+                        return;
+                    }
+                    default:
+                        break;
+                }
+                throw new MQClientException(response.getCode(), response.getRemark());
+            }
+        }
+    }
+    
+    public abstract BrokerRateLimitData fetchSendMessageRateLimitInBroker(String brokerAddr) throws Exception;
+
+    public abstract void updateSendMessageRateLimit(String brokerAddr,
+            UpdateSendMsgRateLimitRequestHeader updateSendMsgRateLimitRequestHeader) throws Exception;
 }

@@ -63,7 +63,6 @@ public interface AuditDao {
     @Update("<script> update audit set auditor=#{audit.auditor} " +
             "<if test=\"audit.status != -1\">,status=#{audit.status} </if>" +
             "<if test=\"audit.refuseReason !=null\">,refuse_reason=#{audit.refuseReason} </if>" +
-            "<if test=\"audit.auditor !=null\">,auditor=#{audit.auditor} </if>" +
             " where id=#{audit.id} and status = 0 " +
             "</script>")
     public Integer update(@Param("audit") Audit audit);
@@ -73,8 +72,16 @@ public interface AuditDao {
      * @param uid
      * @return
      */
-    @Select("select * from audit where uid = #{uid} order by id desc")
-    public List<Audit> selectByUid(@Param("uid") long uid);
+    @Select("select * from audit where uid = #{uid} order by id desc limit #{m},#{n}")
+    public List<Audit> selectByUid(@Param("uid") long uid, @Param("m") int offset, @Param("n") int size);
+    
+    /**
+     * 根据uid查询审核记录量
+     * @param uid
+     * @return
+     */
+    @Select("select count(1) from audit where uid = #{uid}")
+    public Integer selectCountByUid(@Param("uid") long uid);
     
     /**
      * 更新状态

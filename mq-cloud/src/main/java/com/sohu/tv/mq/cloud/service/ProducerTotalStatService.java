@@ -3,7 +3,6 @@ package com.sohu.tv.mq.cloud.service;
 import java.util.Date;
 import java.util.List;
 
-import org.apache.commons.lang3.math.NumberUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -56,11 +55,10 @@ public class ProducerTotalStatService {
      */
     public Result<List<ProducerTotalStat>> query(String producer, Date date) {
         List<ProducerTotalStat> result = null;
-        int dt = NumberUtils.toInt(DateUtil.formatYMD(date));
         try {
-            result = producerTotalStatDao.selectByDate(producer, dt);
+            result = producerTotalStatDao.selectByDate(producer, DateUtil.format(date));
         } catch (Exception e) {
-            logger.error("query err, producer:{}, date:{}, dt:{}", producer, date, dt, e);
+            logger.error("query err, producer:{}, date:{}", producer, date, e);
             return Result.getDBErrorResult(e);
         }
         return Result.getResult(result);
@@ -74,12 +72,11 @@ public class ProducerTotalStatService {
      * @return 返回Result
      */
     public Result<Integer> delete(Date date) {
-        int dt = NumberUtils.toInt(DateUtil.formatYMD(date));
         Integer result = null;
         try {
-            result = producerTotalStatDao.delete(dt);
+            result = producerTotalStatDao.delete(DateUtil.format(date));
         } catch (Exception e) {
-            logger.error("delete err, date:{}, dt:{}", date, dt, e);
+            logger.error("delete err, date:{}", date, e);
             return Result.getDBErrorResult(e);
         }
         return Result.getResult(result);
@@ -126,9 +123,8 @@ public class ProducerTotalStatService {
      */
     public Result<List<String>> queryProducerList(String client, Date date) {
         List<String> result = null;
-        int createDate = NumberUtils.toInt(DateUtil.formatYMD(date));
         try {
-            result = producerTotalStatDao.selectProducerList(client, createDate);
+            result = producerTotalStatDao.selectProducerList(client, DateUtil.format(date));
         } catch (Exception e) {
             logger.error("queryProducerList err, client:{}, date:{}", client, date, e);
             return Result.getDBErrorResult(e);

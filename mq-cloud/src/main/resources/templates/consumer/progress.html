@@ -153,7 +153,7 @@
 																<td class="warning" colspan=7>死消息Topic：<b style="color:red" data-toggle="tooltip" 
 																title="消费失败达到最大重试次数(16)后，将会进入此topic，不再重试">${consumerProgressVO.dlqTopic}</b>
 																	&nbsp;&nbsp;&nbsp;<a href="#"><span title="搜索死消息" class="glyphicon glyphicon-search" style="cursor:pointer;" 
-																	onclick="initOffsetMsgModal('dlq', ${row}, '${consumerProgressVO.dlqTopic}','${consumerProgressVO.dlqMaxOffset?c}', false)" data-target="#msgSearchModal" data-toggle="modal"></span></a>
+																	onclick="initOffsetMsgModal('dlq', ${row}, '${consumerProgressVO.dlqTopic}', '${consumerProgressVO.consumer.id}', '${consumerProgressVO.consumer.name}','${consumerProgressVO.dlqMaxOffset?c}', false)" data-target="#msgSearchModal" data-toggle="modal"></span></a>
 																</td>
 															</tr>
 															<tr>
@@ -198,7 +198,7 @@
 																<td class="warning" colspan=7>重试Topic：<b style="color:red" data-toggle="tooltip" 
 																title="消费失败的消息，会重新发回到此topic，以便重试消费">${consumerProgressVO.retryTopic}</b>
 																&nbsp;&nbsp;&nbsp;<a href="#"><span id="${consumerProgressVO.consumer.name}" title="搜索重试消息" class="glyphicon glyphicon-search"
-																onclick="initOffsetMsgModal('retry', ${row}, '${consumerProgressVO.retryTopic}','${consumerProgressVO.retryMaxOffset?c}', ${consumerProgressVO.consumer.traceEnabled()?c})" data-target="#msgSearchModal" data-toggle="modal"></span></a>
+																onclick="initOffsetMsgModal('retry', ${row}, '${consumerProgressVO.retryTopic}', '${consumerProgressVO.consumer.id}', '${consumerProgressVO.consumer.name}','${consumerProgressVO.retryMaxOffset?c}', ${consumerProgressVO.consumer.traceEnabled()?c})" data-target="#msgSearchModal" data-toggle="modal"></span></a>
 																&nbsp;&nbsp;&nbsp;<a href="#"><span title="跳过重试消息" class="glyphicon glyphicon-fast-forward" 
 																onclick="showResetRetryMessageOffsetModel(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}')" data-toggle="modal"></span></a>
 																</td>
@@ -295,7 +295,7 @@
 											<div class="modal-content">
 												<div class="modal-header">
 													<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-													<h4 class="modal-title"><b>确定跳过堆积的消息吗?</h4>
+													<h4 class="modal-title"><b>确定跳过堆积的消息吗?</b></h4>
 												</div>
 												<form class="form-horizontal form-bordered form-row-stripped">
 													<div class="modal-body">
@@ -332,7 +332,7 @@
 											<div class="modal-content">
 												<div class="modal-header">
 													<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-													<h4 class="modal-title"><b>消息回溯</h4>
+													<h4 class="modal-title"><b>消息回溯</b></h4>
 												</div>
 												<form class="form-horizontal form-bordered form-row-stripped">
 													<div class="modal-body">
@@ -376,7 +376,7 @@
 											<div class="modal-content">
 												<div class="modal-header">
 													<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-													<h4 class="modal-title"><b>确定删除消费者吗?</h4>
+													<h4 class="modal-title"><b>确定删除消费者吗?</b></h4>
 												</div>
 												<form class="form-horizontal form-bordered form-row-stripped">
 													<div class="modal-body">
@@ -543,7 +543,7 @@
 											<div class="modal-content">
 												<div class="modal-header">
 													<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-													<h4 class="modal-title"><b>确定跳过堆积的消息吗?</h4>
+													<h4 class="modal-title"><b>确定跳过堆积的消息吗?</b></h4>
 												</div>
 												<form class="form-horizontal form-bordered form-row-stripped">
 													<div class="modal-body">
@@ -580,7 +580,7 @@
 											<div class="modal-content">
 												<div class="modal-header">
 													<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-													<h4 class="modal-title"><b>消息回溯</h4>
+													<h4 class="modal-title"><b>消息回溯</b></h4>
 												</div>
 												<form class="form-horizontal form-bordered form-row-stripped">
 													<div class="modal-body">
@@ -624,7 +624,7 @@
 											<div class="modal-content">
 												<div class="modal-header">
 													<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-													<h4 class="modal-title"><b>确定删除消费者吗?</h4>
+													<h4 class="modal-title"><b>确定删除消费者吗?</b></h4>
 												</div>
 												<form class="form-horizontal form-bordered form-row-stripped">
 													<div class="modal-body">
@@ -829,11 +829,15 @@
 			
 							<input type="hidden" id="toCid" name="toCid" value="${topic.clusterId}">
 		  	    			<input type="hidden" id="toTopic" name="toTopic" value="">
+		  	    			<input type="hidden" id="messageConsumerId">
+		  	    			<input type="hidden" id="messageConsumer">
 		  	    			<input type="hidden" id="toMessageParam" name="toMessageParam">
 		  	    			<input type="hidden" id="toAppend" name="toAppend" value="false">
 		  	    			<input type="hidden" id="traceEnabled" name="traceEnabled" value="false">
 		  	    			<input type="hidden" id="topicId" name="topicId" value="${topic.id}">
 		  	    			
+		  	    			<!-- 时间段消费 -->
+							<button type="button" id="consumeTimespanMessageBtn" data-toggle='tooltip' title="重新消费该时间段内的消息" onclick="consumeTimespanMessageTip()" class="btn time" style="display:none;"><span class="glyphicon glyphicon-repeat"></span></button>
 		  	    			<!-- 时间段查询 -->
 							<button type="button" data-toggle='tooltip' title="按时间段查询" onclick="searchMessage(false)" class="btn btn-search time" style="display:none;"><span class="glyphicon glyphicon-search" aria-hidden="true"></span></button>
 							<!-- key查询 -->
@@ -926,7 +930,7 @@
 		<div class="modal-content">
 			<div class="modal-header">
 				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-				<h4 class="modal-title"><b>跳过重试消息</h4>
+				<h4 class="modal-title"><b>跳过重试消息</b></h4>
 			</div>
 			<form class="form-horizontal form-bordered form-row-stripped">
 				<div class="modal-body">
@@ -978,12 +982,6 @@
 					<label class="control-label col-md-3"> 消息序号: </label>
 					<div class="col-md-7">
 		        		<div class="form-control-static"><b id="dataIdx" style="word-break:break-all"></b></div>
-					</div>
-				</div>
-				<div class="form-group">
-					<label class="control-label col-md-3"> 发给: </label>
-					<div class="col-md-7">
-						<select id="consumerSelect" class="selectpicker" title="请选择" data-live-search-placeholder="搜索" data-live-search="true"></select>
 					</div>
 				</div>
 			</form>
@@ -1172,6 +1170,54 @@
 		</div>
 	</div>
 </div>
+
+<!-- 消费时间段消息 -->
+<div id="consumeTimespanMessageModel" class="modal fade" tabindex="-1" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+				<span class="h4">重新消费</span><span class="nostyleA" data-toggle="tooltip" data-placement="bottom" title="详细释义"><a href="/wiki/userGuide/clientConsumer#retryTimespan" target=_blank class="glyphicon glyphicon-question-sign"></a></span>
+			</div>
+			<div class="modal-body">
+				<form class="form-horizontal form-bordered form-row-stripped" id="consumeTimespanMessageForm">
+					<input type="hidden" id="timespanConsumeTopic" name="topic">
+					<input type="hidden" id="timespanConsumerId" name="consumerId">
+					<input type="hidden" id="timespanConsumeStart" name="start">
+					<input type="hidden" id="timespanConsumeEnd" name="end">
+					<div class="form-body">
+						<div class="form-group">
+							<label class="control-label col-md-3"> 开始时间: </label>
+							<div class="col-md-5">
+								<input type="text" readonly="readonly" id="timespanConsumeStartShow" class="form-control" />
+							</div>
+						</div>
+					</div>
+					<div class="form-body">
+						<div class="form-group">
+							<label class="control-label col-md-3"> 结束时间: </label>
+							<div class="col-md-5">
+								<input type="text" readonly="readonly" id="timespanConsumeEndShow" class="form-control" />
+							</div>
+						</div>
+					</div>
+					<div class="form-group">
+						<label class="control-label col-md-3"> 客户端: </label>
+						<div class="col-md-5">
+							<select id="timespanConsumeClientIdSelect" class="selectpicker" title="选择消费消息的实例" name="clientId" data-live-search="true">
+							</select>
+						</div>
+					</div>
+				</form>
+			</div>
+			<div  class="modal-footer">
+				<button type="button" data-dismiss="modal" class="btn" >取消</button>
+				<button type="button" id="submitTimespanMessageBtn" class="btn btn-primary" onclick="consumeTimespanMessage()">确定</button>
+			</div>
+		</div>
+	</div>
+</div><!-- 消费时间段消息 -->
+
 <!-- 消息 -->
 <div id="threadMessageModal" class="modal fade" tabindex="-1" data-width="400">
 	<div class="modal-dialog" style="width:1050px;">
@@ -1390,7 +1436,7 @@ function deleteConsumer(tid, cid, btn){
 	},
     function(data){
         if(data.status == 200){
-			toastr.success("删除消费者申请成功");  
+			toastr.success("申请成功！请耐心等待！");  
 			modalHide(3000);
 	    }else{
 	    	toastr.error("操作失败！"+data.message);  
@@ -1413,14 +1459,14 @@ $(function(){
 	$(".user_search_select").selectpicker({
 		width : 500
  	});
-	$("#consumerSelect").selectpicker({
-		width : 250
- 	});
  	// search type tooltip
  	$("#searchCondition").selectpicker({
 		width : 120
  	}).on('changed.bs.select', function(){
  	  	changeSearchType($('#searchCondition option:selected').val());
+ 	});
+ 	$("#timespanConsumeClientIdSelect").selectpicker().on('changed.bs.select', function(){
+ 	  	$('#submitTimespanMessageBtn').removeAttr("disabled");
  	});
 });
 //准备删除
@@ -1540,11 +1586,13 @@ function brokerNameSelectChange(obj){
 }
 var maxAllOffset = '';
 var minAllOffset = '';
-function initOffsetMsgModal(type, index, topic, maxOffset, traceEnabled){
+function initOffsetMsgModal(type, index, topic, consumerId, consumer, maxOffset, traceEnabled){
 	// 清空数据
 	$("#dataTable tbody").html("<tr class='no_more_data'><td colspan=6 class='text-center'>暂无数据</td></tr>");
 	$("#dataTable input").remove();
 	$("#toTopic").val(topic);
+	$("#messageConsumerId").val(consumerId);
+	$("#messageConsumer").val(consumer);
 	$("#pager").hide();
 	
 	// 计算offset
@@ -1563,10 +1611,15 @@ function initOffsetMsgModal(type, index, topic, maxOffset, traceEnabled){
 	if(type == "dlq") {
 		$("#dataTable").addClass("tr-pointer");
 		$("#resendMessageBtn").show();
+		$("#consumeTimespanMessageBtn").addClass("time");
 		$("#cosumeTimes").html("消费次数");
+		if(prevSearchType == "time"){
+			$("#consumeTimespanMessageBtn").show();
+		}
 	} else {
 		$("#dataTable").removeClass("tr-pointer");
 		$("#resendMessageBtn").hide();
+		$("#consumeTimespanMessageBtn").hide().removeClass("time");
 		$("#cosumeTimes").html("重试次数");
 	}
 	//初始化broker列表
@@ -1716,6 +1769,15 @@ function getQueueOwner(consumer, consumerId){
         		}
         		$(id).attr("clientId", data.result[i].clientId);
 	        	$(id).html(prevContent + data.result[i].ip);
+	        	var prevTitle = $(id).attr("title");
+	        	if(prevTitle){
+	        		prevTitle += ","
+        		} else {
+        			prevTitle = "";
+        		}
+	        	$(id).attr("title", prevTitle + data.result[i].clientId);
+				$(id).attr("data-placement", "right");
+				$(id).tooltip({container: 'body'});
         	}
 	    }else{
 	    	toastr.error("获取客户端失败！"+data.message);  
@@ -1758,34 +1820,7 @@ function resendMessageTip(){
 		return;
 	}
 	$("#dataIdx").html(dataIdxArray.toString());
-	// 获取消费者
-	$.get('${request.contextPath}/userConsumer/list',
-		{
-			tid: ${RequestParameters.tid}
-		},
-        function(data){
-            if(data.status == 200){
-            	if(data.result.length == 0) {
-	        		$("#consumerSelect").html("<option value='-1'>无关联的消费者</option>");
-	        		$("#consumerSelect").selectpicker('val', "-1");
-	        		$("#resendBtn").attr("disabled", "disabled");
-        		} else {
-	            	var content = "";
-	            	for(var i in data.result){
-	            		var consumer = data.result[i];
-	            		content += "<option value='"+consumer.id+"'>"+consumer.name+"</option>";
-	            	}
-	        		$("#consumerSelect").html(content);
-	        		$("#consumerSelect").selectpicker('refresh');
-	        		if(data.result.length == 1){
-		        		$("#consumerSelect").selectpicker('val', data.result[0].id);
-	        		}
-        		}
-				$('#resendMsgModal').modal('show');
-		    }else{
-		    	toastr.error("错误！"+data.message);  
-		    }
-    }, 'json');
+	$('#resendMsgModal').modal('show');
 }
 
 //重发消息 
@@ -1798,16 +1833,12 @@ function resendMessage(){
 		alert("请先选择消息(支持shift和ctrl)");
 		return;
 	}
-	if($("#consumerSelect").val().length == 0){
-		alert("请选择消费者");
-		return;
-	}
 	disable("resendBtn");
 	$.post('${request.contextPath}/topic/message/resend',
 		{
 			msgIds: dataArray.toString(),
 			tid: ${RequestParameters.tid},
-			cid: $("#consumerSelect").val()
+			cid: $("#messageConsumerId").val()
 		},
         function(data){
 			enable("resendBtn");
@@ -1818,6 +1849,54 @@ function resendMessage(){
 		    	toastr.error("申请失败！"+data.message);  
 		    }
     }, 'json');
+}
+
+//时间段消费 提示
+function consumeTimespanMessageTip(){
+	$("#consumeTimespanMessageBtn").attr("disabled", "disabled");
+	$.get('${request.contextPath}/consumer/connection',{
+		group: $("#messageConsumer").val(),
+		cid: ${topic.clusterId},
+	},function(data){
+         if(data.status == 200){
+          	var content = "";
+          	for(var i in data.result){
+          		var ip = data.result[i];
+         		content += "<option value='"+ip+"'>"+ip+"</option>";
+          	}
+      		$("#timespanConsumeClientIdSelect").html(content);
+      		$("#timespanConsumeClientIdSelect").selectpicker('refresh');
+	    } else {
+	    	toastr.error("数据获取失败！"+data.message);
+	    }
+    }, 'json');
+    $("#consumeTimespanMessageBtn").removeAttr("disabled");
+	$("#timespanConsumeTopic").val($("#toTopic").val());
+	$("#timespanConsumerId").val($("#messageConsumerId").val());
+	$("#timespanConsumeStart").val($("#timeStartTime").val());
+	$("#timespanConsumeEnd").val($("#timeEndTime").val());
+	$("#timespanConsumeStartShow").val($("#timeStartTimePicker").val());
+	$("#timespanConsumeEndShow").val($("#timeEndTimePicker").val());
+	$('#submitTimespanMessageBtn').attr("disabled", "disabled");
+	$("#consumeTimespanMessageModel").modal('show');
+}
+
+//时间段消费
+function consumeTimespanMessage(){
+	disable("submitTimespanMessageBtn");
+	post('${request.contextPath}/consumer/timespanMessageConsume', 
+		$("#consumeTimespanMessageForm").serialize(), 
+		function(data){
+	        if(data.status == 200){
+				toastr.success("申请成功！请耐心等待！");  
+				modalHide(3000, function(){
+					enable("submitTimespanMessageBtn");
+				});
+		    }else{
+		    	toastr.error("操作失败！"+data.message);  
+		    	enable("submitTimespanMessageBtn");
+		    }
+    	}, 'json');
 }
 
 function updateConsumerTraceShow(cid, consumer, traceable){

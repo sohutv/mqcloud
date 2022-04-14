@@ -53,6 +53,9 @@ public class Topic {
     // 是否开启流量预警
     private int trafficWarnEnabled;
 
+    // 状态确认 0 未确认 1 确认
+    private int effective;
+
     public long getId() {
         return id;
     }
@@ -181,6 +184,14 @@ public class Topic {
         return trafficWarnEnabled == 1;
     }
 
+    public int getEffective() {
+        return effective;
+    }
+
+    public void setEffective(int effective) {
+        this.effective = effective;
+    }
+
     @Override
     public String toString() {
         return "Topic{" +
@@ -198,6 +209,7 @@ public class Topic {
                 ", delayEnabled=" + delayEnabled +
                 ", serializer=" + serializer +
                 ", trafficWarnEnabled=" + trafficWarnEnabled +
+                ", effective=" + effective +
                 '}';
     }
 }

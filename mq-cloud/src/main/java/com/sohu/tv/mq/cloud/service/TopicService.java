@@ -1,10 +1,16 @@
 package com.sohu.tv.mq.cloud.service;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Set;
-
+import com.sohu.tv.mq.cloud.bo.*;
+import com.sohu.tv.mq.cloud.common.mq.SohuMQAdmin;
+import com.sohu.tv.mq.cloud.dao.TopicDao;
+import com.sohu.tv.mq.cloud.mq.DefaultCallback;
+import com.sohu.tv.mq.cloud.mq.MQAdminCallback;
+import com.sohu.tv.mq.cloud.mq.MQAdminTemplate;
+import com.sohu.tv.mq.cloud.util.DateUtil;
+import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper;
+import com.sohu.tv.mq.cloud.util.Result;
+import com.sohu.tv.mq.cloud.util.Status;
+import com.sohu.tv.mq.util.CommonUtil;
 import org.apache.rocketmq.client.exception.MQClientException;
 import org.apache.rocketmq.common.TopicConfig;
 import org.apache.rocketmq.common.admin.TopicStatsTable;
@@ -24,24 +30,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.interceptor.TransactionAspectSupport;
 
-import com.sohu.tv.mq.cloud.bo.Audit;
-import com.sohu.tv.mq.cloud.bo.AuditTopic;
-import com.sohu.tv.mq.cloud.bo.Cluster;
-import com.sohu.tv.mq.cloud.bo.Topic;
-import com.sohu.tv.mq.cloud.bo.TopicConsumer;
-import com.sohu.tv.mq.cloud.bo.TopicStat;
-import com.sohu.tv.mq.cloud.bo.TopicTraffic;
-import com.sohu.tv.mq.cloud.bo.User;
-import com.sohu.tv.mq.cloud.bo.UserProducer;
-import com.sohu.tv.mq.cloud.common.mq.SohuMQAdmin;
-import com.sohu.tv.mq.cloud.dao.TopicDao;
-import com.sohu.tv.mq.cloud.mq.DefaultCallback;
-import com.sohu.tv.mq.cloud.mq.MQAdminCallback;
-import com.sohu.tv.mq.cloud.mq.MQAdminTemplate;
-import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper;
-import com.sohu.tv.mq.cloud.util.Result;
-import com.sohu.tv.mq.cloud.util.Status;
-import com.sohu.tv.mq.util.CommonUtil;
+import java.util.*;
 
 /**
  * topic服务
@@ -69,6 +58,12 @@ public class TopicService {
     
     @Autowired
     private ClusterService clusterService;
+
+    @Autowired
+    private UserFootprintService userFootprintService;
+
+    @Autowired
+    private UserFavoriteService userFavoriteService;
 
     /**
      * 获取topic路由数据
@@ -359,6 +354,20 @@ public class TopicService {
     }
     
     /**
+     * 查询非追踪的topic
+     */
+    public Result<List<Topic>> queryNoneTraceableTopic() {
+        List<Topic> topicList = null;
+        try {
+            topicList = topicDao.selectNoneTraceableTopic();
+        } catch (Exception e) {
+            logger.error("queryNoneTraceableTopic err", e);
+            return Result.getDBErrorResult(e);
+        }
+        return Result.getResult(topicList);
+    }
+    
+    /**
      * 创建topic
      * @param mqCluster
      * @param auditTopic
@@ -496,6 +505,9 @@ public class TopicService {
                     throw new RuntimeException("delete topic:"+topic.getName()+" on cluster err!");
                 }
             }
+            // 第四步：清理关联表
+            userFootprintService.deleteByTid(topic.getId());
+            userFavoriteService.deleteByTid(topic.getId());
         } catch (Exception e) {
             logger.error("deleteTopic topic:{}", topic, e);
             TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
@@ -686,7 +698,9 @@ public class TopicService {
     public Result<Integer> resetCount(int dayAgo) {
         Integer result = null;
         try {
-            result = topicDao.resetCount(dayAgo);
+            Date dt = new Date(System.currentTimeMillis() - dayAgo * 24 * 60 * 60 * 1000);
+            dt = DateUtil.parseYMD(DateUtil.formatYMD(dt));
+            result = topicDao.resetCount(dt);
         } catch (Exception e) {
             logger.error("resetCount err, dayAgo:{}", dayAgo, e);
             return Result.getDBErrorResult(e);

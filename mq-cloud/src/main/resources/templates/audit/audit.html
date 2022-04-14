@@ -34,6 +34,9 @@
 					</tr>
 				</tbody>
 			</table>
+			<div class="modal-footer">
+				<ul id="auditPagination" style="float: right"></ul>
+			</div>
 		</div>
 	</div>
 </div>
@@ -54,8 +57,11 @@
 	</div>
 </div>
 <script>
-	function showAuditList(){
-		$.get('${request.contextPath}/audit/list',
+	function showAuditList(currentPage){
+		if(!currentPage){
+			currentPage = 1;
+		}
+		$.get('${request.contextPath}/audit/list?currentPage=' + currentPage,
 	        function(data){
 				$("#auditListTbody").html(data);
 				$("#auditModal").modal('show');

@@ -1,9 +1,9 @@
 package com.sohu.tv.mq.cloud.dao;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
-import com.sohu.tv.mq.cloud.bo.TopicConsumer;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -13,8 +13,10 @@ import org.springframework.test.context.junit4.SpringRunner;
 
 import com.sohu.tv.mq.cloud.Application;
 import com.sohu.tv.mq.cloud.bo.Topic;
+import com.sohu.tv.mq.cloud.bo.TopicConsumer;
 import com.sohu.tv.mq.cloud.bo.TopicTraffic;
 import com.sohu.tv.mq.cloud.service.ClusterService;
+import com.sohu.tv.mq.cloud.util.DateUtil;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = Application.class)
@@ -68,15 +70,23 @@ public class TopicDaoTest {
         timeList.add("1719");
         List<Integer> list = new ArrayList<>();
         list.add(1);
-        List<TopicTraffic> result = topicTrafficDao.selectByDateTime("2018-07-31", timeList, list);
+        List<TopicTraffic> result = topicTrafficDao.selectByDateTime(new Date(), timeList, list);
         Integer rst = topicDao.updateCount(result);
         Assert.assertEquals(timeList.size(), rst.intValue());
     }
-
+    
     @Test
     public void testQueryTopicConsumer() {
         List<TopicConsumer> list = topicDao.selectTopicConsumerByTid(1809L);
         Assert.assertNotNull(list);
+    }
+    
+    @Test
+    public void testRestCount() {
+        Date dt = new Date(System.currentTimeMillis() - 2 * 24 * 60 * 60 * 1000);
+        dt = DateUtil.parseYMD(DateUtil.formatYMD(dt));
+        Integer count = topicDao.resetCount(dt);
+        Assert.assertNotNull(count);
     }
 
 }

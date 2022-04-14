@@ -20,11 +20,11 @@
 			<label for="type">查询方式: </label>
 		    <select id="searchCondition" class="selectpicker form-control">
 				<option data-title="按照key查询消息，最多可查时间段内的${brokerSize*64}条" value="key">key</option>
-				<option data-title="按照时间段查询消息,最多检索5000条" value="time">时间段</option>
-				<option data-title="按照偏移量查询消息,最多检索5000条" value="offset">偏移量</option>
-				<option data-title="按照消息id查询" value="msgId">消息id</option>
+				<option value="time">时间段</option>
+				<option value="offset">偏移量</option>
+				<option value="msgId">消息id</option>
 				<#if traceEnabled>
-					<option data-title="查询trace情况(支持按照key或msgId查询)" value="trace">trace</option>
+					<option value="trace">trace</option>
 				</#if>
 			</select>
 		</div>
@@ -98,8 +98,11 @@
 	  	    <input type="hidden" id="topicDiv" name="topic" value="${response.result.topic}">
 	  	    <input type="hidden" id="append" name="append" value="false">
 	  	    <input type="hidden" id="messageParam" name="messageParam" value="${response.result.serialize()}">
+	  	    <!-- 时间段消费 -->
+			<button type="button" id="consumeTimespanMessageBtn" data-toggle='tooltip' title="重新消费该时间段内的消息" onclick="consumeTimespanMessageTip()" class="btn time" style="display:none;"><span class="glyphicon glyphicon-repeat"></span></button>
+			<!-- 时间段查询 -->
 			<button type="button" data-toggle='tooltip' title="按时间段查询${response.result.topic}" onclick="searchMessage(false)" class="btn btn-search time" style="display:none;"><span class="glyphicon glyphicon-search" aria-hidden="true"></span></button>
-			<!-- 消息查询 -->
+			<!-- 消息id查询 -->
 			<button type="button" data-toggle='tooltip' title="按消息id查询${response.result.topic}" onclick="viewMessage()" class="btn btn-search msgId" style="display:none;"><span class="glyphicon glyphicon-search" aria-hidden="true"></span></button>
 			<!-- key查询 -->
 			<button type="button" data-toggle='tooltip' title="按key查询${response.result.topic}" onclick="searchKeyMessage()" class="btn btn-search key"><span class="glyphicon glyphicon-search" aria-hidden="true"></span></button>
@@ -244,6 +247,59 @@
 	</div>
 </div>
 <div id="scriptDiv" style="display:none;"></div>
+
+<!-- 消费时间段消息 -->
+<div id="consumeTimespanMessageModel" class="modal fade" tabindex="-1" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+				<span class="h4">重新消费</span><span class="nostyleA" data-toggle="tooltip" data-placement="bottom" title="详细释义"><a href="/wiki/userGuide/clientConsumer#retryTimespan" target=_blank class="glyphicon glyphicon-question-sign"></a></span>
+			</div>
+			<div class="modal-body">
+				<form class="form-horizontal form-bordered form-row-stripped" id="consumeTimespanMessageForm">
+					<input type="hidden" id="timespanConsumeTopic" name="topic" value="${response.result.topic}">
+					<input type="hidden" id="timespanConsumeStart" name="start">
+					<input type="hidden" id="timespanConsumeEnd" name="end">
+					<div class="form-body">
+						<div class="form-group">
+							<label class="control-label col-md-3"> 开始时间: </label>
+							<div class="col-md-5">
+								<input type="text" readonly="readonly" id="timespanConsumeStartShow" class="form-control" />
+							</div>
+						</div>
+					</div>
+					<div class="form-body">
+						<div class="form-group">
+							<label class="control-label col-md-3"> 结束时间: </label>
+							<div class="col-md-5">
+								<input type="text" readonly="readonly" id="timespanConsumeEndShow" class="form-control" />
+							</div>
+						</div>
+					</div>
+					<div class="form-group">
+						<label class="control-label col-md-3"> 消费者: </label>
+						<div class="col-md-7">
+							<select id="timespanConsumeConsumerSelect" class="selectpicker" title="请选择" data-live-search-placeholder="搜索" name="consumerId"  data-live-search="true"></select>
+						</div>
+					</div>
+					<div class="form-group">
+						<label class="control-label col-md-3"> 客户端: </label>
+						<div class="col-md-7">
+							<select id="timespanConsumeClientIdSelect" class="selectpicker" title="选择消费消息的实例" name="clientId" data-live-search="true">
+							</select>
+						</div>
+					</div>
+				</form>
+			</div>
+			<div  class="modal-footer">
+				<button type="button" data-dismiss="modal" class="btn" >取消</button>
+				<button type="button" id="submitTimespanMessageBtn" disabled="disabled" class="btn btn-primary" onclick="consumeTimespanMessage()">确定</button>
+			</div>
+		</div>
+	</div>
+</div><!-- 消费时间段消息 -->
+
 <script>
 var pageNum = 0;
 //显示分页
@@ -530,6 +586,17 @@ $(function(){
 	<#if RequestParameters.msgId??>
 		trace('${RequestParameters.msgId}', false, ${RequestParameters.time});
 	</#if>
+ 	$("#timespanConsumeConsumerSelect").selectpicker({
+		width : 220
+ 	}).on('changed.bs.select', function(){
+ 		consumerChange();
+ 	});
+ 	$("#timespanConsumeClientIdSelect").selectpicker({
+		width : 220
+ 	}).on('changed.bs.select', function(){
+ 		consumerIdChange();
+ 	});
+ 	$("#timespanConsumeClientIdSelect").selectpicker('refresh');
 });
 function setTrackOption(msg){
 	trackOption = {
@@ -905,5 +972,81 @@ function trace(msgId, hasTime, time){
 	$("#traceKey").val(msgId);
 	// 查询trace
 	searchTraceMessage();
+}
+
+//时间段消费 提示
+function consumeTimespanMessageTip(){
+	$("#consumeTimespanMessageBtn").attr("disabled", "disabled");
+	// 获取消费者
+	$.get('${request.contextPath}/userConsumer/list',
+		{
+			tid: ${RequestParameters.tid}
+		},
+        function(data){
+            if(data.status == 200){
+            	if(data.result.length == 0) {
+	        		$("#timespanConsumeConsumerSelect").html("<option value='-1'>无关联的消费者</option>");
+	        		$("#timespanConsumeConsumerSelect").selectpicker('val', "-1");
+        		} else {
+	            	var content = "";
+	            	for(var i in data.result){
+	            		var consumer = data.result[i];
+	            		content += "<option value='"+consumer.id+"'>"+consumer.name+"</option>";
+	            	}
+	        		$("#timespanConsumeConsumerSelect").html(content);
+	        		$("#timespanConsumeConsumerSelect").selectpicker('refresh');
+        		}
+            	$("#consumeTimespanMessageModel").modal('show');
+		    }else{
+		    	toastr.error("错误！"+data.message);  
+		    }
+    }, 'json');
+    $("#consumeTimespanMessageBtn").removeAttr("disabled");
+	$("#timespanConsumeTopic").val($("#topicDiv").val());
+	$("#timespanConsumeStart").val($("#timeStartTime").val());
+	$("#timespanConsumeEnd").val($("#timeEndTime").val());
+	$("#timespanConsumeStartShow").val($("#timeStartTimePicker").val());
+	$("#timespanConsumeEndShow").val($("#timeEndTimePicker").val());
+}
+
+function consumerChange(){
+	$("#submitTimespanMessageBtn").attr("disabled", "disabled");
+	$.get('${request.contextPath}/consumer/connection',{
+		group: $("#timespanConsumeConsumerSelect option:selected").text(),
+		cid: $("#cid").val(),
+	},function(data){
+         if(data.status == 200){
+          	var content = "";
+          	for(var i in data.result){
+          		var ip = data.result[i];
+         		content += "<option value='"+ip+"'>"+ip+"</option>";
+          	}
+      		$("#timespanConsumeClientIdSelect").html(content);
+	    } else {
+	    	$("#timespanConsumeClientIdSelect").empty();
+	    	toastr.error("数据获取失败！"+data.message);
+	    }
+     	$("#timespanConsumeClientIdSelect").selectpicker('refresh');
+    }, 'json');
+}
+function consumerIdChange(){
+	$("#submitTimespanMessageBtn").removeAttr("disabled");
+}
+//时间段消费
+function consumeTimespanMessage(){
+	disable("submitTimespanMessageBtn");
+	post('${request.contextPath}/consumer/timespanMessageConsume', 
+		$("#consumeTimespanMessageForm").serialize(), 
+		function(data){
+	        if(data.status == 200){
+				toastr.success("申请成功！请耐心等待！");  
+				modalHide(3000, function(){
+					enable("submitTimespanMessageBtn"); 
+				});
+		    }else{
+		    	toastr.error("操作失败！"+data.message);  
+		    	enable("submitTimespanMessageBtn");
+		    }
+    	}, 'json');
 }
 </script>

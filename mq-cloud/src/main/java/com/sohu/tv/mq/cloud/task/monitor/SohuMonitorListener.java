@@ -154,7 +154,7 @@ public class SohuMonitorListener implements MonitorListener {
         Map<String, Object> paramMap = new HashMap<>();
         paramMap.put("topic", undoneMsgs.getTopic());
         paramMap.put("consumerLink",
-                mqCloudConfigHelper.getTopicConsumeLink(undoneMsgs.getTopic(), undoneMsgs.getConsumerGroup()));
+                mqCloudConfigHelper.getTopicConsumeHrefLink(undoneMsgs.getTopic(), undoneMsgs.getConsumerGroup()));
         paramMap.put("undoneMsgsTotal", undoneMsgs.getUndoneMsgsTotal());
         paramMap.put("undoneMsgsSingleMQ", undoneMsgs.getUndoneMsgsSingleMQ());
         paramMap.put("resource", undoneMsgs.getConsumerGroup());
@@ -258,7 +258,7 @@ public class SohuMonitorListener implements MonitorListener {
         }
         String topic = event.getMessageQueue().getTopic();
         Map<String, Object> paramMap = new HashMap<>();
-        paramMap.put("consumerLink", mqCloudConfigHelper.getTopicConsumeLink(topic, event.getConsumerGroup()));
+        paramMap.put("consumerLink", mqCloudConfigHelper.getTopicConsumeHrefLink(topic, event.getConsumerGroup()));
         paramMap.put("broker", event.getMessageQueue().getBrokerName());
         paramMap.put("topic", topic);
         paramMap.put("queue", event.getMessageQueue().getQueueId());
@@ -271,12 +271,19 @@ public class SohuMonitorListener implements MonitorListener {
     }
 
     @Override
-    public void reportConsumerRunningInfo(
-            TreeMap<String, ConsumerRunningInfo> criTable) {
+    public void reportConsumerRunningInfo(TreeMap<String, ConsumerRunningInfo> criTable) {
+        String consumerGroup = criTable.firstEntry().getValue().getProperties().getProperty("consumerGroup");
+        reportConsumerRunningInfo(consumerGroup, criTable);
+    }
+
+    public void reportConsumerRunningInfo(String consumerGroup, TreeMap<String, ConsumerRunningInfo> criTable) {
         if (criTable == null || criTable.size() == 0) {
             return;
         }
-        String consumerGroup = criTable.firstEntry().getValue().getProperties().getProperty("consumerGroup");
+        if (consumerGroup == null) {
+            log.warn("consumerGroup is null, runningInfo={}", criTable.firstEntry().getValue().formatString());
+            return;
+        }
         try {
             // 分析订阅关系
             boolean result = ConsumerRunningInfo.analyzeSubscription(criTable);
@@ -430,7 +437,7 @@ public class SohuMonitorListener implements MonitorListener {
             }
             Map<String, Object> paramMap = new HashMap<>();
             paramMap.put("topic", tc.getTopic());
-            paramMap.put("concumserLink", mqCloudConfigHelper.getTopicConsumeLink(topicResult.getResult().getId(), tc.getConsumer()));
+            paramMap.put("concumserLink", mqCloudConfigHelper.getTopicConsumeHrefLink(topicResult.getResult().getId(), tc.getConsumer()));
             paramMap.put("list", list);
             paramMap.put("resource", tc.getConsumer());
             alertService.sendWarn(users, WarnType.CONSUME_BLOCK, paramMap);

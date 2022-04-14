@@ -1,0 +1,131 @@
+<!-- 关联消费者 -->
+<div id="associateConsumerModal" class="modal fade" tabindex="-1" data-width="400">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+				<span class="h4">关联消费者</span> <span class="nostyleA" data-toggle="tooltip" data-placement="bottom" title="点击查看下面各项的详细释义"><a href="/wiki/userGuide/produceAndConsume#oldUser" target=_blank class="glyphicon glyphicon-question-sign"></a></span>
+			</div>
+			<form class="form-horizontal form-bordered form-row-stripped" id="associateConsumerForm">
+				<div class="modal-body">
+					<div class="row">
+						<div class="col-md-12">
+							<div class="form-body">
+								<div class="form-group">
+									<label class="control-label col-md-3"> Topic: </label>
+									<div class="col-md-5">
+										<select id="associateConsumerTopicSelect" class="selectpicker" title="请选择" data-live-search-placeholder="搜索" name="tid" data-live-search="true">
+										</select>
+									</div>
+								</div>
+								<div class="form-group">
+									<label class="control-label col-md-3"> 消费者: </label>
+									<div class="col-md-5">
+										<select id="associateConsumerSelect" class="selectpicker" title="请选择consumer group" data-live-search-placeholder="搜索" name="cid" data-live-search="true">
+										</select>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" data-dismiss="modal" class="btn" >取消</button>
+					<button type="button" class="btn btn-primary" id="associateConsumerBtn" onclick="associateConsumer()">确定</button>
+				</div>
+			</form>
+		</div>
+	</div>
+</div>
+<script type="text/javascript">
+	$(function(){
+		$('#associateConsumerTopicSelect').selectpicker({
+		    width: '269px'
+		});
+		$('#associateConsumerSelect').selectpicker({
+		    width: '269px'
+		});
+		// 下拉框change事件
+		$('#associateConsumerTopicSelect').on('changed.bs.select',function(e, clickedIndex, newValue, oldValue){
+			refreshConsumerSelect($(this).val());
+		});
+	});
+	/**
+	 * 初始化topic下拉列表
+	 */
+	function initConsumerAssociateTopicList(){
+		$.get('${request.contextPath}/topic/list',
+		        function(data){
+		            if(data.status == 200){
+		            	var content = "";
+		            	for(var i in data.result){
+		            		var topic = data.result[i];
+		            		content += "<option value='"+topic.id+"'>"+topic.name+"</option>";
+		            	}
+		        		$("#associateConsumerTopicSelect").html(content);
+		        		$('#associateConsumerTopicSelect').selectpicker({
+		        		    width: '269px'
+		        		});
+		        		$("#associateConsumerTopicSelect").selectpicker('refresh');
+				    }else{
+				    	toastr.error("数据获取失败！"+data.message);  
+				    }
+	        }, 'json');
+	}
+	/**
+	 * 刷新消费者下拉框
+	 */
+	function refreshConsumerSelect(topicId){
+		if(!topicId){
+			return;
+		}
+		$.get('${request.contextPath}/consumer/list',
+				{
+					tid: topicId
+				},
+		        function(data){
+		            if(data.status == 200){
+		            	var content = "";
+		            	for(var i in data.result){
+		            		var consumer = data.result[i];
+		            		content += "<option value='"+consumer.id+"'>"+consumer.name+"</option>";
+		            	}
+		        		$("#associateConsumerSelect").html(content);
+		        		$('#associateConsumerSelect').selectpicker({
+		        		    width: '269px'
+		        		});
+		        		$("#associateConsumerSelect").selectpicker('refresh');
+				    }else{
+				    	toastr.error("数据获取失败！"+data.message);  
+				    }
+	        }, 'json');
+	}
+	/**
+	 * 建立关联
+	 */
+	function associateConsumer(){
+		if(!$("#associateConsumerTopicSelect").val()){
+			alert("请先选择Topic");
+			return;
+		}
+		if(!$("#associateConsumerSelect").val()){
+			alert("请选择消费者");
+			return;
+		}
+		disable("associateConsumerBtn");
+		$.post('${request.contextPath}/consumer/associate',
+				$("#associateConsumerForm").serialize(),
+		        function(data){
+		            if(data.status == 200){
+		            	toastr.success("申请成功！请耐心等待！");  
+		            	modalHide(3000, function(){
+		            		enable("associateConsumerBtn");
+			            	$("#associateConsumerForm")[0].reset();
+		            	});
+				    }else{
+				    	toastr.error("申请失败！"+data.message);  
+				    	enable("associateConsumerBtn");
+				    }
+	        }, 'json');
+	}
+</script>

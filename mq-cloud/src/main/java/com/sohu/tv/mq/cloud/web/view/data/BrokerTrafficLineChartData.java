@@ -104,18 +104,17 @@ public class BrokerTrafficLineChartData implements LineChartData {
         
         // 解析参数
         Date date = getDate(searchMap, DATE_FIELD);
-        String dateStr = DateUtil.formatYMD(date);
         String ip = getValue(searchMap, IP_FIELD);
         
         //获取流量
-        Result<List<BrokerTraffic>> result = brokerTrafficService.query(ip, dateStr);
+        Result<List<BrokerTraffic>> result = brokerTrafficService.query(ip, date);
         if (!result.isOK()) {
             return lineChartList;
         }
 
         Date dayBefore = new Date(date.getTime() - 24*60*60*1000);
         //获取前一天流量
-        Result<List<BrokerTraffic>> resultDayBefore = brokerTrafficService.query(ip, DateUtil.formatYMD(dayBefore));
+        Result<List<BrokerTraffic>> resultDayBefore = brokerTrafficService.query(ip, dayBefore);
         
         // 构造曲线图对象
         LineChart lineChart = new LineChart();

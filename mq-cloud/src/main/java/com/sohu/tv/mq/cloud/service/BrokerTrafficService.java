@@ -145,7 +145,7 @@ public class BrokerTrafficService {
      * @param date
      * @return
      */
-    public Result<List<BrokerTraffic>> query(String ip, String date) {
+    public Result<List<BrokerTraffic>> query(String ip, Date date) {
         List<BrokerTraffic> list = null;
         try {
             list = brokerTrafficDao.select(ip, date);
@@ -163,7 +163,7 @@ public class BrokerTrafficService {
      * @param date
      * @return
      */
-    public Result<List<BrokerTraffic>> queryClusterTraffic(int clusterId, String date) {
+    public Result<List<BrokerTraffic>> queryClusterTraffic(int clusterId, Date date) {
         List<BrokerTraffic> list = null;
         try {
             list = brokerTrafficDao.selectClusterTraffic(clusterId, date);
@@ -181,7 +181,7 @@ public class BrokerTrafficService {
      * @param date
      * @return
      */
-    public Result<List<BrokerTraffic>> queryTraffic(String date, List<String> times, List<String> ips) {
+    public Result<List<BrokerTraffic>> queryTraffic(Date date, List<String> times, List<String> ips) {
         List<BrokerTraffic> list = null;
         try {
             list = brokerTrafficDao.selectTrafficList(date, times, ips);
@@ -199,7 +199,7 @@ public class BrokerTrafficService {
      * @param date
      * @return
      */
-    public Result<BrokerTraffic> queryTrafficStatistic(String date, List<String> ips, String beginTime) {
+    public Result<BrokerTraffic> queryTrafficStatistic(Date date, List<String> ips, String beginTime) {
         BrokerTraffic brokerTraffic = null;
         try {
             brokerTraffic = brokerTrafficDao.selectTrafficStatistic(date, ips, beginTime);
@@ -217,7 +217,7 @@ public class BrokerTrafficService {
      * @param date
      * @return
      */
-    public Result<BrokerTraffic> queryTrafficStatistic(String date, String ip, String beginTime) {
+    public Result<BrokerTraffic> queryTrafficStatistic(Date date, String ip, String beginTime) {
         BrokerTraffic brokerTraffic = null;
         try {
             brokerTraffic = brokerTrafficDao.selectTrafficStatisticByIp(date, ip, beginTime);

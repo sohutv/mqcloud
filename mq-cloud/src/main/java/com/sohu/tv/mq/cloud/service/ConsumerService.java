@@ -1,48 +1,7 @@
 package com.sohu.tv.mq.cloud.service;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
-import java.util.TreeMap;
-import java.util.TreeSet;
-
-import org.apache.commons.lang3.StringUtils;
-import org.apache.rocketmq.client.exception.MQBrokerException;
-import org.apache.rocketmq.common.MQVersion;
-import org.apache.rocketmq.common.MixAll;
-import org.apache.rocketmq.common.admin.ConsumeStats;
-import org.apache.rocketmq.common.admin.OffsetWrapper;
-import org.apache.rocketmq.common.admin.TopicOffset;
-import org.apache.rocketmq.common.admin.TopicStatsTable;
-import org.apache.rocketmq.common.message.MessageQueue;
-import org.apache.rocketmq.common.protocol.body.Connection;
-import org.apache.rocketmq.common.protocol.body.ConsumeStatus;
-import org.apache.rocketmq.common.protocol.body.ConsumerConnection;
-import org.apache.rocketmq.common.protocol.body.ConsumerRunningInfo;
-import org.apache.rocketmq.common.protocol.body.GroupList;
-import org.apache.rocketmq.common.protocol.body.ProcessQueueInfo;
-import org.apache.rocketmq.common.protocol.heartbeat.MessageModel;
-import org.apache.rocketmq.remoting.protocol.LanguageCode;
-import org.apache.rocketmq.tools.admin.MQAdminExt;
-import org.apache.rocketmq.tools.command.CommandUtil;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.dao.DuplicateKeyException;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.interceptor.TransactionAspectSupport;
-
 import com.alibaba.fastjson.JSON;
-import com.sohu.tv.mq.cloud.bo.Cluster;
-import com.sohu.tv.mq.cloud.bo.ConsumeStatsExt;
-import com.sohu.tv.mq.cloud.bo.Consumer;
-import com.sohu.tv.mq.cloud.bo.Topic;
+import com.sohu.tv.mq.cloud.bo.*;
 import com.sohu.tv.mq.cloud.common.mq.SohuMQAdmin;
 import com.sohu.tv.mq.cloud.dao.ConsumerDao;
 import com.sohu.tv.mq.cloud.dao.UserConsumerDao;
@@ -55,35 +14,62 @@ import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper;
 import com.sohu.tv.mq.cloud.util.Result;
 import com.sohu.tv.mq.cloud.util.Status;
 import com.sohu.tv.mq.metric.StackTraceMetric;
+import com.sohu.tv.mq.util.Constant;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.rocketmq.client.exception.MQBrokerException;
+import org.apache.rocketmq.common.MQVersion;
+import org.apache.rocketmq.common.MixAll;
+import org.apache.rocketmq.common.admin.ConsumeStats;
+import org.apache.rocketmq.common.admin.OffsetWrapper;
+import org.apache.rocketmq.common.admin.TopicOffset;
+import org.apache.rocketmq.common.admin.TopicStatsTable;
+import org.apache.rocketmq.common.message.MessageQueue;
+import org.apache.rocketmq.common.protocol.body.*;
+import org.apache.rocketmq.common.protocol.heartbeat.MessageModel;
+import org.apache.rocketmq.remoting.protocol.LanguageCode;
+import org.apache.rocketmq.tools.admin.DefaultMQAdminExt;
+import org.apache.rocketmq.tools.admin.MQAdminExt;
+import org.apache.rocketmq.tools.command.CommandUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DuplicateKeyException;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.interceptor.TransactionAspectSupport;
+
+import java.util.*;
+
 /**
  * consumer服务
- * @Description: 
+ * 
+ * @Description:
  * @author yongfeigao
  * @date 2018年6月27日
  */
 @Service
 public class ConsumerService {
-    
+
     private Logger logger = LoggerFactory.getLogger(this.getClass());
-    
+
     @Autowired
     private ConsumerDao consumerDao;
-    
+
     @Autowired
     private MQAdminTemplate mqAdminTemplate;
-    
+
     @Autowired
     private UserConsumerDao userConsumerDao;
-    
+
     @Autowired
     private MQCloudConfigHelper mqCloudConfigHelper;
-    
+
     @Autowired
     private ClusterService clusterService;
-    
+
     @Autowired
     private TopicService topicService;
-    
+
     /**
      * 保存Consumer记录
      * 
@@ -136,7 +122,7 @@ public class ConsumerService {
         }
         return Result.getResult(consumer);
     }
-    
+
     /**
      * 根据name获取consumer
      * 
@@ -153,7 +139,7 @@ public class ConsumerService {
         }
         return Result.getResult(consumer);
     }
-    
+
     /**
      * 按照tid查询consumer
      * 
@@ -164,7 +150,7 @@ public class ConsumerService {
         tidList.add(tid);
         return queryByTidList(tidList);
     }
-    
+
     /**
      * 查询全量consumer
      * 
@@ -180,7 +166,7 @@ public class ConsumerService {
         }
         return Result.getResult(consumerList);
     }
-    
+
     /**
      * 按照tid列表查询consumer
      * 
@@ -196,7 +182,7 @@ public class ConsumerService {
         }
         return Result.getResult(consumerList);
     }
-    
+
     /**
      * 按照id列表查询consumer
      * 
@@ -212,7 +198,7 @@ public class ConsumerService {
         }
         return Result.getResult(consumerList);
     }
-    
+
     /**
      * 查询用户所属topic的消费者
      * 
@@ -228,7 +214,7 @@ public class ConsumerService {
         }
         return Result.getResult(consumerList);
     }
-    
+
     /**
      * 查询用户的消费者
      * 
@@ -244,7 +230,7 @@ public class ConsumerService {
         }
         return Result.getResult(consumerList);
     }
-    
+
     /**
      * 按照tid和consumer查询consumer
      * 
@@ -260,9 +246,10 @@ public class ConsumerService {
         }
         return Result.getResult(consumer);
     }
-    
+
     /**
      * 更新consumer描述
+     * 
      * @return
      */
     public Result<Integer> updateConsumerInfo(long id, String info) {
@@ -275,9 +262,10 @@ public class ConsumerService {
         }
         return Result.getResult(result);
     }
-    
+
     /**
      * 更新consumer trace
+     * 
      * @return
      */
     public Result<Integer> updateConsumerTrace(long id, int traceEnabled) {
@@ -290,9 +278,10 @@ public class ConsumerService {
         }
         return Result.getResult(result);
     }
-    
+
     /**
      * 抓取集群消费方式的消费者进度
+     * 
      * @param topic
      * @param consumerList
      * @return
@@ -301,8 +290,8 @@ public class ConsumerService {
         return mqAdminTemplate.execute(new DefaultCallback<Map<Long, ConsumeStats>>() {
             public Map<Long, ConsumeStats> callback(MQAdminExt mqAdmin) throws Exception {
                 Map<Long, ConsumeStats> map = new HashMap<Long, ConsumeStats>();
-                for(Consumer consumer : consumerList) {
-                    if(consumer.isClustering()) {
+                for (Consumer consumer : consumerList) {
+                    if (consumer.isClustering()) {
                         try {
                             ConsumeStats consumeStats = mqAdmin.examineConsumeStats(consumer.getName());
                             map.put(consumer.getId(), consumeStats);
@@ -313,29 +302,32 @@ public class ConsumerService {
                 }
                 return map;
             }
+
             @Override
             public Cluster mqCluster() {
                 return cluster;
             }
         });
     }
-    
+
     /**
      * 抓取广播消费方式的消费进度
+     * 
      * @param topic
      * @param consumerList
      * @return
      */
-    public Map<Long, List<ConsumeStatsExt>> fetchBroadcastingConsumeProgress(Cluster cluster, String topic, List<Consumer> consumerList) {
+    public Map<Long, List<ConsumeStatsExt>> fetchBroadcastingConsumeProgress(Cluster cluster, String topic,
+            List<Consumer> consumerList) {
         return mqAdminTemplate.execute(new DefaultCallback<Map<Long, List<ConsumeStatsExt>>>() {
             public Map<Long, List<ConsumeStatsExt>> callback(MQAdminExt mqAdmin) throws Exception {
                 Map<Long, List<ConsumeStatsExt>> map = new HashMap<Long, List<ConsumeStatsExt>>();
                 TopicStatsTable topicStatsTable = mqAdmin.examineTopicStats(topic);
-                if(topicStatsTable == null) {
+                if (topicStatsTable == null) {
                     return map;
                 }
-                for(Consumer consumer : consumerList) {
-                    if(!consumer.isBroadcast()) {
+                for (Consumer consumer : consumerList) {
+                    if (!consumer.isBroadcast()) {
                         continue;
                     }
                     ConsumerConnection cc = null;
@@ -348,25 +340,26 @@ public class ConsumerService {
                     Set<Connection> connSet = cc.getConnectionSet();
                     // only for fixed order
                     Set<String> clientIdSet = new TreeSet<String>();
-                    for(Connection conn : connSet) {
+                    for (Connection conn : connSet) {
                         if (conn.getVersion() < MQVersion.Version.V3_1_8_SNAPSHOT.ordinal()) {
                             continue;
                         }
                         clientIdSet.add(conn.getClientId());
                     }
                     List<ConsumeStatsExt> consumeStatsList = new ArrayList<ConsumeStatsExt>();
-                    for(String clientId : clientIdSet) {
+                    for (String clientId : clientIdSet) {
                         // 抓取状态
-                        ConsumerRunningInfo consumerRunningInfo = mqAdmin.getConsumerRunningInfo(consumer.getName(), clientId, false);
+                        ConsumerRunningInfo consumerRunningInfo = mqAdmin.getConsumerRunningInfo(consumer.getName(),
+                                clientId, false);
                         Map<MessageQueue, ProcessQueueInfo> mqProcessMap = consumerRunningInfo.getMqTable();
-                        if(mqProcessMap == null) {
+                        if (mqProcessMap == null) {
                             continue;
                         }
                         // 组装数据
                         Map<MessageQueue, OffsetWrapper> offsetTable = new TreeMap<MessageQueue, OffsetWrapper>();
-                        for(MessageQueue mq : mqProcessMap.keySet()) {
+                        for (MessageQueue mq : mqProcessMap.keySet()) {
                             TopicOffset topicOffset = topicStatsTable.getOffsetTable().get(mq);
-                            if(topicOffset == null) {
+                            if (topicOffset == null) {
                                 continue;
                             }
                             OffsetWrapper offsetWrapper = new OffsetWrapper();
@@ -380,10 +373,11 @@ public class ConsumerService {
                         consumeStats.setOffsetTable(offsetTable);
                         consumeStats.setClientId(clientId);
                         // 计算tps
-                        if(consumerRunningInfo.getStatusTable() != null) {
+                        if (consumerRunningInfo.getStatusTable() != null) {
                             ConsumeStatus consumeStatus = consumerRunningInfo.getStatusTable().get(topic);
-                            if(consumeStatus != null) {
-                                consumeStats.setConsumeTps(consumeStatus.getConsumeOKTPS() + consumeStatus.getConsumeFailedTPS());
+                            if (consumeStatus != null) {
+                                consumeStats.setConsumeTps(
+                                        consumeStatus.getConsumeOKTPS() + consumeStatus.getConsumeFailedTPS());
                             }
                         }
                         consumeStatsList.add(consumeStats);
@@ -392,13 +386,14 @@ public class ConsumerService {
                 }
                 return map;
             }
+
             @Override
             public Cluster mqCluster() {
                 return cluster;
             }
         });
     }
-    
+
     /**
      * 删除consumer
      */
@@ -407,21 +402,21 @@ public class ConsumerService {
         try {
             // 第一步：删除consumer记录
             Integer count = consumerDao.delete(consumer.getId());
-            if(count == null || count != 1) {
+            if (count == null || count != 1) {
                 return Result.getResult(Status.DB_ERROR);
             }
             // 第二步：删除UserConsumer
             Integer deleteCount = userConsumerDao.deleteByConsumerId(consumer.getId());
-            if(deleteCount == null) {
+            if (deleteCount == null) {
                 return Result.getResult(Status.DB_ERROR);
             }
             // 第三步：真实删除consumer(为了防止误删，只有线上环境才能删除)
-            if(mqCloudConfigHelper.isOnline()) {
+            if (mqCloudConfigHelper.isOnline()) {
                 Result<?> result = deleteConsumerOnCluster(mqCluster, consumer.getName());
-                if(result.isNotOK()) {
-                    throw new RuntimeException("delete consumer:"+consumer.getName()+" on cluster err!");
+                if (result.isNotOK()) {
+                    throw new RuntimeException("delete consumer:" + consumer.getName() + " on cluster err!");
                 }
-                if(consumer.isClustering()) {
+                if (consumer.isClustering()) {
                     topicService.deleteTopicOnCluster(mqCluster, MixAll.RETRY_GROUP_TOPIC_PREFIX + consumer.getName());
                 }
             }
@@ -432,9 +427,10 @@ public class ConsumerService {
         }
         return Result.getOKResult();
     }
-    
+
     /**
      * 删除consumer
+     * 
      * @param mqCluster
      * @param consumerGroup
      */
@@ -447,20 +443,23 @@ public class ConsumerService {
                     mqAdmin.deleteSubscriptionGroup(master, consumerGroup);
                 }
                 long end = System.currentTimeMillis();
-                logger.info("delete consumer use:{}ms,consumerGroup:{},cluster:{}", (end- start), consumerGroup, mqCluster);
+                logger.info("delete consumer use:{}ms,consumerGroup:{},cluster:{}", (end - start), consumerGroup,
+                        mqCluster);
                 return Result.getOKResult();
             }
+
             @Override
             public Result<?> exception(Exception e) throws Exception {
                 logger.error("delete consumer:{} err:{}", consumerGroup, e.getMessage());
                 return Result.getWebErrorResult(e);
             }
+
             public Cluster mqCluster() {
                 return mqCluster;
             }
         });
     }
-    
+
     /**
      * 重置offset
      * 
@@ -492,9 +491,10 @@ public class ConsumerService {
         Result<?> resetResult = resetOffset(cluster, topic, consumer, resetTo);
         return resetResult;
     }
-    
+
     /**
      * 重置偏移量
+     * 
      * @param mqCluster
      * @param consumer
      */
@@ -502,43 +502,56 @@ public class ConsumerService {
         return mqAdminTemplate.execute(new MQAdminCallback<Result<?>>() {
             public Result<?> callback(MQAdminExt mqAdmin) throws Exception {
                 long start = System.currentTimeMillis();
-                //判断消费者是否在线
+                // 判断消费者是否在线
                 boolean consumerOnline = true;
+                boolean isC = false;
                 try {
-                    mqAdmin.examineConsumerConnectionInfo(consumerGroup);
+                    ConsumerConnection conn = mqAdmin.examineConsumerConnectionInfo(consumerGroup);
+                    // 判断是否消费者是c++客户端
+                    Set<Connection> connectionSet = conn.getConnectionSet();
+                    if (connectionSet != null && connectionSet.size() != 0) {
+                        Connection connection = connectionSet.iterator().next();
+                        if (LanguageCode.CPP == connection.getLanguage()) {
+                            isC = true;
+                        }
+                    }
                 } catch (MQBrokerException e) {
-                    if(206 == e.getResponseCode()) {
+                    if (206 == e.getResponseCode()) {
                         consumerOnline = false;
                     }
                 }
                 String env = null;
-                if(consumerOnline) {
+                if (consumerOnline) {
                     env = "online";
-                    //重置consumer端, consumer在线
-                    mqAdmin.resetOffsetByTimestamp(topic, consumerGroup, timeInMillis, true);
+                    // 重置consumer端, consumer在线
+                    ((DefaultMQAdminExt) mqAdmin).resetOffsetByTimestamp(topic, consumerGroup, timeInMillis, true, isC);
                 } else {
-                    //重置broker端, consumer不在线
+                    // 重置broker端, consumer不在线
                     env = "offline";
                     mqAdmin.resetOffsetByTimestampOld(consumerGroup, topic, timeInMillis, true);
                 }
                 String time = DateUtil.getFormat(DateUtil.YMD_DASH_BLANK_HMS_COLON).format(new Date(timeInMillis));
-                logger.info("resetOffset {} to {} use:{},topic={},group={}", env, time, System.currentTimeMillis()- start, 
+                logger.info("resetOffset {} to {} use:{},topic={},group={}", env, time,
+                        System.currentTimeMillis() - start,
                         topic, consumerGroup);
                 return Result.getOKResult();
             }
+
             @Override
             public Result<?> exception(Exception e) throws Exception {
                 logger.error("resetOffset topic={},group={} err:{}", topic, consumerGroup, e.getMessage());
                 return Result.getWebErrorResult(e);
             }
+
             public Cluster mqCluster() {
                 return mqCluster;
             }
         });
     }
-    
+
     /**
      * 获取消费者链接
+     * 
      * @param consumerGroup
      * @param mqCluster
      * @return
@@ -549,19 +562,27 @@ public class ConsumerService {
                 ConsumerConnection consumerConnection = mqAdmin.examineConsumerConnectionInfo(consumerGroup);
                 return Result.getResult(consumerConnection);
             }
+
             public Result<ConsumerConnection> exception(Exception e) throws Exception {
                 logger.warn("cluster:{} consumerGroup:{} error:{}", mqCluster, consumerGroup, e.getMessage());
-                return Result.getDBErrorResult(e);
+                if (e instanceof MQBrokerException && 206 == ((MQBrokerException) e).getResponseCode()) {
+                    Result<ConsumerConnection> result = Result.getResult(Status.NO_ONLINE);
+                    result.setException(e);
+                    return result;
+                }
+                return Result.getRequestErrorResult(e);
             }
+
             public Cluster mqCluster() {
                 return mqCluster;
             }
         });
     }
-    
+
     /**
      * 初始化consumer（从集群导入到数据库中），可以执行多次，因为数据库有唯一索引
      * 该方法适用于公司内部已经搭建了mq集群，想使用mqcloud进行管理
+     * 
      * @param mqCluster
      * @param topicList
      * @return
@@ -573,6 +594,7 @@ public class ConsumerService {
             public Cluster mqCluster() {
                 return mqCluster;
             }
+
             public void invoke(MQAdminExt mqAdmin) throws Exception {
                 for (Topic topic : topicList) {
                     GroupList groupList = null;
@@ -589,7 +611,8 @@ public class ConsumerService {
                             conn = mqAdmin.examineConsumerConnectionInfo(group);
                         } catch (MQBrokerException e) {
                             if (206 == e.getResponseCode()) {
-                                addToMap(resultMap, topic.getName(), Result.getResult(Status.NO_ONLINE).setResult(group));
+                                addToMap(resultMap, topic.getName(),
+                                        Result.getResult(Status.NO_ONLINE).setResult(group));
                                 continue;
                             } else {
                                 addToMap(resultMap, topic.getName(), Result.getWebErrorResult(e).setResult(group));
@@ -621,19 +644,20 @@ public class ConsumerService {
         });
         return resultMap;
     }
-    
+
     @SuppressWarnings("rawtypes")
     private void addToMap(Map<String, List<Result>> resultMap, String topic, Result<?> result) {
         List<Result> resultList = resultMap.get(topic);
-        if(resultList == null) {
+        if (resultList == null) {
             resultList = new ArrayList<Result>();
             resultMap.put(topic, resultList);
         }
         resultList.add(result);
     }
-    
+
     /**
      * 获取consumer运行时信息
+     * 
      * @param cluster
      * @param consumerGroup
      * @return
@@ -650,24 +674,27 @@ public class ConsumerService {
                         continue;
                     }
                     String clientId = connection.getClientId();
-                    ConsumerRunningInfo consumerRunningInfo = mqAdmin.getConsumerRunningInfo(consumerGroup, clientId, false);
-                    if(consumerRunningInfo != null) {
+                    ConsumerRunningInfo consumerRunningInfo = mqAdmin.getConsumerRunningInfo(consumerGroup, clientId,
+                            false);
+                    if (consumerRunningInfo != null) {
                         infoMap.put(clientId, consumerRunningInfo);
                     }
                 }
                 return infoMap;
             }
+
             public Map<String, ConsumerRunningInfo> exception(Exception e) throws Exception {
                 logger.warn("cluster:{}, consumer:{}, err:{}", cluster, consumerGroup, e.getMessage());
                 return null;
             }
+
             @Override
             public Cluster mqCluster() {
                 return cluster;
             }
         });
     }
-    
+
     /**
      * 获取消费者状态（go客户端不支持getConsumeStatus，所以调用getConsumerRunningInfo）
      * 
@@ -708,7 +735,7 @@ public class ConsumerService {
             return null;
         }
     }
-    
+
     /**
      * 获取线程指标
      * 
@@ -716,7 +743,8 @@ public class ConsumerService {
      * @param consumerGroup
      * @return
      */
-    public Result<List<StackTraceMetric>> getConsumeThreadMetrics(Cluster cluster, String clientId, String consumerGroup) {
+    public Result<List<StackTraceMetric>> getConsumeThreadMetrics(Cluster cluster, String clientId,
+            String consumerGroup) {
         return mqAdminTemplate.execute(new DefaultCallback<Result<List<StackTraceMetric>>>() {
             public Result<List<StackTraceMetric>> callback(MQAdminExt mqAdmin) throws Exception {
                 SohuMQAdmin sohuMQAdmin = (SohuMQAdmin) mqAdmin;
@@ -729,7 +757,7 @@ public class ConsumerService {
                 if (properties == null) {
                     return Result.getResult(Status.NO_RESULT);
                 }
-                String threadMetricListString = (String) properties.get("threadMetricList");
+                String threadMetricListString = (String) properties.get(Constant.COMMAND_VALUE_THREAD_METRIC);
                 if (threadMetricListString == null) {
                     return Result.getResult(Status.NO_RESULT);
                 }
@@ -747,7 +775,7 @@ public class ConsumerService {
             }
         });
     }
-    
+
     /**
      * 获取消费失败指标
      * 
@@ -755,7 +783,8 @@ public class ConsumerService {
      * @param consumerGroup
      * @return
      */
-    public Result<List<StackTraceMetric>> getConsumeFailedMetrics(Cluster cluster, String clientId, String consumerGroup) {
+    public Result<List<StackTraceMetric>> getConsumeFailedMetrics(Cluster cluster, String clientId,
+            String consumerGroup) {
         return mqAdminTemplate.execute(new DefaultCallback<Result<List<StackTraceMetric>>>() {
             public Result<List<StackTraceMetric>> callback(MQAdminExt mqAdmin) throws Exception {
                 SohuMQAdmin sohuMQAdmin = (SohuMQAdmin) mqAdmin;
@@ -768,7 +797,7 @@ public class ConsumerService {
                 if (properties == null) {
                     return Result.getResult(Status.NO_RESULT);
                 }
-                String threadMetricListString = (String) properties.get("failedMetricList");
+                String threadMetricListString = (String) properties.get(Constant.COMMAND_VALUE_FAILED_METRIC);
                 if (threadMetricListString == null) {
                     return Result.getResult(Status.NO_RESULT);
                 }
@@ -786,5 +815,32 @@ public class ConsumerService {
             }
         });
     }
-}
 
+    /**
+     * 消费时间段消息
+     * 
+     * @param clientId
+     * @param consumerGroup
+     * @return
+     */
+    public Result<?> consumeTimespanMessage(Cluster cluster, AuditTimespanMessageConsume auditTimespanMessageConsume) {
+        return mqAdminTemplate.execute(new MQAdminCallback<Result<?>>() {
+            public Result<?> callback(MQAdminExt mqAdmin) throws Exception {
+                SohuMQAdmin sohuMQAdmin = (SohuMQAdmin) mqAdmin;
+                sohuMQAdmin.consumeTimespanMessage(auditTimespanMessageConsume.getClientId(),
+                        auditTimespanMessageConsume.getTopic(), auditTimespanMessageConsume.getConsumer(),
+                        auditTimespanMessageConsume.getStart(), auditTimespanMessageConsume.getEnd());
+                return Result.getOKResult();
+            }
+
+            public Result<?> exception(Exception e) {
+                logger.error("consumeTimespanMessage:{} err}", auditTimespanMessageConsume, e);
+                return Result.getWebErrorResult(e);
+            }
+
+            public Cluster mqCluster() {
+                return cluster;
+            }
+        });
+    }
+}

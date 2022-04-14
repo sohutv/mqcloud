@@ -1,18 +1,16 @@
 package com.sohu.tv.mq.cloud.web.controller;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeMap;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.validation.Valid;
-
+import com.sohu.tv.mq.cloud.bo.*;
+import com.sohu.tv.mq.cloud.bo.Audit.TypeEnum;
+import com.sohu.tv.mq.cloud.service.*;
+import com.sohu.tv.mq.cloud.util.*;
+import com.sohu.tv.mq.cloud.web.controller.param.*;
+import com.sohu.tv.mq.cloud.web.vo.ConsumerProgressVO;
+import com.sohu.tv.mq.cloud.web.vo.QueueOwnerVO;
+import com.sohu.tv.mq.cloud.web.vo.UserInfo;
+import com.sohu.tv.mq.metric.StackTraceMetric;
+import com.sohu.tv.mq.util.CommonUtil;
+import com.sohu.tv.mq.util.Constant;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.rocketmq.client.exception.MQBrokerException;
 import org.apache.rocketmq.common.MixAll;
@@ -27,100 +25,63 @@ import org.apache.rocketmq.common.protocol.body.ConsumerRunningInfo;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.HtmlUtils;
 
-import com.sohu.tv.mq.cloud.bo.Audit;
-import com.sohu.tv.mq.cloud.bo.Audit.TypeEnum;
-import com.sohu.tv.mq.cloud.bo.AuditAssociateConsumer;
-import com.sohu.tv.mq.cloud.bo.AuditConsumer;
-import com.sohu.tv.mq.cloud.bo.AuditConsumerConfig;
-import com.sohu.tv.mq.cloud.bo.AuditResetOffset;
-import com.sohu.tv.mq.cloud.bo.ClientVersion;
-import com.sohu.tv.mq.cloud.bo.Cluster;
-import com.sohu.tv.mq.cloud.bo.ConsumeStatsExt;
-import com.sohu.tv.mq.cloud.bo.Consumer;
-import com.sohu.tv.mq.cloud.bo.ConsumerConfig;
-import com.sohu.tv.mq.cloud.bo.MessageReset;
-import com.sohu.tv.mq.cloud.bo.Topic;
-import com.sohu.tv.mq.cloud.bo.TopicTopology;
-import com.sohu.tv.mq.cloud.bo.User;
-import com.sohu.tv.mq.cloud.bo.UserConsumer;
-import com.sohu.tv.mq.cloud.service.AlertService;
-import com.sohu.tv.mq.cloud.service.AuditService;
-import com.sohu.tv.mq.cloud.service.ClientVersionService;
-import com.sohu.tv.mq.cloud.service.ClusterService;
-import com.sohu.tv.mq.cloud.service.ConsumerConfigService;
-import com.sohu.tv.mq.cloud.service.ConsumerService;
-import com.sohu.tv.mq.cloud.service.TopicService;
-import com.sohu.tv.mq.cloud.service.UserConsumerService;
-import com.sohu.tv.mq.cloud.service.UserService;
-import com.sohu.tv.mq.cloud.service.VerifyDataService;
-import com.sohu.tv.mq.cloud.util.DateUtil;
-import com.sohu.tv.mq.cloud.util.FreemarkerUtil;
-import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper;
-import com.sohu.tv.mq.cloud.util.Result;
-import com.sohu.tv.mq.cloud.util.Status;
-import com.sohu.tv.mq.cloud.web.controller.param.AssociateConsumerParam;
-import com.sohu.tv.mq.cloud.web.controller.param.ConsumerConfigParam;
-import com.sohu.tv.mq.cloud.web.controller.param.ConsumerParam;
-import com.sohu.tv.mq.cloud.web.controller.param.PaginationParam;
-import com.sohu.tv.mq.cloud.web.controller.param.UserConsumerParam;
-import com.sohu.tv.mq.cloud.web.vo.ConsumerProgressVO;
-import com.sohu.tv.mq.cloud.web.vo.QueueOwnerVO;
-import com.sohu.tv.mq.cloud.web.vo.UserInfo;
-import com.sohu.tv.mq.metric.StackTraceMetric;
-import com.sohu.tv.mq.util.CommonUtil;
-import com.sohu.tv.mq.util.Constant;
+import javax.servlet.http.HttpServletRequest;
+import javax.validation.Valid;
+import java.util.*;
+
 /**
  * 消费者接口
- * @Description: 
+ * 
+ * @Description:
  * @author yongfeigao
  * @date 2018年6月12日
  */
 @Controller
 @RequestMapping("/consumer")
 public class ConsumerController extends ViewController {
-    
+
     @Autowired
     private ConsumerService consumerService;
-    
+
     @Autowired
     private UserService userService;
-    
+
     @Autowired
     private UserConsumerService userConsumerService;
-    
+
     @Autowired
     private AuditService auditService;
-    
+
     @Autowired
     private AlertService alertService;
-    
+
     @Autowired
     private TopicService topicService;
-    
+
     @Autowired
     private VerifyDataService verifyDataService;
-    
+
     @Autowired
     private ClusterService clusterService;
-    
+
     @Autowired
     private ConsumerConfigService consumerConfigService;
-    
+
     @Autowired
     private MQCloudConfigHelper mqCloudConfigHelper;
-    
+
     @Autowired
     private ClientVersionService clientVersionService;
-    
+
+    @Autowired
+    private UserFootprintService userFootprintService;
+
     /**
      * 消费进度
+     * 
      * @param topicParam
      * @return
      * @throws Exception
@@ -134,7 +95,7 @@ public class ConsumerController extends ViewController {
         setPagination(map, paginationParam);
         // 获取消费者
         Result<TopicTopology> topicTopologyResult = userService.queryTopicTopology(userInfo.getUser(), tid);
-        if(topicTopologyResult.isNotOK()) {
+        if (topicTopologyResult.isNotOK()) {
             setResult(map, topicTopologyResult);
             return view;
         }
@@ -143,48 +104,54 @@ public class ConsumerController extends ViewController {
         List<Consumer> consumerList = topicTopology.getConsumerList();
         // consumer选择
         ConsumerSelector consumerSelector = new ConsumerSelector();
-        if(consumer == null || consumer.length() == 0) {
+        if (consumer == null || consumer.length() == 0) {
             pagination(consumerSelector, consumerList, paginationParam);
         } else {
             consumerSelector.select(consumerList, consumer);
         }
         // 获取消费者归属者
         Map<Long, List<User>> consumerMap = getConsumerMap(tid, consumerSelector.getCidList());
-        
+
         Topic topic = topicTopology.getTopic();
         Cluster cluster = clusterService.getMQClusterById(topic.getClusterId());
-        
+
         // 构建集群数据
-        List<ConsumerProgressVO> clusterList = buildClusteringConsumerProgressVOList(cluster, topic.getName(), 
+        List<ConsumerProgressVO> clusterList = buildClusteringConsumerProgressVOList(cluster, topic.getName(),
                 consumerSelector.getClusteringConsumerList(), consumerMap);
         // 获取消费者配置
-        for(ConsumerProgressVO vo : clusterList) {
+        for (ConsumerProgressVO vo : clusterList) {
             vo.setConsumerConfig(consumerConfigService.getConsumerConfig(vo.getConsumer().getName()));
         }
         // 组装集群模式消费者信息
         setResult(map, clusterList);
-        
+
         // 构建广播数据
-        List<ConsumerProgressVO> list = buildBroadcastingConsumerProgressVOList(cluster, topic.getName(), 
+        List<ConsumerProgressVO> list = buildBroadcastingConsumerProgressVOList(cluster, topic.getName(),
                 consumerSelector.getBroadcastConsumerList(), consumerMap);
         // 获取消费者配置
-        for(ConsumerProgressVO vo : list) {
+        for (ConsumerProgressVO vo : list) {
             vo.setConsumerConfig(consumerConfigService.getConsumerConfig(vo.getConsumer().getName()));
         }
         // 组装广播模式消费者信息
         setResult(map, "resultExt", Result.getResult(list));
-        
+
         setResult(map, "topic", topic);
         FreemarkerUtil.set("long", Long.class, map);
         setResult(map, "cluster", cluster);
-        
+
         // 限速常量
         setResult(map, "limitConsumeTps", Constant.LIMIT_CONSUME_TPS);
+        // 记录访问足迹
+        UserFootprint userFootprint = new UserFootprint();
+        userFootprint.setUid(userInfo.getUser().getId());
+        userFootprint.setTid(tid);
+        userFootprintService.save(userFootprint);
         return view;
     }
-    
+
     /**
      * 分页
+     * 
      * @param consumerSelector
      * @param consumerList
      * @param paginationParam
@@ -194,57 +161,58 @@ public class ConsumerController extends ViewController {
         paginationParam.caculatePagination(consumerList.size());
         consumerSelector.select(consumerList, paginationParam.getBegin(), paginationParam.getEnd());
     }
-    
+
     /**
      * 构建集群消费模式消费者消费进度
+     * 
      * @param cluster
      * @param topic
      * @param consumerList
      * @param consumerMap
      * @return
      */
-    private List<ConsumerProgressVO> buildClusteringConsumerProgressVOList(Cluster cluster, String topic, 
-            List<Consumer> consumerList, Map<Long, List<User>> consumerMap){
+    private List<ConsumerProgressVO> buildClusteringConsumerProgressVOList(Cluster cluster, String topic,
+            List<Consumer> consumerList, Map<Long, List<User>> consumerMap) {
         List<ConsumerProgressVO> list = new ArrayList<ConsumerProgressVO>();
-        if(consumerList.isEmpty()) {
+        if (consumerList.isEmpty()) {
             return list;
         }
         Map<Long, ConsumeStats> consumeStatsMap = consumerService.fetchClusteringConsumeProgress(cluster, consumerList);
-        
+
         // 组装集群模式vo
-        for(Consumer consumer : consumerList) {
+        for (Consumer consumer : consumerList) {
             ConsumerProgressVO consumerProgressVO = buildConsumerProgressVO(topic, consumerMap, consumer);
-            if(consumeStatsMap == null) {
+            if (consumeStatsMap == null) {
                 list.add(consumerProgressVO);
                 continue;
             }
             ConsumeStats consumeStats = consumeStatsMap.get(consumer.getId());
-            if(consumeStats == null) {
+            if (consumeStats == null) {
                 list.add(consumerProgressVO);
                 continue;
             }
             consumerProgressVO.setConsumeTps(consumeStats.getConsumeTps());
-            
+
             // 拆分正常队列和重试队列
             HashMap<MessageQueue, OffsetWrapper> offsetTable = consumeStats.getOffsetTable();
             Map<MessageQueue, OffsetWrapper> offsetMap = new TreeMap<MessageQueue, OffsetWrapper>();
             Map<MessageQueue, OffsetWrapper> retryOffsetMap = new TreeMap<MessageQueue, OffsetWrapper>();
-            for(MessageQueue mq : offsetTable.keySet()) {
-                if(CommonUtil.isRetryTopic(mq.getTopic())) {
+            for (MessageQueue mq : offsetTable.keySet()) {
+                if (CommonUtil.isRetryTopic(mq.getTopic())) {
                     retryOffsetMap.put(mq, offsetTable.get(mq));
                     // 设置topic名字
-                    if(consumerProgressVO.getRetryTopic() == null) {
+                    if (consumerProgressVO.getRetryTopic() == null) {
                         consumerProgressVO.setRetryTopic(mq.getTopic());
-                    } else if(!mq.getTopic().equals(consumerProgressVO.getRetryTopic())){
-                        logger.error("retry consumer:{} has two diffrent topic, {} != {}", consumer.getName(), 
+                    } else if (!mq.getTopic().equals(consumerProgressVO.getRetryTopic())) {
+                        logger.error("retry consumer:{} has two diffrent topic, {} != {}", consumer.getName(),
                                 mq.getTopic(), consumerProgressVO.getRetryTopic());
                     }
                 } else {
                     offsetMap.put(mq, offsetTable.get(mq));
-                    if(consumerProgressVO.getTopic() == null) {
+                    if (consumerProgressVO.getTopic() == null) {
                         consumerProgressVO.setTopic(mq.getTopic());
-                    } else if(!mq.getTopic().equals(consumerProgressVO.getTopic())){
-                        logger.error("consumer:{} has two diffrent topic, {} != {}", consumer.getName(), 
+                    } else if (!mq.getTopic().equals(consumerProgressVO.getTopic())) {
+                        logger.error("consumer:{} has two diffrent topic, {} != {}", consumer.getName(),
                                 mq.getTopic(), consumerProgressVO.getTopic());
                     }
                 }
@@ -253,10 +221,11 @@ public class ConsumerController extends ViewController {
             String dlqTopic = MixAll.getDLQTopic(consumer.getName());
             consumerProgressVO.setDlqTopic(dlqTopic);
             TopicStatsTable topicStatsTable = topicService.stats(cluster, dlqTopic);
-            if(topicStatsTable != null) {
-                consumerProgressVO.setDlqOffsetMap(new TreeMap<MessageQueue, TopicOffset>(topicStatsTable.getOffsetTable()));
+            if (topicStatsTable != null) {
+                consumerProgressVO
+                        .setDlqOffsetMap(new TreeMap<MessageQueue, TopicOffset>(topicStatsTable.getOffsetTable()));
             }
-            
+
             consumerProgressVO.setOffsetMap(offsetMap);
             consumerProgressVO.setRetryOffsetMap(retryOffsetMap);
             consumerProgressVO.computeTotalDiff();
@@ -264,42 +233,44 @@ public class ConsumerController extends ViewController {
         }
         return list;
     }
-    
+
     /**
      * 构建广播消费模式消费者消费进度
+     * 
      * @param cluster
      * @param topic
      * @param consumerList
      * @param consumerMap
      * @return
      */
-    private List<ConsumerProgressVO> buildBroadcastingConsumerProgressVOList(Cluster cluster, String topic, 
-            List<Consumer> consumerList, Map<Long, List<User>> consumerMap){
+    private List<ConsumerProgressVO> buildBroadcastingConsumerProgressVOList(Cluster cluster, String topic,
+            List<Consumer> consumerList, Map<Long, List<User>> consumerMap) {
         List<ConsumerProgressVO> list = new ArrayList<ConsumerProgressVO>();
-        if(consumerList.isEmpty()) {
+        if (consumerList.isEmpty()) {
             return list;
         }
         // 抓取广播消费模式下消费者状态
-        Map<Long, List<ConsumeStatsExt>> consumeStatsMap = consumerService.fetchBroadcastingConsumeProgress(cluster, topic, consumerList);
+        Map<Long, List<ConsumeStatsExt>> consumeStatsMap = consumerService.fetchBroadcastingConsumeProgress(cluster,
+                topic, consumerList);
         // 组装广播消费模式vo
-        for(Consumer consumer : consumerList) {
+        for (Consumer consumer : consumerList) {
             ConsumerProgressVO consumerProgressVO = buildConsumerProgressVO(topic, consumerMap, consumer);
-            if(consumeStatsMap == null) {
+            if (consumeStatsMap == null) {
                 list.add(consumerProgressVO);
                 continue;
             }
             List<ConsumeStatsExt> consumeStatsList = consumeStatsMap.get(consumer.getId());
-            if(consumeStatsList == null) {
+            if (consumeStatsList == null) {
                 list.add(consumerProgressVO);
                 continue;
             }
             Map<MessageQueue, OffsetWrapper> offsetMap = new TreeMap<MessageQueue, OffsetWrapper>();
-            for(ConsumeStatsExt consumeStats : consumeStatsList) {
+            for (ConsumeStatsExt consumeStats : consumeStatsList) {
                 consumerProgressVO.setConsumeTps(consumerProgressVO.getConsumeTps() + consumeStats.getConsumeTps());
                 Map<MessageQueue, OffsetWrapper> offsetTable = consumeStats.getOffsetTable();
-                for(MessageQueue mq : offsetTable.keySet()) {
+                for (MessageQueue mq : offsetTable.keySet()) {
                     OffsetWrapper prev = offsetMap.get(mq);
-                    if(prev == null) {
+                    if (prev == null) {
                         prev = new OffsetWrapper();
                         offsetMap.put(mq, prev);
                     }
@@ -310,7 +281,7 @@ public class ConsumerController extends ViewController {
                     prev.setBrokerOffset(prev.getBrokerOffset() + cur.getBrokerOffset());
                     prev.setConsumerOffset(prev.getConsumerOffset() + cur.getConsumerOffset());
                     // 取最小的更新时间
-                    if(prev.getLastTimestamp() == 0 || prev.getLastTimestamp() > cur.getLastTimestamp()) {
+                    if (prev.getLastTimestamp() == 0 || prev.getLastTimestamp() > cur.getLastTimestamp()) {
                         prev.setLastTimestamp(cur.getLastTimestamp());
                     }
                 }
@@ -322,47 +293,50 @@ public class ConsumerController extends ViewController {
         }
         return list;
     }
-    
+
     /**
      * 构建ConsumerProgressVO
+     * 
      * @return
      */
-    public ConsumerProgressVO buildConsumerProgressVO(String topic, Map<Long, List<User>> consumerMap, Consumer consumer) {
+    public ConsumerProgressVO buildConsumerProgressVO(String topic, Map<Long, List<User>> consumerMap,
+            Consumer consumer) {
         ConsumerProgressVO consumerProgressVO = new ConsumerProgressVO();
         consumerProgressVO.setConsumer(consumer);
         consumerProgressVO.setTopic(topic);
         consumerProgressVO.setOwnerList(consumerMap.get(consumer.getId()));
         return consumerProgressVO;
     }
-    
+
     /**
      * 获取消费者map
+     * 
      * @param tid
      * @param cidList
      * @return
      */
     private Map<Long, List<User>> getConsumerMap(long tid, List<Long> cidList) {
         Map<Long, List<User>> consumerMap = new HashMap<Long, List<User>>();
-        if(cidList == null || cidList.size() == 0) {
+        if (cidList == null || cidList.size() == 0) {
             return consumerMap;
         }
         Result<List<UserConsumer>> ucListResult = userConsumerService.queryTopicConsumer(tid, cidList);
-        if(ucListResult.isEmpty()) {
+        if (ucListResult.isEmpty()) {
             return consumerMap;
         }
         Set<Long> uidList = new HashSet<Long>();
-        for(UserConsumer userConsumer : ucListResult.getResult()) {
+        for (UserConsumer userConsumer : ucListResult.getResult()) {
             uidList.add(userConsumer.getUid());
         }
         Result<List<User>> userListResult = userService.query(uidList);
-        if(userListResult.isEmpty()) {
+        if (userListResult.isEmpty()) {
             return consumerMap;
         }
-        for(UserConsumer userConsumer : ucListResult.getResult()) {
-            for(User user : userListResult.getResult()) {
-                if(userConsumer.getUid() == user.getId()) {
+        for (UserConsumer userConsumer : ucListResult.getResult()) {
+            for (User user : userListResult.getResult()) {
+                if (userConsumer.getUid() == user.getId()) {
                     List<User> userList = consumerMap.get(userConsumer.getConsumerId());
-                    if(userList == null) {
+                    if (userList == null) {
                         userList = new ArrayList<User>();
                         consumerMap.put(userConsumer.getConsumerId(), userList);
                     }
@@ -375,6 +349,7 @@ public class ConsumerController extends ViewController {
 
     /**
      * 重置偏移量
+     * 
      * @param userConsumerParam
      * @return
      * @throws Exception
@@ -385,24 +360,25 @@ public class ConsumerController extends ViewController {
         // 校验用户是否能重置，防止误调用接口
         Result<List<UserConsumer>> userConsumerListResult = userConsumerService.queryUserConsumer(userInfo.getUser(),
                 userConsumerParam.getTid(), userConsumerParam.getConsumerId());
-        if(userConsumerListResult.isEmpty() && !userInfo.getUser().isAdmin()) {
+        if (userConsumerListResult.isEmpty() && !userInfo.getUser().isAdmin()) {
             return Result.getResult(Status.PERMISSION_DENIED_ERROR);
         }
         Date resetOffsetTo = null;
         try {
-            if(userConsumerParam.getOffset() != null) {
-                resetOffsetTo = DateUtil.getFormat(DateUtil.YMD_DASH_BLANK_HMS_COLON).parse(userConsumerParam.getOffset());
+            if (userConsumerParam.getOffset() != null) {
+                resetOffsetTo = DateUtil.getFormat(DateUtil.YMD_DASH_BLANK_HMS_COLON)
+                        .parse(userConsumerParam.getOffset());
             }
         } catch (Exception e) {
             logger.error("resetOffsetTo param err:{}", userConsumerParam.getOffset(), e);
             return Result.getResult(Status.PARAM_ERROR);
         }
-        
+
         // 构造审核记录
         Audit audit = new Audit();
         // 重新定义操作成功返回的文案
         String message = "";
-        if(resetOffsetTo == null) {
+        if (resetOffsetTo == null) {
             audit.setType(TypeEnum.RESET_OFFSET_TO_MAX.getType());
             message = "跳过堆积申请成功！请耐心等待！";
         } else {
@@ -415,7 +391,7 @@ public class ConsumerController extends ViewController {
         BeanUtils.copyProperties(userConsumerParam, auditResetOffset);
         // 保存记录
         Result<?> result = auditService.saveAuditAndSkipAccumulation(audit, auditResetOffset);
-        if(result.isOK()) {
+        if (result.isOK()) {
             String tip = getTopicConsumerTip(userConsumerParam.getTid(), userConsumerParam.getConsumerId());
             alertService.sendAuditMail(userInfo.getUser(), TypeEnum.getEnumByType(audit.getType()), tip);
             // 重新定义返回文案
@@ -423,7 +399,7 @@ public class ConsumerController extends ViewController {
         }
         return Result.getWebResult(result);
     }
-    
+
     /**
      * 删除消费者
      * 
@@ -444,33 +420,34 @@ public class ConsumerController extends ViewController {
         if (userConsumerListResult.isEmpty() && !userInfo.getUser().isAdmin()) {
             return Result.getResult(Status.PERMISSION_DENIED_ERROR);
         }
-        
+
         Result<Consumer> consumerResult = consumerService.queryById(userConsumerParam.getConsumerId());
-        if(consumerResult.isNotOK()) {
+        if (consumerResult.isNotOK()) {
             return Result.getWebResult(consumerResult);
         }
-        
+
         Result<Topic> topicResult = topicService.queryTopic(consumerResult.getResult().getTid());
-        if(topicResult.isNotOK()) {
+        if (topicResult.isNotOK()) {
             return Result.getWebResult(topicResult);
         }
-        
+
         // 构造审核记录
         Audit audit = new Audit();
         audit.setType(TypeEnum.DELETE_CONSUMER.getType());
         audit.setUid(userInfo.getUser().getId());
         // 保存记录
-        Result<?> result = auditService.saveAuditAndConsumerDelete(audit, userConsumerParam.getConsumerId(), 
+        Result<?> result = auditService.saveAuditAndConsumerDelete(audit, userConsumerParam.getConsumerId(),
                 consumerResult.getResult().getName(), topicResult.getResult().getName());
-        if(result.isOK()) {
-            alertService.sendAuditMail(userInfo.getUser(), TypeEnum.DELETE_CONSUMER, consumerResult.getResult().getName());
+        if (result.isOK()) {
+            alertService.sendAuditMail(userInfo.getUser(), TypeEnum.DELETE_CONSUMER,
+                    consumerResult.getResult().getName());
         }
         return Result.getWebResult(result);
     }
-    
-    
+
     /**
      * 消费者列表
+     * 
      * @param topicParam
      * @return
      * @throws Exception
@@ -481,9 +458,10 @@ public class ConsumerController extends ViewController {
         Result<List<Consumer>> consumerListResult = consumerService.queryByTid(tid);
         return Result.getWebResult(consumerListResult);
     }
-    
+
     /**
      * 消费者列表
+     * 
      * @param topicParam
      * @return
      * @throws Exception
@@ -494,7 +472,7 @@ public class ConsumerController extends ViewController {
         Result<List<Consumer>> consumerListResult = consumerService.queryAll();
         return Result.getWebResult(consumerListResult);
     }
-    
+
     /**
      * 关联消费者
      * 
@@ -509,7 +487,7 @@ public class ConsumerController extends ViewController {
         return associateUserConsumer(userInfo, userInfo.getUser().getId(), associateConsumerParam.getTid(),
                 associateConsumerParam.getCid());
     }
-    
+
     /**
      * 授权关联
      * 
@@ -530,7 +508,7 @@ public class ConsumerController extends ViewController {
         }
         return associateUserConsumer(userInfo, uid, tid, cid);
     }
-    
+
     /**
      * 复用之前的逻辑
      * 
@@ -577,10 +555,11 @@ public class ConsumerController extends ViewController {
      * @throws Exception
      */
     @ResponseBody
-    @RequestMapping(value="/add", method=RequestMethod.POST)
+    @RequestMapping(value = "/add", method = RequestMethod.POST)
     public Result<?> add(UserInfo userInfo, @Valid ConsumerParam consumerParam) throws Exception {
         logger.info("create consumer, user:{} consumerParam:{}", userInfo, consumerParam);
-        Result<?> isExist = verifyDataService.verifyAddConsumerIsExist(userInfo.getUser().getId(), consumerParam.getConsumer());
+        Result<?> isExist = verifyDataService.verifyAddConsumerIsExist(userInfo.getUser().getId(),
+                consumerParam.getConsumer());
         if (isExist.isNotOK()) {
             return isExist;
         }
@@ -590,20 +569,20 @@ public class ConsumerController extends ViewController {
         audit.setStatus(Audit.StatusEnum.INIT.getStatus());
         audit.setUid(userInfo.getUser().getId());
         audit.setInfo(consumerParam.getInfo());
-        
+
         // 构建消费者审核记录
         AuditConsumer auditConsumer = new AuditConsumer();
         BeanUtils.copyProperties(consumerParam, auditConsumer);
         // 保存记录
         Result<?> result = auditService.saveAuditAndConsumer(audit, auditConsumer);
-        if(result.isOK()) {
+        if (result.isOK()) {
             String topicTip = getTopicTip(consumerParam.getTid());
             alertService.sendAuditMail(userInfo.getUser(), TypeEnum.NEW_CONSUMER,
-                    topicTip + " consumer:<b>" + consumerParam.getConsumer()+"</b>");
+                    topicTip + " consumer:<b>" + consumerParam.getConsumer() + "</b>");
         }
         return Result.getWebResult(result);
     }
-    
+
     /**
      * 根据broker查询队列信息
      * 
@@ -613,7 +592,7 @@ public class ConsumerController extends ViewController {
     @ResponseBody
     @RequestMapping(value = "/broker/queue", method = RequestMethod.GET)
     public Result<?> getQueueList(@RequestParam("topic") String topic,
-            @RequestParam("brokerName") String brokerName, 
+            @RequestParam("brokerName") String brokerName,
             @RequestParam("clusterId") long clusterId) throws Exception {
         if (topic == "" || brokerName == "") {
             return Result.getResult(Status.PARAM_ERROR);
@@ -633,58 +612,70 @@ public class ConsumerController extends ViewController {
                 if (!queueOffsetMap.containsKey(mq.getQueueId()) || queueOffsetMap.get(mq.getQueueId()) < maxOffset) {
                     queueOffsetMap.put(mq.getQueueId(), maxOffset);
                 }
-            } 
+            }
         }
         return Result.getResult(queueOffsetMap);
     }
-    
+
     /**
      * 获取topic和consumer的提示信息
+     * 
      * @param tid
      * @param cid
      * @return
      */
     private String getTopicConsumerTip(long tid, long cid) {
-        StringBuilder sb = new StringBuilder();
         Result<Topic> topicResult = topicService.queryTopic(tid);
         String topic = null;
         if (topicResult.isOK()) {
             topic = topicResult.getResult().getName();
+        }
+        Result<Consumer> consumerResult = consumerService.queryById(cid);
+        String consumer = null;
+        if (consumerResult.isOK()) {
+            consumer = consumerResult.getResult().getName();
+        }
+        return getTopicConsumerTip(topic, consumer);
+    }
+
+    private String getTopicConsumerTip(String topic, String consumer) {
+        StringBuilder sb = new StringBuilder();
+        if (topic != null) {
             sb.append(" topic:<b>");
             sb.append(topic);
             sb.append("</b>");
         }
-        Result<Consumer> consumerResult = consumerService.queryById(cid);
-        if (consumerResult.isOK()) {
-            String consumer = consumerResult.getResult().getName();
+        if (consumer != null) {
             sb.append(" consumer:");
             if (topic != null) {
-                sb.append(mqCloudConfigHelper.getTopicConsumeLink(topic, consumer));
+                sb.append(mqCloudConfigHelper.getTopicConsumeHrefLink(topic, consumer));
             } else {
                 sb.append(consumer);
             }
         }
         return sb.toString();
     }
-    
+
     /**
      * 获取topic的提示信息
+     * 
      * @param tid
      * @return
      */
     private String getTopicTip(long tid) {
         StringBuilder sb = new StringBuilder();
         Result<Topic> topicResult = topicService.queryTopic(tid);
-        if(topicResult.isOK()) {
+        if (topicResult.isOK()) {
             sb.append(" topic:<b>");
             sb.append(topicResult.getResult().getName());
             sb.append("</b>");
         }
         return sb.toString();
     }
-    
+
     /**
      * 获取queue的拥有者
+     * 
      * @param userInfo
      * @param cid
      * @param consumer
@@ -698,15 +689,15 @@ public class ConsumerController extends ViewController {
         Cluster cluster = clusterService.getMQClusterById(cid);
         // 获取消费者运行时信息
         Map<String, ConsumerRunningInfo> map = consumerService.getConsumerRunningInfo(cluster, consumer);
-        if(map == null) {
+        if (map == null) {
             return Result.getResult(Status.NO_RESULT);
         }
         // 组装vo
         List<QueueOwnerVO> queueConsumerVOList = new ArrayList<QueueOwnerVO>();
-        for(String clientId : map.keySet()) {
+        for (String clientId : map.keySet()) {
             String ip = clientId.substring(0, clientId.indexOf("@"));
             ConsumerRunningInfo consumerRunningInfo = map.get(clientId);
-            for(MessageQueue messageQueue : consumerRunningInfo.getMqTable().keySet()) {
+            for (MessageQueue messageQueue : consumerRunningInfo.getMqTable().keySet()) {
                 QueueOwnerVO queueOwnerVO = new QueueOwnerVO();
                 BeanUtils.copyProperties(messageQueue, queueOwnerVO);
                 queueOwnerVO.setClientId(clientId);
@@ -716,7 +707,7 @@ public class ConsumerController extends ViewController {
         }
         return Result.getResult(queueConsumerVOList);
     }
-    
+
     /**
      * 更新描述
      * 
@@ -728,7 +719,8 @@ public class ConsumerController extends ViewController {
     public Result<?> updateInfo(UserInfo userInfo, @RequestParam("cid") int cid,
             @RequestParam("info") String info) throws Exception {
         // 校验当前用户是否拥有权限
-        Result<List<UserConsumer>> ucListResult = userConsumerService.queryUserConsumer(userInfo.getUser().getId(), cid);
+        Result<List<UserConsumer>> ucListResult = userConsumerService.queryUserConsumer(userInfo.getUser().getId(),
+                cid);
         if (ucListResult.isEmpty() && !userInfo.getUser().isAdmin()) {
             return Result.getResult(Status.PERMISSION_DENIED_ERROR);
         }
@@ -736,10 +728,11 @@ public class ConsumerController extends ViewController {
             return Result.getResult(Status.PARAM_ERROR);
         }
         Result<Integer> result = consumerService.updateConsumerInfo(cid, HtmlUtils.htmlEscape(info.trim(), "UTF-8"));
-        logger.info(userInfo.getUser().getName() + " update consumer info , cid:{}, info:{}, status:{}", cid, info, result.isOK());
+        logger.info(userInfo.getUser().getName() + " update consumer info , cid:{}, info:{}, status:{}", cid, info,
+                result.isOK());
         return Result.getWebResult(result);
     }
-    
+
     /**
      * 更新trace
      * 
@@ -750,7 +743,7 @@ public class ConsumerController extends ViewController {
     @RequestMapping(value = "/update/trace", method = RequestMethod.POST)
     public Result<?> updateConsumerTrace(UserInfo userInfo, @RequestParam("cid") int cid,
             @RequestParam("traceEnabled") int traceEnabled) throws Exception {
-        if(!userInfo.getUser().isAdmin()) {
+        if (!userInfo.getUser().isAdmin()) {
             // 校验当前用户是否拥有权限
             Result<List<UserConsumer>> ucListResult = userConsumerService.queryUserConsumer(userInfo.getUser().getId(),
                     cid);
@@ -762,13 +755,15 @@ public class ConsumerController extends ViewController {
             return Result.getResult(Status.PARAM_ERROR);
         }
         Result<Integer> result = consumerService.updateConsumerTrace(cid, traceEnabled);
-        logger.info(userInfo.getUser().notBlankName() + " update consumer trace , cid:{}, traceEnabled:{}, status:{}", cid,
+        logger.info(userInfo.getUser().notBlankName() + " update consumer trace , cid:{}, traceEnabled:{}, status:{}",
+                cid,
                 traceEnabled, result.isOK());
         return Result.getWebResult(result);
     }
-    
+
     /**
      * 重置重试消息偏移量
+     * 
      * @param userConsumerParam
      * @return
      * @throws Exception
@@ -779,7 +774,7 @@ public class ConsumerController extends ViewController {
         // 校验用户是否能重置，防止误调用接口
         Result<List<UserConsumer>> userConsumerListResult = userConsumerService.queryUserConsumer(userInfo.getUser(),
                 userConsumerParam.getTid(), userConsumerParam.getConsumerId());
-        if(userConsumerListResult.isEmpty() && !userInfo.getUser().isAdmin()) {
+        if (userConsumerListResult.isEmpty() && !userInfo.getUser().isAdmin()) {
             return Result.getResult(Status.PERMISSION_DENIED_ERROR);
         }
         // 校验时间格式
@@ -789,7 +784,7 @@ public class ConsumerController extends ViewController {
             logger.error("resetOffsetTo param err:{}", userConsumerParam.getOffset(), e);
             return Result.getResult(Status.PARAM_ERROR);
         }
-        
+
         // 构造审核记录
         Audit audit = new Audit();
         audit.setType(TypeEnum.RESET_RETRY_OFFSET.getType());
@@ -804,7 +799,7 @@ public class ConsumerController extends ViewController {
         BeanUtils.copyProperties(userConsumerParam, auditResetOffset);
         // 保存记录
         Result<?> result = auditService.saveAuditAndSkipAccumulation(audit, auditResetOffset);
-        if(result.isOK()) {
+        if (result.isOK()) {
             String tip = getTopicConsumerTip(userConsumerParam.getTid(), userConsumerParam.getConsumerId());
             alertService.sendAuditMail(userInfo.getUser(), TypeEnum.getEnumByType(audit.getType()), tip);
             // 重新定义返回文案
@@ -812,7 +807,7 @@ public class ConsumerController extends ViewController {
         }
         return Result.getWebResult(result);
     }
-    
+
     /**
      * 获取重置的时间
      * 
@@ -824,14 +819,14 @@ public class ConsumerController extends ViewController {
     public Result<?> reset(@PathVariable String consumer, HttpServletRequest request) throws Exception {
         MessageReset messageReset = null;
         ConsumerConfig consumerConfig = consumerConfigService.getConsumerConfig(consumer);
-        if(consumerConfig != null && consumerConfig.getRetryMessageResetTo() != null) {
+        if (consumerConfig != null && consumerConfig.getRetryMessageResetTo() != null) {
             messageReset = new MessageReset();
             messageReset.setConsumer(consumer);
             messageReset.setResetTo(consumerConfig.getRetryMessageResetTo());
         }
         return Result.getResult(messageReset);
     }
-    
+
     /**
      * 获取消费者配置
      * 
@@ -844,9 +839,10 @@ public class ConsumerController extends ViewController {
         ConsumerConfig consumerConfig = consumerConfigService.getConsumerConfig(consumer);
         return Result.getResult(consumerConfig);
     }
-    
+
     /**
      * 更新消费者配置
+     * 
      * @return
      * @throws Exception
      */
@@ -854,12 +850,12 @@ public class ConsumerController extends ViewController {
     @RequestMapping("/update/config")
     public Result<?> updateConfig(UserInfo userInfo, @Valid ConsumerConfigParam consumerConfigParam) throws Exception {
         // 校验用户是否有权限
-        Result<List<UserConsumer>> userResult = userConsumerService.queryUserConsumer(userInfo.getUser(), 
+        Result<List<UserConsumer>> userResult = userConsumerService.queryUserConsumer(userInfo.getUser(),
                 consumerConfigParam.getConsumerId());
-        if(userResult.isEmpty() && !userInfo.getUser().isAdmin()) {
+        if (userResult.isEmpty() && !userInfo.getUser().isAdmin()) {
             return Result.getResult(Status.PERMISSION_DENIED_ERROR);
         }
-        
+
         TypeEnum type = consumerConfigParam.getType();
         if (type == null) {
             return Result.getResult(Status.PARAM_ERROR);
@@ -878,7 +874,7 @@ public class ConsumerController extends ViewController {
         BeanUtils.copyProperties(consumerConfigParam, auditConsumerConfig);
         // 保存记录
         Result<?> result = auditService.saveAuditAndConsumerConfig(audit, auditConsumerConfig);
-        if(result.isOK()) {
+        if (result.isOK()) {
             String tip = getUpdateConsumerConfigTip(auditConsumerConfig);
             alertService.sendAuditMail(userInfo.getUser(), TypeEnum.getEnumByType(audit.getType()), tip);
             // 重新定义返回文案
@@ -886,9 +882,10 @@ public class ConsumerController extends ViewController {
         }
         return Result.getWebResult(result);
     }
-    
+
     /**
      * 获取consumer的提示信息
+     * 
      * @param tid
      * @param cid
      * @return
@@ -899,11 +896,11 @@ public class ConsumerController extends ViewController {
         if (consumerResult.isOK()) {
             Consumer consumer = consumerResult.getResult();
             sb.append(" consumer:");
-            sb.append(mqCloudConfigHelper.getTopicConsumeLink(consumer.getTid(), consumer.getName()));
+            sb.append(mqCloudConfigHelper.getTopicConsumeHrefLink(consumer.getTid(), consumer.getName()));
         }
         return sb.toString();
     }
-    
+
     /**
      * 诊断链接
      * 
@@ -917,23 +914,23 @@ public class ConsumerController extends ViewController {
         Cluster cluster = clusterService.getMQClusterById(cid);
         Result<ConsumerConnection> result = consumerService.examineConsumerConnectionInfo(group, cluster);
         if (result.isNotOK()) {
-            Exception e = result.getException();
-            if (e != null && e instanceof MQBrokerException && 206 == ((MQBrokerException) e).getResponseCode()) {
-                return Result.getResult(Status.NO_ONLINE);
+            if (Status.NO_ONLINE.getKey() == result.getStatus()) {
+                return result;
             }
             return Result.getWebResult(result);
         }
         HashSet<Connection> connectionSet = result.getResult().getConnectionSet();
         List<String> connList = new ArrayList<String>();
-        for(Connection conn : connectionSet) {
+        for (Connection conn : connectionSet) {
             connList.add(conn.getClientId());
         }
         Collections.sort(connList);
         return Result.getResult(connList);
     }
-    
+
     /**
      * 线程指标
+     * 
      * @param userInfo
      * @param clientId
      * @param consumer
@@ -960,7 +957,7 @@ public class ConsumerController extends ViewController {
         Result<ClientVersion> cvResult = clientVersionService.query(topicResult.getResult().getName(), consumer);
         if (cvResult.isNotOK() || !mqCloudConfigHelper.threadMetricSupported(cvResult.getResult().getVersion())) {
             setResult(map, Result.getResult(Status.PARAM_ERROR)
-                    .setMessage("请升级mq-client至" + mqCloudConfigHelper.getThreadMetricSupportedVersion() + "及以上版本"));
+                    .setMessage("请升级客户端至" + mqCloudConfigHelper.getThreadMetricSupportedVersion() + "及以上版本"));
             return view;
         }
         Cluster cluster = clusterService.getMQClusterById(topicResult.getResult().getClusterId());
@@ -976,9 +973,10 @@ public class ConsumerController extends ViewController {
         setResult(map, result);
         return view;
     }
-    
+
     /**
      * 消费失败指标
+     * 
      * @param userInfo
      * @param clientId
      * @param consumer
@@ -1005,7 +1003,8 @@ public class ConsumerController extends ViewController {
         Result<ClientVersion> cvResult = clientVersionService.query(topicResult.getResult().getName(), consumer);
         if (cvResult.isNotOK() || !mqCloudConfigHelper.threadMetricSupported(cvResult.getResult().getVersion())) {
             setResult(map, Result.getResult(Status.PARAM_ERROR)
-                    .setMessage("请升级mq-client至" + mqCloudConfigHelper.getConsumeFailedMetricSupportedVersion() + "及以上版本"));
+                    .setMessage(
+                            "请升级客户端至" + mqCloudConfigHelper.getConsumeFailedMetricSupportedVersion() + "及以上版本"));
             return view;
         }
         Cluster cluster = clusterService.getMQClusterById(topicResult.getResult().getClusterId());
@@ -1027,12 +1026,73 @@ public class ConsumerController extends ViewController {
         setResult(map, result);
         return view;
     }
-    
+
+    /**
+     * 时间段消息消费
+     * 
+     * @param userInfo
+     * @param clientId
+     * @param consumer
+     * @param map
+     * @return
+     * @throws Exception
+     */
+    @ResponseBody
+    @RequestMapping("/timespanMessageConsume")
+    public Result<?> timespanMessageConsume(UserInfo userInfo,
+            @Valid TimespanMessageConsumeParam timespanMessageConsumeParam, Map<String, Object> map) throws Exception {
+        // 获取消费者对象
+        Result<Consumer> consumerResult = consumerService.queryById(timespanMessageConsumeParam.getConsumerId());
+        if (consumerResult.isNotOK()) {
+            return Result.getResult(Status.PARAM_ERROR);
+        }
+        timespanMessageConsumeParam.setConsumer(consumerResult.getResult().getName());
+        // 获取topic
+        Result<Topic> topicResult = null;
+        if (CommonUtil.isDeadTopic(timespanMessageConsumeParam.getTopic())) {
+            topicResult = topicService.queryTopic(consumerResult.getResult().getTid());
+        } else {
+            topicResult = topicService.queryTopic(timespanMessageConsumeParam.getTopic());
+        }
+        if (topicResult.isNotOK()) {
+            return Result.getResult(Status.PARAM_ERROR);
+        }
+        // topic校验权限
+        Result<List<UserConsumer>> permResult = userConsumerService.queryUserConsumer(userInfo.getUser().getId(),
+                topicResult.getResult().getId(), consumerResult.getResult().getId());
+        if (permResult.isEmpty()) {
+            return Result.getResult(Status.PERMISSION_DENIED_ERROR);
+        }
+        String topic = topicResult.getResult().getName();
+        
+        // 判断客户端版本
+        Result<ClientVersion> cvResult = clientVersionService.query(topic, timespanMessageConsumeParam.getConsumer());
+        if (cvResult.isNotOK()
+                || !mqCloudConfigHelper.consumeTimespanMessageSupported(cvResult.getResult().getVersion())) {
+            return Result.getResult(Status.PARAM_ERROR)
+                    .setMessage("请升级客户端至" + mqCloudConfigHelper.getConsumeTimespanMessageSupportedVersion() + "及以上版本");
+        }
+        // 构造审核记录
+        Audit audit = new Audit();
+        audit.setType(TypeEnum.TIMESPAN_MESSAGE_CONSUME.getType());
+        audit.setUid(userInfo.getUser().getId());
+        // 构造重置对象
+        AuditTimespanMessageConsume auditTimespanMessageConsume = new AuditTimespanMessageConsume();
+        BeanUtils.copyProperties(timespanMessageConsumeParam, auditTimespanMessageConsume);
+        // 保存记录
+        Result<?> result = auditService.saveAuditAndAuditTimespanMessageConsume(audit, auditTimespanMessageConsume);
+        if (result.isOK()) {
+            String tip = getTopicConsumerTip(topic, timespanMessageConsumeParam.getConsumer());
+            alertService.sendAuditMail(userInfo.getUser(), TypeEnum.getEnumByType(audit.getType()), tip);
+        }
+        return Result.getWebResult(result);
+    }
+
     @Override
     public String viewModule() {
         return "consumer";
     }
-    
+
     /**
      * consumer 选择
      * 
@@ -1049,6 +1109,7 @@ public class ConsumerController extends ViewController {
 
         /**
          * 选择特定的consumer
+         * 
          * @param consumerList
          * @param consumerName
          */
@@ -1065,6 +1126,7 @@ public class ConsumerController extends ViewController {
 
         /**
          * 选择某个范围的consumer
+         * 
          * @param consumerList
          * @param begin
          * @param end

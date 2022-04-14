@@ -396,4 +396,24 @@ public class UserService {
         }
         return Result.getResult(userList);
     }
+    
+    /**
+     * 查询用户记录
+     * 
+     * @param user
+     */
+    public Result<List<User>> queryByGroup(long gid) {
+        // -1表示全部组
+        if (gid == -1) {
+            return queryAll();
+        }
+        List<User> userList = null;
+        try {
+            userList = userDao.selectByGid(gid);
+        } catch (Exception e) {
+            logger.error("queryByGroup gid:{} err", gid, e);
+            return Result.getDBErrorResult(e);
+        }
+        return Result.getResult(userList);
+    }
 }

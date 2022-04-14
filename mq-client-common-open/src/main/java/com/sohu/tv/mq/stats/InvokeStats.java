@@ -1,5 +1,7 @@
 package com.sohu.tv.mq.stats;
 
+import com.sohu.tv.mq.common.MQRateLimitException;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -120,6 +122,7 @@ public class InvokeStats {
             if (exception == null) {
                 return;
             }
+            exception = MQRateLimitException.tryToChange(exception);
             String className = exception.getClass().getSimpleName();
             AtomicInteger counter = exceptionMap.get(className);
             if (counter == null) {

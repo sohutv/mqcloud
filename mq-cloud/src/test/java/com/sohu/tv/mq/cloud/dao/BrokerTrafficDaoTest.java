@@ -12,7 +12,6 @@ import org.springframework.test.context.junit4.SpringRunner;
 
 import com.sohu.tv.mq.cloud.Application;
 import com.sohu.tv.mq.cloud.bo.BrokerTraffic;
-import com.sohu.tv.mq.cloud.util.DateUtil;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = Application.class)
@@ -46,7 +45,7 @@ public class BrokerTrafficDaoTest {
 
     @Test
     public void testSelect() {
-        List<BrokerTraffic> list = brokerTrafficDao.select(ip, DateUtil.formatYMD(date));
+        List<BrokerTraffic> list = brokerTrafficDao.select(ip, date);
         Assert.assertNotNull(list);
     }
 

@@ -37,6 +37,9 @@ public class TopicTopology {
     // 生产者是否具有流量
     private boolean producerHasTraffic;
 
+    // 收藏id
+    private long favoriteId;
+
     public long getUid() {
         return uid;
     }
@@ -123,5 +126,13 @@ public class TopicTopology {
 
     public void setProducerHasTraffic(boolean producerHasTraffic) {
         this.producerHasTraffic = producerHasTraffic;
+    }
+
+    public long getFavoriteId() {
+        return favoriteId;
+    }
+
+    public void setFavoriteId(long favoriteId) {
+        this.favoriteId = favoriteId;
     }
 }

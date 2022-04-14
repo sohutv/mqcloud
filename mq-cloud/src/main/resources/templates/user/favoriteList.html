@@ -1,0 +1,45 @@
+<#if response.empty>
+<tr>
+	<td colspan="4" class="text-center">暂无数据</td>
+<tr>
+<#else>
+	<#list response.result as favorite>
+	<tr>
+		<td>${(pagination.result.currentPage - 1)*pagination.result.numOfPage + favorite_index + 1}</td>
+		<td><a title="查看详情" href="${request.contextPath}/user/topic/${favorite.tid}/detail">${favorite.topic}</a></td>
+		<td>${favorite.createTime?string("yyyy-MM-dd HH:mm:ss")}</td>
+		<td><span class="glyphicon glyphicon-heart-empty pointer-cursor" onclick="deleteFavorite(${favorite.tid})" aria-hidden="true" title="取消收藏"></span></td>
+	</tr>
+	</#list>
+	<script type='text/javascript'>
+		<#if pagination.OK && pagination.result.totalPages gt 1>
+	       var favoriteOptions = {
+	           currentPage: ${pagination.result.currentPage},
+	           totalPages: ${pagination.result.totalPages},
+	    	   bootstrapMajorVersion: 3,
+	    	   size: "small",
+	           tooltipTitles: function (type, page, current) {
+	               switch (type) {
+	               case "first":
+	                   return "跳到首页";
+	               case "prev":
+	                   return "上一页";
+	               case "next":
+	                   return "下一页";
+	               case "last":
+	                   return "跳到尾页";
+	               case "page":
+	                   return "第" + page + "页";
+	               }
+	           },
+	           onPageClicked: function (event, originalEvent, type, page) {
+				   showFavoriteList(page);
+	           },
+	           itemContainerClass: function (type, page, current) {
+	       	   		return (page === current) ? "active" : "pointer-cursor";
+	       	   }
+	       }
+	       $('#favoritePagination').bootstrapPaginator(favoriteOptions);
+		</#if>
+	</script>
+</#if>

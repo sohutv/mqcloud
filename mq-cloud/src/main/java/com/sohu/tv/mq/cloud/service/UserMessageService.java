@@ -44,33 +44,17 @@ public class UserMessageService {
     /**
      * 查询未读的消息
      * 
-     * @return Result<List<UserMessage>>
+     * @return Result<Integer>
      */
-    public Result<List<UserMessage>> queryUnread(long uid) {
-        List<UserMessage> userMessageList = null;
+    public Result<Integer> queryUnread(long uid) {
+        Integer count = null;
         try {
-            userMessageList = userMessageDao.select(uid);
+            count = userMessageDao.selectUnreadCount(uid);
         } catch (Exception e) {
             logger.error("queryUnread err, uid:{}", uid, e);
             return Result.getDBErrorResult(e);
         }
-        return Result.getResult(userMessageList);
-    }
-    
-    /**
-     * 查询所有的消息
-     * 
-     * @return Result<List<UserMessage>>
-     */
-    public Result<List<UserMessage>> queryAll(long uid) {
-        List<UserMessage> userMessageList = null;
-        try {
-            userMessageList = userMessageDao.selectAll(uid);
-        } catch (Exception e) {
-            logger.error("queryAll err, uid:{}", uid, e);
-            return Result.getDBErrorResult(e);
-        }
-        return Result.getResult(userMessageList);
+        return Result.getResult(count);
     }
     
     /**
@@ -101,5 +85,41 @@ public class UserMessageService {
             return Result.getDBErrorResult(e);
         }
         return Result.getOKResult();
+    }
+    
+    /**
+     * 查询用户消息列表
+     * 
+     * @param uid
+     * @param offset
+     * @param size
+     * @return
+     */
+    public Result<List<UserMessage>> queryList(long uid, int offset, int size) {
+        List<UserMessage> list = null;
+        try {
+            list = userMessageDao.select(uid, offset, size);
+        } catch (Exception e) {
+            logger.error("queryUserWarnList err, uid:{}", uid, e);
+            return Result.getDBErrorResult(e);
+        }
+        return Result.getResult(list);
+    }
+
+    /**
+     * 查询用户消息量
+     * 
+     * @param uid
+     * @return
+     */
+    public Result<Integer> queryCount(long uid) {
+        Integer count = null;
+        try {
+            count = userMessageDao.selectCount(uid);
+        } catch (Exception e) {
+            logger.error("queryCount err, uid:{}", uid, e);
+            return Result.getDBErrorResult(e);
+        }
+        return Result.getResult(count);
     }
 }

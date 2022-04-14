@@ -135,4 +135,24 @@ public interface ConsumerDao {
             + "<foreach collection=\"idList\" item=\"id\" separator=\",\" open=\"(\" close=\")\">#{id}</foreach>"
             + "</script>")
     public List<Consumer> selectByIdList(@Param("idList") Collection<Long> idList);
+
+    /**
+     * 批量删除
+     * @param cidList
+     */
+    @Delete("<script>delete from consumer where id in "
+            + "<foreach collection=\"cidList\" item=\"id\" separator=\",\" open=\"(\" close=\")\">#{id}</foreach>"
+            + "</script>")
+    void deleteByIds(@Param("cidList") List<Long> cidList);
+
+    /**
+     * 修改消费模式
+     *
+     * @param tid
+     * @param consumeWay
+     */
+    @Update("update consumer set consume_way=#{consumeWay} where id =#{id}")
+    void updateConsumerWay(@Param("id") long id,@Param("consumeWay") int consumeWay);
+
+
 }

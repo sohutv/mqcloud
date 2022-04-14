@@ -1,13 +1,11 @@
 package com.sohu.tv.mq.cloud.task;
 
+import com.sohu.tv.mq.cloud.service.ConsumerDeadTrafficService;
+import net.javacrumbs.shedlock.core.SchedulerLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
-
-import com.sohu.tv.mq.cloud.service.ConsumerDeadTrafficService;
-
-import net.javacrumbs.shedlock.core.SchedulerLock;
 /**
  * 死消息监控任务
  * 
@@ -24,10 +22,10 @@ public class DeadMessageTask {
     private TaskExecutor taskExecutor;
     
     /**
-     * 每小时的3分33监控一次
+     * 每10分钟监控一次
      */
-    @Scheduled(cron = "33 03 * * * *")
-    @SchedulerLock(name = "deadMessageTask", lockAtMostFor = 180000, lockAtLeastFor = 180000)
+    @Scheduled(cron = "15 */10 * * * *")
+    @SchedulerLock(name = "deadMessageTask", lockAtMostFor = 600000, lockAtLeastFor = 600000)
     public void deadMessageTask() {
         taskExecutor.execute(new Runnable() {
             public void run() {

@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Map;
 
 import javax.validation.Valid;
+
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -13,6 +14,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.sohu.tv.mq.cloud.bo.User;
+import com.sohu.tv.mq.cloud.bo.UserGroup;
+import com.sohu.tv.mq.cloud.service.UserGroupService;
 import com.sohu.tv.mq.cloud.service.UserService;
 import com.sohu.tv.mq.cloud.util.Result;
 import com.sohu.tv.mq.cloud.util.Status;
@@ -30,17 +33,44 @@ public class AdminUserController extends AdminViewController {
     @Autowired
     private UserService userService;
     
+    @Autowired
+    private UserGroupService userGroupService;
+    
     /**
      * 用户列表
      * @param map
      * @return
      */
     @RequestMapping("/list")
-    public String list(Map<String, Object> map) {
+    public String list(@RequestParam("gid") long gid, Map<String, Object> map) {
         setView(map, "list");
-        Result<List<User>> userListResult = userService.queryAll();
+        Result<List<User>> userListResult = userService.queryByGroup(gid);
+        Result<List<UserGroup>> userGroupListResult = userGroupService.queryAll();
+        if (userGroupListResult.isNotEmpty()) {
+            setResult(map, "userGroupList", userGroupListResult.getResult());
+            if (userListResult.isNotEmpty()) {
+                setUserGroup(userListResult.getResult(), userGroupListResult.getResult());
+            }
+        }
         setResult(map, userListResult);
         return view();
+    }
+    
+    /**
+     * 设置用户分组
+     * 
+     * @param userList
+     * @param gid
+     */
+    private void setUserGroup(List<User> userList, List<UserGroup> userGroupList) {
+        for (User user : userList) {
+            for (UserGroup userGroup : userGroupList) {
+                if (user.getGid() == userGroup.getId()) {
+                    user.setGroupName(userGroup.getName());
+                    break;
+                }
+            }
+        }
     }
     
     /**
@@ -89,6 +119,19 @@ public class AdminUserController extends AdminViewController {
         }
         Result<Integer> result = userService.resetPassword(uid, password);
         return result;
+    }
+    
+    /**
+     * 更新用户所属
+     */
+    @ResponseBody
+    @RequestMapping(value = "/update/group", method = RequestMethod.POST)
+    public Result<?> addToGroup(@RequestParam("gid") long gid, @RequestParam("uid") long uid) {
+        User user = new User();
+        user.setId(uid);
+        user.setGid(gid);
+        userService.update(user);
+        return Result.getWebResult(userService.update(user));
     }
     
     @Override

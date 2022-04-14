@@ -43,6 +43,6 @@ public class ConsumerServiceTest {
 
     @Test
     public void resetOffset() {
-        consumerService.resetOffset(clusterService.getMQClusterById(1), "%RETRY%jellyfish-group-preonline", "jellyfish-group-preonline", 10*1000);
+        consumerService.resetOffset(clusterService.getMQClusterById(3), "mqcloud-json-test-topic", "mqcloud-json-test-consumer2", System.currentTimeMillis());
     }
 }

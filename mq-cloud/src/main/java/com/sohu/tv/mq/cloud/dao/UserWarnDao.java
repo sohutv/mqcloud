@@ -9,6 +9,7 @@ import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 
 import com.sohu.tv.mq.cloud.bo.UserWarn;
+import com.sohu.tv.mq.cloud.bo.UserWarnCount;
 
 /**
  * 用户警告
@@ -80,4 +81,5 @@ public interface UserWarnDao {
      */
     @Select("select date(create_time) createDate,count(1) count from user_warn where uid = #{uid} and create_time > #{time} group by date(create_time)")
     public List<UserWarnCount> warnCount(@Param("uid") long uid, @Param("time") Date time);
+
 }

@@ -19,6 +19,8 @@
 		margin: 0;
 		border: 0;
 		background-color: transparent;
+		white-space: pre-wrap;
+		overflow-y:hidden;
 	}
 	.fixedHeight {
 		max-height: 400px;
@@ -88,7 +90,7 @@
 					<tr>
 						<#assign i = i + 1>
 						<#if !rowspaned>
-							<#if sohu && bkey == "0">
+							<#if bkey == "0">
 								<td rowspan=${brokerGroup[key]?size}><a onclick="showBrokerStoreStatModal('${brokerGroup[key][bkey].brokerAddr}')" data-toggle="tooltip" title="查看master存储性能" href="#">${key}</a></td>
 							<#else>
 								<td rowspan=${brokerGroup[key]?size}>${key}</td>
@@ -185,6 +187,9 @@
 							<#if brokerGroup[key][bkey].checkTime??>${brokerGroup[key][bkey].checkTime}</#if>
 						</td>
 						<td>
+							<#if brokerGroup[key][bkey].version?? && bkey == "0">
+								<img title="查看broker限速详情" width="22" height="24" style="display:inline-block;" src="${request.contextPath}/img/rateLimiter.png" onclick="brokerRateLimitModalShow('${brokerGroup[key][bkey].brokerAddr}')" class="pointer" data-toggle="modal"></img>
+							</#if>
 							<#if brokerGroup[key][bkey].info??>
 								<button data-target="#clusterInfoModal${i}" data-toggle="modal" type="button" class="btn btn-sm btn-success"
 								title="查看当前broker的其他状态信息"><span class="glyphicon glyphicon-eye-open" aria-hidden="true"></span></button>
@@ -466,7 +471,7 @@
 				</form>
 			</div>
 			<div class="modal-footer">
-				<button type="button" class="btn btn-primary" id="installBtn" data-toggle="modal" onclick="install('broker')"><span id="brokerInstall">一键安装<span></button>
+				<button type="button" class="btn btn-primary" id="installBtn" data-toggle="modal" onclick="install('broker')"><span id="brokerInstall">一键安装</span></button>
 			</div>
 		</div>
 	</div>
@@ -562,7 +567,7 @@
 				</form>
 			</div>
 			<div class="modal-footer">
-				<button type="button" class="btn btn-primary" id="upgradeBtn" data-toggle="modal" onclick="upgrade('upgradeBroker')"><span id="upgradeBrokerKey">一键升级<span></button>
+				<button type="button" class="btn btn-primary" id="upgradeBtn" data-toggle="modal" onclick="upgrade('upgradeBroker')"><span id="upgradeBrokerKey">一键升级</span></button>
 			</div>
 		</div>
 	</div>
@@ -845,6 +850,51 @@
 			<div class="modal-footer">
 				<button type="button" data-dismiss="modal" class="btn" >取消</button>
 				<button type="submit" class="btn btn-primary" onclick="modifyBrokerConfig()" data-toggle="tooltip" title="注意：此更新仅对当前broker有效！" id="modifyBrokerConfigBtn">更新</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- 查看broker限速详情 -->
+<div id="brokerRateLimitModal" class="modal fade" tabindex="-1" data-width="400" aria-hidden="true">
+	<div class="modal-dialog" style="width:800px">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal"
+						aria-hidden="true">&times;</button>
+				<h4 class="modal-title"><span id="brokerRateLimitAddr"></span>限速详情</h4>
+			</div>
+			<div id="brokerRateLimitDetail"></div>
+		</div>
+	</div>
+</div>
+
+<!-- 修改topic限速 -->
+<div id="topicRateLimitModal" class="modal fade" tabindex="-1" data-width="400" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal"
+						aria-hidden="true">&times;</button>
+				<h4 class="modal-title"><span id="rateLimitTopic"></span>限速修改</h4>
+			</div>
+			<div class="modal-body">
+				<form class="form-horizontal form-row-stripped">
+					<div class="col-md-12">
+						<div class="form-group">
+							<label class="control-label col-md-5"> 写入限速: </label>
+							<div class="col-md-3 input-group">
+								<input type="text" id="rateLimitTopicQps" class="form-control"><span
+										class="input-group-addon">次/秒</span>
+							</div>
+						</div>
+					</div>
+				</form>
+			</div>
+			<div class="modal-footer">
+				<button type="button" data-dismiss="modal" class="btn" >取消</button>
+				<button type="button" class="btn btn-primary" onclick="updateTopicLimitRate()"
+						id="updateTopicLimitRateBtn">确定</button>
 			</div>
 		</div>
 	</div>
@@ -1981,6 +2031,62 @@ function skip(id){
 		$("#" + id).attr("status", "2");
 		alert($("#" + id).find(".dataFile").eq(0).html()+"标记为已处理");
 	}
+}
+
+function brokerRateLimitModalShow(addr){
+	$("#brokerRateLimitAddr").html(addr);
+	$.get('${request.contextPath}/admin/broker/ratelimit/info',
+			{
+				cid: ${response.result.selectedMQCluster.id},
+				addr:  addr
+			},
+			function(data){
+				$("#brokerRateLimitDetail").html(data);
+				$("#brokerRateLimitModal").modal('show');
+				$("#rateLimitAddr").val(addr);
+				$("#rateLimitCid").val(${response.result.selectedMQCluster.id});
+			});
+}
+
+function updateBrokerLimitRate() {
+	disable("brokerLimitRateFormBtn");
+	$.post('${request.contextPath}/admin/broker/ratelimit/update',
+			$("#brokerLimitRateForm").serialize(),
+			function(data){
+				if(data.status == 200){
+					toastr.success("修改成功, 系统将自动刷新");
+					reload(3000);
+				} else{
+					toastr.error("修改失败！"+data.message);
+					enable("brokerLimitRateFormBtn");
+				}
+			}, 'json');
+}
+
+function updateTopicLimitRateShow(topic, qps) {
+	$("#rateLimitTopic").html(topic);
+	$("#rateLimitTopicQps").val(qps);
+	$("#topicRateLimitModal").modal('show');
+}
+
+function updateTopicLimitRate() {
+	disable("updateTopicLimitRateBtn");
+	$.post('${request.contextPath}/admin/broker/ratelimit/update',
+			{
+				cid: ${response.result.selectedMQCluster.id},
+				addr:  $("#rateLimitAddr").val(),
+				topic: $("#rateLimitTopic").html(),
+				topicLimitQps: $("#rateLimitTopicQps").val()
+			},
+			function(data){
+				if(data.status == 200){
+					toastr.success("修改成功, 系统将自动刷新");
+					reload(3000);
+				} else{
+					toastr.error("修改失败！"+data.message);
+					enable("updateTopicLimitRateBtn");
+				}
+			}, 'json');
 }
 </script>
 </#if>

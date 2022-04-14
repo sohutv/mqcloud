@@ -1,11 +1,11 @@
 package com.sohu.tv.mq.cloud.util;
 
-import java.util.Collection;
-import java.util.Map;
-
 import com.alibaba.fastjson.JSON;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.sohu.tv.mq.cloud.web.controller.param.PaginationParam;
+
+import java.util.Collection;
+import java.util.Map;
 
 /**
  * web请求结果
@@ -167,7 +167,17 @@ public class Result<T> {
         }
         return (Result<T>) getResult(status).setMessage(error);
     }
-	
+
+    /**
+     * 获取请求异常返回结果
+     *
+     * @param status
+     * @return
+     */
+    public static <T> Result<T> getRequestErrorResult(Exception e) {
+        return (Result<T>) getResult(Status.REQUEST_ERROR).setException(e);
+    }
+
 	/**
      * 获取Db异常返回结果
      * 

@@ -1,4 +1,4 @@
-package com.sohu.tv.mq.cloud.dao;
+package com.sohu.tv.mq.cloud.bo;
 
 import java.util.Date;
 

@@ -17,7 +17,6 @@ import com.sohu.tv.mq.cloud.bo.ServerStatus;
 import com.sohu.tv.mq.cloud.dao.ServerAlarmConfigDao;
 import com.sohu.tv.mq.cloud.dao.ServerStatusDao;
 import com.sohu.tv.mq.cloud.task.server.data.Server;
-import com.sohu.tv.mq.cloud.util.DateUtil;
 import com.sohu.tv.mq.cloud.util.Result;
 import com.sohu.tv.mq.cloud.util.Status;
 /**
@@ -67,7 +66,7 @@ public class ServerDataService {
      * 查询今日当前所有服务器状态
      * @return List<ServerInfoExt>
      */
-    public List<ServerInfoExt> queryAllServer(String date) {
+    public List<ServerInfoExt> queryAllServer(Date date) {
         try {
             return serverStatusDao.queryAllServer(date);
         } catch (Exception e) {
@@ -123,7 +122,7 @@ public class ServerDataService {
 	 * @param date
 	 * @return
 	 */
-	public List<ServerStatus> queryServerStat(String ip, String date) {
+	public List<ServerStatus> queryServerStat(String ip, Date date) {
 		try {
 			return serverStatusDao.queryServerStat(ip, date);
 		} catch (Exception e) {
@@ -138,7 +137,7 @@ public class ServerDataService {
      * @param date
      * @return
      */
-    public List<ServerStatus> queryServerStatByIp(String ip, String date, String beginTime) {
+    public List<ServerStatus> queryServerStatByIp(String ip, Date date, String beginTime) {
         try {
             return serverStatusDao.queryServerStatByIp(ip, date, beginTime);
         } catch (Exception e) {
@@ -170,7 +169,7 @@ public class ServerDataService {
     public Result<Integer> delete(Date date) {
         Integer rows = 0;
         try {
-            rows = serverStatusDao.deleteServerStat(DateUtil.formatYMD(date));
+            rows = serverStatusDao.deleteServerStat(date);
         } catch (Exception e) {
             logger.error("dete err, date:{}", date, e);
             return Result.getDBErrorResult(e);

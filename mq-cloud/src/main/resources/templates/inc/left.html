@@ -5,9 +5,11 @@
       <li id="nameserver"><a class="glyphicon glyphicon-link" href="${request.contextPath}/admin/nameserver/list"> 集群发现</span></a></li>
       <li id="cluster"><a class="glyphicon glyphicon-cloud" href="${request.contextPath}/admin/cluster/list"> 集群管理</span></a></li>
       <li id="topology"><a class="glyphicon glyphicon-globe" href="${request.contextPath}/admin/topology/cluster"> 集群拓扑</span></a></li>
+      <li id="topicManager"><a class="glyphicon glyphicon-link" href="${request.contextPath}/admin/topicManager/list"> 主题管理</span></a></li>
+      <li id="consumerManager"><a class="glyphicon glyphicon-link" href="${request.contextPath}/admin/consumer/list"> 消费管理</span></a></li>
       <li id="monitor"><a href="${request.contextPath}/admin/monitor/consumer" class="glyphicon glyphicon-eye-open"> 监控管理</a></li>
       <li id="trafficWarn"><a href="${request.contextPath}/admin/trafficMonitor/topic" class="glyphicon glyphicon-warning-sign"> 流量监控</a></li>
-      <li id="user"><a href="${request.contextPath}/admin/user/list" class="glyphicon glyphicon-user"> 用户管理</a></li>
+      <li id="user"><a href="${request.contextPath}/admin/user/list?gid=-1" class="glyphicon glyphicon-user"> 用户管理</a></li>
       <li id="server"><a href="${request.contextPath}/admin/server/list" class="glyphicon glyphicon-wrench"> 机器管理</a></li>
       <li id="notice"><a href="${request.contextPath}/admin/notice/list" class="glyphicon glyphicon-bell"> 通知管理</a></li>
       <li id="client"><a href="${request.contextPath}/admin/client/list" class="glyphicon glyphicon-bookmark"> 客户端版本</a></li>
@@ -46,7 +48,11 @@
 			$("#topology").addClass("active");
 		} else if (uri.indexOf("/admin/broker/config") != -1){
 			$("#brokerConfigTemplate").addClass("active");
-		}
+		}else if (uri.indexOf("/admin/topicManager/list") != -1){
+          $("#topicManager").addClass("active");
+        }else if (uri.indexOf("/admin/consumer/list") != -1){
+          $("#consumerManager").addClass("active");
+        }
 		
 		// 初始化提示
 		$("[data-toggle='tooltip']").tooltip({container: 'body'});

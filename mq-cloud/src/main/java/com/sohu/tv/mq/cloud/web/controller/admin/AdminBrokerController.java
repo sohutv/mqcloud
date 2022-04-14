@@ -1,17 +1,19 @@
 package com.sohu.tv.mq.cloud.web.controller.admin;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.function.Function;
-
-import javax.validation.Valid;
-
+import com.sohu.tv.mq.cloud.bo.*;
+import com.sohu.tv.mq.cloud.common.model.BrokerRateLimitData;
+import com.sohu.tv.mq.cloud.common.model.UpdateSendMsgRateLimitRequestHeader;
+import com.sohu.tv.mq.cloud.mq.MQAdminCallback;
+import com.sohu.tv.mq.cloud.mq.MQAdminTemplate;
+import com.sohu.tv.mq.cloud.service.*;
+import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper;
+import com.sohu.tv.mq.cloud.util.Result;
+import com.sohu.tv.mq.cloud.util.Status;
+import com.sohu.tv.mq.cloud.web.controller.param.BrokerConfigParam;
+import com.sohu.tv.mq.cloud.web.controller.param.UpdateSendMsgRateLimitParam;
+import com.sohu.tv.mq.cloud.web.vo.BrokerConfigGroupVO;
+import com.sohu.tv.mq.cloud.web.vo.BrokerConfigVO;
+import com.sohu.tv.mq.cloud.web.vo.UserInfo;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.rocketmq.common.protocol.body.ClusterInfo;
 import org.apache.rocketmq.common.protocol.route.BrokerData;
@@ -26,24 +28,9 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
-import com.sohu.tv.mq.cloud.bo.Broker;
-import com.sohu.tv.mq.cloud.bo.BrokerConfig;
-import com.sohu.tv.mq.cloud.bo.BrokerConfigGroup;
-import com.sohu.tv.mq.cloud.bo.Cluster;
-import com.sohu.tv.mq.cloud.bo.ClusterConfig;
-import com.sohu.tv.mq.cloud.mq.MQAdminCallback;
-import com.sohu.tv.mq.cloud.mq.MQAdminTemplate;
-import com.sohu.tv.mq.cloud.service.BrokerConfigGroupService;
-import com.sohu.tv.mq.cloud.service.BrokerConfigService;
-import com.sohu.tv.mq.cloud.service.BrokerService;
-import com.sohu.tv.mq.cloud.service.ClusterConfigService;
-import com.sohu.tv.mq.cloud.service.ClusterService;
-import com.sohu.tv.mq.cloud.util.Result;
-import com.sohu.tv.mq.cloud.util.Status;
-import com.sohu.tv.mq.cloud.web.controller.param.BrokerConfigParam;
-import com.sohu.tv.mq.cloud.web.vo.BrokerConfigGroupVO;
-import com.sohu.tv.mq.cloud.web.vo.BrokerConfigVO;
-import com.sohu.tv.mq.cloud.web.vo.UserInfo;
+import javax.validation.Valid;
+import java.util.*;
+import java.util.function.Function;
 
 /**
  * broker
@@ -74,6 +61,9 @@ public class AdminBrokerController extends AdminViewController {
 
     @Autowired
     private ClusterConfigService clusterConfigService;
+
+    @Autowired
+    private MQCloudConfigHelper mqCloudConfigHelper;
 
     /**
      * 刷新
@@ -446,6 +436,39 @@ public class AdminBrokerController extends AdminViewController {
         Result<List<ClusterConfig>> result = clusterConfigService.query(cid);
         setResult(map, toBrokerConfigGroupVOList(result.getResult()));
         return adminViewModule() + "/clusterConfig";
+    }
+
+    /**
+     * 配置选择
+     *
+     * @return
+     */
+    @RequestMapping(value = "/ratelimit/info")
+    public String rateLimitInfo(UserInfo ui, @RequestParam(name = "cid") int cid,
+                                @RequestParam(name = "addr") String addr, Map<String, Object> map) {
+        Result<BrokerRateLimitData> result = brokerService.fetchSendMessageRateLimitInBroker(cid, addr);
+        setResult(map, result);
+        setResult(map, "configHelper", mqCloudConfigHelper);
+        return adminViewModule() + "/rateLimitInfo";
+    }
+
+    /**
+     * 限流更新
+     * @param ui
+     * @param cid
+     * @param addr
+     * @param updateSendMsgRateLimitParam
+     * @return
+     */
+    @ResponseBody
+    @RequestMapping(value = "/ratelimit/update")
+    public Result<?> rateLimitUpdate(UserInfo ui, @RequestParam(name = "cid") int cid, @RequestParam(name = "addr") String addr,
+                                     UpdateSendMsgRateLimitParam updateSendMsgRateLimitParam) {
+        UpdateSendMsgRateLimitRequestHeader updateSendMsgRateLimitRequestHeader =
+                new UpdateSendMsgRateLimitRequestHeader();
+        BeanUtils.copyProperties(updateSendMsgRateLimitParam, updateSendMsgRateLimitRequestHeader);
+        Result<?> result = brokerService.updateSendMessageRateLimit(cid, addr, updateSendMsgRateLimitRequestHeader);
+        return Result.getWebResult(result);
     }
 
     /**

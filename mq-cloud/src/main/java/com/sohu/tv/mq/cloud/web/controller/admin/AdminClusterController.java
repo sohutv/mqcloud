@@ -109,8 +109,6 @@ public class AdminClusterController extends AdminViewController {
         messageQueryCondition.setCid(mqCluster.getId());
         messageQueryCondition.setTopic("SCHEDULE_TOPIC_XXXX");
         setResult(map, "messageQueryCondition", messageQueryCondition);
-        // 判断是否sohu
-        setResult(map, "sohu", mqCloudConfigHelper.isSohu());
         setResult(map, "mqcloudDomain", mqCloudConfigHelper.getDomain());
         return view();
     }

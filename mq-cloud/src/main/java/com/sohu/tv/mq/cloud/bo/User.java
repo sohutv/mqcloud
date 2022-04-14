@@ -44,6 +44,12 @@ public class User {
     
     // 接收手机通知 0：不接收，1：接收
     private int receivePhoneNotice = -1;
+    
+    // 用户组id
+    private long gid = -1;
+    
+    // 用户组名
+    private String groupName;
 
     public long getId() {
         return id;
@@ -144,6 +150,25 @@ public class User {
        return getName();
     }
     
+    public long getGid() {
+        return gid;
+    }
+
+    public void setGid(long gid) {
+        this.gid = gid;
+    }
+    
+    public String getGroupName() {
+        if (gid == 0) {
+            return "未分组";
+        }
+        return groupName;
+    }
+
+    public void setGroupName(String groupName) {
+        this.groupName = groupName;
+    }
+
     @Override
     public int hashCode() {
         final int prime = 31;
@@ -172,6 +197,7 @@ public class User {
     @Override
     public String toString() {
         return "User [id=" + id + ", name=" + name + ", email=" + email + ", mobile=" + mobile + ", type=" + type
-                + ", createDate=" + createDate + ", updateTime=" + updateTime + "]";
+                + ", createDate=" + createDate + ", updateTime=" + updateTime + ", receiveNotice=" + receiveNotice
+                + ", password=" + password + ", receivePhoneNotice=" + receivePhoneNotice + ", gid=" + gid + "]";
     }
 }
