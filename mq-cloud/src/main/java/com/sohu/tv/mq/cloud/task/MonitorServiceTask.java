@@ -19,7 +19,6 @@ import net.javacrumbs.shedlock.core.SchedulerLock;
 public class MonitorServiceTask {
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
     
-    @Autowired
     private List<MonitorService> sohuMonitorServiceList;
     
     @Autowired
@@ -49,5 +48,9 @@ public class MonitorServiceTask {
                 logger.info("monitor, use:{}ms", System.currentTimeMillis() - start);
             }
         });
+    }
+
+    public void setSohuMonitorServiceList(List<MonitorService> sohuMonitorServiceList) {
+        this.sohuMonitorServiceList = sohuMonitorServiceList;
     }
 }

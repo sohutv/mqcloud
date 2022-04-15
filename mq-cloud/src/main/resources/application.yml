@@ -70,3 +70,5 @@ login:
 
 rocketmq:
   customized: true
+task:
+  enabled: true

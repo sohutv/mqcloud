@@ -411,14 +411,12 @@ public class ConsumerService {
                 return Result.getResult(Status.DB_ERROR);
             }
             // 第三步：真实删除consumer(为了防止误删，只有线上环境才能删除)
-            if (mqCloudConfigHelper.isOnline()) {
-                Result<?> result = deleteConsumerOnCluster(mqCluster, consumer.getName());
-                if (result.isNotOK()) {
-                    throw new RuntimeException("delete consumer:" + consumer.getName() + " on cluster err!");
-                }
-                if (consumer.isClustering()) {
-                    topicService.deleteTopicOnCluster(mqCluster, MixAll.RETRY_GROUP_TOPIC_PREFIX + consumer.getName());
-                }
+            Result<?> result = deleteConsumerOnCluster(mqCluster, consumer.getName());
+            if (result.isNotOK()) {
+                throw new RuntimeException("delete consumer:" + consumer.getName() + " on cluster err!");
+            }
+            if (consumer.isClustering()) {
+                topicService.deleteTopicOnCluster(mqCluster, MixAll.RETRY_GROUP_TOPIC_PREFIX + consumer.getName());
             }
         } catch (Exception e) {
             logger.error("deleteConsumer:{}", consumer.getName(), e);

@@ -9,6 +9,8 @@ target
 PROJECT_DIR_IS_UNDEFINED
 logs
 pom.xml.versionsBackup
+nmon
+nmon.zip
 
 # ignore eclipse files
 .project

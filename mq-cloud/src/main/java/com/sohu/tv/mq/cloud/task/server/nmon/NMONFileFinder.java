@@ -78,7 +78,7 @@ public class NMONFileFinder implements CommandLineRunner {
             File nmonDir = new File(path);
             if (!nmonDir.exists()) {
                 // 线上环境尝试通过http加载
-                boolean ok = mqCloudConfigHelper.isOnline() && downloadAndUnzip(nmonDir.getParentFile());
+                boolean ok = downloadAndUnzip(nmonDir.getParentFile());
                 if(!ok) {
                     logger.error("{} path not exist", nmonDir.getAbsolutePath());
                     return;
