@@ -182,27 +182,27 @@
 					            </#if>
 					            <#list clusterTopology.nameServerList as nameServer>
 					            , {
-					                name: 'ns:${nameServer.ipSub}',
+					                name: 'ns:${nameServer.addr}',
 					                x: ${nameServer_index * nameServerX + nameServerX / 2},
 					                y: 0,
-					                _ip: '${nameServer.ip}',
+					                _ip: '${nameServer.serverInfo.ip}',
 					                label: {
 					                    formatter: function (){
-					                    	return "${nameServer.ipSub}";
+					                    	return "${nameServer.serverInfo.ipSub}";
 					                    }
 					                },itemStyle : {
 					                	normal: {
-					                        color: '${nameServer.roomColor}'
+					                        color: '${nameServer.serverInfo.roomColor}'
 					                    },
 					                    emphasis: {
-					                    	color: '${nameServer.roomColor}'
+					                    	color: '${nameServer.serverInfo.roomColor}'
 					                    }
 					                },
-					                <#if nameServer.physical>
+					                <#if nameServer.serverInfo.physical>
 					                	symbol: 'rect'
-					                <#elseif nameServer.virtual>
+					                <#elseif nameServer.serverInfo.virtual>
 					               		symbol: 'roundRect'
-					                <#elseif nameServer.docker>
+					                <#elseif nameServer.serverInfo.docker>
 					                	symbol: 'circle'
 					                <#else>
 					                	symbol: 'diamond',
@@ -230,7 +230,7 @@
 					                symbolSize: [60, 25]
 					            }
 					            , {
-					                name: 'm:${brokerGroup.master.serverInfo.ipSub}',
+					                name: 'm:${brokerGroup.master.addr}',
 					                x: ${brokerGroup_index * brokerX + brokerX / 2},
 					                y: 665,
 					                _ip: '${brokerGroup.master.serverInfo.ip}',
@@ -259,7 +259,7 @@
 					            }
 					            <#if brokerGroup.slave??>
 					            ,{
-					                name: 's:${brokerGroup.slave.serverInfo.ipSub}',
+					                name: 's:${brokerGroup.slave.addr}',
 					                x: ${brokerGroup_index * brokerX + brokerX / 2},
 					                y: 800,
 					                _ip: '${brokerGroup.slave.serverInfo.ip}',
@@ -309,7 +309,7 @@
 				            	<#list clusterTopology.nameServerList as nameServer>
 					            {
 					            	source: '${clusterTopology.cluster.name}',
-					                target: 'ns:${nameServer.ipSub}',
+					                target: 'ns:${nameServer.addr}',
 					            },
 					            </#list>
 					            <#if clusterTopology.brokerGroupList??>
@@ -331,16 +331,16 @@
 					            },
 					            <#if brokerGroup.slave??>
 					            {
-					            	source: 'm:${brokerGroup.master.serverInfo.ipSub}',
+					            	source: 'm:${brokerGroup.master.addr}',
 					                target: '${brokerGroup.brokerName}',
 					            },
 					            {
-					            	source: 's:${brokerGroup.slave.serverInfo.ipSub}',
-					               	target: 'm:${brokerGroup.master.serverInfo.ipSub}',
+					            	source: 's:${brokerGroup.slave.addr}',
+					               	target: 'm:${brokerGroup.master.addr}',
 					            },
 					            <#else>
 					            {
-					            	source: 'm:${brokerGroup.master.serverInfo.ipSub}',
+					            	source: 'm:${brokerGroup.master.addr}',
 					               	target: '${brokerGroup.brokerName}',
 					            },
 					            </#if>

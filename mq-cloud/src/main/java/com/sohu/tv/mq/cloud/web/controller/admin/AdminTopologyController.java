@@ -178,15 +178,15 @@ public class AdminTopologyController extends AdminViewController {
      * @param nameServers
      * @return
      */
-    private List<ServerInfo> filterNameServers(int cid, List<NameServer> nameServers, List<ServerInfo> serverInfoList) {
-        List<ServerInfo> nsList = new ArrayList<>();
+    private List<ClusterTopologyVO.NameServerInfo> filterNameServers(int cid, List<NameServer> nameServers, List<ServerInfo> serverInfoList) {
+        List<ClusterTopologyVO.NameServerInfo> nsList = new ArrayList<>();
         Iterator<NameServer> it = nameServers.iterator();
         while (it.hasNext()) {
             NameServer ns = it.next();
             if (ns.getCid() == cid) {
                 ServerInfo serverInfo = findServerInfo(serverInfoList, ns.getIp());
                 if (serverInfo != null) {
-                    nsList.add(serverInfo);
+                    nsList.add(new ClusterTopologyVO.NameServerInfo(ns,serverInfo));
                 }
                 it.remove();
             }
@@ -195,7 +195,7 @@ public class AdminTopologyController extends AdminViewController {
             return null;
         }
         Collections.sort(nsList, (a, b) -> {
-            return a.getIp().compareTo(b.getIp());
+            return a.getServerInfo().getIp().compareTo(b.getServerInfo().getIp());
         });
         return nsList;
     }

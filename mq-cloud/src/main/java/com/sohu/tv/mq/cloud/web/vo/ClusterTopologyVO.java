@@ -4,6 +4,7 @@ import java.util.List;
 
 import com.sohu.tv.mq.cloud.bo.BrokerTraffic;
 import com.sohu.tv.mq.cloud.bo.Cluster;
+import com.sohu.tv.mq.cloud.bo.NameServer;
 import com.sohu.tv.mq.cloud.bo.ServerInfo;
 
 /**
@@ -14,7 +15,7 @@ import com.sohu.tv.mq.cloud.bo.ServerInfo;
  */
 public class ClusterTopologyVO {
     private Cluster cluster;
-    private List<ServerInfo> nameServerList;
+    private List<NameServerInfo> nameServerList;
     private List<BrokerGroup> brokerGroupList;
     private BrokerTraffic clusterTraffic;
 
@@ -26,11 +27,11 @@ public class ClusterTopologyVO {
         this.cluster = cluster;
     }
 
-    public List<ServerInfo> getNameServerList() {
+    public List<NameServerInfo> getNameServerList() {
         return nameServerList;
     }
 
-    public void setNameServerList(List<ServerInfo> nameServerList) {
+    public void setNameServerList(List<NameServerInfo> nameServerList) {
         this.nameServerList = nameServerList;
     }
 
@@ -127,6 +128,48 @@ public class ClusterTopologyVO {
 
         public void setAddr(String addr) {
             this.addr = addr;
+        }
+    }
+
+    public static class NameServerInfo{
+        // ip:port
+        private String addr;
+        // cluster id
+        private int cid;
+        // server info
+        private ServerInfo serverInfo;
+
+        public NameServerInfo() {
+        }
+
+        public NameServerInfo(NameServer nameServer,ServerInfo serverInfo){
+            this.serverInfo = serverInfo;
+            this.addr = nameServer.getAddr();
+            this.cid = nameServer.getCid();
+        }
+
+        public String getAddr() {
+            return addr;
+        }
+
+        public void setAddr(String addr) {
+            this.addr = addr;
+        }
+
+        public int getCid() {
+            return cid;
+        }
+
+        public void setCid(int cid) {
+            this.cid = cid;
+        }
+
+        public ServerInfo getServerInfo() {
+            return serverInfo;
+        }
+
+        public void setServerInfo(ServerInfo serverInfo) {
+            this.serverInfo = serverInfo;
         }
     }
 }
