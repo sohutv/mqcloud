@@ -432,6 +432,10 @@ public class TopicService {
             public Result<?> callback(MQAdminExt mqAdmin) throws Exception {
                 long start = System.currentTimeMillis();
                 Set<String> masterSet = CommandUtil.fetchMasterAddrByClusterName(mqAdmin, mqCluster.getName());
+                if (masterSet.size() == 0) {
+                    logger.error("create or update topic failed:no master node, cluser:{}, topic:{}", mqCluster, topicConfig);
+                    return Result.getResult(Status.BROKER_NOT_EXIST_ERROR);
+                }
                 for (String addr : masterSet) {
                     mqAdmin.createAndUpdateTopicConfig(addr, topicConfig);
                 }

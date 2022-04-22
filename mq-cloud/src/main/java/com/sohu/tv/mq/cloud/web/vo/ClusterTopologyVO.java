@@ -1,11 +1,11 @@
 package com.sohu.tv.mq.cloud.web.vo;
 
-import java.util.List;
-
 import com.sohu.tv.mq.cloud.bo.BrokerTraffic;
 import com.sohu.tv.mq.cloud.bo.Cluster;
 import com.sohu.tv.mq.cloud.bo.NameServer;
 import com.sohu.tv.mq.cloud.bo.ServerInfo;
+
+import java.util.List;
 
 /**
  * 集群拓扑VO

@@ -56,6 +56,7 @@ public enum Status {
     DB_UPDATE_ERR_CONSUME_TIMESPAN_MESSAGE_OK(519, "重新消费成功,但是审核记录更新失败"),
     REQUEST_ERROR(520, "请求异常"),
     BROKER_UNSUPPORTED_ERROR(521, "broker暂不支持"),
+    BROKER_NOT_EXIST_ERROR(522, "master不存在"),
     
     // 6xx代表web请求异常
     WEB_ERROR(600, "请求错误"),

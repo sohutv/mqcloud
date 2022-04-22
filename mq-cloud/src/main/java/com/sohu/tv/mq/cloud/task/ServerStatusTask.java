@@ -1,13 +1,5 @@
 package com.sohu.tv.mq.cloud.task;
 
-import java.util.Date;
-import java.util.List;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.scheduling.annotation.Scheduled;
-
 import com.sohu.tv.mq.cloud.bo.ServerInfo;
 import com.sohu.tv.mq.cloud.service.SSHTemplate;
 import com.sohu.tv.mq.cloud.service.SSHTemplate.DefaultLineProcessor;
@@ -19,8 +11,14 @@ import com.sohu.tv.mq.cloud.task.server.data.OSInfo;
 import com.sohu.tv.mq.cloud.task.server.data.Server;
 import com.sohu.tv.mq.cloud.task.server.nmon.NMONService;
 import com.sohu.tv.mq.cloud.util.Result;
-
 import net.javacrumbs.shedlock.core.SchedulerLock;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Scheduled;
+
+import java.util.Date;
+import java.util.List;
 
 /**
  * 服务器状态监控任务
@@ -121,6 +119,7 @@ public class ServerStatusTask {
 				server.parse(line, null);
 			}
 		});
+		server.resetDateTime();
 		if(!result.isSuccess()) {
 			logger.error("collect " + ip + " err:" + result.getResult(), result.getExcetion());
 		}

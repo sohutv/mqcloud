@@ -177,6 +177,15 @@
 					</execution>
 				</executions>
 			</plugin>
+			<!-- docker plugin -->
+			<plugin>
+				<groupId>com.spotify</groupId>
+				<artifactId>dockerfile-maven-plugin</artifactId>
+				<version>1.4.3</version>
+				<configuration>
+					<skip>true</skip>
+				</configuration>
+			</plugin>
 		</plugins>
 	</build>
 </project>

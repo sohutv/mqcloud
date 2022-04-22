@@ -11,6 +11,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
 
+import com.alibaba.fastjson.JSON;
 import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.message.MessageQueue;
 import org.apache.rocketmq.common.protocol.body.Connection;
@@ -312,6 +313,11 @@ public class SohuMonitorListener implements MonitorListener {
                 consumerStat.setSbscription(sbscription);
                 consumerStatDao.saveSimpleConsumerStat(consumerStat);
                 subscriptionWarn(consumerGroup, sbscription);
+
+                if (uniqSet.size() <= 1){
+                    log.debug("analyze subscription result is {},but find subscription number only one,the criTable is {}",
+                            false, JSON.toJSON(criTable));
+                }
             }
         } catch (NumberFormatException e) {
             log.warn("num parse err");

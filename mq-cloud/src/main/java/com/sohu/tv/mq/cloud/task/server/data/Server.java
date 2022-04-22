@@ -1,11 +1,12 @@
 package com.sohu.tv.mq.cloud.task.server.data;
 
+import org.apache.commons.lang3.math.NumberUtils;
+
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 import java.util.regex.Pattern;
-
-import org.apache.commons.lang3.math.NumberUtils;
 /**
  * 服务器基本状态
  * @Description: 
@@ -25,19 +26,22 @@ public class Server implements LineParser{
 	private Date collectTime;
 	private String ip;
 	//host
-	private String host;
+	private String host = "unknown";
 	//逻辑cpu个数
 	private int cpus;
 	//nmon版本
 	private String nmon;
 	//cpu型号
-	private String cpuModel;
+	private String cpuModel = "unknown";
 	//内核版本
 	private String kernel;
 	//发行版本
 	private String dist;
 	//ulimit
 	private String ulimit = "";
+
+	private String date;
+	private String time;
 	
 	private CPU cpu;
 	private Memory mem;
@@ -87,6 +91,10 @@ public class Server implements LineParser{
 					cpus = NumberUtils.toInt(items[2]);
 				} else if("OS".equals(items[1])) {
 					kernel = items[2];
+				} else if ("date".equals(items[1])) {
+					date = items[2];
+				} else if ("time".equals(items[1])) {
+					time = items[2];
 				}
 			}
 		} else if(cpuModel == null && pattern.matcher(line).find()) {
@@ -125,6 +133,22 @@ public class Server implements LineParser{
 			}
 		}
 		return result;
+	}
+
+	public void resetDateTime() {
+		if (dateTime != null) {
+			return;
+		}
+		if (date == null || time == null) {
+			return;
+		}
+		SimpleDateFormat sdf = new SimpleDateFormat("HH:mm.ss,dd-MMM-yyyy", Locale.ENGLISH);
+		dateTime = time + "," + date;
+		try {
+			this.collectTime = sdf.parse(dateTime);
+		} catch (ParseException e) {
+			// ignore
+		}
 	}
 	public String getDateTime() {
 		return dateTime;
