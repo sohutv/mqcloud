@@ -1,35 +1,19 @@
 package com.sohu.tv.mq.cloud.web.controller.admin;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-
-import com.sohu.tv.mq.cloud.bo.Broker;
-import com.sohu.tv.mq.cloud.bo.BrokerTraffic;
-import com.sohu.tv.mq.cloud.bo.Cluster;
-import com.sohu.tv.mq.cloud.bo.NameServer;
-import com.sohu.tv.mq.cloud.bo.ServerInfo;
-import com.sohu.tv.mq.cloud.service.BrokerService;
-import com.sohu.tv.mq.cloud.service.BrokerTrafficService;
-import com.sohu.tv.mq.cloud.service.ClusterService;
-import com.sohu.tv.mq.cloud.service.NameServerService;
-import com.sohu.tv.mq.cloud.service.ServerDataService;
+import com.sohu.tv.mq.cloud.bo.*;
+import com.sohu.tv.mq.cloud.service.*;
 import com.sohu.tv.mq.cloud.util.DateUtil;
 import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper;
 import com.sohu.tv.mq.cloud.util.Result;
 import com.sohu.tv.mq.cloud.web.vo.ClusterTopologyVO;
 import com.sohu.tv.mq.cloud.web.vo.ClusterTopologyVO.BrokerGroup;
 import com.sohu.tv.mq.cloud.web.vo.ClusterTopologyVO.BrokerStat;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+
+import java.util.*;
 
 /**
  * 集群拓扑
