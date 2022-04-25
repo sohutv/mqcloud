@@ -48,15 +48,21 @@ mqcloud支持的是一个master对应一个slave模式。管理员在列表页�
 
    ![](img/brokerOnlineConfig.png)
 
-4. 点击broker实例后的**停写**按钮可以实现写权限擦除功能，用于broker平滑下线使用（slave可以直接下线，无需停写）。
+4. 点击broker的漏斗图标可以查看broker的限流配置及历史限速记录：
+   
+   ![](img/brokerOnlineLimit.png)
 
-5. 停写后的broker，点击**下线**按钮，可以实现关闭broker实例的功能。
+   broker的限速设置基于Topic维度，分为全局限速设置及单个Topic限速设置，全局设置是在未配置单个Topic限速的情况下生效。
 
-6. 下线后的broker，会出现**启动**按钮和**升级**按钮，分别对应启动broker和升级broker两种功能。
+5. 点击broker实例后的**停写**按钮可以实现写权限擦除功能，用于broker平滑下线使用（slave可以直接下线，无需停写）。
+
+6. 停写后的broker，点击**下线**按钮，可以实现关闭broker实例的功能。
+
+7. 下线后的broker，会出现**启动**按钮和**升级**按钮，分别对应启动broker和升级broker两种功能。
 
    若broker下线后想从集群移除，需要执行**刷新broker**功能。
 
-7. online环境的mqcloud会对broker实例进行存活性监控，一旦探活失败，将会通过邮件通知管理员。
+8. online环境的mqcloud会对broker实例进行存活性监控，一旦探活失败，将会通过邮件通知管理员。
 
 ## 六、<span id="clusterTraffic">集群流量</span>
 
