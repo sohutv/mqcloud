@@ -213,9 +213,8 @@ public class ClusterMonitorTask {
     /**
      * 处理报警信息
      * 
-     * @param alarmList
-     * @param type
-     * @param alarmTitle
+     * @param clusterStatList
+     * @param warnType
      */
     private void handleAlarmMessage(List<ClusterStat> clusterStatList, WarnType warnType) {
         if (clusterStatList.isEmpty()) {
@@ -246,7 +245,8 @@ public class ClusterMonitorTask {
                 }
                 // 获取slave
                 Broker slave = findSlave(broker, brokerList);
-                if (slave == null) {
+                // 无从节点或从节点宕机忽略落后情况
+                if (slave == null || (slave.getCheckStatus() == CheckStatusEnum.FAIL.getStatus())) {
                     continue;
                 }
                 // 获取slave落后字节

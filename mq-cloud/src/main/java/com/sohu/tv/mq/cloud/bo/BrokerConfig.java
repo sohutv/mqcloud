@@ -128,7 +128,7 @@ public class BrokerConfig {
             return key;
         }
         if (!onlineValue.equals(value)) {
-            return "<b>" + key + "</b>";
+            return "<b style= 'color:red'>" + key + "</b>";
         }
         return key;
     }
