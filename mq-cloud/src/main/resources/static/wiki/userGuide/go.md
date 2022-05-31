@@ -24,7 +24,7 @@
 3. 集群发现-HttpResolver
 
    ```
-   primitive.NewHttpResolver("test-cluster", "http://${mqcloudDomain}/rocketmq/nsaddr-3")
+   primitive.NewHttpResolver("test-cluster", "http://${mqcloudDomain}/rocketmq/nsaddr-集群id")
    ```
 
    HttpResolver共两个参数：
@@ -38,7 +38,7 @@
    consumer或者producer.WithInstance("pid or port"+"@集群id")
    ```
 
-   集群id就是NameServer路由地址最后的数字。注意，必须追加集群id，否则跨集群时，使用一个通道导致异常。
+   集群id就是NameServer路由地址最后的数字。注意，必须追加集群id，否则跨集群时，使用一个通道导致异常，可依据[集群配置](cgo#appendix)进行配置。
 
 ## 四、<span id="produce">生产消息</span>
 
@@ -47,7 +47,7 @@
    ```
    p, _ := rocketmq.NewProducer(
        producer.WithGroupName("mqcloud-json-test-producer"),
-       producer.WithNsResovler(primitive.NewHttpResolver("test-cluster", "http://${mqcloudDomain}/rocketmq/nsaddr-3")),
+       producer.WithNsResovler(primitive.NewHttpResolver("test-cluster", "http://${mqcloudDomain}/rocketmq/nsaddr-集群id")),
        producer.WithRetry(2),
    )
    ```
@@ -83,7 +83,7 @@
    fmt.Printf("send message success: result=%s\n", res.String())
    ```
 
-   1. 推荐发送消息时指定WithKeys，keys为消息的标识，比如视频id为123的消息，可以通过[消息查询](http://mq.tv.sohuno.com/wiki/userGuide/messageQuery#key)模块按照123查询出所有这个视频变更的消息。
+   1. 推荐发送消息时指定WithKeys，keys为消息的标识，比如视频id为123的消息，可以通过[消息查询](/wiki/userGuide/messageQuery#key)模块按照123查询出所有这个视频变更的消息。
    2. 每条消息发送完毕应该检查返回值，不可丢失的消息在异常情况应该进行重试或降级处理。
 
 4. 关闭
@@ -97,14 +97,14 @@
    }
    ```
 
-## 四、<span id="consume">消费消息</span>
+## 五、<span id="consume">消费消息</span>
 
 1. 初始化代码如下，其余请参考[官方实例](https://github.com/apache/rocketmq-client-go/blob/master/docs/Introduction.md)：
 
    ```
    c, _ := rocketmq.NewPushConsumer(
        consumer.WithGroupName("mqcloud-json-test-consumer"),
-       consumer.WithNsResovler(primitive.NewHttpResolver("test-cluster", "http://${mqcloudDomain}/rocketmq/nsaddr-3")),
+       consumer.WithNsResovler(primitive.NewHttpResolver("test-cluster", "http://${mqcloudDomain}/rocketmq/nsaddr-集群id")),
        consumer.WithConsumerModel(consumer.Clustering),
    )
    ```
@@ -154,5 +154,14 @@
        fmt.Printf("shutdown Consumer error: %s", err.Error())
    }
    ```
+## 六、<span id="appendix">集群配置</span>
+生产环境集群配置列表：
+
+| 集群id   | 集群名称            | 集群路由地址                                |
+|:------:| :------:             | :------:                                      |
+|   1    |index-cluster        | http://${mqcloudDomain}/rocketmq/nsaddr-1|
+|   2    | core-cluster        | http://${mqcloudDomain}/rocketmq/nsaddr-2|
+|   3    | test-cluster        | http://${mqcloudDomain}/rocketmq/nsaddr-3|
+|   5    | transaction-cluster | http://${mqcloudDomain}/rocketmq/nsaddr-5|
 
    ​

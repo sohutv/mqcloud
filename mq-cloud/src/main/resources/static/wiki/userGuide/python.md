@@ -27,7 +27,7 @@
    ```
    topic = 'index-test-python-topic'
    group_id = 'index-test-python-topic-producer'
-   name_server_domain = 'http://${mqcloudDomain}/rocketmq/nsaddr-3'
+   name_server_domain = 'http://${mqcloudDomain}/rocketmq/nsaddr-集群id'
    ```
 
    参数释义
@@ -85,7 +85,7 @@
    ```
    topic = 'index-test-python-topic'
    group_id = 'index-test-python-topic-consumer01'
-   name_server_domain = 'http://${mqcloudDomain}/rocketmq/nsaddr-3'
+   name_server_domain = 'http://${mqcloudDomain}/rocketmq/nsaddr-集群id'
    model = MessageModel.CLUSTERING
    ```
 
@@ -93,7 +93,7 @@
 
    1. topic：topic名称
    2. group_id：consumerGroup，可以参考[消费详情](topic#consume)的consumer group。
-   3. name_server_domain：NameServer的域名，不同的集群对应不同的id。
+   3. name_server_domain：NameServer的域名，不同的集群对应不同的id。集群id可依据[集群配置](python#appendix)进行配置。
    5. model：消费方式
       1. CLUSTERING：所有的消费实例均分消息进行消费。
       2. BROADCASTING：每个消费实例会消费所有的消息。
@@ -148,4 +148,14 @@
 1. rocketmq日志默认在$HOME/logs/rocketmq-cpp下，可以参考定位问题。
 2. 其余注意事项请参考[常见问题](faq)。
 3. 完整用法示例可以参考[官方样例](https://github.com/apache/rocketmq-client-python/tree/master/samples)。
+
+## 六、<span id="appendix">集群配置</span>
+生产环境集群配置列表：
+
+| 集群id   | 集群名称            | 集群路由地址                                |
+|:------:| :------:             | :------:                                      |
+|   1    |index-cluster        | http://${mqcloudDomain}/rocketmq/nsaddr-1|
+|   2    | core-cluster        | http://${mqcloudDomain}/rocketmq/nsaddr-2|
+|   3    | test-cluster        | http://${mqcloudDomain}/rocketmq/nsaddr-3|
+|   5    | transaction-cluster | http://${mqcloudDomain}/rocketmq/nsaddr-5|
 

@@ -5,3 +5,4 @@
 - [三、公共配置](#common)
 - [四、生产消息](#produce)
 - [五、消费消息](#consume)
+- [六、集群配置](#appendix)
