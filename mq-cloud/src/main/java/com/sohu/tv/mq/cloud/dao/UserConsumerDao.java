@@ -136,4 +136,12 @@ public interface UserConsumerDao {
             +  " uid in (select id from user where gid = #{gid})"
             + "</script>")
     List<Long> selectTidListByGid(@Param(value = "gid")long gid);
+
+    /**
+     * 根据consumerName获取关联uid
+     * @param gid
+     */
+    @Select("select distinct user_consumer.uid from user_consumer inner join consumer on consumer.id = user_consumer.consumer_id " +
+            "where consumer.name = #{name}")
+    List<Integer> selectUidByConsumerName(@Param("name") String groupClientName);
 }

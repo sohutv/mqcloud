@@ -71,6 +71,12 @@ public class TaskConfiguration {
         ProducerStatsTask producerStatsTask = new ProducerStatsTask();
         return producerStatsTask;
     }
+
+    @Bean
+    public ClientConnectionTask clientConnectionTask() {
+        ClientConnectionTask clientConnectionTask = new ClientConnectionTask();
+        return clientConnectionTask;
+    }
     
     @Bean
     public MonitorServiceTask monitorServiceTask(MQCloudConfigHelper mqCloudConfigHelper,

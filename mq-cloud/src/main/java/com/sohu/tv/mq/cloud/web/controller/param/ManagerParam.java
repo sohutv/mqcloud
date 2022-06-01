@@ -19,6 +19,12 @@ public class ManagerParam {
     // 用户ID
     private Long uid;
 
+    // 客户端语言
+    private String language;
+
+    // 客户端名称
+    private String groupName;
+
     // 当日生产为0
     private Boolean nonePrducerFlows;
 
@@ -54,6 +60,22 @@ public class ManagerParam {
 
     public void setUid(Long uid) {
         this.uid = uid;
+    }
+
+    public String getLanguage() {
+        return language;
+    }
+
+    public void setLanguage(String language) {
+        this.language = language;
+    }
+
+    public String getGroupName() {
+        return groupName;
+    }
+
+    public void setGroupName(String groupName) {
+        this.groupName = groupName;
     }
 
     public Boolean getNonePrducerFlows() {
@@ -100,6 +122,12 @@ public class ManagerParam {
         if (noneConsumerFlows != null){
             builder.append("&noneConsumerFlows=").append(noneConsumerFlows);
         }
+        if (StringUtils.isNotBlank(language)){
+            builder.append("&language=").append(language);
+        }
+        if (StringUtils.isNotBlank(groupName)){
+            builder.append("&groupName=").append(groupName);
+        }
         String query = builder.toString();
         if (query.startsWith("&")){
             query = query.substring(1);
@@ -123,6 +151,7 @@ public class ManagerParam {
                 "cid=" + cid +
                 ", gid=" + gid +
                 ", uid=" + uid +
+                ", language=" + language +
                 ", nonePrducerFlows=" + nonePrducerFlows +
                 ", noneConsumers=" + noneConsumers +
                 ", noneConsumerFlows=" + noneConsumerFlows +

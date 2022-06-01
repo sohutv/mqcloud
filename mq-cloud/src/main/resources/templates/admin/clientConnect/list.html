@@ -1,0 +1,357 @@
+<div class="main">
+	<form class="form-inline" role="form" action="${request.contextPath}/admin/clientConnect/list">
+		<div class="form-group">
+			<label for="cid"> 集群: </label>
+			<div class="form-group">
+				<select id="cid" class="selectpicker" title="搜索集群" data-live-search-placeholder="输入搜索内容" name="cid" data-live-search="false"></select>
+			</div>
+		</div>
+		<div class="form-group">
+			<label for="language"> 客户端语言: </label>
+			<div class="form-group">
+				<select id="language" class="selectpicker" title="搜索" data-live-search-placeholder="输入搜索内容" name="language" data-live-search="false">
+				</select>
+			</div>
+		</div>
+		<div class="form-group">
+			<label for="groupName"> 客户端名称: </label>
+			<div class="form-group">
+				<select id="groupName" class="selectpicker" title="搜索客户端" data-live-search-placeholder="输入搜索内容" name="groupName" data-live-search="true"></select>
+			</div>
+		</div>
+    	<button type="submit" class="btn btn-search"><span class="glyphicon glyphicon-search" aria-hidden="true"></span></button>
+		<button type="button" title="刷新消费者客户端信息" data-target="#refreshClient" data-toggle="modal" style="float: right;">
+			<span class="glyphicon glyphicon-refresh" aria-hidden="true"></span>
+		</button>
+	</form>
+	<hr/>
+	<table class="table table-striped table-hover" style="margin-top: 0px;word-break:break-all; word-wrap:break-all;">
+		<thead>
+			<colgroup>
+				<col width="5%">
+				<col width="8%">
+				<col width="18%">
+				<col width="20%">
+				<col width="8%">
+				<col width="6%">
+				<col width="8%">
+				<col width="20%">
+				<col>
+			</colgroup>
+			<tr>
+				<td style="text-align:center;vertical-align:middle;">序号</td>
+				<td style="text-align:center;vertical-align:middle;">集群名称</td>
+				<td style="text-align:center;vertical-align:middle;">关联主题</td>
+				<td style="text-align:center;vertical-align:middle;">客户端名称</td>
+				<td style="text-align:center;vertical-align:middle;">类别</td>
+				<td style="text-align:center;vertical-align:middle;">语言</td>
+				<td style="text-align:center;vertical-align:middle;">版本</td>
+				<td style="text-align:center;vertical-align:middle;">关联用户</td>
+				<td style="text-align:center;vertical-align:middle;">操作</td>
+			</tr>
+		</thead>
+		<tbody>
+			<#if listResult.empty>
+				<tr>
+					<td colspan=10 style="text-align:center">
+						暂无数据
+					</td>
+				</tr>
+			<#else>
+				<#list listResult.result as clientLanguageVo>
+					<tr>
+						<td style="text-align:center;vertical-align:middle;">${clientLanguageVo.index}</td>
+						<td style="text-align:center;vertical-align:middle;">${clientLanguageVo.clusterName!}</td>
+						<td style="text-align:center;vertical-align:middle;">${clientLanguageVo.topic.name!}</td>
+						<td style="text-align:center;vertical-align:middle;">${clientLanguageVo.clientLanguage.clientGroupName!}</td>
+						<td style="text-align:center;vertical-align:middle;">
+							<#if clientLanguageVo.clientLanguage.clientGroupType == 1>
+								<span>消费者</span>
+							<#else>
+								<span>生产者</span>
+							</#if>
+						</td>
+						<td style="text-align:center;vertical-align:middle;">${clientLanguageVo.clientLanguage.languageStr}</td>
+						<td style="text-align:center;vertical-align:middle;">${clientLanguageVo.clientLanguage.version}</td>
+						<td style="text-align:center;vertical-align:middle;"><a href="javascript:void();" class="copied" data-toggle="tooltip" title="点击复制关联人员邮箱" data-clipboard-text="${clientLanguageVo.userEmails}">${clientLanguageVo.userNames}</a></td>
+						<td style="text-align:center;vertical-align:middle;">
+							<button type="button" class="btn btn-sm btn-success" title="手动修改" data-target="#modifyClientData" data-toggle="modal" onclick="loadModifyData('${clientLanguageVo.clientLanguage.tid}','${clientLanguageVo.clientLanguage.clientGroupName}');"><span class="glyphicon glyphicon-edit" aria-hidden="true"></span></button>
+						</td>
+					</tr>
+				</#list>
+			</#if>
+		</tbody>
+	</table>
+<ul id="pagination" data-url="${request.contextPath}/admin/clientConnect/list?${queryParams.queryStr!}" style="float:right"></ul>
+<#include "../../inc/pagination.html">
+</div>
+
+<div id="modifyClientData" class="modal fade" tabindex="-1" data-width="400">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+				<h4 class="modal-title"><b id="auditDetailUser"></b>修改客户端信息<b id="auditDetailAction"></b></h4>
+			</div>
+			<form class="form-horizontal form-bordered form-row-stripped" id="modifyShow">
+				<div class="modal-body">
+					<div class="row">
+						<div class="col-md-12">
+							<div class="form-body">
+								<div class="form-group">
+									<label class="control-label col-md-4"> 客户端名称: </label>
+									<div class="col-md-6">
+										<input type="hidden" name="tid" id="tid" class="form-control" />
+										<input type="hidden" name="clientGroupName" id="clientGroupName" class="form-control" />
+										<div class="form-control-static" style="border:0;border-radius:5px;background-color:rgba(241,241,241,.98);padding-left:10px">
+											<span id="groupNameShow" style="word-break:break-all;text-align: center"></span>
+										</div>
+									</div>
+								</div>
+								<div class="form-group">
+									<label class="control-label col-md-4"> 客户端语言: </label>
+									<div class="col-md-6">
+										<select id="clientLanguage" class="selectpicker" title="搜索语言" data-live-search-placeholder="输入搜索内容" name="language" data-live-search="false"></select>
+									</div>
+								</div>
+								<div class="form-group">
+									<label class="control-label col-md-4"> 客户端版本: </label>
+									<div class="col-md-6">
+										<input type="text" id="version" name="version" data-toggle="tooltip" title="GitHub版本信息" class="form-control"/>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-default" data-dismiss="modal">
+						取消
+					</button>
+					<button type="button" class="btn btn-primary" onclick="modifyData()">
+						确认
+					</button>
+				</div>
+			</form>
+		</div>
+	</div>
+</div>
+
+<div id="refreshClient" class="modal fade" tabindex="-1" data-width="200">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+				<h4 class="modal-title">客户端刷新(不指定默认刷新全部)</h4>
+			</div>
+			<form class="form-horizontal form-bordered form-row-stripped" id="addUserProducerModalForm">
+				<div class="modal-body">
+					<div class="row">
+						<div class="col-md-12">
+							<div class="form-body">
+								<div class="form-group">
+									<label class="control-label col-md-3"> Topic名称: </label>
+									<div class="col-md-5">
+										<input type="text" name="refreshName" data-toggle="tooltip" id="refreshName" title="待刷新的客户端绑定Topic名称" class="form-control"/>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</form>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-default" data-dismiss="modal">
+					取消
+				</button>
+				<button type="button" id="refreshClientData" class="btn btn-primary" onclick="refreshClientData()">
+					刷新
+				</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<script>
+
+	$(function(){
+		// 初始化提示组件
+		$("[data-toggle='tooltip']").tooltip();
+
+		$('#cid').selectpicker({
+			width: '140px'
+		});
+		initClusterList("cid");
+		$('#language').selectpicker({
+			width: '80px'
+		});
+		initLanguage("language");
+		$('#groupName').selectpicker({
+			width: '220px'
+		});
+		initGroupName("groupName");
+	});
+
+	/**
+	 * 初始化客户端名称
+	 */
+	function initGroupName(clientGroupName){
+		$.get('${request.contextPath}/admin/clientConnect/getAllGroupName',
+				function (data){
+					if (data.result.status == 200){
+						var content = "";
+						content += "<option value= >"+'全部'+"</option>";
+						for(var i in data.result.result){
+							var groupName = data.result.result[i];
+							content += "<option value='"+groupName+"'>"+groupName+"</option>";
+						}
+						$("#"+clientGroupName).html(content);
+						$("#"+clientGroupName).selectpicker('refresh');
+						<#if queryParams.queryStr?? && queryParams.groupName??>
+								$('#' + clientGroupName).selectpicker('val', '${queryParams.groupName}');
+					</#if>
+					}else{
+						toastr.error("数据获取失败！"+data.message);
+					}
+				}, 'json');
+	}
+
+
+	/**
+	 * 初始化语言
+	 */
+	function initLanguage(showLanguage){
+		$.get('${request.contextPath}/admin/clientConnect/getAllLanguage',
+				function (data){
+					if (data.result.status == 200){
+						var content = "";
+						content += "<option value= >"+'全部'+"</option>";
+						for(var i in data.result.result){
+							var language = data.result.result[i];
+							content += "<option value='"+language.code+"'>"+language.language+"</option>";
+						}
+						$("#"+showLanguage).html(content);
+						$("#"+showLanguage).selectpicker('refresh');
+						<#if queryParams.queryStr?? && queryParams.language??>
+								$('#' + showLanguage).selectpicker('val', '${queryParams.language}');
+					</#if>
+					}else{
+						toastr.error("数据获取失败！"+data.message);
+					}
+				}, 'json');
+	}
+
+
+	/**
+	 * 初始化集群下拉列表
+	 */
+	function initClusterList(showCluserList){
+		$.get('${request.contextPath}/admin/topicManager/getAllCluser',
+				function(data){
+					if(data.result.status == 200){
+						var content = "";
+						content += "<option value= >"+'全部'+"</option>";
+						for(var i in data.result.result){
+							var cluser = data.result.result[i];
+							content += "<option value='"+cluser.id+"'>"+cluser.name+"</option>";
+						}
+						$("#"+showCluserList).html(content);
+						$("#"+showCluserList).selectpicker('refresh');
+						<#if queryParams.queryStr?? && queryParams.cid??>
+								$('#' + showCluserList).selectpicker('val', '${queryParams.cid}');
+					</#if>
+					}else{
+						toastr.error("数据获取失败！"+data.message);
+					}
+				}, 'json');
+	}
+
+	function loadModifyData(tid,clientGroupName){
+		$('#clientLanguage').selectpicker({
+			width : '100%'
+		});
+
+		$.post('${request.contextPath}/admin/clientConnect/query',
+				{
+					tid: tid,
+					clientGroupName: clientGroupName,
+					withLanguagesList: true
+				},
+				function(data){
+					if(data.result.status == 200){
+						var languageData = data.result.result;
+
+						var content = "";
+						for(var i in languageData.languageList){
+							var language = languageData.languageList[i];
+							content += "<option value='"+language.code+"'>"+language.language+"</option>";
+						}
+						$('#clientLanguage').html(content);
+						$('#clientLanguage').selectpicker('refresh');
+						var languageCode = languageData.clientLanguage.language;
+						$('#clientLanguage').selectpicker('val', languageCode);
+
+						var clientGroupName = languageData.clientLanguage.clientGroupName;
+						$("#clientGroupName").val(clientGroupName);
+						$("#groupNameShow").html(clientGroupName);
+
+						var tid = languageData.clientLanguage.tid;
+						$("#tid").val(tid);
+
+						if (languageData.clientLanguage.allowAutoRefresh == 0){
+							$('#allowAutoRefresh').selectpicker('val', 0);
+						}else {
+							$('#allowAutoRefresh').selectpicker('val', 1);
+						}
+
+						var version = languageData.clientLanguage.version;
+						$("#version").val(version);
+
+					}else{
+						toastr.error("数据获取失败！"+data.message);
+					}
+				}, 'json');
+
+	}
+
+
+	function modifyData(){
+		$.post('${request.contextPath}/admin/clientConnect/update',
+				$("#modifyShow").serialize(),
+				function(data){
+					if(data.result.status == 200){
+						toastr.success("已添加，将重新刷新");
+						reload();
+					}else{
+						toastr.error("新增失败！"+data.result.message);
+						enable("nameServerDeleteBtn");
+					}
+				}, 'json');
+
+	}
+
+	$(function () {
+		var clipboard = new ClipboardJS('.copied');
+		clipboard.on('success', function(e) {
+			toastr.success("复制成功");
+		});
+	})
+
+	function refreshClientData(){
+		var refreshName = $("#refreshName").val();
+		$.post('${request.contextPath}/admin/clientConnect/refreshClient',
+				{
+					topicName: refreshName
+				},
+				function(data){
+					if(data.result.status == 200){
+						toastr.success("刷新任务已提交，请稍后刷新页面");
+						reload();
+					}else{
+						toastr.error("任务提交失败！"+data.result.message);
+						enable("nameServerDeleteBtn");
+					}
+				}, 'json');
+	}
+</script>
+

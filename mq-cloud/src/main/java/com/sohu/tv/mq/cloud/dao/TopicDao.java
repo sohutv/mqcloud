@@ -128,6 +128,34 @@ public interface TopicDao {
      */
     @Select("select * from topic order by name")
     public List<Topic> selectAll();
+
+
+    /**
+     * 查询所有topic以及对应的生产者
+     * @return Cursor<Topic>
+     */
+    @Select("<script> select DISTINCT topic.*, user_producer.producer as producerName " +
+            "from topic inner join user_producer " +
+            "on topic.id = user_producer.tid " +
+            "left join client_language on client_language.client_group_name = user_producer.producer " +
+            "where client_language.tid is null " +
+            " <if test=\"topicName != null and topicName != ''\"> and topic.name = #{topicName} </if>"+
+            "</script>")
+    public List<Topic> selectAllWithProducer(@Param("topicName") String topicName);
+
+
+    /**
+     * 查询所有topic以及对应的消费者
+     * @return Cursor<Topic>
+     */
+    @Select("<script> select DISTINCT topic.*, consumer.name as consumerName " +
+            "from topic inner join consumer " +
+            "on topic.id = consumer.tid " +
+            "left join client_language on client_language.client_group_name = consumer.name " +
+            "where client_language.tid is null " +
+            " <if test=\"topicName != null and topicName != ''\"> and topic.name = #{topicName} </if>"+
+            "</script>")
+    public List<Topic> selectAllWithConsumer(@Param("topicName") String topicName);
     
     /**
      * 按照名字查询

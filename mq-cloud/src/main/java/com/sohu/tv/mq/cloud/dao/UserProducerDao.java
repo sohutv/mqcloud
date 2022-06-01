@@ -156,4 +156,11 @@ public interface UserProducerDao {
             + "limit 1"
             + "</script>")
     String checkExistByName(@Param("list") List<String> newArrayList);
+
+    /**
+     * 依据生产者名称获取关联用户ID
+     *
+     */
+    @Select("select distinct uid from user_producer where producer = #{name}")
+    List<Integer> selectUidByProduceName(@Param("name") String groupClientName);
 }

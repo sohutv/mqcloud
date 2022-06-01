@@ -34,7 +34,13 @@ public class Topic {
     
     // 冗余字段
     private Cluster cluster;
-    
+
+    // 冗余字段 生产者名称
+    private String producerName;
+
+    // 冗余字段 消费者名称
+    private String consumerName;
+
     // 消息发送量
     private long count;
     
@@ -192,6 +198,22 @@ public class Topic {
         this.effective = effective;
     }
 
+    public String getProducerName() {
+        return producerName;
+    }
+
+    public void setProducerName(String producerName) {
+        this.producerName = producerName;
+    }
+
+    public String getConsumerName() {
+        return consumerName;
+    }
+
+    public void setConsumerName(String consumerName) {
+        this.consumerName = consumerName;
+    }
+
     @Override
     public String toString() {
         return "Topic{" +
@@ -210,6 +232,8 @@ public class Topic {
                 ", serializer=" + serializer +
                 ", trafficWarnEnabled=" + trafficWarnEnabled +
                 ", effective=" + effective +
+                ", producerName=" + producerName +
+                ", consumerName=" + consumerName +
                 '}';
     }
 }
