@@ -68,6 +68,9 @@ public class ConsumerService {
     private ClusterService clusterService;
 
     @Autowired
+    private ClientConnectionService clientConnectionService;
+
+    @Autowired
     private TopicService topicService;
 
     /**
@@ -555,7 +558,7 @@ public class ConsumerService {
      * @return
      */
     public Result<ConsumerConnection> examineConsumerConnectionInfo(String consumerGroup, Cluster mqCluster) {
-        return mqAdminTemplate.execute(new MQAdminCallback<Result<ConsumerConnection>>() {
+        Result<ConsumerConnection> result = mqAdminTemplate.execute(new MQAdminCallback<Result<ConsumerConnection>>() {
             public Result<ConsumerConnection> callback(MQAdminExt mqAdmin) throws Exception {
                 ConsumerConnection consumerConnection = mqAdmin.examineConsumerConnectionInfo(consumerGroup);
                 return Result.getResult(consumerConnection);
@@ -575,6 +578,13 @@ public class ConsumerService {
                 return mqCluster;
             }
         });
+        if(result.isOK()){
+            ConsumerConnection consumerConnection = result.getResult();
+            HashSet<Connection> newConnections = clientConnectionService.checkConnectVersion(consumerConnection.getConnectionSet(),
+                    consumerGroup,ClientLanguage.CONSUMER_CLIENT_GROUP_TYPE, mqCluster);
+            consumerConnection.setConnectionSet(newConnections);
+        }
+        return result;
     }
 
     /**

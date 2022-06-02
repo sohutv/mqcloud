@@ -1,8 +1,11 @@
 package com.sohu.tv.mq.cloud.service;
 
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 
+import com.sohu.tv.mq.cloud.bo.ClientLanguage;
+import org.apache.rocketmq.common.protocol.body.Connection;
 import org.apache.rocketmq.common.protocol.body.ProducerConnection;
 import org.apache.rocketmq.tools.admin.MQAdminExt;
 import org.slf4j.Logger;
@@ -35,6 +38,9 @@ public class UserProducerService {
     
     @Autowired
     private MQAdminTemplate mqAdminTemplate;
+
+    @Autowired
+    private ClientConnectionService clientConnectionService;
     
     /**
      * 按照uid查询UserProducer
@@ -155,18 +161,27 @@ public class UserProducerService {
      * @return
      */
     public Result<ProducerConnection> examineProducerConnectionInfo(String producerGroup, String topic, Cluster mqCluster) {
-        return mqAdminTemplate.execute(new MQAdminCallback<Result<ProducerConnection>>() {
+        Result<ProducerConnection> connectionResult = mqAdminTemplate.execute(new MQAdminCallback<Result<ProducerConnection>>() {
             public Result<ProducerConnection> callback(MQAdminExt mqAdmin) throws Exception {
                 ProducerConnection producerConnection = mqAdmin.examineProducerConnectionInfo(producerGroup, topic);
                 return Result.getResult(producerConnection);
             }
+
             public Result<ProducerConnection> exception(Exception e) throws Exception {
                 return Result.getDBErrorResult(e);
             }
+
             public Cluster mqCluster() {
                 return mqCluster;
             }
         });
+        if (connectionResult.isOK()){
+            HashSet<Connection> connectionSet = connectionResult.getResult().getConnectionSet();
+            HashSet<Connection> newConnctions = clientConnectionService.checkConnectVersion(connectionSet, producerGroup,
+                    ClientLanguage.PRODUCER_CLIENT_GROUP_TYPE, mqCluster);
+            connectionResult.getResult().setConnectionSet(newConnctions);
+        }
+        return connectionResult;
     }
     
     /**

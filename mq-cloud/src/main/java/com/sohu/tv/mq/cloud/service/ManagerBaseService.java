@@ -23,7 +23,7 @@ import java.util.stream.Stream;
 /**
  * @author fengwang219475
  * @version 1.0
- * @description: TODO
+ * @description: 多条件查询基础服务类
  * @date 2022/3/3 17:11
  */
 public class ManagerBaseService {
@@ -91,7 +91,7 @@ public class ManagerBaseService {
     private List<Long> getAllTopicIdByCid(Long cid, List<Long> tids) {
         List<Long> list = topicDao.selectAllTidsByCid(cid);
         list.retainAll(tids);
-        return list;
+        return list.stream().sorted().collect(Collectors.toList());
     }
 
     /**
