@@ -17,7 +17,11 @@
 				<tr>
 					<td>${conn.clientId}</td>
 					<td>${conn.language}</td>
-					<td>${mqVersion.getVersionDesc(conn.version)}</td>
+					<#if conn.version != -1>
+						<td>${mqVersion.getVersionDesc(conn.version)}</td>
+					<#else>
+						<td>${conn.versionStr}</td>
+					</#if>
 				</tr>
 			</#list>
 		</#if>
