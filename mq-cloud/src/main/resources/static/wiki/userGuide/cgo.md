@@ -37,7 +37,7 @@
 
    1. GroupID：producerGroup，可以点击复制[topic详情页](topic#detail)的producer group。
    2. NameServerDomain：NameServer的域名，可以点击复制[topic详情页](topic#detail)的集群路由。
-   3. 集群id：topic所在集群的id,可依据[集群配置](cgo#appendix)进行配置。
+   3. 集群id：topic所在集群的id,可到[topic详情页](topic#detail)查看。
 
 3. 创建生产者实例
 
@@ -160,14 +160,4 @@
 1. rocketmq日志默认在$HOME/logs/rocketmq-cpp下，可以参考定位问题。
 2. 其余注意事项请参考[常见问题](faq)。
 3. 完整用法示例可以参考[官方样例](https://github.com/apache/rocketmq-client-go/tree/master/examples)。
-
-## 六、<span id="appendix">集群配置</span>
-生产环境集群配置列表：
-
-| 集群id   | 集群名称            | 集群路由地址                                |
-|:------:| :------:             | :------:                                      |
-|   1    |index-cluster        | http://${mqcloudDomain}/rocketmq/nsaddr-1|
-|   2    | core-cluster        | http://${mqcloudDomain}/rocketmq/nsaddr-2|
-|   3    | test-cluster        | http://${mqcloudDomain}/rocketmq/nsaddr-3|
-|   5    | transaction-cluster | http://${mqcloudDomain}/rocketmq/nsaddr-5|
 

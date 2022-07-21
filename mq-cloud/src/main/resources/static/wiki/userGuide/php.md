@@ -107,7 +107,7 @@ echo 'extension=rocketmq.so' >> /usr/local/php/lib/php.ini
 
    1. PushConsumer构造函数参数：consumerGroup，可以参考[消费详情](topic#consume)的consumer group。
    2. NameServerDomain：NameServer的域名，可以点击复制[topic详情页](topic#detail)的集群路由。
-   3. 集群id：topic所在集群的id，可依据[集群配置](php#appendix)进行配置。
+   3. 集群id：topic所在集群的id，可到[topic详情页](topic#detail)查看配置。
    4. MessageModel：消费方式
       1. CLUSTERING：所有的消费实例均分消息进行消费。
       2. BROADCASTING ：每个消费实例会消费所有的消息。
@@ -140,15 +140,5 @@ echo 'extension=rocketmq.so' >> /usr/local/php/lib/php.ini
 1. rocketmq日志默认在$HOME/logs/rocketmq-cpp下，可以参考定位问题。
 2. 其余注意事项请参考[常见问题](faq)。
 3. 完整用法示例可以参考[官方样例](https://github.com/lpflpf/rocketmq-client-php/tree/master/example)。
-
-## 六、<span id="appendix">集群配置</span>
-生产环境集群配置列表：
-
-| 集群id   | 集群名称            | 集群路由地址                                |
-|:------:| :------:             | :------:                                      |
-|   1    |index-cluster        | http://${mqcloudDomain}/rocketmq/nsaddr-1|
-|   2    | core-cluster        | http://${mqcloudDomain}/rocketmq/nsaddr-2|
-|   3    | test-cluster        | http://${mqcloudDomain}/rocketmq/nsaddr-3|
-|   5    | transaction-cluster | http://${mqcloudDomain}/rocketmq/nsaddr-5|
 
 

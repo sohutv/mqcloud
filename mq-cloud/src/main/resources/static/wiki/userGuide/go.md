@@ -38,7 +38,7 @@
    consumer或者producer.WithInstance("pid or port"+"@集群id")
    ```
 
-   集群id就是NameServer路由地址最后的数字。注意，必须追加集群id，否则跨集群时，使用一个通道导致异常，可依据[集群配置](cgo#appendix)进行配置。
+   集群id就是NameServer路由地址最后的数字。注意，必须追加集群id，否则跨集群时，使用一个通道导致异常，可到[topic详情页](topic#detail)查看配置。
 
 ## 四、<span id="produce">生产消息</span>
 
@@ -154,14 +154,3 @@
        fmt.Printf("shutdown Consumer error: %s", err.Error())
    }
    ```
-## 六、<span id="appendix">集群配置</span>
-生产环境集群配置列表：
-
-| 集群id   | 集群名称            | 集群路由地址                                |
-|:------:| :------:             | :------:                                      |
-|   1    |index-cluster        | http://${mqcloudDomain}/rocketmq/nsaddr-1|
-|   2    | core-cluster        | http://${mqcloudDomain}/rocketmq/nsaddr-2|
-|   3    | test-cluster        | http://${mqcloudDomain}/rocketmq/nsaddr-3|
-|   5    | transaction-cluster | http://${mqcloudDomain}/rocketmq/nsaddr-5|
-
-   ​
