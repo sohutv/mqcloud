@@ -6,7 +6,7 @@
 	<artifactId>mq</artifactId>
 	<packaging>pom</packaging>
 	<name>mq</name>
-	<version>4.9.2</version>
+	<version>4.9.3</version>
 
 	<modules>
 		<module>mq-client-common-open</module>
@@ -29,6 +29,8 @@
 		<guava.version>18.0</guava.version>
 		<github.global.server>github</github.global.server>
 		<jedis.version>3.3.0</jedis.version>
+		<okhttp.version>3.8.1</okhttp.version>
+		<jackson.version>2.10.5</jackson.version>
 	</properties>
 
 	<dependencyManagement>
@@ -115,6 +117,11 @@
 				<artifactId>jedis</artifactId>
 				<optional>true</optional>
 				<version>${jedis.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>com.squareup.okhttp3</groupId>
+				<artifactId>okhttp</artifactId>
+				<version>${okhttp.version}</version>
 			</dependency>
 		</dependencies>
 	</dependencyManagement>

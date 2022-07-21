@@ -6,7 +6,7 @@
 	<parent>
 		<groupId>com.sohu.tv</groupId>
 		<artifactId>mq</artifactId>
-		<version>4.9.2</version>
+		<version>4.9.3</version>
 	</parent>
 
 	<artifactId>mq-client-common-open</artifactId>
@@ -44,6 +44,12 @@
 			<version>${micrometer.version}</version>
 			<optional>true</optional>
 		</dependency>
+		<dependency>
+			<groupId>com.fasterxml.jackson.core</groupId>
+			<artifactId>jackson-databind</artifactId>
+			<optional>true</optional>
+			<version>${jackson.version}</version>
+		</dependency>
 	</dependencies>
 	
 	<build>
@@ -65,6 +71,35 @@
 		                </configuration>
 			        </execution>
 			    </executions>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-shade-plugin</artifactId>
+				<version>3.3.0</version>
+				<executions>
+					<execution>
+						<phase>package</phase>
+						<goals>
+							<goal>shade</goal>
+						</goals>
+						<configuration>
+							<createDependencyReducedPom>true</createDependencyReducedPom>
+							<useDependencyReducedPomInJar>true</useDependencyReducedPomInJar>
+							<relocations>
+								<relocation>
+									<pattern>com.fasterxml.jackson</pattern>
+									<shadedPattern>shaded.com.fasterxml.jackson</shadedPattern>
+								</relocation>
+							</relocations>
+							<artifactSet>
+								<includes>
+									<include>com.sohu.tv:mq-client-common-open</include>
+									<include>com.fasterxml.jackson.core:*</include>
+								</includes>
+							</artifactSet>
+						</configuration>
+					</execution>
+				</executions>
 			</plugin>
 		</plugins>
 	</build>
