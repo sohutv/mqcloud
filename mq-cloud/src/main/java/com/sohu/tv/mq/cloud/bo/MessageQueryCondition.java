@@ -1,11 +1,11 @@
 package com.sohu.tv.mq.cloud.bo;
 
-import java.io.IOException;
-import java.util.List;
-
-import com.alibaba.fastjson.JSON;
 import com.sohu.tv.mq.cloud.util.CompressUtil;
 import com.sohu.tv.mq.util.CommonUtil;
+import com.sohu.tv.mq.util.JSONUtil;
+
+import java.io.IOException;
+import java.util.List;
 
 /**
  * 消息查询条件
@@ -166,7 +166,7 @@ public class MessageQueryCondition {
     }
 
     public String serialize() throws IOException {
-        return CompressUtil.compress(JSON.toJSONString(this));
+        return CompressUtil.compress(JSONUtil.toJSONString(this));
     }
 
     public void setStart(long start) {

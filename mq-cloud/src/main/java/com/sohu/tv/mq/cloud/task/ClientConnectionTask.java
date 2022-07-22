@@ -25,7 +25,7 @@ public class ClientConnectionTask {
 
     /**
      * 采集客户端连接数据 存储客户端语言版本
-     * 执行时间 凌晨3点
+     * 执行时间 每3小时一次
      */
     @Scheduled(cron = "0 0 3 * * ?")
     @SchedulerLock(name = "collectClientConnection", lockAtMostFor = 180000, lockAtLeastFor = 180000)

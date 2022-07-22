@@ -1,9 +1,13 @@
 package com.sohu.tv.mq.rocketmq.netty;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
+import com.sohu.tv.mq.metric.ConsumeFailedStat;
+import com.sohu.tv.mq.metric.ConsumeStatManager;
+import com.sohu.tv.mq.metric.ConsumeThreadStat;
+import com.sohu.tv.mq.metric.StackTraceMetric;
+import com.sohu.tv.mq.rocketmq.RocketMQConsumer;
+import com.sohu.tv.mq.util.Constant;
+import com.sohu.tv.mq.util.JSONUtil;
+import io.netty.channel.ChannelHandlerContext;
 import org.apache.rocketmq.common.UtilAll;
 import org.apache.rocketmq.common.protocol.RequestCode;
 import org.apache.rocketmq.common.protocol.ResponseCode;
@@ -13,15 +17,9 @@ import org.apache.rocketmq.remoting.exception.RemotingCommandException;
 import org.apache.rocketmq.remoting.netty.NettyRequestProcessor;
 import org.apache.rocketmq.remoting.protocol.RemotingCommand;
 
-import com.alibaba.fastjson.JSON;
-import com.sohu.tv.mq.metric.ConsumeFailedStat;
-import com.sohu.tv.mq.metric.ConsumeStatManager;
-import com.sohu.tv.mq.metric.ConsumeThreadStat;
-import com.sohu.tv.mq.metric.StackTraceMetric;
-import com.sohu.tv.mq.rocketmq.RocketMQConsumer;
-import com.sohu.tv.mq.util.Constant;
-
-import io.netty.channel.ChannelHandlerContext;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * sohu 客户端远程处理器
@@ -117,8 +115,7 @@ public class SohuClientRemotingProcessor implements NettyRequestProcessor {
         }
         List<StackTraceMetric> threadMetricList = consumeThreadMetrics.getAll();
         ConsumerRunningInfo consumerRunningInfo = new ConsumerRunningInfo();
-        consumerRunningInfo.getProperties().put(Constant.COMMAND_VALUE_THREAD_METRIC,
-                JSON.toJSONString(threadMetricList));
+        consumerRunningInfo.getProperties().put(Constant.COMMAND_VALUE_THREAD_METRIC, JSONUtil.toJSONString(threadMetricList));
         return consumerRunningInfo;
     }
 
@@ -137,7 +134,7 @@ public class SohuClientRemotingProcessor implements NettyRequestProcessor {
         }
         List<StackTraceMetric> metricList = consumeFailedMetrics.getAll();
         ConsumerRunningInfo consumerRunningInfo = new ConsumerRunningInfo();
-        consumerRunningInfo.getProperties().put(Constant.COMMAND_VALUE_FAILED_METRIC, JSON.toJSONString(metricList));
+        consumerRunningInfo.getProperties().put(Constant.COMMAND_VALUE_FAILED_METRIC, JSONUtil.toJSONString(metricList));
         return consumerRunningInfo;
     }
 

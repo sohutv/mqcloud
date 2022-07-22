@@ -11,6 +11,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
 
+import com.sohu.tv.mq.util.JSONUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.rocketmq.common.admin.TopicOffset;
 import org.apache.rocketmq.common.admin.TopicStatsTable;
@@ -23,7 +24,6 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
-import com.alibaba.fastjson.JSON;
 import com.sohu.tv.mq.cloud.bo.Audit;
 import com.sohu.tv.mq.cloud.bo.Audit.TypeEnum;
 import com.sohu.tv.mq.cloud.bo.AuditResendMessage;
@@ -389,10 +389,7 @@ public class TopicMessageController extends ViewController {
     /**
      * 组装参数
      * 
-     * @param time
-     * @param topic
      * @param key
-     * @param cid
      * @return
      * @throws IOException
      */
@@ -403,7 +400,7 @@ public class TopicMessageController extends ViewController {
         }
         // 解析对象
         String json = CompressUtil.uncompress(messageParam);
-        MessageQueryCondition messageQueryCondition = JSON.parseObject(json, MessageQueryCondition.class);
+        MessageQueryCondition messageQueryCondition = JSONUtil.parse(json, MessageQueryCondition.class);
         if (append) {
             messageQueryCondition.prepareForSearch();
             return messageQueryCondition;

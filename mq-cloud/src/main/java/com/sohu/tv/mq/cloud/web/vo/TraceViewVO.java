@@ -5,10 +5,10 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+import com.sohu.tv.mq.util.JSONUtil;
 import org.apache.rocketmq.client.trace.TraceContext;
 import org.apache.rocketmq.client.trace.TraceType;
 
-import com.alibaba.fastjson.JSON;
 import com.sohu.tv.mq.cloud.bo.TraceMessageDetail;
 import com.sohu.tv.mq.cloud.util.DateUtil;
 
@@ -168,7 +168,7 @@ public class TraceViewVO {
         if (producerRequestView == null || producerRequestView.getDetail() == null) {
             return "{}";
         }
-        return JSON.toJSONString(producerRequestView.getDetail());
+        return JSONUtil.toJSONString(producerRequestView.getDetail());
     }
 
     /**
@@ -186,7 +186,7 @@ public class TraceViewVO {
                 messageList.add(consumerViewVO.getDetail());
             }
         }
-        return JSON.toJSONString(messageList);
+        return JSONUtil.toJSONString(messageList);
     }
 
     public void buildProducer(TraceMessageDetail traceMessageDetail, TraceContext traceContext) {

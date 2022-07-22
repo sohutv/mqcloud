@@ -1,8 +1,7 @@
 package com.sohu.tv.mq.cloud.util;
 
-import com.alibaba.fastjson.JSON;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.sohu.tv.mq.cloud.web.controller.param.PaginationParam;
+import com.sohu.tv.mq.util.JSONUtil;
 
 import java.util.Collection;
 import java.util.Map;
@@ -30,7 +29,6 @@ public class Result<T> {
     /**
      * 获取OK结果
      * 
-     * @param status
      * @return
      */
     public static <T> Result<T> getOKResult() {
@@ -62,17 +60,15 @@ public class Result<T> {
     /**
      * 获取json格式数据
      * 
-     * @param status
      * @return
      */
     public static String getJsonResult(Result<?> result) {
-        return JSON.toJSONString(result);
+        return JSONUtil.toJSONString(result);
     }
 
 	/**
 	 * 获取正常返回结果
 	 * 
-	 * @param status
 	 * @return
 	 */
     public static <T> Result<T> getResult(Object result) {
@@ -85,7 +81,6 @@ public class Result<T> {
     /**
      * 保存结果
      * 
-     * @param status
      * @return
      */
     public static void setResult(Map<String, Object> map, Object result) {
@@ -99,7 +94,6 @@ public class Result<T> {
     /**
      * 保存结果
      * 
-     * @param status
      * @return
      */
     public static void setResult(Map<String, Object> map, Result<?> result) {
@@ -113,7 +107,6 @@ public class Result<T> {
     /**
      * 保存分页结果
      * 
-     * @param status
      * @return
      */
     public static void setResult(Map<String, Object> map, PaginationParam paginationParam) {
@@ -127,7 +120,6 @@ public class Result<T> {
     /**
      * 保存视图变量
      * 
-     * @param status
      * @return
      */
     public static void setView(Map<String, Object> map, Object result) {
@@ -137,7 +129,6 @@ public class Result<T> {
 	/**
 	 * 获取异常返回结果
 	 * 
-	 * @param status
 	 * @return
 	 */
 	public static <T> Result<T> getWebErrorResult(Exception e) {
@@ -147,7 +138,6 @@ public class Result<T> {
 	/**
      * 获取异常返回结果
      * 
-     * @param status
      * @return
      */
     public static <T> Result<T> getWebParamErrorResult(Exception e) {
@@ -171,7 +161,6 @@ public class Result<T> {
     /**
      * 获取请求异常返回结果
      *
-     * @param status
      * @return
      */
     public static <T> Result<T> getRequestErrorResult(Exception e) {
@@ -181,7 +170,6 @@ public class Result<T> {
 	/**
      * 获取Db异常返回结果
      * 
-     * @param status
      * @return
      */
     public static <T> Result<T> getDBErrorResult(Exception e) {
@@ -191,7 +179,6 @@ public class Result<T> {
     /**
      * 处理结果
      * 
-     * @param status
      * @return
      */
     public static <T> Result<T> getWebResult(Result<T> result) {
@@ -208,7 +195,6 @@ public class Result<T> {
      * 外部可以使用此方法便捷的判断结果是否正确
      * @return
      */
-    @JsonIgnore
     public boolean isOK() {
         return Status.OK.getKey() == status;
     }
@@ -217,7 +203,6 @@ public class Result<T> {
      * 外部可以使用此方法便捷的判断结果是否正确
      * @return
      */
-    @JsonIgnore
     public boolean isNotOK() {
         return !isOK();
     }
@@ -227,7 +212,6 @@ public class Result<T> {
      * 
      * @return
      */
-    @JsonIgnore
     @SuppressWarnings("rawtypes")
     public boolean isNotEmpty() {
         if(isNotOK()) {
@@ -247,7 +231,6 @@ public class Result<T> {
      * 
      * @return
      */
-    @JsonIgnore
     public boolean isEmpty() {
         return !isNotEmpty();
     }
@@ -291,11 +274,10 @@ public class Result<T> {
     /**
      * 转换为json格式数据
      * 
-     * @param status
      * @return
      */
     public String toJson() {
-        return JSON.toJSONString(this);
+        return JSONUtil.toJSONString(this);
     }
 
     @Override

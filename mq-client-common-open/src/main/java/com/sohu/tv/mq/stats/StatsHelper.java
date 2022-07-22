@@ -1,33 +1,22 @@
 package com.sohu.tv.mq.stats;
 
-import java.net.HttpURLConnection;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.TreeMap;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
-
+import com.sohu.tv.mq.stats.InvokeStats.ExceptionStats;
+import com.sohu.tv.mq.stats.InvokeStats.InvokeStatsResult;
+import com.sohu.tv.mq.stats.InvokeStats.TimeAndExceptionStats;
+import com.sohu.tv.mq.stats.dto.ClientStats;
+import com.sohu.tv.mq.util.JSONUtil;
 import org.apache.rocketmq.common.utils.HttpTinyClient;
 import org.apache.rocketmq.common.utils.HttpTinyClient.HttpResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.alibaba.fastjson.JSON;
-import com.sohu.tv.mq.stats.InvokeStats.ExceptionStats;
-import com.sohu.tv.mq.stats.InvokeStats.InvokeStatsResult;
-import com.sohu.tv.mq.stats.InvokeStats.TimeAndExceptionStats;
-import com.sohu.tv.mq.stats.dto.ClientStats;
+import java.net.HttpURLConnection;
+import java.text.SimpleDateFormat;
+import java.util.*;
+import java.util.Map.Entry;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * 统计助手
@@ -231,7 +220,7 @@ public class StatsHelper implements StatsHelperMBean {
             }
             statsHelper.clientStats = clientStats;
             // 发送结果
-            String stats = JSON.toJSONString(clientStats);
+            String stats = JSONUtil.toJSONString(clientStats);
             // 统计采样
             sampleStats.recordCost(System.currentTimeMillis() - start, new Date(start));
 

@@ -1,12 +1,12 @@
 package com.sohu.tv.mq.cloud.web.controller.admin;
 
-import com.alibaba.fastjson.JSON;
 import com.sohu.tv.mq.cloud.bo.*;
 import com.sohu.tv.mq.cloud.service.*;
 import com.sohu.tv.mq.cloud.util.*;
 import com.sohu.tv.mq.cloud.web.controller.param.ServerAlarmConfigParam;
 import com.sohu.tv.mq.cloud.web.vo.MachineTypeVO;
 import com.sohu.tv.mq.cloud.web.vo.ServerRoleVO;
+import com.sohu.tv.mq.util.JSONUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.springframework.beans.BeanUtils;
@@ -435,50 +435,50 @@ public class AdminServerController extends AdminViewController {
             maxIops = getBigger(maxIops, ss.getDiops());
         }
         // x axis
-        map.put("xAxis", JSON.toJSONString(xAxis));
+        map.put("xAxis", JSONUtil.toJSONString(xAxis));
         // load
-        map.put("load1", JSON.toJSONString(load1Serie));
-        map.put("load5", JSON.toJSONString(load5Serie));
-        map.put("load15", JSON.toJSONString(load15Serie));
+        map.put("load1", JSONUtil.toJSONString(load1Serie));
+        map.put("load5", JSONUtil.toJSONString(load5Serie));
+        map.put("load15", JSONUtil.toJSONString(load15Serie));
         map.put("maxLoad1", String.valueOf(maxLoad1));
         map.put("avgLoad1", format(totalLoad1, list.size()));
         // cpu
-        map.put("user", JSON.toJSONString(userSerie));
-        map.put("sys", JSON.toJSONString(sysSerie));
-        map.put("wa", JSON.toJSONString(waSerie));
+        map.put("user", JSONUtil.toJSONString(userSerie));
+        map.put("sys", JSONUtil.toJSONString(sysSerie));
+        map.put("wa", JSONUtil.toJSONString(waSerie));
         map.put("maxUser", String.valueOf(maxUser));
         map.put("maxSys", String.valueOf(maxSys));
         map.put("maxWa", String.valueOf(maxWa));
         // memory
-        map.put("mtotal", JSON.toJSONString(totalSerie));
-        map.put("muse", JSON.toJSONString(useSerie));
-        map.put("mcache", JSON.toJSONString(cacheSerie));
-        map.put("mbuffer", JSON.toJSONString(bufferSerie));
+        map.put("mtotal", JSONUtil.toJSONString(totalSerie));
+        map.put("muse", JSONUtil.toJSONString(useSerie));
+        map.put("mcache", JSONUtil.toJSONString(cacheSerie));
+        map.put("mbuffer", JSONUtil.toJSONString(bufferSerie));
         map.put("curFree", format(curFree, 1024));
         map.put("maxUse", format(maxUse, 1024));
         map.put("maxCache", format(maxCache, 1024));
         map.put("maxBuffer", format(maxBuffer, 1024));
         // swap
-        map.put("mswap", JSON.toJSONString(swapSerie));
-        map.put("mswapUse", JSON.toJSONString(swapUseSerie));
+        map.put("mswap", JSONUtil.toJSONString(swapSerie));
+        map.put("mswapUse", JSONUtil.toJSONString(swapUseSerie));
         map.put("maxSwap", String.valueOf(maxSwapUse));
         // net
-        map.put("nin", JSON.toJSONString(netInSerie));
-        map.put("nout", JSON.toJSONString(netOutSerie));
+        map.put("nin", JSONUtil.toJSONString(netInSerie));
+        map.put("nout", JSONUtil.toJSONString(netOutSerie));
         map.put("maxNetIn", format(maxNetIn, 1024));
         map.put("maxNetOut", format(maxNetOut, 1024));
         // tcp
-        map.put("testab", JSON.toJSONString(establishedSerie));
-        map.put("twait", JSON.toJSONString(twSerie));
-        map.put("torph", JSON.toJSONString(orphanSerie));
+        map.put("testab", JSONUtil.toJSONString(establishedSerie));
+        map.put("twait", JSONUtil.toJSONString(twSerie));
+        map.put("torph", JSONUtil.toJSONString(orphanSerie));
         map.put("maxConn", maxConn);
         map.put("maxWait", maxWait);
         map.put("maxOrphan", maxOrphan);
         // disk
-        map.put("dread", JSON.toJSONString(readSerie));
-        map.put("dwrite", JSON.toJSONString(writeSerie));
-        map.put("dbusy", JSON.toJSONString(busySerie));
-        map.put("diops", JSON.toJSONString(iopsSerie));
+        map.put("dread", JSONUtil.toJSONString(readSerie));
+        map.put("dwrite", JSONUtil.toJSONString(writeSerie));
+        map.put("dbusy", JSONUtil.toJSONString(busySerie));
+        map.put("diops", JSONUtil.toJSONString(iopsSerie));
         map.put("maxRead", format(maxRead, 1024));
         map.put("maxWrite", format(maxWrite, 1024));
         map.put("maxBusy", String.valueOf(maxBusy));
@@ -581,7 +581,7 @@ public class AdminServerController extends AdminViewController {
             }
         }
         // x axis
-        map.put("xAxis", JSON.toJSONString(xAxis));
+        map.put("xAxis", JSONUtil.toJSONString(xAxis));
         map.put("cpu", subcpuMap.values());
         return adminViewModule() + "/cpu";
     }
@@ -609,7 +609,7 @@ public class AdminServerController extends AdminViewController {
             addNetMap(ss.getNoutExt(), subnetMap, false);
         }
         // x axis
-        map.put("xAxis", JSON.toJSONString(xAxis));
+        map.put("xAxis", JSONUtil.toJSONString(xAxis));
         map.put("net", subnetMap.values());
         return adminViewModule() + "/net";
     }
@@ -695,7 +695,7 @@ public class AdminServerController extends AdminViewController {
             addToChart(space, spaceChart);
         }
         // x axis
-        map.put("xAxis", JSON.toJSONString(xAxis));
+        map.put("xAxis", JSONUtil.toJSONString(xAxis));
         map.put("read", readChart);
         map.put("write", writeChart);
         map.put("busy", busyChart);
@@ -956,7 +956,7 @@ public class AdminServerController extends AdminViewController {
         private int yAxis;
 
         public String toJson() {
-            return JSON.toJSONString(this);
+            return JSONUtil.toJSONString(this);
         }
 
         public Series(String name) {

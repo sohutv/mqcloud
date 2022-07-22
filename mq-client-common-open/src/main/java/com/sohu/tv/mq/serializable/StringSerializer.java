@@ -1,8 +1,7 @@
 package com.sohu.tv.mq.serializable;
 
+import com.sohu.tv.mq.util.JSONUtil;
 import org.apache.rocketmq.remoting.common.RemotingHelper;
-
-import com.alibaba.fastjson.JSON;
 
 /**
  * String 序列化
@@ -17,7 +16,7 @@ public class StringSerializer<T> implements MessageSerializer<T> {
     public byte[] serialize(T source) throws Exception {
         // 兼容非String的类型
         if (!(source instanceof String)) {
-            return JSON.toJSONBytes(source);
+            source = (T) JSONUtil.toJSONString(source);
         }
         return ((String) source).getBytes(RemotingHelper.DEFAULT_CHARSET);
     }

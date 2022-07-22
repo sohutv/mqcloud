@@ -2,6 +2,7 @@ package com.sohu.tv.mq.rocketmq;
 
 import java.util.List;
 
+import com.sohu.tv.mq.util.JSONUtil;
 import org.apache.rocketmq.client.producer.MessageQueueSelector;
 import org.apache.rocketmq.client.producer.SendResult;
 import org.apache.rocketmq.common.message.Message;
@@ -11,7 +12,6 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.alibaba.fastjson.JSON;
 import com.sohu.index.tv.mq.common.Result;
 
 public class RocketMQProducerJsonTest {
@@ -27,7 +27,7 @@ public class RocketMQProducerJsonTest {
     @Test
     public void produce() {
         Video video = new Video(1, "搜狐tv");
-        String str = JSON.toJSONString(video);
+        String str = JSONUtil.toJSONString(video);
         Result<SendResult> sendResult = producer.publish(str, String.valueOf(1));
         System.out.println(sendResult);
         Assert.assertTrue(sendResult.isSuccess());
@@ -37,7 +37,7 @@ public class RocketMQProducerJsonTest {
     public void produceMulti() throws Exception {
         for(int i = 0; i < 10000; ++i) {
             Video video = new Video(i, "搜狐tv"+i);
-            String str = JSON.toJSONString(video);
+            String str = JSONUtil.toJSONString(video);
             Result<SendResult> sendResult = producer.publish(str, String.valueOf(i));
             System.out.println(sendResult);
             Assert.assertTrue(sendResult.isSuccess());
@@ -62,7 +62,7 @@ public class RocketMQProducerJsonTest {
     public void produceOrder() {
         producer.setMessageQueueSelector(new IDHashMessageQueueSelector());
         Video video = new Video(123, "搜狐tv");
-        String str = JSON.toJSONString(video);
+        String str = JSONUtil.toJSONString(video);
         Result<SendResult> sendResult = producer.publishOrder(str, String.valueOf(video.getId()), video.getId());
         Assert.assertNotNull(sendResult);
     }

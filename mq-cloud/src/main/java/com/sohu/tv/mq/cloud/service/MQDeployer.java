@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.sohu.tv.mq.util.JSONUtil;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.protocol.body.ClusterInfo;
@@ -16,7 +17,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import com.alibaba.fastjson.JSON;
 import com.sohu.tv.mq.cloud.bo.BrokerConfig;
 import com.sohu.tv.mq.cloud.bo.Cluster;
 import com.sohu.tv.mq.cloud.bo.StoreFiles;
@@ -72,7 +72,7 @@ public class MQDeployer {
 
     // 部署broker时自动创建监控订阅组
     public static final String SUBSCRIPTIONGROUP_JSON = "echo '"
-            + JSON.toJSONString(SubscriptionGroup.buildMonitorSubscriptionGroup()) 
+            + JSONUtil.toJSONString(SubscriptionGroup.buildMonitorSubscriptionGroup())
             + "' > %s/data/config/subscriptionGroup.json";
    
     protected Logger logger = LoggerFactory.getLogger(this.getClass());
@@ -467,7 +467,7 @@ public class MQDeployer {
                 if(topicWrapper == null) {
                     return Result.getResult(Status.NO_RESULT);
                 }
-                return Result.getResult(JSON.toJSONString(topicWrapper));
+                return Result.getResult(JSONUtil.toJSONString(topicWrapper));
             }
 
             public Result<String> exception(Exception e) throws Exception {
@@ -495,7 +495,7 @@ public class MQDeployer {
                 if(subscriptionWrapper == null) {
                     return Result.getResult(Status.NO_RESULT);
                 }
-                return Result.getResult(JSON.toJSONString(subscriptionWrapper));
+                return Result.getResult(JSONUtil.toJSONString(subscriptionWrapper));
             }
 
             public Result<String> exception(Exception e) throws Exception {

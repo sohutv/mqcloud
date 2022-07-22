@@ -3,8 +3,8 @@ package com.sohu.tv.mq.cloud.cache;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.alibaba.fastjson.JSON;
 import com.google.common.cache.CacheStats;
+import com.sohu.tv.mq.util.JSONUtil;
 
 /**
  * LocalCacheStats
@@ -42,7 +42,7 @@ public class LocalCacheStats implements CacheStatsMbean {
         if(obj instanceof String) {
             return obj;
         }
-        return JSON.toJSONString(obj);
+        return JSONUtil.toJSONString(obj);
     }
 
     @Override

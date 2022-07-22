@@ -1,17 +1,22 @@
 package com.sohu.tv.mq.cloud.service;
 
-import java.net.InetSocketAddress;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.TreeMap;
-
+import com.google.common.base.Joiner;
+import com.sohu.tv.mq.cloud.bo.*;
+import com.sohu.tv.mq.cloud.bo.DecodedMessage.MessageBodyType;
+import com.sohu.tv.mq.cloud.common.mq.SohuMQAdmin;
+import com.sohu.tv.mq.cloud.mq.DefaultCallback;
+import com.sohu.tv.mq.cloud.mq.MQAdminCallback;
+import com.sohu.tv.mq.cloud.mq.MQAdminTemplate;
+import com.sohu.tv.mq.cloud.util.*;
+import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper.MQCloudConfigEvent;
+import com.sohu.tv.mq.cloud.web.controller.param.MessageParam;
+import com.sohu.tv.mq.cloud.web.vo.TraceViewVO;
+import com.sohu.tv.mq.cloud.web.vo.TraceViewVO.RequestViewVO;
+import com.sohu.tv.mq.serializable.DefaultMessageSerializer;
+import com.sohu.tv.mq.serializable.MessageSerializer;
+import com.sohu.tv.mq.serializable.MessageSerializerEnum;
+import com.sohu.tv.mq.util.CommonUtil;
+import com.sohu.tv.mq.util.JSONUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.rocketmq.client.QueryResult;
 import org.apache.rocketmq.client.consumer.DefaultMQPullConsumer;
@@ -29,11 +34,7 @@ import org.apache.rocketmq.common.TopicConfig;
 import org.apache.rocketmq.common.UtilAll;
 import org.apache.rocketmq.common.admin.ConsumeStats;
 import org.apache.rocketmq.common.admin.OffsetWrapper;
-import org.apache.rocketmq.common.message.Message;
-import org.apache.rocketmq.common.message.MessageAccessor;
-import org.apache.rocketmq.common.message.MessageConst;
-import org.apache.rocketmq.common.message.MessageExt;
-import org.apache.rocketmq.common.message.MessageQueue;
+import org.apache.rocketmq.common.message.*;
 import org.apache.rocketmq.common.protocol.ResponseCode;
 import org.apache.rocketmq.common.protocol.body.ClusterInfo;
 import org.apache.rocketmq.common.protocol.body.Connection;
@@ -55,37 +56,9 @@ import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 import org.springframework.web.util.HtmlUtils;
 
-import com.alibaba.fastjson.JSON;
-import com.google.common.base.Joiner;
-import com.sohu.tv.mq.cloud.bo.Cluster;
-import com.sohu.tv.mq.cloud.bo.Consumer;
-import com.sohu.tv.mq.cloud.bo.DecodedMessage;
-import com.sohu.tv.mq.cloud.bo.DecodedMessage.MessageBodyType;
-import com.sohu.tv.mq.cloud.bo.MQOffset;
-import com.sohu.tv.mq.cloud.bo.MessageData;
-import com.sohu.tv.mq.cloud.bo.MessageQueryCondition;
-import com.sohu.tv.mq.cloud.bo.MessageTrackExt;
-import com.sohu.tv.mq.cloud.bo.ResentMessageResult;
-import com.sohu.tv.mq.cloud.bo.TraceMessageDetail;
-import com.sohu.tv.mq.cloud.common.mq.SohuMQAdmin;
-import com.sohu.tv.mq.cloud.mq.DefaultCallback;
-import com.sohu.tv.mq.cloud.mq.MQAdminCallback;
-import com.sohu.tv.mq.cloud.mq.MQAdminTemplate;
-import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper;
-import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper.MQCloudConfigEvent;
-import com.sohu.tv.mq.cloud.util.MQCloudIdStrategy;
-import com.sohu.tv.mq.cloud.util.MessageDelayLevel;
-import com.sohu.tv.mq.cloud.util.MessageTypeClassLoader;
-import com.sohu.tv.mq.cloud.util.MsgTraceDecodeUtil;
-import com.sohu.tv.mq.cloud.util.Result;
-import com.sohu.tv.mq.cloud.util.Status;
-import com.sohu.tv.mq.cloud.web.controller.param.MessageParam;
-import com.sohu.tv.mq.cloud.web.vo.TraceViewVO;
-import com.sohu.tv.mq.cloud.web.vo.TraceViewVO.RequestViewVO;
-import com.sohu.tv.mq.serializable.DefaultMessageSerializer;
-import com.sohu.tv.mq.serializable.MessageSerializer;
-import com.sohu.tv.mq.serializable.MessageSerializerEnum;
-import com.sohu.tv.mq.util.CommonUtil;
+import java.net.InetSocketAddress;
+import java.util.*;
+import java.util.Map.Entry;
 
 /**
  * 消息服务
@@ -416,7 +389,7 @@ public class MessageService {
             if (CommonUtil.isTraceTopic(msg.getTopic())) {
                 List<TraceContext> traceContextList = MsgTraceDecodeUtil
                         .decoderFromTraceDataString(new String((byte[]) decodedBody));
-                m.setDecodedBody(JSON.toJSONString(traceContextList));
+                m.setDecodedBody(JSONUtil.toJSONString(traceContextList));
             } else {
                 m.setDecodedBody(HtmlUtils.htmlEscape(new String((byte[]) decodedBody)));
             }
@@ -430,7 +403,7 @@ public class MessageService {
             m.setDecodedBody(decodedBody.toString());
         } else {
             m.setMessageBodyType(MessageBodyType.OBJECT);
-            m.setDecodedBody(JSON.toJSONString(decodedBody));
+            m.setDecodedBody(JSONUtil.toJSONString(decodedBody));
         }
         BeanUtils.copyProperties(msg, m);
         m.setBroker(broker);
@@ -905,7 +878,7 @@ public class MessageService {
         for (DecodedMessage decodedMessage : decodedMessageList) {
             String message = decodedMessage.getDecodedBody();
             // 转换为trace对象
-            List<TraceContext> traceContextList = JSON.parseArray(message, TraceContext.class);
+            List<TraceContext> traceContextList = JSONUtil.parseList(message, TraceContext.class);
             for (TraceContext traceContext : traceContextList) {
                 TraceBean traceBean = traceContext.getTraceBeans().get(0);
                 // 过滤非相关消息

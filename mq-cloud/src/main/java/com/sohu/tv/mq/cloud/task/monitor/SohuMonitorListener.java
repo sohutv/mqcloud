@@ -11,7 +11,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
 
-import com.alibaba.fastjson.JSON;
+import com.sohu.tv.mq.util.JSONUtil;
 import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.message.MessageQueue;
 import org.apache.rocketmq.common.protocol.body.Connection;
@@ -113,7 +113,6 @@ public class SohuMonitorListener implements MonitorListener {
     /**
      * 校验是否发送报警邮件
      * 
-     * @param topic
      * @param undoneMsgs
      */
     private void veriftAccumulateAlarm(UndoneMsgs undoneMsgs) {
@@ -169,7 +168,6 @@ public class SohuMonitorListener implements MonitorListener {
      * 获取用户
      * 
      * @param topic
-     * @param userID
      * @return
      */
     private List<User> getUsers(String topic, String consumerGroup) {
@@ -194,7 +192,6 @@ public class SohuMonitorListener implements MonitorListener {
     /**
      * 获取用户ID
      * 
-     * @param topic
      * @param consuemrGroup
      * @return
      */
@@ -316,7 +313,7 @@ public class SohuMonitorListener implements MonitorListener {
 
                 if (uniqSet.size() <= 1){
                     log.debug("analyze subscription result is {},but find subscription number only one,the criTable is {}",
-                            false, JSON.toJSON(criTable));
+                            false, JSONUtil.toJSONString(criTable));
                 }
             }
         } catch (NumberFormatException e) {

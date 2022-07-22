@@ -1,8 +1,9 @@
 package com.sohu.tv.mq.cloud.bo;
 
-import java.util.Map;
 
-import com.alibaba.fastjson.JSON;
+import com.sohu.tv.mq.util.JSONUtil;
+
+import java.util.Map;
 
 /**
  * 生产者统计
@@ -76,7 +77,7 @@ public class ProducerStat {
         if(exception == null) {
             return null;
         }
-        return JSON.parseObject(exception, Map.class);
+        return JSONUtil.parse(exception, Map.class);
     }
 
     public void setException(String exception) {

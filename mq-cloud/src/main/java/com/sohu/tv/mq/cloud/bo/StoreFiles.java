@@ -7,8 +7,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import com.alibaba.fastjson.JSON;
 import com.sohu.tv.mq.cloud.util.WebUtil;
+import com.sohu.tv.mq.util.JSONUtil;
 
 /**
  * 存储文件
@@ -262,7 +262,7 @@ public class StoreFiles {
         }
 
         public String toJsonString() {
-            return JSON.toJSONString(this);
+            return JSONUtil.toJSONString(this);
         }
     }
 

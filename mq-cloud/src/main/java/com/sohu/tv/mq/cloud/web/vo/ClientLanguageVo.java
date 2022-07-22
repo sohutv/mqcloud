@@ -5,6 +5,7 @@ import com.sohu.tv.mq.cloud.bo.ClientLanguage;
 import com.sohu.tv.mq.cloud.bo.Topic;
 import com.sohu.tv.mq.cloud.bo.User;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.rocketmq.remoting.protocol.LanguageCode;
 import org.springframework.util.CollectionUtils;
 
 import java.util.ArrayList;

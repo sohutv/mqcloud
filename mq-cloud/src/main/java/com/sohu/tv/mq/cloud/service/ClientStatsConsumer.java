@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import com.sohu.tv.mq.util.JSONUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,7 +14,6 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Component;
 
-import com.alibaba.fastjson.JSON;
 import com.sohu.tv.mq.cloud.bo.ProducerStat;
 import com.sohu.tv.mq.cloud.bo.ProducerTotalStat;
 import com.sohu.tv.mq.cloud.common.MemoryMQConsumer;
@@ -95,7 +95,7 @@ public class ClientStatsConsumer implements MemoryMQConsumer<ClientStats> {
         producerTotalStat.setCreateDate(DateUtil.format(now));
         producerTotalStat.setCreateTime(DateUtil.getFormat(DateUtil.HHMM).format(now));
         if(clientStats.getExceptionMap() != null && clientStats.getExceptionMap().size() > 0) {
-            producerTotalStat.setException(JSON.toJSONString(clientStats.getExceptionMap()));
+            producerTotalStat.setException(JSONUtil.toJSONString(clientStats.getExceptionMap()));
         }
         return producerTotalStat;
     }
@@ -121,7 +121,7 @@ public class ClientStatsConsumer implements MemoryMQConsumer<ClientStats> {
             // 处理异常记录
             Map<String, Integer> exceptionMap = entry.getValue().getExceptionMap();
             if(exceptionMap != null) {
-                producerStat.setException(JSON.toJSONString(exceptionMap));
+                producerStat.setException(JSONUtil.toJSONString(exceptionMap));
             }
             producerStatList.add(producerStat);
         }

@@ -1,14 +1,15 @@
 package com.sohu.tv.mq.cloud.bo;
 
-import java.net.InetSocketAddress;
-import java.net.SocketAddress;
-
+import com.sohu.tv.mq.serializable.MessageSerializerEnum;
+import com.sohu.tv.mq.util.CommonUtil;
+import com.sohu.tv.mq.util.JSONUtil;
 import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.message.MessageExt;
 
-import com.alibaba.fastjson.JSONObject;
-import com.sohu.tv.mq.serializable.MessageSerializerEnum;
-import com.sohu.tv.mq.util.CommonUtil;
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * 解码的消息
@@ -77,14 +78,14 @@ public class DecodedMessage extends MessageExt {
      * @return
      */
     public String toJson() {
-        JSONObject obj = new JSONObject();
-        obj.put("qid", getQueueId());
-        obj.put("offset", getQueueOffset());
-        obj.put("broker", address(getStoreHost()));
-        obj.put("born", getBornTimestamp());
-        obj.put("client", address(getBornHost()));
-        obj.put("store", getStoreTimestamp());
-        return obj.toJSONString();
+        Map<String, Object> map = new HashMap<>();
+        map.put("qid", getQueueId());
+        map.put("offset", getQueueOffset());
+        map.put("broker", address(getStoreHost()));
+        map.put("born", getBornTimestamp());
+        map.put("client", address(getBornHost()));
+        map.put("store", getStoreTimestamp());
+        return JSONUtil.toJSONString(map);
     }
     
     private String address(SocketAddress addr) {

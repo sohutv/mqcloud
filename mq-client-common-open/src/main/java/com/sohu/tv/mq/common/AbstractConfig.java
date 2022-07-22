@@ -1,31 +1,20 @@
 package com.sohu.tv.mq.common;
 
-import java.net.HttpURLConnection;
-import java.util.ArrayList;
-import java.util.List;
-
-import org.apache.commons.lang3.StringUtils;
-import org.apache.rocketmq.client.ClientConfig;
-import org.apache.rocketmq.client.log.ClientLogger;
-import org.apache.rocketmq.client.trace.AsyncTraceDispatcher;
-import org.apache.rocketmq.common.MixAll;
-import org.apache.rocketmq.common.UtilAll;
-import org.apache.rocketmq.common.utils.HttpTinyClient;
-import org.apache.rocketmq.common.utils.HttpTinyClient.HttpResult;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.TypeReference;
 import com.sohu.tv.mq.dto.ClusterInfoDTO;
-import com.sohu.tv.mq.dto.DTOResult;
 import com.sohu.tv.mq.serializable.MessageSerializer;
 import com.sohu.tv.mq.serializable.MessageSerializerEnum;
 import com.sohu.tv.mq.trace.SohuAsyncTraceDispatcher;
 import com.sohu.tv.mq.trace.TraceRocketMQProducer;
 import com.sohu.tv.mq.util.CommonUtil;
 import com.sohu.tv.mq.util.Constant;
-import com.sohu.tv.mq.util.Version;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.rocketmq.client.ClientConfig;
+import org.apache.rocketmq.client.log.ClientLogger;
+import org.apache.rocketmq.client.trace.AsyncTraceDispatcher;
+import org.apache.rocketmq.common.MixAll;
+import org.apache.rocketmq.common.UtilAll;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * 公共配置
@@ -95,44 +84,9 @@ public abstract class AbstractConfig {
      * 初始化
      */
     protected void init() {
-        List<String> paramValues = new ArrayList<String>();
-        paramValues.add("topic");
-        paramValues.add(getTopic());
-        paramValues.add("group");
-        paramValues.add(group);
-        paramValues.add("role");
-        paramValues.add(String.valueOf(role()));
-        paramValues.add("v");
-        paramValues.add(Version.get());
-        // 从MQCLoud拉取配置信息
-        long times = 1;
         while (true) {
-            DTOResult<ClusterInfoDTO> clusterInfoDTOResult = null;
-            try {
-                HttpResult result = HttpTinyClient.httpGet("http://" + mqCloudDomain + "/cluster/info", null,
-                        paramValues,
-                        "UTF-8", 3000);
-                if (HttpURLConnection.HTTP_OK == result.code) {
-                    clusterInfoDTOResult = JSON.parseObject(result.content, new TypeReference<DTOResult<ClusterInfoDTO>>(){});
-                    if (clusterInfoDTOResult.ok()) {
-                        clusterInfoDTO = clusterInfoDTOResult.getResult();
-                    }
-                } else {
-                    logger.error("http connetion err: code:{},info:{}", result.code, result.content);
-                }
-            } catch (Throwable e) {
-                logger.error("http err, topic:{},group:{}", topic, group, e);
-            }
+            clusterInfoDTO = CommonUtil.fetchClusterInfo(mqCloudDomain, getTopic(), group, role());
             if (clusterInfoDTO == null) {
-                if (clusterInfoDTOResult != null) {
-                    if (clusterInfoDTOResult.getStatus() == 201) {
-                        logger.warn("please register your {}:{} topic:{} in MQCloud first, times:{}",
-                                role() == 1 ? "producer" : "consumer", group, topic, times++);
-                    } else {
-                        logger.warn("fetch topic:{} group:{} cluster info err:{}, times:{}", getTopic(), group,
-                                clusterInfoDTOResult.getMessage(), times++);
-                    }
-                }
                 try {
                     Thread.sleep(1000);
                 } catch (InterruptedException e) {

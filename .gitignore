@@ -11,6 +11,7 @@ logs
 pom.xml.versionsBackup
 nmon
 nmon.zip
+dependency-reduced-pom.xml
 
 # ignore eclipse files
 .project

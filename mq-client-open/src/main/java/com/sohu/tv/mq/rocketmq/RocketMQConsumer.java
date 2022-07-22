@@ -12,6 +12,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
+import com.sohu.tv.mq.util.JSONUtil;
 import org.apache.rocketmq.client.consumer.DefaultMQPushConsumer;
 import org.apache.rocketmq.client.consumer.listener.ConsumeConcurrentlyContext;
 import org.apache.rocketmq.client.consumer.listener.ConsumeConcurrentlyStatus;
@@ -35,8 +36,6 @@ import org.apache.rocketmq.common.utils.HttpTinyClient;
 import org.apache.rocketmq.common.utils.HttpTinyClient.HttpResult;
 import org.apache.rocketmq.remoting.RemotingClient;
 
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.TypeReference;
 import com.sohu.index.tv.mq.common.BatchConsumerCallback;
 import com.sohu.index.tv.mq.common.ConsumerCallback;
 import com.sohu.tv.mq.common.AbstractConfig;
@@ -211,9 +210,8 @@ public class RocketMQConsumer extends AbstractConfig {
                         logger.error("http response err: code:{},info:{}", result.code, result.content);
                         return;
                     }
-                    DTOResult<ConsumerConfigDTO> dtoResult = JSON.parseObject(result.content,
-                            new TypeReference<DTOResult<ConsumerConfigDTO>>() {
-                            });
+                    DTOResult<ConsumerConfigDTO> dtoResult = JSONUtil.parse(result.content, DTOResult.class,
+                            ConsumerConfigDTO.class);
                     ConsumerConfigDTO consumerConfigDTO = dtoResult.getResult();
                     if (consumerConfigDTO == null) {
                         return;
