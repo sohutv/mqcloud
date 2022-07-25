@@ -61,6 +61,10 @@ public abstract class AbstractConfig {
     
     protected SohuAsyncTraceDispatcher traceDispatcher;
 
+    public AbstractConfig() {
+        System.setProperty(ClientLogger.CLIENT_LOG_USESLF4J, "true");
+    }
+
     public AbstractConfig(String group, String topic) {
         this.topic = topic;
         this.group = group;
@@ -74,6 +78,10 @@ public abstract class AbstractConfig {
 
     public void setTopic(String topic) {
         this.topic = topic;
+    }
+
+    public void setGroup(String group) {
+        this.group = group;
     }
 
     public String getGroup() {

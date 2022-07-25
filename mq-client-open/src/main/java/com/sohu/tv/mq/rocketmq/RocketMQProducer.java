@@ -29,7 +29,7 @@ import java.util.function.Consumer;
 @SuppressWarnings("deprecation")
 public class RocketMQProducer extends AbstractConfig {
     // rocketmq 实际生产者
-    private final DefaultMQProducer producer;
+    private DefaultMQProducer producer;
     
     // 统计助手
     private StatsHelper statsHelper;
@@ -47,28 +47,49 @@ public class RocketMQProducer extends AbstractConfig {
 
     // 限流发生时，是否暂停一会发送线程
     private boolean suspendAWhileWhenRateLimited = false;
-    
+
+    public RocketMQProducer() {
+    }
+
     /**
      * 同样消息的Producer，归为同一个Group，应用必须设置，并保证命名唯一
      */
     public RocketMQProducer(String producerGroup, String topic) {
-        super(producerGroup, topic);
-        producer = new DefaultMQProducer(producerGroup);
-        // 默认启用延迟容错，通过统计每个队列的发送耗时情况来计算broker是否可用
-        producer.setSendLatencyFaultEnable(true);
+        construct(producerGroup, topic);
     }
     
     /**
      * 同样消息的Producer，归为同一个Group，应用必须设置，并保证命名唯一
      */
     public RocketMQProducer(String producerGroup, String topic, TransactionListener transactionListener) {
-        super(producerGroup, topic);
-        producer = new TransactionMQProducer(producerGroup);
+        construct(producerGroup, topic, transactionListener);
+    }
+
+    /**
+     * 初始化
+     */
+    public RocketMQProducer construct(String producerGroup, String topic) {
+        return construct(producerGroup, topic, null);
+    }
+
+    /**
+     * 初始化
+     */
+    public RocketMQProducer construct(String producerGroup, String topic, TransactionListener transactionListener) {
+        setGroup(producerGroup);
+        setTopic(topic);
+        if (transactionListener == null) {
+            producer = new DefaultMQProducer(group);
+        } else {
+            TransactionMQProducer producer = new TransactionMQProducer(group);
+            producer.setTransactionListener(transactionListener);
+            this.producer = producer;
+        }
         // 默认启用延迟容错，通过统计每个队列的发送耗时情况来计算broker是否可用
         producer.setSendLatencyFaultEnable(true);
-        ((TransactionMQProducer) producer).setTransactionListener(transactionListener);
+        return this;
     }
-    
+
     /**
      * 启动
      */

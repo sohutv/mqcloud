@@ -119,12 +119,15 @@ public class RocketMQConsumer extends AbstractConfig {
     // 消息消费
     private IMessageConsumer<?> messageConsumer;
 
+    public RocketMQConsumer() {
+    }
+
     /**
      * 一个应用创建一个Consumer，由应用来维护此对象，可以设置为全局对象或者单例<br>
      * ConsumerGroupName需要由应用来保证唯一
      */
     public RocketMQConsumer(String consumerGroup, String topic) {
-        this(consumerGroup, topic, false);
+        construct(consumerGroup, topic, false);
     }
 
     /**
@@ -132,7 +135,22 @@ public class RocketMQConsumer extends AbstractConfig {
      * ConsumerGroupName需要由应用来保证唯一
      */
     public RocketMQConsumer(String consumerGroup, String topic, boolean useLeakyBucketRateLimiter) {
-        super(consumerGroup, topic);
+        construct(consumerGroup, topic, useLeakyBucketRateLimiter);
+    }
+
+    /**
+     * 初始化
+     */
+    public RocketMQConsumer construct(String consumerGroup, String topic) {
+        return construct(consumerGroup, topic, false);
+    }
+
+    /**
+     * 初始化
+     */
+    public RocketMQConsumer construct(String consumerGroup, String topic, boolean useLeakyBucketRateLimiter) {
+        setTopic(topic);
+        setGroup(consumerGroup);
         consumer = new DefaultMQPushConsumer(consumerGroup);
         // 消费消息超时将会发回重试队列，超时时间由默认的15分钟修改为2小时
         consumer.setConsumeTimeout(2 * 60);
@@ -146,6 +164,7 @@ public class RocketMQConsumer extends AbstractConfig {
         ConsumeStatManager.getInstance().register(getGroup());
         // 关闭最大等待时间
         getConsumer().setAwaitTerminationMillisWhenShutdown(10000);
+        return this;
     }
 
     public void start() {
