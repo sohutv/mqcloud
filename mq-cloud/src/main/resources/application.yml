@@ -18,14 +18,17 @@ eureka:
 management:
   context-path: /actuator
   port: 8088
-  security: 
-    enabled: false
-endpoints: 
+  security:
+    enabled: true
+endpoints:
   heapdump: 
     enabled: false 
   pause: 
-    enabled: false  
-    
+    enabled: false
+  env:
+    post:
+      enabled: false
+
 spring: 
   profiles: 
     active: local
