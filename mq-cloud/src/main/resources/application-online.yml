@@ -4,7 +4,7 @@ spring:
   freemarker: 
     cache: true
   datasource: 
-    url: jdbc:mysql://127.0.0.1:3306/mq-cloud?useUnicode=true&characterEncoding=UTF-8
+    url: jdbc:mysql://127.0.0.1:3306/mq-cloud?useUnicode=true&characterEncoding=UTF-8&useSSL=false
     username: mqcloud
     password: mqcloud
     tomcat: 
