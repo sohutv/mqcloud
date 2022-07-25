@@ -3,6 +3,7 @@ package com.sohu.tv.mq.rocketmq.consumer;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.sohu.tv.mq.util.JSONUtil;
 import org.apache.rocketmq.client.consumer.listener.ConsumeConcurrentlyContext;
 import org.apache.rocketmq.client.consumer.listener.ConsumeConcurrentlyStatus;
 import org.apache.rocketmq.client.consumer.listener.ConsumeOrderlyContext;
@@ -11,7 +12,6 @@ import org.apache.rocketmq.common.message.MessageConst;
 import org.apache.rocketmq.common.message.MessageExt;
 import org.slf4j.Logger;
 
-import com.alibaba.fastjson.JSON;
 import com.sohu.index.tv.mq.common.MQMessage;
 import com.sohu.tv.mq.metric.ConsumeStatManager;
 import com.sohu.tv.mq.metric.ConsumeThreadStat;
@@ -79,9 +79,16 @@ public abstract class AbstractMessageConsumer<T, C> implements IMessageConsumer<
      * @return
      */
     public ConsumeOrderlyStatus consumeMessage(List<MessageExt> msgs, ConsumeOrderlyContext context) {
+        long start = System.currentTimeMillis();
         ConsumeStatus consumeStatus = consume(new MessageContext(msgs, context));
         if (ConsumeStatus.FAIL == consumeStatus && rocketMQConsumer.isReconsume()) {
+            if (consumeStats != null) {
+                consumeStats.incrementException();
+            }
             return ConsumeOrderlyStatus.SUSPEND_CURRENT_QUEUE_A_MOMENT;
+        }
+        if (consumeStats != null) {
+            consumeStats.increment(System.currentTimeMillis() - start);
         }
         return ConsumeOrderlyStatus.SUCCESS;
     }
@@ -189,13 +196,12 @@ public abstract class AbstractMessageConsumer<T, C> implements IMessageConsumer<
         // 消费类型为String，采用JSON转换
         if (consumerParameterTypeClass == String.class) {
             debugLog("String-consumerParameterType", me.getMsgId(), message.getClass().getName(), "String");
-            return (MQMessage<T>) new MQMessage<>(JSON.toJSONString(message), me);
+            return (MQMessage<T>) new MQMessage<>(JSONUtil.toJSONString(message), me);
         }
         // 消息为String，采用JSON转换
         if (message instanceof String) {
             debugLog("String-Message", me.getMsgId(), "String", consumerParameterTypeClass.getName());
-            return (MQMessage<T>) new MQMessage<>(
-                    JSON.parseObject(message.toString(), consumerParameterTypeClass), me);
+            return (MQMessage<T>) new MQMessage<>(JSONUtil.parse(message.toString(), consumerParameterTypeClass), me);
         }
         debugLog("unknown", me.getMsgId(), message.getClass().getName(), consumerParameterTypeClass.getName());
         // 消费类型和消息都不是String，并且消息与消费类型不匹配，此时可能会类转换异常
