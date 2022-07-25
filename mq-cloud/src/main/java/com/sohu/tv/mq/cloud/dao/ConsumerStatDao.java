@@ -23,7 +23,7 @@ public interface ConsumerStatDao {
 	 */
 	@Insert("insert into consumer_stat(consumer_group,topic,undone_msg_count,undone_1q_msg_count,undone_delay) " +
 	"values(#{consumerGroup},#{topic},#{undoneMsgCount},#{undone1qMsgCount},#{undoneDelay})" +
-	"on duplicate key update undone_msg_count=values(undone_msg_count)," +
+	"on duplicate key update updatetime=CURRENT_TIMESTAMP, undone_msg_count=values(undone_msg_count)," +
 	"undone_1q_msg_count=values(undone_1q_msg_count)," +
 	"undone_delay=values(undone_delay)")
 	public Integer saveConsumerStat(@Param("consumerGroup") String consumerGroup, 
