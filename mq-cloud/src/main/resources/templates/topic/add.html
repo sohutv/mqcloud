@@ -99,9 +99,20 @@
 									</div>
 								</div>
 								<div class="form-group">
+									<label class="control-label col-md-3"> 通信协议: </label>
+									<div class="col-md-5 checkbox">
+										<label data-toggle="tooltip" title="java语言请保持默认选项">
+											<input type="radio" name="httpEnabled" value="0" checked>RocketMQ
+										</label>
+										<label data-toggle="tooltip" title="非java语言建议使用http协议生产">
+											<input type="radio" name="httpEnabled" value="1">HTTP <span class="nostyleA" data-toggle="tooltip" data-placement="bottom" title="点击查看http协议生产"><a href="/wiki/userGuide/http#producer" target=_blank class="glyphicon glyphicon-question-sign"></a></span>
+										</label>
+									</div>
+								</div>
+								<div class="form-group">
 									<label class="control-label col-md-3"> 用途: </label>
 									<div class="col-md-5">
-										<textarea type="text" name="info" rows="3" class="form-control" placeholder="请填写"></textarea>
+										<textarea type="text" name="info" rows="2" class="form-control" placeholder="请填写"></textarea>
 									</div>
 								</div>
 								<div class="form-group">

@@ -43,6 +43,13 @@
 					    <input type="radio" value="1" disabled="disabled" <#if response.result.traceEnabled == 1>checked</#if>>是
 					</div>
 				</div>
+				<div class="form-group">
+					<label class="control-label col-md-3"> 消费协议: </label>
+					<div class="col-md-6 checkbox">
+						<input type="radio" value="0" disabled="disabled" <#if response.result.httpConsumeEnabled == 0>checked</#if>>RocketMQ
+						<input type="radio" value="1" disabled="disabled" <#if response.result.httpConsumeEnabled == 1>checked</#if>>HTTP
+					</div>
+				</div>
 			</div>
 		</div>
 	</div>

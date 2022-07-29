@@ -3,6 +3,8 @@ package com.sohu.tv.mq.cloud.web.controller.admin;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.sohu.tv.mq.cloud.service.*;
+import com.sohu.tv.mq.cloud.service.MQProxyService.ConsumerConfigParam;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,11 +20,6 @@ import com.sohu.tv.mq.cloud.bo.AuditResendMessage;
 import com.sohu.tv.mq.cloud.bo.Cluster;
 import com.sohu.tv.mq.cloud.bo.Consumer;
 import com.sohu.tv.mq.cloud.bo.Topic;
-import com.sohu.tv.mq.cloud.service.AuditResendMessageService;
-import com.sohu.tv.mq.cloud.service.AuditService;
-import com.sohu.tv.mq.cloud.service.ClusterService;
-import com.sohu.tv.mq.cloud.service.MessageService;
-import com.sohu.tv.mq.cloud.service.TopicService;
 import com.sohu.tv.mq.cloud.util.Result;
 import com.sohu.tv.mq.cloud.util.Status;
 import com.sohu.tv.mq.cloud.web.vo.ResendMessageVO;
@@ -54,6 +51,9 @@ public class AdminMessageController {
 
     @Autowired
     private TopicService topicService;
+
+    @Autowired
+    private MQProxyService mqProxyService;
 
     /**
      * resend message
@@ -95,7 +95,7 @@ public class AdminMessageController {
         if(consumerResult.isNotOK()) {
             return consumerResult;
         }
-        String consumer = consumerResult.getResult().getName();
+        Consumer consumer = consumerResult.getResult();
 
         // 获取cluster
         Cluster cluster = clusterService.getMQClusterById(topicResult.getResult().getClusterId());
@@ -109,15 +109,22 @@ public class AdminMessageController {
                 continue;
             }
             Result<?> sendResult;
-            if (consumerResult.getResult().isClustering()) {
-                sendResult = messageService.resend(cluster, topic, msg.getMsgId(), consumer);
+            if (!consumer.httpConsumeEnabled()) {
+                if (consumer.isClustering()) {
+                    sendResult = messageService.resend(cluster, topic, msg.getMsgId(), consumer.getName());
+                } else {
+                    sendResult = messageService.resendDirectly(cluster, msg.getMsgId(), consumer.getName());
+                }
             } else {
-                sendResult = messageService.resendDirectly(cluster, msg.getMsgId(), consumer);
+                ConsumerConfigParam consumerConfigParam = new ConsumerConfigParam();
+                consumerConfigParam.setConsumer(consumer.getName());
+                consumerConfigParam.setRetryMsgId(msg.getMsgId());
+                sendResult = mqProxyService.consumerConfig(userInfo, consumerConfigParam);
             }
             int status = AuditResendMessage.StatusEnum.SUCCESS.getStatus();
             if (sendResult.isNotOK()) {
-                logger.warn("resendMessage cluster:{} topic:{} consumer:{} msgId:{} err:{}", cluster, topic, consumer, 
-                        msg.getMsgId(), sendResult);
+                logger.warn("resendMessage cluster:{} topic:{} consumer:{} msgId:{} err:{}", cluster, topic,
+                        consumer.getName(), msg.getMsgId(), sendResult);
                 status = AuditResendMessage.StatusEnum.FAILED.getStatus();
                 resendMessageVO.incrFailed();
             } else {
@@ -127,7 +134,7 @@ public class AdminMessageController {
             if (updateResult.isNotOK()) {
                 resendMessageVO.incrStatusUpdatedFailed();
                 logger.warn("resendMessage cluster:{} topic:{} consumer:{} msgId:{} update not ok :{}", cluster, topic,
-                        consumer, msg.getMsgId(), updateResult);
+                        consumer.getName(), msg.getMsgId(), updateResult);
             }
         }
         
@@ -189,22 +196,29 @@ public class AdminMessageController {
         if(consumerResult.isNotOK()) {
             return consumerResult;
         }
-        String consumer = consumerResult.getResult().getName();
+        Consumer consumer = consumerResult.getResult();
 
         // 统计状态
         ResendMessageVO resendMessageVO = new ResendMessageVO();
         resendMessageVO.setTotal(1);
         if(AuditResendMessage.StatusEnum.SUCCESS.getStatus() != auditResendMessage.getStatus()) {
             Result<?> sendResult;
-            if (consumerResult.getResult().isClustering()) {
-                sendResult = messageService.resend(cluster, topic, msgId, consumer);
+            if (!consumer.httpConsumeEnabled()) {
+                if (consumerResult.getResult().isClustering()) {
+                    sendResult = messageService.resend(cluster, topic, msgId, consumer.getName());
+                } else {
+                    sendResult = messageService.resendDirectly(cluster, msgId, consumer.getName());
+                }
             } else {
-                sendResult = messageService.resendDirectly(cluster, msgId, consumer);
+                ConsumerConfigParam consumerConfigParam = new ConsumerConfigParam();
+                consumerConfigParam.setConsumer(consumer.getName());
+                consumerConfigParam.setRetryMsgId(msgId);
+                sendResult = mqProxyService.consumerConfig(userInfo, consumerConfigParam);
             }
             int status = AuditResendMessage.StatusEnum.SUCCESS.getStatus();
             if (sendResult.isNotOK()) {
-                logger.warn("resendMessage cluster:{} topic:{} consumer:{} msgId:{} err:{}", cluster, topic, consumer,
-                        msgId, sendResult);
+                logger.warn("resendMessage cluster:{} topic:{} consumer:{} msgId:{} err:{}", cluster, topic,
+                        consumer.getName(), msgId, sendResult);
                 status = AuditResendMessage.StatusEnum.FAILED.getStatus();
                 resendMessageVO.incrFailed();
             } else {
@@ -213,7 +227,7 @@ public class AdminMessageController {
             Result<Integer> updateResult = auditResendMessageService.update(aid, msgId, status);
             if (updateResult.isNotOK()) {
                 logger.warn("resendMessage cluster:{} topic:{} consumer:{} msgId:{} update not ok :{}", cluster, topic,
-                        consumer, msgId, updateResult);
+                        consumer.getName(), msgId, updateResult);
                 resendMessageVO.incrStatusUpdatedFailed();
             }
             

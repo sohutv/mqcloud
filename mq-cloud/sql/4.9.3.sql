@@ -16,3 +16,8 @@ CREATE TABLE `client_language` (
     UNIQUE KEY `union_key` (`cid`,`tid`,`client_group_name`),
     KEY `nomal_query_index` (`client_group_name`,`client_group_type`,`language`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='客户端语言';
+
+alter table `audit_consumer` add column `http_consume_enabled` int(4) NOT NULL DEFAULT '0' COMMENT '0:不开启http消费,1:开启http消费';
+alter table `consumer` add column `http_consume_enabled` int(4) NOT NULL DEFAULT '0' COMMENT '0:不开启http消费,1:开启http消费';
+alter table `audit_topic` add column `http_enabled` int(4) NOT NULL DEFAULT '0' COMMENT '0:不开启http生产,1:开启http生产';
+alter table `user_producer` add column `http_enabled` int(4) NOT NULL DEFAULT '0' COMMENT '0:不开启http生产,1:开启http生产';

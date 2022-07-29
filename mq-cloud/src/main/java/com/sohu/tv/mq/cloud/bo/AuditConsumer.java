@@ -14,6 +14,8 @@ public class AuditConsumer {
     
     private int permitsPerSecond;
 
+    private int httpConsumeEnabled;
+
     public long getAid() {
         return aid;
     }
@@ -66,9 +68,24 @@ public class AuditConsumer {
         this.permitsPerSecond = permitsPerSecond;
     }
 
+    public int getHttpConsumeEnabled() {
+        return httpConsumeEnabled;
+    }
+
+    public void setHttpConsumeEnabled(int httpConsumeEnabled) {
+        this.httpConsumeEnabled = httpConsumeEnabled;
+    }
+
     @Override
     public String toString() {
-        return "AuditConsumer [aid=" + aid + ", tid=" + tid + ", consumer=" + consumer + ", consumeWay=" + consumeWay
-                + ", traceEnabled=" + traceEnabled + ", permitsPerSecond=" + permitsPerSecond + "]";
+        return "AuditConsumer{" +
+                "aid=" + aid +
+                ", tid=" + tid +
+                ", consumer='" + consumer + '\'' +
+                ", consumeWay=" + consumeWay +
+                ", traceEnabled=" + traceEnabled +
+                ", permitsPerSecond=" + permitsPerSecond +
+                ", httpConsumeEnabled=" + httpConsumeEnabled +
+                '}';
     }
 }
