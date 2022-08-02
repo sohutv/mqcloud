@@ -11,6 +11,8 @@ public class TopicConsumer {
     private long tid;
     private String topic;
     private int clusterId;
+    // 消费方式 0:集群消费,1:广播消费
+    private int consumeWay;
     public long getCid() {
         return cid;
     }
@@ -40,5 +42,13 @@ public class TopicConsumer {
     }
     public void setClusterId(int clusterId) {
         this.clusterId = clusterId;
+    }
+
+    public int getConsumeWay() {
+        return consumeWay;
+    }
+
+    public void setConsumeWay(int consumeWay) {
+        this.consumeWay = consumeWay;
     }
 }

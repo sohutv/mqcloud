@@ -1,12 +1,13 @@
 package com.sohu.tv.mq.cloud.bo;
 
+import org.apache.rocketmq.common.admin.OffsetWrapper;
+import org.apache.rocketmq.common.message.MessageQueue;
+
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeMap;
-
-import org.apache.rocketmq.common.admin.OffsetWrapper;
-import org.apache.rocketmq.common.message.MessageQueue;
 /**
  * ConsumeStats扩展
  * @Description: 
@@ -52,6 +53,17 @@ public class ConsumeStatsExt {
     
     public String getClientId() {
         return clientId;
+    }
+
+    public String getClientIdHtml() {
+        String[] sts = clientId.split(",");
+        StringBuilder builder = new StringBuilder();
+        for(String s : sts){
+            builder.append("<div>");
+            builder.append(s);
+            builder.append("</div>");
+        }
+        return builder.toString();
     }
 
     public void setClientId(String clientId) {

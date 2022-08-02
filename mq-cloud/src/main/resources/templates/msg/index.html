@@ -978,7 +978,7 @@ function trace(msgId, hasTime, time){
 function consumeTimespanMessageTip(){
 	$("#consumeTimespanMessageBtn").attr("disabled", "disabled");
 	// 获取消费者
-	$.get('${request.contextPath}/userConsumer/list',
+	$.get('${request.contextPath}/userConsumer/list/filter',
 		{
 			tid: ${RequestParameters.tid}
 		},

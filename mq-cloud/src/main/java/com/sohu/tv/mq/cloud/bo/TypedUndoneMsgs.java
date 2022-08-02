@@ -18,4 +18,13 @@ public class TypedUndoneMsgs extends UndoneMsgs {
     public void setClustering(boolean clustering) {
         this.clustering = clustering;
     }
+
+    public void addUndoneMsgsSingleMQ(long undoneMsgsSingleMQ) {
+        if (undoneMsgsSingleMQ > 0) {
+            setUndoneMsgsTotal(getUndoneMsgsTotal() + undoneMsgsSingleMQ);
+        }
+        if (undoneMsgsSingleMQ > getUndoneMsgsSingleMQ()) {
+            setUndoneMsgsSingleMQ(undoneMsgsSingleMQ);
+        }
+    }
 }

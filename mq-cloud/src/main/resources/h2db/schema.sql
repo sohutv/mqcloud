@@ -769,4 +769,9 @@ CREATE TABLE IF NOT EXISTS `client_language` (
     `update_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     UNIQUE KEY `union_key` (`cid`,`tid`,`client_group_name`),
     KEY `nomal_query_index` (`client_group_name`,`client_group_type`,`language`) USING BTREE
-)
+);
+
+alter table IF EXISTS `consumer` add column IF NOT EXISTS `http_consume_enabled` int(4) NOT NULL DEFAULT '0' COMMENT '0:不开启http消费,1:开启http消费';
+alter table IF EXISTS `audit_consumer` add column IF NOT EXISTS `http_consume_enabled` int(4) NOT NULL DEFAULT '0' COMMENT '0:不开启http消费,1:开启http消费';
+alter table IF EXISTS `audit_topic` add column IF NOT EXISTS `http_enabled` int(4) NOT NULL DEFAULT '0' COMMENT '0:不开启http生产,1:开启http生产';
+alter table IF EXISTS `user_producer` add column IF NOT EXISTS `http_enabled` int(4) NOT NULL DEFAULT '0' COMMENT '0:不开启http生产,1:开启http生产';

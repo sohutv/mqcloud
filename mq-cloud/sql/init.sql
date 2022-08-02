@@ -56,6 +56,7 @@ CREATE TABLE `audit_consumer` (
   `consume_way` int(4) NOT NULL DEFAULT '0' COMMENT '0:集群消费,1:广播消费',
   `trace_enabled` int(4) NOT NULL DEFAULT '0' COMMENT '0:不开启trace,1:开启trace',
   `permits_per_second` int(11) DEFAULT NULL COMMENT 'qps',
+  `http_consume_enabled` int(4) NOT NULL DEFAULT '0' COMMENT '0:不开启http消费,1:开启http消费',
   UNIQUE KEY `tid` (`tid`,`consumer`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='审核消费者相关表';
 
@@ -112,7 +113,8 @@ CREATE TABLE `audit_topic` (
   `info` varchar(360) DEFAULT NULL COMMENT 'topic描述',
   `qps` int(11) DEFAULT NULL COMMENT '消息量qps预估',
   `qpd` int(11) DEFAULT NULL COMMENT '一天消息量预估',
-  `serializer` int(4) NOT NULL DEFAULT '0' COMMENT '序列化器 0:Protobuf,1:String'
+  `serializer` int(4) NOT NULL DEFAULT '0' COMMENT '序列化器 0:Protobuf,1:String',
+  `http_enabled` int(4) NOT NULL DEFAULT '0' COMMENT '0:不开启http生产,1:开启http生产'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='审核topic相关表';
 
 -- ----------------------------
@@ -259,6 +261,7 @@ CREATE TABLE `consumer` (
   `create_date` date NOT NULL,
   `update_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   `trace_enabled` int(4) NOT NULL DEFAULT '0' COMMENT '0:不开启trace,1:开启trace',
+  `http_consume_enabled` int(4) NOT NULL DEFAULT '0' COMMENT '0:不开启http消费,1:开启http消费',
   `info` varchar(360) DEFAULT NULL COMMENT '消费者描述',
   PRIMARY KEY (`id`),
   UNIQUE KEY `name` (`name`),
@@ -546,6 +549,7 @@ CREATE TABLE `user_producer` (
   `uid` int(11) NOT NULL COMMENT '用户id',
   `tid` int(11) NOT NULL COMMENT 'topic id',
   `producer` varchar(64) NOT NULL COMMENT 'producer名',
+  `http_enabled` int(4) NOT NULL DEFAULT '0' COMMENT '0:不开启http生产,1:开启http生产',
   PRIMARY KEY (`id`),
   KEY `t_p` (`tid`,`producer`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='用户与生产者关系表';

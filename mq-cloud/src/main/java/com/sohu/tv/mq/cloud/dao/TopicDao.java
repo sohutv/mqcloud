@@ -1,20 +1,11 @@
 package com.sohu.tv.mq.cloud.dao;
 
+import com.sohu.tv.mq.cloud.bo.*;
+import org.apache.ibatis.annotations.*;
+
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
-
-import org.apache.ibatis.annotations.Delete;
-import org.apache.ibatis.annotations.Insert;
-import org.apache.ibatis.annotations.Options;
-import org.apache.ibatis.annotations.Param;
-import org.apache.ibatis.annotations.Select;
-import org.apache.ibatis.annotations.Update;
-
-import com.sohu.tv.mq.cloud.bo.Topic;
-import com.sohu.tv.mq.cloud.bo.TopicConsumer;
-import com.sohu.tv.mq.cloud.bo.TopicStat;
-import com.sohu.tv.mq.cloud.bo.TopicTraffic;
 
 /**
  * topic dao
@@ -297,4 +288,17 @@ public interface TopicDao {
             "order by count desc "
             + "</script>")
     List<Long> selectAllTidsByCid(@Param("cid") Long cid);
+
+    /**
+     * 查询http消费的消费者
+     */
+    @Select("select topic.name topic, consumer.name consumer, consumer.consume_way consumeWay from topic,consumer where consumer.http_consume_enabled = 1 and consumer.tid = topic.id")
+    List<TopicConsumer> selectHttpTopicConsumer();
+
+
+    /**
+     * 查询http生产者
+     */
+    @Select("select distinct topic.name topic, user_producer.producer producer from topic,user_producer where user_producer.http_enabled = 1 and user_producer.tid = topic.id")
+    List<TopicProducer> selectHttpTopicProducer();
 }

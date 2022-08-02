@@ -389,6 +389,7 @@ public class TopicService {
             up.setTid(topic.getId());
             up.setUid(audit.getUid());
             up.setProducer(auditTopic.getProducer());
+            up.setHttpEnabled(auditTopic.getHttpEnabled());
             Integer updateCount = userProducerService.save(up);
             if(updateCount == null) {
                 return Result.getResult(Status.DB_ERROR);
@@ -790,6 +791,31 @@ public class TopicService {
         }
         return Result.getOKResult();
     }
-    
+
+    /**
+     * 获取http方式消费的topic和消费者
+     * @return
+     */
+    public Result<List<TopicConsumer>> queryHttpConsumer() {
+        try {
+            return Result.getResult(topicDao.selectHttpTopicConsumer());
+        } catch (Exception e) {
+            logger.error("selectHttpTopicConsumer err", e);
+            return Result.getDBErrorResult(e);
+        }
+    }
+
+    /**
+     * 获取http方式消费的topic和消费者
+     * @return
+     */
+    public Result<List<TopicProducer>> queryHttpProducer() {
+        try {
+            return Result.getResult(topicDao.selectHttpTopicProducer());
+        } catch (Exception e) {
+            logger.error("selectHttpTopicProducer err", e);
+            return Result.getDBErrorResult(e);
+        }
+    }
 }
 

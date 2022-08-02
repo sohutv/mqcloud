@@ -125,14 +125,14 @@
 				                    		<a href="#"><span title="跳过堆积的消息，直接消费至最新的消息" class="glyphicon glyphicon-fast-forward" data-target="#skipAccumulationModel${row}" data-toggle="modal"></span></a>
 				                    		<a href="#"><span title="消费过去一段时间至现在的消息" class="glyphicon glyphicon-backward" data-target="#resetOffSetModel${row}" data-toggle="modal"></span></a>
 				                    		<#if consumerProgressVO.consumerConfig?? && consumerProgressVO.consumerConfig.pause?? && consumerProgressVO.consumerConfig.pause>
-				                    			<a href="#"><span title="恢复消费" class="glyphicon glyphicon-play" onclick="showPauseConsumeConfigModel(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', false<#if consumerProgressVO.consumerConfig?? && consumerProgressVO.consumerConfig.pauseClientId??>,'${consumerProgressVO.consumerConfig.pauseClientId}'</#if>)" data-toggle="modal"></span></a>
+				                    			<a href="#"><span title="恢复消费" class="glyphicon glyphicon-play" onclick="showPauseConsumeConfigModel(${consumerProgressVO.consumer.httpConsumeEnabled()?c}, ${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', false<#if consumerProgressVO.consumerConfig?? && consumerProgressVO.consumerConfig.pauseClientId??>,'${consumerProgressVO.consumerConfig.pauseClientId}'</#if>)" data-toggle="modal"></span></a>
 				                    		<#else>
-				                    			<a href="#"><span title="暂停消费【客户端需要升级至最新版本】" class="glyphicon glyphicon-pause" onclick="showPauseConsumeConfigModel(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', true<#if consumerProgressVO.consumerConfig?? && consumerProgressVO.consumerConfig.pauseClientId??>,'${consumerProgressVO.consumerConfig.pauseClientId}'</#if>)" data-toggle="modal"></span></a>
+				                    			<a href="#"><span title="暂停消费" class="glyphicon glyphicon-pause" onclick="showPauseConsumeConfigModel(${consumerProgressVO.consumer.httpConsumeEnabled()?c}, ${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', true<#if consumerProgressVO.consumerConfig?? && consumerProgressVO.consumerConfig.pauseClientId??>,'${consumerProgressVO.consumerConfig.pauseClientId}'</#if>)" data-toggle="modal"></span></a>
 				                    		</#if>
 				                    		<#if consumerProgressVO.consumerConfig?? && consumerProgressVO.consumerConfig.enableRateLimit?? && consumerProgressVO.consumerConfig.enableRateLimit>
 			                    				<img title="解除消费限速" width="22" height="24" style="display:inline-block;" src="${request.contextPath}/img/rateLimiter2.png" class="pointer" onclick="showLimitConsumeConfigModel(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', true, <#if consumerProgressVO.consumerConfig.permitsPerSecond??>${consumerProgressVO.consumerConfig.permitsPerSecond}<#else>${limitConsumeTps}</#if>)" data-toggle="modal"></img>
 				                    		<#else>
-				                    			<img title="限制消费速率【客户端需要升级至最新版本】" width="22" height="24" style="display:inline-block;" src="${request.contextPath}/img/rateLimiter.png" class="pointer" onclick="showLimitConsumeConfigModel(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', false, <#if consumerProgressVO.consumerConfig?? && consumerProgressVO.consumerConfig.permitsPerSecond??>${consumerProgressVO.consumerConfig.permitsPerSecond}<#else>${limitConsumeTps}</#if>)" data-toggle="modal"></img>
+				                    			<img title="限制消费速率" width="22" height="24" style="display:inline-block;" src="${request.contextPath}/img/rateLimiter.png" class="pointer" onclick="showLimitConsumeConfigModel(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', false, <#if consumerProgressVO.consumerConfig?? && consumerProgressVO.consumerConfig.permitsPerSecond??>${consumerProgressVO.consumerConfig.permitsPerSecond}<#else>${limitConsumeTps}</#if>)" data-toggle="modal"></img>
 				                    		</#if>
 			                    		</#if>
 			                    		<button type="button" class="btn btn-xs btn-warning" data-target="#deleteConsumerModel${row}" title="删除${consumerProgressVO.consumer.name}" data-toggle="modal"><span class="glyphicon glyphicon-trash" aria-hidden="true"></span></button>
@@ -452,7 +452,13 @@
 										</#if>
 									</#if>
 								</td>
-	                    		<td>广播</td>
+	                    		<td>
+									<#if consumerProgressVO.consumer.httpConsumeEnabled()>
+										<font color="blue" data-toggle="tooltip" title="http方式消费">${consumerProgressVO.messageModel}</font>
+									<#else>
+										集群
+									</#if>
+								</td>
 	                    		<td>${consumerProgressVO.diff}</td>
 	                    		<td>${consumerProgressVO.consumeTpsFormat}</td>
 	                    		<td><span class="glyphicon glyphicon-eye-close" data-toggle="tooltip" title="广播模式不支持trace"></span></td>
@@ -471,9 +477,9 @@
 				                    		<a href="#"><span title="跳过堆积的消息，直接消费至最新的消息" class="glyphicon glyphicon-fast-forward pointer" data-target="#skipAccumulationModel${row}b" data-toggle="modal"></span></a>
 				                    		<a href="#"><span title="消费过去一段时间至现在的消息" class="glyphicon glyphicon-backward pointer" data-target="#resetOffSetModel${row}b" data-toggle="modal"></span></a>
 			                    			<#if consumerProgressVO.consumerConfig?? && consumerProgressVO.consumerConfig.pause?? && consumerProgressVO.consumerConfig.pause>
-						               			<a href="#"><span title="恢复消费" class="glyphicon glyphicon-play pointer" onclick="showPauseConsumeConfigModel(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', false<#if consumerProgressVO.consumerConfig?? && consumerProgressVO.consumerConfig.pauseClientId??>,'${consumerProgressVO.consumerConfig.pauseClientId}'</#if>)" data-toggle="modal"></span></a>
+						               			<a href="#"><span title="恢复消费" class="glyphicon glyphicon-play pointer" onclick="showPauseConsumeConfigModel(${consumerProgressVO.consumer.httpConsumeEnabled()?c}, ${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', false<#if consumerProgressVO.consumerConfig?? && consumerProgressVO.consumerConfig.pauseClientId??>,'${consumerProgressVO.consumerConfig.pauseClientId}'</#if>)" data-toggle="modal"></span></a>
 						               		<#else>
-						               			<a href="#"><span title="暂停消费" class="glyphicon glyphicon-pause pointer" onclick="showPauseConsumeConfigModel(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', true<#if consumerProgressVO.consumerConfig?? && consumerProgressVO.consumerConfig.pauseClientId??>,'${consumerProgressVO.consumerConfig.pauseClientId}'</#if>)" data-toggle="modal"></span></a>
+						               			<a href="#"><span title="暂停消费" class="glyphicon glyphicon-pause pointer" onclick="showPauseConsumeConfigModel(${consumerProgressVO.consumer.httpConsumeEnabled()?c}, ${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', true<#if consumerProgressVO.consumerConfig?? && consumerProgressVO.consumerConfig.pauseClientId??>,'${consumerProgressVO.consumerConfig.pauseClientId}'</#if>)" data-toggle="modal"></span></a>
 						               		</#if>
 						               		<#if consumerProgressVO.consumerConfig?? && consumerProgressVO.consumerConfig.enableRateLimit?? && consumerProgressVO.consumerConfig.enableRateLimit>
 						           				<img title="解除消费限速" width="22" height="24" style="display:inline-block;" src="${request.contextPath}/img/rateLimiter2.png" class="pointer" onclick="showLimitConsumeConfigModel(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', true, <#if consumerProgressVO.consumerConfig.permitsPerSecond??>${consumerProgressVO.consumerConfig.permitsPerSecond}<#else>${limitConsumeTps}</#if>)" data-toggle="modal"></img>
@@ -486,13 +492,25 @@
 		                    		<#if consumerProgressVO.offsetMap??>
 		                    		<!-- 详情 -->
 		                    		<div id="consumeDetailModel${row}b" class="modal fade" tabindex="-1" aria-hidden="true" style="overflow-y: auto;">
-										<div class="modal-dialog" style="width:700px">
+										<div class="modal-dialog" style="width:800px">
 											<div class="modal-content">
 												<div class="modal-header">
 													<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
 													<h4 class="modal-title"><b>${consumerProgressVO.consumer.name}</b> 消费详情</h4>
 												</div>
 												<table class="table table-striped table-hover" style="margin-top: 0px">
+													<#if consumerProgressVO.consumer.httpConsumeEnabled()>
+													<colgroup>
+														<col width="150px">
+														<col>
+														<col>
+														<col>
+														<col>
+														<col>
+														<col>
+														<col>
+													</colgroup>
+													</#if>
 													<thead>
 														<tr>
 															<td>clientId</td>
@@ -501,15 +519,23 @@
 															<td>broker偏移量</td>
 															<td>消费者偏移量</td>
 															<td>堆积量</td>
+															<#if consumerProgressVO.consumer.httpConsumeEnabled()>
+															<td>消费时间</td>
+															<td data-toggle="tooltip" title="单位: 秒.毫秒">锁定时间</td>
+															</#if>
 														</tr>
 													</thead>
 													<tbody>
 														<#list consumerProgressVO.consumeStatsList as consumeStats>
 															<tr>
 																<td rowspan=${consumeStats.offsetTable?size+1} align="center">
+																	<#if !consumerProgressVO.consumer.httpConsumeEnabled()>
 																	${consumeStats.clientId}
 																	<br><a href="#" onclick="showThreadMetrics('${consumeStats.clientId}','${consumerProgressVO.consumer.name}')"><span data-toggle="tooltip" title="消费线程诊断" class="glyphicon glyphicon-wrench"></span></a>
 																	<a href="#" onclick="showFailedMetrics('${consumeStats.clientId}','${consumerProgressVO.consumer.name}')"><span  data-toggle="tooltip" title="消费异常诊断" class="glyphicon glyphicon-exclamation-sign"></span></a>
+																	<#else>
+																		${consumeStats.clientIdHtml}
+																	</#if>
 																</td>
 															</tr>
 															<#list consumeStats.offsetTable as mq,offset>
@@ -529,6 +555,18 @@
 																		0
 																	</#if>
 																</td>
+																<#if consumerProgressVO.consumer.httpConsumeEnabled()>
+																<td>
+																	<#if offset.lastTimestamp <= 0>
+																		暂无
+																	<#else>
+																		${offset.lastTimestamp?number_to_datetime?string("yyyy-MM-dd HH:mm:ss")}
+																	</#if>
+																</td>
+																<td>
+																	${offset.lockTime}
+																</td>
+																</#if>
 															</tr>
 															</#list>
 														</#list>
@@ -1047,7 +1085,7 @@
 							</div>
 						</div>
 					</div>
-					<div class="form-group">
+					<div class="form-group" id="clientIdDiv">
 						<label class="control-label col-md-3"> 客户端: </label>
 						<div class="col-md-5">
 							<select id="pauseClientIdSelect" class="selectpicker" title="不选默认应用于所有的消费者" name="pauseClientId" data-live-search="true" multiple data-max-options="1">
@@ -1266,28 +1304,34 @@ function showLimitConsumeConfigModel(consumerId, consumer, enableRateLimit, perm
 /**
  * 暂停恢复消费者
  */
-function showPauseConsumeConfigModel(consumerId, consumer, pause, pauseClientId){
+function showPauseConsumeConfigModel(httpConsume, consumerId, consumer, pause, pauseClientId){
 	$("#pauseConsumeConfigBtn").attr("disabled", "disabled");
-	$.get('${request.contextPath}/consumer/connection',{
-		group: consumer,
-		cid: ${topic.clusterId},
-	},function(data){
-          if(data.status == 200){
-          	var content = "";
-          	for(var i in data.result){
-          		var ip = data.result[i];
-         		content += "<option value='"+ip+"'>"+ip+"</option>";
-          	}
-      		$("#pauseClientIdSelect").html(content);
-      		$("#pauseClientIdSelect").selectpicker('refresh');
-      		$("#pauseConsumeConfigBtn").removeAttr("disabled");
-      		if(pauseClientId){
-	      		$('#pauseClientIdSelect').selectpicker('val', pauseClientId);
-      		}
-	    } else {
-	    	toastr.error("数据获取失败！"+data.message);  
-	    }
-    }, 'json');
+	if (httpConsume) {
+		$("#clientIdDiv").hide();
+		$("#pauseConsumeConfigBtn").removeAttr("disabled");
+	} else {
+		$("#clientIdDiv").show();
+		$.get('${request.contextPath}/consumer/connection',{
+			group: consumer,
+			cid: ${topic.clusterId},
+		},function(data){
+			if(data.status == 200){
+				var content = "";
+				for(var i in data.result){
+					var ip = data.result[i];
+					content += "<option value='"+ip+"'>"+ip+"</option>";
+				}
+				$("#pauseClientIdSelect").html(content);
+				$("#pauseClientIdSelect").selectpicker('refresh');
+				$("#pauseConsumeConfigBtn").removeAttr("disabled");
+				if(pauseClientId){
+					$('#pauseClientIdSelect').selectpicker('val', pauseClientId);
+				}
+			} else {
+				toastr.error("数据获取失败！"+data.message);
+			}
+		}, 'json');
+	}
 	if(pause){
 		$("#pauseConsumeTip").html("暂停");
 	} else {

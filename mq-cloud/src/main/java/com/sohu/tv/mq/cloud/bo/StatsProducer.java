@@ -14,6 +14,9 @@ public class StatsProducer {
     // 前一分钟流量
     private Traffic traffic;
 
+    // 是否开启http生产
+    private int httpEnabled;
+
     public boolean isStats() {
         return stats;
     }
@@ -37,7 +40,15 @@ public class StatsProducer {
     public void setTraffic(Traffic traffic) {
         this.traffic = traffic;
     }
-    
+
+    public int getHttpEnabled() {
+        return httpEnabled;
+    }
+
+    public void setHttpEnabled(int httpEnabled) {
+        this.httpEnabled = httpEnabled;
+    }
+
     public void copyTraffic(Traffic traffic) {
         this.traffic = new Traffic();
         this.traffic.setSize(traffic.getSize());

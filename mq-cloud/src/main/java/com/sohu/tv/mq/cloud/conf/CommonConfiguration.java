@@ -5,9 +5,12 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import javax.annotation.PreDestroy;
 
+import okhttp3.ConnectionPool;
+import okhttp3.OkHttpClient;
 import org.apache.commons.pool2.impl.GenericKeyedObjectPool;
 import org.apache.commons.pool2.impl.GenericKeyedObjectPoolConfig;
 import org.apache.rocketmq.tools.admin.MQAdminExt;
@@ -15,9 +18,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
+import org.springframework.http.client.OkHttp3ClientHttpRequestFactory;
 import org.springframework.jmx.export.MBeanExporter;
 
 import com.sohu.tv.mq.cloud.bo.BrokerTraffic;
@@ -39,6 +44,7 @@ import com.sohu.tv.mq.cloud.util.SSHPooledObjectFactory;
 import com.sohu.tv.mq.stats.dto.ClientStats;
 
 import ch.ethz.ssh2.Connection;
+import org.springframework.web.client.RestTemplate;
 
 /**
  * 通用配置
@@ -246,5 +252,17 @@ public class CommonConfiguration {
     public SmsSender smsSender() throws Exception {
         Class<?> clz = Class.forName("com.sohu.tv.mq.cloud.common.service.impl.DefaultSmsSender");
         return (SmsSender) clz.newInstance();
+    }
+
+
+    @Bean
+    public RestTemplate restTemplate(RestTemplateBuilder restTemplateBuilder) {
+        RestTemplate restTemplate =
+                restTemplateBuilder.requestFactory(new OkHttp3ClientHttpRequestFactory(new OkHttpClient.Builder()
+                .connectionPool(new ConnectionPool())
+                .connectTimeout(2000, TimeUnit.MILLISECONDS)
+                .readTimeout(1000, TimeUnit.MILLISECONDS)
+                .writeTimeout(1000, TimeUnit.MILLISECONDS).build())).build();
+        return restTemplate;
     }
 }

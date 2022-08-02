@@ -11,7 +11,10 @@ public class UserProducer extends UserTopic {
     private String producer;
 
     private boolean stats;
-    
+
+    // 是否开启http生产
+    private int httpEnabled;
+
     public String getProducer() {
         return producer;
     }
@@ -26,6 +29,18 @@ public class UserProducer extends UserTopic {
 
     public void setStats(boolean stats) {
         this.stats = stats;
+    }
+
+    public int getHttpEnabled() {
+        return httpEnabled;
+    }
+
+    public void setHttpEnabled(int httpEnabled) {
+        this.httpEnabled = httpEnabled;
+    }
+
+    public boolean httpEnabled() {
+        return 1 == httpEnabled;
     }
 
     @Override

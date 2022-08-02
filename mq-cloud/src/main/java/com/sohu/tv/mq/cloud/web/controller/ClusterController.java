@@ -1,8 +1,14 @@
 package com.sohu.tv.mq.cloud.web.controller;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.validation.Valid;
-
+import com.sohu.tv.mq.cloud.bo.*;
+import com.sohu.tv.mq.cloud.common.MemoryMQ;
+import com.sohu.tv.mq.cloud.service.*;
+import com.sohu.tv.mq.cloud.util.Result;
+import com.sohu.tv.mq.cloud.util.WebUtil;
+import com.sohu.tv.mq.cloud.web.controller.param.TopicUserParam;
+import com.sohu.tv.mq.dto.ClusterInfoDTO;
+import com.sohu.tv.mq.stats.dto.ClientStats;
+import com.sohu.tv.mq.util.JSONUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,23 +17,8 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.alibaba.fastjson.JSON;
-import com.sohu.tv.mq.cloud.bo.ClientVersion;
-import com.sohu.tv.mq.cloud.bo.Cluster;
-import com.sohu.tv.mq.cloud.bo.Consumer;
-import com.sohu.tv.mq.cloud.bo.Topic;
-import com.sohu.tv.mq.cloud.bo.UserProducer;
-import com.sohu.tv.mq.cloud.common.MemoryMQ;
-import com.sohu.tv.mq.cloud.service.ClientVersionService;
-import com.sohu.tv.mq.cloud.service.ClusterService;
-import com.sohu.tv.mq.cloud.service.ConsumerService;
-import com.sohu.tv.mq.cloud.service.TopicService;
-import com.sohu.tv.mq.cloud.service.UserProducerService;
-import com.sohu.tv.mq.cloud.util.Result;
-import com.sohu.tv.mq.cloud.util.WebUtil;
-import com.sohu.tv.mq.cloud.web.controller.param.TopicUserParam;
-import com.sohu.tv.mq.dto.ClusterInfoDTO;
-import com.sohu.tv.mq.stats.dto.ClientStats;
+import javax.servlet.http.HttpServletRequest;
+import javax.validation.Valid;
 /**
  * 集群信息查询
  * @Description: 
@@ -103,6 +94,10 @@ public class ClusterController {
         }
         Consumer consumer = consumerResult.getResult();
         clusterInfoDTO.setBroadcast(consumer.isBroadcast());
+        // http方式消费的全部为广播
+        if (consumer.httpConsumeEnabled()) {
+            clusterInfoDTO.setBroadcast(true);
+        }
         if (topic.traceEnabled()) {
             clusterInfoDTO.setTraceEnabled(consumer.traceEnabled());
         }
@@ -120,7 +115,7 @@ public class ClusterController {
     public Result<?> report(@RequestParam("stats") String stats) throws Exception {
         ClientStats clientStats = null;
         try {
-            clientStats = JSON.parseObject(stats, ClientStats.class);
+            clientStats = JSONUtil.parse(stats, ClientStats.class);
         } catch (Exception e) {
             logger.error("json err:{}", stats, e);
         }

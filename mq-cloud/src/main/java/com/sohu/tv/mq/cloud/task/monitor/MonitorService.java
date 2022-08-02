@@ -1,14 +1,12 @@
 package com.sohu.tv.mq.cloud.task.monitor;
 
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Random;
-import java.util.Set;
-import java.util.TreeMap;
-
+import com.sohu.tv.mq.cloud.bo.*;
+import com.sohu.tv.mq.cloud.service.ConsumerService;
+import com.sohu.tv.mq.cloud.service.NameServerService;
+import com.sohu.tv.mq.cloud.util.Jointer;
+import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper;
+import com.sohu.tv.mq.cloud.util.Result;
+import com.sohu.tv.mq.util.CommonUtil;
 import org.apache.rocketmq.acl.common.AclClientRPCHook;
 import org.apache.rocketmq.acl.common.SessionCredentials;
 import org.apache.rocketmq.client.consumer.DefaultMQPullConsumer;
@@ -41,15 +39,8 @@ import org.apache.rocketmq.tools.monitor.UndoneMsgs;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.sohu.tv.mq.cloud.bo.Cluster;
-import com.sohu.tv.mq.cloud.bo.NameServer;
-import com.sohu.tv.mq.cloud.bo.TypedUndoneMsgs;
-import com.sohu.tv.mq.cloud.service.ConsumerService;
-import com.sohu.tv.mq.cloud.service.NameServerService;
-import com.sohu.tv.mq.cloud.util.Jointer;
-import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper;
-import com.sohu.tv.mq.cloud.util.Result;
-import com.sohu.tv.mq.util.CommonUtil;
+import java.util.*;
+import java.util.Map.Entry;
 
 /**
  * copy from org.apache.rocketmq.tools.monitor.MonitorService
@@ -173,7 +164,7 @@ public class MonitorService {
             if (CommonUtil.isRetryTopic(topic)) {
                 String consumerGroup = topic.substring(MixAll.RETRY_GROUP_TOPIC_PREFIX.length());
                 // 内置consumer不检测
-                if(MixAll.TOOLS_CONSUMER_GROUP.equals(consumerGroup)) {
+                if (MixAll.TOOLS_CONSUMER_GROUP.equals(consumerGroup) || MixAll.MONITOR_CONSUMER_GROUP.equals(consumerGroup)) {
                     continue;
                 }
                 // 链接在线检测
@@ -181,17 +172,30 @@ public class MonitorService {
                 if(cc == null) {
                     continue;
                 }
-                
-                try {
-                    this.reportUndoneMsgs(consumerGroup, cc);
-                } catch (Exception e) {
-                    logger.warn("reportUndoneMsgs Exception", e);
+
+                Consumer consumer = null;
+                Result<Consumer> consumerResult = consumerService.queryConsumerByName(consumerGroup);
+                if (consumerResult.isNotOK()) {
+                    logger.warn("consumer:{} not exist");
+                } else {
+                    consumer = consumerResult.getResult();
                 }
 
-                try {
-                    this.reportConsumerRunningInfo(consumerGroup, cc);
-                } catch (Exception e) {
-                    logger.warn("reportConsumerRunningInfo Exception", e);
+                // http consumer 监控
+                if (consumer != null && consumer.httpConsumeEnabled()) {
+                    reportHttpUndoneMsgs(consumer, cc);
+                } else {
+                    try {
+                        this.reportUndoneMsgs(consumerGroup, cc);
+                    } catch (Exception e) {
+                        logger.warn("reportUndoneMsgs Exception", e);
+                    }
+
+                    try {
+                        this.reportConsumerRunningInfo(consumerGroup, cc);
+                    } catch (Exception e) {
+                        logger.warn("reportConsumerRunningInfo Exception", e);
+                    }
                 }
 
                 try {
@@ -284,20 +288,7 @@ public class MonitorService {
                 }
                 // 组装数据
                 for(MessageQueue mq : mqOffsetMap.keySet()) {
-                    TopicOffset topicOffset = topicStatsTable.getOffsetTable().get(mq);
-                    // 经过测试，客户端存在broker发生变更，但是消费者状态统计未变更的情况，这样会引起空指针异常
-                    if(topicOffset == null) {
-                        logger.debug("client:{} topic:{} consumerGroup:{} mq:{} not in topicStatsTable", 
-                                conn.getClientId(), topic, consumerGroup, mq);
-                        continue;
-                    }
-                    long undoneMsgsSingleMQ = topicOffset.getMaxOffset() - mqOffsetMap.get(mq);
-                    if(undoneMsgsSingleMQ > 0) {
-                        undoneMsgs.setUndoneMsgsTotal(undoneMsgs.getUndoneMsgsTotal() + undoneMsgsSingleMQ);
-                    }
-                    if(undoneMsgsSingleMQ > undoneMsgs.getUndoneMsgsSingleMQ()) {
-                        undoneMsgs.setUndoneMsgsSingleMQ(undoneMsgsSingleMQ);
-                    }
+                    addUndoneMsgsSingleMQ(undoneMsgs, topicStatsTable, mq, mqOffsetMap.get(mq));
                 }
             }
             this.monitorListener.reportUndoneMsgs(undoneMsgs);
@@ -324,6 +315,75 @@ public class MonitorService {
         if (!infoMap.isEmpty()) {
             this.monitorListener.reportConsumerRunningInfo(consumerGroup, infoMap);
         }
+    }
+
+    /**
+     * http消费模式堆积检测
+     * @param consumer
+     * @param cc
+     */
+    private void reportHttpUndoneMsgs(Consumer consumer, ConsumerConnection cc) {
+        String topic = cc.getSubscriptionTable().keySet().iterator().next();
+        TopicStatsTable topicStatsTable = null;
+        try {
+            topicStatsTable = defaultMQAdminExt.examineTopicStats(topic);
+        } catch (Exception e) {
+            logger.warn("examineTopicStats topic:{}, err:{}", topic, e.getMessage());
+            return;
+        }
+        if (topicStatsTable == null || topicStatsTable.getOffsetTable().size() == 0) {
+            return;
+        }
+        TypedUndoneMsgs undoneMsgs = new TypedUndoneMsgs();
+        undoneMsgs.setTopic(topic);
+        undoneMsgs.setConsumerGroup(consumer.getName());
+
+        // 集群模式数据解析
+        if (consumer.isClustering()) {
+            Result<List<QueueOffset>> result = consumerService.fetchHttpClusteringQueueOffset(consumer.getName());
+            if (result.isNotOK()) {
+                logger.warn("fetchHttpClusteringQueueOffset:{} error:{}", consumer.getName(), result);
+                return;
+            }
+            List<QueueOffset> queueOffsets = result.getResult();
+            for (QueueOffset qo : queueOffsets) {
+                addUndoneMsgsSingleMQ(undoneMsgs, topicStatsTable, qo.getMessageQueue(), qo.getCommittedOffset());
+            }
+        } else {
+            Result<Map<String, List<QueueOffset>>> result =
+                    consumerService.fetchHttpBroadcastQueueOffset(consumer.getName());
+            if (result.isNotOK()) {
+                logger.warn("fetchHttpBroadcastQueueOffset:{} error:{}", consumer.getName(), result);
+                return;
+            }
+            Map<String, List<QueueOffset>> map = result.getResult();
+            for (List<QueueOffset> queueOffsets : map.values()) {
+                for (QueueOffset qo : queueOffsets) {
+                    addUndoneMsgsSingleMQ(undoneMsgs, topicStatsTable, qo.getMessageQueue(), qo.getCommittedOffset());
+                }
+            }
+        }
+        this.monitorListener.reportUndoneMsgs(undoneMsgs);
+    }
+
+    /**
+     * 添加单个队列堆积消息量
+     * @param undoneMsgs
+     * @param topicStatsTable
+     * @param mq
+     * @param offset
+     */
+    private void addUndoneMsgsSingleMQ(TypedUndoneMsgs undoneMsgs, TopicStatsTable topicStatsTable, MessageQueue mq,
+                               long offset) {
+        // offset非法，不保存
+        if (offset < 0) {
+            return;
+        }
+        TopicOffset topicOffset = topicStatsTable.getOffsetTable().get(mq);
+        if (topicOffset == null) {
+            return;
+        }
+        undoneMsgs.addUndoneMsgsSingleMQ(topicOffset.getMaxOffset() - offset);
     }
 
     private void computeUndoneMsgs(final UndoneMsgs undoneMsgs, final ConsumeStats consumeStats) {

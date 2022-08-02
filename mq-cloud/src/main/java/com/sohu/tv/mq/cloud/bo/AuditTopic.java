@@ -36,6 +36,9 @@ public class AuditTopic {
 
     // 序列化器
     private int serializer;
+
+    // 是否开启http生产
+    private int httpEnabled;
     
     public long getAid() {
         return aid;
@@ -145,11 +148,30 @@ public class AuditTopic {
         this.serializer = serializer;
     }
 
-    @Override
-    public String toString() {
-        return "AuditTopic [aid=" + aid + ", name=" + name + ", queueNum=" + queueNum + ", ordered=" + ordered
-                + ", producer=" + producer + ", qpd=" + qpd + ", qps=" + qps + ", traceEnabled=" + traceEnabled
-                + ", transactionEnabled=" + transactionEnabled + ", testEnabled=" + testEnabled + "]";
+    public int getHttpEnabled() {
+        return httpEnabled;
     }
 
+    public void setHttpEnabled(int httpEnabled) {
+        this.httpEnabled = httpEnabled;
+    }
+
+    @Override
+    public String toString() {
+        return "AuditTopic{" +
+                "aid=" + aid +
+                ", name='" + name + '\'' +
+                ", queueNum=" + queueNum +
+                ", ordered=" + ordered +
+                ", producer='" + producer + '\'' +
+                ", qpd=" + qpd +
+                ", qps=" + qps +
+                ", traceEnabled=" + traceEnabled +
+                ", transactionEnabled=" + transactionEnabled +
+                ", testEnabled=" + testEnabled +
+                ", delayEnabled=" + delayEnabled +
+                ", serializer=" + serializer +
+                ", httpEnabled=" + httpEnabled +
+                '}';
+    }
 }

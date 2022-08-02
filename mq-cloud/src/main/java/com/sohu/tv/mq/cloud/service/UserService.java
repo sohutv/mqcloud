@@ -1,11 +1,12 @@
 package com.sohu.tv.mq.cloud.service;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
+import com.sohu.tv.mq.cloud.bo.*;
+import com.sohu.tv.mq.cloud.cache.LocalCache;
+import com.sohu.tv.mq.cloud.dao.ConsumerDao;
+import com.sohu.tv.mq.cloud.dao.UserDao;
+import com.sohu.tv.mq.cloud.util.Jointer;
+import com.sohu.tv.mq.cloud.util.Result;
+import com.sohu.tv.mq.cloud.util.Status;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,18 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 
-import com.sohu.tv.mq.cloud.bo.Consumer;
-import com.sohu.tv.mq.cloud.bo.StatsProducer;
-import com.sohu.tv.mq.cloud.bo.Topic;
-import com.sohu.tv.mq.cloud.bo.TopicTopology;
-import com.sohu.tv.mq.cloud.bo.User;
-import com.sohu.tv.mq.cloud.bo.UserProducer;
-import com.sohu.tv.mq.cloud.cache.LocalCache;
-import com.sohu.tv.mq.cloud.dao.ConsumerDao;
-import com.sohu.tv.mq.cloud.dao.UserDao;
-import com.sohu.tv.mq.cloud.util.Jointer;
-import com.sohu.tv.mq.cloud.util.Result;
-import com.sohu.tv.mq.cloud.util.Status;
+import java.util.*;
 
 /**
  * 用户服务
@@ -211,6 +201,7 @@ public class UserService {
         for (UserProducer userProducer : userProducerList) {
             StatsProducer statsProducer = new StatsProducer();
             statsProducer.setProducer(userProducer.getProducer());
+            statsProducer.setHttpEnabled(userProducer.getHttpEnabled());
             List<UserProducer> userProducerListCopy = filterMap.get(statsProducer);
             if (userProducerListCopy == null) {
                 userProducerListCopy = new ArrayList<UserProducer>();

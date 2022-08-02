@@ -1,7 +1,11 @@
 package com.sohu.tv.mq.cloud.web.controller;
 
-import java.util.List;
-
+import com.sohu.tv.mq.cloud.bo.*;
+import com.sohu.tv.mq.cloud.bo.Audit.TypeEnum;
+import com.sohu.tv.mq.cloud.service.*;
+import com.sohu.tv.mq.cloud.util.Result;
+import com.sohu.tv.mq.cloud.util.Status;
+import com.sohu.tv.mq.cloud.web.vo.UserInfo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -9,22 +13,8 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
-import com.sohu.tv.mq.cloud.bo.Audit;
-import com.sohu.tv.mq.cloud.bo.Topic;
-import com.sohu.tv.mq.cloud.bo.User;
-import com.sohu.tv.mq.cloud.bo.UserConsumer;
-import com.sohu.tv.mq.cloud.bo.Audit.TypeEnum;
-import com.sohu.tv.mq.cloud.bo.Consumer;
-import com.sohu.tv.mq.cloud.service.AlertService;
-import com.sohu.tv.mq.cloud.service.AuditService;
-import com.sohu.tv.mq.cloud.service.ConsumerService;
-import com.sohu.tv.mq.cloud.service.TopicService;
-import com.sohu.tv.mq.cloud.service.UserConsumerService;
-import com.sohu.tv.mq.cloud.service.UserService;
-import com.sohu.tv.mq.cloud.service.VerifyDataService;
-import com.sohu.tv.mq.cloud.util.Result;
-import com.sohu.tv.mq.cloud.util.Status;
-import com.sohu.tv.mq.cloud.web.vo.UserInfo;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Controller
 @RequestMapping("/userConsumer")
@@ -101,21 +91,45 @@ public class UserConsumerController {
         }
         return Result.getWebResult(result);
     }
-    
+
     /**
      * 查询用户topic消费者列表
-     * 
+     *
      * @return
      * @throws Exception
      */
     @ResponseBody
     @RequestMapping(value = "/list")
     public Result<?> list(UserInfo userInfo, @RequestParam("tid") int tid) throws Exception {
-        if(userInfo.getUser().isAdmin()) {
-            Result<List<Consumer>> consumerListResult = consumerService.queryByTid(tid);
-            return Result.getWebResult(consumerListResult);
+        return Result.getWebResult(getConsumerListResult(userInfo, tid, false));
+    }
+
+    /**
+     * 查询用户topic消费者列表
+     *
+     * @return
+     * @throws Exception
+     */
+    @ResponseBody
+    @RequestMapping(value = "/list/filter")
+    public Result<?> listFilter(UserInfo userInfo, @RequestParam("tid") int tid) throws Exception {
+        return Result.getWebResult(getConsumerListResult(userInfo, tid, true));
+    }
+
+    public Result<List<Consumer>> getConsumerListResult(UserInfo userInfo, int tid, boolean filter) {
+        Result<List<Consumer>> listResult = null;
+        if (userInfo.getUser().isAdmin()) {
+            listResult = consumerService.queryByTid(tid);
+        } else {
+            listResult = consumerService.queryUserTopicConsumer(userInfo.getUser().getId(), tid);
         }
-        Result<List<Consumer>> listResult = consumerService.queryUserTopicConsumer(userInfo.getUser().getId(), tid);
-        return Result.getWebResult(listResult);
+        List<Consumer> list = listResult.getResult();
+        if (list == null) {
+            return listResult;
+        }
+        if (filter) {
+            listResult.setResult(list.stream().filter(consumer -> !consumer.httpConsumeEnabled()).collect(Collectors.toList()));
+        }
+        return listResult;
     }
 }

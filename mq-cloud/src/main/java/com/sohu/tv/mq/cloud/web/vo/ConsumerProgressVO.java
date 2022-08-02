@@ -1,18 +1,17 @@
 package com.sohu.tv.mq.cloud.web.vo;
 
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-
-import org.apache.rocketmq.common.admin.OffsetWrapper;
-import org.apache.rocketmq.common.admin.TopicOffset;
-import org.apache.rocketmq.common.message.MessageQueue;
-
 import com.sohu.tv.mq.cloud.bo.ConsumeStatsExt;
 import com.sohu.tv.mq.cloud.bo.Consumer;
 import com.sohu.tv.mq.cloud.bo.ConsumerConfig;
 import com.sohu.tv.mq.cloud.bo.User;
+import org.apache.rocketmq.common.admin.OffsetWrapper;
+import org.apache.rocketmq.common.admin.TopicOffset;
+import org.apache.rocketmq.common.message.MessageQueue;
+
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 
 /**
  * 消费进度
@@ -225,5 +224,12 @@ public class ConsumerProgressVO {
 
     public void setConsumerConfig(ConsumerConfig consumerConfig) {
         this.consumerConfig = consumerConfig;
+    }
+
+    public String getMessageModel() {
+        if (consumer.isClustering()) {
+            return "集群";
+        }
+        return "广播";
     }
 }

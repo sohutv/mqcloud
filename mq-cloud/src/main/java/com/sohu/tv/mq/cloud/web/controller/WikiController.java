@@ -51,7 +51,8 @@ public class WikiController {
         html = html.replace("${repositoryUrl}", mqCloudConfigHelper.getRepositoryUrl());
         html = html.replace("${producer}", mqCloudConfigHelper.getProducerClass());
         html = html.replace("${consumer}", mqCloudConfigHelper.getConsumerClass());
-        html = html.replace("${mqcloudDomain}", mqCloudConfigHelper.getDomain());
+        html = html.replace("${httpProducerUriPrefix}", mqCloudConfigHelper.getHttpProducerUriPrefix());
+        html = html.replace("${httpConsumerUriPrefix}", mqCloudConfigHelper.getHttpConsumerUriPrefix());
         Result.setResult(map, html);
         
         // toc

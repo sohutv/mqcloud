@@ -1,6 +1,5 @@
 package com.sohu.tv.mq.cloud.service;
 
-import com.alibaba.fastjson.JSON;
 import com.sohu.tv.mq.cloud.bo.*;
 import com.sohu.tv.mq.cloud.common.mq.SohuMQAdmin;
 import com.sohu.tv.mq.cloud.dao.ConsumerDao;
@@ -9,13 +8,15 @@ import com.sohu.tv.mq.cloud.mq.DefaultCallback;
 import com.sohu.tv.mq.cloud.mq.DefaultInvoke;
 import com.sohu.tv.mq.cloud.mq.MQAdminCallback;
 import com.sohu.tv.mq.cloud.mq.MQAdminTemplate;
+import com.sohu.tv.mq.cloud.service.MQProxyService.ConsumerConfigParam;
 import com.sohu.tv.mq.cloud.util.DateUtil;
 import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper;
 import com.sohu.tv.mq.cloud.util.Result;
 import com.sohu.tv.mq.cloud.util.Status;
+import com.sohu.tv.mq.cloud.web.vo.UserInfo;
 import com.sohu.tv.mq.metric.StackTraceMetric;
 import com.sohu.tv.mq.util.Constant;
-import org.apache.commons.lang3.StringUtils;
+import com.sohu.tv.mq.util.JSONUtil;
 import org.apache.rocketmq.client.exception.MQBrokerException;
 import org.apache.rocketmq.common.MQVersion;
 import org.apache.rocketmq.common.MixAll;
@@ -39,6 +40,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.interceptor.TransactionAspectSupport;
 
 import java.util.*;
+import java.util.Map.Entry;
 
 /**
  * consumer服务
@@ -72,6 +74,9 @@ public class ConsumerService {
 
     @Autowired
     private TopicService topicService;
+
+    @Autowired
+    private MQProxyService mqProxyService;
 
     /**
      * 保存Consumer记录
@@ -330,9 +335,6 @@ public class ConsumerService {
                     return map;
                 }
                 for (Consumer consumer : consumerList) {
-                    if (!consumer.isBroadcast()) {
-                        continue;
-                    }
                     ConsumerConnection cc = null;
                     try {
                         cc = mqAdmin.examineConsumerConnectionInfo(consumer.getName());
@@ -349,6 +351,12 @@ public class ConsumerService {
                         }
                         clientIdSet.add(conn.getClientId());
                     }
+                    // http方式的消费
+                    if (consumer.httpConsumeEnabled()) {
+                        map.put(consumer.getId(), getHttpConumeStats(clientIdSet, topicStatsTable, consumer));
+                        continue;
+                    }
+                    // 正常的广播消费
                     List<ConsumeStatsExt> consumeStatsList = new ArrayList<ConsumeStatsExt>();
                     for (String clientId : clientIdSet) {
                         // 抓取状态
@@ -395,6 +403,122 @@ public class ConsumerService {
                 return cluster;
             }
         });
+    }
+
+    /**
+     * 获取http消费的状况
+     * @param topicStatsTable
+     * @param consumer
+     * @return
+     */
+    private List<ConsumeStatsExt> getHttpConumeStats(Set<String> clientIdSet, TopicStatsTable topicStatsTable,
+                                                     Consumer consumer) {
+        if (consumer.isClustering()) {
+            return getHttpClusteringConumeStats(clientIdSet, topicStatsTable, consumer.getName());
+        }
+        return getHttpBroadcastConumeStats(clientIdSet, topicStatsTable, consumer.getName());
+    }
+
+    /**
+     * 获取http集群模式队列偏移量
+     * @param consumer
+     * @return
+     */
+    public Result<List<QueueOffset>> fetchHttpClusteringQueueOffset(String consumer) {
+        return mqProxyService.clusteringQueueOffset(consumer);
+    }
+
+    /**
+     * 获取http广播模式队列偏移量
+     * @param consumer
+     * @return
+     */
+    public Result<Map<String, List<QueueOffset>>> fetchHttpBroadcastQueueOffset(String consumer) {
+         return mqProxyService.broadcastQueueOffset(consumer);
+    }
+
+    /**
+     * 获取http消费的状况
+     * @param topicStatsTable
+     * @param consumer
+     * @return
+     */
+    private List<ConsumeStatsExt> getHttpClusteringConumeStats(Set<String> clientIdSet, TopicStatsTable topicStatsTable,
+                                                     String consumer) {
+        List<ConsumeStatsExt> consumeStatsList = new ArrayList<ConsumeStatsExt>();
+        StringBuilder clientIdBuilder = new StringBuilder();
+        for (String clientId : clientIdSet) {
+            clientIdBuilder.append(clientId);
+            clientIdBuilder.append(",");
+        }
+        ConsumeStatsExt consumeStats = new ConsumeStatsExt();
+        consumeStats.setClientId(clientIdBuilder.toString());
+        consumeStatsList.add(consumeStats);
+        Result<List<QueueOffset>> result = fetchHttpClusteringQueueOffset(consumer);
+        List<QueueOffset> list = result.getResult();
+        if (list == null) {
+            return consumeStatsList;
+        }
+        Map<MessageQueue, OffsetWrapper> offsetTable = new TreeMap<MessageQueue, OffsetWrapper>();
+        for (QueueOffset queueOffset : list) {
+            TopicOffset topicOffset = topicStatsTable.getOffsetTable().get(queueOffset.getMessageQueue());
+            if (topicOffset == null) {
+                continue;
+            }
+            OffsetWrapper offsetWrapper = new OffsetWrapperExt();
+            offsetWrapper.setBrokerOffset(topicOffset.getMaxOffset());
+            offsetWrapper.setConsumerOffset(queueOffset.getCommittedOffset());
+            offsetWrapper.setLastTimestamp(queueOffset.getLastConsumeTimestamp());
+            ((OffsetWrapperExt)offsetWrapper).setLockTimestamp(queueOffset.getLockTimestamp());
+            offsetTable.put(queueOffset.getMessageQueue(), offsetWrapper);
+        }
+        consumeStats.setOffsetTable(offsetTable);
+        return consumeStatsList;
+    }
+
+    /**
+     * 获取http消费的状况
+     * @param topicStatsTable
+     * @param consumer
+     * @return
+     */
+    private List<ConsumeStatsExt> getHttpBroadcastConumeStats(Set<String> clientIdSet,
+                                                              TopicStatsTable topicStatsTable, String consumer) {
+        Result<Map<String, List<QueueOffset>>> result = fetchHttpBroadcastQueueOffset(consumer);
+        Map<String, List<QueueOffset>> map = result.getResult();
+        if (map == null) {
+            // 返回空数据
+            List<ConsumeStatsExt> consumeStatsList = new ArrayList<ConsumeStatsExt>();
+            for (String clientId : clientIdSet) {
+                ConsumeStatsExt consumeStats = new ConsumeStatsExt();
+                consumeStats.setClientId(clientId);
+                consumeStatsList.add(consumeStats);
+            }
+            return consumeStatsList;
+        }
+        // 拼装队列偏移量
+        List<ConsumeStatsExt> consumeStatsList = new ArrayList<ConsumeStatsExt>();
+        for (Entry<String, List<QueueOffset>> entry : map.entrySet()) {
+            Map<MessageQueue, OffsetWrapper> offsetTable = new TreeMap<MessageQueue, OffsetWrapper>();
+            List<QueueOffset> queueOffsets = entry.getValue();
+            for(QueueOffset queueOffset : queueOffsets){
+                TopicOffset topicOffset = topicStatsTable.getOffsetTable().get(queueOffset.getMessageQueue());
+                if (topicOffset == null) {
+                    continue;
+                }
+                OffsetWrapper offsetWrapper = new OffsetWrapperExt();
+                offsetWrapper.setBrokerOffset(topicOffset.getMaxOffset());
+                offsetWrapper.setConsumerOffset(queueOffset.getCommittedOffset());
+                offsetWrapper.setLastTimestamp(queueOffset.getLastConsumeTimestamp());
+                ((OffsetWrapperExt)offsetWrapper).setLockTimestamp(queueOffset.getLockTimestamp());
+                offsetTable.put(queueOffset.getMessageQueue(), offsetWrapper);
+            }
+            ConsumeStatsExt consumeStats = new ConsumeStatsExt();
+            consumeStats.setClientId(entry.getKey());
+            consumeStats.setOffsetTable(offsetTable);
+            consumeStatsList.add(consumeStats);
+        }
+        return consumeStatsList;
     }
 
     /**
@@ -470,27 +594,11 @@ public class ConsumerService {
      * @param time
      * @return
      */
-    public Result<?> resetOffset(long clusterId, String topic, String consumer, String time) {
-        // 解析重置的时间
-        long resetTo = -1;
-        if (StringUtils.isNotBlank(time)) {
-            try {
-                Date date = DateUtil.getFormat(DateUtil.YMD_DASH_BLANK_HMS_COLON).parse(time);
-                resetTo = date.getTime();
-            } catch (Exception e) {
-                logger.error("resetOffsetTo param err:{}", time, e);
-                return Result.getResult(Status.PARAM_ERROR);
-            }
-        } else {
-            // 跳过堆积：重置到一分钟之前
-            resetTo = System.currentTimeMillis() - 60000;
-        }
-        if (resetTo == -1) {
-            return Result.getResult(Status.PARAM_ERROR);
-        }
-        Cluster cluster = clusterService.getMQClusterById(clusterId);
-        Result<?> resetResult = resetOffset(cluster, topic, consumer, resetTo);
-        return resetResult;
+    public Result<?> resetOffset(UserInfo userInfo, String consumerGroup, long timeInMillis) {
+        ConsumerConfigParam configParam = new ConsumerConfigParam();
+        configParam.setConsumer(consumerGroup);
+        configParam.setResetOffsetTimestamp(timeInMillis);
+        return mqProxyService.consumerConfig(userInfo, configParam);
     }
 
     /**
@@ -516,10 +624,8 @@ public class ConsumerService {
                             isC = true;
                         }
                     }
-                } catch (MQBrokerException e) {
-                    if (206 == e.getResponseCode()) {
-                        consumerOnline = false;
-                    }
+                } catch (Exception e) {
+                    consumerOnline = false;
                 }
                 String env = null;
                 if (consumerOnline) {
@@ -719,7 +825,7 @@ public class ConsumerService {
             try {
                 info = mqAdmin.getConsumerRunningInfo(consumer, connection.getClientId(), false);
             } catch (Exception e) {
-                logger.error("getConsumerRunningInfo topic:{},consumerGroup:{}", topic, consumer, e);
+                logger.warn("getConsumerRunningInfo topic:{},consumerGroup:{} err:{}", topic, consumer, e.toString());
                 return null;
             }
             if (info == null) {
@@ -769,7 +875,7 @@ public class ConsumerService {
                 if (threadMetricListString == null) {
                     return Result.getResult(Status.NO_RESULT);
                 }
-                List<StackTraceMetric> list = JSON.parseArray(threadMetricListString, StackTraceMetric.class);
+                List<StackTraceMetric> list = JSONUtil.parseList(threadMetricListString, StackTraceMetric.class);
                 return Result.getResult(list);
             }
 
@@ -809,7 +915,7 @@ public class ConsumerService {
                 if (threadMetricListString == null) {
                     return Result.getResult(Status.NO_RESULT);
                 }
-                List<StackTraceMetric> list = JSON.parseArray(threadMetricListString, StackTraceMetric.class);
+                List<StackTraceMetric> list = JSONUtil.parseList(threadMetricListString, StackTraceMetric.class);
                 return Result.getResult(list);
             }
 

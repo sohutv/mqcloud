@@ -1,61 +1,9 @@
 package com.sohu.tv.mq.cloud.web.controller;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.validation.Valid;
-
-import org.apache.commons.lang3.StringUtils;
-import org.apache.rocketmq.common.MQVersion;
-import org.apache.rocketmq.common.MixAll;
-import org.apache.rocketmq.common.admin.TopicOffset;
-import org.apache.rocketmq.common.admin.TopicStatsTable;
-import org.apache.rocketmq.common.message.MessageQueue;
-import org.apache.rocketmq.common.protocol.body.Connection;
-import org.apache.rocketmq.common.protocol.body.ConsumerConnection;
-import org.apache.rocketmq.common.protocol.body.ProducerConnection;
-import org.springframework.beans.BeanUtils;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
-import org.springframework.web.util.HtmlUtils;
-
-import com.sohu.tv.mq.cloud.bo.Audit;
+import com.sohu.tv.mq.cloud.bo.*;
 import com.sohu.tv.mq.cloud.bo.Audit.TypeEnum;
-import com.sohu.tv.mq.cloud.bo.AuditAssociateProducer;
-import com.sohu.tv.mq.cloud.bo.AuditTopic;
-import com.sohu.tv.mq.cloud.bo.AuditTopicUpdate;
-import com.sohu.tv.mq.cloud.bo.Cluster;
-import com.sohu.tv.mq.cloud.bo.Consumer;
-import com.sohu.tv.mq.cloud.bo.Topic;
-import com.sohu.tv.mq.cloud.bo.User;
-import com.sohu.tv.mq.cloud.bo.UserConsumer;
-import com.sohu.tv.mq.cloud.bo.UserProducer;
 import com.sohu.tv.mq.cloud.common.util.WebUtil;
-import com.sohu.tv.mq.cloud.service.AlertService;
-import com.sohu.tv.mq.cloud.service.AuditService;
-import com.sohu.tv.mq.cloud.service.ClusterService;
-import com.sohu.tv.mq.cloud.service.ConsumerClientStatService;
-import com.sohu.tv.mq.cloud.service.ConsumerService;
-import com.sohu.tv.mq.cloud.service.ProducerTotalStatService;
-import com.sohu.tv.mq.cloud.service.TopicService;
-import com.sohu.tv.mq.cloud.service.UserConsumerService;
-import com.sohu.tv.mq.cloud.service.UserProducerService;
-import com.sohu.tv.mq.cloud.service.UserService;
-import com.sohu.tv.mq.cloud.service.VerifyDataService;
+import com.sohu.tv.mq.cloud.service.*;
 import com.sohu.tv.mq.cloud.util.DateUtil;
 import com.sohu.tv.mq.cloud.util.FreemarkerUtil;
 import com.sohu.tv.mq.cloud.util.Result;
@@ -68,6 +16,25 @@ import com.sohu.tv.mq.cloud.web.vo.BrokersQueueOffsetVO.QueueOffset;
 import com.sohu.tv.mq.cloud.web.vo.IpSearchResultVO;
 import com.sohu.tv.mq.cloud.web.vo.UserInfo;
 import com.sohu.tv.mq.util.CommonUtil;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.rocketmq.common.MQVersion;
+import org.apache.rocketmq.common.MixAll;
+import org.apache.rocketmq.common.admin.TopicOffset;
+import org.apache.rocketmq.common.admin.TopicStatsTable;
+import org.apache.rocketmq.common.message.MessageQueue;
+import org.apache.rocketmq.common.protocol.body.Connection;
+import org.apache.rocketmq.common.protocol.body.ConsumerConnection;
+import org.apache.rocketmq.common.protocol.body.ProducerConnection;
+import org.springframework.beans.BeanUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.util.HtmlUtils;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.validation.Valid;
+import java.util.*;
 
 /**
  * topic接口
@@ -708,6 +675,30 @@ public class TopicController extends ViewController {
                 ipSearchResultVOList.add(ipSearchResultVO);
             }
         }
+    }
+
+    /**
+     * 获取http方式消费的consumer
+     * @return
+     * @throws Exception
+     */
+    @ResponseBody
+    @RequestMapping(value = "/httpConsumer")
+    public Result<?> getHttpTopicConsumer() throws Exception {
+        Result<List<TopicConsumer>> result = topicService.queryHttpConsumer();
+        return Result.getWebResult(result);
+    }
+
+    /**
+     * 获取http方式生产者
+     * @return
+     * @throws Exception
+     */
+    @ResponseBody
+    @RequestMapping(value = "/httpProducer")
+    public Result<?> getHttpTopicProducer() throws Exception {
+        Result<List<TopicProducer>> result = topicService.queryHttpProducer();
+        return Result.getWebResult(result);
     }
 
     @Override

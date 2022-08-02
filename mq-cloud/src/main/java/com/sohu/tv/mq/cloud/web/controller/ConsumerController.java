@@ -1140,7 +1140,7 @@ public class ConsumerController extends ViewController {
 
         private void addConsumer(Consumer consumer) {
             cidList.add(consumer.getId());
-            if (consumer.isClustering()) {
+            if (consumer.isClustering() && !consumer.httpConsumeEnabled()) {
                 clusteringConsumerList.add(consumer);
             } else {
                 broadcastConsumerList.add(consumer);

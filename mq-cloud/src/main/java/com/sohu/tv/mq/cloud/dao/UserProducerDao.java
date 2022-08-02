@@ -1,16 +1,10 @@
 package com.sohu.tv.mq.cloud.dao;
 
-import java.util.ArrayList;
+import com.sohu.tv.mq.cloud.bo.UserProducer;
+import org.apache.ibatis.annotations.*;
+
 import java.util.Collection;
 import java.util.List;
-
-import org.apache.ibatis.annotations.Delete;
-import org.apache.ibatis.annotations.Insert;
-import org.apache.ibatis.annotations.Options;
-import org.apache.ibatis.annotations.Param;
-import org.apache.ibatis.annotations.Select;
-
-import com.sohu.tv.mq.cloud.bo.UserProducer;
 
 /**
  * 用户生产者dao
@@ -25,8 +19,8 @@ public interface UserProducerDao {
      * @param consumer
      */
     @Options(useGeneratedKeys = true, keyProperty = "up.id")
-    @Insert("insert into user_producer(uid, tid, producer) values("
-            + "#{up.uid},#{up.tid},#{up.producer})")
+    @Insert("insert into user_producer(uid, tid, producer, http_enabled) values("
+            + "#{up.uid},#{up.tid},#{up.producer},#{up.httpEnabled})")
     public Integer insert(@Param("up") UserProducer userProducer);
     
     /**

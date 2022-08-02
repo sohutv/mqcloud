@@ -46,6 +46,9 @@ public class TopicParam {
     // 序列化器
     @Range(min = 0, max = 1)
     private int serializer;
+
+    // 是否开启http生产
+    private int httpEnabled;
     
     public String getProducer() {
         return producer;
@@ -121,11 +124,31 @@ public class TopicParam {
     public void setSerializer(int serializer) {
         this.serializer = serializer;
     }
+
+    public int getHttpEnabled() {
+        return httpEnabled;
+    }
+
+    public void setHttpEnabled(int httpEnabled) {
+        this.httpEnabled = httpEnabled;
+    }
+
     @Override
     public String toString() {
-        return "TopicParam [name=" + name + ", queueNum=" + queueNum + ", ordered=" + ordered + ", info=" + info
-                + ", producer=" + producer + ", traceEnabled=" + traceEnabled + ", transactionEnabled="
-                + transactionEnabled + ", qpd=" + qpd + ", qps=" + qps + ", testEnabled=" + testEnabled
-                + ", delayEnabled=" + delayEnabled + ", serializer=" + serializer + "]";
+        return "TopicParam{" +
+                "name='" + name + '\'' +
+                ", queueNum=" + queueNum +
+                ", ordered=" + ordered +
+                ", info='" + info + '\'' +
+                ", producer='" + producer + '\'' +
+                ", traceEnabled=" + traceEnabled +
+                ", transactionEnabled=" + transactionEnabled +
+                ", qpd=" + qpd +
+                ", qps=" + qps +
+                ", testEnabled=" + testEnabled +
+                ", delayEnabled=" + delayEnabled +
+                ", serializer=" + serializer +
+                ", httpEnabled=" + httpEnabled +
+                '}';
     }
 }

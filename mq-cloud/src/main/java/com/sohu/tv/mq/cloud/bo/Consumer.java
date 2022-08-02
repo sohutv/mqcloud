@@ -38,7 +38,10 @@ public class Consumer {
     
     // 用途
     private String info;
-    
+
+    // 是否开启http消费
+    private int httpConsumeEnabled;
+
     public long getId() {
         return id;
     }
@@ -131,9 +134,32 @@ public class Consumer {
         this.info = info;
     }
 
+    public int getHttpConsumeEnabled() {
+        return httpConsumeEnabled;
+    }
+
+    public void setHttpConsumeEnabled(int httpConsumeEnabled) {
+        this.httpConsumeEnabled = httpConsumeEnabled;
+    }
+
+    public boolean httpConsumeEnabled() {
+        return 1 == httpConsumeEnabled;
+    }
+
     @Override
     public String toString() {
-        return "Consumer [id=" + id + ", tid=" + tid + ", name=" + name + ", consumeWay=" + consumeWay + ", createDate="
-                + createDate + ", updateTime=" + updateTime + ", traceEnabled=" + traceEnabled + "]";
+        return "Consumer{" +
+                "id=" + id +
+                ", tid=" + tid +
+                ", name='" + name + '\'' +
+                ", consumeWay=" + consumeWay +
+                ", createDate=" + createDate +
+                ", updateTime=" + updateTime +
+                ", topicName='" + topicName + '\'' +
+                ", consumerTraffic=" + consumerTraffic +
+                ", traceEnabled=" + traceEnabled +
+                ", info='" + info + '\'' +
+                ", httpConsumeEnabled=" + httpConsumeEnabled +
+                '}';
     }
 }

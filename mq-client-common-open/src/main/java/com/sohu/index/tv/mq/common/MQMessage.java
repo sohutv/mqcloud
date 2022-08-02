@@ -61,7 +61,9 @@ public class MQMessage<T> {
     }
 
     public MQMessage<T> setKeys(String keys) {
-        innerMessage.setKeys(keys);
+        if (keys != null && keys.length() > 0) {
+            innerMessage.setKeys(keys);
+        }
         return this;
     }
 

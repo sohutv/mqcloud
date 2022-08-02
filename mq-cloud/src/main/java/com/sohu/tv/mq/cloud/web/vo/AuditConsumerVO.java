@@ -19,6 +19,8 @@ public class AuditConsumerVO {
     private int traceEnabled;
     
     private int permitsPerSecond;
+
+    private int httpConsumeEnabled;
     
     public long getAid() {
         return aid;
@@ -61,5 +63,13 @@ public class AuditConsumerVO {
     }
     public void setPermitsPerSecond(int permitsPerSecond) {
         this.permitsPerSecond = permitsPerSecond;
+    }
+
+    public int getHttpConsumeEnabled() {
+        return httpConsumeEnabled;
+    }
+
+    public void setHttpConsumeEnabled(int httpConsumeEnabled) {
+        this.httpConsumeEnabled = httpConsumeEnabled;
     }
 }

@@ -1,9 +1,9 @@
 package com.sohu.tv.mq.cloud.util;
 
-import com.alibaba.fastjson.JSON;
 import com.sohu.tv.mq.cloud.bo.CommonConfig;
 import com.sohu.tv.mq.cloud.service.CommonConfigService;
 import com.sohu.tv.mq.util.CommonUtil;
+import com.sohu.tv.mq.util.JSONUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.rocketmq.common.MixAll;
@@ -156,6 +156,14 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware, Comm
     
     private String consumeTimespanMessageSupportedVersion;
 
+    // mq代理服务列表
+    private String mqProxyServerString;
+
+    // http协议生产uri前缀
+    private String httpProducerUriPrefix;
+    // http协议消费uri前缀
+    private String httpConsumerUriPrefix;
+
     @Autowired
     private CommonConfigService commonConfigService;
 
@@ -190,7 +198,7 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware, Comm
             } else if (fieldType == Boolean.class) {
                 field.set(this, Boolean.valueOf(value));
             } else {
-                field.set(this, JSON.parseObject(value, fieldType));
+                field.set(this, JSONUtil.parse(value, fieldType));
             }
         }
         // 发布更新时间
@@ -555,7 +563,31 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware, Comm
     public void setConsumeTimespanMessageSupportedVersion(String consumeTimespanMessageSupportedVersion) {
         this.consumeTimespanMessageSupportedVersion = consumeTimespanMessageSupportedVersion;
     }
-    
+
+    public String getMqProxyServerString() {
+        return mqProxyServerString;
+    }
+
+    public void setMqProxyServerString(String mqProxyServerString) {
+        this.mqProxyServerString = mqProxyServerString;
+    }
+
+    public String getHttpProducerUriPrefix() {
+        return httpProducerUriPrefix;
+    }
+
+    public void setHttpProducerUriPrefix(String httpProducerUriPrefix) {
+        this.httpProducerUriPrefix = httpProducerUriPrefix;
+    }
+
+    public String getHttpConsumerUriPrefix() {
+        return httpConsumerUriPrefix;
+    }
+
+    public void setHttpConsumerUriPrefix(String httpConsumerUriPrefix) {
+        this.httpConsumerUriPrefix = httpConsumerUriPrefix;
+    }
+
     public boolean threadMetricSupported(String version) {
         return version.compareTo(threadMetricSupportedVersion) >= 0;
     }

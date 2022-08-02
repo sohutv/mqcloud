@@ -1,15 +1,16 @@
 package com.sohu.tv.mq.cloud.web.controller.admin;
 
-import java.text.ParseException;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import javax.validation.Valid;
-
+import com.sohu.tv.mq.cloud.bo.*;
+import com.sohu.tv.mq.cloud.bo.Audit.StatusEnum;
+import com.sohu.tv.mq.cloud.bo.Audit.TypeEnum;
+import com.sohu.tv.mq.cloud.service.*;
+import com.sohu.tv.mq.cloud.service.MQProxyService.ConsumerConfigParam;
+import com.sohu.tv.mq.cloud.util.DateUtil;
+import com.sohu.tv.mq.cloud.util.Result;
+import com.sohu.tv.mq.cloud.util.Status;
+import com.sohu.tv.mq.cloud.web.controller.param.PaginationParam;
+import com.sohu.tv.mq.cloud.web.vo.*;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.rocketmq.common.protocol.body.Connection;
 import org.apache.rocketmq.common.protocol.body.ProducerConnection;
 import org.springframework.beans.BeanUtils;
@@ -20,66 +21,9 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
-import com.sohu.tv.mq.cloud.bo.Audit;
-import com.sohu.tv.mq.cloud.bo.Audit.StatusEnum;
-import com.sohu.tv.mq.cloud.bo.Audit.TypeEnum;
-import com.sohu.tv.mq.cloud.bo.AuditAssociateConsumer;
-import com.sohu.tv.mq.cloud.bo.AuditAssociateProducer;
-import com.sohu.tv.mq.cloud.bo.AuditConsumer;
-import com.sohu.tv.mq.cloud.bo.AuditConsumerConfig;
-import com.sohu.tv.mq.cloud.bo.AuditConsumerDelete;
-import com.sohu.tv.mq.cloud.bo.AuditResendMessage;
-import com.sohu.tv.mq.cloud.bo.AuditResetOffset;
-import com.sohu.tv.mq.cloud.bo.AuditTimespanMessageConsume;
-import com.sohu.tv.mq.cloud.bo.AuditTopic;
-import com.sohu.tv.mq.cloud.bo.AuditTopicDelete;
-import com.sohu.tv.mq.cloud.bo.AuditTopicTrace;
-import com.sohu.tv.mq.cloud.bo.AuditTopicTrafficWarn;
-import com.sohu.tv.mq.cloud.bo.AuditTopicUpdate;
-import com.sohu.tv.mq.cloud.bo.AuditUserConsumerDelete;
-import com.sohu.tv.mq.cloud.bo.AuditUserProducerDelete;
-import com.sohu.tv.mq.cloud.bo.Cluster;
-import com.sohu.tv.mq.cloud.bo.Consumer;
-import com.sohu.tv.mq.cloud.bo.ConsumerConfig;
-import com.sohu.tv.mq.cloud.bo.Topic;
-import com.sohu.tv.mq.cloud.bo.User;
-import com.sohu.tv.mq.cloud.bo.UserConsumer;
-import com.sohu.tv.mq.cloud.bo.UserMessage;
-import com.sohu.tv.mq.cloud.bo.UserProducer;
-import com.sohu.tv.mq.cloud.service.AlertService;
-import com.sohu.tv.mq.cloud.service.AssociateConsumerService;
-import com.sohu.tv.mq.cloud.service.AssociateProducerService;
-import com.sohu.tv.mq.cloud.service.AuditConsumerConfigService;
-import com.sohu.tv.mq.cloud.service.AuditConsumerDeleteService;
-import com.sohu.tv.mq.cloud.service.AuditConsumerService;
-import com.sohu.tv.mq.cloud.service.AuditResendMessageService;
-import com.sohu.tv.mq.cloud.service.AuditResetOffsetService;
-import com.sohu.tv.mq.cloud.service.AuditService;
-import com.sohu.tv.mq.cloud.service.AuditTimespanMessageConsumeService;
-import com.sohu.tv.mq.cloud.service.AuditTopicDeleteService;
-import com.sohu.tv.mq.cloud.service.AuditTopicService;
-import com.sohu.tv.mq.cloud.service.AuditTopicTraceService;
-import com.sohu.tv.mq.cloud.service.AuditTopicTrafficWarnService;
-import com.sohu.tv.mq.cloud.service.AuditTopicUpdateService;
-import com.sohu.tv.mq.cloud.service.AuditUserConsumerDeleteService;
-import com.sohu.tv.mq.cloud.service.AuditUserProducerDeleteService;
-import com.sohu.tv.mq.cloud.service.ClusterService;
-import com.sohu.tv.mq.cloud.service.ConsumerConfigService;
-import com.sohu.tv.mq.cloud.service.ConsumerService;
-import com.sohu.tv.mq.cloud.service.TopicService;
-import com.sohu.tv.mq.cloud.service.UserConsumerService;
-import com.sohu.tv.mq.cloud.service.UserMessageService;
-import com.sohu.tv.mq.cloud.service.UserProducerService;
-import com.sohu.tv.mq.cloud.service.UserService;
-import com.sohu.tv.mq.cloud.util.DateUtil;
-import com.sohu.tv.mq.cloud.util.Result;
-import com.sohu.tv.mq.cloud.util.Status;
-import com.sohu.tv.mq.cloud.web.controller.param.PaginationParam;
-import com.sohu.tv.mq.cloud.web.vo.AuditVO;
-import com.sohu.tv.mq.cloud.web.vo.ConnectionVO;
-import com.sohu.tv.mq.cloud.web.vo.TopicInfoVO;
-import com.sohu.tv.mq.cloud.web.vo.UserInfo;
-import com.sohu.tv.mq.cloud.web.vo.UserTopicInfoVO;
+import javax.validation.Valid;
+import java.text.ParseException;
+import java.util.*;
 
 /**
  * 审核
@@ -166,6 +110,9 @@ public class AuditController extends AdminViewController {
 
     @Autowired
     private AuditTimespanMessageConsumeService auditTimespanMessageConsumeService;
+
+    @Autowired
+    private MQProxyService mqProxyService;
 
     /**
      * 审核主列表
@@ -724,6 +671,13 @@ public class AuditController extends AdminViewController {
         Result<?> consumerConfigResult = consumerConfigService.save(consumerConfig);
         if (consumerConfigResult.isNotOK()) {
             logger.error("save consumer{} rate limit error", auditConsumer.getConsumer());
+        } else {
+            // http消费需要单独设置限速
+            try {
+                httpConsumerConfig(userInfo, consumer, consumerConfig);
+            } catch (Exception e) {
+                logger.error("httpConsumerConfig error:{} config:{}", consumer, consumerConfig, e);
+            }
         }
 
         // 更新申请状态
@@ -763,11 +717,20 @@ public class AuditController extends AdminViewController {
         }
         AuditAssociateProducer auditAssociateProducer = auditAssociateProducerResult.getResult();
 
+        // 获取存在的生产者
+        String producer = auditAssociateProducer.getProducer();
+        Result<List<UserProducer>> upListResult = userProducerService.queryUserProducer(producer);
+        if (upListResult.isEmpty()) {
+            return upListResult;
+        }
+        int httpEnabled = upListResult.getResult().get(0).getHttpEnabled();
+
         // 保存关联关系
         UserProducer up = new UserProducer();
         up.setTid(auditAssociateProducer.getTid());
         up.setUid(auditAssociateProducer.getUid());
-        up.setProducer(auditAssociateProducer.getProducer());
+        up.setProducer(producer);
+        up.setHttpEnabled(httpEnabled);
         Result<UserProducer> userProducerResult = userProducerService.saveNoException(up);
         if (userProducerResult.isNotOK()) {
             return userProducerResult;
@@ -1161,28 +1124,52 @@ public class AuditController extends AdminViewController {
         }
         Consumer consumer = consumerResult.getResult();
 
+        // 解析时间
+        long resetTo = -1;
+        if (StringUtils.isNotBlank(auditResetOffset.getOffset())) {
+            try {
+                Date date = DateUtil.getFormat(DateUtil.YMD_DASH_BLANK_HMS_COLON).parse(auditResetOffset.getOffset());
+                resetTo = date.getTime();
+            } catch (Exception e) {
+                logger.error("resetOffsetTo param err:{}", auditResetOffset.getOffset(), e);
+                return Result.getResult(Status.PARAM_ERROR);
+            }
+        } else {
+            // 跳过堆积：重置到一分钟之前
+            resetTo = System.currentTimeMillis() - 60000;
+        }
+        if (resetTo == -1) {
+            return Result.getResult(Status.PARAM_ERROR);
+        }
         // 重试消息重置
         if (TypeEnum.RESET_RETRY_OFFSET.getType() == audit.getType()) {
-            Date resetTo = DateUtil.getFormat(DateUtil.YMD_DASH_BLANK_HMS_COLON).parse(auditResetOffset.getOffset());
             ConsumerConfig consumerConfig = new ConsumerConfig();
             consumerConfig.setConsumer(consumer.getName());
-            consumerConfig.setRetryMessageResetTo(resetTo.getTime());
+            consumerConfig.setRetryMessageResetTo(resetTo);
             consumerConfig.setRetryMessageSkipKey(auditResetOffset.getMessageKey());
             Result<?> result = consumerConfigService.save(consumerConfig);
             if (result.isNotOK()) {
                 return Result.getWebResult(result);
             }
         } else {
-            // 查询topic记录
-            Result<Topic> topicResult = topicService.queryTopic(auditResetOffset.getTid());
-            if (topicResult.isNotOK()) {
-                return topicResult;
-            }
-            Topic topic = topicResult.getResult();
-            Result<?> resetOffsetResult = consumerService.resetOffset(topic.getClusterId(), topic.getName(),
-                    consumer.getName(), auditResetOffset.getOffset());
-            if (resetOffsetResult.isNotOK()) {
-                return resetOffsetResult;
+            if (consumer.httpConsumeEnabled()) {
+                Result<?> resetOffsetResult = consumerService.resetOffset(userInfo, consumer.getName(), resetTo);
+                if (resetOffsetResult.isNotOK()) {
+                    return Result.getWebResult(resetOffsetResult);
+                }
+            } else {
+                // 查询topic记录
+                Result<Topic> topicResult = topicService.queryTopic(auditResetOffset.getTid());
+                if (topicResult.isNotOK()) {
+                    return topicResult;
+                }
+                Topic topic = topicResult.getResult();
+                Cluster cluster = clusterService.getMQClusterById(topic.getClusterId());
+                Result<?> resetOffsetResult = consumerService.resetOffset(cluster, topic.getName(),
+                        consumer.getName(), resetTo);
+                if (resetOffsetResult.isNotOK()) {
+                    return resetOffsetResult;
+                }
             }
         }
         // 更新申请状态
@@ -1579,6 +1566,8 @@ public class AuditController extends AdminViewController {
         if (saveResult.isNotOK()) {
             return Result.getWebResult(saveResult);
         }
+        // http消费需要单独设置限速
+        httpConsumerConfig(userInfo, consumer, consumerConfig);
         // 更新申请状态
         boolean updateOK = agreeAndTip(audit, userInfo.getUser().getEmail(), consumer.getName());
         if (updateOK) {
@@ -1643,6 +1632,45 @@ public class AuditController extends AdminViewController {
             return Result.getOKResult();
         }
         return Result.getResult(Status.DB_UPDATE_ERR_CONSUME_TIMESPAN_MESSAGE_OK);
+    }
+
+    /**
+     * http消费者配置
+     * @param userInfo
+     * @param consumer
+     * @param consumerConfig
+     */
+    public void httpConsumerConfig(UserInfo userInfo, Consumer consumer, ConsumerConfig consumerConfig) {
+        if (!consumer.httpConsumeEnabled()) {
+            return;
+        }
+        ConsumerConfigParam consumerConfigParam = new ConsumerConfigParam();
+        consumerConfigParam.setConsumer(consumer.getName());
+        // 设置是否暂停
+        if (consumerConfig.getPause() != null) {
+            if (consumerConfig.getPause()) {
+                consumerConfigParam.setPause(1);
+            } else {
+                consumerConfigParam.setPause(0);
+            }
+        }
+        if (consumer.isBroadcast()) {
+            // 设置暂停客户端id
+            consumerConfigParam.setClientId(consumerConfig.getPauseClientId());
+        }
+        // 设置是否限速
+        if (consumerConfig.getEnableRateLimit() != null) {
+            if (consumerConfig.getEnableRateLimit()) {
+                consumerConfigParam.setRateLimitEnabled(1);
+            } else {
+                consumerConfigParam.setRateLimitEnabled(0);
+            }
+        }
+        consumerConfigParam.setLimitRate(consumerConfig.getPermitsPerSecond());
+        Result<?> result = mqProxyService.consumerConfig(userInfo, consumerConfigParam);
+        if (result.isNotOK()) {
+            logger.error("save http consumer:{} httpConsumerConfig:{} failed", consumer.getName(), consumerConfig);
+        }
     }
 
     @Override
