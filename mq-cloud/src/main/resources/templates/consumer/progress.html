@@ -92,7 +92,7 @@
 										</#if>
 									</#if>
 								</td>
-	                    		<td>集群</td>
+								<td>${consumerProgressVO.messageModel}</td>
 	                    		<td>${consumerProgressVO.diff}</td>
 	                    		<td>${consumerProgressVO.consumeTpsFormat}</td>
 	                    		<td>
@@ -456,7 +456,7 @@
 									<#if consumerProgressVO.consumer.httpConsumeEnabled()>
 										<font color="blue" data-toggle="tooltip" title="http方式消费">${consumerProgressVO.messageModel}</font>
 									<#else>
-										集群
+										${consumerProgressVO.messageModel}
 									</#if>
 								</td>
 	                    		<td>${consumerProgressVO.diff}</td>

@@ -63,18 +63,24 @@
 							</tr>
 							</thead>
 							<tbody>
-							<#if response.result.clientIdListResult.OK>
-								<#list response.result.clientIdListResult.result as clientId>
+							<#if response.result.clientIdListResult??>
+								<#if response.result.clientIdListResult.OK>
+									<#list response.result.clientIdListResult.result as clientId>
+										<tr>
+											<td>${clientId}</td>
+										</tr>
+									</#list>
 									<tr>
-										<td>${clientId}</td>
+										<td style="font-weight:bold;color:red;">该消费者还有链接，请确认后再删除！</td>
 									</tr>
-								</#list>
-								<tr>
-									<td style="font-weight:bold;color:red;">该消费者还有链接，请确认后再删除！</td>
-								</tr>
+								<#else>
+									<tr>
+										<td>${response.result.clientIdListResult.message}</td>
+									</tr>
+								</#if>
 							<#else>
 								<tr>
-									<td>${response.result.clientIdListResult.message}</td>
+									<td>暂无</td>
 								</tr>
 							</#if>
 							</tbody>
