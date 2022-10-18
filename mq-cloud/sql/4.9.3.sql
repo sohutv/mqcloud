@@ -21,3 +21,9 @@ alter table `audit_consumer` add column `http_consume_enabled` int(4) NOT NULL D
 alter table `consumer` add column `http_consume_enabled` int(4) NOT NULL DEFAULT '0' COMMENT '0:不开启http消费,1:开启http消费';
 alter table `audit_topic` add column `http_enabled` int(4) NOT NULL DEFAULT '0' COMMENT '0:不开启http生产,1:开启http生产';
 alter table `user_producer` add column `http_enabled` int(4) NOT NULL DEFAULT '0' COMMENT '0:不开启http生产,1:开启http生产';
+
+-- ----------------------------
+-- add new broker configuration
+-- ----------------------------
+INSERT INTO `broker_config`(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) VALUES (1, 'jvmMemory', '8g', 'broker启动内存大小,对应jvm参数中的xmx/xms,单位:g或m', '', 16, 0, NULL, 0);
+INSERT INTO `broker_config`(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) VALUES (1, 'maxDirectMemorySize', '15g', '堆外内存大小,单位:g', NULL, 17, 0, NULL, 0);

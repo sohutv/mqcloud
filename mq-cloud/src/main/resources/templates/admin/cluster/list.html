@@ -939,6 +939,31 @@ function install(id){
 			alert("请填写安装的绝对路径，并以/结尾");
 			return;
 		}
+
+		var directMemorySizeStr = $("#maxDirectMemorySize").val();
+		var directMemorySize;
+		if (!!directMemorySizeStr && !confirmEnding(directMemorySizeStr,'g')){
+			alert("堆外内存大小最小设置值为1G，请重新设置，例如:“6g”");
+			return;
+		} else {
+			directMemorySize = Number(directMemorySizeStr.replace('g',''));
+		}
+
+		let elementById = document.getElementsByName("transientStorePoolEnable");
+		var transientStoreCheck;
+		for(i = 0; i < elementById.length ; i++){
+			if(elementById[i].checked){
+				transientStoreCheck = elementById[i].value;
+				break;
+			}
+		}
+		if (transientStoreCheck == 'true'){
+			var limitSize = Number($("#transientStorePoolSize").val()) + 1
+			if (directMemorySize <  limitSize){
+				alert("堆外内存大小不得小于"+ limitSize + "g");
+				return;
+			}
+		}
 	}
 	if($('#'+id+'Install').html() == "继续"){
 		setTimeout(method+'()', 500);
@@ -946,6 +971,15 @@ function install(id){
 		validateJDK();
 	}
 	disableBtn("installBtn");
+}
+
+function confirmEnding(str, target) {
+	var start = str.length-target.length;
+	var arr = str.substr(start,target.length);
+	if(arr == target){
+		return true;
+	}
+	return false;
 }
 
 /**

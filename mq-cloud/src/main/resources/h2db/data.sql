@@ -278,3 +278,6 @@ INSERT IGNORE into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, 
 -- topic_traffic_warn_config init
 -- ----------------------------
 INSERT IGNORE INTO `topic_traffic_warn_config`(avg_multiplier,avg_max_percentage_increase,max_max_percentage_increase,alarm_receiver) VALUES (5, 200, 30, 0);
+
+INSERT IGNORE INTO `broker_config`(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) VALUES (1, 'jvmMemory', '8g', 'broker启动内存大小,对应jvm参数中的xmx/xms,单位:g或m', '', 16, 0, NULL, 0);
+INSERT IGNORE INTO `broker_config`(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) VALUES (1, 'maxDirectMemorySize', '15g', '堆外内存大小,单位:g', NULL, 17, 0, NULL, 0);

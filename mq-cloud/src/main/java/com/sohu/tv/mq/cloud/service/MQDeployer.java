@@ -3,6 +3,7 @@ package com.sohu.tv.mq.cloud.service;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import com.sohu.tv.mq.util.JSONUtil;
 import org.apache.commons.lang3.math.NumberUtils;
@@ -67,7 +68,11 @@ public class MQDeployer {
             + " >> %s/logs/startup.log 2>&1 &\" > %s/" + RUN_FILE;
     
     public static final String DATA_LOGS_DIR = "mkdir -p %s/data/config|mkdir -p %s/logs|";
-    
+
+    public static final String JVM_OPTION_JVMMEMORY = "sed -i 's|-server -Xms8g -Xmx8g|-server -Xms%s -Xmx%s|g' %s/bin/runbroker.sh";
+
+    public static final String JVM_OPTION_DIRECTMEMORY = "sed -i 's|-XX:MaxDirectMemorySize=15g|-XX:MaxDirectMemorySize=%s|g' %s/bin/runbroker.sh";
+
     public static final String MQ_AUTH = "/tmp/mqauth";
 
     // 部署broker时自动创建监控订阅组
@@ -305,7 +310,33 @@ public class MQDeployer {
         if(configResult.isNotOK()) {
             return configResult;
         }
-        // 2.初始化监控订阅信息
+        // 2.启动配置，替换启动参数
+        StringBuilder optionCommond = new StringBuilder();
+        Optional.ofNullable(param.get("jvmMemory")).ifPresent(xmx -> {
+            optionCommond.append(String.format(JVM_OPTION_JVMMEMORY, xmx, xmx, absoluteDir)).append(";");
+        });
+        Optional.ofNullable(param.get("maxDirectMemorySize")).ifPresent(maxDirectMemorySize -> {
+            optionCommond.append(String.format(JVM_OPTION_DIRECTMEMORY, maxDirectMemorySize, absoluteDir));
+        });
+        if (optionCommond.length() > 0) {
+            SSHResult sedResult = null;
+            try {
+                sedResult = sshTemplate.execute(brokerIp, new SSHCallback() {
+                    public SSHResult call(SSHSession session) {
+                        SSHResult sshResult = session.executeCommand(optionCommond.toString());
+                        return sshResult;
+                    }
+                });
+            } catch (SSHException e) {
+                logger.error("configBroker, ip:{},comm:{}", brokerIp, comm, e);
+                return Result.getWebErrorResult(e);
+            }
+            Result<?> configSedResult = wrapSSHResult(sedResult);
+            if (configSedResult.isNotOK()) {
+                return configSedResult;
+            }
+        }
+        // 3.初始化监控订阅信息
         final String subscriptionGroupComm = String.format(SUBSCRIPTIONGROUP_JSON, absoluteDir);
         try {
             sshResult = sshTemplate.execute(brokerIp, new SSHCallback() {
@@ -337,25 +368,25 @@ public class MQDeployer {
             return masterAddressResult;
         }
         String masterAddress = masterAddressResult.getResult();
-        // 3.1抓取topic配置
+        // 4.1抓取topic配置
         Result<String> result = fetchTopicConfig(cluster, masterAddress);
         if(Status.DB_ERROR.getKey() == result.getStatus()) {
             return result;
         }
         
-        // 3.2保存topic配置
+        // 4.2保存topic配置
         Result<?> topicSSHResult = saveConfig(brokerIp, result.getResult(), absoluteDir, "topics.json");
         if(!topicSSHResult.isOK()) {
             return topicSSHResult;
         }
         
-        // 4.1抓取consumer配置
+        // 5.1抓取consumer配置
         Result<String> consumerResult = fetchConsumerConfig(cluster, masterAddress);
         if(Status.DB_ERROR.getKey() == consumerResult.getStatus()) {
             return consumerResult;
         }
         
-        // 4.2保存consumer配置
+        // 5.2保存consumer配置
         Result<?> consumerSSHResult = saveConfig(brokerIp, consumerResult.getResult(), absoluteDir, 
                 "subscriptionGroup.json");
         return consumerSSHResult;
