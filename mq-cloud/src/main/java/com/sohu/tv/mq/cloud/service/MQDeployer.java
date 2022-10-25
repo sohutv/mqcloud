@@ -63,7 +63,7 @@ public class MQDeployer {
     public static final String RUN_FILE = "run.sh";
     
     public static final String CONFIG_FILE = "mq.conf";
-    
+
     public static final String RUN_CONFIG = "echo \"source /etc/profile;nohup sh %s/bin/%s -c %s/" + CONFIG_FILE 
             + " >> %s/logs/startup.log 2>&1 &\" > %s/" + RUN_FILE;
     
@@ -582,14 +582,17 @@ public class MQDeployer {
         String mvConfig = String.format(mvCommTemplate, backupDir, CONFIG_FILE, destDir);
         // 2. 移动run.sh
         String mvRun = String.format(mvCommTemplate, backupDir, RUN_FILE, destDir);
-        // 3. 移动data目录
+        // 3. 移动broker启动脚本 runbroker.sh
+        String mvBrokerRun = String.format(mvCommTemplate, backupDir, "bin/runbroker.sh", destDir + "/bin");
+        // 4. 移动data目录
         String mvData = String.format(mvCommTemplate, backupDir, "data", destDir);
-        // 4. 创建logs目录
+        // 5. 创建logs目录
         String createLogsDir = String.format("mkdir -p %s/logs", destDir);
         // 顺序执行,各个命令之间没有依赖
         String comm = new StringBuilder()
                 .append(mvConfig).append(" ; ")
                 .append(mvRun).append(" ; ")
+                .append(mvBrokerRun).append(" ; ")
                 .append(mvData).append(" ; ")
                 .append(createLogsDir).toString();
         SSHResult sshResult = null;
@@ -609,7 +612,7 @@ public class MQDeployer {
         if (mvResult.isNotOK()) {
             return mvResult;
         }
-        // 5. 备份目录重命名
+        // 6. 备份目录重命名
         String renameBackupDirComm = "sudo mv " + backupDir + " " + backupDir + DateUtil.getFormatNow(DateUtil.YMDHMS);
         try {
             sshResult = sshTemplate.execute(ip, new SSHCallback() {

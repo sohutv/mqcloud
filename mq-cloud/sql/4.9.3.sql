@@ -27,3 +27,4 @@ alter table `user_producer` add column `http_enabled` int(4) NOT NULL DEFAULT '0
 -- ----------------------------
 INSERT INTO `broker_config`(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) VALUES (1, 'jvmMemory', '8g', 'broker启动内存大小,对应jvm参数中的xmx/xms,单位:g或m', '', 16, 0, NULL, 0);
 INSERT INTO `broker_config`(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) VALUES (1, 'maxDirectMemorySize', '15g', '堆外内存大小,单位:g', NULL, 17, 0, NULL, 0);
+INSERT INTO `broker_config`(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) VALUES (1, 'physicalMemorySize', '0', '物理内存(单位字节)，0代表使用全部物理内存', '部署到docker或多个broker部署到一台机器时使用', 18, 1, NULL, 0);
