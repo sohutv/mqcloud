@@ -693,6 +693,7 @@ INSERT INTO `common_config`(`key`, `value`, `comment`) VALUES ('queryMessageFrom
 INSERT INTO `common_config`(`key`, `value`, `comment`) VALUES ('consumeFallBehindSize', '1073741824', '消费落后多少进行预警,单位byte');
 INSERT INTO `common_config`(`key`, `value`, `comment`) VALUES ('messageTypeLocation', 'classpath*:msg-type/*.class', '消息序列化方式为protostuf并且发送为自定义类型时，需要配置消息类型的class路径,例如 1:classpath*:msg-type/*.class 2：jar:file:///tmp/msgType.jar!/**/*.class 3：jar:http://127.0.0.1:8080/msgType.jar!/**/*.class');
 INSERT INTO `common_config`(`key`, `value`, `comment`) VALUES ('slaveFallBehindSize', '10485760', 'slave的commitlog落后master多少进行预警,单位byte');
+INSERT INTO `common_config`(`key`, `value`, `comment`) VALUES ('mqProxyServerString', '127.0.0.1', 'MQProxy服务器地址列表，多个用逗号分割');
 -- ----------------------------
 -- warn_config init
 -- ----------------------------
@@ -1016,8 +1017,9 @@ insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynami
 insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) values(24, 'dLegerPeers', null, 'DLeger相关配置', null, 26, 0, null, 0);
 insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) values(24, 'dLegerSelfId', null, 'DLeger相关配置', null, 27, 0, null, 0);
 insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) values(24, 'enableScheduleMessageStats', 'true', '开启schedule队列消息统计', null, 28, 1, null, 0);
-insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) values(24, 'isEnableBatchPush', 'false', 'DLedger批量复制', null, 29, 0, null, 1);
+insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) values(24, 'isEnableBatchPush', 'false', 'DLedger批量复制', null, 29, 0, null, 0);
 insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) values(24, 'autoDeleteUnusedStats', 'false', '删除topic或订阅时一起删除相关统计', null, 30, 1, null, 0);
+insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) values(24, 'registerBroker', 'true', '是否注册broker', null, 31, 1, null, 0);
 
 -- ----------------------------
 -- Table structure for `topic_traffic_warn_config`
