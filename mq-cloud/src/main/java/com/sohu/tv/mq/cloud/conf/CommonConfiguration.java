@@ -150,8 +150,8 @@ public class CommonConfiguration {
     public GenericKeyedObjectPool<Cluster, MQAdminExt> mqPool() {
         GenericKeyedObjectPoolConfig genericKeyedObjectPoolConfig = new GenericKeyedObjectPoolConfig();
         genericKeyedObjectPoolConfig.setTestWhileIdle(true);
-        genericKeyedObjectPoolConfig.setMaxTotalPerKey(1);
-        genericKeyedObjectPoolConfig.setMaxIdlePerKey(1);
+        genericKeyedObjectPoolConfig.setMaxTotalPerKey(5);
+        genericKeyedObjectPoolConfig.setMaxIdlePerKey(2);
         genericKeyedObjectPoolConfig.setMinIdlePerKey(1);
         genericKeyedObjectPoolConfig.setMaxWaitMillis(10000);
         genericKeyedObjectPoolConfig.setTimeBetweenEvictionRunsMillis(20000);

@@ -7,6 +7,8 @@ import com.sohu.tv.mq.util.Constant;
 import org.apache.rocketmq.acl.common.AclClientRPCHook;
 import org.apache.rocketmq.acl.common.SessionCredentials;
 
+import java.util.concurrent.atomic.AtomicLong;
+
 /**
  * sohu mq admin 工厂
  * 
@@ -14,7 +16,10 @@ import org.apache.rocketmq.acl.common.SessionCredentials;
  * @date 2020年4月28日
  */
 public class SohuMQAdminFactory {
+
     private MQCloudConfigHelper mqCloudConfigHelper;
+
+    private AtomicLong instanceId = new AtomicLong();
 
     public SohuMQAdminFactory(MQCloudConfigHelper mqCloudConfigHelper) {
         this.mqCloudConfigHelper = mqCloudConfigHelper;
@@ -38,6 +43,7 @@ public class SohuMQAdminFactory {
 		} else {
 			sohuMQAdmin = new DefaultSohuMQAdmin();
 		}
+		sohuMQAdmin.setAdminExtGroup(sohuMQAdmin.getAdminExtGroup() + instanceId.incrementAndGet());
 		sohuMQAdmin.setVipChannelEnabled(false);
 		sohuMQAdmin.setUnitName(String.valueOf(key.getId()));
 		sohuMQAdmin.start();
