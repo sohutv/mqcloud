@@ -6,7 +6,7 @@
 	<parent>
 		<groupId>com.sohu.tv</groupId>
 		<artifactId>mq</artifactId>
-		<version>4.9.3</version>
+		<version>4.9.4</version>
 	</parent>
 
 	<artifactId>mq-client-common-open</artifactId>
@@ -49,6 +49,16 @@
 			<artifactId>jackson-databind</artifactId>
 			<optional>true</optional>
 			<version>${jackson.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>ch.qos.logback</groupId>
+			<artifactId>logback-core</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>ch.qos.logback</groupId>
+			<artifactId>logback-classic</artifactId>
+			<scope>test</scope>
 		</dependency>
 	</dependencies>
 	
