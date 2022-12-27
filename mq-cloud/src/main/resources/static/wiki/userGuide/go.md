@@ -1,3 +1,6 @@
+
+**注意：考虑到社区维护的rocketmq-client-go问题较多，且问题往往无法快速定位，所以强烈建议使用[http](http)方式接入**
+
 ## 一、<span id="apply">前提条件</span>
 
 请先参考[生产和消费](produceAndConsume)完成申请。
