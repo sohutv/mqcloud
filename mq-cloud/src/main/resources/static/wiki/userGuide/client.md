@@ -45,7 +45,7 @@
     <param name="File" value="${LOGS_DIR}/rocketmq.log" />
     <param name="DatePattern" value="'.'yyyy-MM-dd" />
     <layout class="org.apache.log4j.PatternLayout">
-        <param name="ConversionPattern" value="%d{yyy-MM-dd HH\:mm\:ss,SSS} %p %c{1}(%L) - %m%n"/>
+        <param name="ConversionPattern" value="%d{yyy-MM-dd HH:mm:ss,SSS} %p %c{1}(%L) - %m%n"/>
     </layout>
 </appender>
 <logger name="RocketmqClient" additivity="false">
@@ -64,7 +64,7 @@
 ```
 <Appenders>
     <RollingFile name="RocketmqClientAppender" fileName="${sys:client.logRoot}/rocketmq_client.log" filePattern="${sys:client.logRoot}/rocketmq_client-%d{yyyy-MM-dd}-%i.log">
-        <PatternLayout pattern="%d{yyy-MM-dd HH\:mm\:ss,SSS} %p %c{1}(%L) - %m%n"/>
+        <PatternLayout pattern="%d{yyy-MM-dd HH:mm:ss,SSS} [%t] %p %c{1.}(%L) - %m%n"/>
         <Policies>
             <TimeBasedTriggeringPolicy/>
             <SizeBasedTriggeringPolicy size="1 GB"/>
