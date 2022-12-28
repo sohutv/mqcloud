@@ -6,14 +6,17 @@ import com.sohu.tv.mq.common.AbstractConfig;
 import com.sohu.tv.mq.common.MQRateLimitException;
 import com.sohu.tv.mq.common.SohuSendMessageHook;
 import com.sohu.tv.mq.metric.MQMetricsExporter;
+import com.sohu.tv.mq.route.AffinityMQStrategy;
 import com.sohu.tv.mq.stats.StatsHelper;
 import org.apache.rocketmq.client.exception.MQClientException;
+import org.apache.rocketmq.client.impl.producer.DefaultMQProducerImpl;
 import org.apache.rocketmq.client.producer.*;
 import org.apache.rocketmq.client.trace.AsyncTraceDispatcher;
 import org.apache.rocketmq.client.trace.hook.SendMessageTraceHookImpl;
 import org.apache.rocketmq.common.message.Message;
 import org.apache.rocketmq.remoting.exception.RemotingException;
 
+import java.lang.reflect.Field;
 import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.*;
@@ -925,5 +928,29 @@ public class RocketMQProducer extends AbstractConfig {
 
     public void setRetryTimesWhenSendFailed(int retryTimesWhenSendFailed) {
         producer.setRetryTimesWhenSendFailed(retryTimesWhenSendFailed);
+    }
+
+    public boolean isSuspendAWhileWhenRateLimited() {
+        return suspendAWhileWhenRateLimited;
+    }
+
+    public void setSuspendAWhileWhenRateLimited(boolean suspendAWhileWhenRateLimited) {
+        this.suspendAWhileWhenRateLimited = suspendAWhileWhenRateLimited;
+    }
+
+    @Override
+    protected void initAffinity() {
+        super.initAffinity();
+        if (isAffinityEnabled()) {
+            try {
+                Field field = DefaultMQProducerImpl.class.getDeclaredField("mqFaultStrategy");
+                field.setAccessible(true);
+                field.set(producer.getDefaultMQProducerImpl(), new AffinityMQStrategy(getAffinityBrokerSuffix(),
+                        isAffinityIfBrokerNotSet()));
+                logger.info("{} initAffinity:{}", group, getAffinityBrokerSuffix());
+            } catch (Exception e) {
+                logger.error("initAffinity error", e);
+            }
+        }
     }
 }

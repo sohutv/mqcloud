@@ -1,9 +1,13 @@
 package com.sohu.tv.mq.trace;
 
+import com.sohu.tv.mq.common.AbstractConfig;
+import com.sohu.tv.mq.route.AffinityMQStrategy;
 import org.apache.rocketmq.client.exception.MQClientException;
+import org.apache.rocketmq.client.impl.producer.DefaultMQProducerImpl;
 import org.apache.rocketmq.client.producer.DefaultMQProducer;
 
-import com.sohu.tv.mq.common.AbstractConfig;
+import java.lang.reflect.Field;
+
 /**
  * 专门发送trace数据的producer
  * 
@@ -58,5 +62,21 @@ public class TraceRocketMQProducer extends AbstractConfig {
     @Override
     protected int role() {
         return PRODUCER;
+    }
+
+    @Override
+    protected void initAffinity() {
+        super.initAffinity();
+        if (isAffinityEnabled()) {
+            try {
+                Field field = DefaultMQProducerImpl.class.getDeclaredField("mqFaultStrategy");
+                field.setAccessible(true);
+                field.set(producer.getDefaultMQProducerImpl(), new AffinityMQStrategy(getAffinityBrokerSuffix(),
+                        isAffinityIfBrokerNotSet()));
+                logger.info("{} initAffinity:{}", group, getAffinityBrokerSuffix());
+            } catch (Exception e) {
+                logger.error("initAffinity error", e);
+            }
+        }
     }
 }

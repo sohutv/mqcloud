@@ -61,8 +61,14 @@ public abstract class AbstractConfig {
     
     protected SohuAsyncTraceDispatcher traceDispatcher;
 
+    // 启用亲和性
+    private boolean affinityEnabled;
+
+    // 亲和的broker，broker名与机房名采用下划线分割，比如broker-a_bx，表示bx机房的broker-a
+    private String affinityBrokerSuffix;
+
     public AbstractConfig() {
-        System.setProperty(ClientLogger.CLIENT_LOG_USESLF4J, "true");
+        this(null, null);
     }
 
     public AbstractConfig(String group, String topic) {
@@ -70,6 +76,21 @@ public abstract class AbstractConfig {
         this.group = group;
         // use slf4j
         System.setProperty(ClientLogger.CLIENT_LOG_USESLF4J, "true");
+        // 设置亲和性
+        setAffinity();
+    }
+
+    public void setAffinity(){
+        // 优先使用jvm属性
+        setAffinityBrokerSuffix(System.getProperty(CommonUtil.MQ_AFFINITY));
+        if (getAffinityBrokerSuffix() == null) {
+            // 其次使用系统变量
+            setAffinityBrokerSuffix(System.getenv(CommonUtil.MQ_AFFINITY));
+        }
+        // 如果外部配置了亲和性，则开启
+        if (getAffinityBrokerSuffix() != null) {
+            setAffinityEnabled(true);
+        }
     }
 
     public String getTopic() {
@@ -144,10 +165,6 @@ public abstract class AbstractConfig {
         clientConfig.setUnitName(String.valueOf(clusterInfoDTO.getClusterId()));
         // 自动设置是否trace
         traceEnabled = clusterInfoDTO.isTraceEnabled();
-        // 设置instanceName
-        if(getInstanceName() != null) {
-            clientConfig.setInstanceName(getInstanceName());
-        }
         // 设置序列化方式
         messageSerializer = MessageSerializerEnum.getMessageSerializerByType(
                 clusterInfoDTO.getSerializer());
@@ -156,8 +173,16 @@ public abstract class AbstractConfig {
         }
         // 客户端ip初始化
         initClientIp(clientConfig);
+        // 亲和性初始化
+        initAffinity();
+        // 构建instanceName
+        buildInstanceName();
         // trace 初始化
         initTrace();
+        // 设置instanceName
+        if(getInstanceName() != null) {
+            clientConfig.setInstanceName(getInstanceName());
+        }
     }
     
     /**
@@ -196,23 +221,35 @@ public abstract class AbstractConfig {
             // 构建单独的trace producer
             TraceRocketMQProducer traceRocketMQProducer = new TraceRocketMQProducer(
                     CommonUtil.buildTraceTopicProducer(traceTopic), traceTopic);
-            // 初始化TraceDispatcher
-            traceDispatcher = new SohuAsyncTraceDispatcher(traceTopic);
             // 设置producer属性
             traceRocketMQProducer.getProducer().setSendMsgTimeout(5000);
-            traceRocketMQProducer.getProducer().setMaxMessageSize(traceDispatcher.getMaxMsgSize() - 10 * 1000);
             traceRocketMQProducer.setMqCloudDomain(mqCloudDomain);
             traceRocketMQProducer.setInstanceName(getGroup());
+            // 采用外部生产者或消费者的亲和设置
+            traceRocketMQProducer.setAffinityEnabled(affinityEnabled);
+            traceRocketMQProducer.setAffinityBrokerSuffix(affinityBrokerSuffix);
             // 启动trace producer
             traceRocketMQProducer.start();
-            // 赋给TraceDispatcher
-            traceDispatcher.setTraceProducer(traceRocketMQProducer.getProducer());
+            // 初始化TraceDispatcher
+            traceDispatcher = new SohuAsyncTraceDispatcher(traceTopic, traceRocketMQProducer.getProducer());
             // 启动
-            traceDispatcher.start();
+            traceDispatcher.start(null, null);
             // 注册
             registerTraceDispatcher(traceDispatcher);
         } catch (Exception e) {
             logger.error("SohuAsyncTraceDispatcher init err", e);
+        }
+    }
+
+    /**
+     * 亲和性初始化
+     */
+    protected void initAffinity() {
+        if (!affinityEnabled) {
+            return;
+        }
+        if (affinityBrokerSuffix == null) {
+            throw new IllegalArgumentException("affinityBrokerSuffix cannot be null");
         }
     }
 
@@ -265,18 +302,29 @@ public abstract class AbstractConfig {
     }
 
     /**
-     * 当存在同一JVM内需要向多个RocketMQ集群生产消息时, 需要设置InstanceName作区分，否则默认发往第一个初始化的集群。
-     * 注：之所以追加pid是因为如果集群消费方式的consumer设置了相同的instanceName，会导致消费不均
-     * 参考：https://blog.csdn.net/a417930422/article/details/50663629
-     * 
+     * 设置instanceName
+     *
      * @param instanceName
      */
     public void setInstanceName(String instanceName) {
-        StringBuilder buffer = new StringBuilder();
-        buffer.append(UtilAll.getPid());
-        buffer.append("@");
-        buffer.append(instanceName);
-        this.instanceName = buffer.toString();
+        this.instanceName = instanceName;
+    }
+
+    /**
+     * 构建instanceName
+     */
+    public void buildInstanceName() {
+        if (affinityEnabled) {
+            if (this.instanceName == null) {
+                this.instanceName = UtilAll.getPid() + CommonUtil.MQ_AFFINITY_DELIMITER + affinityBrokerSuffix;
+            } else {
+                this.instanceName = UtilAll.getPid() + CommonUtil.MQ_AFFINITY_DELIMITER + affinityBrokerSuffix + "@" + this.instanceName;
+            }
+        } else {
+            if (this.instanceName != null) {
+                this.instanceName = UtilAll.getPid() + "@" + this.instanceName;
+            }
+        }
     }
 
     public String getInstanceName() {
@@ -287,5 +335,30 @@ public abstract class AbstractConfig {
     	if(traceDispatcher != null){
     		traceDispatcher.shutdown();
     	}
+    }
+
+    public boolean isAffinityEnabled() {
+        return affinityEnabled;
+    }
+
+    public void setAffinityEnabled(boolean affinityEnabled) {
+        this.affinityEnabled = affinityEnabled;
+    }
+
+    public String getAffinityBrokerSuffix() {
+        return affinityBrokerSuffix;
+    }
+
+    public void setAffinityBrokerSuffix(String affinityBrokerSuffix) {
+        this.affinityBrokerSuffix = affinityBrokerSuffix;
+    }
+
+    /**
+     * 如果broker设置亲和标记，当客户端标记为default时，亲和该broker
+     *
+     * @return
+     */
+    public boolean isAffinityIfBrokerNotSet() {
+        return CommonUtil.MQ_AFFINITY_DEFAULT.equals(affinityBrokerSuffix);
     }
 }

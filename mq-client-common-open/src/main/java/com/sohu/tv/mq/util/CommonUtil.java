@@ -16,6 +16,12 @@ public class CommonUtil {
     private static final Logger logger = LoggerFactory.getLogger(CommonUtil.class);
 
     public static final String TRACE_TOPIC_SUFFIX = "-trace-topic";
+
+    public static final String MQ_AFFINITY = "MQ_AFFINITY";
+
+    public static final String MQ_AFFINITY_DELIMITER = "_";
+
+    public static final String MQ_AFFINITY_DEFAULT = "default";
     
     /**
      * mqcloud-test-topic -> mqcloud-test-trace-topic
