@@ -14,6 +14,7 @@ import org.apache.rocketmq.common.protocol.ResponseCode;
 import org.apache.rocketmq.common.protocol.body.ConsumerRunningInfo;
 import org.apache.rocketmq.common.protocol.body.TopicList;
 import org.apache.rocketmq.common.protocol.header.GetConsumerRunningInfoRequestHeader;
+import org.apache.rocketmq.common.protocol.header.namesrv.UnRegisterBrokerRequestHeader;
 import org.apache.rocketmq.common.protocol.route.BrokerData;
 import org.apache.rocketmq.common.protocol.route.TopicRouteData;
 import org.apache.rocketmq.remoting.RPCHook;
@@ -296,4 +297,32 @@ public abstract class SohuMQAdmin extends DefaultMQAdminExt {
 
     public abstract void updateSendMessageRateLimit(String brokerAddr,
             UpdateSendMsgRateLimitRequestHeader updateSendMsgRateLimitRequestHeader) throws Exception;
+
+
+    public void unregisterBroker(
+            final String namesrvAddr,
+            final String clusterName,
+            final String brokerAddr,
+            final String brokerName,
+            final long brokerId
+    ) throws Exception {
+        UnRegisterBrokerRequestHeader requestHeader = new UnRegisterBrokerRequestHeader();
+        requestHeader.setBrokerAddr(brokerAddr);
+        requestHeader.setBrokerId(brokerId);
+        requestHeader.setBrokerName(brokerName);
+        requestHeader.setClusterName(clusterName);
+        RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.UNREGISTER_BROKER, requestHeader);
+
+        RemotingCommand response = getMQClientInstance().getMQClientAPIImpl().getRemotingClient().invokeSync(namesrvAddr, request, 3000);
+        assert response != null;
+        switch (response.getCode()) {
+            case ResponseCode.SUCCESS: {
+                return;
+            }
+            default:
+                break;
+        }
+
+        throw new MQBrokerException(response.getCode(), response.getRemark(), brokerAddr);
+    }
 }

@@ -254,4 +254,36 @@ public class BrokerService {
             }
         });
     }
+
+    /**
+     * 查询broker
+     */
+    public Result<Broker> queryBroker(int cid, String addr) {
+        Broker broker = null;
+        try {
+            broker = brokerDao.selectBroker(cid, addr);
+        } catch (Exception e) {
+            logger.error("queryBroker:{} err", addr, e);
+            return Result.getDBErrorResult(e);
+        }
+        return Result.getResult(broker);
+    }
+
+    /**
+     * 更新是否可写
+     */
+    public Result<?> updateWritable(int cid, String addr, boolean writable) {
+        Integer result = null;
+        try {
+            if (writable) {
+                result = brokerDao.updateWritable(cid, addr, 1);
+            } else {
+                result = brokerDao.updateWritable(cid, addr, 0);
+            }
+        } catch (Exception e) {
+            logger.error("updateWritable err, cid:{}, addr:{}", cid, addr, e);
+            return Result.getDBErrorResult(e);
+        }
+        return Result.getResult(result);
+    }
 }

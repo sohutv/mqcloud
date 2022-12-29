@@ -1,14 +1,9 @@
 package com.sohu.tv.mq.cloud.dao;
 
-import java.util.List;
-
-import org.apache.ibatis.annotations.Delete;
-import org.apache.ibatis.annotations.Insert;
-import org.apache.ibatis.annotations.Param;
-import org.apache.ibatis.annotations.Select;
-import org.apache.ibatis.annotations.Update;
-
 import com.sohu.tv.mq.cloud.bo.Broker;
+import org.apache.ibatis.annotations.*;
+
+import java.util.List;
 /**
  * BrokerDao
  * 
@@ -59,4 +54,20 @@ public interface BrokerDao {
      */
     @Delete("delete from broker where cid=#{cid}")
     public Integer delete(@Param("cid") int cid);
+
+    /**
+     * 查询
+     *
+     * @return
+     */
+    @Select("select * from broker where cid = #{cid} and addr = #{addr}")
+    public Broker selectBroker(@Param("cid") int cid, @Param("addr") String addr);
+
+    /**
+     * 更新
+     *
+     * @param notice
+     */
+    @Update("update broker set writable = #{writable} where cid = #{cid} and addr = #{addr}")
+    public Integer updateWritable(@Param("cid") int cid, @Param("addr") String addr, @Param("writable") int writable);
 }

@@ -37,6 +37,9 @@ public class BrokerStatVO {
     
     private String baseDir;
 
+    // 是否可以写入
+    private boolean writable = true;
+
     public Map<String, String> getInfo() {
         return info;
     }
@@ -126,6 +129,14 @@ public class BrokerStatVO {
 
     public String getCheckStatusDesc() {
         return CheckStatusEnum.getCheckStatusEnumByStatus(getCheckStatus()).getDesc();
+    }
+
+    public boolean isWritable() {
+        return writable;
+    }
+
+    public void setWritable(boolean writable) {
+        this.writable = writable;
     }
 
     public class DelayQueue {

@@ -1,32 +1,10 @@
 package com.sohu.tv.mq.cloud.web.controller.admin;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
-
-import javax.validation.Valid;
-
-import org.apache.commons.lang3.math.NumberUtils;
-import org.apache.rocketmq.common.protocol.body.ClusterInfo;
-import org.apache.rocketmq.common.protocol.body.KVTable;
-import org.apache.rocketmq.common.protocol.route.BrokerData;
-import org.apache.rocketmq.common.running.RunningStats;
-import org.apache.rocketmq.tools.admin.MQAdminExt;
-import org.springframework.beans.BeanUtils;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
-
 import com.sohu.tv.mq.cloud.bo.Broker;
 import com.sohu.tv.mq.cloud.bo.Cluster;
 import com.sohu.tv.mq.cloud.bo.MessageQueryCondition;
 import com.sohu.tv.mq.cloud.bo.Topic;
+import com.sohu.tv.mq.cloud.common.mq.SohuMQAdmin;
 import com.sohu.tv.mq.cloud.mq.DefaultCallback;
 import com.sohu.tv.mq.cloud.mq.MQAdminCallback;
 import com.sohu.tv.mq.cloud.mq.MQAdminTemplate;
@@ -42,6 +20,22 @@ import com.sohu.tv.mq.cloud.web.controller.param.ClusterParam;
 import com.sohu.tv.mq.cloud.web.vo.BrokerStatVO;
 import com.sohu.tv.mq.cloud.web.vo.ClusterInfoVO;
 import com.sohu.tv.mq.cloud.web.vo.UserInfo;
+import org.apache.commons.lang3.math.NumberUtils;
+import org.apache.rocketmq.common.protocol.body.ClusterInfo;
+import org.apache.rocketmq.common.protocol.body.KVTable;
+import org.apache.rocketmq.common.protocol.route.BrokerData;
+import org.apache.rocketmq.common.running.RunningStats;
+import org.apache.rocketmq.tools.admin.MQAdminExt;
+import org.springframework.beans.BeanUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import javax.validation.Valid;
+import java.util.*;
 
 /**
  * 集群
@@ -123,9 +117,14 @@ public class AdminClusterController extends AdminViewController {
     @ResponseBody
     @RequestMapping(value = "/nowrite", method = RequestMethod.POST)
     public Result<?> nowrite(UserInfo ui, @RequestParam(name = "cid") Integer cid,
-            @RequestParam(name = "broker") String broker) {
+            @RequestParam(name = "addr") String addr) {
         Cluster mqCluster = getMQCluster(cid);
-        logger.warn("nowrite {}:{}, user:{}", mqCluster, broker, ui);
+        logger.warn("nowrite {}:{}, user:{}", mqCluster, addr, ui);
+        Result<Broker> brokerResult = brokerService.queryBroker(cid, addr);
+        if (brokerResult.isNotOK()) {
+            return Result.getWebResult(brokerResult);
+        }
+        Broker broker = brokerResult.getResult();
         Integer rst = mqAdminTemplate.execute(new DefaultCallback<Integer>() {
             public Integer callback(MQAdminExt mqAdmin) throws Exception {
                 List<String> namesrvList = mqAdmin.getNameServerAddressList();
@@ -135,13 +134,14 @@ public class AdminClusterController extends AdminViewController {
                 int totalWipeTopicCount = 0;
                 for (String namesrvAddr : namesrvList) {
                     try {
-                        int wipeTopicCount = mqAdmin.wipeWritePermOfBroker(namesrvAddr, broker);
+                        int wipeTopicCount = mqAdmin.wipeWritePermOfBroker(namesrvAddr, broker.getBrokerName());
                         totalWipeTopicCount += wipeTopicCount;
                     } catch (Exception e) {
-                        logger.error("nowrite namesrvAddr:{}, broker:{} err", namesrvAddr, broker, e);
+                        logger.error("nowrite namesrvAddr:{}, broker:{} err", namesrvAddr, broker.getBrokerName(), e);
                         throw e;
                     }
                 }
+                brokerService.updateWritable(cid, broker.getAddr(), false);
                 return totalWipeTopicCount;
             }
 
@@ -150,6 +150,48 @@ public class AdminClusterController extends AdminViewController {
             }
         });
         return Result.getResult(rst);
+    }
+
+    /**
+     * 恢复写入
+     *
+     * @param cid
+     * @param broker
+     * @return
+     */
+    @ResponseBody
+    @RequestMapping(value = "/resume/write", method = RequestMethod.POST)
+    public Result<?> resumeWrite(UserInfo ui, @RequestParam(name = "cid") Integer cid,
+                             @RequestParam(name = "addr") String addr) {
+        Cluster mqCluster = getMQCluster(cid);
+        logger.warn("resumeWrite {}:{}, user:{}", mqCluster, addr, ui);
+        Result<Broker> brokerResult = brokerService.queryBroker(cid, addr);
+        if (brokerResult.isNotOK()) {
+            return Result.getWebResult(brokerResult);
+        }
+        Broker broker = brokerResult.getResult();
+        return mqAdminTemplate.execute(new DefaultCallback<Result<?>>() {
+            public Result<?> callback(MQAdminExt mqAdmin) throws Exception {
+                List<String> namesrvList = mqAdmin.getNameServerAddressList();
+                if (namesrvList == null) {
+                    return Result.getResult(null);
+                }
+                SohuMQAdmin sohuMQAdmin = (SohuMQAdmin) mqAdmin;
+                for (String namesrvAddr : namesrvList) {
+                    try {
+                        sohuMQAdmin.unregisterBroker(namesrvAddr, mqCluster.getName(), broker.getAddr(), broker.getBrokerName(), broker.getBrokerID());
+                    } catch (Exception e) {
+                        logger.error("unregisterBroker namesrvAddr:{}, broker:{} err", namesrvAddr, broker, e);
+                        return Result.getWebErrorResult(e);
+                    }
+                }
+                brokerService.updateWritable(cid, broker.getAddr(), true);
+                return Result.getOKResult();
+            }
+            public Cluster mqCluster() {
+                return mqCluster;
+            }
+        });
     }
 
     /**
@@ -306,6 +348,7 @@ public class AdminClusterController extends AdminViewController {
                             // 监控结果
                             brokerStatVO.setCheckStatus(broker.getCheckStatus());
                             brokerStatVO.setCheckTime(broker.getCheckTimeFormat());
+                            brokerStatVO.setWritable(broker.isWritable());
                             // 当有broker down时，数据库中的broker 地址已过时，增加异常处理
                             try {
                                 // 抓取统计指标

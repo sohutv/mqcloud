@@ -33,6 +33,9 @@ public class Broker {
     
     // 安装路径
     private String baseDir;
+
+    // 是否可以写入
+    private boolean writable = true;
     
     public int getCid() {
         return cid;
@@ -126,6 +129,14 @@ public class Broker {
 
     public void setBaseDir(String baseDir) {
         this.baseDir = baseDir;
+    }
+
+    public boolean isWritable() {
+        return writable;
+    }
+
+    public void setWritable(boolean writable) {
+        this.writable = writable;
     }
 
     @Override

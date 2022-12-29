@@ -225,7 +225,11 @@
 							</#if>
 							<#if brokerGroup[key][bkey].version??>
 							<#if bkey == "0">
-								<button title="禁止客户端写入，broker下线前需要先禁止写入，等没有人写入后，再下线" type="button" onclick="program('${brokerGroup[key][bkey].brokerAddr}', 'program${i}')" class="btn btn-sm btn-success" data-target="#nowriteModal${i}" data-toggle="modal">停写</button>
+								<#if brokerGroup[key][bkey].writable>
+									<button title="禁止客户端写入，broker下线前需要先禁止写入，等没有人写入后，再下线" type="button" onclick="program('${brokerGroup[key][bkey].brokerAddr}', 'program${i}')" class="btn btn-sm btn-success" data-target="#nowriteModal${i}" data-toggle="modal">停写</button>
+								<#else>
+									<button title="恢复写入" type="button" onclick="program('${brokerGroup[key][bkey].brokerAddr}', 'program${i}')" class="btn btn-sm btn-success" data-target="#nowriteModal${i}" data-toggle="modal">恢复</button>
+								</#if>
 								<button title="已经停写的broker，可以进行关闭操作" type="button" class="btn btn-sm btn-success" data-target="#brokerOfflineModal${i}" onclick="program('${brokerGroup[key][bkey].brokerAddr}', 'brokerOfflineProgram${i}')" data-toggle="modal">下线</button>
 								<#if brokerGroup[key]?size <= 1>
 									<button title="增加slave" type="button" class="btn btn-sm btn-success"  onclick="addBroker('${key}')" data-target="#addBrokerModal" data-toggle="modal"><span class="glyphicon glyphicon-plus" aria-hidden="true"></span>&nbsp;Slave</button>
@@ -236,7 +240,7 @@
 										<div class="modal-content">
 											<div class="modal-header">
 												<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-												<h4 class="modal-title">确定要停止写入?</h4>
+												<h4 class="modal-title">确定要<#if brokerGroup[key][bkey].writable>停止<#else>恢复</#if>写入?</h4>
 											</div>
 											<form class="form-horizontal form-bordered form-row-stripped" id="nowrite${i}">
 												<div class="modal-body">
@@ -256,13 +260,18 @@
 																	</div>
 																</div>
 																<input type="hidden" name="cid" value="${response.result.selectedMQCluster.id}">
+																<input type="hidden" name="addr" value="${brokerGroup[key][bkey].brokerAddr}">
 															</div>
 														</div>
 													</div>
 												</div>
 												<div class="modal-footer">
 													<button type="button" data-dismiss="modal" class="btn" >取消</button>
-													<button type="button" class="btn btn-primary" onclick="nowrite('nowrite${i}')" id="nowrite${i}Btn">确定</button>
+													<#if brokerGroup[key][bkey].writable>
+														<button type="button" class="btn btn-primary" onclick="nowrite('nowrite${i}')" id="nowrite${i}Btn">确定</button>
+													<#else>
+														<button type="button" class="btn btn-primary" onclick="resumeWrite('nowrite${i}')" id="nowrite${i}Btn">确定</button>
+													</#if>
 												</div>
 											</form>
 										</div>
@@ -942,10 +951,10 @@ function install(id){
 
 		var directMemorySizeStr = $("#maxDirectMemorySize").val();
 		var directMemorySize;
-		if (!!directMemorySizeStr && !confirmEnding(directMemorySizeStr,'g')){
+		if (directMemorySizeStr && !confirmEnding(directMemorySizeStr,'g')){
 			alert("堆外内存大小最小设置值为1G，请重新设置，例如:“6g”");
 			return;
-		} else {
+		} else if (directMemorySizeStr) {
 			directMemorySize = Number(directMemorySizeStr.replace('g',''));
 		}
 
@@ -1466,15 +1475,31 @@ function nowrite(formId){
 			$("#"+formId).serialize(),
 	        function(data){
 	            if(data.status == 200){
-	            	toastr.success("停写成功，请耐心等待客户端写入结束！");  
-	            	modalHide(3000, function(){
-	            		enable(formId+"Btn");
-	            	});
+	            	toastr.success("停写成功，请耐心等待客户端写入结束！");
+					reload(3000);
 			    }else{
 			    	toastr.error("操作失败！"+data.message);  
 			    	enable(formId+"Btn");
 			    }
         }, 'json');
+}
+
+/**
+ * 恢复写入
+ */
+function resumeWrite(formId){
+	disable(formId+"Btn");
+	$.post('${request.contextPath}/admin/cluster/resume/write',
+			$("#"+formId).serialize(),
+			function(data){
+				if(data.status == 200){
+					toastr.success("恢复成功，请耐心等待客户端恢复写入！");
+					reload(3000);
+				}else{
+					toastr.error("操作失败！"+data.message);
+					enable(formId+"Btn");
+				}
+			}, 'json');
 }
 
 /**
