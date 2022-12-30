@@ -21,6 +21,9 @@ public class ConsumerConfigDTO {
     // 重试消息跳过的key
     private String retryMessageSkipKey;
 
+    // 是否解注册
+    private Boolean unregister;
+
     public Long getRetryMessageResetTo() {
         return retryMessageResetTo;
     }
@@ -67,6 +70,14 @@ public class ConsumerConfigDTO {
 
     public void setRetryMessageSkipKey(String retryMessageSkipKey) {
         this.retryMessageSkipKey = retryMessageSkipKey;
+    }
+
+    public Boolean getUnregister() {
+        return unregister;
+    }
+
+    public void setUnregister(Boolean unregister) {
+        this.unregister = unregister;
     }
 
     @Override

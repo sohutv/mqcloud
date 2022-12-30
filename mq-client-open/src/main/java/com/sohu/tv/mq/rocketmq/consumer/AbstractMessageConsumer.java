@@ -58,6 +58,10 @@ public abstract class AbstractMessageConsumer<T, C> implements IMessageConsumer<
      * @return
      */
     public ConsumeConcurrentlyStatus consumeMessage(List<MessageExt> msgs, ConsumeConcurrentlyContext context) {
+        if (rocketMQConsumer.getMQClientInstance().selectConsumer(rocketMQConsumer.getGroup()) == null) {
+            logger.warn("{} has unregistered, ignore msgSize:{}", rocketMQConsumer.getGroup(), msgs.size());
+            return ConsumeConcurrentlyStatus.CONSUME_SUCCESS;
+        }
         long start = System.currentTimeMillis();
         ConsumeStatus consumeStatus = consume(new MessageContext(msgs, context));
         if (ConsumeStatus.FAIL == consumeStatus && rocketMQConsumer.isReconsume()) {
@@ -79,6 +83,10 @@ public abstract class AbstractMessageConsumer<T, C> implements IMessageConsumer<
      * @return
      */
     public ConsumeOrderlyStatus consumeMessage(List<MessageExt> msgs, ConsumeOrderlyContext context) {
+        if (rocketMQConsumer.getMQClientInstance().selectConsumer(rocketMQConsumer.getGroup()) == null) {
+            logger.warn("{} has unregistered, ignore msgSize:{}", rocketMQConsumer.getGroup(), msgs.size());
+            return ConsumeOrderlyStatus.SUCCESS;
+        }
         long start = System.currentTimeMillis();
         ConsumeStatus consumeStatus = consume(new MessageContext(msgs, context));
         if (ConsumeStatus.FAIL == consumeStatus && rocketMQConsumer.isReconsume()) {

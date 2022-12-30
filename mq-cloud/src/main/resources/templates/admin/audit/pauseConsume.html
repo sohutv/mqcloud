@@ -29,6 +29,12 @@
 			        	<input type="text" value="${response.result.pauseClientId!}" readonly="readonly" class="form-control" />
 					</div>
 				</div>
+				<div class="form-group">
+					<label class="control-label col-md-3"> 下线: </label>
+					<div class="col-md-6">
+						<input type="text" value="<#if response.result.unregister?? && response.result.unregister>是<#else>否</#if>" readonly="readonly" class="form-control" />
+					</div>
+				</div>
 				<div class="form-group custom">
 					<label class="control-label col-md-3"> 拒绝理由: </label>
 					<div class="col-md-6">

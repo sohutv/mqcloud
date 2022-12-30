@@ -616,6 +616,7 @@ CREATE TABLE `broker` (
   `check_status` tinyint(4) DEFAULT 0 COMMENT '检测结果:0:未知,1:正常,2:异常',
   `check_time` datetime COMMENT '检测时间',
   `base_dir` varchar(360) DEFAULT NULL COMMENT '安装路径',
+  `writable` int(4) NOT NULL DEFAULT '1' COMMENT '0:不可写入,1:可写入',
   UNIQUE KEY `cid` (`cid`,`addr`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='broker表';
 
@@ -761,6 +762,7 @@ CREATE TABLE `audit_consumer_config` (
   `permits_per_second` float DEFAULT NULL COMMENT 'qps',
   `enable_rate_limit` tinyint(4) DEFAULT NULL COMMENT '0:不限速,1:限速',
   `pause` tinyint(4) DEFAULT NULL COMMENT '0:不暂停,1:暂停',
+  `unregister` tinyint(4) DEFAULT NULL COMMENT '0:不解注册,1:解注册',
   `pause_client_id` varchar(255) DEFAULT NULL COMMENT '暂停的客户端Id'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='审核消费者配置相关表';
 
@@ -775,6 +777,7 @@ CREATE TABLE `consumer_config` (
   `enable_rate_limit` tinyint(4) DEFAULT NULL COMMENT '0:不限速,1:限速',
   `pause` tinyint(4) DEFAULT NULL COMMENT '0:不暂停,1:暂停',
   `pause_client_id` varchar(255) DEFAULT NULL COMMENT '暂停的客户端Id',
+  `unregister` tinyint(4) DEFAULT NULL COMMENT '0:不解注册,1:解注册',
   `retry_message_skip_key` varchar(360) DEFAULT NULL COMMENT '消息key',
   `update_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   UNIQUE KEY `consumer` (`consumer`)

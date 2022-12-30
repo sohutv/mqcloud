@@ -22,11 +22,13 @@ public interface AuditConsumerConfigDao {
             + "<if test=\"auditConsumerConfig.enableRateLimit != null\">,enable_rate_limit</if>"
             + "<if test=\"auditConsumerConfig.pause != null\">,pause</if>"
             + "<if test=\"auditConsumerConfig.pauseClientId != null\">,pause_client_id</if>"
+            + "<if test=\"auditConsumerConfig.unregister != null\">,unregister</if>"
             + ") values(#{auditConsumerConfig.aid}, #{auditConsumerConfig.consumerId}"
             + "<if test=\"auditConsumerConfig.permitsPerSecond != null\">,#{auditConsumerConfig.permitsPerSecond}</if>"
             + "<if test=\"auditConsumerConfig.enableRateLimit != null\">,#{auditConsumerConfig.enableRateLimit}</if>"
             + "<if test=\"auditConsumerConfig.pause != null\">,#{auditConsumerConfig.pause}</if>"
             + "<if test=\"auditConsumerConfig.pauseClientId != null\">,#{auditConsumerConfig.pauseClientId}</if>"
+            + "<if test=\"auditConsumerConfig.unregister != null\">,#{auditConsumerConfig.unregister}</if>"
             + ")</script>")
     public Integer insert(@Param("auditConsumerConfig") AuditConsumerConfig auditConsumerConfig);
     

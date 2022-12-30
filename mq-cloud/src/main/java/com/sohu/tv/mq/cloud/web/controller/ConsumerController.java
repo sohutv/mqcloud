@@ -12,7 +12,6 @@ import com.sohu.tv.mq.metric.StackTraceMetric;
 import com.sohu.tv.mq.util.CommonUtil;
 import com.sohu.tv.mq.util.Constant;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.rocketmq.client.exception.MQBrokerException;
 import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.admin.ConsumeStats;
 import org.apache.rocketmq.common.admin.OffsetWrapper;
@@ -869,6 +868,11 @@ public class ConsumerController extends ViewController {
         // ip不存在则置空
         if (consumerConfigParam.getPauseClientId() == null) {
             consumerConfigParam.setPauseClientId("");
+        } else {
+            if (consumerConfigParam.getPause() != null && !consumerConfigParam.getPause()) {
+                // 恢复时，解注册取消
+                consumerConfigParam.setUnregister(false);
+            }
         }
         AuditConsumerConfig auditConsumerConfig = new AuditConsumerConfig();
         BeanUtils.copyProperties(consumerConfigParam, auditConsumerConfig);

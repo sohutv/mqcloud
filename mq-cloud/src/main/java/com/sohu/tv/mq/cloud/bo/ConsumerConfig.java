@@ -21,6 +21,8 @@ public class ConsumerConfig {
     // 消费限速
     private Boolean enableRateLimit;
     private Double permitsPerSecond;
+    // 是否解注册
+    private Boolean unregister;
 
     public String getConsumer() {
         return consumer;
@@ -76,6 +78,14 @@ public class ConsumerConfig {
 
     public void setRetryMessageSkipKey(String retryMessageSkipKey) {
         this.retryMessageSkipKey = retryMessageSkipKey;
+    }
+
+    public Boolean getUnregister() {
+        return unregister;
+    }
+
+    public void setUnregister(Boolean unregister) {
+        this.unregister = unregister;
     }
 
     @Override

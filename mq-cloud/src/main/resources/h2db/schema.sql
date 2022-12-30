@@ -775,3 +775,6 @@ alter table IF EXISTS `consumer` add column IF NOT EXISTS `http_consume_enabled`
 alter table IF EXISTS `audit_consumer` add column IF NOT EXISTS `http_consume_enabled` int(4) NOT NULL DEFAULT '0' COMMENT '0:不开启http消费,1:开启http消费';
 alter table IF EXISTS `audit_topic` add column IF NOT EXISTS `http_enabled` int(4) NOT NULL DEFAULT '0' COMMENT '0:不开启http生产,1:开启http生产';
 alter table IF EXISTS `user_producer` add column IF NOT EXISTS `http_enabled` int(4) NOT NULL DEFAULT '0' COMMENT '0:不开启http生产,1:开启http生产';
+alter table IF EXISTS `audit_consumer_config` add column IF NOT EXISTS `unregister` tinyint(4) DEFAULT NULL COMMENT '0:不解注册,1:解注册';
+alter table IF EXISTS `consumer_config` add column IF NOT EXISTS `unregister` tinyint(4) DEFAULT NULL COMMENT '0:不解注册,1:解注册';
+alter table IF EXISTS `broker` add column IF NOT EXISTS `writable` int(4) NOT NULL DEFAULT '1' COMMENT '0:不可写入,1:可写入';

@@ -23,6 +23,9 @@ public class AuditConsumerConfigVO {
     private String topic;
     private String consumer;
 
+    // 是否解注册
+    private Boolean unregister;
+
     public long getAid() {
         return aid;
     }
@@ -85,5 +88,13 @@ public class AuditConsumerConfigVO {
 
     public void setConsumer(String consumer) {
         this.consumer = consumer;
+    }
+
+    public Boolean getUnregister() {
+        return unregister;
+    }
+
+    public void setUnregister(Boolean unregister) {
+        this.unregister = unregister;
     }
 }

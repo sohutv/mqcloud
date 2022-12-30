@@ -1091,6 +1091,11 @@
 							<select id="pauseClientIdSelect" class="selectpicker" title="不选默认应用于所有的消费者" name="pauseClientId" data-live-search="true" multiple data-max-options="1">
 							</select>
 						</div>
+						<div class="col-md-2" id="unregisterDiv">
+							<div class="checkbox">
+								<input id="unregister" name="unregister" value="1" type="checkbox" disabled="disabled" data-toggle="tooltip" title="勾选后消息队列将重新分配，并且不分配该客户端，后续可以恢复消费。">下线
+							</div>
+						</div>
 					</div>
 				</form>
 			</div>
@@ -1311,26 +1316,34 @@ function showPauseConsumeConfigModel(httpConsume, consumerId, consumer, pause, p
 		$("#pauseConsumeConfigBtn").removeAttr("disabled");
 	} else {
 		$("#clientIdDiv").show();
-		$.get('${request.contextPath}/consumer/connection',{
-			group: consumer,
-			cid: ${topic.clusterId},
-		},function(data){
-			if(data.status == 200){
-				var content = "";
-				for(var i in data.result){
-					var ip = data.result[i];
-					content += "<option value='"+ip+"'>"+ip+"</option>";
+		if (pause) {
+			$.get('${request.contextPath}/consumer/connection', {
+				group: consumer,
+				cid: ${topic.clusterId},
+			}, function (data) {
+				if (data.status == 200) {
+					var content = "";
+					for (var i in data.result) {
+						var ip = data.result[i];
+						content += "<option value='" + ip + "'>" + ip + "</option>";
+					}
+					$("#pauseClientIdSelect").html(content);
+					$("#pauseClientIdSelect").selectpicker('refresh');
+					$("#pauseConsumeConfigBtn").removeAttr("disabled");
+				} else {
+					toastr.error("数据获取失败！" + data.message);
 				}
-				$("#pauseClientIdSelect").html(content);
-				$("#pauseClientIdSelect").selectpicker('refresh');
-				$("#pauseConsumeConfigBtn").removeAttr("disabled");
-				if(pauseClientId){
-					$('#pauseClientIdSelect').selectpicker('val', pauseClientId);
-				}
-			} else {
-				toastr.error("数据获取失败！"+data.message);
+			}, 'json');
+		} else {
+			if (pauseClientId) {
+				$("#pauseClientIdSelect").html("<option value='" + pauseClientId + "'>" + pauseClientId + "</option>");
+				$('#pauseClientIdSelect').selectpicker('val', pauseClientId);
+				$('#pauseClientIdSelect').prop('disabled', true);
 			}
-		}, 'json');
+			$("#unregisterDiv").hide();
+			$("#pauseClientIdSelect").selectpicker('refresh');
+			$("#pauseConsumeConfigBtn").removeAttr("disabled");
+		}
 	}
 	if(pause){
 		$("#pauseConsumeTip").html("暂停");
@@ -1346,6 +1359,7 @@ function showPauseConsumeConfigModel(httpConsume, consumerId, consumer, pause, p
  * 暂停消费
  */
 function pauseConsumeConfig(){
+	$("#pauseClientIdSelect").removeAttr("disabled");
 	disable("pauseConsumeConfigBtn");
 	$.get('${request.contextPath}/consumer/update/config',
 	$("#pauseConsumeConfigForm").serialize()
@@ -1512,6 +1526,16 @@ $(function(){
  	$("#timespanConsumeClientIdSelect").selectpicker().on('changed.bs.select', function(){
  	  	$('#submitTimespanMessageBtn').removeAttr("disabled");
  	});
+
+	// 暂停下拉框change事件
+	$('#pauseClientIdSelect').on('changed.bs.select',function(e, clickedIndex, newValue, oldValue){
+		if($(this).val()){
+			$("#unregister").removeAttr("disabled");
+		} else {
+			$("#unregister").prop("checked", false);
+			$("#unregister").attr("disabled", "disabled");
+		}
+	});
 });
 //准备删除
 function prepareDeleteUserConsumer(uid,userName,consumerID){

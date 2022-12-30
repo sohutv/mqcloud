@@ -20,6 +20,8 @@ public class AuditConsumerConfig {
     // 消费限速
     private Boolean enableRateLimit;
     private Double permitsPerSecond;
+    // 是否解注册
+    private Boolean unregister;
 
     public long getAid() {
         return aid;
@@ -75,6 +77,14 @@ public class AuditConsumerConfig {
 
     public void setPauseClientId(String pauseClientId) {
         this.pauseClientId = pauseClientId;
+    }
+
+    public Boolean getUnregister() {
+        return unregister;
+    }
+
+    public void setUnregister(Boolean unregister) {
+        this.unregister = unregister;
     }
 
     @Override

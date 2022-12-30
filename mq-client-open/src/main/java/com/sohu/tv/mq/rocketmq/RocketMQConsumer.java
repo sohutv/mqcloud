@@ -1,41 +1,5 @@
 package com.sohu.tv.mq.rocketmq;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
-import java.net.HttpURLConnection;
-import java.util.List;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.TimeUnit;
-
-import com.sohu.tv.mq.util.JSONUtil;
-import org.apache.rocketmq.client.consumer.DefaultMQPushConsumer;
-import org.apache.rocketmq.client.consumer.listener.ConsumeConcurrentlyContext;
-import org.apache.rocketmq.client.consumer.listener.ConsumeConcurrentlyStatus;
-import org.apache.rocketmq.client.consumer.listener.ConsumeOrderlyContext;
-import org.apache.rocketmq.client.consumer.listener.ConsumeOrderlyStatus;
-import org.apache.rocketmq.client.consumer.listener.MessageListenerConcurrently;
-import org.apache.rocketmq.client.consumer.listener.MessageListenerOrderly;
-import org.apache.rocketmq.client.exception.MQClientException;
-import org.apache.rocketmq.client.impl.consumer.DefaultMQPushConsumerImpl;
-import org.apache.rocketmq.client.impl.consumer.PullMessageService;
-import org.apache.rocketmq.client.impl.factory.MQClientInstance;
-import org.apache.rocketmq.client.trace.AsyncTraceDispatcher;
-import org.apache.rocketmq.client.trace.hook.ConsumeMessageTraceHookImpl;
-import org.apache.rocketmq.common.ServiceState;
-import org.apache.rocketmq.common.ServiceThread;
-import org.apache.rocketmq.common.consumer.ConsumeFromWhere;
-import org.apache.rocketmq.common.message.MessageExt;
-import org.apache.rocketmq.common.protocol.RequestCode;
-import org.apache.rocketmq.common.protocol.heartbeat.MessageModel;
-import org.apache.rocketmq.common.utils.HttpTinyClient;
-import org.apache.rocketmq.common.utils.HttpTinyClient.HttpResult;
-import org.apache.rocketmq.remoting.RemotingClient;
-
 import com.sohu.index.tv.mq.common.BatchConsumerCallback;
 import com.sohu.index.tv.mq.common.ConsumerCallback;
 import com.sohu.tv.mq.common.AbstractConfig;
@@ -52,7 +16,36 @@ import com.sohu.tv.mq.rocketmq.limiter.SwitchableRateLimiter;
 import com.sohu.tv.mq.rocketmq.limiter.TokenBucketRateLimiter;
 import com.sohu.tv.mq.rocketmq.netty.SohuClientRemotingProcessor;
 import com.sohu.tv.mq.rocketmq.redis.IRedis;
+import com.sohu.tv.mq.route.AllocateMessageQueueByAffinity;
 import com.sohu.tv.mq.util.Constant;
+import com.sohu.tv.mq.util.JSONUtil;
+import org.apache.rocketmq.client.consumer.DefaultMQPushConsumer;
+import org.apache.rocketmq.client.consumer.listener.*;
+import org.apache.rocketmq.client.exception.MQClientException;
+import org.apache.rocketmq.client.impl.consumer.DefaultMQPushConsumerImpl;
+import org.apache.rocketmq.client.impl.consumer.PullMessageService;
+import org.apache.rocketmq.client.impl.factory.MQClientInstance;
+import org.apache.rocketmq.client.trace.AsyncTraceDispatcher;
+import org.apache.rocketmq.client.trace.hook.ConsumeMessageTraceHookImpl;
+import org.apache.rocketmq.common.ServiceState;
+import org.apache.rocketmq.common.ServiceThread;
+import org.apache.rocketmq.common.consumer.ConsumeFromWhere;
+import org.apache.rocketmq.common.message.MessageExt;
+import org.apache.rocketmq.common.message.MessageQueue;
+import org.apache.rocketmq.common.protocol.RequestCode;
+import org.apache.rocketmq.common.protocol.heartbeat.MessageModel;
+import org.apache.rocketmq.common.utils.HttpTinyClient;
+import org.apache.rocketmq.common.utils.HttpTinyClient.HttpResult;
+import org.apache.rocketmq.remoting.RemotingClient;
+
+import java.lang.reflect.*;
+import java.net.HttpURLConnection;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 
 /**
  * rocketmq 消费者
@@ -119,6 +112,9 @@ public class RocketMQConsumer extends AbstractConfig {
     // 消息消费
     private IMessageConsumer<?> messageConsumer;
 
+    // 启动时从某个时间点消费
+    public long consumeFromTimestampWhenBoot;
+
     public RocketMQConsumer() {
     }
 
@@ -169,6 +165,9 @@ public class RocketMQConsumer extends AbstractConfig {
 
     public void start() {
         try {
+            if (consumeFromTimestampWhenBoot != 0) {
+                consumer.suspend();
+            }
             // 初始化配置
             initConfig(consumer);
             if (getClusterInfoDTO().isBroadcast()) {
@@ -247,14 +246,23 @@ public class RocketMQConsumer extends AbstractConfig {
                         // 停止所有实例
                         if (pauseClientId == null || pauseClientId.length() == 0) {
                             needCheckPause = true;
-                        } else if (consumerConfigDTO.getPauseClientId()
-                                .equals(consumer.getDefaultMQPushConsumerImpl().getmQClientFactory().getClientId())) { // 只停止当前实例
+                        } else if (consumerConfigDTO.getPauseClientId().equals(getMQClientInstance().getClientId())) {
+                            // 只停止当前实例
                             needCheckPause = true;
                         }
                     }
                     if (needCheckPause
                             && consumer.getDefaultMQPushConsumerImpl().isPause() != consumerConfigDTO.getPause()) {
                         setPause(consumerConfigDTO.getPause());
+                        String clientId = getMQClientInstance().getClientId();
+                        String pauseClientId = consumerConfigDTO.getPauseClientId();
+                        if (clientId.equals(pauseClientId)) {
+                            if (consumerConfigDTO.getUnregister() != null && consumerConfigDTO.getUnregister()) {
+                                unregister();
+                            } else {
+                                register();
+                            }
+                        }
                     }
                     // 3.更新限速
                     if (consumerConfigDTO.getEnableRateLimit() != null &&
@@ -300,10 +308,33 @@ public class RocketMQConsumer extends AbstractConfig {
      */
     public void initAfterStart() {
         // 注册私有处理器
-        MQClientInstance mqClientInstance = consumer.getDefaultMQPushConsumerImpl().getmQClientFactory();
-        RemotingClient remotingClient = mqClientInstance.getMQClientAPIImpl().getRemotingClient();
+        RemotingClient remotingClient = getMQClientInstance().getMQClientAPIImpl().getRemotingClient();
         SohuClientRemotingProcessor processor = new SohuClientRemotingProcessor(this);
         remotingClient.registerProcessor(RequestCode.GET_CONSUMER_RUNNING_INFO, processor, null);
+        // 处理启动偏移量
+        if (consumeFromTimestampWhenBoot != 0) {
+            try {
+                Set<MessageQueue> mqs = null;
+                while (true) {
+                    mqs = consumer.fetchSubscribeMessageQueues(getTopic());
+                    if (mqs == null || mqs.size() == 0) {
+                        logger.info("{} wait for fetchSubscribeMessageQueues", getGroup());
+                        Thread.sleep(1000);
+                    } else {
+                        break;
+                    }
+                }
+                for (MessageQueue mq : mqs) {
+                    long offset = consumer.searchOffset(mq, consumeFromTimestampWhenBoot);
+                    consumer.getDefaultMQPushConsumerImpl().updateConsumeOffset(mq, offset);
+                }
+                consumer.getOffsetStore().persistAll(mqs);
+                consumer.resume();
+                logger.info("{} consume from:{}", getGroup(), consumeFromTimestampWhenBoot);
+            } catch (Exception e) {
+                logger.warn("{} resetOffsetByTimeStamp err", getGroup(), e);
+            }
+        }
     }
 
     /**
@@ -617,6 +648,20 @@ public class RocketMQConsumer extends AbstractConfig {
         return consumer.getDefaultMQPushConsumerImpl().isPause();
     }
 
+    public void unregister() {
+        logger.info("{} unregister:{}", getGroup(), getMQClientInstance().getClientId());
+        getMQClientInstance().unregisterConsumer(getGroup());
+    }
+
+    public void register() {
+        logger.info("{} register:{}", getGroup(), getMQClientInstance().getClientId());
+        getMQClientInstance().registerConsumer(getGroup(), consumer.getDefaultMQPushConsumerImpl());
+    }
+
+    public MQClientInstance getMQClientInstance() {
+        return consumer.getDefaultMQPushConsumerImpl().getmQClientFactory();
+    }
+
     public void setEnableRateLimit(boolean enableRateLimit) {
         if (rateLimiter instanceof SwitchableRateLimiter) {
             ((SwitchableRateLimiter) rateLimiter).setEnabled(enableRateLimit);
@@ -830,5 +875,30 @@ public class RocketMQConsumer extends AbstractConfig {
             return;
         }
         new TimespanConsumer(this, topic, start, end).start();
+    }
+
+    @Override
+    protected void initAffinity() {
+        super.initAffinity();
+        if (!getClusterInfoDTO().isBroadcast() && isAffinityEnabled()) {
+            try {
+                consumer.setAllocateMessageQueueStrategy(new AllocateMessageQueueByAffinity());
+                logger.info("{} initAffinity affinityBrokerSuffix:{}", group, getAffinityBrokerSuffix());
+            } catch (Exception e) {
+                logger.error("initAffinity error", e);
+            }
+        }
+    }
+
+    public long getConsumeFromTimestampWhenBoot() {
+        return consumeFromTimestampWhenBoot;
+    }
+
+    public void setConsumeFromTimestampWhenBoot(long consumeFromTimestampWhenBoot) {
+        this.consumeFromTimestampWhenBoot = consumeFromTimestampWhenBoot;
+    }
+
+    public void setConsumeFromMaxOffsetWhenBoot() {
+        setConsumeFromTimestampWhenBoot(System.currentTimeMillis() + 10 * 1000);
     }
 }
