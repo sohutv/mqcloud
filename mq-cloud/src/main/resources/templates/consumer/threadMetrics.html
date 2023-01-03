@@ -15,7 +15,7 @@
 						<#assign shouldShow = true>
 						<#list threadMetric.stackTraceArray as stackTrace>
 							<#if shouldShow>
-								<#if stackTrace.className?contains("com.sohu.tv.mq.rocketmq.MessageConsumer")>
+								<#if stackTrace.className?contains("com.sohu.tv.mq.rocketmq.consumer") || stackTrace.className?contains("com.sohu.tv.mq.rocketmq.MessageConsumer")>
 									<#assign shouldShow = false>
 								</#if>
 								<#if shouldShow>
