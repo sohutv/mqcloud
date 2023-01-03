@@ -13,6 +13,9 @@ import com.sohu.tv.mq.cloud.util.Result;
 import net.javacrumbs.shedlock.core.SchedulerLock;
 import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.Pair;
+import org.apache.rocketmq.common.admin.TopicOffset;
+import org.apache.rocketmq.common.admin.TopicStatsTable;
+import org.apache.rocketmq.common.message.MessageQueue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -49,6 +52,9 @@ public class ConsumeFallBehindTask {
 
     @Autowired
     private AlarmConfigBridingService alarmConfigBridingService;
+
+    @Autowired
+    private TopicService topicService;
 
     /**
      * 检测是否落后太多
@@ -125,13 +131,25 @@ public class ConsumeFallBehindTask {
                 BrokerMomentStatsItem brokerMomentStatsItem = iterator.next();
                 String[] split = brokerMomentStatsItem.getKey().split("@");
                 // 内置consumer不检测
-                if (MixAll.TOOLS_CONSUMER_GROUP.equals(split[2])) {
+                if (MixAll.TOOLS_CONSUMER_GROUP.equals(split[2]) || MixAll.MONITOR_CONSUMER_GROUP.equals(split[2])) {
                     iterator.remove();
                     continue;
                 }
                 // 过滤掉超频的消费者
                 if (!alarmConfigBridingService.needWarn("consumerFallBehind", split[1], split[2])) {
                     iterator.remove();
+                    continue;
+                }
+                // 消息量不大不进行预警
+                Cluster cluster = clusterService.getMQClusterById(pair.getObject1().getCid());
+                TopicStatsTable topicStatsTable = topicService.stats(cluster, pair.getObject1().getAddr(), split[1]);
+                if (topicStatsTable != null) {
+                    MessageQueue messageQueue = new MessageQueue(split[1], pair.getObject1().getBrokerName(), Integer.valueOf(split[0]));
+                    TopicOffset topicOffset = topicStatsTable.getOffsetTable().get(messageQueue);
+                    if (topicOffset == null || topicOffset.getMaxOffset() - topicOffset.getMinOffset() < 10000) {
+                        iterator.remove();
+                        continue;
+                    }
                 }
             }
             if (list.size() <= 0) {
