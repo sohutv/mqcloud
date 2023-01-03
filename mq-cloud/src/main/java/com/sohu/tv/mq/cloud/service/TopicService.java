@@ -817,5 +817,31 @@ public class TopicService {
             return Result.getDBErrorResult(e);
         }
     }
+
+    /**
+     * 获取topic各个队列状态数据
+     *
+     * @param mqCluster
+     * @param topic
+     */
+    public TopicStatsTable stats(Cluster cluster, String brokerAddr, String topic) {
+        return mqAdminTemplate.execute(new MQAdminCallback<TopicStatsTable>() {
+            public TopicStatsTable callback(MQAdminExt mqAdmin) throws Exception {
+                SohuMQAdmin sohuMQAdmin = (SohuMQAdmin) mqAdmin;
+                return sohuMQAdmin.getMQClientInstance().getMQClientAPIImpl().getTopicStatsInfo(brokerAddr, topic,
+                        5000);
+            }
+
+            public Cluster mqCluster() {
+                return cluster;
+            }
+
+            @Override
+            public TopicStatsTable exception(Exception e) throws Exception {
+                logger.warn("brokerAddr:{}, topic:{}, err:{}", brokerAddr, topic, e.toString());
+                return null;
+            }
+        });
+    }
 }
 
