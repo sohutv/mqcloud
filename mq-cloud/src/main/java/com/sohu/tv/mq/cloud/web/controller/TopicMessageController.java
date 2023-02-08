@@ -257,10 +257,16 @@ public class TopicMessageController extends ViewController {
             @RequestParam("topic") String topic,
             @RequestParam("keyStartTime") Long beginTime,
             @RequestParam("keyEndTime") Long endTime,
-            @RequestParam("cid") int cid,
+            @RequestParam(name = "cid", required = false) Integer cid,
             @RequestParam(name = "msgKey") String msgKey,
             Map<String, Object> map) throws Exception {
         String view = viewModule() + "/keySearch";
+        if (cid == null) {
+            Result<Topic> topicResult = topicService.queryTopic(topic);
+            if (topicResult.isOK()) {
+                cid = (int) topicResult.getResult().getClusterId();
+            }
+        }
         Cluster cluster = clusterService.getMQClusterById(cid);
         // 时间点
         if (beginTime == 0 || endTime == 0 || beginTime > endTime) {
