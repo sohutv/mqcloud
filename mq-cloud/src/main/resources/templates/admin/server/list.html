@@ -64,7 +64,7 @@
 					<tr>
 						<td rowspan="${rowspan}"><input class="pointer" type="checkbox" name="monitor" value="${server.ip}" onclick="checkThis(this)" /></td>
 						<td rowspan="${rowspan}">${server_index + 1}</td>
-						<td rowspan="${rowspan}"><a href="#" onclick="setIp('${server.ip}')" data-target="#monitorModal" data-toggle="modal">${server.ip}</a></td>
+						<td rowspan="${rowspan}"><a href="#" data="${server.ip}" onclick="setIp('${server.ip}')" data-target="#monitorModal" data-toggle="modal">${server.ip}</a></td>
 						<td rowspan="${rowspan}">${server.cpus!}</td>
 						<td rowspan="${rowspan}">
 							<#if server.mtotal != 0>
@@ -677,7 +677,7 @@ $(function(){
 	}
 	//初始化
 	initMachineTypeList();
-	
+
 	<#if RequestParameters.ip?? && RequestParameters.ip != "">
 		setIp("${RequestParameters.ip}");
 		$('a[data="${RequestParameters.ip}"]').click();

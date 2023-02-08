@@ -7,6 +7,6 @@ package com.sohu.tv.mq.util;
 public class Version {
     
     public static String get() {
-        return "4.9.3";
+        return "4.9.4";
     }
 }
