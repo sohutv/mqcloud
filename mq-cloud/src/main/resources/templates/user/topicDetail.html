@@ -5,6 +5,7 @@
         <li id="consume" data-url="${request.contextPath}/consumer/progress?tid=${response.result}<#if RequestParameters.consumer??>&consumer=${RequestParameters.consumer}</#if><#if RequestParameters.time??>&time=${RequestParameters.time}</#if><#if RequestParameters.consumerId??>&consumerId=${RequestParameters.consumerId}</#if><#if RequestParameters.currentPage??>&currentPage=${RequestParameters.currentPage}</#if>"><a href="?tab=consume">消费详情</a></li>
         <li id="msg" data-url="${request.contextPath}/topic/message/index?tid=${response.result}<#if RequestParameters.msgId??>&msgId=${RequestParameters.msgId}</#if><#if RequestParameters.time??>&time=${RequestParameters.time}</#if>"><a href="?tab=msg">消息</a></li>
     </ul>
+    <input type="hidden" id="curTopicId" value="${response.result}">
     <div class="tab-content" id="tabContent">
         <div class="tab-pane active" id="topologyTab">
         </div>

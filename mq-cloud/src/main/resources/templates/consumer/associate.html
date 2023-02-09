@@ -67,6 +67,11 @@
 		        		    width: '269px'
 		        		});
 		        		$("#associateConsumerTopicSelect").selectpicker('refresh');
+						var curTopicId = $("#curTopicId").val();
+						if (curTopicId) {
+							$('#associateConsumerTopicSelect').selectpicker('val', curTopicId);
+							refreshConsumerSelect(curTopicId);
+						}
 				    }else{
 				    	toastr.error("数据获取失败！"+data.message);  
 				    }
