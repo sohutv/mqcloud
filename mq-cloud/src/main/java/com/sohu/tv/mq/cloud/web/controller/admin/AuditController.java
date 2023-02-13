@@ -257,6 +257,7 @@ public class AuditController extends AdminViewController {
                     msg = getAuditResetOffsetTipMessage(aid);
                     break;
                 case ASSOCIATE_PRODUCER:
+                case NEW_PRODUCER:
                     msg = getAuditAssociateProducerTipMessage(aid);
                     break;
                 case ASSOCIATE_CONSUMER:
@@ -719,11 +720,14 @@ public class AuditController extends AdminViewController {
 
         // 获取存在的生产者
         String producer = auditAssociateProducer.getProducer();
-        Result<List<UserProducer>> upListResult = userProducerService.queryUserProducer(producer);
-        if (upListResult.isEmpty()) {
-            return upListResult;
+        int httpEnabled = 0;
+        if(TypeEnum.NEW_PRODUCER.getType() != audit.getType()){
+            Result<List<UserProducer>> upListResult = userProducerService.queryUserProducer(producer);
+            if (upListResult.isEmpty()) {
+                return upListResult;
+            }
+            httpEnabled = upListResult.getResult().get(0).getHttpEnabled();
         }
-        int httpEnabled = upListResult.getResult().get(0).getHttpEnabled();
 
         // 保存关联关系
         UserProducer up = new UserProducer();

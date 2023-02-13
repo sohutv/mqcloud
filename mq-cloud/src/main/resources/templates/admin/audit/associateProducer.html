@@ -23,12 +23,14 @@
 						<input type="text" value="${response.result.producer}" readonly="readonly" class="form-control" >
 					</div>
 				</div>
-				<div class="form-group">
-					<label class="control-label col-md-3"> 关联用户: </label>
-					<div class="col-md-6">
-						<input type="text" value="${response.result.user}" readonly="readonly" class="form-control" >
+				<#if response.result.type != 21>
+					<div class="form-group">
+						<label class="control-label col-md-3"> 关联用户: </label>
+						<div class="col-md-6">
+							<input type="text" value="${response.result.user}" readonly="readonly" class="form-control" >
+						</div>
 					</div>
-				</div>
+				</#if>
 				<div class="form-group custom">
 					<label class="control-label col-md-3"> 拒绝理由: </label>
 					<div class="col-md-6">

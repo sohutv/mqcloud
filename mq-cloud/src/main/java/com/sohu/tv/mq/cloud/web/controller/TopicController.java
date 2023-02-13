@@ -80,6 +80,9 @@ public class TopicController extends ViewController {
     @Autowired
     private ConsumerClientStatService consumerClientStatService;
 
+    @Autowired
+    private ClientConnectionService clientConnectionService;
+
     /**
      * 更新Topic路由
      * 
@@ -250,6 +253,21 @@ public class TopicController extends ViewController {
     }
 
     /**
+     * 新建生产者
+     *
+     * @param topicParam
+     * @return
+     * @throws Exception
+     */
+    @ResponseBody
+    @RequestMapping(value = "/new/producer", method = RequestMethod.POST)
+    public Result<?> newProducer(UserInfo userInfo, @Valid AssociateProducerParam associateProducerParam)
+            throws Exception {
+        return newUserProducer(userInfo, userInfo.getUser().getId(), associateProducerParam.getTid(),
+                associateProducerParam.getProducer());
+    }
+
+    /**
      * 授权关联
      * 
      * @param userInfo
@@ -281,7 +299,7 @@ public class TopicController extends ViewController {
      */
     private Result<?> associateUserProducer(UserInfo userInfo, long uid, long tid, String producer) {
         // 校验关联关系是否存在
-        Result<?> isExist = verifyDataService.verifyUserProducerIsExist(uid, tid, producer);
+        Result<?> isExist = verifyDataService.verifyUserProducerIsExist(TypeEnum.ASSOCIATE_PRODUCER, uid, tid, producer);
         if (isExist.getStatus() != Status.OK.getKey()) {
             return isExist;
         }
@@ -315,6 +333,42 @@ public class TopicController extends ViewController {
         }
         return Result.getWebResult(result);
     }
+
+    /**
+     * 新建生产者
+     *
+     * @param userInfo
+     * @param uid
+     * @param tid
+     * @param producer
+     * @return
+     */
+    private Result<?> newUserProducer(UserInfo userInfo, long uid, long tid, String producer) {
+        // 校验关联关系是否存在
+        Result<?> isExist = verifyDataService.verifyUserProducerIsExist(TypeEnum.NEW_PRODUCER, uid, tid, producer);
+        if (isExist.getStatus() != Status.OK.getKey()) {
+            return isExist;
+        }
+        // 构建AuditAssociateProducer
+        AuditAssociateProducer auditAssociateProducer = new AuditAssociateProducer();
+        auditAssociateProducer.setProducer(producer);
+        auditAssociateProducer.setTid(tid);
+        auditAssociateProducer.setUid(uid);
+        // 构建Audit
+        Audit audit = new Audit();
+        audit.setType(TypeEnum.NEW_PRODUCER.getType());
+        audit.setStatus(Audit.StatusEnum.INIT.getStatus());
+        audit.setUid(userInfo.getUser().getId());
+        Result<Audit> result = auditService.saveAuditAndAssociateProducer(audit, auditAssociateProducer);
+        if (result.isOK()) {
+            // 根据申请的不同发送不同的消息
+            String tip = getTopicTip(tid) + " producer:<b>" + producer + "</b>";
+            alertService.sendAuditMail(userInfo.getUser(), TypeEnum.NEW_PRODUCER, tip);
+        }
+        return Result.getWebResult(result);
+    }
+
+
 
     /**
      * 删除topic
@@ -468,6 +522,7 @@ public class TopicController extends ViewController {
         String view = viewModule() + "/connection";
         Cluster cluster = clusterService.getMQClusterById(cid);
         HashSet<Connection> connectionSet = null;
+        Integer clientType = ClientLanguage.PRODUCER_CLIENT_GROUP_TYPE;
         if (type == 1) {
             Result<ProducerConnection> result = userProducerService.examineProducerConnectionInfo(group, topic,
                     cluster);
@@ -476,6 +531,7 @@ public class TopicController extends ViewController {
             }
         } else {
             Result<ConsumerConnection> result = consumerService.examineConsumerConnectionInfo(group, cluster);
+            clientType = ClientLanguage.CONSUMER_CLIENT_GROUP_TYPE;
             if (result.isOK()) {
                 connectionSet = result.getResult().getConnectionSet();
             }
@@ -483,6 +539,8 @@ public class TopicController extends ViewController {
         if (connectionSet == null || connectionSet.isEmpty()) {
             return view;
         }
+        // 替换为新客户端
+        connectionSet = clientConnectionService.checkConnectVersion(connectionSet, group, clientType, cid);
         List<Connection> connList = new ArrayList<Connection>(connectionSet);
         Collections.sort(connList, new Comparator<Connection>() {
             public int compare(Connection o1, Connection o2) {

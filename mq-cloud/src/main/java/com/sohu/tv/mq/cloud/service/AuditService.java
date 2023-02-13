@@ -713,7 +713,8 @@ public class AuditService {
             case RESET_RETRY_OFFSET:
                 return getResetOffsetResult(aid);
             case ASSOCIATE_PRODUCER:
-                return getAuditAssociateProducerResult(aid);
+            case NEW_PRODUCER:
+                return getAuditAssociateProducerResult(aid, typeEnum.getType());
             case ASSOCIATE_CONSUMER:
                 return getAuditAssociateConsumerResult(aid);
             case BECOME_ADMIN:
@@ -1037,7 +1038,7 @@ public class AuditService {
      * @param aid
      * @return Result
      */
-    private Result<?> getAuditAssociateProducerResult(long aid) {
+    private Result<?> getAuditAssociateProducerResult(long aid, int type) {
         Result<AuditAssociateProducer> auditAssociateProducerResult = associateProducerService.query(aid);
         if (auditAssociateProducerResult.isNotOK()) {
             return auditAssociateProducerResult;
@@ -1066,6 +1067,7 @@ public class AuditService {
         auditAssociateProducerVO
                 .setUser(userResult.getResult().getName() == null ? userResult.getResult().getEmailName()
                         : userResult.getResult().getName());
+        auditAssociateProducerVO.setType(type);
         return Result.getResult(auditAssociateProducerVO);
     }
 

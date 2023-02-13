@@ -57,6 +57,7 @@
 						<ul class="dropdown-menu">
 							<li><a href="#" data-target="#addTopicModal" data-toggle="modal"><i class="glyphicon glyphicon-send"></i> 生产消息</a></li>
 							<li><a href="#" onclick="initConsumerAddTopicList()" data-target="#addConsumerModal" data-toggle="modal"><i class="glyphicon glyphicon-cloud-download"></i> 消费消息</a></li>
+							<li><a href="#" onclick="initNewProducerAssociateTopicList()" data-target="#newProducerModal" data-toggle="modal"><i class="glyphicon glyphicon-cloud-upload"></i> 新建生产者</a></li>
 							<li><a href="#" onclick="initProducerAssociateTopicList()" data-target="#associateProducerModal" data-toggle="modal"><i class="glyphicon glyphicon-link"></i> 关联生产者</a></li>
 							<li><a href="#" onclick="initConsumerAssociateTopicList()" data-target="#associateConsumerModal" data-toggle="modal"><i class="glyphicon glyphicon-link"></i> 关联消费者</a></li>
 							<li><a href="#" onclick="batchAssociateModalShow()" data-target="#batchAssociateModal" data-toggle="modal"><i class="glyphicon glyphicon-tags"></i> 批量授权</a></li>
@@ -130,6 +131,7 @@
 	<#include "../consumer/add.html">
 	<#include "../consumer/associate.html">
 	<#include "../producer/associate.html">
+	<#include "../producer/newProducer.html">
 	<script>
 		function logout(){
 			$.get('${request.contextPath}/user/logout',function(data){

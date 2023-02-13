@@ -15,6 +15,8 @@ public class AuditAssociateProducerVO {
     // producer
     private String producer;
     private String topic;
+    // audit type
+    private Integer type;
     public long getAid() {
         return aid;
     }
@@ -44,5 +46,13 @@ public class AuditAssociateProducerVO {
     }
     public void setUser(String user) {
         this.user = user;
+    }
+
+    public Integer getType() {
+        return type;
+    }
+
+    public void setType(Integer type) {
+        this.type = type;
     }
 }

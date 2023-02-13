@@ -170,6 +170,7 @@ public class Audit {
         LIMIT_CONSUME(18, "消费限速", "limitConsume"),
         UPDATE_TOPIC_TRAFFIC_WARN(19, "修改Topic流量预警", "updateTopicTrafficWarn"),
         TIMESPAN_MESSAGE_CONSUME(20, "重新消费消息", "timespanMessageConsume"),
+        NEW_PRODUCER(21, "新建生产者", "associateProducer"),
         ;
 
         private Integer type;

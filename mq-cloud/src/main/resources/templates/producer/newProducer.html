@@ -1,0 +1,99 @@
+<div id="newProducerModal" class="modal fade" tabindex="-1" data-width="400">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+				<span class="h4">新建生产者</span>
+			</div>
+			<form class="form-horizontal form-bordered form-row-stripped" id="newProducerForm">
+				<div class="modal-body">
+					<div class="row">
+						<div class="col-md-12">
+							<div class="form-body">
+								<div class="form-group">
+									<label class="control-label col-md-3"> Topic: </label>
+									<div class="col-md-5">
+										<select id="newProducerTopicSelect" class="selectpicker" title="请选择" data-live-search-placeholder="搜索" name="tid" data-live-search="true">
+										</select>
+									</div>
+								</div>
+								<div class="form-group">
+									<label class="control-label col-md-3"> 生产者: </label>
+									<div class="col-md-6">
+										<input type="text" id="newProducerInput" name="producer" value="" placeholder="topic名-producer" class="form-control">
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" data-dismiss="modal" class="btn" >取消</button>
+					<button type="button" class="btn btn-primary" id="newProducerBtn" onclick="newProducer()">确定</button>
+				</div>
+			</form>
+		</div>
+	</div>
+</div>
+<script type="text/javascript">
+	$(function(){
+		$('#newProducerTopicSelect').selectpicker({
+		    width: '269px'
+		});
+	});
+	/**
+	 * 初始化topic下拉列表
+	 */
+	function initNewProducerAssociateTopicList(){
+		$.get('${request.contextPath}/topic/list',
+		        function(data){
+		            if(data.status == 200){
+		            	var content = "";
+		            	for(var i in data.result){
+		            		var topic = data.result[i];
+		            		content += "<option value='"+topic.id+"'>"+topic.name+"</option>";
+		            	}
+		        		$("#newProducerTopicSelect").html(content);
+		        		$('#newProducerTopicSelect').selectpicker({
+		        		    width: '269px'
+		        		});
+		        		$("#newProducerTopicSelect").selectpicker('refresh');
+						var curTopicId = $("#curTopicId").val();
+						if (curTopicId) {
+							$('#newProducerTopicSelect').selectpicker('val', curTopicId);
+						}
+				    }else{
+				    	toastr.error("数据获取失败！"+data.message);  
+				    }
+	        }, 'json');
+	}
+
+	/**
+	 * 建立关联
+	 */
+	function newProducer(){
+		if(!$("#newProducerTopicSelect").val()){
+			alert("请先选择Topic");
+			return;
+		}
+		if(!$("#newProducerInput").val()){
+			alert("请填写生产者");
+			return;
+		}
+		disable("newProducerBtn");
+		$.post('${request.contextPath}/topic/new/producer',
+				$("#newProducerForm").serialize(),
+		        function(data){
+		            if(data.status == 200){
+		            	toastr.success("申请成功！请耐心等待！");  
+		            	modalHide(3000, function(){
+		            		enable("newProducerBtn");
+			            	$("#newProducerForm")[0].reset();
+		            	});
+				    }else{
+				    	toastr.error("申请失败！"+data.message);  
+				    	enable("newProducerBtn");
+				    }
+	        }, 'json');
+	}
+</script>

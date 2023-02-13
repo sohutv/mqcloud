@@ -1,12 +1,5 @@
 package com.sohu.tv.mq.cloud.service;
 
-import java.util.List;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
-
 import com.sohu.tv.mq.cloud.bo.Audit;
 import com.sohu.tv.mq.cloud.bo.Audit.StatusEnum;
 import com.sohu.tv.mq.cloud.bo.Audit.TypeEnum;
@@ -16,6 +9,12 @@ import com.sohu.tv.mq.cloud.util.Result;
 import com.sohu.tv.mq.cloud.web.controller.admin.AdminMessageController;
 import com.sohu.tv.mq.cloud.web.controller.admin.AuditController;
 import com.sohu.tv.mq.cloud.web.vo.UserInfo;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
+import java.util.List;
 
 /**
  * 自动审核
@@ -111,6 +110,7 @@ public class AutoAuditService {
                         result = auditController.resetOffset(userInfo, aid);
                         break;
                     case ASSOCIATE_PRODUCER:
+                    case NEW_PRODUCER:
                         result = auditController.associateProducer(userInfo, aid);
                         break;
                     case ASSOCIATE_CONSUMER:
