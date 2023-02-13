@@ -15,7 +15,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.admin.ConsumeStats;
 import org.apache.rocketmq.common.admin.OffsetWrapper;
-import org.apache.rocketmq.common.admin.TopicOffset;
 import org.apache.rocketmq.common.admin.TopicStatsTable;
 import org.apache.rocketmq.common.message.MessageQueue;
 import org.apache.rocketmq.common.protocol.body.Connection;
@@ -221,8 +220,7 @@ public class ConsumerController extends ViewController {
             consumerProgressVO.setDlqTopic(dlqTopic);
             TopicStatsTable topicStatsTable = topicService.stats(cluster, dlqTopic);
             if (topicStatsTable != null) {
-                consumerProgressVO
-                        .setDlqOffsetMap(new TreeMap<MessageQueue, TopicOffset>(topicStatsTable.getOffsetTable()));
+                consumerProgressVO.setDlqOffsetMap(new TreeMap<>(topicStatsTable.getOffsetTable()));
             }
 
             consumerProgressVO.setOffsetMap(offsetMap);
@@ -430,13 +428,23 @@ public class ConsumerController extends ViewController {
             return Result.getWebResult(topicResult);
         }
 
+        // 校验是否还有链接
+        String consumer = consumerResult.getResult().getName();
+        if (!consumerResult.getResult().httpConsumeEnabled()) {
+            Cluster cluster = clusterService.getMQClusterById(topicResult.getResult().getClusterId());
+            Result<ConsumerConnection> connectionResult = consumerService.examineConsumerConnectionInfo(consumer, cluster);
+            if (connectionResult.isOK()) {
+                return Result.getResult(Status.CONSUMER_CONNECTION_EXIST_ERROR);
+            }
+        }
+
         // 构造审核记录
         Audit audit = new Audit();
         audit.setType(TypeEnum.DELETE_CONSUMER.getType());
         audit.setUid(userInfo.getUser().getId());
         // 保存记录
         Result<?> result = auditService.saveAuditAndConsumerDelete(audit, userConsumerParam.getConsumerId(),
-                consumerResult.getResult().getName(), topicResult.getResult().getName());
+                consumer, topicResult.getResult().getName());
         if (result.isOK()) {
             alertService.sendAuditMail(userInfo.getUser(), TypeEnum.DELETE_CONSUMER,
                     consumerResult.getResult().getName());

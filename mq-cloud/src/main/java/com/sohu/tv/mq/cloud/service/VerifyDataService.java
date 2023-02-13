@@ -1,30 +1,18 @@
 package com.sohu.tv.mq.cloud.service;
 
-import java.util.List;
-
+import com.sohu.tv.mq.cloud.bo.*;
+import com.sohu.tv.mq.cloud.bo.Audit.StatusEnum;
+import com.sohu.tv.mq.cloud.bo.Audit.TypeEnum;
+import com.sohu.tv.mq.cloud.util.Result;
+import com.sohu.tv.mq.cloud.util.Status;
+import com.sohu.tv.mq.cloud.web.controller.param.TopicParam;
+import com.sohu.tv.mq.cloud.web.controller.param.UserConsumerParam;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import com.sohu.tv.mq.cloud.bo.Audit;
-import com.sohu.tv.mq.cloud.bo.Audit.StatusEnum;
-import com.sohu.tv.mq.cloud.bo.Audit.TypeEnum;
-import com.sohu.tv.mq.cloud.bo.AuditAssociateConsumer;
-import com.sohu.tv.mq.cloud.bo.AuditAssociateProducer;
-import com.sohu.tv.mq.cloud.bo.AuditConsumerDelete;
-import com.sohu.tv.mq.cloud.bo.AuditTopicDelete;
-import com.sohu.tv.mq.cloud.bo.AuditTopicUpdate;
-import com.sohu.tv.mq.cloud.bo.AuditUserConsumerDelete;
-import com.sohu.tv.mq.cloud.bo.AuditUserProducerDelete;
-import com.sohu.tv.mq.cloud.bo.Consumer;
-import com.sohu.tv.mq.cloud.bo.Topic;
-import com.sohu.tv.mq.cloud.bo.UserConsumer;
-import com.sohu.tv.mq.cloud.bo.UserProducer;
-import com.sohu.tv.mq.cloud.util.Result;
-import com.sohu.tv.mq.cloud.util.Status;
-import com.sohu.tv.mq.cloud.web.controller.param.TopicParam;
-import com.sohu.tv.mq.cloud.web.controller.param.UserConsumerParam;
+import java.util.List;
 
 /**
  * 校验数据是否重复 （主要是：过滤用户重复的申请）
@@ -82,7 +70,7 @@ public class VerifyDataService {
      * @param producer
      * @return
      */
-    public Result<?> verifyUserProducerIsExist(long uid, long tid, String producer) {
+    public Result<?> verifyUserProducerIsExist(TypeEnum type, long uid, long tid, String producer) {
         // 增加校验，用户不可重复关联同一producer
         Result<List<UserProducer>> userProducerResult = userProducerService.findUserProducer(uid, producer);
         if (userProducerResult.isNotOK()) {
@@ -92,7 +80,7 @@ public class VerifyDataService {
             return Result.getResult(Status.REPEAT_ERROR);
         }
         // 增加校验用户不可重复发送审核信息
-        Result<?> findUserConsumerResult = findAuditRecordsForNotReview(TypeEnum.ASSOCIATE_PRODUCER, uid, producer);
+        Result<?> findUserConsumerResult = findAuditRecordsForNotReview(type, uid, producer);
         if (findUserConsumerResult.isNotOK()) {
             return findUserConsumerResult;
         }
@@ -226,6 +214,11 @@ public class VerifyDataService {
         if (isProducerRepeat.isNotOK()) {
             return isProducerRepeat;
         }
+        // 校验是否与存在的消费者重复
+        Result<Consumer> consumerResult = consumerService.queryConsumerByName(consumer);
+        if (consumerResult.getResult() != null) {
+            return Result.getResult(Status.CONSUMER_REPEAT);
+        }
         logger.info("verify add consumer is ok, consumer:{}, uid:{}", consumer, uid);
         return Result.getOKResult();
     }
@@ -343,6 +336,7 @@ public class VerifyDataService {
                 case DELETE_CONSUMER:
                     return findDeleteConsumerRecords(auditListResult, id);
                 case ASSOCIATE_PRODUCER:
+                case NEW_PRODUCER:
                     return findAssociateProducerRecords(auditListResult, name, id);// id==0?name:id
                 case ASSOCIATE_CONSUMER:
                     return findAssociateConsumerRecords(auditListResult, id, name);
