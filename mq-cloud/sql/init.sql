@@ -165,6 +165,7 @@ CREATE TABLE `audit_resend_message` (
 -- ----------------------------
 -- Table structure for `audit_resend_message_consumer`
 -- ----------------------------
+DROP TABLE IF EXISTS `audit_resend_message_consumer`;
 CREATE TABLE `audit_resend_message_consumer` (
   `aid` int(11) NOT NULL COMMENT '审核id',
   `consumer_id` int(11) NOT NULL COMMENT 'consumer id'
@@ -173,6 +174,7 @@ CREATE TABLE `audit_resend_message_consumer` (
 -- ----------------------------
 -- Table structure for `audit_topic_trace`
 -- ----------------------------
+DROP TABLE IF EXISTS `audit_topic_trace`;
 CREATE TABLE `audit_topic_trace` (
   `aid` int(11) NOT NULL COMMENT '审核id',
   `tid` int(11) NOT NULL COMMENT 'topic id',
@@ -663,7 +665,7 @@ CREATE TABLE `broker_store_stat` (
 -- ----------------------------
 -- user init
 -- ----------------------------
-INSERT INTO `user` VALUES ('1', 'admin', 'admin@admin.com', '18688888888', '1', '2018-10-01', '2018-10-01 09:49:00', '1', '21232f297a57a5a743894a0e4a801fc3');
+INSERT IGNORE INTO `user`(`id`, name, email, mobile, type, create_date, update_time, receive_notice, password) VALUES ('1', 'admin', 'admin@admin.com', '18688888888', '1', '2018-10-01', '2018-10-01 09:49:00', '1', '21232f297a57a5a743894a0e4a801fc3');
 
 -- ----------------------------
 -- common_config init
