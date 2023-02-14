@@ -4,6 +4,7 @@ import com.sohu.tv.mq.cloud.bo.ConsumeStatsExt;
 import com.sohu.tv.mq.cloud.bo.Consumer;
 import com.sohu.tv.mq.cloud.bo.ConsumerConfig;
 import com.sohu.tv.mq.cloud.bo.User;
+import com.sohu.tv.mq.cloud.util.WebUtil;
 import org.apache.rocketmq.common.admin.OffsetWrapper;
 import org.apache.rocketmq.common.admin.TopicOffset;
 import org.apache.rocketmq.common.message.MessageQueue;
@@ -57,7 +58,11 @@ public class ConsumerProgressVO {
     }
 
     public String getConsumeTpsFormat() {
-        return String.valueOf(Math.round(consumeTps));
+        return WebUtil.countFormat(Math.round(consumeTps));
+    }
+
+    public long getConsumeTpsRound() {
+        return Math.round(consumeTps);
     }
 
     public void setConsumeTps(double consumeTps) {
@@ -114,6 +119,10 @@ public class ConsumerProgressVO {
 
     public long getDiff() {
         return diffTotal;
+    }
+
+    public String getDiffFormat() {
+        return WebUtil.countFormat(diffTotal);
     }
 
     public long computeTotalDiff() {

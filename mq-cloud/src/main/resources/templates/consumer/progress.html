@@ -24,8 +24,8 @@
 					<col width="150px">
 					<col width="180px">
 					<col width="50px">
-					<col width="70px">
-					<col width="50px">
+					<col width="80px">
+					<col width="60px">
 					<col width="53px">
 					<col width="160px">
 					<col width="122px">
@@ -93,8 +93,8 @@
 									</#if>
 								</td>
 								<td>${consumerProgressVO.messageModel}</td>
-	                    		<td>${consumerProgressVO.diff}</td>
-	                    		<td>${consumerProgressVO.consumeTpsFormat}</td>
+	                    		<td title="${consumerProgressVO.diff}" data-toggle="tooltip">${consumerProgressVO.diffFormat}</td>
+	                    		<td title="${consumerProgressVO.consumeTpsRound}" data-toggle="tooltip">${consumerProgressVO.consumeTpsFormat}</td>
 	                    		<td>
 	                    			<#if topic.traceEnabled()>
 		                    			<#if (consumerProgressVO.ownerList?? && consumerProgressVO.ownerList?seq_contains(userInfo.user)) || userInfo.user.type == 1>
