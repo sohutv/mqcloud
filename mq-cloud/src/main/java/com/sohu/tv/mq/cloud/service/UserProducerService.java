@@ -39,9 +39,6 @@ public class UserProducerService {
     @Autowired
     private MQAdminTemplate mqAdminTemplate;
 
-    @Autowired
-    private ClientConnectionService clientConnectionService;
-    
     /**
      * 按照uid查询UserProducer
      */
@@ -175,12 +172,6 @@ public class UserProducerService {
                 return mqCluster;
             }
         });
-        if (connectionResult.isOK()){
-            HashSet<Connection> connectionSet = connectionResult.getResult().getConnectionSet();
-            HashSet<Connection> newConnctions = clientConnectionService.checkConnectVersion(connectionSet, producerGroup,
-                    ClientLanguage.PRODUCER_CLIENT_GROUP_TYPE, mqCluster);
-            connectionResult.getResult().setConnectionSet(newConnctions);
-        }
         return connectionResult;
     }
     

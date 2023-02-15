@@ -324,10 +324,10 @@ public class ClientConnectionService {
      * @date: 2022/5/13 16:33
      */
     public HashSet<Connection> checkConnectVersion(HashSet<Connection> connectionSet, String consumerGroup,
-                                                   Integer clientType, Cluster mqCluster) {
+                                                   Integer clientType, long cid) {
         try {
             ClientLanguage queryParams = new ClientLanguage();
-            queryParams.setCid((long) mqCluster.getId());
+            queryParams.setCid(cid);
             queryParams.setClientGroupType(clientType);
             queryParams.setClientGroupName(consumerGroup);
             queryParams.setModifyType(ClientLanguage.MODIFYBYPERSON);

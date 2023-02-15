@@ -70,9 +70,6 @@ public class ConsumerService {
     private ClusterService clusterService;
 
     @Autowired
-    private ClientConnectionService clientConnectionService;
-
-    @Autowired
     private TopicService topicService;
 
     @Autowired
@@ -684,12 +681,6 @@ public class ConsumerService {
                 return mqCluster;
             }
         });
-        if(result.isOK()){
-            ConsumerConnection consumerConnection = result.getResult();
-            HashSet<Connection> newConnections = clientConnectionService.checkConnectVersion(consumerConnection.getConnectionSet(),
-                    consumerGroup,ClientLanguage.CONSUMER_CLIENT_GROUP_TYPE, mqCluster);
-            consumerConnection.setConnectionSet(newConnections);
-        }
         return result;
     }
 
