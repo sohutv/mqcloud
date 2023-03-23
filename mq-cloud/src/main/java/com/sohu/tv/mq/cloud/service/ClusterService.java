@@ -173,8 +173,6 @@ public class ClusterService {
         if (cluster == null) {
             return;
         }
-        if (fileReservedTime > cluster.getFileReservedTime()) {
-            cluster.setFileReservedTime(fileReservedTime);
-        }
+        cluster.setFileReservedTime(fileReservedTime);
     }
 }
