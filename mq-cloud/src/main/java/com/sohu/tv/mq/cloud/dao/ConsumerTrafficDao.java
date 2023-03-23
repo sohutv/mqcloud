@@ -134,10 +134,10 @@ public interface ConsumerTrafficDao {
             + "SELECT cons.id "
             + "FROM consumer cons LEFT JOIN consumer_traffic traffic  "
             + "ON cons.id = traffic.consumer_id and traffic.create_date = #{createDate,jdbcType=DATE} "
-            + "WHERE cons.tid IN "
-            + "<foreach collection=\"tids\" item=\"id\" separator=\",\" open=\"(\" close=\")\">#{id}</foreach>"
+            + "WHERE cons.id IN "
+            + "<foreach collection=\"cids\" item=\"id\" separator=\",\" open=\"(\" close=\")\">#{id}</foreach>"
             + "GROUP BY cons.id  "
             + "HAVING sum(IFNULL( traffic.count, 0) ) = 0  "
             + "</script>")
-    List<Long> selectNoneConsumerFlowsId(@Param("tids") List<Long> idList,@Param("createDate") Date createDate);
+    List<Long> selectNoneConsumerFlowsId(@Param("cids") List<Long> cids,@Param("createDate") Date createDate);
 }

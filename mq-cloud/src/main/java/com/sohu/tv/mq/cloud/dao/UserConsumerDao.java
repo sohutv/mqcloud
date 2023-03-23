@@ -129,13 +129,20 @@ public interface UserConsumerDao {
     List<Long> selectTidListByUid(@Param(value = "uid") long uid);
 
     /**
+     * 根据uid查询
+     * @param uid
+     */
+    @Select("select distinct ${feild} from user_consumer where uid = #{uid} ")
+    List<Long> selectConsumerFeildListByUid(@Param(value = "uid") long uid, @Param(value = "feild") String feild);
+
+    /**
      * 根据gid查询
      * @param gid
      */
-    @Select("<script>select distinct tid from user_consumer where "
+    @Select("<script>select distinct ${feild} from user_consumer where "
             +  " uid in (select id from user where gid = #{gid})"
             + "</script>")
-    List<Long> selectTidListByGid(@Param(value = "gid")long gid);
+    List<Long> selectConsumerFeildListByGid(@Param(value = "gid")long gid, @Param(value = "feild") String feild);
 
     /**
      * 根据consumerName获取关联uid

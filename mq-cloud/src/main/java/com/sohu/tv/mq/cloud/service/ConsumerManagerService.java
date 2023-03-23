@@ -22,7 +22,6 @@ import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -49,15 +48,14 @@ public class ConsumerManagerService extends ManagerBaseService{
     public Result<?> queryAndFilterConsumerList(ManagerParam param, PaginationParam paginationParam) throws Exception{
 
         try {
-
-            List<Long> idList = new ArrayList<>();
-            List<Topic> topicList = comonFilterTopic(param,paginationParam,idList,true);
-            if (CollectionUtils.isEmpty(topicList)){
-                logger.warn("multi condition to query Topic,the result of topicList is empty");
-                return Result.getOKResult();
-            }
-            Map<Long, List<Topic>> topicMap = topicList.stream().collect(Collectors.groupingBy(Topic::getId));
-            List<Consumer> consumers = consumerDao.selectByTidList(idList);
+            List<Long> tidList = Optional.ofNullable(param.getCid())
+                    .map(c -> topicDao.selectAllTidsByCid(c)).orElse(null);
+            List<Long> cidListByUid = Optional.ofNullable(param.getUid())
+                    .map(u -> userConsumerDao.selectConsumerFeildListByUid(u, "consumer_id")).orElse(null);
+            List<Long> cidListByGid = Optional.ofNullable(param.getGid())
+                    .map(u -> userConsumerDao.selectConsumerFeildListByGid(u, "consumer_id")).orElse(null);
+            Set<Long> queryCidSet = intersectionToSet(cidListByUid, cidListByGid);
+            List<Consumer> consumers = consumerDao.selectByTidAndCidList(tidList, queryCidSet);
             if (CollectionUtils.isEmpty(consumers)){
                 logger.warn("query consumer by topic id,the result of consumer is empty");
                 return Result.getOKResult();
@@ -65,17 +63,29 @@ public class ConsumerManagerService extends ManagerBaseService{
             final List<Long> cids = consumers.stream().map(Consumer::getId).collect(Collectors.toList());
             // 消费量筛选 消费量为0或没有消费记录
             if (param.getNoneConsumerFlows() != null && param.getNoneConsumerFlows()){
-                List<Long> noneFlowCids = consumerTrafficDao.selectNoneConsumerFlowsId(idList,new Date());
+                List<Long> noneFlowCids = consumerTrafficDao.selectNoneConsumerFlowsId(cids, new Date());
                 consumers = consumers.stream().filter(node->
                         noneFlowCids.contains(node.getId())
                 ).collect(Collectors.toList());
             }
+            if (CollectionUtils.isEmpty(consumers)){
+                return Result.getOKResult();
+            }
             Map<Long, Long> consumerFlowSum = summaryConsumerFlowBy5Min(cids);
             paginationParam.caculatePagination(consumers.size());
-            consumers = consumers.stream().skip(paginationParam.getBegin()).limit(paginationParam.getNumOfPage())
+            consumers = consumers.stream()
+                    .sorted(Comparator.comparing(Consumer::getTid))
+                    .skip(paginationParam.getBegin())
+                    .limit(paginationParam.getNumOfPage())
                     .collect(Collectors.toList());
             List<ConsumerManagerVo> resultVo = new ArrayList<>(consumers.size());
-            int index = paginationParam.getBegin();
+            List<Long> queryTids = consumers.stream().map(Consumer::getTid).collect(Collectors.toList());
+            List<Topic> topicList = topicDao.queryTopicDataByLimit(queryTids);
+            if (CollectionUtils.isEmpty(topicList)){
+                return Result.getOKResult();
+            }
+            Map<Long, List<Topic>> topicMap = topicList.stream().collect(Collectors.groupingBy(Topic::getId));
+            int index = paginationParam.getBegin() + 1;
             for (Consumer consumer : consumers) {
                 ConsumerManagerVo consumerManagerVo = new ConsumerManagerVo();
                 consumerManagerVo.setConsumer(consumer);

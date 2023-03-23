@@ -83,6 +83,33 @@ public interface ConsumerDao {
             + "<foreach collection=\"tidList\" item=\"id\" separator=\",\" open=\"(\" close=\")\">#{id}</foreach>"
             + " order by name</script>")
     public List<Consumer> selectByTidList(@Param("tidList") Collection<Long> tidList);
+
+    /**
+     * 根据tid列表批量查询consumer
+     *
+     * @param tidList topic id list
+     * @param tidList consumer id list
+     * @return List<Consumer> 消费者
+     */
+    @Select("<script>" +
+            "select * from consumer " +
+             "<where> " +
+            "<if test=\"tidList != null\"> " +
+            "tid in " +
+            "<foreach collection=\"tidList\" item=\"id\" open=\"(\" separator=\",\" close=\")\"> " +
+            "${id} " +
+            "</foreach> " +
+            "</if> " +
+            "<if test=\"cidList != null\"> " +
+            "and id in " +
+            "<foreach collection=\"cidList\" item=\"cid\" open=\"(\" separator=\",\" close=\")\"> " +
+            "${cid} " +
+            "</foreach> " +
+            "</if> " +
+            " </where>"+
+            "order by name " +
+            "</script>")
+    public List<Consumer> selectByTidAndCidList(@Param("tidList") Collection<Long> tidList, @Param("cidList") Collection<Long> cidList);
     
     /**
      * 删除记录
