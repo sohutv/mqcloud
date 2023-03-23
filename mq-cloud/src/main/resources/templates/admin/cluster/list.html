@@ -191,7 +191,7 @@
 								<img title="查看broker限速详情" width="22" height="24" style="display:inline-block;" src="${request.contextPath}/img/rateLimiter.png" onclick="brokerRateLimitModalShow('${brokerGroup[key][bkey].brokerAddr}')" class="pointer" data-toggle="modal"></img>
 							</#if>
 							<#if brokerGroup[key][bkey].info??>
-								<button data-target="#clusterInfoModal${i}" data-toggle="modal" type="button" class="btn btn-sm btn-success"
+								<button data-target="#clusterInfoModal${i}" data-toggle="modal" type="button" class="btn btn-xs btn-success"
 								title="查看当前broker的其他状态信息"><span class="glyphicon glyphicon-eye-open" aria-hidden="true"></span></button>
 								<div id="clusterInfoModal${i}" class="modal fade" tabindex="-1" data-width="400" aria-hidden="true">
 									<div class="modal-dialog">
@@ -226,14 +226,12 @@
 							<#if brokerGroup[key][bkey].version??>
 							<#if bkey == "0">
 								<#if brokerGroup[key][bkey].writable>
-									<button title="禁止客户端写入，broker下线前需要先禁止写入，等没有人写入后，再下线" type="button" onclick="program('${brokerGroup[key][bkey].brokerAddr}', 'program${i}')" class="btn btn-sm btn-success" data-target="#nowriteModal${i}" data-toggle="modal">停写</button>
+									<button title="禁止客户端写入，broker下线前需要先禁止写入，等没有人写入后，再下线" type="button" onclick="program('${brokerGroup[key][bkey].brokerAddr}', 'program${i}')" class="btn btn-xs btn-success" data-target="#nowriteModal${i}" data-toggle="modal">停写</button>
 								<#else>
-									<button title="恢复写入" type="button" onclick="program('${brokerGroup[key][bkey].brokerAddr}', 'program${i}')" class="btn btn-sm btn-success" data-target="#nowriteModal${i}" data-toggle="modal">恢复</button>
+									<button title="恢复写入" type="button" onclick="program('${brokerGroup[key][bkey].brokerAddr}', 'program${i}')" class="btn btn-xs btn-success" data-target="#nowriteModal${i}" data-toggle="modal">恢复</button>
 								</#if>
-								<button title="已经停写的broker，可以进行关闭操作" type="button" class="btn btn-sm btn-success" data-target="#brokerOfflineModal${i}" onclick="program('${brokerGroup[key][bkey].brokerAddr}', 'brokerOfflineProgram${i}')" data-toggle="modal">下线</button>
-								<#if brokerGroup[key]?size <= 1>
-									<button title="增加slave" type="button" class="btn btn-sm btn-success"  onclick="addBroker('${key}')" data-target="#addBrokerModal" data-toggle="modal"><span class="glyphicon glyphicon-plus" aria-hidden="true"></span>&nbsp;Slave</button>
-								</#if>
+								<button title="已经停写的broker，可以进行关闭操作" type="button" class="btn btn-xs btn-success" data-target="#brokerOfflineModal${i}" onclick="program('${brokerGroup[key][bkey].brokerAddr}', 'brokerOfflineProgram${i}')" data-toggle="modal">下线</button>
+								<button title="增加slave" type="button" class="btn btn-xs btn-success"  onclick="addBroker('${key}')" data-target="#addBrokerModal" data-toggle="modal"><span class="glyphicon glyphicon-plus" aria-hidden="true"></span></button>
 								<!-- 停写 -->
 								<div id="nowriteModal${i}" class="modal fade" tabindex="-1" data-width="400">
 									<div class="modal-dialog" style="width:1000px">
@@ -278,12 +276,12 @@
 									</div>
 								</div>
 							<#else>
-								<button title="slave可以直接进行关闭" type="button" class="btn btn-sm btn-success" data-target="#brokerOfflineModal${i}" onclick="program('${brokerGroup[key][bkey].brokerAddr}', 'brokerOfflineProgram${i}')" data-toggle="modal">下线</button>
+								<button title="slave可以直接进行关闭" type="button" class="btn btn-xs btn-success" data-target="#brokerOfflineModal${i}" onclick="program('${brokerGroup[key][bkey].brokerAddr}', 'brokerOfflineProgram${i}')" data-toggle="modal">下线</button>
 							</#if>
 							<#else>
-								<button title="启动broker" data-toggle="tooltip" type="button" id="${key}<#if bkey != "0">-s</#if>Btn" class="btn btn-sm btn-success" onclick="startupBroker('${brokerGroup[key][bkey].brokerAddr}', '${key}<#if bkey != "0">-s</#if>', '${brokerGroup[key][bkey].baseDir!}')">启动</button>
-								<button title="在当前机器更新broker并保留数据" type="button" class="btn btn-sm btn-success"  onclick="upgradeBroker('${brokerGroup[key][bkey].brokerAddr}', '${key}<#if bkey != "0">-s</#if>', '${brokerGroup[key][bkey].baseDir!}')" data-target="#upgradeBrokerModal" data-toggle="modal">升级</button>
-								<button title="将当前机器broker数据迁移至远程机器" type="button" class="btn btn-sm btn-success"  onclick="migrateBrokerData('${brokerGroup[key][bkey].brokerAddr}', '${brokerGroup[key][bkey].baseDir!}')" data-target="#migrateBrokerDataModal" data-toggle="modal">数据迁移</button>
+								<button title="启动broker" data-toggle="tooltip" type="button" id="${key}<#if bkey != "0">-s</#if>Btn" class="btn btn-xs btn-success" onclick="startupBroker('${brokerGroup[key][bkey].brokerAddr}', '${key}<#if bkey != "0">-s</#if>', '${brokerGroup[key][bkey].baseDir!}')">启动</button>
+								<button title="在当前机器更新broker并保留数据" type="button" class="btn btn-xs btn-success"  onclick="upgradeBroker('${brokerGroup[key][bkey].brokerAddr}', '${key}<#if bkey != "0">-s</#if>', '${brokerGroup[key][bkey].baseDir!}')" data-target="#upgradeBrokerModal" data-toggle="modal">升级</button>
+								<button title="将当前机器broker数据迁移至远程机器" type="button" class="btn btn-xs btn-success"  onclick="migrateBrokerData('${brokerGroup[key][bkey].brokerAddr}', '${brokerGroup[key][bkey].baseDir!}')" data-target="#migrateBrokerDataModal" data-toggle="modal">数据迁移</button>
 							</#if>
 							
 							<!-- 下线 -->
