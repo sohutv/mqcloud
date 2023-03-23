@@ -21,6 +21,14 @@ public interface CommonConfigDao {
      */
     @Select("select * from common_config")
     public List<CommonConfig> select();
+
+    /**
+     * 查询记录
+     *
+     * @param consumer
+     */
+    @Select("select * from common_config where `key`=#{key}")
+    public CommonConfig selectByKey(@Param("key") String key);
     
     /**
      * 保存记录

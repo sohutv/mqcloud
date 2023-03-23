@@ -622,7 +622,10 @@ public class TopicController extends ViewController {
         if (StringUtils.isBlank(info)) {
             return Result.getResult(Status.PARAM_ERROR);
         }
-        Result<Integer> result = topicService.updateTopicInfo(tid, HtmlUtils.htmlEscape(info.trim(), "UTF-8"));
+        Topic topic = new Topic();
+        topic.setId(tid);
+        topic.setInfo(HtmlUtils.htmlEscape(info.trim(), "UTF-8"));
+        Result<Integer> result = topicService.updateDBTopic(topic);
         logger.info(userInfo.getUser().getName() + " update topic info , tid:{}, info:{}, status:{}", tid, info,
                 result.isOK());
         return Result.getWebResult(result);

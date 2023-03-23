@@ -164,6 +164,9 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware, Comm
     // http协议消费uri前缀
     private String httpConsumerUriPrefix;
 
+    // clientGroup ns config
+    private Map<String, String> clientGroupNSConfig;
+
     @Autowired
     private CommonConfigService commonConfigService;
 
@@ -186,6 +189,10 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware, Comm
             }
             String value = commonConfig.getValue();
             if (value == null) {
+                continue;
+            }
+            value = value.trim();
+            if(value.isEmpty()) {
                 continue;
             }
             Class<?> fieldType = field.getType();
@@ -458,6 +465,10 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware, Comm
 
     public String getIgnoreTopic() {
         return ignoreTopic;
+    }
+
+    public Map<String, String> getClientGroupNSConfig() {
+        return clientGroupNSConfig;
     }
 
     public boolean isIgnoreTopic(String topic) {

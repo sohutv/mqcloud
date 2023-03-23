@@ -36,6 +36,12 @@
 				</select>
 			</div>
 		</div>
+		<div class="form-group">
+			<label for="topic"> topic: </label>
+			<div class="form-group">
+				<input id="topic" type="text" class="form-control" name="topic" value="" placeholder="Topic名字">
+			</div>
+		</div>
 		<button type="submit" class="btn btn-search""><span class="glyphicon glyphicon-search" aria-hidden="true"></span></button>
 	</form>
 	<hr/>
@@ -89,8 +95,9 @@
 			</#if>
 			</td>
 			<td style="text-align:center;vertical-align:middle;">
-				<button type="button" class="btn btn-sm btn-success" title="关联生产者" data-target="#relationProducer" data-toggle="modal" onclick="loadParams('${manager.topic.name}','${manager.topic.id}');"><span class="glyphicon glyphicon-plus" aria-hidden="true"></span></button>
+<!--				<button type="button" class="btn btn-sm btn-success" title="关联生产者" data-target="#relationProducer" data-toggle="modal" onclick="loadParams('${manager.topic.name}','${manager.topic.id}');"><span class="glyphicon glyphicon-plus" aria-hidden="true"></span></button>-->
 				<button type="button" class="btn btn-sm btn-success" title="检查Topic" data-target="#topicDeleteCheck" data-toggle="modal" onclick="loadDeleteCheck('${manager.topic.name}','${manager.topic.id}','${manager.topic.effective}');"><span class="glyphicon glyphicon-check" aria-hidden="true"></span></button>
+				<button type="button" class="btn btn-sm btn-success" title="迁移Topic" data-target="#copyTopicModal" data-toggle="modal" onclick="copyTopicShow('${manager.topic.id}','${manager.topic.name}','${manager.topic.clusterId}','${manager.topic.cluster.name}');"><span class="glyphicon glyphicon-copy" aria-hidden="true"></span></button>
 			</td>
 		</tr>
 		</#list>
@@ -250,6 +257,101 @@
 	</div>
 </div>
 
+<!-- topic迁移 -->
+<div id="copyTopicModal" class="modal fade" tabindex="-1">
+	<div class="modal-dialog" style="width:800px;">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+				<h4 class="modal-title">topic跨集群迁移</h4>
+			</div>
+			<div class="modal-content" style="height:500px;overflow-y:scroll;overflow-x:hidden;">
+				<div class="row">
+					<div class="col-md-12">
+						<div class="form-body">
+							<fieldset>
+								<legend style="margin:0px;font-size:14px;font-weight:bold;">第一步：复制资源</legend>
+								<div class="col-sm-6">
+									<table class="table table-striped table-hover table-bordered" style="margin: 0px;word-break:break-all; word-wrap:break-all;">
+										<thead>
+										<colgroup>
+											<col width="80px">
+											<col>
+											<col width="20px">
+										</colgroup>
+										</thead>
+										<tbody>
+										<tr>
+											<td style="text-align:center;vertical-align:middle;height: 51px">源集群</td>
+											<td id="copyFromCluster" style="text-align:center;vertical-align:middle;"></td>
+											<td rowspan="3" style="text-align:center;vertical-align:middle;">
+												<button type="button" title="在目标集群上创建同名topic及其消费者" data-toggle="tooltip" id="copyTopicBtn" class="btn btn-xs btn-success" onclick="copyTopic()">复制</button>
+												<button type="button" title="删除源集群上的topic及其消费者" data-toggle="tooltip" id="deleteSourceTopicBtn" class="btn btn-xs btn-success" onclick="deleteSourceTopic()"><span class="glyphicon glyphicon-trash" aria-hidden="true"></span></button>
+											</td>
+										</tr>
+										<tr>
+											<td style="text-align:center;vertical-align:middle;">topic</td>
+											<td id="copyTopicName"></td>
+										</tr>
+										<tr>
+											<td style="text-align:center;vertical-align:middle;">消费者</td>
+											<td id="copyTopicConsumer"></td>
+										</tr>
+										</tbody>
+									</table>
+								</div>
+								<div class="col-sm-6">
+									<table class="table table-striped table-hover table-bordered" style="margin: 0px;word-break:break-all; word-wrap:break-all;">
+										<thead>
+										<colgroup>
+											<col width="80px">
+											<col>
+											<col width="20px">
+										</colgroup>
+										</thead>
+										<tbody>
+										<tr>
+											<td style="text-align:center;vertical-align:middle;">目标集群</td>
+											<td>
+												<select id="destTopicCid" class="selectpicker" title="集群" data-live-search-placeholder="输入搜索内容" name="cid" data-live-search="true"></select>
+											</td>
+											<td rowspan="3" style="text-align:center;vertical-align:middle;">
+												<button type="button" title="查询目标集群上的topic及其消费者" data-toggle="tooltip" id="destTopicBtn" class="btn btn-xs btn-success" onclick="topicConsumerList()"><span class="glyphicon glyphicon-search" aria-hidden="true"></span></button>
+												<button type="button" title="删除目标集群上的topic及其消费者" data-toggle="tooltip" id="deleteTopicBtn" class="btn btn-xs btn-success" onclick="deleteDestTopic()"><span class="glyphicon glyphicon-trash" aria-hidden="true"></span></button>
+											</td>
+										</tr>
+										<tr>
+											<td style="text-align:center;vertical-align:middle;">topic</td>
+											<td id="destTopic"></td>
+										</tr>
+										<tr>
+											<td style="text-align:center;vertical-align:middle;">消费者</td>
+											<td id="destTopicConsumer"></td>
+										</tr>
+										</tbody>
+									</table>
+								</div>
+							</fieldset>
+							<fieldset>
+								<legend style="margin:0px;font-size:14px;font-weight:bold;">第二步：修改路由</legend>
+								<table class="table table-striped table-hover table-bordered" style="margin: 0px;word-break:break-all; word-wrap:break-all;">
+									<thead>
+									<colgroup>
+										<col>
+										<col width="100px">
+									</colgroup>
+									</thead>
+									<tbody id="sourceResouceBody">
+									</tbody>
+								</table>
+							</fieldset>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
 
 <script>
 
@@ -273,7 +375,13 @@
 		$('#noneConsumers').selectpicker({
 			width: '100px'
 		});
+		$('#destTopicCid').selectpicker({
+			width: '200px'
+		});
 		initNoneConsumers("noneConsumers")
+		<#if queryParams.queryStr??  && queryParams.topic??>
+			$('#topic').val('${queryParams.topic}');
+		</#if>
 	});
 
 	function initNoneConsumers(consumerStatus) {
@@ -300,6 +408,29 @@
 						<#if queryParams.queryStr?? && queryParams.cid??>
 								$('#' + showCluserList).selectpicker('val', '${queryParams.cid}');
 						</#if>
+					}else{
+						toastr.error("数据获取失败！"+data.message);
+					}
+				}, 'json');
+	}
+
+	/**
+	 * 初始化集群下拉列表
+	 */
+	function initCopyTopicClusterList(cid){
+		$.get('${request.contextPath}/admin/topicManager/getAllCluser',
+				function(data){
+					if(data.result.status == 200){
+						var content = "";
+						for(var i in data.result.result){
+							var cluser = data.result.result[i];
+							if(cid == cluser.id){
+								continue;
+							}
+							content += "<option value='"+cluser.id+"'>"+cluser.name+"</option>";
+						}
+						$("#destTopicCid").html(content);
+						$("#destTopicCid").selectpicker('refresh');
 					}else{
 						toastr.error("数据获取失败！"+data.message);
 					}
@@ -476,6 +607,220 @@
 			width : '100%'
 		});
 		initUserList("nodeUser")
+	}
+
+	function copyTopicShow(tid, name, cid, clusterName) {
+		producerListShow(tid,cid);
+		initConsumerList(name,cid);
+		initCopyTopicClusterList(cid);
+		$("#copyTopicName").html(name);
+		$("#copyFromCluster").html(clusterName).val(cid);
+	}
+
+	/**
+	 * 初始化消费者列表
+	 */
+	function initConsumerList(topic) {
+		$.post('${request.contextPath}/admin/topicManager/mqcloud/topic/consumer',
+				{
+					topic: topic
+				},
+				function (data) {
+					if (data.status == 200) {
+						var content = "<ul class='list-group'>";
+						var consumerContent = "";
+						for (var i in data.result) {
+							var consumer = data.result[i];
+							content += "<li class='list-group-item'>" + consumer.name + "</li>";
+
+							var resource = consumer.name;
+							consumerContent += "<tr>";
+							consumerContent += "<td>" + resource + "</td>";
+							consumerContent += "<td><button type='button' class='btn btn-xs btn-success' onClick=changeRoute('"+resource+"',0)>添加</button> <button type='button' class='btn btn-xs btn-success' onClick=changeRoute('"+resource+"',-1)><span class='glyphicon glyphicon-trash' aria-hidden='true'></span></button></td>";
+							consumerContent += "</tr>";
+						}
+						content += "</ul>";
+						$("#copyTopicConsumer").html(content);
+						$("#sourceResouceBody").append(consumerContent);
+					}else{
+						toastr.error("数据获取失败！"+data.message);
+					}
+				}, 'json');
+	}
+
+	/**
+	 * 初始化生产者列表
+	 */
+	function producerListShow(tid) {
+		$.post('${request.contextPath}/producer/list',
+				{
+					tid: tid
+				},
+				function (data) {
+					if (data.status == 200) {
+						var content = "";
+						for (var i in data.result) {
+							content += "<tr>";
+							var resource = data.result[i].producer;
+							content += "<td>" + resource + "</td>";
+							content += "<td><button type='button' class='btn btn-xs btn-success' onClick=changeRoute('"+resource+"',0)>添加</button> <button type='button' class='btn btn-xs btn-success' onClick=changeRoute('"+resource+"',-1)><span class='glyphicon glyphicon-trash' aria-hidden='true'></span></button></td>";
+							content += "</tr>";
+						}
+						$("#sourceResouceBody").html(content);
+					}else{
+						toastr.error("数据获取失败！"+data.message);
+					}
+				}, 'json');
+	}
+
+	/**
+	 * 查询消费者列表
+	 */
+	function topicConsumerList() {
+		var cid = $("#destTopicCid").val();
+		if (!cid) {
+			alert("请选择目标集群");
+			return;
+		}
+		var topic = $("#copyTopicName").html();
+		if (!topic) {
+			alert("topic为空");
+			return;
+		}
+		$.post('${request.contextPath}/admin/topicManager/cluster/topic/consumer',
+				{
+					topic: topic,
+					cid: cid
+				},
+				function (data) {
+					if (data.status == 200) {
+						var content = "<ul class='list-group'>";
+						for (var i in data.result) {
+							var consumer = data.result[i];
+							content += "<li class='list-group-item'>" + consumer + "</li>";
+						}
+						content += "</ul>";
+						$("#destTopicConsumer").html(content);
+						$("#destTopic").html($("#copyTopicName").html());
+					}else{
+						toastr.error("数据获取失败！"+data.message);
+						$("#destTopic").html("");
+					}
+				}, 'json');
+	}
+
+	function copyTopic(){
+		var cid = $("#destTopicCid").val();
+		if (!cid) {
+			alert("请选择目标集群");
+			return;
+		}
+		var topic = $("#copyTopicName").html();
+		if (!topic) {
+			alert("topic为空");
+			return;
+		}
+		disable("copyTopicBtn");
+		$.post('${request.contextPath}/admin/topicManager/copyTopic',
+				{
+					topic: topic,
+					cid: cid
+				},
+				function(data){
+					if(data.status == 200){
+						toastr.success("复制成功");
+						topicConsumerList();
+					}else{
+						toastr.error("复制失败！"+data.message);
+					}
+					enable("copyTopicBtn");
+				}, 'json');
+	}
+
+	function deleteSourceTopic(cidComId, topicComId, consumerComId, delBtnId) {
+		var cid = $("#copyFromCluster").val();
+		if (!cid) {
+			alert("请选择源集群");
+			return;
+		}
+		var destCid = $("#destTopicCid").val();
+		if (!destCid) {
+			alert("请选择目标集群");
+			return;
+		}
+		var topic = $("#copyTopicName").html();
+		if (!topic) {
+			alert("topic为空");
+			return;
+		}
+		disable("deleteSourceTopicBtn");
+		$.post('${request.contextPath}/admin/topicManager/deleteTopic',
+				{
+					topic: topic,
+					cid: cid,
+					destCid: destCid
+				},
+				function (data) {
+					if (data.status == 200) {
+						toastr.success("删除成功");
+						$("#copyTopicName").html("");
+						$("#copyTopicConsumer").html("");
+					} else {
+						toastr.error("删除失败！" + data.message);
+					}
+					enable("deleteSourceTopicBtn");
+				}, 'json');
+	}
+
+	function deleteDestTopic() {
+		var cid = $("#destTopicCid").val();
+		if (!cid) {
+			alert("请选择目标集群");
+			return;
+		}
+		var topic = $("#destTopic").html();
+		if (!topic) {
+			alert("请先查询topic");
+			return;
+		}
+		disable("deleteTopicBtn");
+		$.post('${request.contextPath}/admin/topicManager/deleteTopic',
+				{
+					topic: topic,
+					cid: cid
+				},
+				function (data) {
+					if (data.status == 200) {
+						toastr.success("删除成功");
+						$("#destTopic").html("");
+						$("#destTopicConsumer").html("");
+					} else {
+						toastr.error("删除失败！" + data.message);
+					}
+					enable("deleteTopicBtn");
+				}, 'json');
+	}
+
+	function changeRoute(resource, cid) {
+		if (cid == 0) {
+			var cid = $("#destTopicCid").val();
+			if (!cid) {
+				alert("请选择目标集群");
+				return;
+			}
+		}
+		$.post('${request.contextPath}/admin/topicManager/change/route',
+				{
+					resource: resource,
+					cid: cid
+				},
+				function (data) {
+					if (data.status == 200) {
+						toastr.success("操作成功");
+					} else {
+						toastr.error("操作失败！" + data.message);
+					}
+				}, 'json');
 	}
 </script>
 

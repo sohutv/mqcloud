@@ -1,6 +1,7 @@
 package com.sohu.tv.mq.cloud.service;
 
 import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import com.sohu.tv.mq.cloud.bo.Topic;
 import com.sohu.tv.mq.cloud.bo.User;
 import com.sohu.tv.mq.cloud.dao.TopicDao;
@@ -12,6 +13,7 @@ import com.sohu.tv.mq.cloud.util.Result;
 import com.sohu.tv.mq.cloud.web.controller.param.ManagerParam;
 import com.sohu.tv.mq.cloud.web.controller.param.PaginationParam;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.CollectionUtils;
 
 import javax.annotation.Resource;
@@ -39,6 +41,9 @@ public class ManagerBaseService {
 
     @Resource
     protected TopicTrafficDao topicTrafficDao;
+
+    @Autowired
+    private TopicService topicService;
 
     // 流量统计时间范围
     private final static int SUMMARY_TOPIC_FLOW_TIME = 5;
@@ -118,6 +123,16 @@ public class ManagerBaseService {
             isAddLimitQuery = true;
             lists.add(getTidListByGid(param.getGid()));
         }
+        if (param.getTopic() != null) {
+            isAddLimitQuery = true;
+            Result<List<Topic>> listResult = topicService.queryTopicList(param.getTopic(), 0, 0, 100, new LinkedList<>());
+            if (listResult != null) {
+                List<Topic> topicList = listResult.getResult();
+                if (!CollectionUtils.isEmpty(topicList)) {
+                    lists.add(topicList.stream().map(Topic::getId).collect(Collectors.toList()));
+                }
+            }
+        }
 
         //求交集并去重
         return retainTidList(lists, isAddLimitQuery).stream().distinct().collect(Collectors.toList());
@@ -153,7 +168,7 @@ public class ManagerBaseService {
      */
     private List<Long> getTidListByUid(Long uid) {
         // 限制用户 需要关联user-consumer,user-producer
-        List<Long> consumerTids = userConsumerDao.selectTidListByUid(uid);
+        List<Long> consumerTids = userConsumerDao.selectConsumerFeildListByUid(uid, "tid");
         List<Long> producerTids = userProducerDao.selectTidListByUid(uid);
         return Stream.concat(consumerTids.stream(), producerTids.stream()).distinct().collect(Collectors.toList());
     }
@@ -163,7 +178,7 @@ public class ManagerBaseService {
      */
     private List<Long> getTidListByGid(long gid) {
         // 限制组织 需要管理user-group,user-consumer,user-producer
-        List<Long> consumerTids = userConsumerDao.selectTidListByGid(gid);
+        List<Long> consumerTids = userConsumerDao.selectConsumerFeildListByGid(gid, "tid");
         List<Long> producerTids = userProducerDao.selectTidListByGid(gid);
         return Stream.concat(consumerTids.stream(), producerTids.stream()).distinct().collect(Collectors.toList());
     }
@@ -191,6 +206,22 @@ public class ManagerBaseService {
             return topicDao.selectAll().stream().map(Topic::getId).collect(Collectors.toList());
         }
         return Lists.newArrayList(referSet);
+    }
+
+    /**
+     * 返回null 说明该条件可忽略
+     * 返回List 需要纳入限制条件
+     */
+    protected Set<Long> intersectionToSet(List<Long> ... lists){
+        Set<Long> result = null;
+        List<List<Long>> noNullList = Stream.of(lists).filter(Objects::nonNull).collect(Collectors.toList());
+        if (CollectionUtils.isEmpty(noNullList))return result;
+        List<Long> remove = noNullList.remove(0);
+        if (CollectionUtils.isEmpty(noNullList)) return Sets.newHashSet(remove);
+        for (List<Long> list : noNullList) {
+            remove.retainAll(list);
+        }
+        return Sets.newHashSet(remove);
     }
 
     /**

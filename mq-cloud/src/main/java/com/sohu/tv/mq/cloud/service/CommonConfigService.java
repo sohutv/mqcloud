@@ -45,7 +45,21 @@ public class CommonConfigService {
         }
         return Result.getResult(list);
     }
-    
+
+    /**
+     * 查询配置
+     */
+    public Result<CommonConfig> queryByKey(String key) {
+        CommonConfig commonConfig = null;
+        try {
+            commonConfig = commonConfigDao.selectByKey(key);
+        } catch (Exception e) {
+            logger.error("query err:{}", key, e);
+            return Result.getDBErrorResult(e);
+        }
+        return Result.getResult(commonConfig);
+    }
+
     /**
      * 保存配置
      */

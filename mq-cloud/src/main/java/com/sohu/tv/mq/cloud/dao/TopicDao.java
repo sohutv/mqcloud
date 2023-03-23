@@ -92,14 +92,6 @@ public interface TopicDao {
     public List<Topic> selectTrafficWarnEnabledTopic(@Param("clusterId") int clusterId);
     
     /**
-     * 更新记录
-     * 
-     * @param topic
-     */
-    @Update("update topic set queue_num=#{topic.queueNum} where id=#{topic.id}")
-    public Integer update(@Param("topic") Topic topic);
-    
-    /**
      * 更新count
      * 
      * @param topic
@@ -188,13 +180,16 @@ public interface TopicDao {
     
     /**
      * 更新记录
-     * 
-     * @param tid
-     * @param info
+     *
+     * @param topic
      */
-    @Update("update topic set info=#{info} where id=#{tid}")
-    public Integer updateTopicInfo(@Param("tid") long tid, @Param("info") String info);
-    
+    @Update("<script>update topic set id=#{topic.id} "
+            + "<if test=\"topic.info != null\">,info=#{topic.info}</if>"
+            + "<if test=\"topic.queueNum != 0\">,queue_num=#{topic.queueNum}</if>"
+            + "<if test=\"topic.clusterId != 0\">,cluster_id=#{topic.clusterId}</if>"
+            + "where id=#{topic.id}</script>")
+    public Integer update(@Param("topic") Topic topic);
+
     /**
      * 更新记录
      * 
@@ -244,8 +239,11 @@ public interface TopicDao {
      * 依据条件分页查询topic
      * @param limitTids topic uid,gid限制条件
      */
-    @Select("<script>select * from topic where id in "
+    @Select("<script>select * from topic " +
+            "<if test=\"limitTids != null\"> "
+            + "where id in "
             + "<foreach collection=\"limitTids\" item=\"tid\" separator=\",\" open=\"(\" close=\")\">#{tid}</foreach> "
+            + "</if> "
             + "order by count desc "
             + "</script>")
     List<Topic> queryTopicDataByLimit(@Param("limitTids") List<Long> limitTids);

@@ -464,7 +464,10 @@ public class TopicService {
     public Result<?> updateTopic(Topic topic) {
         try {
             // 第一步：更新topic记录
-            Integer count = topicDao.update(topic);
+            Topic dbTopic = new Topic();
+            dbTopic.setId(topic.getId());
+            dbTopic.setQueueNum(topic.getQueueNum());
+            Integer count = topicDao.update(dbTopic);
             if(count == null || count != 1) {
                 return Result.getResult(Status.DB_ERROR);
             }
@@ -678,16 +681,15 @@ public class TopicService {
     }
     
     /**
-     * 更新topic描述
-     * @param topicTrafficList
+     * 更新topic
      * @return
      */
-    public Result<Integer> updateTopicInfo(long tid, String info) {
+    public Result<Integer> updateDBTopic(Topic topic) {
         Integer result = null;
         try {
-            result = topicDao.updateTopicInfo(tid, info);
+            result = topicDao.update(topic);
         } catch (Exception e) {
-            logger.error("updateTopicInfo err, tid:{}, info:{}", tid, info, e);
+            logger.error("updateDBTopic err, topic:{}", topic, e);
             return Result.getDBErrorResult(e);
         }
         return Result.getResult(result);

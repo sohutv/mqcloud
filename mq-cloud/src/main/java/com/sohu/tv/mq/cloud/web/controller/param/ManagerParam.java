@@ -34,6 +34,8 @@ public class ManagerParam {
     // 无消费量
     private Boolean noneConsumerFlows;
 
+    private String topic;
+
     //请求参数
     private String queryStr;
 
@@ -102,6 +104,14 @@ public class ManagerParam {
         this.noneConsumerFlows = noneConsumerFlows;
     }
 
+    public String getTopic() {
+        return topic;
+    }
+
+    public void setTopic(String topic) {
+        this.topic = topic;
+    }
+
     public void buildQueryStr(){
         StringBuilder builder = new StringBuilder();
         if (cid !=null){
@@ -127,6 +137,9 @@ public class ManagerParam {
         }
         if (StringUtils.isNotBlank(groupName)){
             builder.append("&groupName=").append(groupName);
+        }
+        if (StringUtils.isNotBlank(topic)) {
+            builder.append("&topic=").append(topic);
         }
         String query = builder.toString();
         if (query.startsWith("&")){

@@ -7,6 +7,7 @@ import org.apache.rocketmq.tools.admin.MQAdminExt;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.CommandLineRunner;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -24,7 +25,7 @@ import com.sohu.tv.mq.cloud.util.Result;
  * @date 2019年9月23日
  */
 @Component
-public class ClusterInfoUpdateTask {
+public class ClusterInfoUpdateTask implements CommandLineRunner {
     
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
@@ -70,4 +71,8 @@ public class ClusterInfoUpdateTask {
         logger.info("update cluster info end! use:{}ms", System.currentTimeMillis() - start);
     }
 
+    @Override
+    public void run(String... args) throws Exception {
+        updateClusterInfo();
+    }
 }

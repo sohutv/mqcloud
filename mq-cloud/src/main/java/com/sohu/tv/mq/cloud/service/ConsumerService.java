@@ -685,6 +685,57 @@ public class ConsumerService {
     }
 
     /**
+     * 查询topic被哪些消费者消费
+     * @param cluster
+     * @param topic
+     * @return
+     */
+    public Result<GroupList> queryTopicConsumeByWho(Cluster cluster, String topic) {
+        return mqAdminTemplate.execute(new MQAdminCallback<Result<GroupList>>() {
+            public Result<GroupList> callback(MQAdminExt mqAdmin) throws Exception {
+                GroupList groupList = mqAdmin.queryTopicConsumeByWho(topic);
+                return Result.getResult(groupList);
+            }
+
+            public Result<GroupList> exception(Exception e) {
+                logger.error("queryTopicConsumeByWho:{} err}", topic, e);
+                return Result.getWebErrorResult(e);
+            }
+
+            public Cluster mqCluster() {
+                return cluster;
+            }
+        });
+    }
+
+    /**
+     * 查询所有消费者
+     *
+     * @param mqCluster
+     * @return
+     */
+    public Result<SubscriptionGroupWrapper> queryAllConsumer(Cluster mqCluster) {
+        return mqAdminTemplate.execute(new MQAdminCallback<Result<SubscriptionGroupWrapper>>() {
+            public Result<SubscriptionGroupWrapper> callback(MQAdminExt mqAdmin) throws Exception {
+                long start = System.currentTimeMillis();
+                Set<String> masterSet = CommandUtil.fetchMasterAddrByClusterName(mqAdmin, mqCluster.getName());
+                SubscriptionGroupWrapper subscriptionGroupWrapper = mqAdmin.getAllSubscriptionGroup(masterSet.iterator().next(), 5000);
+                return Result.getResult(subscriptionGroupWrapper);
+            }
+
+            @Override
+            public Result<SubscriptionGroupWrapper> exception(Exception e) throws Exception {
+                logger.error("queryAllConsumer:{} err", e.toString());
+                return Result.getWebErrorResult(e);
+            }
+
+            public Cluster mqCluster() {
+                return mqCluster;
+            }
+        });
+    }
+
+    /**
      * 初始化consumer（从集群导入到数据库中），可以执行多次，因为数据库有唯一索引
      * 该方法适用于公司内部已经搭建了mq集群，想使用mqcloud进行管理
      * 
