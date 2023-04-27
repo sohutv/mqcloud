@@ -600,15 +600,42 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware, Comm
     }
 
     public boolean threadMetricSupported(String version) {
-        return version.compareTo(threadMetricSupportedVersion) >= 0;
+        return compareTo(version, threadMetricSupportedVersion) >= 0;
     }
 
     public boolean consumeFailedMetricSupported(String version) {
-        return version.compareTo(consumeFailedMetricSupportedVersion) >= 0;
+        return compareTo(version, consumeFailedMetricSupportedVersion) >= 0;
     }
-    
+
     public boolean consumeTimespanMessageSupported(String version) {
-        return version.compareTo(consumeTimespanMessageSupportedVersion) >= 0;
+        return compareTo(version, consumeTimespanMessageSupportedVersion) >= 0;
+    }
+
+    /**
+     * 版本号比较
+     * @param v1
+     * @param v2
+     * @return 0:相等 1:v1>v2 -1:v1<v2
+     */
+    public int compareTo(String v1, String v2) {
+        String[] v1Array = v1.split("\\.");
+        String[] v2Array = v2.split("\\.");
+        int length = Math.min(v1Array.length, v2Array.length);
+        for (int i = 0; i < length; i++) {
+            int v1Int = Integer.parseInt(v1Array[i]);
+            int v2Int = Integer.parseInt(v2Array[i]);
+            if (v1Int > v2Int) {
+                return 1;
+            } else if (v1Int < v2Int) {
+                return -1;
+            }
+        }
+        if (v1Array.length > v2Array.length) {
+            return 1;
+        } else if (v1Array.length < v2Array.length) {
+            return -1;
+        }
+        return 0;
     }
     
     public String getMachineRoomColor(String room) {
