@@ -123,7 +123,7 @@ public abstract class AbstractMessageConsumer<T, C> implements IMessageConsumer<
                     consume(mqMessage.getMessage(), mqMessage.getMessageExt());
                 } catch (Throwable e) {
                     logger.error("consume topic:{} consumer:{} msgId:{} bornTimestamp:{}",
-                            rocketMQConsumer.getTopic(), group, mqMessage.getMessageExt().getMsgId(),
+                            rocketMQConsumer.getTopic(), group, mqMessage.getMsgId(),
                             mqMessage.getMessageExt().getBornTimestamp(), e);
                     ConsumeStatManager.getInstance().getConsumeFailedMetrics(group)
                             .set(buildMessageExceptionMetric(mqMessage, e));

@@ -141,6 +141,14 @@ public class MQMessage<T> {
         return innerMessage instanceof MessageClientExt ? ((MessageClientExt)innerMessage).getOffsetMsgId() : null;
     }
 
+    public String getMsgId() {
+        String msgId = buildOffsetMsgId();
+        if (msgId == null) {
+            msgId = getMessageExt().getMsgId();
+        }
+        return msgId;
+    }
+
     public static <T> MQMessage<T> build(T message) {
         MQMessage<T> mqMessage = new MQMessage<>();
         mqMessage.setMessage(message);
