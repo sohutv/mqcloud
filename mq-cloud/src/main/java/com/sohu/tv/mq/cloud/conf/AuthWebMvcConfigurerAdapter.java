@@ -1,9 +1,10 @@
 package com.sohu.tv.mq.cloud.conf;
 
+import com.sohu.tv.mq.cloud.processor.EmptyStringModelAttributeMethodProcessor;
 import com.sohu.tv.mq.cloud.web.interceptor.AdminInterceptor;
 import com.sohu.tv.mq.cloud.web.interceptor.AuthInterceptor;
 import com.sohu.tv.mq.cloud.web.interceptor.UserGuideInterceptor;
-import com.sohu.tv.mq.cloud.web.service.UserInfoMethodArgumentResolver;
+import com.sohu.tv.mq.cloud.processor.UserInfoMethodArgumentResolver;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
@@ -56,6 +57,7 @@ public class AuthWebMvcConfigurerAdapter extends WebMvcConfigurerAdapter {
     @Override
     public void addArgumentResolvers(List<HandlerMethodArgumentResolver> argumentResolvers) {
         argumentResolvers.add(uerInfoMethodArgumentResolver());
+        argumentResolvers.add(emptyStringModelAttributeMethodProcessor());
         super.addArgumentResolvers(argumentResolvers);
     }
 
@@ -72,5 +74,14 @@ public class AuthWebMvcConfigurerAdapter extends WebMvcConfigurerAdapter {
         resolver.setDefaultViews(Collections.singletonList(new MappingJackson2JsonView()));
         resolver.setViewResolvers(viewResolvers);
         return resolver;
+    }
+
+    /**
+     * 配置空字符串参数处理
+     * @return EmptyStringModelAttributeMethodProcessor
+     */
+    @Bean
+    public EmptyStringModelAttributeMethodProcessor emptyStringModelAttributeMethodProcessor() {
+        return new EmptyStringModelAttributeMethodProcessor(true);
     }
 }
