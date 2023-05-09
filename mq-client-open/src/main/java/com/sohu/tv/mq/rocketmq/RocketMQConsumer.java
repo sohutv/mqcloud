@@ -718,8 +718,14 @@ public class RocketMQConsumer extends AbstractConfig {
         return consumerParameterTypeClass;
     }
 
+    public void setConsumerParameterTypeClass(Class clz){
+        this.consumerParameterTypeClass = clz;
+    }
+
     public void initConsumerParameterTypeClass() {
-        consumerParameterTypeClass = detectConsumerParameterTypeClass();
+        if (consumerParameterTypeClass == null) {
+            consumerParameterTypeClass = detectConsumerParameterTypeClass();
+        }
     }
 
     /**

@@ -75,6 +75,9 @@ public class ConsumerService {
     @Autowired
     private MQProxyService mqProxyService;
 
+    @Autowired
+    private AlarmConfigService alarmConfigService;
+
     /**
      * 保存Consumer记录
      * 
@@ -542,6 +545,8 @@ public class ConsumerService {
             if (consumer.isClustering()) {
                 topicService.deleteTopicOnCluster(mqCluster, MixAll.RETRY_GROUP_TOPIC_PREFIX + consumer.getName());
             }
+            // 第四步：删除consumer报警配置
+            alarmConfigService.deleteByConsumer(consumer.getName());
         } catch (Exception e) {
             logger.error("deleteConsumer:{}", consumer.getName(), e);
             TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();

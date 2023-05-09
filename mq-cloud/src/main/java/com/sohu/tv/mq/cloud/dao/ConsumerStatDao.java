@@ -1,11 +1,15 @@
 package com.sohu.tv.mq.cloud.dao;
 
-import java.util.List;
-
-import org.apache.ibatis.annotations.*;
-
 import com.sohu.tv.mq.cloud.bo.ConsumerBlock;
 import com.sohu.tv.mq.cloud.bo.ConsumerStat;
+import com.sohu.tv.mq.cloud.bo.Topic;
+import org.apache.ibatis.annotations.Insert;
+import org.apache.ibatis.annotations.Options;
+import org.apache.ibatis.annotations.Param;
+import org.apache.ibatis.annotations.Select;
+
+import java.util.Collection;
+import java.util.List;
 /**
  * 消费者状态
  * @author yongfeigao
@@ -86,16 +90,20 @@ public interface ConsumerStatDao {
 			@Param("broker") String broker,
 			@Param("qid") int qid, 
 			@Param("offsetMovedTime")long offsetMovedTime);
-	
+
+	@Select("select count(1) from consumer_stat")
+	public Integer selectConsumerStatCount();
+
 	@Select("select id,consumer_group consumerGroup,topic,undone_msg_count undoneMsgCount," +
 			"undone_1q_msg_count undone1qMsgCount," +
 			"undone_delay undoneDelay,sbscription,updatetime" +
-			" FROM consumer_stat ORDER BY updatetime desc")
-	public List<ConsumerStat> getConsumerStat();
-	
-	@Select("select csid,instance,broker,qid,block_time blockTime,updatetime," +
+			" FROM consumer_stat ORDER BY updatetime desc limit #{m},#{n}")
+	public List<ConsumerStat> getConsumerStat(@Param("m") int offset, @Param("n") int size);
+
+	@Select("<script>select csid,instance,broker,qid,block_time blockTime,updatetime," +
 			"offset_moved_time offsetMovedTime, offset_moved_times offsetMovedTimes " +
-			"FROM consumer_block " +
-			"ORDER BY updatetime desc")
-	public List<ConsumerBlock> getConsumerBlock();
+			"FROM consumer_block where csid in " +
+			"<foreach collection=\"csList\" item=\"cs\" separator=\",\" open=\"(\" close=\")\">#{cs.id}</foreach>" +
+			" ORDER BY updatetime desc</script>")
+	public List<ConsumerBlock> getConsumerBlock(@Param("csList") List<ConsumerStat> consumerStats);
 }
