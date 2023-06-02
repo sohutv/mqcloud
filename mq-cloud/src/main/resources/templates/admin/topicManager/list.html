@@ -95,7 +95,6 @@
 			</#if>
 			</td>
 			<td style="text-align:center;vertical-align:middle;">
-<!--				<button type="button" class="btn btn-sm btn-success" title="关联生产者" data-target="#relationProducer" data-toggle="modal" onclick="loadParams('${manager.topic.name}','${manager.topic.id}');"><span class="glyphicon glyphicon-plus" aria-hidden="true"></span></button>-->
 				<button type="button" class="btn btn-sm btn-success" title="检查Topic" data-target="#topicDeleteCheck" data-toggle="modal" onclick="loadDeleteCheck('${manager.topic.name}','${manager.topic.id}','${manager.topic.effective}');"><span class="glyphicon glyphicon-check" aria-hidden="true"></span></button>
 				<button type="button" class="btn btn-sm btn-success" title="迁移Topic" data-target="#copyTopicModal" data-toggle="modal" onclick="copyTopicShow('${manager.topic.id}','${manager.topic.name}','${manager.topic.clusterId}','${manager.topic.cluster.name}');"><span class="glyphicon glyphicon-copy" aria-hidden="true"></span></button>
 			</td>
@@ -138,56 +137,6 @@
 					保存
 				</button>
 			</div>
-		</div>
-	</div>
-</div>
-
-<div id="relationProducer" class="modal fade" tabindex="-1" data-width="400">
-	<div class="modal-dialog">
-		<div class="modal-content">
-			<div class="modal-header">
-				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-				<h4 class="modal-title"><b id="auditDetailUser"></b>关联生产者<b id="auditDetailAction"></b></h4>
-			</div>
-			<form class="form-horizontal form-bordered form-row-stripped" id="addProducerReleation">
-				<div class="modal-body">
-					<div class="row">
-						<div class="col-md-12">
-							<div class="form-body">
-								<div class="form-group">
-									<label class="control-label col-md-4"> 当前topic: </label>
-									<div class="col-md-6">
-										<input type="hidden" name="tid" id="topicid" class="form-control" />
-										<div class="form-control-static" style="border:0;border-radius:5px;background-color:rgba(241,241,241,.98);padding-left:10px">
-											<span id="topicName" style="word-break:break-all;text-align: center"></span>
-										</div>
-									</div>
-								</div>
-								<div class="form-group">
-									<label class="control-label col-md-4"> 生产者(多个用;分隔): </label>
-									<div class="col-md-6">
-										<input type="text" name="pNames" id="addProducerNames" class="form-control" />
-									</div>
-								</div>
-								<div class="form-group">
-									<label class="control-label col-md-4"> 所属用户: </label>
-									<div class="col-md-6">
-										<select id="nodeUser" class="selectpicker" title="搜索人员" data-live-search-placeholder="输入搜索内容" name="userId" data-live-search="true"></select>
-									</div>
-								</div>
-							</div>
-						</div>
-					</div>
-				</div>
-				<div class="modal-footer">
-					<button type="button" class="btn btn-default" data-dismiss="modal">
-						关闭
-					</button>
-					<button type="button" id="addRelation" class="btn btn-primary" onclick="addRelationForTopic()">
-						保存
-					</button>
-				</div>
-			</form>
 		</div>
 	</div>
 </div>
@@ -583,21 +532,6 @@
 			return formatNum(value / 1000) +'千';
 		}
 		return value;
-	}
-
-	function addRelationForTopic(){
-		disable("addRelation");
-		$.post('${request.contextPath}/admin/topicManager/addProducer',
-				$("#addProducerReleation").serialize(),
-				function(data){
-					if(data.result.status == 200){
-						toastr.success("已添加，将重新刷新");
-						reload();
-					}else{
-						toastr.error("新增失败！"+data.result.message);
-						enable("nameServerDeleteBtn");
-					}
-				}, 'json');
 	}
 
 	function loadParams(name,id){
