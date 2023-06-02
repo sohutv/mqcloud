@@ -38,10 +38,10 @@
 										</tbody>
 										<script>
 											<#if trace.producerRequestView??>
-												$("#jsonviewProducer" + ${trace_index + 1}).JSONView(${trace.producerToJsonString()});
+												$("#jsonviewProducer" + ${trace_index + 1}).jsonViewer(${trace.producerToJsonString()});
 											</#if>
 											<#if trace.consumerRequestViewList??>
-												$("#jsonviewConsumer" + ${trace_index + 1}).JSONView(${trace.consumerToJsonString()});
+												$("#jsonviewConsumer" + ${trace_index + 1}).jsonViewer(${trace.consumerToJsonString()});
 											</#if>
 										</script>
 									</table>

@@ -1,5 +1,6 @@
 package com.sohu.tv.mq.cloud.bo;
 
+import com.sohu.tv.mq.cloud.util.WebUtil;
 import com.sohu.tv.mq.serializable.MessageSerializerEnum;
 import com.sohu.tv.mq.util.CommonUtil;
 import com.sohu.tv.mq.util.JSONUtil;
@@ -25,12 +26,16 @@ public class DecodedMessage extends MessageExt {
     private String consumer;
     // broker端的msgid
     private String offsetMsgId;
+    // 消息字节长度
+    private int msgLength;
     
     // 消息体类型
     private MessageBodyType messageBodyType;
     
     // 消息体序列化方式
     private MessageSerializerEnum messageBodySerializer;
+
+    private long timerDeliverTime;
 
     public String getBroker() {
         return broker;
@@ -85,6 +90,9 @@ public class DecodedMessage extends MessageExt {
         map.put("born", getBornTimestamp());
         map.put("client", address(getBornHost()));
         map.put("store", getStoreTimestamp());
+        if(timerDeliverTime > 0) {
+            map.put("msgId", getMsgId());
+        }
         return JSONUtil.toJSONString(map);
     }
     
@@ -141,6 +149,30 @@ public class DecodedMessage extends MessageExt {
     
     public void setMessageBodySerializer(MessageSerializerEnum messageBodySerializer) {
         this.messageBodySerializer = messageBodySerializer;
+    }
+
+    public int getMsgLength() {
+        return msgLength;
+    }
+
+    public void setMsgLength(int msgLength) {
+        this.msgLength = msgLength;
+    }
+
+    public String getFormatMsgLength() {
+        return WebUtil.sizeFormat(msgLength);
+    }
+
+    public long getTimerDeliverTime() {
+        return timerDeliverTime;
+    }
+
+    public void setTimerDeliverTime(long timerDeliverTime) {
+        this.timerDeliverTime = timerDeliverTime;
+    }
+
+    public boolean isDeliverTimeUp() {
+        return System.currentTimeMillis() >= timerDeliverTime;
     }
 
     /**
