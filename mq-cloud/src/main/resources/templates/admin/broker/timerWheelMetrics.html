@@ -1,0 +1,18 @@
+<#if !response.OK>
+    <tr class="no_more_data"><td class="text-center" colspan="4">异常！${response.message}</td></tr>
+<#else>
+    <#if response.result.timingCount?size == 0>
+        <tr class="no_more_data"><td class="text-center" colspan="4">暂无数据</td></tr>
+    <#else>
+        <#assign index = 1>
+        <#list response.result.timingCount?keys as topic>
+            <tr>
+                <td>${index}</td>
+                <td><a href="/topic/detail?topic=${topic}">${topic}</a></td>
+                <td>${response.result.timingCount[topic].count}</td>
+                <td>${response.result.timingCount[topic].timeStamp?number_to_datetime?string("yyyy-MM-dd HH:mm:ss")}</td>
+            </tr>
+            <#assign index = index+1>
+        </#list>
+    </#if>
+</#if>

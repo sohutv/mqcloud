@@ -1,8 +1,6 @@
 package com.sohu.tv.mq.cloud.web.vo;
 
-import com.sohu.tv.mq.cloud.bo.Broker;
-import com.sohu.tv.mq.cloud.bo.Cluster;
-import com.sohu.tv.mq.cloud.bo.NameServer;
+import com.sohu.tv.mq.cloud.bo.*;
 import org.apache.commons.lang3.math.NumberUtils;
 
 import java.util.ArrayList;
@@ -35,6 +33,26 @@ public class ServerRoleVO {
         roleVO.setClusterName(cluster.getName());
         roleVO.setClusterId(cluster.getId());
         roleVO.setDeployment("ns");
+        roleVOList.add(roleVO);
+    }
+
+    public void addProxy(Proxy proxy, Cluster cluster) {
+        RoleVO roleVO = new RoleVO();
+        roleVO.setPort(NumberUtils.toInt(proxy.getAddr().split(":")[1]));
+        roleVO.setBaseDir(proxy.getBaseDir());
+        roleVO.setClusterName(cluster.getName());
+        roleVO.setClusterId(cluster.getId());
+        roleVO.setDeployment("proxy");
+        roleVOList.add(roleVO);
+    }
+
+    public void addController(Controller controller, Cluster cluster) {
+        RoleVO roleVO = new RoleVO();
+        roleVO.setPort(NumberUtils.toInt(controller.getAddr().split(":")[1]));
+        roleVO.setBaseDir(controller.getBaseDir());
+        roleVO.setClusterName(cluster.getName());
+        roleVO.setClusterId(cluster.getId());
+        roleVO.setDeployment("controller");
         roleVOList.add(roleVO);
     }
 

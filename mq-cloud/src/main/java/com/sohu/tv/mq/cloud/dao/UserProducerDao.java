@@ -115,9 +115,9 @@ public interface UserProducerDao {
      * 
      * @param consumer
      */
-    @Insert("<script>insert into user_producer(uid, tid, producer) values"
+    @Insert("<script>insert into user_producer(uid, tid, producer, http_enabled) values"
             + "<foreach collection=\"upList\" item=\"up\" separator=\",\">"
-            + "(#{up.uid},#{up.tid},#{up.producer})"
+            + "(#{up.uid},#{up.tid},#{up.producer},#{up.httpEnabled})"
             + "</foreach></script>")
     public Integer batchInsert(@Param("upList") List<UserProducer> userProducerList);
 

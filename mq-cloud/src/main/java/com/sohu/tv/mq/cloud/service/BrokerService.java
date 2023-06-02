@@ -4,6 +4,7 @@ import com.sohu.tv.mq.cloud.bo.Broker;
 import com.sohu.tv.mq.cloud.bo.CheckStatusEnum;
 import com.sohu.tv.mq.cloud.bo.Cluster;
 import com.sohu.tv.mq.cloud.common.model.BrokerRateLimitData;
+import com.sohu.tv.mq.cloud.common.model.TimerMetricsSerializeWrapper;
 import com.sohu.tv.mq.cloud.common.model.TopicRateLimit;
 import com.sohu.tv.mq.cloud.common.model.UpdateSendMsgRateLimitRequestHeader;
 import com.sohu.tv.mq.cloud.common.mq.SohuMQAdmin;
@@ -12,6 +13,7 @@ import com.sohu.tv.mq.cloud.mq.DefaultCallback;
 import com.sohu.tv.mq.cloud.mq.MQAdminTemplate;
 import com.sohu.tv.mq.cloud.util.Result;
 import com.sohu.tv.mq.cloud.util.Status;
+import org.apache.rocketmq.client.exception.MQBrokerException;
 import org.apache.rocketmq.client.exception.MQClientException;
 import org.apache.rocketmq.remoting.protocol.RemotingSysResponseCode;
 import org.apache.rocketmq.tools.admin.MQAdminExt;
@@ -285,5 +287,30 @@ public class BrokerService {
             return Result.getDBErrorResult(e);
         }
         return Result.getResult(result);
+    }
+
+    /**
+     * 获取broker的timerWheel信息
+     */
+    public Result<?> getTimerWheelMetrics(int cid, String brokerAddr) {
+        return mqAdminTemplate.execute(new DefaultCallback<Result<Void>>() {
+            public Cluster mqCluster() {
+                return clusterService.getMQClusterById(cid);
+            }
+
+            public Result<Void> callback(MQAdminExt mqAdmin) throws Exception {
+                TimerMetricsSerializeWrapper timerMetricsSerializeWrapper = ((SohuMQAdmin) mqAdmin).getTimerWheelMetrics(brokerAddr);
+                return Result.getResult(timerMetricsSerializeWrapper);
+            }
+
+            public Result<Void> exception(Exception e) {
+                logger.error("cid:{}, brokerAddr:{} getTimerWheelMetrics err", cid, brokerAddr, e);
+                if (e instanceof MQBrokerException &&
+                        ((MQBrokerException) e).getResponseCode() == RemotingSysResponseCode.REQUEST_CODE_NOT_SUPPORTED) {
+                    return Result.getResult(Status.BROKER_UNSUPPORTED_ERROR);
+                }
+                return Result.getDBErrorResult(e);
+            }
+        });
     }
 }

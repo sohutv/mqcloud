@@ -1,12 +1,12 @@
 package com.sohu.tv.mq.cloud.web.vo;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
 import com.sohu.tv.mq.cloud.bo.CheckStatusEnum;
 import com.sohu.tv.mq.cloud.util.MessageDelayLevel;
 import com.sohu.tv.mq.cloud.util.WebUtil;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 /**
  * broker状态
@@ -39,6 +39,26 @@ public class BrokerStatVO {
 
     // 是否可以写入
     private boolean writable = true;
+
+    /**
+     * 时间轮生产流程
+     * 1.TimerEnqueueGetService从rmq_sys_wheel_timer拉取消息,封装TimerRequest写入enqueuePutQueue
+     * 2.TimerEnqueuePutService从enqueuePutQueue拉取TimerRequest,封装TimerLog绑定时间轮
+     * 时间轮消费流程
+     * 1.TimerDequeueGetService从时间轮拉取TimerLog,封装TimerRequest写入dequeueGetQueue
+     * 2.TimerDequeueGetMessageService从dequeueGetQueue拉取TimerRequest,获取真实消息写入dequeuePutQueue
+     * 3.TimerDequeuePutMessageService从dequeuePutQueue拉取消息转换为原始消息投入原始队列
+     */
+    // 从enqueuePutQueue写入时间轮，表示数据写入时间轮的吞吐
+    private float timerEnqueueTps;
+    // 从dequeuePutQueue写入原始topic，表示消息写入原始topic的吞吐
+    private float timerDequeueTps;
+    // rmq_sys_wheel_timer还有多少消息未入queue，表示拉取rmq_sys_wheel_timer消息的落后量
+    private long timerOffsetBehind;
+    // TimerLog入dequeueGetQueue的落后时间，表示消费时间轮的落后时间
+    private long timerReadBehind;
+    // 时间轮还有多少消息，表示时间轮有多少消息未到时
+    private long timerCongestNum;
 
     public Map<String, String> getInfo() {
         return info;
@@ -137,6 +157,54 @@ public class BrokerStatVO {
 
     public void setWritable(boolean writable) {
         this.writable = writable;
+    }
+
+    public float getTimerEnqueueTps() {
+        return timerEnqueueTps;
+    }
+
+    public String getTimerEnqueueTpsFormat() {
+        return WebUtil.format(timerEnqueueTps);
+    }
+
+    public void setTimerEnqueueTps(float timerEnqueueTps) {
+        this.timerEnqueueTps = timerEnqueueTps;
+    }
+
+    public float getTimerDequeueTps() {
+        return timerDequeueTps;
+    }
+
+    public String getTimerDequeueTpsFormat() {
+        return WebUtil.format(timerDequeueTps);
+    }
+
+    public void setTimerDequeueTps(float timerDequeueTps) {
+        this.timerDequeueTps = timerDequeueTps;
+    }
+
+    public long getTimerOffsetBehind() {
+        return timerOffsetBehind;
+    }
+
+    public void setTimerOffsetBehind(long timerOffsetBehind) {
+        this.timerOffsetBehind = timerOffsetBehind;
+    }
+
+    public long getTimerReadBehind() {
+        return timerReadBehind;
+    }
+
+    public void setTimerReadBehind(long timerReadBehind) {
+        this.timerReadBehind = timerReadBehind;
+    }
+
+    public long getTimerCongestNum() {
+        return timerCongestNum;
+    }
+
+    public void setTimerCongestNum(long timerCongestNum) {
+        this.timerCongestNum = timerCongestNum;
     }
 
     public class DelayQueue {

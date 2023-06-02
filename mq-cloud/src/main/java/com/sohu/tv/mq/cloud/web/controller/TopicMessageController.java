@@ -194,6 +194,42 @@ public class TopicMessageController extends ViewController {
     }
 
     /**
+     * 搜索
+     *
+     * @return
+     * @throws Exception
+     */
+    @RequestMapping("/timerWheel/search")
+    public String timerWheelSearch(UserInfo userInfo,
+                         HttpServletRequest request,
+                         HttpServletResponse response,
+                         @RequestParam("timerWheelStartTime") Long startTime,
+                         @RequestParam("timerWheelEndTime") Long endTime,
+                         @RequestParam("append") boolean append,
+                         @RequestParam(name = "timerWheelKey", required = false) String key,
+                         @RequestParam(name = "messageParam") String messageParam,
+                         Map<String, Object> map) throws Exception {
+        String view = viewModule() + "/timerWheelSearch";
+        // 解析参数对象
+        if (StringUtils.isEmpty(key)) {
+            key = null;
+        } else {
+            key = key.trim();
+        }
+        MessageQueryCondition messageQueryCondition = parseParam(startTime, endTime, key, messageParam, append);
+        if (messageQueryCondition == null) {
+            setResult(map, Result.getResult(Status.PARAM_ERROR));
+            return view;
+        }
+        messageQueryCondition.setTimerWheelSearch(true);
+        // 消息查询
+        Result<MessageData> result = messageService.queryMessage(messageQueryCondition, false);
+        setResult(map, result);
+        setTraceEnabled(map, messageQueryCondition.getTopic());
+        return view;
+    }
+
+    /**
      * 根据msgId查询消息
      * 
      * @return

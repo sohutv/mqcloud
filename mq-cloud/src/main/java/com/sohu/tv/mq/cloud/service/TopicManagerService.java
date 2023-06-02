@@ -2,13 +2,14 @@ package com.sohu.tv.mq.cloud.service;
 
 import com.google.common.collect.Lists;
 import com.sohu.tv.mq.cloud.bo.*;
-import com.sohu.tv.mq.cloud.dao.*;
+import com.sohu.tv.mq.cloud.dao.ClusterDao;
+import com.sohu.tv.mq.cloud.dao.ConsumerDao;
+import com.sohu.tv.mq.cloud.dao.ConsumerTrafficDao;
 import com.sohu.tv.mq.cloud.util.DateUtil;
 import com.sohu.tv.mq.cloud.util.Result;
-import com.sohu.tv.mq.cloud.util.Status;
 import com.sohu.tv.mq.cloud.util.WebUtil;
-import com.sohu.tv.mq.cloud.web.controller.param.PaginationParam;
 import com.sohu.tv.mq.cloud.web.controller.param.ManagerParam;
+import com.sohu.tv.mq.cloud.web.controller.param.PaginationParam;
 import com.sohu.tv.mq.cloud.web.vo.TopicManagerInfoVo;
 import com.sohu.tv.mq.cloud.web.vo.TopicStateVo;
 import com.sohu.tv.mq.cloud.web.vo.UserInfo;
@@ -21,10 +22,8 @@ import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * @author fengwang219475
@@ -99,39 +98,6 @@ public class TopicManagerService extends ManagerBaseService{
         } catch (Exception e) {
             e.printStackTrace();
             logger.error("query topic result is err,the err message is {}",e.getCause().getMessage());
-            return Result.getDBErrorResult(e);
-        }
-    }
-
-    /**
-     * 增加生产者
-     */
-    public Result<?> addProducers(Long tid, String pNames, Long userId,HttpServletRequest request) {
-        try {
-            String[] productNameList = pNames.split(SPLIT_STR);
-            List<UserProducer> list = new ArrayList<>(productNameList.length);
-            //校验相同生产者是否存在
-            String existName = userProducerDao.checkExistByName(Lists.newArrayList(productNameList));
-            if (existName != null){
-                return Result.getResult(Status.DB_DUPLICATE_KEY).setMessage(existName + "已存在");
-            }
-            for (String name : productNameList) {
-                UserProducer userProducer = new UserProducer();
-                userProducer.setProducer(name);
-                userProducer.setUid(userId);
-                userProducer.setTid(tid);
-                list.add(userProducer);
-            }
-            if (CollectionUtils.isEmpty(list)) {
-                return Result.getOKResult();
-            }
-            Integer batchInsertCount = userProducerDao.batchInsert(list);
-            UserInfo userInfo = (UserInfo) WebUtil.getAttribute(request, UserInfo.USER_INFO);
-            logger.warn("add producer for topic,the topic id is {},producer names is {},the operator is {},the date is {}",
-                    tid,pNames,userInfo.getUser().getEmail(),DateUtil.formatYMD(new Date()));
-            return Result.getResult(batchInsertCount);
-        } catch (Exception e) {
-            logger.error("addProducers is err,the err message is {}",e.getMessage());
             return Result.getDBErrorResult(e);
         }
     }

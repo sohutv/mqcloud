@@ -1,9 +1,11 @@
 package com.sohu.tv.mq.cloud.mq;
 
+import com.sohu.tv.mq.cloud.Application;
 import com.sohu.tv.mq.cloud.common.model.BrokerMomentStatsData;
 import com.sohu.tv.mq.cloud.common.model.BrokerRateLimitData;
 import com.sohu.tv.mq.cloud.common.model.BrokerStoreStat;
 import com.sohu.tv.mq.cloud.common.model.UpdateSendMsgRateLimitRequestHeader;
+import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper;
 import org.apache.rocketmq.common.protocol.RequestCode;
 import org.apache.rocketmq.common.protocol.header.ConsumerSendMsgBackRequestHeader;
 import org.apache.rocketmq.common.protocol.header.SendMessageRequestHeader;
@@ -11,10 +13,14 @@ import org.apache.rocketmq.remoting.exception.RemotingConnectException;
 import org.apache.rocketmq.remoting.exception.RemotingSendRequestException;
 import org.apache.rocketmq.remoting.exception.RemotingTimeoutException;
 import org.apache.rocketmq.remoting.protocol.RemotingCommand;
-import org.junit.AfterClass;
+import org.junit.After;
 import org.junit.Assert;
-import org.junit.BeforeClass;
+import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.junit4.SpringRunner;
 
 import static org.junit.Assert.assertTrue;
 
@@ -22,8 +28,14 @@ import static org.junit.Assert.assertTrue;
  * @author: yongfeigao
  * @date: 2022/4/6 11:08
  */
+@RunWith(SpringRunner.class)
+@SpringBootTest(classes = Application.class)
 public class DefaultSohuMQAdminTest {
-    private static DefaultSohuMQAdmin sohuMQAdmin;
+
+    @Autowired
+    private MQCloudConfigHelper mqCloudConfigHelper;
+
+    private DefaultSohuMQAdmin sohuMQAdmin;
 
     @Test
     public void testGetBrokerStoreStats() throws Exception {
@@ -73,7 +85,7 @@ public class DefaultSohuMQAdminTest {
         sohuMQAdmin.updateSendMessageRateLimit("127.0.0.1:8888", updateSendMsgRateLimitRequestHeader);
     }
 
-    public static void sendMessageMock() throws RemotingConnectException, RemotingSendRequestException, RemotingTimeoutException, NoSuchFieldException, SecurityException, IllegalArgumentException, IllegalAccessException, InterruptedException {
+    public void sendMessageMock() throws RemotingConnectException, RemotingSendRequestException, RemotingTimeoutException, NoSuchFieldException, SecurityException, IllegalArgumentException, IllegalAccessException, InterruptedException {
         SendMessageRequestHeader requestHeader = new SendMessageRequestHeader();
         String topic = "SELF_TEST_TOPIC";
         requestHeader.setProducerGroup("testGroup");
@@ -116,9 +128,9 @@ public class DefaultSohuMQAdminTest {
         }
     }
 
-    @BeforeClass
-    public static void setup() throws Exception {
-        sohuMQAdmin = new DefaultSohuMQAdmin();
+    @Before
+    public void setup() throws Exception {
+        sohuMQAdmin = new DefaultSohuMQAdmin(mqCloudConfigHelper);
         sohuMQAdmin.start();
     }
 
@@ -135,8 +147,8 @@ public class DefaultSohuMQAdminTest {
         }).start();
     }
 
-    @AfterClass
-    public static void destroy() {
+    @After
+    public void destroy() {
         sohuMQAdmin.shutdown();
     }
 

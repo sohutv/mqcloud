@@ -1,21 +1,17 @@
 package com.sohu.tv.mq.cloud.web.controller.admin;
 
-import java.util.Map;
-
-import org.apache.commons.lang3.math.NumberUtils;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.servlet.ModelAndView;
-
 import com.sohu.tv.mq.cloud.service.MQDeployer;
 import com.sohu.tv.mq.cloud.util.Result;
+import com.sohu.tv.mq.cloud.util.RocketMQVersion;
 import com.sohu.tv.mq.cloud.util.Status;
 import com.sohu.tv.mq.cloud.web.controller.param.StoreFileParam;
 import com.sohu.tv.mq.cloud.web.vo.UserInfo;
+import org.apache.commons.lang3.math.NumberUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.ModelAndView;
+
+import java.util.Map;
 
 /**
  * 部署控制器
@@ -105,12 +101,12 @@ public class AdminDeployController extends AdminViewController {
      * 拷贝
      * @return
      */
-    @RequestMapping(value="/scp", method=RequestMethod.POST)
-    public Result<?> scp(UserInfo ui, @RequestParam(name="ip") String ip) {
+    @RequestMapping(value = "/scp", method = RequestMethod.POST)
+    public Result<?> scp(UserInfo ui, @RequestParam(name = "ip") String ip, @RequestParam(name = "v") String version) {
         logger.warn("scp:{}, user:{}", ip, ui);
         // 远程拷贝文件
-        Result<?> wgetResult = mqDeployer.scp(ip);
-        if(wgetResult.isNotOK()) {
+        Result<?> wgetResult = mqDeployer.scp(ip, RocketMQVersion.getRocketMQVersion(version));
+        if (wgetResult.isNotOK()) {
             return wgetResult;
         }
         return Result.getOKResult();
@@ -136,11 +132,10 @@ public class AdminDeployController extends AdminViewController {
      * @return
      */
     @RequestMapping(value="/config/ns", method=RequestMethod.POST)
-    public Result<?> configNS(UserInfo ui, @RequestParam(name="ip") String ip, @RequestParam(name="listenPort") int port, 
-            @RequestParam(name="dir") String dir) {
-        logger.warn("configNS:{}, dir:{}, port:{}, user:{}", ip, dir, port, ui);
+    public Result<?> configNS(UserInfo ui, @RequestParam Map<String, Object> param) {
+        logger.warn("configNS, param, user:{}", param, ui);
         // 配置
-        Result<?> configResult = mqDeployer.configNameServer(ip, port, dir);
+        Result<?> configResult = mqDeployer.configNameServer(param);
         if(configResult.isNotOK()) {
             return configResult;
         }
@@ -156,6 +151,36 @@ public class AdminDeployController extends AdminViewController {
         logger.warn("configBroker, brokerParam:{}, user:{}", param, ui);
         // 配置
         Result<?> configResult = mqDeployer.configBroker(param);
+        if(configResult.isNotOK()) {
+            return configResult;
+        }
+        return Result.getOKResult();
+    }
+
+    /**
+     * 配置
+     * @return
+     */
+    @RequestMapping(value="/config/controller", method=RequestMethod.POST)
+    public Result<?> configController(UserInfo ui, @RequestParam Map<String, Object> param) {
+        logger.warn("configController:{}, param:{}", param, ui);
+        // 配置
+        Result<?> configResult = mqDeployer.configController(param);
+        if(configResult.isNotOK()) {
+            return configResult;
+        }
+        return Result.getOKResult();
+    }
+
+    /**
+     * 配置
+     * @return
+     */
+    @RequestMapping(value="/config/proxy", method=RequestMethod.POST)
+    public Result<?> configProxy(UserInfo ui, @RequestParam Map<String, Object> param) {
+        logger.warn("configProxy:{}, param:{}", param, ui);
+        // 配置
+        Result<?> configResult = mqDeployer.configProxy(param);
         if(configResult.isNotOK()) {
             return configResult;
         }

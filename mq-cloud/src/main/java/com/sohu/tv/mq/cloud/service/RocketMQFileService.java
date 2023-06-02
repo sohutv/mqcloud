@@ -25,8 +25,16 @@ public class RocketMQFileService {
     private MQCloudConfigHelper mqCloudConfigHelper;
 
     public byte[] getRocketmqFile() {
+        return getRocketmqFile(mqCloudConfigHelper.getRocketmqFilePath());
+    }
+
+    public byte[] getRocketmq5File() {
+        return getRocketmqFile(mqCloudConfigHelper.getRocketmq5FilePath());
+    }
+
+    public byte[] getRocketmqFile(String rocketmqFilePath) {
         InputStream in = null;
-        String path = mqCloudConfigHelper.getRocketmqFilePath().trim();
+        String path = rocketmqFilePath.trim();
         ResourceLoader loader = new DefaultResourceLoader();
         try {
             in = loader.getResource(path).getInputStream();

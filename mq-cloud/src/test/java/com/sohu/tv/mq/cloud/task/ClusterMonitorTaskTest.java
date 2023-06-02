@@ -38,4 +38,9 @@ public class ClusterMonitorTaskTest {
             }
         }
     }
+
+    @Test
+    public void testControllerMonitorStatus() {
+        monitorServiceTask.controllerMonitor();
+    }
 }

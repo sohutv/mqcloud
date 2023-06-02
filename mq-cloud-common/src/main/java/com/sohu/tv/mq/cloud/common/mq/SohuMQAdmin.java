@@ -1,8 +1,7 @@
 package com.sohu.tv.mq.cloud.common.mq;
 
-import java.lang.reflect.Field;
-import java.util.List;
-
+import com.sohu.tv.mq.cloud.common.model.*;
+import com.sohu.tv.mq.util.Constant;
 import org.apache.rocketmq.client.exception.MQBrokerException;
 import org.apache.rocketmq.client.exception.MQClientException;
 import org.apache.rocketmq.client.impl.factory.MQClientInstance;
@@ -26,11 +25,8 @@ import org.apache.rocketmq.remoting.protocol.RemotingCommand;
 import org.apache.rocketmq.tools.admin.DefaultMQAdminExt;
 import org.apache.rocketmq.tools.admin.DefaultMQAdminExtImpl;
 
-import com.sohu.tv.mq.cloud.common.model.BrokerMomentStatsData;
-import com.sohu.tv.mq.cloud.common.model.BrokerRateLimitData;
-import com.sohu.tv.mq.cloud.common.model.BrokerStoreStat;
-import com.sohu.tv.mq.cloud.common.model.UpdateSendMsgRateLimitRequestHeader;
-import com.sohu.tv.mq.util.Constant;
+import java.lang.reflect.Field;
+import java.util.List;
 
 /**
  * sohu实现，为了添加扩展某些方法
@@ -325,4 +321,20 @@ public abstract class SohuMQAdmin extends DefaultMQAdminExt {
 
         throw new MQBrokerException(response.getCode(), response.getRemark(), brokerAddr);
     }
+
+    /**
+     * 获取controller元数据：为了兼容4.x & 5.x
+     * @param controllerAddress
+     * @return
+     * @throws Exception
+     */
+    public abstract GetMetaDataResponseHeader getControllerMetaData(final String controllerAddress) throws Exception;
+
+    /**
+     * 获取定时消息时间轮指标
+     * @param addr
+     * @return
+     * @throws Exception
+     */
+    public abstract TimerMetricsSerializeWrapper getTimerWheelMetrics(final String addr)  throws Exception;
 }

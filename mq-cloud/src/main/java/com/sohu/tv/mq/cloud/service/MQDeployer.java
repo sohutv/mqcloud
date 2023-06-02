@@ -1,23 +1,5 @@
 package com.sohu.tv.mq.cloud.service;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-
-import com.sohu.tv.mq.util.JSONUtil;
-import org.apache.commons.lang3.math.NumberUtils;
-import org.apache.rocketmq.common.MixAll;
-import org.apache.rocketmq.common.protocol.body.ClusterInfo;
-import org.apache.rocketmq.common.protocol.body.SubscriptionGroupWrapper;
-import org.apache.rocketmq.common.protocol.body.TopicConfigSerializeWrapper;
-import org.apache.rocketmq.common.protocol.route.BrokerData;
-import org.apache.rocketmq.tools.admin.MQAdminExt;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
-
 import com.sohu.tv.mq.cloud.bo.BrokerConfig;
 import com.sohu.tv.mq.cloud.bo.Cluster;
 import com.sohu.tv.mq.cloud.bo.StoreFiles;
@@ -30,13 +12,26 @@ import com.sohu.tv.mq.cloud.service.SSHTemplate.DefaultLineProcessor;
 import com.sohu.tv.mq.cloud.service.SSHTemplate.SSHCallback;
 import com.sohu.tv.mq.cloud.service.SSHTemplate.SSHResult;
 import com.sohu.tv.mq.cloud.service.SSHTemplate.SSHSession;
-import com.sohu.tv.mq.cloud.util.DateUtil;
-import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper;
-import com.sohu.tv.mq.cloud.util.Result;
-import com.sohu.tv.mq.cloud.util.SSHException;
-import com.sohu.tv.mq.cloud.util.Status;
+import com.sohu.tv.mq.cloud.util.*;
 import com.sohu.tv.mq.cloud.web.vo.ScpDirVO;
 import com.sohu.tv.mq.cloud.web.vo.ScpVO;
+import com.sohu.tv.mq.util.JSONUtil;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
+import org.apache.rocketmq.common.MixAll;
+import org.apache.rocketmq.common.protocol.body.ClusterInfo;
+import org.apache.rocketmq.common.protocol.body.SubscriptionGroupWrapper;
+import org.apache.rocketmq.common.protocol.body.TopicConfigSerializeWrapper;
+import org.apache.rocketmq.common.protocol.route.BrokerData;
+import org.apache.rocketmq.tools.admin.MQAdminExt;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * MQ部署
@@ -64,16 +59,17 @@ public class MQDeployer {
     
     public static final String CONFIG_FILE = "mq.conf";
 
-    public static final String RUN_CONFIG = "echo \"source /etc/profile;nohup sh %s/bin/%s -c %s/" + CONFIG_FILE 
-            + " >> %s/logs/startup.log 2>&1 &\" > %s/" + RUN_FILE;
-    
+    public static final String ENV_CONFIG = "echo \"source /etc/profile\" > %s/" + RUN_FILE;
+
+    public static final String JVM_OPT_EXT_CONFIG = "echo \"export JAVA_OPT_EXT='%s'\" >> %s/" + RUN_FILE;
+
+    public static final String RUN_CONFIG = "echo \"nohup sh %s/bin/%s >> %s/logs/startup.log 2>&1 &\" >> %s/" + RUN_FILE;
+
     public static final String DATA_LOGS_DIR = "mkdir -p %s/data/config|mkdir -p %s/logs|";
 
-    public static final String JVM_OPTION_JVMMEMORY = "sed -i 's|-server -Xms8g -Xmx8g|-server -Xms%s -Xmx%s|g' %s/bin/runbroker.sh";
-
-    public static final String JVM_OPTION_DIRECTMEMORY = "sed -i 's|-XX:MaxDirectMemorySize=15g|-XX:MaxDirectMemorySize=%s|g' %s/bin/runbroker.sh";
-
     public static final String MQ_AUTH = "/tmp/mqauth";
+
+    public static final String PROXY_JSON = "rmq-proxy.json";
 
     // 部署broker时自动创建监控订阅组
     public static final String SUBSCRIPTIONGROUP_JSON = "echo '"
@@ -198,12 +194,17 @@ public class MQDeployer {
      * @param ip
      * @return
      */
-    public Result<?> scp(String ip){
+    public Result<?> scp(String ip, RocketMQVersion rocketMQVersion){
         SSHResult sshResult = null;
         try {
             sshResult = sshTemplate.execute(ip, new SSHCallback() {
                 public SSHResult call(SSHSession session) {
-                    byte[] rocketmqFile = rocketMQFileService.getRocketmqFile();
+                    byte[] rocketmqFile = null;
+                    if (RocketMQVersion.V4 == rocketMQVersion) {
+                        rocketmqFile = rocketMQFileService.getRocketmqFile();
+                    } else {
+                        rocketmqFile = rocketMQFileService.getRocketmq5File();
+                    }
                     SSHResult sshResult = session.scpToDir(rocketmqFile, MQCloudConfigHelper.ROCKETMQ_FILE, TMP_DIR);
                     rocketmqFile = null;
                     return sshResult;
@@ -251,16 +252,20 @@ public class MQDeployer {
      * @param ip
      * @return
      */
-    public Result<?> configNameServer(String ip, int port, String absoluteDir){
+    public Result<?> configNameServer(Map<String, Object> param){
+        String port = param.get("listenPort").toString();
+        String ip = param.get("ip").toString();
+        String absoluteDir = param.get("dir").toString();
         String absoluteConfig = absoluteDir + "/" + CONFIG_FILE;
         String mqConf = "echo \"kvConfigPath="+absoluteDir+"/data/kvConfig.json\" >> " + absoluteConfig + "|"
                 + "echo \"listenPort="+port+"\" >> " + absoluteConfig + "|";
-        if(mqCloudConfigHelper.isAdminAclEnable()) {
+        if (mqCloudConfigHelper.isAdminAclEnable()) {
             mqConf += "echo \"adminAclEnable=true\" >> " + absoluteConfig + "|";
         }
+        String runFileCommand = buildNameServerRunFileCommand(param);
         String comm = String.format(DATA_LOGS_DIR, absoluteDir, absoluteDir)
                 + mqConf
-                + String.format(RUN_CONFIG, absoluteDir, "mqnamesrv", absoluteDir, absoluteDir, absoluteDir);
+                + runFileCommand;
         SSHResult sshResult = null;
         try {
             sshResult = sshTemplate.execute(ip, new SSHCallback() {
@@ -275,7 +280,7 @@ public class MQDeployer {
         }
         return wrapSSHResult(sshResult);
     }
-    
+
     /**
      * configBroker
      * @param ip
@@ -287,18 +292,37 @@ public class MQDeployer {
         String absoluteDir = param.get("dir").toString();
         String absoluteConfig = absoluteDir + "/" + CONFIG_FILE;
         String brokerIp = param.get("ip").toString();
+        String runFileCommand = buildBrokerRunFileCommand(param);
         // 1.基础配置
         String comm = String.format(DATA_LOGS_DIR, absoluteDir, absoluteDir)
                 + "mkdir -p " + param.get("storePathRootDir") + "/consumequeue " + param.get("storePathCommitLog")
                 + "|echo -e \""
                 + map2String(param, cluster.getId())
                 + "\" > " + absoluteConfig + "|"
-                + String.format(RUN_CONFIG, absoluteDir, "mqbroker", absoluteDir, absoluteDir, absoluteDir);
+                + runFileCommand;
+        // 2.启用proxy
+        String proxyConfigCommand = null;
+        if (isEnableProxy(param)) {
+            proxyConfigCommand = "|echo '{\"rocketMQClusterName\":\"" + clusterName + "\""
+                    + ",\"namesrvDomain\":\"" + param.get("rmqAddressServerDomain") + "\""
+                    + ",\"namesrvDomainSubgroup\":\"" + param.get("rmqAddressServerSubGroup") + "\"";
+            if (param.get("grpcServerPort") != null) {
+                proxyConfigCommand += ",\"grpcServerPort\":" + param.remove("grpcServerPort");
+            }
+            if (param.get("remotingListenPort") != null) {
+                proxyConfigCommand += ",\"remotingListenPort\":" + param.remove("remotingListenPort");
+            }
+            proxyConfigCommand += "}' > " + absoluteDir + "/" + PROXY_JSON;
+        }
+        if (proxyConfigCommand != null) {
+            comm += proxyConfigCommand;
+        }
+        final String finalComm = comm;
         SSHResult sshResult = null;
         try {
             sshResult = sshTemplate.execute(brokerIp, new SSHCallback() {
                 public SSHResult call(SSHSession session) {
-                    SSHResult sshResult = session.executeCommand(comm);
+                    SSHResult sshResult = session.executeCommand(finalComm);
                     return sshResult;
                 }
             });
@@ -309,32 +333,6 @@ public class MQDeployer {
         Result<?> configResult = wrapSSHResult(sshResult);
         if(configResult.isNotOK()) {
             return configResult;
-        }
-        // 2.启动配置，替换启动参数
-        StringBuilder optionCommond = new StringBuilder();
-        Optional.ofNullable(param.get("jvmMemory")).ifPresent(xmx -> {
-            optionCommond.append(String.format(JVM_OPTION_JVMMEMORY, xmx, xmx, absoluteDir)).append(";");
-        });
-        Optional.ofNullable(param.get("maxDirectMemorySize")).ifPresent(maxDirectMemorySize -> {
-            optionCommond.append(String.format(JVM_OPTION_DIRECTMEMORY, maxDirectMemorySize, absoluteDir));
-        });
-        if (optionCommond.length() > 0) {
-            SSHResult sedResult = null;
-            try {
-                sedResult = sshTemplate.execute(brokerIp, new SSHCallback() {
-                    public SSHResult call(SSHSession session) {
-                        SSHResult sshResult = session.executeCommand(optionCommond.toString());
-                        return sshResult;
-                    }
-                });
-            } catch (SSHException e) {
-                logger.error("configBroker, ip:{},comm:{}", brokerIp, comm, e);
-                return Result.getWebErrorResult(e);
-            }
-            Result<?> configSedResult = wrapSSHResult(sedResult);
-            if (configSedResult.isNotOK()) {
-                return configSedResult;
-            }
         }
         // 3.初始化监控订阅信息
         final String subscriptionGroupComm = String.format(SUBSCRIPTIONGROUP_JSON, absoluteDir);
@@ -391,6 +389,194 @@ public class MQDeployer {
                 "subscriptionGroup.json");
         return consumerSSHResult;
     }
+
+    /**
+     * configController
+     * @param ip
+     * @return
+     */
+    public Result<?> configController(Map<String, Object> param) {
+        param.remove("v");
+        param.remove("cid");
+        param.remove("listenPort");
+        String ip = param.remove("ip").toString();
+        String absoluteDir = param.get("dir").toString();
+        String absoluteConfig = absoluteDir + "/" + CONFIG_FILE;
+        String mqConf = map2String(param);
+        String mqConfCommand = "echo -e \"" + mqConf + "\" > " + absoluteConfig;
+        String runFileCommand = buildControllerRunFileCommand(param);
+        String comm = String.format(DATA_LOGS_DIR, absoluteDir, absoluteDir)
+                + mqConfCommand + "|"
+                + runFileCommand;
+        SSHResult sshResult = null;
+        try {
+            sshResult = sshTemplate.execute(ip, new SSHCallback() {
+                public SSHResult call(SSHSession session) {
+                    SSHResult sshResult = session.executeCommand(comm);
+                    return sshResult;
+                }
+            });
+        } catch (SSHException e) {
+            logger.error("configController, ip:{},comm:{}", ip, comm, e);
+            return Result.getWebErrorResult(e);
+        }
+        return wrapSSHResult(sshResult);
+    }
+
+    /**
+     * configProxy
+     * @return
+     */
+    public Result<?> configProxy(Map<String, Object> param) {
+        param.remove("v");
+        param.remove("cid");
+        param.remove("listenPort");
+        String ip = param.remove("ip").toString();
+        String absoluteDir = param.get("dir").toString();
+        String runFileCommand = buildProxyRunFileCommand(param);
+        String proxyConfigCommand = "echo '" + param.get("config") + "' > " + absoluteDir + "/" + PROXY_JSON;
+        String comm = String.format("mkdir -p %s/logs", absoluteDir) + "|"
+                + proxyConfigCommand + "|"
+                + runFileCommand;
+        SSHResult sshResult = null;
+        try {
+            sshResult = sshTemplate.execute(ip, new SSHCallback() {
+                public SSHResult call(SSHSession session) {
+                    SSHResult sshResult = session.executeCommand(comm);
+                    return sshResult;
+                }
+            });
+        } catch (SSHException e) {
+            logger.error("configController, ip:{},comm:{}", ip, comm, e);
+            return Result.getWebErrorResult(e);
+        }
+        return wrapSSHResult(sshResult);
+    }
+
+    /**
+     * 构建runFile命令
+     *
+     * @param param
+     * @param absoluteDir
+     * @return
+     */
+    private String buildNameServerRunFileCommand(Map<String, Object> param) {
+        return buildRunFileCommand("mqnamesrv", param);
+    }
+
+    /**
+     * 构建runFile命令
+     *
+     * @param param
+     * @param absoluteDir
+     * @return
+     */
+    private String buildControllerRunFileCommand(Map<String, Object> param) {
+        return buildRunFileCommand("mqcontroller", param);
+    }
+
+    /**
+     * 构建runFile命令
+     *
+     * @param param
+     * @param absoluteDir
+     * @return
+     */
+    private String buildProxyRunFileCommand(Map<String, Object> param) {
+        return buildRunFileCommand("mqproxy", param);
+    }
+
+    /**
+     * 构建runFile命令
+     *
+     * @param param
+     * @param absoluteDir
+     * @return
+     */
+    private String buildBrokerRunFileCommand(Map<String, Object> param) {
+        return buildRunFileCommand("mqbroker", param);
+    }
+
+    /**
+     * 构建runFile命令
+     *
+     * @param runFile
+     * @param param
+     * @return
+     */
+    private String buildRunFileCommand(String runFile, Map<String, Object> param) {
+        String JvmOptExtConfig = null;
+        // 构建JVM参数
+        if ("mqbroker".equals(runFile)) {
+            JvmOptExtConfig = buildBrokerJvmOptExtConfig(param);
+        } else {
+            JvmOptExtConfig = buildJvmOptExtConfig(param);
+        }
+        String absoluteDir = param.get("dir").toString();
+        String command = String.format(ENV_CONFIG, absoluteDir);
+        if (JvmOptExtConfig.length() > 0) {
+            command += "|" + String.format(JVM_OPT_EXT_CONFIG, JvmOptExtConfig, absoluteDir);
+        }
+        // broker内嵌proxy参数
+        if ("mqbroker".equals(runFile) && isEnableProxy(param)) {
+            runFile += " --enable-proxy -pc " + absoluteDir + "/" + PROXY_JSON;
+        }
+        // 指定配置文件
+        if ("mqproxy".equals(runFile)) {
+            runFile += " -pc " + absoluteDir + "/" + PROXY_JSON;
+        } else {
+            runFile += " -c " + absoluteDir + "/" + CONFIG_FILE;
+        }
+        command += "|" + String.format(RUN_CONFIG, absoluteDir, runFile, absoluteDir, absoluteDir);
+        return command;
+    }
+
+    private boolean isEnableProxy(Map<String, Object> param) {
+        String enableProxy = (String) param.get("enableProxy");
+        if ("5".equals(param.get("v")) && enableProxy != null) {
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * 支持jvm自定义参数
+     * @param param
+     * @return
+     */
+    private String buildJvmOptExtConfig(Map<String, Object> param) {
+        StringBuilder jvmOptBuilder = new StringBuilder();
+        String jvmOptExt = (String) param.remove("jvmOptExt");
+        if (StringUtils.isNotBlank(jvmOptExt)) {
+            jvmOptBuilder.append(jvmOptExt);
+        }
+        return jvmOptBuilder.toString();
+    }
+
+    /**
+     * 支持jvm自定义参数
+     * @param param
+     * @return
+     */
+    private String buildBrokerJvmOptExtConfig(Map<String, Object> param) {
+        String jvmMemory = (String) param.remove("jvmMemory");
+        StringBuilder jvmOptBuilder = new StringBuilder();
+        if (StringUtils.isNotBlank(jvmMemory)) {
+            jvmOptBuilder.append("-Xms");
+            jvmOptBuilder.append(jvmMemory);
+            jvmOptBuilder.append(" -Xmx");
+            jvmOptBuilder.append(jvmMemory);
+        }
+        String maxDirectMemorySize = (String) param.remove("maxDirectMemorySize");
+        if (StringUtils.isNotBlank(maxDirectMemorySize)) {
+            if (jvmOptBuilder.length() != 0) {
+                jvmOptBuilder.append(" ");
+            }
+            jvmOptBuilder.append("-XX:MaxDirectMemorySize=");
+            jvmOptBuilder.append(maxDirectMemorySize);
+        }
+        return jvmOptBuilder.toString();
+    }
     
     private String map2String(Map<String, Object> param, int cid) {
         StringBuilder sb = new StringBuilder();
@@ -401,6 +587,18 @@ public class MQDeployer {
                     sb.append(key + "=" + param.get(key) + "\n");
                 }
             }
+        }
+        return sb.toString();
+    }
+
+    private String map2String(Map<String, Object> param) {
+        StringBuilder sb = new StringBuilder();
+        for (String key : param.keySet()) {
+            String value = param.get(key).toString();
+            if (StringUtils.isBlank(value)) {
+                continue;
+            }
+            sb.append(key + "=" + param.get(key) + "\n");
         }
         return sb.toString();
     }
@@ -582,8 +780,9 @@ public class MQDeployer {
         String mvConfig = String.format(mvCommTemplate, backupDir, CONFIG_FILE, destDir);
         // 2. 移动run.sh
         String mvRun = String.format(mvCommTemplate, backupDir, RUN_FILE, destDir);
-        // 3. 移动broker启动脚本 runbroker.sh
-        String mvBrokerRun = String.format(mvCommTemplate, backupDir, "bin/runbroker.sh", destDir + "/bin");
+        // 3. 移动rmq-proxy.json
+        String mvProxyJson = String.format("[ -f %s ] &&", backupDir + "/" + PROXY_JSON)
+                + String.format(mvCommTemplate, backupDir, PROXY_JSON, destDir);
         // 4. 移动data目录
         String mvData = String.format(mvCommTemplate, backupDir, "data", destDir);
         // 5. 创建logs目录
@@ -592,7 +791,7 @@ public class MQDeployer {
         String comm = new StringBuilder()
                 .append(mvConfig).append(" ; ")
                 .append(mvRun).append(" ; ")
-                .append(mvBrokerRun).append(" ; ")
+                .append(mvProxyJson).append(" ; ")
                 .append(mvData).append(" ; ")
                 .append(createLogsDir).toString();
         SSHResult sshResult = null;

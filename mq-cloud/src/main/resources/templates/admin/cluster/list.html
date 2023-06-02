@@ -29,6 +29,10 @@
 	#theadTable tr td{
 		border: 0px;
 	}
+	.tooltip-inner {
+		max-width: 300px;
+		text-align: left;
+	}
 </style>
 <!--tree插件 -->
 <link href="${request.contextPath}/resources/treetable/jquery.treetable.css" rel="stylesheet">
@@ -68,11 +72,12 @@
 		<thead>
 			<tr>
 				<td>Broker名字</td>
-				<td>BrokerID</td>
+				<td>ID</td>
 				<td>地址</td>
-				<td>生产量/秒</td>
-				<td>消费量/秒</td>
-				<td>延时消息量</td>
+				<td data-toggle="tooltip" title="单位:秒">生产</td>
+				<td data-toggle="tooltip" title="单位:秒">消费</td>
+				<td data-toggle="tooltip" title="定时消息量,5.x支持的特性">定时</td>
+				<td data-toggle="tooltip" title="延时消息量">延时</td>
 				<td data-toggle="tooltip" title="slave的commitlog落后于master多少">落后量</td>
 				<td>版本</td>
 				<td data-toggle="tooltip" title="MQCloud会定时监控broker是否存活">状态</td>
@@ -110,6 +115,9 @@
 						</td>
 						<td>
 							<#if brokerGroup[key][bkey].outTps??>${brokerGroup[key][bkey].outTps}</#if>	
+						</td>
+						<td>
+							<a href="#" data-target="#timerWheelMetricsModal" data-toggle="modal" onclick="timerWheelMetrics('${brokerGroup[key][bkey].brokerAddr}')"><span data-toggle="tooltip" data-html="true" title="时间轮写入吞吐(timerEnqueueTps):${brokerGroup[key][bkey].timerEnqueueTpsFormat!}<br>commitlog写入吞吐(timerDequeueTps):${brokerGroup[key][bkey].timerDequeueTpsFormat!}<br>消费时间轮topic落后量(timerOffsetBehind):${brokerGroup[key][bkey].timerOffsetBehind!}<br>时间轮转动落后时间(timerReadBehind):${brokerGroup[key][bkey].timerReadBehind!}ms">${brokerGroup[key][bkey].timerCongestNum!}</span></a>
 						</td>
 						<#if bkey == "0">
 							<td>
@@ -419,6 +427,19 @@
 	                </div>
 	            </div>
 				<form class="form-horizontal form-bordered form-row-stripped" id="broker">
+					<div class="form-group">
+						<label class="control-label col-md-3"> RocketMQ版本: </label>
+						<div class="col-md-8 checkbox-inline">
+							<label>
+								<input type="radio" name="v" value="4" checked onclick="hideProxyInput()">4.x
+							</label>&nbsp;&nbsp;
+							<label>
+								<input type="radio" name="v" value="5" onclick="showProxyInput()">5.x
+							</label>
+							&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+							<label id="proxyInput" style="display: none"><input name="enableProxy" type="checkbox">启用Proxy</label>
+						</div>
+					</div>
 					<div class="form-body">
 						<div class="form-group">
 							<label class="control-label col-md-3"> 服务器: </label>
@@ -541,6 +562,17 @@
 							<label class="control-label col-md-3"> 机器: </label>
 							<div class="col-md-8">
 								<input type="text" id="upgradeBrokerAddr" name="ipAddr" class="form-control" readonly/>
+							</div>
+						</div>
+						<div class="form-group">
+							<label class="control-label col-md-3"> RocketMQ版本: </label>
+							<div class="col-md-8 checkbox-inline">
+								<label>
+									<input type="radio" name="v" value="4" checked>4.x
+								</label>&nbsp;&nbsp;
+								<label>
+									<input type="radio" name="v" value="5">5.x
+								</label>
 							</div>
 						</div>
 						<div class="form-group">
@@ -902,6 +934,34 @@
 				<button type="button" data-dismiss="modal" class="btn" >取消</button>
 				<button type="button" class="btn btn-primary" onclick="updateTopicLimitRate()"
 						id="updateTopicLimitRateBtn">确定</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- 查看broker限速详情 -->
+<div id="timerWheelMetricsModal" class="modal fade" tabindex="-1" data-width="400" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal"
+						aria-hidden="true">&times;</button>
+				<h4 class="modal-title"><span id="brokerRateLimitAddr"></span>时间轮指标详情</h4>
+			</div>
+			<div class="modal-body">
+				<table class="table table-striped table-hover" style="margin-top: 0px">
+					<thead>
+					<tr>
+						<td>序号</td>
+						<td>topic</td>
+						<td>消息量</td>
+						<td>更新时间</td>
+					</tr>
+					</thead>
+					<tbody id="timerWheelMetricsDetail">
+						<tr class="no_more_data"><td class="text-center" colspan="4">数据加载中...</td></tr>
+					</tbody>
+				</table>
 			</div>
 		</div>
 	</div>
@@ -2144,6 +2204,23 @@ function updateTopicLimitRate() {
 					enable("updateTopicLimitRateBtn");
 				}
 			}, 'json');
+}
+function hideProxyInput(){
+	$("#proxyInput").hide();
+}
+function showProxyInput(){
+	$("#proxyInput").show();
+}
+
+function timerWheelMetrics(addr) {
+	$.get('${request.contextPath}/admin/broker/timerWheel/metrics',
+		{
+			cid: ${response.result.selectedMQCluster.id},
+			addr:  addr
+		},
+		function(data){
+			$("#timerWheelMetricsDetail").html(data);
+		});
 }
 </script>
 </#if>

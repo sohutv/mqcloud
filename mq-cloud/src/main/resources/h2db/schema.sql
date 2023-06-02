@@ -778,3 +778,25 @@ alter table IF EXISTS `user_producer` add column IF NOT EXISTS `http_enabled` in
 alter table IF EXISTS `audit_consumer_config` add column IF NOT EXISTS `unregister` tinyint(4) DEFAULT NULL COMMENT '0:不解注册,1:解注册';
 alter table IF EXISTS `consumer_config` add column IF NOT EXISTS `unregister` tinyint(4) DEFAULT NULL COMMENT '0:不解注册,1:解注册';
 alter table IF EXISTS `broker` add column IF NOT EXISTS `writable` int(4) NOT NULL DEFAULT '1' COMMENT '0:不可写入,1:可写入';
+alter table IF EXISTS `audit_associate_producer` add column IF NOT EXISTS `http_enabled` int(4) NOT NULL DEFAULT '0' COMMENT '0:不开启http生产,1:开启http生产';
+
+CREATE TABLE IF NOT EXISTS `controller` (
+    `cid`          int(11) NOT NULL COMMENT '集群id',
+    `addr`         varchar(255) NOT NULL COMMENT 'controller 地址',
+    `create_time`  timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `check_status` tinyint(4) DEFAULT 0 COMMENT '检测结果:0:未知,1:正常,2:异常',
+    `check_time`   datetime COMMENT '检测时间',
+    `base_dir`     varchar(360) DEFAULT '/opt/mqcloud/controller' COMMENT '安装路径',
+    UNIQUE KEY `c_cid` (`cid`, `addr`)
+);
+
+CREATE TABLE IF NOT EXISTS `proxy` (
+    `cid`          int(11) NOT NULL COMMENT '集群id',
+    `addr`         varchar(255) NOT NULL COMMENT 'proxy grpc 地址',
+    `create_time`  timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `check_status` tinyint(4) DEFAULT 0 COMMENT '检测结果:0:未知,1:正常,2:异常',
+    `check_time`   datetime COMMENT '检测时间',
+    `base_dir`     varchar(360) DEFAULT '/opt/mqcloud/proxy' COMMENT '安装路径',
+    `config`       text COMMENT '配置',
+    UNIQUE KEY `p_cid` (`cid`, `addr`)
+);

@@ -152,9 +152,26 @@
 				<form class="form-horizontal form-bordered form-row-stripped" id="ns">
 					<div class="form-body">
 						<div class="form-group">
+							<label class="control-label col-md-3"> RocketMQ版本: </label>
+							<div class="col-md-8 checkbox-inline">
+								<label>
+									<input type="radio" name="v" value="4" checked>4.x
+								</label>&nbsp;&nbsp;
+								<label>
+									<input type="radio" name="v" value="5">5.x
+								</label>
+							</div>
+						</div>
+						<div class="form-group">
 							<label class="control-label col-md-3"> 服务器: </label>
 					        <div class="col-md-8">
 								<select id="nsServerSelect" class="selectpicker" title="请选择" data-live-search-placeholder="搜索" name="ip" data-live-search="true"></select>
+							</div>
+						</div>
+						<div class="form-group">
+							<label class="control-label col-md-3"> jvm内存: </label>
+							<div class="col-md-8">
+								<input type="text" id="jvmOptExt" name="jvmOptExt" value="" placeholder="-Xms4g -Xmx4g -Xmn2g" data-toggle="tooltip" title="不填将会保持默认配置" class="form-control" />
 							</div>
 						</div>
 						<div class="form-group">
@@ -186,7 +203,7 @@
 				</form>
 			</div>
 			<div class="modal-footer">
-				<button type="button" class="btn btn-primary" id="installBtn" onclick="install('ns')"><span id="nsInstall">一键安装<span></button>
+				<button type="button" class="btn btn-primary" id="installBtn" onclick="install('ns')"><span id="nsInstall">一键安装</span></button>
 			</div>
 		</div>
 	</div>

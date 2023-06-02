@@ -1,11 +1,14 @@
 package com.sohu.tv.mq.cloud.task;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
+import com.sohu.tv.mq.cloud.bo.*;
+import com.sohu.tv.mq.cloud.bo.UserWarn.WarnType;
+import com.sohu.tv.mq.cloud.common.mq.SohuMQAdmin;
+import com.sohu.tv.mq.cloud.mq.MQAdminCallback;
+import com.sohu.tv.mq.cloud.mq.MQAdminTemplate;
+import com.sohu.tv.mq.cloud.service.*;
+import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper;
+import com.sohu.tv.mq.cloud.util.Result;
+import net.javacrumbs.shedlock.core.SchedulerLock;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.rocketmq.common.protocol.body.KVTable;
 import org.apache.rocketmq.tools.admin.MQAdminExt;
@@ -14,23 +17,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 
-import com.sohu.tv.mq.cloud.bo.Broker;
-import com.sohu.tv.mq.cloud.bo.CheckStatusEnum;
-import com.sohu.tv.mq.cloud.bo.Cluster;
-import com.sohu.tv.mq.cloud.bo.ClusterStat;
-import com.sohu.tv.mq.cloud.bo.NameServer;
-import com.sohu.tv.mq.cloud.bo.SlaveFallBehind;
-import com.sohu.tv.mq.cloud.bo.UserWarn.WarnType;
-import com.sohu.tv.mq.cloud.mq.MQAdminCallback;
-import com.sohu.tv.mq.cloud.mq.MQAdminTemplate;
-import com.sohu.tv.mq.cloud.service.AlertService;
-import com.sohu.tv.mq.cloud.service.BrokerService;
-import com.sohu.tv.mq.cloud.service.ClusterService;
-import com.sohu.tv.mq.cloud.service.NameServerService;
-import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper;
-import com.sohu.tv.mq.cloud.util.Result;
-
-import net.javacrumbs.shedlock.core.SchedulerLock;
+import java.net.InetSocketAddress;
+import java.net.Socket;
+import java.util.*;
 
 /**
  * 集群实例状态监控
@@ -59,6 +48,12 @@ public class ClusterMonitorTask {
 
     @Autowired
     private MQCloudConfigHelper mqCloudConfigHelper;
+
+    @Autowired
+    private ControllerService controllerService;
+
+    @Autowired
+    private ProxyService proxyService;
 
     /**
      * 每6分钟监控一次
@@ -281,5 +276,138 @@ public class ClusterMonitorTask {
             }
         }
         return null;
+    }
+
+    /**
+     * 每6分钟监控一次
+     */
+    @Scheduled(cron = "20 */6 * * * *")
+    @SchedulerLock(name = "controllerMonitor", lockAtMostFor = 345000, lockAtLeastFor = 345000)
+    public void controllerMonitor() {
+        if (clusterService.getAllMQCluster() == null) {
+            logger.warn("controllerMonitor mqcluster is null");
+            return;
+        }
+        logger.info("monitor controller start");
+        long start = System.currentTimeMillis();
+        List<ClusterStat> clusterStatList = new ArrayList<>();
+        for (Cluster mqCluster : clusterService.getAllMQCluster()) {
+            ClusterStat clusterStat = monitorController(mqCluster);
+            if (clusterStat != null) {
+                clusterStatList.add(clusterStat);
+            }
+        }
+        handleAlarmMessage(clusterStatList, WarnType.CONTROLLER_ERROR);
+        logger.info("monitor controller end! use:{}ms", System.currentTimeMillis() - start);
+    }
+
+    /**
+     * ping controller
+     *
+     * @param mqCluster
+     */
+    private ClusterStat monitorController(Cluster mqCluster) {
+        Result<List<Controller>> listResult = controllerService.query(mqCluster.getId());
+        if (listResult.isEmpty()) {
+            return null;
+        }
+        List<String> statList = new ArrayList<>();
+        mqAdminTemplate.execute(new MQAdminCallback<Void>() {
+            public Void callback(MQAdminExt mqAdmin) throws Exception {
+                SohuMQAdmin sohuMQAdmin = (SohuMQAdmin) mqAdmin;
+                listResult.getResult().stream().forEach(controller -> {
+                    String addr = controller.getAddr();
+                    try {
+                        sohuMQAdmin.getControllerMetaData(addr);
+                        controllerService.update(mqCluster.getId(), addr, CheckStatusEnum.OK);
+                    } catch (Exception e) {
+                        controllerService.update(mqCluster.getId(), addr, CheckStatusEnum.FAIL);
+                        statList.add("addr:" + addr + ";Exception: " + e.getMessage());
+                    }
+                });
+                return null;
+            }
+
+            public Cluster mqCluster() {
+                return mqCluster;
+            }
+
+            @Override
+            public Void exception(Exception e) throws Exception {
+                statList.add("Exception: " + e.getMessage());
+                return null;
+            }
+        });
+        if (statList.size() == 0) {
+            return null;
+        }
+        ClusterStat clusterStat = new ClusterStat();
+        clusterStat.setClusterLink(mqCloudConfigHelper.getControllerMonitorLink(mqCluster.getId()));
+        clusterStat.setClusterName(mqCluster.getName());
+        clusterStat.setStats(statList);
+        return clusterStat;
+    }
+
+    /**
+     * 每6分钟监控一次
+     */
+    @Scheduled(cron = "03 */6 * * * *")
+    @SchedulerLock(name = "proxyMonitor", lockAtMostFor = 345000, lockAtLeastFor = 345000)
+    public void proxyMonitor() {
+        if (clusterService.getAllMQCluster() == null) {
+            logger.warn("proxyMonitor mqcluster is null");
+            return;
+        }
+        logger.info("monitor proxy start");
+        long start = System.currentTimeMillis();
+        List<ClusterStat> clusterStatList = new ArrayList<>();
+        for (Cluster mqCluster : clusterService.getAllMQCluster()) {
+            ClusterStat clusterStat = monitorProxy(mqCluster);
+            if (clusterStat != null) {
+                clusterStatList.add(clusterStat);
+            }
+        }
+        handleAlarmMessage(clusterStatList, WarnType.PROXY_ERROR);
+        logger.info("monitor proxy end! use:{}ms", System.currentTimeMillis() - start);
+    }
+
+    /**
+     * ping proxy
+     *
+     * @param mqCluster
+     */
+    private ClusterStat monitorProxy(Cluster mqCluster) {
+        Result<List<Proxy>> listResult = proxyService.query(mqCluster.getId());
+        if (listResult.isEmpty()) {
+            return null;
+        }
+        List<String> statList = new ArrayList<>();
+        listResult.getResult().stream().forEach(proxy -> {
+            String addr = proxy.getAddr();
+            Socket socket = new Socket();
+            try {
+                String[] addrs = addr.split(":");
+                socket.connect(new InetSocketAddress(addrs[0], Integer.parseInt(addrs[1])), 5000);
+                if (socket.isConnected()) {
+                    proxyService.update(mqCluster.getId(), addr, CheckStatusEnum.OK);
+                }
+            } catch (Exception e) {
+                proxyService.update(mqCluster.getId(), addr, CheckStatusEnum.FAIL);
+                statList.add("addr:" + addr + ";Exception: " + e.getMessage());
+            } finally {
+                try {
+                    socket.close();
+                } catch (Exception e) {
+                }
+            }
+        });
+        if (statList.size() == 0) {
+            return null;
+        }
+        ClusterStat clusterStat = new ClusterStat();
+        clusterStat.setClusterLink(mqCloudConfigHelper.getProxyMonitorLink(mqCluster.getId()));
+        clusterStat.setClusterName(mqCluster.getName());
+        clusterStat.setStats(statList);
+        return clusterStat;
     }
 }

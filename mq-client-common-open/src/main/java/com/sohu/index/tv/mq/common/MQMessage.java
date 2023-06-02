@@ -166,6 +166,17 @@ public class MQMessage<T> {
         innerMessage.putUserProperty(IDEMPOTENT_ID, idempotentId);
         return this;
     }
+
+    /**
+     * 设置延迟投递的时间戳
+     *
+     * @param idempotentId
+     * @return
+     */
+    public MQMessage<T> setDeliveryTimestamp(long deliveryTimestamp) {
+        innerMessage.putUserProperty("TIMER_DELIVER_MS", String.valueOf(deliveryTimestamp));
+        return this;
+    }
     
     public MQMessage<T> setExceptionForTest(boolean exceptionForTest) {
         this.exceptionForTest = exceptionForTest;

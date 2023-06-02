@@ -108,20 +108,6 @@ public class AdminTopicController extends AdminViewController {
     }
 
     /**
-     * @description: 关联生产者
-     * @param: * @param: tid topic ID
-     * @param: pNames 多个生产者名称拼接字符串
-     * @param: userId 所属用户
-     * @return: com.sohu.tv.mq.cloud.util.Result<?>
-     * @author fengwang219475
-     * @date: 2022/2/21 14:10
-     */
-    @RequestMapping("/addProducer")
-    public Result<?> addProducers(@RequestParam Long tid, String pNames, @RequestParam Long userId,HttpServletRequest request) throws Exception {
-        return topicManagerService.addProducers(tid, pNames, userId,request);
-    }
-
-    /**
      * @description: 获取指定topic状态
      * @param: * @param: tid
      * @return: com.sohu.tv.mq.cloud.util.Result<?>

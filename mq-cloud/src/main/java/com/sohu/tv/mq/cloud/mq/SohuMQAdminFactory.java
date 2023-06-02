@@ -39,9 +39,9 @@ public class SohuMQAdminFactory {
 		if (mqCloudConfigHelper.isAdminAclEnable()) {
 			SessionCredentials credentials = new SessionCredentials(mqCloudConfigHelper.getAdminAccessKey(),
 					mqCloudConfigHelper.getAdminSecretKey());
-			sohuMQAdmin = new DefaultSohuMQAdmin(new AclClientRPCHook(credentials), 5000);
+			sohuMQAdmin = new DefaultSohuMQAdmin(mqCloudConfigHelper, new AclClientRPCHook(credentials), 5000);
 		} else {
-			sohuMQAdmin = new DefaultSohuMQAdmin();
+			sohuMQAdmin = new DefaultSohuMQAdmin(mqCloudConfigHelper);
 		}
 		sohuMQAdmin.setAdminExtGroup(sohuMQAdmin.getAdminExtGroup() + instanceId.incrementAndGet());
 		sohuMQAdmin.setVipChannelEnabled(false);

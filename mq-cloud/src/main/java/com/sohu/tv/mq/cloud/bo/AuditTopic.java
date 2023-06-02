@@ -124,6 +124,10 @@ public class AuditTopic {
         return testEnabled;
     }
 
+    public boolean needNotice() {
+        return !testEnabled() && name.contains("test");
+    }
+
     public void setTestEnabled(int testEnabled) {
         this.testEnabled = testEnabled;
     }

@@ -57,7 +57,9 @@ public class UserWarn {
         NAMESERVER_ERROR(12, "NameServer异常", "mqError.html"),
         SLAVE_FALL_BEHIND(13, "slave同步落后", "slaveFallBehind.html"),
         SERVER_WARN(14, "服务器异常", "serverWarn.html"),
-        
+        CONTROLLER_ERROR(13, "Controller异常", "mqError.html"),
+        PROXY_ERROR(14, "Proxy异常", "mqError.html"),
+
         UNKNOWN(100, "未知", "unknown.html"),
         ;
         

@@ -1,16 +1,5 @@
 package com.sohu.tv.mq.cloud.service;
 
-import java.text.ParseException;
-import java.util.Date;
-import java.util.List;
-
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.junit4.SpringRunner;
-
 import com.sohu.tv.mq.cloud.Application;
 import com.sohu.tv.mq.cloud.bo.DecodedMessage;
 import com.sohu.tv.mq.cloud.bo.MessageData;
@@ -18,6 +7,16 @@ import com.sohu.tv.mq.cloud.bo.MessageQueryCondition;
 import com.sohu.tv.mq.cloud.bo.ResentMessageResult;
 import com.sohu.tv.mq.cloud.util.DateUtil;
 import com.sohu.tv.mq.cloud.util.Result;
+import org.junit.Assert;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.junit4.SpringRunner;
+
+import java.text.ParseException;
+import java.util.Date;
+import java.util.List;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = Application.class)
@@ -85,5 +84,19 @@ public class MessageServiceTest {
         int clusterId = 3;
         Result<List<ResentMessageResult>> result = messageService.resendDirectly(clusterService.getMQClusterById(clusterId), msgId, consumer);
         Assert.assertTrue(result.isOK());
+    }
+
+    @Test
+    public void testTimeWheel() {
+        MessageQueryCondition messageParam = new MessageQueryCondition();
+        long start = System.currentTimeMillis() - 24 * 60 * 60 * 1000;
+        long end = System.currentTimeMillis();
+        messageParam.setTimerWheelSearch(true);
+        messageParam.setStart(start);
+        messageParam.setEnd(end);
+        messageParam.setCid(clusterService.getMQClusterById(8).getId());
+        messageParam.setTopic("mqcloud-tx-test-topic");
+        Result<MessageData> rst = messageService.queryMessage(messageParam, false);
+        Assert.assertNotNull(rst);
     }
 }

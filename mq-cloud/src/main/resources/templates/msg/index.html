@@ -26,6 +26,7 @@
 				<#if traceEnabled>
 					<option value="trace">trace</option>
 				</#if>
+				<option value="timerWheel">定时消息</option>
 			</select>
 		</div>
 		<span class="nostyleA" data-toggle="tooltip" data-placement="top" title="点击查看各种方式区别"><a href="/wiki/userGuide/messageQuery" target=_blank class="glyphicon glyphicon-question-sign"></a></span>
@@ -92,7 +93,22 @@
 	  	    <div class="form-group trace" style="display:none;">
 	    	    <input type="text" class="form-control" id="traceKey" name="traceKey" placeholder="消息key或msgId">
 			</div>
-	  	    
+
+			<!-- 定时消息查询 -->
+			<div class="form-group timerWheel" style="display:none;">
+				<label for="timerWheelStartTimePicker"> 开始时间: </label>
+				<input id="timerWheelStartTimePicker" type="text" class="Wdate form-control" onclick="WdatePicker({ dateFmt: 'yyyy-MM-dd HH:mm:ss',maxDate:'%y-%M-%d',minDate:'%y-%M-{%d-${cluster.fileReservedDays}}',onpicked:function(){timeChange('timerWheelStartTime')}})" style="width:180px;height:34px;cursor:pointer;" readonly="readonly"
+					   value="${response.result.start?number_to_datetime?string("yyyy-MM-dd HH:mm:ss")}">
+				<input type="hidden" name="timerWheelStartTime" id="timerWheelStartTime" value="${response.result.start?c}">
+				<label for="timerWheelEndTimePicker"> 结束时间: </label>
+				<input id="timerWheelEndTimePicker" type="text" class="Wdate form-control" onclick="WdatePicker({ dateFmt: 'yyyy-MM-dd HH:mm:ss',maxDate:'%y-%M-%d',minDate:'%y-%M-{%d-${cluster.fileReservedDays}}',onpicked:function(){timeChange('timerWheelEndTime')}})" style="width:180px;height:34px;cursor:pointer;" readonly="readonly"
+					   value="${response.result.end?number_to_datetime?string("yyyy-MM-dd HH:mm:ss")}">
+				<input type="hidden" name="timerWheelEndTime" id="timerWheelEndTime" value="${response.result.end?c}">
+			</div>
+			<div class="form-group timerWheel" style="display:none;">
+				<input type="text" class="form-control" id="timerWheelKey" name="timerWheelKey" value="${response.result.key!}" placeholder="关键字，支持模糊匹配">
+			</div>
+
 			<!-- 时间段查询参数 -->
 	  	    <input type="hidden" id="cid" name="cid" value="${response.result.cid}">
 	  	    <input type="hidden" id="topicDiv" name="topic" value="${response.result.topic}">
@@ -111,7 +127,9 @@
 			<button type="button" data-toggle='tooltip' title="按偏移量查询${response.result.topic}" onclick="searchOffsetMessage(false)" class="btn btn-search offset"  style="display:none;"><span class="glyphicon glyphicon-search" aria-hidden="true"></span></button>
 			<!-- trace查询 -->
 			<button type="button" data-toggle='tooltip' title="按trace查询${response.result.topic}" onclick="searchTraceMessage()" class="btn btn-search trace" style="display:none;"><span class="glyphicon glyphicon-search" aria-hidden="true"></span></button>
-			
+			<!-- 时间段查询 -->
+			<button type="button" data-toggle='tooltip' title="按定时查询${response.result.topic}" onclick="searchTimerWheelMessage(false)" class="btn btn-search timerWheel" style="display:none;"><span class="glyphicon glyphicon-search" aria-hidden="true"></span></button>
+
 			<!-- 消息重发 -->
 			<#if consumer == 1>
 				<button type="button" id="resendMessageBtn" data-toggle='tooltip' title="重发消息" onclick="resendMessageTip()" class="btn"><span class="glyphicon glyphicon-send"></span></button>
@@ -412,6 +430,17 @@ function searchTraceMessage() {
 		$("#traceDataTable input").remove();
        	$("#traceDataTable").append(data);
     });
+}
+// 定时消息搜索
+function searchTimerWheelMessage(append){
+	$("#append").val(append);
+	post('${request.contextPath}/topic/message/timerWheel/search', $("#msgSearchForm").serialize(), function(data){
+		if(!append){
+			$("#dataTable tbody").remove();
+			$("#dataTable input").remove();
+		}
+		$("#dataTable").append(data);
+	});
 }
 // 轨迹
 var trackOption = {};

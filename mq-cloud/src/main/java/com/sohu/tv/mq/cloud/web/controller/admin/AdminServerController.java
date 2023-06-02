@@ -53,6 +53,12 @@ public class AdminServerController extends AdminViewController {
     @Autowired
     private ClusterService clusterService;
 
+    @Autowired
+    private ProxyService proxyService;
+
+    @Autowired
+    private com.sohu.tv.mq.cloud.service.ControllerService controllerService;
+
     /**
      * 新增
      * 
@@ -104,6 +110,22 @@ public class AdminServerController extends AdminViewController {
                 nameServerListResult.getResult().forEach(nameServer -> {
                     serverRoleVOMap.computeIfAbsent(nameServer.getIp(), k -> new ServerRoleVO()).addNameServer(nameServer,
                             clusterService.getMQClusterById(nameServer.getCid()));
+                });
+            }
+            // 获取proxy信息
+            Result<List<Proxy>> proxyListResult = proxyService.queryAll();
+            if (proxyListResult.isNotEmpty()) {
+                proxyListResult.getResult().forEach(proxy -> {
+                    serverRoleVOMap.computeIfAbsent(proxy.getIp(), k -> new ServerRoleVO()).addProxy(proxy,
+                            clusterService.getMQClusterById(proxy.getCid()));
+                });
+            }
+            // 获取controller信息
+            Result<List<com.sohu.tv.mq.cloud.bo.Controller>> controllerListResult = controllerService.queryAll();
+            if (controllerListResult.isNotEmpty()) {
+                controllerListResult.getResult().forEach(controller -> {
+                    serverRoleVOMap.computeIfAbsent(controller.getIp(), k -> new ServerRoleVO()).addController(controller,
+                            clusterService.getMQClusterById(controller.getCid()));
                 });
             }
             // 设置到最终返回中

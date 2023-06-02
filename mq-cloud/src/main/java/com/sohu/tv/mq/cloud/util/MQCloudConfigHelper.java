@@ -21,6 +21,7 @@ import javax.annotation.PostConstruct;
 import java.lang.reflect.Field;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * mqcloud配置
@@ -120,6 +121,9 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware, Comm
     // rocketmq安装文件路径
     private String rocketmqFilePath;
 
+    // rocketmq5安装文件路径
+    private String rocketmq5FilePath;
+
     private String privateKey;
 
     // rocketmq admin accessKey
@@ -166,6 +170,9 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware, Comm
 
     // clientGroup ns config
     private Map<String, String> clientGroupNSConfig;
+
+    // 使用旧的请求码的broker
+    private Set<String> oldReqestCodeBrokerSet;
 
     @Autowired
     private CommonConfigService commonConfigService;
@@ -321,6 +328,14 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware, Comm
 
     public String getNameServerMonitorLink(int cid) {
         return getPrefix() + "admin/nameserver/list?cid=" + cid;
+    }
+
+    public String getControllerMonitorLink(int cid) {
+        return getPrefix() + "admin/controller/list?cid=" + cid;
+    }
+
+    public String getProxyMonitorLink(int cid) {
+        return getPrefix() + "admin/proxy/list?cid=" + cid;
     }
 
     public String getBrokerMonitorLink(int cid) {
@@ -496,6 +511,14 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware, Comm
         this.rocketmqFilePath = rocketmqFilePath;
     }
 
+    public String getRocketmq5FilePath() {
+        return rocketmq5FilePath;
+    }
+
+    public void setRocketmq5FilePath(String rocketmq5FilePath) {
+        this.rocketmq5FilePath = rocketmq5FilePath;
+    }
+
     public String getPrivateKey() {
         return privateKey;
     }
@@ -597,6 +620,13 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware, Comm
 
     public void setHttpConsumerUriPrefix(String httpConsumerUriPrefix) {
         this.httpConsumerUriPrefix = httpConsumerUriPrefix;
+    }
+
+    public boolean isOldReqestCodeBroker(String brokerAddr) {
+        if (oldReqestCodeBrokerSet == null) {
+            return false;
+        }
+        return oldReqestCodeBrokerSet.contains(brokerAddr);
     }
 
     public boolean threadMetricSupported(String version) {

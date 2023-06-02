@@ -1,5 +1,6 @@
 package com.sohu.tv.mq.cloud.service;
 
+import com.sohu.tv.mq.cloud.util.RocketMQVersion;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -27,7 +28,7 @@ public class MQDeployerTest {
 
     @Test
     public void testScp() {
-        Result<?> rst = mqDeployer.scp("test.mqcloud.com");
+        Result<?> rst = mqDeployer.scp("test.mqcloud.com", RocketMQVersion.V4);
         Assert.assertEquals(true, rst.isOK());
     }
     

@@ -1,0 +1,692 @@
+<!-- 无集群 -->
+<#if response.notOK>
+<div class="main">
+	<form class="form-inline" role="form">
+		<div class="form-group">
+			<label for="mqClusterSelect"> 集群: 暂无数据 </label>
+		</div>
+	</form>
+	<hr/>
+</div>
+<#else>
+<!-- 有集群 -->
+<div class="main">
+	<form class="form-inline" role="form">
+		<div class="form-group">
+			<label for="mqClusterSelect"> 集群: </label>
+			<select name="type" id="mqClusterSelect" class="form-control select2_category">
+				<#list clusters as cluster>
+					<option value="${cluster.id}"
+						<#if cluster.id == selectedCluster.id>selected="selected"</#if>
+					>${cluster.name}</option>
+				</#list>
+			</select>
+		</div>
+		<div class="form-group">
+			<button type="button" class="btn btn-success" onclick="addController()" data-target="#addControllerModal" data-toggle="modal"><span class="glyphicon glyphicon-plus" aria-hidden="true"></span>&nbsp;Controller</button>
+		</div>
+		<div class="form-group" style="float:right;">
+			<button type="button" class="btn btn-success" data-placement="bottom" title="该功能用于已有Controller关联到MQCloud中" data-target="#associateControllerModal" data-toggle="modal">关联Controller</button>
+		</div>
+	</form>
+	<hr/>
+	<div style="vertical-align: middle;margin-bottom:10px;"><b>Controller列表:</b></div>
+	<table class="table table-striped table-hover" style="margin-top: 0px">
+		<thead>
+			<tr>
+				<td>序号</td>
+				<td>addr</td>
+				<td>创建时间</td>
+				<td data-toggle="tooltip" title="MQCloud会定时监控Controller是否存活">状态</td>
+				<td>监控时间</td>
+				<td>操作</td>
+			</tr>
+		</thead>
+		<tbody>
+			<#if response.empty>
+				<tr class="text-center"><td colspan=6>暂无数据</td></tr>
+			<#else>
+				<#list response.result as controller>
+					<tr>
+						<td>${controller_index + 1}</td>
+						<td>${controller.addr}</td>
+						<td>${controller.createTime?string("yyyy-MM-dd HH:mm:ss")}</td>
+						<td>
+							<#if controller.checkStatus == 2>
+								<font style='font-weight:bold' color='red'>${controller.checkStatusDesc}</font>
+							<#else>
+								${controller.checkStatusDesc}
+							</#if>
+						</td>
+						<td>
+							<#if controller.checkTime??>
+								${controller.checkTime?string("yyyy-MM-dd HH:mm:ss")}
+							</#if>
+						</td>
+						<td>
+							<button type="button" class="btn btn-sm btn-success" title="kill Controller进程并删除Controller地址" data-target="#controllerOfflineModal" data-toggle="modal" onclick="offlineController('${controller.addr}');">下线</button>
+							<button type="button" class="btn btn-sm btn-success" title="删除Controller地址" data-target="#controllerDeleteModal" data-toggle="modal" onclick="deleteController('${controller.addr}');"><span class="glyphicon glyphicon-trash" aria-hidden="true"></span></button>
+						</td>
+					</tr>
+				</#list>
+			</#if>
+		</tbody>
+	</table>
+</div>
+
+<!-- 新建Controller -->
+<div id="addControllerModal" class="modal fade" tabindex="-1">
+	<div class="modal-dialog" style="width:1000px;">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+				<h4 class="modal-title">新建Controller</h4>
+			</div>
+			<div class="modal-body">
+				<div class="row bs-wizard" style="border-bottom:0;">
+	                <div id="controllerServer" class="col-xs-1 bs-wizard-step disabled">
+	                  <div class="text-center bs-wizard-stepnum">服务器选择</div>
+	                  <div class="progress"><div class="progress-bar"></div></div>
+	                  <a href="#" class="bs-wizard-dot"></a>
+	                  <div class="bs-wizard-info text-center">安装到哪</div>
+	                </div>
+	                
+	                <div id="controllerJdk" class="col-xs-2 bs-wizard-step disabled">
+	                  <div class="text-center bs-wizard-stepnum">JDK校验</div>
+	                  <div class="progress"><div class="progress-bar"></div></div>
+	                  <a href="#" class="bs-wizard-dot"></a>
+	                  <div class="bs-wizard-info text-center">校验jdk是否配置完成，版本要求>=1.8</div>
+	                </div>
+	                
+	                <div id="controllerPort" class="col-xs-1 bs-wizard-step disabled">
+	                  <div class="text-center bs-wizard-stepnum">端口校验</div>
+	                  <div class="progress"><div class="progress-bar"></div></div>
+	                  <a href="#" class="bs-wizard-dot"></a>
+	                  <div class="bs-wizard-info text-center">检查端口是否被占用</div>
+	                </div>
+	                
+	                <div id="controllerDir" class="col-xs-1 bs-wizard-step disabled">
+	                  <div class="text-center bs-wizard-stepnum">目录校验</div>
+	                  <div class="progress"><div class="progress-bar"></div></div>
+	                  <a href="#" class="bs-wizard-dot"></a>
+	                  <div class="bs-wizard-info text-center">检查安装目录是否被占用</div>
+	                </div>
+	                
+	                <div id="controllerScp" class="col-xs-2 bs-wizard-step disabled">
+	                  <div class="text-center bs-wizard-stepnum">下载安装包</div>
+	                  <div class="progress"><div class="progress-bar"></div></div>
+	                  <a href="#" class="bs-wizard-dot"></a>
+	                  <div class="bs-wizard-info text-center">从仓库下载安装包到服务器/tmp下</div>
+	                </div>
+	                <div id="controllerUnzip" class="col-xs-1 bs-wizard-step disabled">
+	                  <div class="text-center bs-wizard-stepnum">解压安装包</div>
+	                  <div class="progress"><div class="progress-bar"></div></div>
+	                  <a href="#" class="bs-wizard-dot"></a>
+	                  <div class="bs-wizard-info text-center">解压到安装目录下</div>
+	                </div>
+	                <div id="controllerConfig" class="col-xs-2 bs-wizard-step disabled">
+	                  <div class="text-center bs-wizard-stepnum">生成配置文件</div>
+	                  <div class="progress"><div class="progress-bar"></div></div>
+	                  <a href="#" class="bs-wizard-dot"></a>
+	                  <div class="bs-wizard-info text-center">生成mq.conf和run.sh</div>
+	                </div>
+	                <div id="controllerStartup" class="col-xs-1 bs-wizard-step disabled">
+	                  <div class="text-center bs-wizard-stepnum">启动</div>
+	                  <div class="progress"><div class="progress-bar"></div></div>
+	                  <a href="#" class="bs-wizard-dot"></a>
+	                  <div class="bs-wizard-info text-center">启动Controller</div>
+	                </div>
+	                <div id="controllerProgram" class="col-xs-1 bs-wizard-step disabled">
+	                  <div class="text-center bs-wizard-stepnum">完成</div>
+	                  <div class="progress"><div class="progress-bar"></div></div>
+	                  <a href="#" class="bs-wizard-dot"></a>
+	                  <div class="bs-wizard-info text-center">获取启动后的进程信息</div>
+	                </div>
+	            </div>
+				<form class="form-horizontal form-bordered form-row-stripped" id="controller">
+					<input type="hidden" name="v" value="5">
+					<input type="hidden" id="listenPort" name="listenPort" value="">
+					<div class="form-body">
+						<div class="form-group">
+							<label class="control-label col-md-3"> 服务器: </label>
+					        <div class="col-md-8">
+								<select id="controllerServerSelect" class="selectpicker" title="请选择" data-live-search-placeholder="搜索" name="ip" data-live-search="true"></select>
+							</div>
+						</div>
+						<div class="form-group">
+							<label class="control-label col-md-3"> jvm内存: </label>
+							<div class="col-md-8">
+								<input type="text" id="jvmOptExt" name="jvmOptExt" value="" placeholder="-Xms4g -Xmx4g -Xmn2g" data-toggle="tooltip" title="不填将会保持默认配置" class="form-control" />
+							</div>
+						</div>
+						<div class="form-group">
+							<label class="control-label col-md-3" data-toggle="tooltip" title="Controller在服务器上的绝对路径(包含Controller自身)"> 安装路径: </label>
+					        <div class="col-md-8">
+								<input type="text" id="dir" name="dir" value="/opt/mqcloud/controller" class="form-control"/>
+							</div>
+						</div>
+						<div class="form-group">
+							<label class="control-label col-md-3"> 组名: </label>
+							<div class="col-md-8">
+								<input type="text" id="controllerDLegerGroup" name="controllerDLegerGroup" data-toggle="tooltip" title="同属一个DLedger组需要一致" placeholder="group1" value="" class="form-control" />
+							</div>
+						</div>
+						<div class="form-group">
+							<label class="control-label col-md-3"> 节点id: </label>
+							<div class="col-md-8">
+								<input type="text" id="controllerDLegerSelfId" name="controllerDLegerSelfId" data-toggle="tooltip" title="DLedger组内各个节点要唯一" placeholder="n0" value="" class="form-control" />
+							</div>
+						</div>
+						<div class="form-group">
+							<label class="control-label col-md-3"> 组员信息: </label>
+							<div class="col-md-8">
+								<input type="text" id="controllerDLegerPeers" data-toggle="tooltip" title="DLedger组内成员节点和端口信息，同一个组内的各节点配置要一致。格式:{节点id}-{ip:port};{节点id}-{ip:port};" name="controllerDLegerPeers" placeholder="n0-127.0.0.1:19876;n1-127.0.0.2:19876;" value="" class="form-control" />
+							</div>
+						</div>
+						<div class="form-group">
+							<label class="control-label col-md-3" data-toggle="tooltip" title="controller数据存储位置"> 数据存储路径: </label>
+							<div class="col-md-8">
+								<input type="text" id="controllerStorePath" name="controllerStorePath" value="/opt/mqcloud/controller/data" class="form-control" readonly="readonly"/>
+							</div>
+						</div>
+						<div class="form-group">
+							<label class="control-label col-md-3"> 扫描存活间隔: </label>
+							<div class="col-md-8">
+								<div class="input-group">
+									<input type="text" id="scanNotActiveBrokerInterval" data-toggle="tooltip" title="扫描Broker是否存活的时间间隔" name="scanNotActiveBrokerInterval" value="5000" class="form-control"/>
+									<span class="input-group-addon">毫秒</span>
+								</div>
+							</div>
+						</div>
+						<div class="form-group">
+							<label class="control-label col-md-3"> 允许从SyncStateSet以外选主: </label>
+							<div class="col-md-8 checkbox-inline">
+								<label>
+									<input type="radio" name="enableElectUncleanMaster" value="false" checked> 否
+								</label>&nbsp&nbsp;
+								<label>
+									<input type="radio" name="enableElectUncleanMaster" value="true" data-toggle="tooltip" title="允许后可能会选取数据落后的副本为主而丢失消息"> 是
+								</label>
+							</div>
+						</div>
+						<div class="form-group">
+							<label class="control-label col-md-3"> broker角色变更通知: </label>
+							<div class="col-md-8 checkbox-inline">
+								<label>
+									<input type="radio" name="notifyBrokerRoleChanged" value="false"> 否
+								</label>&nbsp&nbsp;
+								<label>
+									<input type="radio" name="notifyBrokerRoleChanged" data-toggle="tooltip" title="当broker副本组上角色发生变化时主动通知" value="true" checked> 是
+								</label>
+							</div>
+						</div>
+						<div class="form-group">
+							<label class="control-label col-md-3"> 进程信息: </label>
+					        <div class="col-md-8">
+								<textarea id="controllerProgramInfo" type="text" rows="1" class="form-control" readonly></textarea>
+							</div>
+						</div>
+						<div class="form-group">
+							<label class="control-label col-md-3"> 提示: </label>
+					        <div class="col-md-8">
+								<div class="form-control-static">如果安装遇到错误警告，请登录服务器解决后再<b>继续</b>执行</div>
+							</div>
+						</div>
+					</div>
+					<input type="hidden" name="cid" value="${selectedCluster.id}">
+				</form>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-primary" id="installBtn" onclick="install('controller')"><span id="controllerInstall">一键安装</span></button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- 下线 -->
+<div id="controllerOfflineModal" class="modal fade" tabindex="-1" data-width="400">
+	<div class="modal-dialog" style="width:1000px">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+				<h4 class="modal-title">确定要下线Controller?</h4>
+			</div>
+			<div class="modal-body">
+				<form class="form-horizontal form-bordered form-row-stripped" id="controllerOfflineForm">
+					<div class="form-body">
+						<div class="form-group">
+							<label class="control-label col-md-1"> 地址: </label>
+					        <div class="col-md-4">
+								<input type="text" name="addr" id="controllerAddr" class="form-control" readonly />
+							</div>
+						</div>
+						<div class="form-group">
+							<label class="control-label col-md-1"> 进程: </label>
+					        <div class="col-md-10">
+								<textarea id="ctrProgram" type="text" rows="10" class="form-control" readonly></textarea>
+							</div>
+						</div>
+					</div>
+					<input type="hidden" name="cid" value="${selectedCluster.id}">
+				</form>
+			</div>
+			<div class="modal-footer">
+				<button type="button" data-dismiss="modal" class="btn" >取消</button>
+				<button type="button" class="btn btn-primary" onclick="controllerOffline()" id="controllerOfflineBtn">确定</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- 关联Controller -->
+<div id="associateControllerModal" class="modal fade" tabindex="-1" data-width="400">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+				<h4 class="modal-title">关联已有的Controller</h4>
+			</div>
+			<div class="modal-body">
+				<form class="form-horizontal form-bordered form-row-stripped" id="associateControllerForm">
+					<div class="form-body">
+						<div class="form-group">
+							<label class="control-label col-md-4"> 地址: </label>
+					        <div class="col-md-4">
+								<input type="text" name="addr" class="form-control" placeholder="ip:port" />
+							</div>
+						</div>
+					</div>
+					<input type="hidden" name="cid" value="${selectedCluster.id}">
+				</form>
+			</div>
+			<div class="modal-footer">
+				<button type="button" data-dismiss="modal" class="btn" >取消</button>
+				<button type="button" class="btn btn-primary" onclick="associateController()" id="associateControllerBtn">确定</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- 删除 -->
+<div id="controllerDeleteModal" class="modal fade" tabindex="-1" data-width="400">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+				<h4 class="modal-title">确定要删除Controller记录?</h4>
+			</div>
+			<div class="modal-body">
+				<form class="form-horizontal form-bordered form-row-stripped" id="controllerDeleteForm">
+					<div class="form-body">
+						<div class="form-group">
+							<label class="control-label col-md-4"> 地址: </label>
+					        <div class="col-md-4">
+								<input type="text" name="addr" id="controllerAddrDelete" class="form-control" readonly />
+							</div>
+						</div>
+					</div>
+					<input type="hidden" name="cid" value="${selectedCluster.id}">
+				</form>
+			</div>
+			<div class="modal-footer">
+				<button type="button" data-dismiss="modal" class="btn" >取消</button>
+				<button type="button" class="btn btn-primary" onclick="controllerDelete()" id="controllerDeleteBtn">确定</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<script>
+var installId = "";
+var method = "";
+/**
+ * 安装Controller
+ */
+function install(id){
+	installId = id;
+	if(!$('#'+id+'ServerSelect').val()){
+		alert("请先选择服务器");
+		return;
+	}
+	if (!$("#controllerDLegerGroup").val()) {
+		alert("请填写组名");
+		return;
+	}
+	if (!$("#controllerDLegerSelfId").val()) {
+		alert("请填写节点id");
+		return;
+	}
+	if (!$("#controllerDLegerPeers").val()) {
+		alert("请填写组员信息");
+		return;
+	}
+	if($('#'+id+'Install').html() == "继续"){
+		setTimeout(method+'()', 500);
+	} else {
+		validateJDK();
+	}
+	disableStep("installBtn");
+}
+/**
+ * 继续
+ */
+function goOn(m){
+	$("#"+installId+"Install").html("继续");
+	active("installBtn");
+	method = m;
+}
+/**
+ * 校验jdk
+ */
+function validateJDK(){
+	var wizardId = installId+"Jdk";
+	active(wizardId);
+	$.get('${request.contextPath}/admin/deploy/check/jdk',
+		$("#"+installId).serialize(),
+        function(data){
+            if(data.status == 200){
+            	var version = data.result.substring(0, 3);
+            	if(version >= 1.8){
+            		complete(wizardId);
+            		// 校验端口
+            		setTimeout('checkPort()', 1000);
+            	} else {
+            		alert("jdk环境校验失败，最低为1.8，目前版本为："+data.result);
+            		warn(wizardId);
+            		goOn("validateJDK");
+            	}
+		    }else{
+		    	toastr.error("数据获取失败！"+data.message);  
+		    	warn(wizardId);
+		    	goOn("validateJDK");
+		    }
+       }, 'json');
+}
+/**
+ * 端口校验
+ */
+function checkPort(){
+	var peers = $('#controllerDLegerPeers').val();
+	var selfId = $("#controllerDLegerSelfId").val();
+	var port = -1;
+	var peerArray = peers.split(";");
+	for (var i = 0; i < peerArray.length; i++) {
+		var array = peerArray[i].split("-");
+		if (selfId == array[0]) {
+			port = array[1].split(":")[1];
+			break;
+		}
+	}
+	if (port == -1) {
+		goOn("checkPort");
+		alert("请填写正确的组员信息");
+		return;
+	}
+	$("#listenPort").val(port);
+	var wizardId = installId+"Port";
+	active(wizardId);
+	$.post('${request.contextPath}/admin/deploy/check/port',
+		$("#"+installId).serialize(),
+        function(data){
+            if(data.status == 200){
+            	complete(wizardId);
+            	// 校验目录
+            	setTimeout('checkDir()', 1000);
+		    } else if(data.status == 500){
+		    	toastr.error("端口被该程序占用："+data.result);  
+		    	warn(wizardId);
+		    	goOn("checkPort");
+		    } else {
+		    	toastr.error("校验失败！"+data.message);  
+		    	warn(wizardId);
+		    	goOn("checkPort");
+		    }
+       }, 'json');
+}
+/**
+ * 目录校验
+ */
+function checkDir(){
+	var wizardId = installId+"Dir";
+	active(wizardId);
+	$.post('${request.contextPath}/admin/deploy/check/dir',
+		$("#"+installId).serialize(),
+        function(data){
+            if(data.status == 200){
+            	complete(wizardId);
+            	// 下载文件
+        		setTimeout('scp()', 1000);
+		    } else {
+		    	toastr.error("校验失败！"+data.message);  
+		    	warn(wizardId);
+		    	goOn("checkDir");
+		    }
+       }, 'json');
+}
+/**
+ * scp
+ */
+function scp(){
+	var wizardId = installId+"Scp";
+	active(wizardId);
+	$.post('${request.contextPath}/admin/deploy/scp',
+		$("#"+installId).serialize(),
+        function(data){
+            if(data.status == 200){
+            	complete(wizardId);
+            	// 解压文件
+        		setTimeout('unzip()', 1000);
+		    } else {
+		    	toastr.error("下载失败！"+data.message);  
+		    	warn(wizardId);
+		    	goOn("scp");
+		    }
+       }, 'json');
+}
+/**
+ * 解压
+ */
+function unzip(){
+	var wizardId = installId+"Unzip";
+	active(wizardId);
+	$.post('${request.contextPath}/admin/deploy/unzip',
+		$("#"+installId).serialize(),
+        function(data){
+            if(data.status == 200){
+            	complete(wizardId);
+            	// 配置
+        		setTimeout('config()', 1000);
+		    } else {
+		    	toastr.error("解压失败！"+data.message);  
+		    	warn(wizardId);
+		    	goOn("unzip");
+		    }
+       }, 'json');
+}
+/**
+ * 配置
+ */
+function config(){
+	var wizardId = installId+"Config";
+	active(wizardId);
+	$.post('${request.contextPath}/admin/deploy/config/' + installId,
+		$("#"+installId).serialize(),
+        function(data){
+            if(data.status == 200){
+            	complete(wizardId);
+	        	setTimeout('startup()', 1000);
+		    } else {
+		    	toastr.error("配置失败！"+data.message);  
+		    	warn(wizardId);
+		    	goOn("config");
+		    }
+       }, 'json');
+}
+/**
+ * 启动实例
+ */
+function startup(){
+	var wizardId = installId+"Startup";
+	active(wizardId);
+	$.post('${request.contextPath}/admin/controller/startup',
+		$("#"+installId).serialize(),
+        function(data){
+            if(data.status == 200){
+            	complete(wizardId);
+            	var time = 5000;
+            	// 检测进程
+        		setTimeout('checkProgram()', time);
+		    } else {
+		    	toastr.error("启动失败！"+data.message);  
+		    	warn(wizardId);
+		    	goOn("startup");
+		    }
+       }, 'json');
+}
+/**
+ * 检测启动的进程
+ */
+function checkProgram(){
+	var wizardId = installId+"Program";
+	active(wizardId);
+	$.post('${request.contextPath}/admin/deploy/check/program',
+		$("#"+installId).serialize(),
+        function(data){
+            if(data.status == 200){
+            	$("#"+installId+"ProgramInfo").attr("rows", 5).html(data.result);
+            	complete(wizardId);
+            	alert("恭喜你，安装完成啦！");
+            	$("#"+installId+"Install").parent().attr("disabled", "disabled");
+		    } else {
+		    	toastr.error("检查失败！"+data.message);  
+		    	warn(wizardId);
+		    	goOn("checkProgram");
+		    }
+       }, 'json');
+}
+function addController(){
+	initServerList("controllerServerSelect");
+}
+/**
+ * 初始化server下拉列表
+ */
+function initServerList(componentId){
+	$.get('${request.contextPath}/admin/server/all',
+	        function(data){
+	            if(data.status == 200){
+	            	var content = "";
+	            	for(var i in data.result){
+	            		var server = data.result[i];
+	            		content += "<option value='"+server.ip+"'>"+server.ip+"</option>";
+	            	}
+	        		$("#"+componentId).html(content);
+	        		$("#"+componentId).selectpicker('refresh');
+			    }else{
+			    	toastr.error("数据获取失败！"+data.message);  
+			    }
+        }, 'json');
+}
+/**
+ * 获取进程信息
+ */
+function program(addr, programId){
+	$.get('${request.contextPath}/admin/deploy/program',
+			{
+				addr: addr
+			},
+	        function(data){
+				$("#"+programId).html(data.result);
+        }, 'json');
+}
+
+function offlineController(addr){
+	program(addr, "ctrProgram");
+	$("#controllerAddr").val(addr);
+}
+
+function deleteController(addr){
+	$("#controllerAddrDelete").val(addr);
+}
+function controllerOffline(){
+	disable("controllerOfflineBtn");
+	$.post('${request.contextPath}/admin/controller/offline',
+			$("#controllerOfflineForm").serialize(),
+			function(data){
+				if(data.status == 200){
+		        	toastr.success("下线成功, 系统将自动刷新");
+		        	reload(3000);
+			    }else{
+			    	toastr.error("下线失败！"+data.message);
+			    	enable("controllerOfflineBtn");
+			    }
+			}, 'json');
+}
+function controllerDelete(){
+	disable("controllerDeleteBtn");
+	$.post('${request.contextPath}/admin/controller/delete',
+			$("#controllerDeleteForm").serialize(),
+			function(data){
+				if(data.status == 200){
+		        	toastr.success("删除成功, 系统将自动刷新");
+		        	reload(3000);
+			    }else{
+			    	toastr.error("删除失败！"+data.message);
+			    	enable("controllerDeleteBtn");
+			    }
+			}, 'json');
+}
+$('#mqClusterSelect').on('change',function(){
+	window.location.href = "${request.contextPath}/admin/controller/list?cid="+$(this).val();
+});
+
+$(function(){
+	// ns server select event
+	$('#controllerServerSelect').on('shown.bs.select', function(e) {
+		active("controllerServer");
+	});
+	$('#controllerServerSelect').on('hidden.bs.select', function(e) {
+		if(!$('#controllerServerSelect').val()){
+			disableStep("controllerServer");
+		}
+	});
+	$('#controllerServerSelect').on('changed.bs.select', function(e) {
+		complete("controllerServer");
+	});
+	$("#dir").bind('input propertychange', function () {
+		$("#controllerStorePath").val($("#dir").val() + "/data");
+	});
+});
+
+function warn(id){
+	$("#"+id).addClass("warn");
+}
+function disableStep(id){
+	$("#"+id).removeClass("active").addClass("disabled");
+}
+function active(id){
+	$("#"+id).removeClass("disabled").removeClass("warn").addClass("active");
+}
+function complete(id){
+	$("#"+id).removeClass("active").removeClass("warn").addClass("complete");
+}
+</script>
+</#if>
+
+<script>
+$("[data-toggle='modal']").tooltip();
+
+function associateController(){
+	disable("associateControllerBtn");
+	$.post('${request.contextPath}/admin/controller/add',
+		$("#associateControllerForm").serialize(),
+        function(data){
+            if(data.status == 200){
+				toastr.success("关联成功，将自动刷新");  
+				reload(3000);
+		    }else{
+		    	toastr.error("关联失败！"+data.message);
+		    	enable("associateControllerBtn");
+		    }
+        }, 'json');
+}
+</script>

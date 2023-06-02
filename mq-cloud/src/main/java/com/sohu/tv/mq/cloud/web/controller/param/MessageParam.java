@@ -22,6 +22,8 @@ public class MessageParam {
     private String broker;
     @Range(min = 0)
     private long offset;
+    // 消息id
+    private String msgId;
     public int getCid() {
         return cid;
     }
@@ -69,5 +71,13 @@ public class MessageParam {
     
     public void setBroker(String broker) {
         setStoreHost(broker);
+    }
+
+    public String getMsgId() {
+        return msgId;
+    }
+
+    public void setMsgId(String msgId) {
+        this.msgId = msgId;
     }
 }

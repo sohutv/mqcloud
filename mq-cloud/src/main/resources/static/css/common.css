@@ -295,3 +295,8 @@ button.btn.btn-search.ipsearch {
 	background-size:100% 100%;
     -moz-background-size:100% 100%;
 }
+
+.notice {
+	color: #3c763d;
+	font-weight: bold;
+}

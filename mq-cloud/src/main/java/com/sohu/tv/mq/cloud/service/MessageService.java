@@ -18,6 +18,7 @@ import com.sohu.tv.mq.serializable.MessageSerializerEnum;
 import com.sohu.tv.mq.util.CommonUtil;
 import com.sohu.tv.mq.util.JSONUtil;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.rocketmq.client.QueryResult;
 import org.apache.rocketmq.client.consumer.DefaultMQPullConsumer;
 import org.apache.rocketmq.client.consumer.MQPullConsumer;
@@ -45,6 +46,7 @@ import org.apache.rocketmq.common.protocol.route.BrokerData;
 import org.apache.rocketmq.common.protocol.route.QueueData;
 import org.apache.rocketmq.common.protocol.route.TopicRouteData;
 import org.apache.rocketmq.remoting.common.RemotingHelper;
+import org.apache.rocketmq.remoting.exception.RemotingException;
 import org.apache.rocketmq.tools.admin.MQAdminExt;
 import org.apache.rocketmq.tools.admin.api.MessageTrack;
 import org.apache.rocketmq.tools.admin.api.TrackType;
@@ -57,6 +59,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.util.HtmlUtils;
 
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.util.*;
 import java.util.Map.Entry;
 
@@ -74,6 +77,8 @@ public class MessageService {
     private Logger logger = LoggerFactory.getLogger(this.getClass());
 
     public static final String SUB_EXPRESSION = "*";
+
+    public static final String RMQ_SYS_WHEEL_TIMER = "rmq_sys_wheel_timer";
 
     @Autowired
     private MQAdminTemplate mqAdminTemplate;
@@ -298,6 +303,11 @@ public class MessageService {
                     if (msg.getQueueOffset() > mqOffset.getMaxOffset()) {
                         continue;
                     }
+                    // 定时消息搜索需要过滤真实topic
+                    if (messageQueryCondition.isTimerWheelSearch() &&
+                            !messageQueryCondition.getTopic().equals(msg.getProperty(MessageConst.PROPERTY_REAL_TOPIC))) {
+                        continue;
+                    }
                     byte[] bytes = msg.getBody();
                     if (bytes == null || bytes.length == 0) {
                         logger.warn("MessageExt={}, MessageBody is null", msg);
@@ -369,6 +379,7 @@ public class MessageService {
     private DecodedMessage toDecodedMessage(MessageExt msg, String broker) {
         DecodedMessage m = new DecodedMessage();
         byte[] bytes = msg.getBody();
+        m.setMsgLength(bytes.length);
         msg.setBody(null);
         Object decodedBody = bytes;
         try {
@@ -416,6 +427,11 @@ public class MessageService {
             m.setRealTopic(retryTopic);
             m.setConsumer(realTopic);
         }
+        // 设置延迟投递时间
+        String timerDeliverTime = msg.getProperty("TIMER_DELIVER_MS");
+        if (timerDeliverTime != null) {
+            m.setTimerDeliverTime(NumberUtils.toLong(timerDeliverTime));
+        }
         return m;
     }
 
@@ -431,7 +447,11 @@ public class MessageService {
             MessageQueryCondition messageQueryCondition, boolean retryWithErr, boolean offsetSearch) {
         List<MQOffset> offsetList = null;
         try {
-            Set<MessageQueue> mqs = consumer.fetchSubscribeMessageQueues(messageQueryCondition.getTopic());
+            String topic = messageQueryCondition.getTopic();
+            if (messageQueryCondition.isTimerWheelSearch()) {
+                topic = RMQ_SYS_WHEEL_TIMER;
+            }
+            Set<MessageQueue> mqs = consumer.fetchSubscribeMessageQueues(topic);
             offsetList = new ArrayList<MQOffset>();
             for (MessageQueue mq : mqs) {
                 // 判断当前消息队列是否符合条件
@@ -499,6 +519,11 @@ public class MessageService {
                     int nums = MessageDelayLevel.values().length;
                     topicConfig.setWriteQueueNums(nums);
                     topicConfig.setReadQueueNums(nums);
+                } else if (messageQueryCondition.isTimerWheelSearch()) {
+                    topicConfig = new TopicConfig();
+                    topicConfig.setTopicName(RMQ_SYS_WHEEL_TIMER);
+                    topicConfig.setWriteQueueNums(1);
+                    topicConfig.setReadQueueNums(1);
                 }
                 if (topicConfig != null) {
                     Result<?> result = topicService.createAndUpdateTopicOnCluster(cluster, topicConfig);
@@ -627,6 +652,30 @@ public class MessageService {
         } catch (Exception e) {
             mt.setExceptionDesc(RemotingHelper.exceptionSimpleDesc(e));
             return mt;
+        }
+
+        // 检查定时消息
+        if (mp.getMsgId() != null) {
+            try {
+                MessageExt messageExt = mqAdmin.viewMessage(mp.getTopic(), mp.getMsgId());
+                mp.setQueueId(messageExt.getQueueId());
+                mp.setOffset(messageExt.getQueueOffset());
+                InetSocketAddress inetSocketAddress = (InetSocketAddress) messageExt.getStoreHost();
+                mp.setStoreHost(inetSocketAddress.getAddress().getHostAddress() + ":" + inetSocketAddress.getPort());
+            } catch (MQClientException e) {
+                if (208 == e.getResponseCode()) {
+                    mt.setTrackType(TrackType.NOT_CONSUME_YET);
+                } else {
+                    mt.setExceptionDesc("CODE:" + e.getResponseCode() + " DESC:" + e.getErrorMessage());
+                }
+                return mt;
+            } catch (MQBrokerException e) {
+                mt.setExceptionDesc("CODE:" + e.getResponseCode() + " DESC:" + e.getErrorMessage());
+                return mt;
+            } catch (Exception e) {
+                mt.setExceptionDesc(RemotingHelper.exceptionSimpleDesc(e));
+                return mt;
+            }
         }
 
         ClusterInfo ci = mqAdmin.examineBrokerClusterInfo();

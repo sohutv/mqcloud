@@ -41,7 +41,7 @@ public class RocketMQProducer extends AbstractConfig {
     private MessageQueueSelector messageQueueSelector;
     
     // 默认重试次数
-    private int defaultRetryTimes = 1;
+    private int defaultRetryTimes = 0;
     
     // 重试发送线程池
     private ExecutorService retrySenderExecutor;
@@ -503,6 +503,7 @@ public class RocketMQProducer extends AbstractConfig {
      * @param delayLevel 延时级别
      * @return Result.true or false with exception
      */
+    @Deprecated
     public Result<SendResult> publishOneway(Object messageObject, String keys, MessageDelayLevel delayLevel) {
         return publishOneway(messageObject, "", keys, delayLevel);
     }
@@ -516,6 +517,7 @@ public class RocketMQProducer extends AbstractConfig {
      * @param delayLevel 延时级别
      * @return Result.true or false with exception
      */
+    @Deprecated
     public Result<SendResult> publishOneway(Object messageObject, String tags, String keys, MessageDelayLevel delayLevel) {
         Message message = null;
         try {
@@ -533,6 +535,7 @@ public class RocketMQProducer extends AbstractConfig {
      * @param message 消息
      * @return Result.true or false with exception
      */
+    @Deprecated
     public Result<SendResult> publishOneway(Message message) {
         try {
             producer.sendOneway(message);
@@ -548,6 +551,7 @@ public class RocketMQProducer extends AbstractConfig {
      * @param messageMap 消息
      * @return Result.true or false with exception
      */
+    @Deprecated
     public Result<SendResult> publishOneway(Map<String, Object> messageMap) {
         return publishOneway((Object) messageMap);
     }
@@ -558,6 +562,7 @@ public class RocketMQProducer extends AbstractConfig {
      * @param messageMap 消息
      * @return Result.true or false with exception
      */
+    @Deprecated
     public Result<SendResult> publishOneway(Object messageObject) {
         return publishOneway(messageObject, "");
     }
@@ -569,6 +574,7 @@ public class RocketMQProducer extends AbstractConfig {
      * @param keys key
      * @return Result.true or false with exception
      */
+    @Deprecated
     public Result<SendResult> publishOnewayWithExcetpion(Object messageObject, String keys) throws Exception {
         Result<SendResult> result = publishOneway(messageObject, keys, null);
         if (result.getException() != null) {
@@ -584,6 +590,7 @@ public class RocketMQProducer extends AbstractConfig {
      * @param keys key
      * @return Result.true or false with exception
      */
+    @Deprecated
     public Result<SendResult> publishOneway(Object messageObject, String keys) {
         return publishOneway(messageObject, keys, null);
     }

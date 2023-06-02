@@ -472,6 +472,21 @@ public class AdminBrokerController extends AdminViewController {
     }
 
     /**
+     * 时间轮指标
+     * @param ui
+     * @param cid
+     * @param addr
+     * @return
+     */
+    @RequestMapping(value = "/timerWheel/metrics")
+    public String timerWheelMetrics(UserInfo ui, @RequestParam(name = "cid") int cid,
+                                    @RequestParam(name = "addr") String addr, Map<String, Object> map) {
+        Result<?> result = brokerService.getTimerWheelMetrics(cid, addr);
+        setResult(map, result);
+        return adminViewModule() + "/timerWheelMetrics";
+    }
+
+    /**
      * 属性解析为对象
      * 
      * @param properties

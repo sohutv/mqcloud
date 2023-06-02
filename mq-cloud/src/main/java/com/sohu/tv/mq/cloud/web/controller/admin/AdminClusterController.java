@@ -392,7 +392,11 @@ public class AdminClusterController extends AdminViewController {
         kvTable.getTable().remove("brokerVersion");
         // 流量
         brokerStatVO.setInTps(formatTraffic(removeFromMap(stats, "putTps")));
-        brokerStatVO.setOutTps(formatTraffic(removeFromMap(stats, "getTransferedTps")));
+        String getTransferedTps = removeFromMap(stats, "getTransferedTps");
+        if (getTransferedTps == null) {
+            getTransferedTps = removeFromMap(stats, "getTransferredTps");
+        }
+        brokerStatVO.setOutTps(formatTraffic(getTransferedTps));
         // 延迟队列
         for (MessageDelayLevel messageDelayLevel : MessageDelayLevel.values()) {
             String offsetString = removeFromMap(stats,
@@ -408,6 +412,12 @@ public class AdminClusterController extends AdminViewController {
             }
         }
         brokerStatVO.setCommitLogMaxOffset(NumberUtils.toLong(removeFromMap(stats, "commitLogMaxOffset")));
+        // 定时消息指标
+        brokerStatVO.setTimerCongestNum(NumberUtils.toLong(removeFromMap(stats, "timerCongestNum")));
+        brokerStatVO.setTimerEnqueueTps(NumberUtils.toFloat(removeFromMap(stats, "timerEnqueueTps")));
+        brokerStatVO.setTimerDequeueTps(NumberUtils.toFloat(removeFromMap(stats, "timerDequeueTps")));
+        brokerStatVO.setTimerOffsetBehind(NumberUtils.toLong(removeFromMap(stats, "timerOffsetBehind")));
+        brokerStatVO.setTimerReadBehind(NumberUtils.toLong(removeFromMap(stats, "timerReadBehind")));
         // 其余指标
         brokerStatVO.setInfo(new TreeMap<String, String>(stats));
     }

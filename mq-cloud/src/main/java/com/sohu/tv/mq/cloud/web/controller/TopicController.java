@@ -263,8 +263,7 @@ public class TopicController extends ViewController {
     @RequestMapping(value = "/new/producer", method = RequestMethod.POST)
     public Result<?> newProducer(UserInfo userInfo, @Valid AssociateProducerParam associateProducerParam)
             throws Exception {
-        return newUserProducer(userInfo, userInfo.getUser().getId(), associateProducerParam.getTid(),
-                associateProducerParam.getProducer());
+        return newUserProducer(userInfo, associateProducerParam);
     }
 
     /**
@@ -308,6 +307,13 @@ public class TopicController extends ViewController {
         auditAssociateProducer.setProducer(producer);
         auditAssociateProducer.setTid(tid);
         auditAssociateProducer.setUid(uid);
+        // 获取存在的生产者
+        int httpEnabled = 0;
+        Result<List<UserProducer>> upListResult = userProducerService.queryUserProducer(producer);
+        if (!upListResult.isEmpty()) {
+            httpEnabled = upListResult.getResult().get(0).getHttpEnabled();
+        }
+        auditAssociateProducer.setHttpEnabled(httpEnabled);
         // 构建Audit
         Audit audit = new Audit();
         audit.setType(TypeEnum.ASSOCIATE_PRODUCER.getType());
@@ -343,7 +349,10 @@ public class TopicController extends ViewController {
      * @param producer
      * @return
      */
-    private Result<?> newUserProducer(UserInfo userInfo, long uid, long tid, String producer) {
+    private Result<?> newUserProducer(UserInfo userInfo, AssociateProducerParam associateProducerParam) {
+        long uid = userInfo.getUser().getId();
+        long tid = associateProducerParam.getTid();
+        String producer = associateProducerParam.getProducer();
         // 校验关联关系是否存在
         Result<?> isExist = verifyDataService.verifyUserProducerIsExist(TypeEnum.NEW_PRODUCER, uid, tid, producer);
         if (isExist.getStatus() != Status.OK.getKey()) {
@@ -354,6 +363,7 @@ public class TopicController extends ViewController {
         auditAssociateProducer.setProducer(producer);
         auditAssociateProducer.setTid(tid);
         auditAssociateProducer.setUid(uid);
+        auditAssociateProducer.setHttpEnabled(associateProducerParam.getHttpEnabled());
         // 构建Audit
         Audit audit = new Audit();
         audit.setType(TypeEnum.NEW_PRODUCER.getType());

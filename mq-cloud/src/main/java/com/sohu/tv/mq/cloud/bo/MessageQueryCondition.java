@@ -44,6 +44,8 @@ public class MessageQueryCondition {
     private String brokerName;
     // 队列id
     private Integer queueId;
+    // 是否是定时消息搜索
+    private transient boolean timerWheelSearch;
 
     public List<MQOffset> getMqOffsetList() {
         return mqOffsetList;
@@ -184,7 +186,15 @@ public class MessageQueryCondition {
     public void setTimes(long times) {
         this.times = times;
     }
-    
+
+    public boolean isTimerWheelSearch() {
+        return timerWheelSearch;
+    }
+
+    public void setTimerWheelSearch(boolean timerWheelSearch) {
+        this.timerWheelSearch = timerWheelSearch;
+    }
+
     /**
      * 为搜索做准备
      */
