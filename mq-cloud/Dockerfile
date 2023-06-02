@@ -2,8 +2,7 @@ FROM openjdk:8-jdk-alpine
 
 # 更新源、安装openssh 并修改配置文件和生成key 并且同步时间
 RUN apk update && \
-    echo "http://dl-cdn.alpinelinux.org/alpine/edge/testing/" >> /etc/apk/repositories && \
-    apk add openssh-server tzdata nmon bash sudo net-tools && \
+    apk add openssh-server tzdata bash sudo net-tools && \
     cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && \
     sed -i "s/#PermitRootLogin.*/PermitRootLogin yes/g" /etc/ssh/sshd_config && \
     sed -i 's/#StrictModes yes/StrictModes no/' /etc/ssh/sshd_config && \
@@ -13,7 +12,6 @@ RUN apk update && \
     ssh-keygen -t ecdsa -P "" -f /etc/ssh/ssh_host_ecdsa_key && \
     ssh-keygen -t ed25519 -P "" -f /etc/ssh/ssh_host_ed25519_key && \
     echo "root:admin" | chpasswd && \
-    cp /usr/bin/nmon /tmp/ && \
     echo "JAVA_HOME=/usr/lib/jvm/default-jvm" >> /etc/profile && \
     echo "PATH=\$JAVA_HOME/bin:\$PATH" >> /etc/profile && \
     echo "export JAVA_HOME PATH" >> /etc/profile
@@ -44,6 +42,7 @@ RUN chown mqcloud:mqcloud -R $broker_path
 # mqcloud
 ARG JAR_FILE
 ADD ${JAR_FILE} /mq-cloud.war
+ADD nmon /tmp/nmon
 ENTRYPOINT ["sh","/run.sh"]
 
 ADD run.sh /
