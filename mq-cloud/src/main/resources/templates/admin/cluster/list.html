@@ -448,6 +448,12 @@
 							</div>
 						</div>
 						<div class="form-group">
+							<label class="control-label col-md-3"> jvm内存: </label>
+							<div class="col-md-8">
+								<input type="text" id="jvmOptExt" name="jvmOptExt" value="" placeholder="-Xms8g -Xmx8g -XX:MaxDirectMemorySize=15g" data-toggle="tooltip" title="不填将会保持默认配置" class="form-control" />
+							</div>
+						</div>
+						<div class="form-group">
 							<label class="control-label col-md-3"> 所属集群: </label>
 					        <div class="col-md-8">
 								<input type="text" value="${response.result.selectedMQCluster.name}" class="form-control" readonly/>
@@ -1005,31 +1011,6 @@ function install(id){
 		if(!baseDir || baseDir.charAt(baseDir.length-1) != "/" || baseDir.charAt(0) != "/"){
 			alert("请填写安装的绝对路径，并以/结尾");
 			return;
-		}
-
-		var directMemorySizeStr = $("#maxDirectMemorySize").val();
-		var directMemorySize;
-		if (directMemorySizeStr && !confirmEnding(directMemorySizeStr,'g')){
-			alert("堆外内存大小最小设置值为1G，请重新设置，例如:“6g”");
-			return;
-		} else if (directMemorySizeStr) {
-			directMemorySize = Number(directMemorySizeStr.replace('g',''));
-		}
-
-		let elementById = document.getElementsByName("transientStorePoolEnable");
-		var transientStoreCheck;
-		for(i = 0; i < elementById.length ; i++){
-			if(elementById[i].checked){
-				transientStoreCheck = elementById[i].value;
-				break;
-			}
-		}
-		if (transientStoreCheck == 'true'){
-			var limitSize = Number($("#transientStorePoolSize").val()) + 1
-			if (directMemorySize <  limitSize){
-				alert("堆外内存大小不得小于"+ limitSize + "g");
-				return;
-			}
 		}
 	}
 	if($('#'+id+'Install').html() == "继续"){

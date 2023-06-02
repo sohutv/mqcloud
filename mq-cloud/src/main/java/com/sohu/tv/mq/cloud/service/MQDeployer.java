@@ -505,13 +505,7 @@ public class MQDeployer {
      * @return
      */
     private String buildRunFileCommand(String runFile, Map<String, Object> param) {
-        String JvmOptExtConfig = null;
-        // 构建JVM参数
-        if ("mqbroker".equals(runFile)) {
-            JvmOptExtConfig = buildBrokerJvmOptExtConfig(param);
-        } else {
-            JvmOptExtConfig = buildJvmOptExtConfig(param);
-        }
+        String JvmOptExtConfig = buildJvmOptExtConfig(param);
         String absoluteDir = param.get("dir").toString();
         String command = String.format(ENV_CONFIG, absoluteDir);
         if (JvmOptExtConfig.length() > 0) {
@@ -553,31 +547,6 @@ public class MQDeployer {
         return jvmOptBuilder.toString();
     }
 
-    /**
-     * 支持jvm自定义参数
-     * @param param
-     * @return
-     */
-    private String buildBrokerJvmOptExtConfig(Map<String, Object> param) {
-        String jvmMemory = (String) param.remove("jvmMemory");
-        StringBuilder jvmOptBuilder = new StringBuilder();
-        if (StringUtils.isNotBlank(jvmMemory)) {
-            jvmOptBuilder.append("-Xms");
-            jvmOptBuilder.append(jvmMemory);
-            jvmOptBuilder.append(" -Xmx");
-            jvmOptBuilder.append(jvmMemory);
-        }
-        String maxDirectMemorySize = (String) param.remove("maxDirectMemorySize");
-        if (StringUtils.isNotBlank(maxDirectMemorySize)) {
-            if (jvmOptBuilder.length() != 0) {
-                jvmOptBuilder.append(" ");
-            }
-            jvmOptBuilder.append("-XX:MaxDirectMemorySize=");
-            jvmOptBuilder.append(maxDirectMemorySize);
-        }
-        return jvmOptBuilder.toString();
-    }
-    
     private String map2String(Map<String, Object> param, int cid) {
         StringBuilder sb = new StringBuilder();
         Result<List<BrokerConfig>> result = brokerConfigService.queryByCid(cid);

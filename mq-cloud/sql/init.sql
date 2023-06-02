@@ -845,8 +845,6 @@ insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynami
 insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) values(1, 'brokerPermission', '6', 'broker权限', 'broker下线可以设置为只读', 10, 1, '2:只写;4:只读;6:读写', 0);
 insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) values(1, 'storePathRootDir', null, '数据文件存储根目录', '务必设置', 11, 0, null, 1);
 insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) values(1, 'storePathCommitLog', null, 'CommitLog文件存储根目录', '务必设置', 12, 0, null, 1);
-insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) VALUES (1, 'jvmMemory', '8g', 'broker启动内存大小,对应jvm参数中的xmx/xms,单位:g或m', '', 16, 0, NULL, 0);
-insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) VALUES (1, 'maxDirectMemorySize', '15g', '堆外内存大小,单位:g', NULL, 17, 0, NULL, 0);
 insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) VALUES (1, 'physicalMemorySize', '0', '物理内存(单位字节)，0代表使用全部物理内存', '部署到docker或多个broker部署到一台机器时使用', 18, 1, NULL, 0);
 insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) values(1, 'grpcServerPort', '8081', 'proxy grpc协议端口', null, 19, 0, null, 0);
 insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) values(1, 'remotingListenPort', '8080', 'proxy remoting协议端口', null, 20, 0, null, 0);
