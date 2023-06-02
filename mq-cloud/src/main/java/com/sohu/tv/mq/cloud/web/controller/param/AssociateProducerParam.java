@@ -16,6 +16,8 @@ public class AssociateProducerParam {
     // producer
     @NotBlank
     private String producer;
+    // 是否开启http生产
+    private int httpEnabled;
     public long getTid() {
         return tid;
     }
@@ -27,5 +29,13 @@ public class AssociateProducerParam {
     }
     public void setProducer(String producer) {
         this.producer = producer;
+    }
+
+    public int getHttpEnabled() {
+        return httpEnabled;
+    }
+
+    public void setHttpEnabled(int httpEnabled) {
+        this.httpEnabled = httpEnabled;
     }
 }

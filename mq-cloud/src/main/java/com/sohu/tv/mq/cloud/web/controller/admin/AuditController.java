@@ -717,24 +717,12 @@ public class AuditController extends AdminViewController {
             return auditAssociateProducerResult;
         }
         AuditAssociateProducer auditAssociateProducer = auditAssociateProducerResult.getResult();
-
-        // 获取存在的生产者
-        String producer = auditAssociateProducer.getProducer();
-        int httpEnabled = 0;
-        if(TypeEnum.NEW_PRODUCER.getType() != audit.getType()){
-            Result<List<UserProducer>> upListResult = userProducerService.queryUserProducer(producer);
-            if (upListResult.isEmpty()) {
-                return upListResult;
-            }
-            httpEnabled = upListResult.getResult().get(0).getHttpEnabled();
-        }
-
         // 保存关联关系
         UserProducer up = new UserProducer();
         up.setTid(auditAssociateProducer.getTid());
         up.setUid(auditAssociateProducer.getUid());
-        up.setProducer(producer);
-        up.setHttpEnabled(httpEnabled);
+        up.setProducer(auditAssociateProducer.getProducer());
+        up.setHttpEnabled(auditAssociateProducer.getHttpEnabled());
         Result<UserProducer> userProducerResult = userProducerService.saveNoException(up);
         if (userProducerResult.isNotOK()) {
             return userProducerResult;
@@ -1455,6 +1443,7 @@ public class AuditController extends AdminViewController {
                     tmp.setUid(user.getId());
                     tmp.setTid(topicInfoVO.getTopic().getId());
                     tmp.setProducer(up.getProducer());
+                    tmp.setHttpEnabled(up.getHttpEnabled());
                     upList.add(tmp);
                 }
                 // 拼装UserConsumer

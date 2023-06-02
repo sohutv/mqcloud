@@ -21,7 +21,7 @@ public interface AuditAssociateProducerDao {
      * @param AuditAssociateProducer
      * @return
      */
-    @Insert("insert into audit_associate_producer(aid, tid, uid, producer) values(#{p.aid}, #{p.tid}, #{p.uid}, #{p.producer})")
+    @Insert("insert into audit_associate_producer(aid, tid, uid, producer, http_enabled) values(#{p.aid}, #{p.tid}, #{p.uid}, #{p.producer}, #{p.httpEnabled})")
     public void insert(@Param("p") AuditAssociateProducer auditAssociateProducer);
     
     /**

@@ -14,6 +14,8 @@ public class AuditAssociateProducer {
     private long uid;
     // producer
     private String producer;
+    // 是否开启http生产
+    private int httpEnabled;
     public long getAid() {
         return aid;
     }
@@ -41,5 +43,13 @@ public class AuditAssociateProducer {
     }
     public void setUid(long uid) {
         this.uid = uid;
+    }
+
+    public int getHttpEnabled() {
+        return httpEnabled;
+    }
+
+    public void setHttpEnabled(int httpEnabled) {
+        this.httpEnabled = httpEnabled;
     }
 }

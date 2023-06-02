@@ -17,6 +17,8 @@ public class AuditAssociateProducerVO {
     private String topic;
     // audit type
     private Integer type;
+    // 是否开启http生产
+    private int httpEnabled;
     public long getAid() {
         return aid;
     }
@@ -54,5 +56,13 @@ public class AuditAssociateProducerVO {
 
     public void setType(Integer type) {
         this.type = type;
+    }
+
+    public int getHttpEnabled() {
+        return httpEnabled;
+    }
+
+    public void setHttpEnabled(int httpEnabled) {
+        this.httpEnabled = httpEnabled;
     }
 }
