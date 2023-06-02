@@ -1,7 +1,5 @@
 ## 一、<span id="spring-boot">初始化之spring-boot方式</span>
 
-**老用户请先通过首页“关联资源”入口关联消费者**
-
 ```
 @Configuration
 public class MQConfiguration {
@@ -335,4 +333,30 @@ consumer.shutdown();
       ![](img/msg_reconsume.png)
 
    此功能只支持选择一个实例进行消费，后台审核通过后，将从集群的slave节点拉取消息消费。
+
+9. <span id="skipAccumulation">主动跳过堆积</span>
+
+   如果消费发生了堆积，而消息又可以丢弃的情况，可以在消费代码中使用如下逻辑跳过堆积的消息：
+
+   ```
+   ConsumerCallback consumerCallback = new ConsumerCallback<String, MessageExt>() {
+       public void call(String t, MessageExt m) {
+           // 获取队列里面未消费的消息数量
+           long queueMessageCount = Long.parseLong(m.getProperty("MAX_OFFSET")) - m.getQueueOffset();
+           // 获取消息的延迟时间
+           long timeDelay = System.currentTimeMillis() - m.getBornTimestamp();
+           // 堆积超过10万条或延迟超过3小时，跳过此消息
+           if (queueMessageCount > 100000 || timeDelay > 3 * 60 * 60 * 1000L) {
+               return;
+           }
+           // 消费逻辑
+       }
+   }
+   ```
+
+   ​
+
+   ​
+
+   ​
 

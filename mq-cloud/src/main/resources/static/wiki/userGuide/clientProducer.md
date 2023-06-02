@@ -1,7 +1,5 @@
 ## 一、<span id="spring-boot">初始化之spring-boot方式</span>
 
-**老用户请先通过首页“关联资源”入口关联生产者**
-
 ```
 @Configuration
 public class MQConfiguration {
