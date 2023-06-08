@@ -401,3 +401,19 @@ Result<SendResult> result = new PublishCommand(producer, map).execute();
 ### 1.与异步发送有哪些不同的地方？
 
 使用业务线程发送，没有重试机制，不等待响应。
+
+## 十一、<span id="timerWheel">定时消息</span>
+
+目前已支持任意维度的定时消息，使用方式如下：
+
+```
+// 24小时后投递消息
+long deliveryTimestamp = System.currentTimeMillis() + (24 * 3600 * 1000L);
+MQMessage<?> mqMessage = MQMessage.build(msg).setKeys(key).setDeliveryTimestamp(deliveryTimestamp);
+Result<SendResult> sendResult = producer.send(mqMessage);
+if (!sendResult.isSuccess) { // 发送失败
+    System.out.println("发送失败");
+}
+```
+
+注意：投递消息的时间尽量分散，不建议在同一时间大量投递消息。
