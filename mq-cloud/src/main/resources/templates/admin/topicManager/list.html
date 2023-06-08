@@ -37,6 +37,16 @@
 			</div>
 		</div>
 		<div class="form-group">
+			<label for="orderType"> 排序方式: </label>
+			<div class="form-group">
+				<select id="orderType" class="selectpicker" title="搜索" data-live-search-placeholder="输入搜索内容" name="orderType" data-live-search="false">
+					<option value=1 selected="selected">按照流量倒序</option>
+					<option value=2>按照名称正序</option>
+					<option value=3>按照创建时间正序</option>
+				</select>
+			</div>
+		</div>
+		<div class="form-group">
 			<label for="topic"> topic: </label>
 			<div class="form-group">
 				<input id="topic" type="text" class="form-control" name="topic" value="" placeholder="Topic名字">
@@ -324,12 +334,18 @@
 		$('#noneConsumers').selectpicker({
 			width: '100px'
 		});
+		$('#orderType').selectpicker({
+			width: '150px'
+		});
 		$('#destTopicCid').selectpicker({
 			width: '200px'
 		});
 		initNoneConsumers("noneConsumers")
-		<#if queryParams.queryStr??  && queryParams.topic??>
+		<#if queryParams.queryStr?? && queryParams.topic??>
 			$('#topic').val('${queryParams.topic}');
+		</#if>
+		<#if queryParams.queryStr?? && queryParams.orderType??>
+			$('#orderType').selectpicker('val', '${queryParams.orderType}');
 		</#if>
 	});
 

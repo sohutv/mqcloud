@@ -11,6 +11,7 @@ import com.sohu.tv.mq.cloud.dao.UserProducerDao;
 import com.sohu.tv.mq.cloud.util.DateUtil;
 import com.sohu.tv.mq.cloud.util.Result;
 import com.sohu.tv.mq.cloud.web.controller.param.ManagerParam;
+import com.sohu.tv.mq.cloud.web.controller.param.ManagerParam.QueryOrderType;
 import com.sohu.tv.mq.cloud.web.controller.param.PaginationParam;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,6 +22,8 @@ import javax.servlet.http.HttpServletRequest;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import static com.sohu.tv.mq.cloud.web.controller.param.ManagerParam.QueryOrderType.TRAFFIC_DESC;
 
 /**
  * @author fengwang219475
@@ -59,34 +62,51 @@ public class ManagerBaseService {
         if (CollectionUtils.isEmpty(topicIds)) {
             return null;
         }
-        return loopQueryAndFilter(param.getCid(), topicIds, paginationParam, resultTids, returnAll);
+        return loopQueryAndFilter(param.getCid(), topicIds, paginationParam
+                , resultTids, returnAll, param);
     }
 
     /**
      * 内存分页
      */
     private List<Topic> loopQueryAndFilter(Long cid, List<Long> tids, PaginationParam paginationParam,
-                                           List<Long> resultTids, boolean returnAll) {
+                                           List<Long> resultTids, boolean returnAll, ManagerParam param) {
         List<Long> allTopicIdByCid = getAllTopicIdByCid(cid, tids);
         if (CollectionUtils.isEmpty(allTopicIdByCid)) {
             return null;
         }
+        List<Topic> allTopic = new ArrayList<>();
+        List<List<Long>> partition = Lists.partition(allTopicIdByCid, 100);
+        for (List<Long> ids : partition) {
+            List<Topic> topicList = topicDao.queryTopicDataByLimit(ids);
+            allTopic.addAll(topicList);
+        }
+        QueryOrderType orderType = QueryOrderType.getQueryOrderTypeByDefault(param.getOrderType(), TRAFFIC_DESC);
+        switch (orderType){
+            case TRAFFIC_DESC:
+                allTopic.sort(Comparator.comparing(Topic::getCount).reversed());
+                break;
+            case TOPICNAME_ASC:
+                allTopic.sort(Comparator.comparing(topic -> {
+                    if (StringUtils.isEmpty(topic.getName())) {
+                        return "";
+                    }
+                    return topic.getName().toLowerCase();
+                }));
+                break;
+            case CREATE_ASC:
+                allTopic.sort(Comparator.comparing(Topic::getCreateDate));
+                break;
+        }
         if (returnAll) {
-            List<Topic> allTopic = new ArrayList<>();
-            List<List<Long>> partition = Lists.partition(allTopicIdByCid, 100);
-            for (List<Long> ids : partition) {
-                List<Topic> topicList = topicDao.queryTopicDataByLimit(ids);
-                allTopic.addAll(topicList);
-            }
             resultTids.addAll(allTopicIdByCid);
-            return allTopic.stream().sorted(Comparator.comparing(Topic::getCount).reversed()).collect(Collectors.toList());
+            return allTopic;
         } else {
             paginationParam.caculatePagination(allTopicIdByCid.size());
-            List<List<Long>> partition = Lists.partition(allTopicIdByCid, paginationParam.getNumOfPage());
-            List<Long> list = partition.get(paginationParam.getCurrentPage() - 1);
-            List<Topic> topicList = topicDao.queryTopicDataByLimit(list);
-            resultTids.addAll(list);
-            return topicList;
+            List<List<Topic>> topicPageContent = Lists.partition(allTopic, paginationParam.getNumOfPage());
+            List<Topic> currentTopics = topicPageContent.get(paginationParam.getCurrentPage() - 1);
+            resultTids.addAll(currentTopics.stream().map(Topic::getId).collect(Collectors.toList()));
+            return currentTopics;
         }
     }
 
