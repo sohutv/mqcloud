@@ -1,5 +1,6 @@
 package com.sohu.tv.mq.cloud.web.controller.admin;
 
+import com.sohu.tv.mq.cloud.service.BrokerService;
 import com.sohu.tv.mq.cloud.service.MQDeployer;
 import com.sohu.tv.mq.cloud.util.Result;
 import com.sohu.tv.mq.cloud.util.RocketMQVersion;
@@ -25,6 +26,9 @@ public class AdminDeployController extends AdminViewController {
     
     @Autowired
     private MQDeployer mqDeployer;
+
+    @Autowired
+    private BrokerService brokerService;
 
     private static final String BACKUP_SUFFIX = ".backup";
     
@@ -250,7 +254,7 @@ public class AdminDeployController extends AdminViewController {
      * @return
      */
     @RequestMapping(value="/shutdown", method=RequestMethod.POST)
-    public Result<?> shutdown(UserInfo ui, @RequestParam(name="addr") String addr) {
+    public Result<?> shutdown(UserInfo ui, @RequestParam(name="cid") int cid, @RequestParam(name="addr") String addr) {
         logger.warn("shutdown:{}, user:{}", addr, ui);
         String[] addrs = addr.split(":");
         String ip = addrs[0];
@@ -259,7 +263,12 @@ public class AdminDeployController extends AdminViewController {
         if(port == 0) {
             return Result.getResult(Status.PARAM_ERROR);
         }
-        return mqDeployer.shutdown(ip, port);
+        Result<?> shutdownResult = mqDeployer.shutdown(ip, port);
+        if (shutdownResult.isOK()) {
+            // 关闭后的broker更新状态
+            brokerService.updateWritable(cid, addr, true);
+        }
+        return shutdownResult;
     }
 
     /**
