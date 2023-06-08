@@ -301,6 +301,7 @@
 											<h4 class="modal-title">确定要下线broker?</h4>
 										</div>
 										<form class="form-horizontal form-bordered form-row-stripped" id="brokerOffline${i}">
+											<input type="hidden" name="cid" value="${response.result.selectedMQCluster.id}">
 											<div class="modal-body">
 												<div class="row">
 													<div class="col-md-12">
@@ -1873,7 +1874,7 @@ function startupBroker(ipAddr, brokerName, dir){
             	reload(5000);   
 		    } else {
 		    	toastr.error("启动失败！"+data.message);  
-		    	enable(dir+"Btn");
+		    	enable(brokerName+"Btn");
 		    }
        }, 'json');
 }

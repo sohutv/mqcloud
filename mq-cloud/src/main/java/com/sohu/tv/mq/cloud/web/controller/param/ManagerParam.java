@@ -36,6 +36,8 @@ public class ManagerParam {
 
     private String topic;
 
+    private Integer orderType;
+
     //请求参数
     private String queryStr;
 
@@ -112,6 +114,14 @@ public class ManagerParam {
         this.topic = topic;
     }
 
+    public Integer getOrderType() {
+        return orderType;
+    }
+
+    public void setOrderType(Integer orderType) {
+        this.orderType = orderType;
+    }
+
     public void buildQueryStr(){
         StringBuilder builder = new StringBuilder();
         if (cid !=null){
@@ -141,6 +151,9 @@ public class ManagerParam {
         if (StringUtils.isNotBlank(topic)) {
             builder.append("&topic=").append(topic);
         }
+        if (orderType != null){
+            builder.append("&orderType=").append(orderType);
+        }
         String query = builder.toString();
         if (query.startsWith("&")){
             query = query.substring(1);
@@ -169,5 +182,35 @@ public class ManagerParam {
                 ", noneConsumers=" + noneConsumers +
                 ", noneConsumerFlows=" + noneConsumerFlows +
                 '}';
+    }
+
+    public static enum QueryOrderType{
+        TRAFFIC_DESC(1, "traffic"),
+        TOPICNAME_ASC(2, "topicName"),
+        CREATE_ASC(3, "createTime");
+
+        private final int type;
+        private final String name;
+
+        private QueryOrderType(int type, String name) {
+            this.type = type;
+            this.name = name;
+        }
+
+        public static QueryOrderType getQueryOrderTypeByDefault(Integer type, QueryOrderType defaultQueryOrderType) {
+            if (type == null) {
+                return defaultQueryOrderType;
+            }
+            for (QueryOrderType queryOrderType : QueryOrderType.values()) {
+                if (queryOrderType.getType() == type) {
+                    return queryOrderType;
+                }
+            }
+            return defaultQueryOrderType;
+        }
+
+        public int getType() {
+            return type;
+        }
     }
 }
