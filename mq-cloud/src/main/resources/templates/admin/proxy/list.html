@@ -322,7 +322,7 @@ function install(id){
 	}
 	try {
 		var configJson = JSON.parse($("#configPre").text());
-		$("#listenPort").val(configJson.grpcServerPort);
+		$("#listenPort").val(configJson.remotingListenPort);
 	} catch (e) {
 		alert(e.name + ":" + e.message);
 		return;
