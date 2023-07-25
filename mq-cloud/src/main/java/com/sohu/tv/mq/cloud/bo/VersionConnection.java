@@ -1,6 +1,6 @@
 package com.sohu.tv.mq.cloud.bo;
 
-import org.apache.rocketmq.common.protocol.body.Connection;
+import org.apache.rocketmq.remoting.protocol.body.Connection;
 
 /**
  * @author fengwang219475
@@ -17,8 +17,7 @@ public class VersionConnection extends Connection {
     }
 
     public VersionConnection(Connection connection,String versionStr) {
-        // 用以区别解析
-        setVersion(-1);
+        setVersion(connection.getVersion());
         setLanguage(connection.getLanguage());
         setClientAddr(connection.getClientAddr());
         setClientId(connection.getClientId());
