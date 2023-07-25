@@ -27,7 +27,12 @@
 				<tr>
 					<td>${config_index + 1}</td>
 					<td id="key${config.id}">${config.key}</td>
-					<td id="value${config.id}">${config.value!}</td>
+					<#if config.jsonValue>
+						<td style="display: none" id="value${config.id}">${config.value!}</td>
+						<td id="show${config.id}"><script>$("#show${config.id}").jsonViewer(${config.value}, {withQuotes: true, rootCollapsable: false})</script></td>
+					<#else>
+						<td id="value${config.id}">${config.value!}</td>
+					</#if>
 					<td id="comment${config.id}">${config.comment}</td>
 					<td><button type="button" class="btn btn-success" data-target="#updateConfigModal" onclick="updateConfig(${config.id})" data-toggle="modal">修改</button></td>
 				</tr>
@@ -51,20 +56,21 @@
 						<div class="col-md-12">
 							<div class="form-body">
 								<div class="form-group">
-									<label class="control-label col-md-3"> 配置项: </label>
-									<div class="col-md-5">
+									<label class="control-label col-md-2"> 配置项: </label>
+									<div class="col-md-10">
 										<input type="text" id="configKey" name="key" class="form-control" readonly="readonly"/>
 									</div>
 								</div>
 								<div class="form-group">
-									<label class="control-label col-md-3"> 配置值: </label>
-									<div class="col-md-5">
+									<label class="control-label col-md-2"> 配置值: </label>
+									<div class="col-md-10">
 										<textarea type="text" id="configValue" name="value" rows="6" class="form-control"></textarea>
+										<pre id="jsonPre" contenteditable="true"></pre>
 									</div>
 								</div>
 								<div class="form-group">
-									<label class="control-label col-md-3"> 注释: </label>
-									<div class="col-md-5">
+									<label class="control-label col-md-2"> 注释: </label>
+									<div class="col-md-10">
 										<textarea type="text" id="configComment" name="comment" rows="6" class="form-control"></textarea>
 									</div>
 								</div>
@@ -86,10 +92,26 @@
 	function updateConfig(id){
 		$("#configId").val(id);
 		$("#configKey").val($("#key"+id).html());
-		$("#configValue").val($("#value"+id).html());
+		if ($("#value" + id).is(":visible")) {
+			$("#jsonPre").hide();
+			$("#configValue").show().val($("#value"+id).html());
+		} else {
+			$("#configValue").hide();
+			$("#jsonPre").show();
+			$("#jsonPre").jsonViewer(JSON.parse($("#value"+id).html()), {withQuotes: true, rootCollapsable: false});
+		}
 		$("#configComment").val($("#comment"+id).html());
 	}
-	function update(){
+	function update() {
+		if ($("#jsonPre").is(":visible") && $("#jsonPre").text()) {
+			try {
+				JSON.parse($("#jsonPre").text());
+				$("#configValue").val($("#jsonPre").text());
+			} catch (e) {
+				alert(e.name + ":" + e.message);
+				return;
+			}
+		}
 		disable("updateConfigBtn");
 		$.post('${request.contextPath}/admin/config/update',
 			$("#updateConfigForm").serialize(),

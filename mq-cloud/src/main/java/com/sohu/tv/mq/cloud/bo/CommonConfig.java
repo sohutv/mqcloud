@@ -1,4 +1,7 @@
 package com.sohu.tv.mq.cloud.bo;
+
+import org.apache.commons.lang3.StringUtils;
+
 /**
  * 通用配置
  * 
@@ -48,6 +51,15 @@ public class CommonConfig {
 
     public void setComment(String comment) {
         this.comment = comment;
+    }
+
+    public boolean isJsonValue() {
+        if (StringUtils.isBlank(value)) {
+            return false;
+        }
+        return key.equals("operatorContact") || key.equals("classList") || key.equals("mapWithByteList")
+                || key.equals("machineRoom") || key.equals("machineRoomList") || key.equals("machineRoomColor")
+                || key.equals("clientGroupNSConfig") || key.equals("oldReqestCodeBrokerSet") || key.equals("proxyAcls");
     }
 
     @Override
