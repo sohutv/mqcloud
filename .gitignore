@@ -9,6 +9,7 @@ target
 PROJECT_DIR_IS_UNDEFINED
 logs
 pom.xml.versionsBackup
+nmon
 nmon.zip
 dependency-reduced-pom.xml
 
