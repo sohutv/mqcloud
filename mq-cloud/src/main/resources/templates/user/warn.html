@@ -67,6 +67,7 @@
 		}, function(data) {
 			if (data.status == 200) {
 				$("#warnContent").html(data.result.content);
+				$("#warnContent > table").attr("style", "margin-top: 0px;word-break:break-all; word-wrap:break-all;");
 			} else {
 				$("#warnContent").html(data.message);
 			}
