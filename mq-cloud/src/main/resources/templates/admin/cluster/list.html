@@ -1874,7 +1874,7 @@ function startupBroker(ipAddr, brokerName, dir){
             	reload(5000);   
 		    } else {
 		    	toastr.error("启动失败！"+data.message);  
-		    	enable(brokerName+"Btn");
+		    	enable(dir+"Btn");
 		    }
        }, 'json');
 }
