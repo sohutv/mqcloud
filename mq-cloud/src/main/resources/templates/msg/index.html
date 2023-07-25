@@ -357,12 +357,10 @@ function next(){
 		if($("#data_"+(pageNum+1)).length > 0){
 			showPage(pageNum+1);
 		} else {
-			if("offset" == prevSearchType){
+			if($("#offsetStart").is(":visible")){
 				searchOffsetMessage(true);
-			} else if ("time" == prevSearchType) {
+			} else {
 				searchMessage(true);
-			} else if ("timerWheel" == prevSearchType) {
-				searchTimerWheelMessage(true);
 			}
 		}
 	}
