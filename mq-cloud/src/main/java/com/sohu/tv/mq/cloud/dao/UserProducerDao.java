@@ -19,8 +19,8 @@ public interface UserProducerDao {
      * @param consumer
      */
     @Options(useGeneratedKeys = true, keyProperty = "up.id")
-    @Insert("insert into user_producer(uid, tid, producer, http_enabled) values("
-            + "#{up.uid},#{up.tid},#{up.producer},#{up.httpEnabled})")
+    @Insert("insert into user_producer(uid, tid, producer, protocol) values("
+            + "#{up.uid},#{up.tid},#{up.producer},#{up.protocol})")
     public Integer insert(@Param("up") UserProducer userProducer);
     
     /**
@@ -115,9 +115,9 @@ public interface UserProducerDao {
      * 
      * @param consumer
      */
-    @Insert("<script>insert into user_producer(uid, tid, producer, http_enabled) values"
+    @Insert("<script>insert into user_producer(uid, tid, producer, protocol) values"
             + "<foreach collection=\"upList\" item=\"up\" separator=\",\">"
-            + "(#{up.uid},#{up.tid},#{up.producer},#{up.httpEnabled})"
+            + "(#{up.uid},#{up.tid},#{up.producer},#{up.protocol})"
             + "</foreach></script>")
     public Integer batchInsert(@Param("upList") List<UserProducer> userProducerList);
 

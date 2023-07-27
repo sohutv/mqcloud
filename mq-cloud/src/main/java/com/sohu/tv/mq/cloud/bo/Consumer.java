@@ -1,5 +1,7 @@
 package com.sohu.tv.mq.cloud.bo;
 
+import com.sohu.tv.mq.util.MQProtocol;
+
 import java.util.Date;
 
 /**
@@ -39,8 +41,8 @@ public class Consumer {
     // 用途
     private String info;
 
-    // 是否开启http消费
-    private int httpConsumeEnabled;
+    // 通信协议
+    private int protocol;
 
     public long getId() {
         return id;
@@ -134,16 +136,20 @@ public class Consumer {
         this.info = info;
     }
 
-    public int getHttpConsumeEnabled() {
-        return httpConsumeEnabled;
+    public int getProtocol() {
+        return protocol;
     }
 
-    public void setHttpConsumeEnabled(int httpConsumeEnabled) {
-        this.httpConsumeEnabled = httpConsumeEnabled;
+    public void setProtocol(int protocol) {
+        this.protocol = protocol;
     }
 
-    public boolean httpConsumeEnabled() {
-        return 1 == httpConsumeEnabled;
+    public boolean isHttpProtocol() {
+        return MQProtocol.isHttp(protocol);
+    }
+
+    public boolean isProxyRemoting() {
+        return MQProtocol.isProxyRemoting(protocol);
     }
 
     @Override
@@ -159,7 +165,7 @@ public class Consumer {
                 ", consumerTraffic=" + consumerTraffic +
                 ", traceEnabled=" + traceEnabled +
                 ", info='" + info + '\'' +
-                ", httpConsumeEnabled=" + httpConsumeEnabled +
+                ", protocol=" + protocol +
                 '}';
     }
 }

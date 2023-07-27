@@ -25,12 +25,15 @@
 								</div>
 								<div class="form-group">
 									<label class="control-label col-md-3"> 通信协议: </label>
-									<div class="col-md-5 checkbox">
+									<div class="col-md-8 checkbox">
 										<label data-toggle="tooltip" title="java语言请保持默认选项">
-											<input type="radio" name="httpEnabled" value="0" checked>RocketMQ
+											<input type="radio" name="protocol" value="0" checked>RocketMQ
 										</label>
 										<label data-toggle="tooltip" title="非java语言建议使用http协议生产">
-											<input type="radio" name="httpEnabled" value="1">HTTP <span class="nostyleA" data-toggle="tooltip" data-placement="bottom" title="点击查看http协议生产"><a href="/wiki/userGuide/http#producer" target=_blank class="glyphicon glyphicon-question-sign"></a></span>
+											<input type="radio" name="protocol" value="1">HTTP <span class="nostyleA" data-toggle="tooltip" data-placement="bottom" title="点击查看http协议生产"><a href="/wiki/userGuide/http#producer" target=_blank class="glyphicon glyphicon-question-sign"></a></span>
+										</label>
+										<label data-toggle="tooltip" title="代理模式的remoting协议">
+											<input type="radio" name="protocol" value="2">Proxy Remoting
 										</label>
 									</div>
 								</div>

@@ -1,7 +1,7 @@
 package com.sohu.tv.mq.cloud.bo;
 
 import com.sohu.tv.mq.util.CommonUtil;
-import org.apache.rocketmq.common.admin.OffsetWrapper;
+import org.apache.rocketmq.remoting.protocol.admin.OffsetWrapper;
 
 /**
  * @author: yongfeigao

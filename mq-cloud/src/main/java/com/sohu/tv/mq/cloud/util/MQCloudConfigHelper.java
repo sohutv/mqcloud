@@ -7,6 +7,7 @@ import com.sohu.tv.mq.util.JSONUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.rocketmq.common.MixAll;
+import org.apache.rocketmq.common.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -173,6 +174,9 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware, Comm
 
     // 使用旧的请求码的broker
     private Set<String> oldReqestCodeBrokerSet;
+
+    // proxy acl
+    private List<Map<String, Object>> proxyAcls;
 
     @Autowired
     private CommonConfigService commonConfigService;
@@ -699,6 +703,16 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware, Comm
             }
         }
         return false;
+    }
+
+    public Pair<String, String> getProxyAcl(int clusterId) {
+        if (proxyAcls == null) {
+            return null;
+        }
+        return proxyAcls.stream().filter(acls -> ((Integer) acls.get("clusterId")) == clusterId)
+                .findAny()
+                .map(acls -> new Pair(acls.get("accessKey"), acls.get("secretKey")))
+                .orElse(null);
     }
 
     @Override

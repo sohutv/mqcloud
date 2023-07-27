@@ -201,7 +201,7 @@ public class UserService {
         for (UserProducer userProducer : userProducerList) {
             StatsProducer statsProducer = new StatsProducer();
             statsProducer.setProducer(userProducer.getProducer());
-            statsProducer.setHttpEnabled(userProducer.getHttpEnabled());
+            statsProducer.setProtocol(userProducer.getProtocol());
             List<UserProducer> userProducerListCopy = filterMap.get(statsProducer);
             if (userProducerListCopy == null) {
                 userProducerListCopy = new ArrayList<UserProducer>();

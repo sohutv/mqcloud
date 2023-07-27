@@ -29,9 +29,8 @@ public class ConsumerParam {
     @Range(min = 1)
     private int permitsPerSecond;
 
-    // 是否http协议消费 0:否,1:是
-    @Range(min = 0, max = 1)
-    private int httpConsumeEnabled;
+    // 通信协议
+    private int protocol;
     
     public long getTid() {
         return tid;
@@ -76,12 +75,12 @@ public class ConsumerParam {
         this.permitsPerSecond = permitsPerSecond;
     }
 
-    public int getHttpConsumeEnabled() {
-        return httpConsumeEnabled;
+    public int getProtocol() {
+        return protocol;
     }
 
-    public void setHttpConsumeEnabled(int httpConsumeEnabled) {
-        this.httpConsumeEnabled = httpConsumeEnabled;
+    public void setProtocol(int protocol) {
+        this.protocol = protocol;
     }
 
     @Override
@@ -93,7 +92,7 @@ public class ConsumerParam {
                 ", info='" + info + '\'' +
                 ", traceEnable=" + traceEnable +
                 ", permitsPerSecond=" + permitsPerSecond +
-                ", httpConsumeEnabled=" + httpConsumeEnabled +
+                ", protocol=" + protocol +
                 '}';
     }
 }

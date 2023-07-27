@@ -82,7 +82,7 @@ public class MessageServiceTest {
         String msgId = "0A131F9000002A9F00000001B214B695";
         String consumer = "basic-apitest-topic-broadcast-consumer";
         int clusterId = 3;
-        Result<List<ResentMessageResult>> result = messageService.resendDirectly(clusterService.getMQClusterById(clusterId), msgId, consumer);
+        Result<?> result = messageService.resendDirectly(clusterService.getMQClusterById(clusterId), null, msgId, consumer, false);
         Assert.assertTrue(result.isOK());
     }
 

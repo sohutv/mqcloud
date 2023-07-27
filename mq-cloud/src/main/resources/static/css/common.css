@@ -300,3 +300,7 @@ button.btn.btn-search.ipsearch {
 	color: #3c763d;
 	font-weight: bold;
 }
+
+.checkbox label, .radio label {
+	padding-left: 1px!important;
+}

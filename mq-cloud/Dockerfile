@@ -27,24 +27,30 @@ RUN mkdir -p $ssh_path && \
     echo "mqcloud     ALL=(ALL)       NOPASSWD: ALL" >> /etc/sudoers && \
     sed -i "s/Defaults    requiretty/#Defaults    requiretty/g" /etc/sudoers
 
+# 拷贝rocketmq文件
+ARG ROCKETMQ_FILE
+COPY ${ROCKETMQ_FILE} /tmp/rmq.zip
+
 # 安装ns
 ARG ns_path=/opt/mqcloud/ns
 RUN mkdir -p $ns_path $ns_path/data/config $ns_path/logs
 RUN chown mqcloud:mqcloud -R $ns_path
-ADD src/main/resources/static/software/rocketmq-docker.tar $ns_path
+RUN unzip /tmp/rmq.zip -d $ns_path
+ADD docker/ns.conf $ns_path/ns.conf
 
 # 安装broker
 ARG broker_path=/opt/mqcloud/broker-a
 RUN mkdir -p $broker_path $broker_path/data/consumequeue $broker_path/data/commitlog $broker_path/logs
-ADD src/main/resources/static/software/rocketmq-docker.tar $broker_path
+RUN unzip /tmp/rmq.zip -d $broker_path
 RUN chown mqcloud:mqcloud -R $broker_path
+ADD docker/broker.conf $broker_path/broker.conf
 
 # mqcloud
 ARG JAR_FILE
 ADD ${JAR_FILE} /mq-cloud.war
-ADD nmon /tmp/nmon
-ENTRYPOINT ["sh","/run.sh"]
+ADD docker/nmon /tmp/nmon
+ADD docker/run.sh /
 
-ADD run.sh /
+ENTRYPOINT ["sh","/run.sh"]
 EXPOSE 8080
 EXPOSE 22

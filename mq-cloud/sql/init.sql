@@ -42,7 +42,7 @@ CREATE TABLE `audit_associate_producer` (
   `aid` int(11) NOT NULL COMMENT '审核id',
   `tid` int(11) NOT NULL COMMENT 'topic id',
   `producer` varchar(64) NOT NULL COMMENT '关联的生产者名字',
-  `http_enabled` int(4) NOT NULL DEFAULT '0' COMMENT '0:不开启http生产,1:开启http生产',
+  `protocol` int(4) NOT NULL DEFAULT '0' COMMENT '0:remoting,1:http,2:proxy remoting,3:grpc',
   PRIMARY KEY (`aid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='审核关联生产者相关表';
 
@@ -57,7 +57,7 @@ CREATE TABLE `audit_consumer` (
   `consume_way` int(4) NOT NULL DEFAULT '0' COMMENT '0:集群消费,1:广播消费',
   `trace_enabled` int(4) NOT NULL DEFAULT '0' COMMENT '0:不开启trace,1:开启trace',
   `permits_per_second` int(11) DEFAULT NULL COMMENT 'qps',
-  `http_consume_enabled` int(4) NOT NULL DEFAULT '0' COMMENT '0:不开启http消费,1:开启http消费',
+  `protocol` int(4) NOT NULL DEFAULT '0' COMMENT '0:remoting,1:http,2:proxy remoting,3:grpc',
   UNIQUE KEY `tid` (`tid`,`consumer`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='审核消费者相关表';
 
@@ -115,7 +115,7 @@ CREATE TABLE `audit_topic` (
   `qps` int(11) DEFAULT NULL COMMENT '消息量qps预估',
   `qpd` int(11) DEFAULT NULL COMMENT '一天消息量预估',
   `serializer` int(4) NOT NULL DEFAULT '0' COMMENT '序列化器 0:Protobuf,1:String',
-  `http_enabled` int(4) NOT NULL DEFAULT '0' COMMENT '0:不开启http生产,1:开启http生产'
+  `protocol` int(4) NOT NULL DEFAULT '0' COMMENT '0:remoting,1:http,2:proxy remoting,3:grpc'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='审核topic相关表';
 
 -- ----------------------------
@@ -262,7 +262,7 @@ CREATE TABLE `consumer` (
   `create_date` date NOT NULL,
   `update_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   `trace_enabled` int(4) NOT NULL DEFAULT '0' COMMENT '0:不开启trace,1:开启trace',
-  `http_consume_enabled` int(4) NOT NULL DEFAULT '0' COMMENT '0:不开启http消费,1:开启http消费',
+  `protocol` int(4) NOT NULL DEFAULT '0' COMMENT '0:remoting,1:http,2:proxy remoting,3:grpc',
   `info` varchar(360) DEFAULT NULL COMMENT '消费者描述',
   PRIMARY KEY (`id`),
   UNIQUE KEY `name` (`name`),
@@ -550,7 +550,7 @@ CREATE TABLE `user_producer` (
   `uid` int(11) NOT NULL COMMENT '用户id',
   `tid` int(11) NOT NULL COMMENT 'topic id',
   `producer` varchar(64) NOT NULL COMMENT 'producer名',
-  `http_enabled` int(4) NOT NULL DEFAULT '0' COMMENT '0:不开启http生产,1:开启http生产',
+  `protocol` int(4) NOT NULL DEFAULT '0' COMMENT '0:remoting,1:http,2:proxy remoting,3:grpc',
   PRIMARY KEY (`id`),
   KEY `t_p` (`tid`,`producer`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='用户与生产者关系表';
@@ -664,7 +664,7 @@ CREATE TABLE `broker_store_stat` (
 -- ----------------------------
 -- user init
 -- ----------------------------
-INSERT INTO `user` VALUES ('1', 'admin', 'admin@admin.com', '18688888888', '1', '2018-10-01', '2018-10-01 09:49:00', '1', '21232f297a57a5a743894a0e4a801fc3', 0);
+INSERT INTO `user`(`id`, name, email, mobile, type, create_date, update_time, receive_notice, password) VALUES ('1', 'admin', 'admin@admin.com', '18688888888', '1', '2018-10-01', '2018-10-01 09:49:00', '1', '21232f297a57a5a743894a0e4a801fc3');
 
 -- ----------------------------
 -- common_config init
@@ -698,6 +698,7 @@ INSERT INTO `common_config`(`key`, `value`, `comment`) VALUES ('slaveFallBehindS
 INSERT INTO `common_config`(`key`, `value`, `comment`) VALUES ('mqProxyServerString', '127.0.0.1', 'MQProxy服务器地址列表，多个用逗号分割');
 INSERT INTO `common_config`(`key`, `value`, `comment`) VALUES ('oldReqestCodeBrokerSet', '', '使用旧请求码的broker列表，例如：["127.0.0.1:10911","127.0.0.2:10911"]');
 INSERT INTO `common_config`(`key`, `value`, `comment`) VALUES ('clientGroupNSConfig', '{}', '客户端ns配置');
+INSERT INTO `common_config`(`key`, `value`, `comment`) VALUES ('proxyAcls', '', 'proxy的acl列表，例如：[{"clusterId":1,"accessKey":"RocketMQ","secretKey":"12345678"}]');
 
 -- ----------------------------
 -- warn_config init

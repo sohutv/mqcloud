@@ -1,15 +1,16 @@
 package com.sohu.tv.mq.cloud.service;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
-
+import com.sohu.tv.mq.cloud.bo.*;
+import com.sohu.tv.mq.cloud.bo.Audit.StatusEnum;
+import com.sohu.tv.mq.cloud.bo.Audit.TypeEnum;
+import com.sohu.tv.mq.cloud.dao.AuditDao;
+import com.sohu.tv.mq.cloud.dao.UserConsumerDao;
+import com.sohu.tv.mq.cloud.dao.UserProducerDao;
+import com.sohu.tv.mq.cloud.util.Result;
+import com.sohu.tv.mq.cloud.util.Status;
+import com.sohu.tv.mq.cloud.web.vo.*;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.rocketmq.common.protocol.body.Connection;
-import org.apache.rocketmq.common.protocol.body.ConsumerConnection;
+import org.apache.rocketmq.remoting.protocol.body.ConsumerConnection;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
@@ -19,52 +20,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.interceptor.TransactionAspectSupport;
 
-import com.sohu.tv.mq.cloud.bo.Audit;
-import com.sohu.tv.mq.cloud.bo.Audit.StatusEnum;
-import com.sohu.tv.mq.cloud.bo.Audit.TypeEnum;
-import com.sohu.tv.mq.cloud.bo.AuditAssociateConsumer;
-import com.sohu.tv.mq.cloud.bo.AuditAssociateProducer;
-import com.sohu.tv.mq.cloud.bo.AuditBatchAssociate;
-import com.sohu.tv.mq.cloud.bo.AuditConsumer;
-import com.sohu.tv.mq.cloud.bo.AuditConsumerConfig;
-import com.sohu.tv.mq.cloud.bo.AuditConsumerDelete;
-import com.sohu.tv.mq.cloud.bo.AuditResendMessage;
-import com.sohu.tv.mq.cloud.bo.AuditResendMessageConsumer;
-import com.sohu.tv.mq.cloud.bo.AuditResetOffset;
-import com.sohu.tv.mq.cloud.bo.AuditTimespanMessageConsume;
-import com.sohu.tv.mq.cloud.bo.AuditTopic;
-import com.sohu.tv.mq.cloud.bo.AuditTopicDelete;
-import com.sohu.tv.mq.cloud.bo.AuditTopicTrace;
-import com.sohu.tv.mq.cloud.bo.AuditTopicTrafficWarn;
-import com.sohu.tv.mq.cloud.bo.AuditTopicUpdate;
-import com.sohu.tv.mq.cloud.bo.AuditUserConsumerDelete;
-import com.sohu.tv.mq.cloud.bo.AuditUserProducerDelete;
-import com.sohu.tv.mq.cloud.bo.Consumer;
-import com.sohu.tv.mq.cloud.bo.Topic;
-import com.sohu.tv.mq.cloud.bo.User;
-import com.sohu.tv.mq.cloud.bo.UserConsumer;
-import com.sohu.tv.mq.cloud.bo.UserProducer;
-import com.sohu.tv.mq.cloud.dao.AuditDao;
-import com.sohu.tv.mq.cloud.dao.UserConsumerDao;
-import com.sohu.tv.mq.cloud.dao.UserProducerDao;
-import com.sohu.tv.mq.cloud.util.Result;
-import com.sohu.tv.mq.cloud.util.Status;
-import com.sohu.tv.mq.cloud.web.vo.AuditAssociateConsumerVO;
-import com.sohu.tv.mq.cloud.web.vo.AuditAssociateProducerVO;
-import com.sohu.tv.mq.cloud.web.vo.AuditConsumerConfigVO;
-import com.sohu.tv.mq.cloud.web.vo.AuditConsumerDeleteVO;
-import com.sohu.tv.mq.cloud.web.vo.AuditConsumerVO;
-import com.sohu.tv.mq.cloud.web.vo.AuditResendMessageVO;
-import com.sohu.tv.mq.cloud.web.vo.AuditResetOffsetVO;
-import com.sohu.tv.mq.cloud.web.vo.AuditTopicDeleteVO;
-import com.sohu.tv.mq.cloud.web.vo.AuditTopicTraceVO;
-import com.sohu.tv.mq.cloud.web.vo.AuditTopicTrafficWarnVO;
-import com.sohu.tv.mq.cloud.web.vo.AuditTopicUpdateVO;
-import com.sohu.tv.mq.cloud.web.vo.AuditUserConsumerDeleteVO;
-import com.sohu.tv.mq.cloud.web.vo.AuditUserProducerDeleteVO;
-import com.sohu.tv.mq.cloud.web.vo.AuditVO;
-import com.sohu.tv.mq.cloud.web.vo.TopicInfoVO;
-import com.sohu.tv.mq.cloud.web.vo.UserTopicInfoVO;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * audit服务
@@ -994,7 +951,7 @@ public class AuditService {
         }
         // 增加消费者链接校验
         Result<ConsumerConnection> connectionResult = consumerService.examineConsumerConnectionInfo(consumer.getName(),
-                clusterService.getMQClusterById(auditConsumerDeleteVO.getTopic().getClusterId()));
+                clusterService.getMQClusterById(auditConsumerDeleteVO.getTopic().getClusterId()), consumer.isProxyRemoting());
         if (connectionResult.isNotOK()) {
             auditConsumerDeleteVO.setClientIdListResult(connectionResult);
         } else {

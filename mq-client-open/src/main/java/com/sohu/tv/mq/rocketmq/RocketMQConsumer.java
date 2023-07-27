@@ -19,12 +19,14 @@ import com.sohu.tv.mq.rocketmq.redis.IRedis;
 import com.sohu.tv.mq.route.AllocateMessageQueueByAffinity;
 import com.sohu.tv.mq.util.Constant;
 import com.sohu.tv.mq.util.JSONUtil;
+import org.apache.rocketmq.client.ClientConfig;
 import org.apache.rocketmq.client.consumer.DefaultMQPushConsumer;
 import org.apache.rocketmq.client.consumer.listener.*;
 import org.apache.rocketmq.client.exception.MQClientException;
 import org.apache.rocketmq.client.impl.consumer.DefaultMQPushConsumerImpl;
 import org.apache.rocketmq.client.impl.consumer.PullMessageService;
 import org.apache.rocketmq.client.impl.factory.MQClientInstance;
+import org.apache.rocketmq.client.impl.producer.DefaultMQProducerImpl;
 import org.apache.rocketmq.client.trace.AsyncTraceDispatcher;
 import org.apache.rocketmq.client.trace.hook.ConsumeMessageTraceHookImpl;
 import org.apache.rocketmq.common.ServiceState;
@@ -32,8 +34,9 @@ import org.apache.rocketmq.common.ServiceThread;
 import org.apache.rocketmq.common.consumer.ConsumeFromWhere;
 import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.common.message.MessageQueue;
-import org.apache.rocketmq.common.protocol.RequestCode;
-import org.apache.rocketmq.common.protocol.heartbeat.MessageModel;
+import org.apache.rocketmq.remoting.RPCHook;
+import org.apache.rocketmq.remoting.protocol.RequestCode;
+import org.apache.rocketmq.remoting.protocol.heartbeat.MessageModel;
 import org.apache.rocketmq.common.utils.HttpTinyClient;
 import org.apache.rocketmq.common.utils.HttpTinyClient.HttpResult;
 import org.apache.rocketmq.remoting.RemotingClient;
@@ -906,5 +909,21 @@ public class RocketMQConsumer extends AbstractConfig {
 
     public void setConsumeFromMaxOffsetWhenBoot() {
         setConsumeFromTimestampWhenBoot(System.currentTimeMillis() + 10 * 1000);
+    }
+
+    @Override
+    public void setAclRPCHook(RPCHook rpcHook) {
+        try {
+            Field rpcHookField = DefaultMQPushConsumerImpl.class.getDeclaredField("rpcHook");
+            rpcHookField.setAccessible(true);
+            rpcHookField.set(consumer.getDefaultMQPushConsumerImpl(), rpcHook);
+        } catch (Exception e) {
+            throw new RuntimeException("setAcl error, group:" + getGroup());
+        }
+    }
+
+    @Override
+    protected Object getMQClient() {
+        return consumer;
     }
 }

@@ -109,11 +109,12 @@ public class AdminMessageController {
                 continue;
             }
             Result<?> sendResult;
-            if (!consumer.httpConsumeEnabled()) {
+            if (!consumer.isHttpProtocol()) {
                 if (consumer.isClustering()) {
                     sendResult = messageService.resend(cluster, topic, msg.getMsgId(), consumer.getName());
                 } else {
-                    sendResult = messageService.resendDirectly(cluster, msg.getMsgId(), consumer.getName());
+                    sendResult = messageService.resendDirectly(cluster, topic, msg.getMsgId(), consumer.getName(),
+                            consumer.isProxyRemoting());
                 }
             } else {
                 ConsumerConfigParam consumerConfigParam = new ConsumerConfigParam();
@@ -203,11 +204,12 @@ public class AdminMessageController {
         resendMessageVO.setTotal(1);
         if(AuditResendMessage.StatusEnum.SUCCESS.getStatus() != auditResendMessage.getStatus()) {
             Result<?> sendResult;
-            if (!consumer.httpConsumeEnabled()) {
+            if (!consumer.isHttpProtocol()) {
                 if (consumerResult.getResult().isClustering()) {
                     sendResult = messageService.resend(cluster, topic, msgId, consumer.getName());
                 } else {
-                    sendResult = messageService.resendDirectly(cluster, msgId, consumer.getName());
+                    sendResult = messageService.resendDirectly(cluster, topic, msgId, consumer.getName(),
+                            consumer.isProxyRemoting());
                 }
             } else {
                 ConsumerConfigParam consumerConfigParam = new ConsumerConfigParam();

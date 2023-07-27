@@ -6,7 +6,7 @@
 	<artifactId>mq</artifactId>
 	<packaging>pom</packaging>
 	<name>mq</name>
-	<version>4.9.4</version>
+	<version>5.1.0</version>
 
 	<modules>
 		<module>mq-client-common-open</module>
@@ -18,7 +18,7 @@
 	<properties>
 		<slf4j.version>1.7.5</slf4j.version>
 		<junit.version>4.13.1</junit.version>
-		<rocketmq.version>4.9.1</rocketmq.version>
+		<rocketmq.version>5.1.1-sohu-1</rocketmq.version>
 		<java.version>1.8</java.version>
 		<protostuff.version>1.5.0</protostuff.version>
 		<logback.version>1.2.0</logback.version>
@@ -136,6 +136,14 @@
 	</dependencies>
 	
 	<repositories>
+		<repository>
+			<id>internal.repo</id>
+			<url>file://${project.basedir}/../lib</url>
+			<layout>default</layout>
+			<snapshots>
+				<enabled>false</enabled>
+			</snapshots>
+		</repository>
 		<repository>
             <id>aliyun.repo</id>
             <url>http://maven.aliyun.com/nexus/content/groups/public/</url>

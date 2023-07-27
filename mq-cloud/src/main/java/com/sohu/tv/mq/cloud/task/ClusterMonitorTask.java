@@ -10,7 +10,7 @@ import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper;
 import com.sohu.tv.mq.cloud.util.Result;
 import net.javacrumbs.shedlock.core.SchedulerLock;
 import org.apache.commons.lang3.math.NumberUtils;
-import org.apache.rocketmq.common.protocol.body.KVTable;
+import org.apache.rocketmq.remoting.protocol.body.KVTable;
 import org.apache.rocketmq.tools.admin.MQAdminExt;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

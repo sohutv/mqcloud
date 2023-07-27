@@ -1,14 +1,5 @@
 package com.sohu.tv.mq.cloud.service;
 
-import java.util.Date;
-import java.util.List;
-
-import org.apache.rocketmq.store.stats.BrokerStatsManager;
-import org.apache.rocketmq.tools.admin.MQAdminExt;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.dao.DuplicateKeyException;
-import org.springframework.stereotype.Service;
-
 import com.sohu.tv.mq.cloud.bo.BrokerTraffic;
 import com.sohu.tv.mq.cloud.bo.Cluster;
 import com.sohu.tv.mq.cloud.bo.Topic;
@@ -19,6 +10,14 @@ import com.sohu.tv.mq.cloud.mq.MQAdminTemplate;
 import com.sohu.tv.mq.cloud.util.DateUtil;
 import com.sohu.tv.mq.cloud.util.Result;
 import com.sohu.tv.mq.cloud.util.Status;
+import org.apache.rocketmq.common.stats.Stats;
+import org.apache.rocketmq.tools.admin.MQAdminExt;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DuplicateKeyException;
+import org.springframework.stereotype.Service;
+
+import java.util.Date;
+import java.util.List;
 
 /**
  * topic流量服务
@@ -118,12 +117,12 @@ public class TopicTrafficService extends TrafficService<TopicTraffic> {
 
     @Override
     protected String getCountKey() {
-        return BrokerStatsManager.TOPIC_PUT_NUMS;
+        return Stats.TOPIC_PUT_NUMS;
     }
 
     @Override
     protected String getSizeKey() {
-        return BrokerStatsManager.TOPIC_PUT_SIZE;
+        return Stats.TOPIC_PUT_SIZE;
     }
 
     @Override

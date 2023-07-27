@@ -128,7 +128,7 @@ public class UserConsumerController {
             return listResult;
         }
         if (filter) {
-            listResult.setResult(list.stream().filter(consumer -> !consumer.httpConsumeEnabled()).collect(Collectors.toList()));
+            listResult.setResult(list.stream().filter(consumer -> !consumer.isHttpProtocol()).collect(Collectors.toList()));
         }
         return listResult;
     }

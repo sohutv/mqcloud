@@ -1,6 +1,6 @@
 package com.sohu.tv.mq.cloud.bo;
 
-import org.apache.rocketmq.common.protocol.body.BrokerStatsData;
+import org.apache.rocketmq.remoting.protocol.body.BrokerStatsData;
 
 /**
  * topic小时流量

@@ -13,11 +13,12 @@ import com.sohu.tv.mq.cloud.util.Status;
 import com.sohu.tv.mq.util.CommonUtil;
 import org.apache.rocketmq.client.exception.MQClientException;
 import org.apache.rocketmq.common.TopicConfig;
-import org.apache.rocketmq.common.admin.TopicStatsTable;
-import org.apache.rocketmq.common.protocol.body.ClusterInfo;
-import org.apache.rocketmq.common.protocol.body.TopicConfigSerializeWrapper;
-import org.apache.rocketmq.common.protocol.body.TopicList;
-import org.apache.rocketmq.common.protocol.route.TopicRouteData;
+import org.apache.rocketmq.remoting.protocol.admin.TopicStatsTable;
+import org.apache.rocketmq.remoting.protocol.body.ClusterInfo;
+import org.apache.rocketmq.remoting.protocol.body.TopicConfigSerializeWrapper;
+import org.apache.rocketmq.remoting.protocol.body.TopicList;
+import org.apache.rocketmq.remoting.protocol.route.BrokerData;
+import org.apache.rocketmq.remoting.protocol.route.TopicRouteData;
 import org.apache.rocketmq.remoting.exception.RemotingException;
 import org.apache.rocketmq.tools.admin.MQAdminExt;
 import org.apache.rocketmq.tools.command.CommandUtil;
@@ -322,7 +323,16 @@ public class TopicService {
     public TopicStatsTable stats(Cluster cluster, String topic) {
         return mqAdminTemplate.execute(new MQAdminCallback<TopicStatsTable>() {
             public TopicStatsTable callback(MQAdminExt mqAdmin) throws Exception {
-                return mqAdmin.examineTopicStats(topic);
+                TopicRouteData topicRouteData = mqAdmin.examineTopicRouteInfo(topic);
+                TopicStatsTable topicStatsTable = new TopicStatsTable();
+                for (BrokerData bd : topicRouteData.getBrokerDatas()) {
+                    String addr = bd.selectBrokerAddr();
+                    if (addr != null) {
+                        TopicStatsTable tst = mqAdmin.examineTopicStats(addr, topic);
+                        topicStatsTable.getOffsetTable().putAll(tst.getOffsetTable());
+                    }
+                }
+                return topicStatsTable;
             }
 
             public Cluster mqCluster() {
@@ -389,7 +399,7 @@ public class TopicService {
             up.setTid(topic.getId());
             up.setUid(audit.getUid());
             up.setProducer(auditTopic.getProducer());
-            up.setHttpEnabled(auditTopic.getHttpEnabled());
+            up.setProtocol(auditTopic.getProtocol());
             Integer updateCount = userProducerService.save(up);
             if(updateCount == null) {
                 return Result.getResult(Status.DB_ERROR);
@@ -614,7 +624,7 @@ public class TopicService {
                 String brokerAddr = clusterInfo.getBrokerAddrTable().entrySet().iterator().next().getValue()
                         .getBrokerAddrs().get(0L);
                 // 获取所有topic配置
-                TopicConfigSerializeWrapper allTopicConfig = mqAdmin.getAllTopicGroup(brokerAddr, 5000);
+                TopicConfigSerializeWrapper allTopicConfig = mqAdmin.getAllTopicConfig(brokerAddr, 5000);
                 // 获取所有topic
                 TopicList topicList = mqAdmin.fetchAllTopicList();
                 // 获取系统topic

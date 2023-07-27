@@ -8,8 +8,8 @@ import com.sohu.tv.mq.cloud.service.*;
 import com.sohu.tv.mq.cloud.util.Result;
 import com.sohu.tv.mq.rocketmq.RocketMQConsumer;
 import com.sohu.tv.mq.rocketmq.RocketMQProducer;
-import org.apache.rocketmq.common.protocol.body.ClusterInfo;
-import org.apache.rocketmq.common.protocol.route.TopicRouteData;
+import org.apache.rocketmq.remoting.protocol.body.ClusterInfo;
+import org.apache.rocketmq.remoting.protocol.route.TopicRouteData;
 import org.apache.rocketmq.tools.admin.MQAdminExt;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,9 +17,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Properties;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -33,28 +30,13 @@ public class DemoDataInitializer implements CommandLineRunner {
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
     @Autowired
-    private ServerDataService serverDataService;
-
-    @Autowired
     private ClusterService clusterService;
-
-    @Autowired
-    private NameServerService nameServerService;
-
-    @Autowired
-    private BrokerService brokerService;
 
     @Autowired
     private TopicService topicService;
 
     @Autowired
-    private ConsumerService consumerService;
-
-    @Autowired
     private UserConsumerService userConsumerService;
-
-    @Autowired
-    private CommonConfigService commonConfigService;
 
     @Autowired
     private MQAdminTemplate mqAdminTemplate;

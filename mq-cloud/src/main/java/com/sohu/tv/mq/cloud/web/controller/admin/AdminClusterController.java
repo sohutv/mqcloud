@@ -21,10 +21,10 @@ import com.sohu.tv.mq.cloud.web.vo.BrokerStatVO;
 import com.sohu.tv.mq.cloud.web.vo.ClusterInfoVO;
 import com.sohu.tv.mq.cloud.web.vo.UserInfo;
 import org.apache.commons.lang3.math.NumberUtils;
-import org.apache.rocketmq.common.protocol.body.ClusterInfo;
-import org.apache.rocketmq.common.protocol.body.KVTable;
-import org.apache.rocketmq.common.protocol.route.BrokerData;
 import org.apache.rocketmq.common.running.RunningStats;
+import org.apache.rocketmq.remoting.protocol.body.ClusterInfo;
+import org.apache.rocketmq.remoting.protocol.body.KVTable;
+import org.apache.rocketmq.remoting.protocol.route.BrokerData;
 import org.apache.rocketmq.tools.admin.MQAdminExt;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -293,7 +293,7 @@ public class AdminClusterController extends AdminViewController {
                 // 获取集群信息
                 ClusterInfo clusterInfo = mqAdmin.examineBrokerClusterInfo();
                 // 获得broker地址map
-                HashMap<String, BrokerData> brokerAddrTable = clusterInfo.getBrokerAddrTable();
+                Map<String, BrokerData> brokerAddrTable = clusterInfo.getBrokerAddrTable();
                 List<Broker> list = new ArrayList<Broker>();
                 // 遍历集群中所有的broker
                 for (String brokerName : brokerAddrTable.keySet()) {

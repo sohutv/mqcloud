@@ -1,5 +1,7 @@
 package com.sohu.tv.mq.cloud.bo;
 
+import com.sohu.tv.mq.util.MQProtocol;
+
 /**
  * 用户生产者对象
  * 
@@ -12,8 +14,8 @@ public class UserProducer extends UserTopic {
 
     private boolean stats;
 
-    // 是否开启http生产
-    private int httpEnabled;
+    // 通信协议
+    private int protocol;
 
     public String getProducer() {
         return producer;
@@ -31,16 +33,16 @@ public class UserProducer extends UserTopic {
         this.stats = stats;
     }
 
-    public int getHttpEnabled() {
-        return httpEnabled;
+    public int getProtocol() {
+        return protocol;
     }
 
-    public void setHttpEnabled(int httpEnabled) {
-        this.httpEnabled = httpEnabled;
+    public void setProtocol(int protocol) {
+        this.protocol = protocol;
     }
 
-    public boolean httpEnabled() {
-        return 1 == httpEnabled;
+    public boolean isProxyRemoting() {
+        return MQProtocol.isProxyRemoting(protocol);
     }
 
     @Override

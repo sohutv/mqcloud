@@ -46,8 +46,9 @@
 				<div class="form-group">
 					<label class="control-label col-md-3"> 消费协议: </label>
 					<div class="col-md-6 checkbox">
-						<input type="radio" value="0" disabled="disabled" <#if response.result.httpConsumeEnabled == 0>checked</#if>>RocketMQ
-						<input type="radio" value="1" disabled="disabled" <#if response.result.httpConsumeEnabled == 1>checked</#if>>HTTP
+						<input type="radio" value="0" disabled="disabled" <#if response.result.protocol == 0>checked</#if>>RocketMQ
+						<input type="radio" value="1" disabled="disabled" <#if response.result.protocol == 1>checked</#if>>HTTP
+						<input type="radio" value="2" disabled="disabled" <#if response.result.protocol == 2>checked</#if>>Proxy Remoting
 					</div>
 				</div>
 				<div class="form-group custom">

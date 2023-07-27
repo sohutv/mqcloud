@@ -15,8 +15,8 @@ import com.sohu.tv.mq.cloud.web.vo.BrokerConfigGroupVO;
 import com.sohu.tv.mq.cloud.web.vo.BrokerConfigVO;
 import com.sohu.tv.mq.cloud.web.vo.UserInfo;
 import org.apache.commons.lang3.math.NumberUtils;
-import org.apache.rocketmq.common.protocol.body.ClusterInfo;
-import org.apache.rocketmq.common.protocol.route.BrokerData;
+import org.apache.rocketmq.remoting.protocol.body.ClusterInfo;
+import org.apache.rocketmq.remoting.protocol.route.BrokerData;
 import org.apache.rocketmq.tools.admin.MQAdminExt;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -81,7 +81,7 @@ public class AdminBrokerController extends AdminViewController {
                 // 获取集群信息
                 ClusterInfo clusterInfo = mqAdmin.examineBrokerClusterInfo();
                 // 获得broker地址map
-                HashMap<String, BrokerData> brokerAddrTable = clusterInfo.getBrokerAddrTable();
+                Map<String, BrokerData> brokerAddrTable = clusterInfo.getBrokerAddrTable();
                 if (brokerAddrTable.isEmpty()) {
                     return Result.getResult(Status.NO_RESULT);
                 }

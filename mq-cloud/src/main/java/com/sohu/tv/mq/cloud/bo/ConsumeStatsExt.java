@@ -1,6 +1,6 @@
 package com.sohu.tv.mq.cloud.bo;
 
-import org.apache.rocketmq.common.admin.OffsetWrapper;
+import org.apache.rocketmq.remoting.protocol.admin.OffsetWrapper;
 import org.apache.rocketmq.common.message.MessageQueue;
 
 import java.util.Arrays;

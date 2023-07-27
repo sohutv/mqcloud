@@ -3,7 +3,7 @@ package com.sohu.tv.mq.cloud.service;
 import java.util.Date;
 import java.util.List;
 
-import org.apache.rocketmq.store.stats.BrokerStatsManager;
+import org.apache.rocketmq.common.stats.Stats;
 import org.apache.rocketmq.tools.admin.MQAdminExt;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -123,12 +123,12 @@ public class ConsumerTrafficService extends TrafficService<ConsumerTraffic> {
 
     @Override
     protected String getCountKey() {
-        return BrokerStatsManager.GROUP_GET_NUMS;
+        return Stats.GROUP_GET_NUMS;
     }
 
     @Override
     protected String getSizeKey() {
-        return BrokerStatsManager.GROUP_GET_SIZE;
+        return Stats.GROUP_GET_SIZE;
     }
 
     @Override

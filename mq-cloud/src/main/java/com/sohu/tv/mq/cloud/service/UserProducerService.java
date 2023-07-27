@@ -5,8 +5,8 @@ import java.util.HashSet;
 import java.util.List;
 
 import com.sohu.tv.mq.cloud.bo.ClientLanguage;
-import org.apache.rocketmq.common.protocol.body.Connection;
-import org.apache.rocketmq.common.protocol.body.ProducerConnection;
+import org.apache.rocketmq.remoting.protocol.body.Connection;
+import org.apache.rocketmq.remoting.protocol.body.ProducerConnection;
 import org.apache.rocketmq.tools.admin.MQAdminExt;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -157,7 +157,8 @@ public class UserProducerService {
      * @param mqCluster
      * @return
      */
-    public Result<ProducerConnection> examineProducerConnectionInfo(String producerGroup, String topic, Cluster mqCluster) {
+    public Result<ProducerConnection> examineProducerConnectionInfo(String producerGroup, String topic,
+                                                                    Cluster mqCluster, boolean isProxyRemoting) {
         Result<ProducerConnection> connectionResult = mqAdminTemplate.execute(new MQAdminCallback<Result<ProducerConnection>>() {
             public Result<ProducerConnection> callback(MQAdminExt mqAdmin) throws Exception {
                 ProducerConnection producerConnection = mqAdmin.examineProducerConnectionInfo(producerGroup, topic);
@@ -170,6 +171,10 @@ public class UserProducerService {
 
             public Cluster mqCluster() {
                 return mqCluster;
+            }
+
+            public boolean isProxyRemoting() {
+                return isProxyRemoting;
             }
         });
         return connectionResult;

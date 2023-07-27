@@ -118,7 +118,7 @@
 							    	</#list>
 							    </#if>					    	
 						    </td>
-						    <td><a href="javacript:void();" class="copied" data-toggle="tooltip" title="点击复制生产者" data-clipboard-text="${key.producer}">${key.producer}</a> <#if key.httpEnabled == 1><span style="vertical-align: middle;" data-toggle="tooltip" title="HTTP协议生产者" class="glyphicon glyphicon-info-sign"></span></#if></td>
+						    <td><a href="javacript:void();" class="copied" data-toggle="tooltip" title="点击复制生产者" data-clipboard-text="${key.producer}">${key.producer}</a> <#if key.protocol == 1><span style="vertical-align: middle;" data-toggle="tooltip" title="HTTP协议生产者" class="glyphicon glyphicon-info-sign"></span></#if><#if key.protocol == 2><span style="vertical-align: middle;" data-toggle="tooltip" title="Proxy Remoting协议生产者" class="glyphicon glyphicon-info-sign"></span></#if></td>
 						</tr>
 					</#list>
 				<#else>

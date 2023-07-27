@@ -14,7 +14,7 @@ public class AuditConsumer {
     
     private int permitsPerSecond;
 
-    private int httpConsumeEnabled;
+    private int protocol;
 
     public long getAid() {
         return aid;
@@ -68,12 +68,12 @@ public class AuditConsumer {
         this.permitsPerSecond = permitsPerSecond;
     }
 
-    public int getHttpConsumeEnabled() {
-        return httpConsumeEnabled;
+    public int getProtocol() {
+        return protocol;
     }
 
-    public void setHttpConsumeEnabled(int httpConsumeEnabled) {
-        this.httpConsumeEnabled = httpConsumeEnabled;
+    public void setProtocol(int protocol) {
+        this.protocol = protocol;
     }
 
     @Override
@@ -85,7 +85,7 @@ public class AuditConsumer {
                 ", consumeWay=" + consumeWay +
                 ", traceEnabled=" + traceEnabled +
                 ", permitsPerSecond=" + permitsPerSecond +
-                ", httpConsumeEnabled=" + httpConsumeEnabled +
+                ", protocol=" + protocol +
                 '}';
     }
 }

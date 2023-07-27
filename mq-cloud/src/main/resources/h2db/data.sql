@@ -36,6 +36,7 @@ INSERT IGNORE INTO `common_config` VALUES ('27', 'mqProxyServerString', '127.0.0
 INSERT IGNORE INTO `common_config` VALUES ('28', 'oldReqestCodeBrokerSet', '', '使用旧请求码的broker列表，例如：["127.0.0.1:10911","127.0.0.2:10911"]');
 INSERT IGNORE INTO `common_config` VALUES ('29', 'rocketmq5FilePath', 'classpath:static/software/rocketmq5.zip', 'rocketmq5安装文件路径，支持以下三种资源加载方式,例如 1:classpath:static/software/rocketmq5.zip 2：file:///tmp/rocketmq5.zip 3：http://127.0.0.1:8080/software/rocketmq5.zip');
 INSERT IGNORE INTO `common_config` VALUES ('30', 'clientGroupNSConfig', '{}', '客户端ns配置');
+INSERT IGNORE INTO `common_config` VALUES ('31', 'proxyAcls', '', 'proxy的acl列表，例如：[{"clusterId":1,"accessKey":"RocketMQ","secretKey":"12345678"}]');
 
 -- ----------------------------
 -- warn_config init

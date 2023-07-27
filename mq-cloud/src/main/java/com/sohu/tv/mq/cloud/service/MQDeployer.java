@@ -19,10 +19,10 @@ import com.sohu.tv.mq.util.JSONUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.rocketmq.common.MixAll;
-import org.apache.rocketmq.common.protocol.body.ClusterInfo;
-import org.apache.rocketmq.common.protocol.body.SubscriptionGroupWrapper;
-import org.apache.rocketmq.common.protocol.body.TopicConfigSerializeWrapper;
-import org.apache.rocketmq.common.protocol.route.BrokerData;
+import org.apache.rocketmq.remoting.protocol.body.ClusterInfo;
+import org.apache.rocketmq.remoting.protocol.body.SubscriptionGroupWrapper;
+import org.apache.rocketmq.remoting.protocol.body.TopicConfigSerializeWrapper;
+import org.apache.rocketmq.remoting.protocol.route.BrokerData;
 import org.apache.rocketmq.tools.admin.MQAdminExt;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -65,7 +65,7 @@ public class MQDeployer {
 
     public static final String RUN_CONFIG = "echo \"nohup sh %s/bin/%s >> %s/logs/startup.log 2>&1 &\" >> %s/" + RUN_FILE;
 
-    public static final String DATA_LOGS_DIR = "mkdir -p %s/data/config|mkdir -p %s/logs|";
+    public static final String DATA_LOGS_DIR = "mkdir -p %s/data/config && mkdir -p %s/logs && ";
 
     public static final String MQ_AUTH = "/tmp/mqauth";
 
@@ -257,10 +257,10 @@ public class MQDeployer {
         String ip = param.get("ip").toString();
         String absoluteDir = param.get("dir").toString();
         String absoluteConfig = absoluteDir + "/" + CONFIG_FILE;
-        String mqConf = "echo \"kvConfigPath="+absoluteDir+"/data/kvConfig.json\" >> " + absoluteConfig + "|"
-                + "echo \"listenPort="+port+"\" >> " + absoluteConfig + "|";
+        String mqConf = "echo \"kvConfigPath="+absoluteDir+"/data/kvConfig.json\" >> " + absoluteConfig + " && "
+                + "echo \"listenPort="+port+"\" >> " + absoluteConfig + " && ";
         if (mqCloudConfigHelper.isAdminAclEnable()) {
-            mqConf += "echo \"adminAclEnable=true\" >> " + absoluteConfig + "|";
+            mqConf += "echo \"adminAclEnable=true\" >> " + absoluteConfig + " && ";
         }
         String runFileCommand = buildNameServerRunFileCommand(param);
         String comm = String.format(DATA_LOGS_DIR, absoluteDir, absoluteDir)
@@ -296,14 +296,14 @@ public class MQDeployer {
         // 1.基础配置
         String comm = String.format(DATA_LOGS_DIR, absoluteDir, absoluteDir)
                 + "mkdir -p " + param.get("storePathRootDir") + "/consumequeue " + param.get("storePathCommitLog")
-                + "|echo -e \""
+                + " && echo -e \""
                 + map2String(param, cluster.getId())
-                + "\" > " + absoluteConfig + "|"
+                + "\" > " + absoluteConfig + " && "
                 + runFileCommand;
         // 2.启用proxy
         String proxyConfigCommand = null;
         if (isEnableProxy(param)) {
-            proxyConfigCommand = "|echo '{\"rocketMQClusterName\":\"" + clusterName + "\""
+            proxyConfigCommand = " && echo '{\"rocketMQClusterName\":\"" + clusterName + "\""
                     + ",\"namesrvDomain\":\"" + param.get("rmqAddressServerDomain") + "\""
                     + ",\"namesrvDomainSubgroup\":\"" + param.get("rmqAddressServerSubGroup") + "\"";
             if (param.get("grpcServerPort") != null) {
@@ -406,7 +406,7 @@ public class MQDeployer {
         String mqConfCommand = "echo -e \"" + mqConf + "\" > " + absoluteConfig;
         String runFileCommand = buildControllerRunFileCommand(param);
         String comm = String.format(DATA_LOGS_DIR, absoluteDir, absoluteDir)
-                + mqConfCommand + "|"
+                + mqConfCommand + " && "
                 + runFileCommand;
         SSHResult sshResult = null;
         try {
@@ -435,8 +435,8 @@ public class MQDeployer {
         String absoluteDir = param.get("dir").toString();
         String runFileCommand = buildProxyRunFileCommand(param);
         String proxyConfigCommand = "echo '" + param.get("config") + "' > " + absoluteDir + "/" + PROXY_JSON;
-        String comm = String.format("mkdir -p %s/logs", absoluteDir) + "|"
-                + proxyConfigCommand + "|"
+        String comm = String.format("mkdir -p %s/logs", absoluteDir) + " && "
+                + proxyConfigCommand + " && "
                 + runFileCommand;
         SSHResult sshResult = null;
         try {
@@ -509,7 +509,7 @@ public class MQDeployer {
         String absoluteDir = param.get("dir").toString();
         String command = String.format(ENV_CONFIG, absoluteDir);
         if (JvmOptExtConfig.length() > 0) {
-            command += "|" + String.format(JVM_OPT_EXT_CONFIG, JvmOptExtConfig, absoluteDir);
+            command += " && " + String.format(JVM_OPT_EXT_CONFIG, JvmOptExtConfig, absoluteDir);
         }
         // broker内嵌proxy参数
         if ("mqbroker".equals(runFile) && isEnableProxy(param)) {
@@ -521,7 +521,7 @@ public class MQDeployer {
         } else {
             runFile += " -c " + absoluteDir + "/" + CONFIG_FILE;
         }
-        command += "|" + String.format(RUN_CONFIG, absoluteDir, runFile, absoluteDir, absoluteDir);
+        command += " && " + String.format(RUN_CONFIG, absoluteDir, runFile, absoluteDir, absoluteDir);
         return command;
     }
 
@@ -598,7 +598,7 @@ public class MQDeployer {
      */
     public Result<?> initConfig(String ip, String nsHome) {
         String comm = "if [ ! -f \"" + MQ_CLOUD_CONFIG_INIT_FLAG + "\" ];then sudo sh "
-                + String.format(MQ_CLOUD_OS_SH, nsHome) + "|touch " + MQ_CLOUD_CONFIG_INIT_FLAG + ";fi";
+                + String.format(MQ_CLOUD_OS_SH, nsHome) + " && touch " + MQ_CLOUD_CONFIG_INIT_FLAG + ";fi";
         SSHResult sshResult = null;
         try {
             sshResult = sshTemplate.execute(ip, new SSHCallback() {
@@ -628,7 +628,7 @@ public class MQDeployer {
                 if(clusterInfo == null) {
                     return Result.getResult(Status.NO_RESULT);
                 }
-                HashMap<String, BrokerData> brokerAddrTable = clusterInfo.getBrokerAddrTable();
+                Map<String, BrokerData> brokerAddrTable = clusterInfo.getBrokerAddrTable();
                 if(brokerAddrTable == null || brokerAddrTable.size() == 0) {
                     return Result.getResult(Status.NO_RESULT);
                 }
@@ -661,7 +661,7 @@ public class MQDeployer {
         return mqAdminTemplate.execute(new MQAdminCallback<Result<String>>() {
             public Result<String> callback(MQAdminExt mqAdmin) throws Exception {
                 // 获取topic配置
-                TopicConfigSerializeWrapper topicWrapper = mqAdmin.getAllTopicGroup(masterAddress, 10 * 1000);
+                TopicConfigSerializeWrapper topicWrapper = mqAdmin.getAllTopicConfig(masterAddress, 10 * 1000);
                 if(topicWrapper == null) {
                     return Result.getResult(Status.NO_RESULT);
                 }
@@ -715,6 +715,14 @@ public class MQDeployer {
      * @return
      */
     public Result<?> backup(String ip, String sourceDir, String destDir) {
+        // 首先判断目标目录是否存在
+        Result<?> dirExistResult = _dirExist(ip, destDir);
+        if (!dirExistResult.isOK()) {
+            return dirExistResult;
+        }
+        if ((Boolean) dirExistResult.getResult()) {
+            return Result.getResult(Status.DB_ERROR).setMessage(destDir + "已存在");
+        }
         String comm = "sudo mv " + sourceDir + " " + destDir;
         SSHResult sshResult = null;
         try {
@@ -1094,7 +1102,7 @@ public class MQDeployer {
         try {
             sshResult = sshTemplate.execute(sourceIp, new SSHCallback() {
                 public SSHResult call(SSHSession session) {
-                    return session.executeCommand("cd " + sourceDataDir + ";tar cz " + storeFile.getName() + "|ssh -i " 
+                    return session.executeCommand("cd " + sourceDataDir + ";tar cz " + storeFile.getName() + " && ssh -i "
                           + MQ_AUTH + " -q mqcloud@" + destIp + " \"tar xzm -C " + destDataDir + "\"", 30 * 60 * 1000);
                 }
             });
@@ -1228,9 +1236,24 @@ public class MQDeployer {
      * @param ip
      * @return
      */
-    public Result<?> dirExist(String ip, String dir){
+    public Result<?> dirExist(String ip, String dir) {
         String destDir = dir + "/data";
-        String comm = "if [ -d \"" +destDir+ "\" ];then echo 1;else echo 0;fi";
+        Result<?> result = _dirExist(ip, destDir);
+        if (result.isOK() && !(Boolean) result.getResult()) {
+            return Result.getResult(Status.DB_ERROR).setMessage("目录不存在");
+        }
+        return result;
+    }
+
+    /**
+     * 判断目录是否存在
+     *
+     * @param ip
+     * @param dir
+     * @return Result.notOK:结果未知;Result<true>:存在;Result<false>:不存在
+     */
+    private Result<?> _dirExist(String ip, String dir) {
+        String comm = "if [ -d \"" + dir + "\" ];then echo 1;else echo 0;fi";
         SSHResult sshResult = null;
         try {
             sshResult = sshTemplate.execute(ip, new SSHCallback() {
@@ -1240,14 +1263,19 @@ public class MQDeployer {
                 }
             });
         } catch (SSHException e) {
-            logger.error("dirExist, ip:{},dir:{}", ip, destDir, e);
+            logger.error("dirExist, ip:{},dir:{}", ip, dir, e);
             return Result.getWebErrorResult(e);
         }
         Result<?> result = wrapSSHResult(sshResult);
-        if(result.isOK() && "0".equals(result.getResult())) {
-            return Result.getResult(Status.DB_ERROR).setMessage("目录不存在");
+        if (!result.isOK()) {
+            return result;
         }
-        return result;
+        if ("0".equals(result.getResult())) {
+            return Result.getResult(false);
+        } else if ("1".equals(result.getResult())) {
+            return Result.getResult(true);
+        }
+        return Result.getResult(Status.NO_RESULT);
     }
     
     /**

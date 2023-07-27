@@ -1,13 +1,12 @@
 package com.sohu.tv.mq.cloud.mq;
 
+import com.sohu.tv.mq.cloud.bo.Cluster;
 import org.apache.commons.pool2.impl.GenericKeyedObjectPool;
 import org.apache.rocketmq.tools.admin.MQAdminExt;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-
-import com.sohu.tv.mq.cloud.bo.Cluster;
 /**
  * 模板类，便于统一处理资源，异常，日志
  * @Description: 
@@ -21,6 +20,9 @@ public class MQAdminTemplate {
     @Autowired
     private GenericKeyedObjectPool<Cluster, MQAdminExt> mqPool;
 
+	@Autowired
+	private GenericKeyedObjectPool<Cluster, MQAdminExt> mqProxyPool;
+
 	/**
 	 * 执行操作
 	 * @param callback
@@ -31,7 +33,11 @@ public class MQAdminTemplate {
         MQAdminExt mqAdmin = null;
 		try {
 		    // 获取mqAdmin实例
-            mqAdmin = mqPool.borrowObject(callback.mqCluster());
+			if (callback.isProxyRemoting()) {
+				mqAdmin = mqProxyPool.borrowObject(callback.mqCluster());
+			} else {
+				mqAdmin = mqPool.borrowObject(callback.mqCluster());
+			}
 		    if(mqAdmin == null) {
 		        logger.warn("cluster:{} cannot get mqadmin!", callback.mqCluster());
 		        return null;
@@ -50,7 +56,11 @@ public class MQAdminTemplate {
 		} finally {
 		    if(mqAdmin != null) {
 		        try {
-                    mqPool.returnObject(callback.mqCluster(), mqAdmin);
+					if (callback.isProxyRemoting()) {
+						mqProxyPool.returnObject(callback.mqCluster(), mqAdmin);
+					} else {
+						mqPool.returnObject(callback.mqCluster(), mqAdmin);
+					}
                 } catch (Exception e) {
                     logger.warn("cluster:{} shutdown err:{}", callback.mqCluster(), e.getMessage());
                 }

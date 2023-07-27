@@ -11,8 +11,8 @@ import com.sohu.tv.mq.cloud.util.Status;
 import com.sohu.tv.mq.cloud.web.controller.param.PaginationParam;
 import com.sohu.tv.mq.cloud.web.vo.*;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.rocketmq.common.protocol.body.Connection;
-import org.apache.rocketmq.common.protocol.body.ProducerConnection;
+import org.apache.rocketmq.remoting.protocol.body.Connection;
+import org.apache.rocketmq.remoting.protocol.body.ProducerConnection;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -722,7 +722,7 @@ public class AuditController extends AdminViewController {
         up.setTid(auditAssociateProducer.getTid());
         up.setUid(auditAssociateProducer.getUid());
         up.setProducer(auditAssociateProducer.getProducer());
-        up.setHttpEnabled(auditAssociateProducer.getHttpEnabled());
+        up.setProtocol(auditAssociateProducer.getProtocol());
         Result<UserProducer> userProducerResult = userProducerService.saveNoException(up);
         if (userProducerResult.isNotOK()) {
             return userProducerResult;
@@ -762,7 +762,7 @@ public class AuditController extends AdminViewController {
         Topic topic = topicResult.getResult();
         Cluster cluster = clusterService.getMQClusterById(topic.getClusterId());
         Result<ProducerConnection> producerConnectionResult = userProducerService.examineProducerConnectionInfo(
-                auditAssociateProducer.getProducer(), topic.getName(), cluster);
+                auditAssociateProducer.getProducer(), topic.getName(), cluster, auditAssociateProducer.isProxyRemoting());
 
         // 组装成vo
         List<ConnectionVO> connectionVOList = new ArrayList<ConnectionVO>();
@@ -1144,7 +1144,7 @@ public class AuditController extends AdminViewController {
                 return Result.getWebResult(result);
             }
         } else {
-            if (consumer.httpConsumeEnabled()) {
+            if (consumer.isHttpProtocol()) {
                 Result<?> resetOffsetResult = consumerService.resetOffset(userInfo, consumer.getName(), resetTo);
                 if (resetOffsetResult.isNotOK()) {
                     return Result.getWebResult(resetOffsetResult);
@@ -1157,8 +1157,13 @@ public class AuditController extends AdminViewController {
                 }
                 Topic topic = topicResult.getResult();
                 Cluster cluster = clusterService.getMQClusterById(topic.getClusterId());
-                Result<?> resetOffsetResult = consumerService.resetOffset(cluster, topic.getName(),
-                        consumer.getName(), resetTo);
+                Result<?> resetOffsetResult = null;
+                if (consumer.isProxyRemoting()) {
+                    resetOffsetResult = consumerService.resetOffsetOfProxyRemoting(cluster, topic.getName(),
+                            consumer.getName(), resetTo);
+                } else {
+                    resetOffsetResult = consumerService.resetOffset(cluster, topic.getName(), consumer.getName(), resetTo);
+                }
                 if (resetOffsetResult.isNotOK()) {
                     return resetOffsetResult;
                 }
@@ -1443,7 +1448,7 @@ public class AuditController extends AdminViewController {
                     tmp.setUid(user.getId());
                     tmp.setTid(topicInfoVO.getTopic().getId());
                     tmp.setProducer(up.getProducer());
-                    tmp.setHttpEnabled(up.getHttpEnabled());
+                    tmp.setProtocol(up.getProtocol());
                     upList.add(tmp);
                 }
                 // 拼装UserConsumer
@@ -1613,7 +1618,8 @@ public class AuditController extends AdminViewController {
         // 获取cluster
         Cluster cluster = clusterService.getMQClusterById(topicResult.getResult().getClusterId());
         // 消费
-        Result<?> consumeResult = consumerService.consumeTimespanMessage(cluster, auditTimespanMessageConsume);
+        Result<?> consumeResult = consumerService.consumeTimespanMessage(cluster, auditTimespanMessageConsume,
+                consResult.getResult().isProxyRemoting());
         if (consumeResult.isNotOK()) {
             return Result.getWebResult(consumeResult);
         }
@@ -1634,7 +1640,7 @@ public class AuditController extends AdminViewController {
      * @param consumerConfig
      */
     public void httpConsumerConfig(UserInfo userInfo, Consumer consumer, ConsumerConfig consumerConfig) {
-        if (!consumer.httpConsumeEnabled()) {
+        if (!consumer.isHttpProtocol()) {
             return;
         }
         ConsumerConfigParam consumerConfigParam = new ConsumerConfigParam();

@@ -3,12 +3,14 @@ package com.sohu.tv.mq.cloud.web.controller;
 import com.sohu.tv.mq.cloud.bo.*;
 import com.sohu.tv.mq.cloud.common.MemoryMQ;
 import com.sohu.tv.mq.cloud.service.*;
+import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper;
 import com.sohu.tv.mq.cloud.util.Result;
 import com.sohu.tv.mq.cloud.util.WebUtil;
 import com.sohu.tv.mq.cloud.web.controller.param.TopicUserParam;
 import com.sohu.tv.mq.dto.ClusterInfoDTO;
 import com.sohu.tv.mq.stats.dto.ClientStats;
 import com.sohu.tv.mq.util.JSONUtil;
+import org.apache.rocketmq.common.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -48,6 +50,9 @@ public class ClusterController {
     
     @Autowired
     private ClusterService clusterService;
+
+    @Autowired
+    private MQCloudConfigHelper mqCloudConfigHelper;
     
     /**
      * 查询topic的cluster，并校验所属关系
@@ -83,6 +88,8 @@ public class ClusterController {
                 return Result.getWebResult(userProducerResult);
             }
             saveClientVersion(topicUserParam);
+            clusterInfoDTO.setProtocol(userProducerResult.getResult().getProtocol());
+            setAcl(mqCluster, clusterInfoDTO);
             return Result.getResult(clusterInfoDTO);
         }
         
@@ -95,14 +102,26 @@ public class ClusterController {
         Consumer consumer = consumerResult.getResult();
         clusterInfoDTO.setBroadcast(consumer.isBroadcast());
         // http方式消费的全部为广播
-        if (consumer.httpConsumeEnabled()) {
+        if (consumer.isHttpProtocol()) {
             clusterInfoDTO.setBroadcast(true);
         }
         if (topic.traceEnabled()) {
             clusterInfoDTO.setTraceEnabled(consumer.traceEnabled());
         }
         saveClientVersion(topicUserParam);
+        clusterInfoDTO.setProtocol(consumer.getProtocol());
+        setAcl(mqCluster, clusterInfoDTO);
         return Result.getResult(clusterInfoDTO);
+    }
+
+    private void setAcl(Cluster cluster, ClusterInfoDTO clusterInfoDTO) {
+        if (clusterInfoDTO.isProxyRemoting() || cluster.isEnableTrace()) {
+            Pair<String, String> pair = mqCloudConfigHelper.getProxyAcl(cluster.getId());
+            if (pair != null) {
+                clusterInfoDTO.setAccessKey(pair.getObject1());
+                clusterInfoDTO.setSecretKey(pair.getObject2());
+            }
+        }
     }
     
     

@@ -134,4 +134,20 @@ public class ClientVersionService {
         }
         return producerList;
     }
+
+    /**
+     * 查询某些客户端版本
+     *
+     * @return
+     */
+    public Result<List<ClientVersion>> query(String topic, List<String> consumers) {
+        List<ClientVersion> clientVersions = null;
+        try {
+            clientVersions = clientVersionDao.selectClientVersionList(topic, consumers, ClientVersion.CONSUMER);
+        } catch (Exception e) {
+            logger.error("query topic:{} consumer:{}", topic, consumers, e);
+            return Result.getDBErrorResult(e);
+        }
+        return Result.getResult(clientVersions);
+    }
 }

@@ -3,7 +3,11 @@ package com.sohu.tv.mq.cloud.service;
 import java.util.List;
 import java.util.Set;
 
-import org.apache.rocketmq.common.subscription.SubscriptionGroupConfig;
+import com.sohu.tv.mq.cloud.bo.*;
+import com.sohu.tv.mq.util.CommonUtil;
+import org.apache.rocketmq.common.MixAll;
+import org.apache.rocketmq.common.TopicConfig;
+import org.apache.rocketmq.remoting.protocol.subscription.SubscriptionGroupConfig;
 import org.apache.rocketmq.tools.admin.MQAdminExt;
 import org.apache.rocketmq.tools.command.CommandUtil;
 import org.slf4j.Logger;
@@ -14,10 +18,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.interceptor.TransactionAspectSupport;
 
-import com.sohu.tv.mq.cloud.bo.Cluster;
-import com.sohu.tv.mq.cloud.bo.Consumer;
-import com.sohu.tv.mq.cloud.bo.User;
-import com.sohu.tv.mq.cloud.bo.UserConsumer;
 import com.sohu.tv.mq.cloud.dao.UserConsumerDao;
 import com.sohu.tv.mq.cloud.mq.MQAdminCallback;
 import com.sohu.tv.mq.cloud.mq.MQAdminTemplate;
@@ -41,6 +41,9 @@ public class UserConsumerService {
     
     @Autowired
     private MQAdminTemplate mqAdminTemplate;
+
+    @Autowired
+    private TopicService topicService;
     
     /**
      * 插入用户记录
@@ -80,7 +83,7 @@ public class UserConsumerService {
      * @param consumer
      */
     public Result<?> createAndUpdateConsumerOnCluster(Cluster mqCluster, Consumer consumer) {
-        return mqAdminTemplate.execute(new MQAdminCallback<Result<?>>() {
+        Result<?> result = mqAdminTemplate.execute(new MQAdminCallback<Result<?>>() {
             public Result<?> callback(MQAdminExt mqAdmin) throws Exception {
                 long start = System.currentTimeMillis();
                 Set<String> masterSet = CommandUtil.fetchMasterAddrByClusterName(mqAdmin, mqCluster.getName());
@@ -103,6 +106,15 @@ public class UserConsumerService {
                 return mqCluster;
             }
         });
+        // proxy-remoting需要创建重试topic
+        if (result.isOK() && consumer.isProxyRemoting()) {
+            TopicConfig topicConfig = new TopicConfig();
+            topicConfig.setReadQueueNums(1);
+            topicConfig.setWriteQueueNums(1);
+            topicConfig.setTopicName(MixAll.getRetryTopic(consumer.getName()));
+            topicService.createAndUpdateTopicOnCluster(mqCluster, topicConfig);
+        }
+        return result;
     }
     
     /**

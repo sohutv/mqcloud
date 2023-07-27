@@ -17,6 +17,8 @@ public class CommonUtil {
 
     public static final String TRACE_TOPIC_SUFFIX = "-trace-topic";
 
+    public static final String TRACE_TOPIC_PRODUCER_SUFFIX = "-trace-topic-producer";
+
     public static final String MQ_AFFINITY = "MQ_AFFINITY";
 
     public static final String MQ_AFFINITY_DELIMITER = "_";
@@ -51,6 +53,19 @@ public class CommonUtil {
             return false;
         }
         return topic.endsWith(TRACE_TOPIC_SUFFIX);
+    }
+
+    /**
+     * 是否是trace topic producer
+     *
+     * @param producer
+     * @return
+     */
+    public static boolean isTraceTopicProducer(String producer) {
+        if (producer == null) {
+            return false;
+        }
+        return producer.endsWith(TRACE_TOPIC_PRODUCER_SUFFIX);
     }
     
     /*

@@ -5,12 +5,12 @@
 	<parent>
 		<groupId>com.sohu.tv</groupId>
 		<artifactId>mq</artifactId>
-		<version>4.9.4</version>
+		<version>5.1.0</version>
 	</parent>
 
 	<artifactId>mq-cloud</artifactId>
 	<packaging>war</packaging>
-	
+
 	<!-- spring boot dependency -->
 	<dependencyManagement>
 		<dependencies>
@@ -68,6 +68,30 @@
 					<groupId>io.netty</groupId>
 					<artifactId>netty-tcnative</artifactId>
 				</exclusion>
+				<exclusion>
+					<artifactId>opentelemetry-exporter-logging</artifactId>
+					<groupId>io.opentelemetry</groupId>
+				</exclusion>
+				<exclusion>
+					<artifactId>okio-jvm</artifactId>
+					<groupId>com.squareup.okio</groupId>
+				</exclusion>
+				<exclusion>
+					<artifactId>opentelemetry-exporter-otlp</artifactId>
+					<groupId>io.opentelemetry</groupId>
+				</exclusion>
+				<exclusion>
+					<artifactId>opentelemetry-exporter-prometheus</artifactId>
+					<groupId>io.opentelemetry</groupId>
+				</exclusion>
+				<exclusion>
+					<artifactId>grpc-netty-shaded</artifactId>
+					<groupId>io.grpc</groupId>
+				</exclusion>
+				<exclusion>
+					<artifactId>grpc-stub</artifactId>
+					<groupId>io.grpc</groupId>
+				</exclusion>
 			</exclusions>
 		</dependency>
 
@@ -117,12 +141,7 @@
 			<artifactId>spring-boot-starter-test</artifactId>
 			<scope>test</scope>
 		</dependency>
-		<dependency>
-			<groupId>junit</groupId>
-			<artifactId>junit</artifactId>
-			<scope>test</scope>
-		</dependency>
-		
+
 		<!--markdown to html-->
 		<dependency>
 		    <groupId>com.vladsch.flexmark</groupId>
@@ -206,6 +225,7 @@
 					<tag>${project.version}</tag>
 					<buildArgs>
 						<JAR_FILE>target/mq-cloud.war</JAR_FILE>
+						<ROCKETMQ_FILE>/src/main/resources/static/software/rocketmq5.zip</ROCKETMQ_FILE>
 					</buildArgs>
 					<skip>false</skip>
 				</configuration>

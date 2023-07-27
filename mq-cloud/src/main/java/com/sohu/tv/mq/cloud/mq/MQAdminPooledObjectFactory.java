@@ -1,14 +1,13 @@
 package com.sohu.tv.mq.cloud.mq;
 
+import com.sohu.tv.mq.cloud.bo.Cluster;
+import com.sohu.tv.mq.cloud.common.mq.SohuMQAdmin;
 import org.apache.commons.pool2.KeyedPooledObjectFactory;
 import org.apache.commons.pool2.PooledObject;
 import org.apache.commons.pool2.impl.DefaultPooledObject;
-import org.apache.rocketmq.common.protocol.body.ClusterInfo;
 import org.apache.rocketmq.tools.admin.MQAdminExt;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.sohu.tv.mq.cloud.bo.Cluster;
 
 /**
  * MQAdmin对象池
@@ -21,13 +20,13 @@ public class MQAdminPooledObjectFactory implements KeyedPooledObjectFactory<Clus
 
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
-    private SohuMQAdminFactory sohuMQAdminFactory;
+    private ISohuMQAdminFactory sohuMQAdminFactory;
 
     @Override
     public PooledObject<MQAdminExt> makeObject(Cluster key) throws Exception {
         DefaultPooledObject<MQAdminExt> pooledObject = new DefaultPooledObject<MQAdminExt>(
                 sohuMQAdminFactory.getInstance(key));
-        logger.info("create object, key:{}", key);
+        logger.info("{}:create object, key:{}", sohuMQAdminFactory, key);
         return pooledObject;
     }
 
@@ -38,31 +37,21 @@ public class MQAdminPooledObjectFactory implements KeyedPooledObjectFactory<Clus
             try {
                 mqAdmin.shutdown();
             } catch (Exception e) {
-                logger.warn("shutdown err, key:{}", key, e);
+                logger.warn("{}shutdown err, key:{}", sohuMQAdminFactory, key, e);
             }
         }
-        logger.info("destroy object {}", key);
+        logger.info("{}:destroy object {}", sohuMQAdminFactory, key);
     }
 
     @Override
     public boolean validateObject(Cluster key, PooledObject<MQAdminExt> p) {
-        MQAdminExt mqAdmin = p.getObject();
-        ClusterInfo clusterInfo = null;
+        SohuMQAdmin mqAdmin = (SohuMQAdmin) p.getObject();
         try {
-            clusterInfo = mqAdmin.examineBrokerClusterInfo();
+            return mqAdmin.isAlive();
         } catch (Exception e) {
-            logger.warn("validate object err, key:{}", key, e);
+            logger.warn("{}:validate object err, key:{}", sohuMQAdminFactory, key, e);
         }
-        if (clusterInfo == null) {
-            return false;
-        }
-        if (clusterInfo.getBrokerAddrTable() == null) {
-            return false;
-        }
-        if (clusterInfo.getBrokerAddrTable().size() <= 0) {
-            return false;
-        }
-        return true;
+        return false;
     }
 
     @Override
@@ -74,7 +63,7 @@ public class MQAdminPooledObjectFactory implements KeyedPooledObjectFactory<Clus
     public void passivateObject(Cluster key, PooledObject<MQAdminExt> p) throws Exception {
     }
 
-    public void setSohuMQAdminFactory(SohuMQAdminFactory sohuMQAdminFactory) {
+    public void setSohuMQAdminFactory(ISohuMQAdminFactory sohuMQAdminFactory) {
         this.sohuMQAdminFactory = sohuMQAdminFactory;
     }
 }

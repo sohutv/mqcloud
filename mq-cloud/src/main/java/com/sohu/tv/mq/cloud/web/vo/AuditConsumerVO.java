@@ -20,7 +20,7 @@ public class AuditConsumerVO {
     
     private int permitsPerSecond;
 
-    private int httpConsumeEnabled;
+    private int protocol;
     
     public long getAid() {
         return aid;
@@ -65,11 +65,11 @@ public class AuditConsumerVO {
         this.permitsPerSecond = permitsPerSecond;
     }
 
-    public int getHttpConsumeEnabled() {
-        return httpConsumeEnabled;
+    public int getProtocol() {
+        return protocol;
     }
 
-    public void setHttpConsumeEnabled(int httpConsumeEnabled) {
-        this.httpConsumeEnabled = httpConsumeEnabled;
+    public void setProtocol(int protocol) {
+        this.protocol = protocol;
     }
 }

@@ -9,11 +9,13 @@ import com.sohu.tv.mq.metric.MQMetricsExporter;
 import com.sohu.tv.mq.route.AffinityMQStrategy;
 import com.sohu.tv.mq.stats.StatsHelper;
 import org.apache.rocketmq.client.exception.MQClientException;
+import org.apache.rocketmq.client.impl.consumer.DefaultMQPushConsumerImpl;
 import org.apache.rocketmq.client.impl.producer.DefaultMQProducerImpl;
 import org.apache.rocketmq.client.producer.*;
 import org.apache.rocketmq.client.trace.AsyncTraceDispatcher;
 import org.apache.rocketmq.client.trace.hook.SendMessageTraceHookImpl;
 import org.apache.rocketmq.common.message.Message;
+import org.apache.rocketmq.remoting.RPCHook;
 import org.apache.rocketmq.remoting.exception.RemotingException;
 
 import java.lang.reflect.Field;
@@ -959,5 +961,21 @@ public class RocketMQProducer extends AbstractConfig {
                 logger.error("initAffinity error", e);
             }
         }
+    }
+
+    @Override
+    public void setAclRPCHook(RPCHook rpcHook) {
+        try {
+            Field rpcHookField = DefaultMQProducerImpl.class.getDeclaredField("rpcHook");
+            rpcHookField.setAccessible(true);
+            rpcHookField.set(producer.getDefaultMQProducerImpl(), rpcHook);
+        } catch (Exception e) {
+            throw new RuntimeException("setAcl error, group:" + getGroup());
+        }
+    }
+
+    @Override
+    protected Object getMQClient() {
+        return producer;
     }
 }

@@ -1,8 +1,7 @@
 package com.sohu.tv.mq.cloud.mq;
 
-import org.apache.rocketmq.tools.admin.MQAdminExt;
-
 import com.sohu.tv.mq.cloud.bo.Cluster;
+import org.apache.rocketmq.tools.admin.MQAdminExt;
 /**
  * 操作回调类
  * @Description: 用于操作MQ的模板类回调
@@ -33,4 +32,13 @@ public interface MQAdminCallback<T> {
 	 * @return MQCluster
 	 */
 	Cluster mqCluster();
+
+	/**
+	 * 是否是代理remoting
+	 *
+	 * @return
+	 */
+	default boolean isProxyRemoting() {
+		return false;
+	}
 }

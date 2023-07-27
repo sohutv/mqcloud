@@ -9,12 +9,15 @@ import org.apache.rocketmq.client.consumer.DefaultMQPullConsumer;
 import org.apache.rocketmq.client.consumer.PullResult;
 import org.apache.rocketmq.client.exception.MQBrokerException;
 import org.apache.rocketmq.client.exception.MQClientException;
+import org.apache.rocketmq.client.impl.consumer.DefaultMQPullConsumerImpl;
 import org.apache.rocketmq.common.ServiceState;
 import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.common.message.MessageQueue;
-import org.apache.rocketmq.common.protocol.heartbeat.MessageModel;
+import org.apache.rocketmq.remoting.RPCHook;
+import org.apache.rocketmq.remoting.protocol.heartbeat.MessageModel;
 import org.apache.rocketmq.remoting.exception.RemotingException;
 
+import java.lang.reflect.Field;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -162,5 +165,21 @@ public class RocketMQPullConsumer extends AbstractConfig {
 
     public NoneBlockingRateLimiter getRateLimiter() {
         return rateLimiter;
+    }
+
+    @Override
+    public void setAclRPCHook(RPCHook rpcHook) {
+        try {
+            Field rpcHookField = DefaultMQPullConsumerImpl.class.getDeclaredField("rpcHook");
+            rpcHookField.setAccessible(true);
+            rpcHookField.set(consumer.getDefaultMQPullConsumerImpl(), rpcHook);
+        } catch (Exception e) {
+            throw new RuntimeException("setAcl error, group:" + getGroup());
+        }
+    }
+
+    @Override
+    protected Object getMQClient() {
+        return consumer;
     }
 }

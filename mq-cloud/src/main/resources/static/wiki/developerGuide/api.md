@@ -34,7 +34,7 @@
 
    **用途**：适用于全量获取topic。
 
-5. 获取所有topic的配置：MQAdminExt.getAllTopicGroup(String brokerAddr, long timeoutMillis)
+5. 获取所有topic的配置：MQAdminExt.getAllTopicConfig(String brokerAddr, long timeoutMillis)
 
    **释义**：获取broker上的所有的topic及配置。
 

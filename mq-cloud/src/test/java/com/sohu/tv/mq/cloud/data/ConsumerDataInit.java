@@ -3,9 +3,9 @@ package com.sohu.tv.mq.cloud.data;
 import java.util.List;
 
 import org.apache.rocketmq.client.exception.MQBrokerException;
-import org.apache.rocketmq.common.protocol.body.ConsumerConnection;
-import org.apache.rocketmq.common.protocol.body.GroupList;
-import org.apache.rocketmq.common.protocol.heartbeat.MessageModel;
+import org.apache.rocketmq.remoting.protocol.body.ConsumerConnection;
+import org.apache.rocketmq.remoting.protocol.body.GroupList;
+import org.apache.rocketmq.remoting.protocol.heartbeat.MessageModel;
 import org.apache.rocketmq.tools.admin.MQAdminExt;
 import org.junit.Test;
 import org.junit.runner.RunWith;

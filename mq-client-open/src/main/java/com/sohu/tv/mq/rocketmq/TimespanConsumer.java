@@ -6,15 +6,18 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.apache.rocketmq.client.consumer.DefaultMQPullConsumer;
 import org.apache.rocketmq.client.consumer.PullResult;
 import org.apache.rocketmq.client.consumer.PullStatus;
 import org.apache.rocketmq.client.consumer.listener.ConsumeConcurrentlyContext;
 import org.apache.rocketmq.client.consumer.listener.ConsumeOrderlyContext;
+import org.apache.rocketmq.client.impl.consumer.DefaultMQPushConsumerImpl;
 import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.common.message.MessageQueue;
+import org.apache.rocketmq.remoting.RPCHook;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -54,10 +57,20 @@ public class TimespanConsumer {
         this.mqConsumer = rocketMQConsumer;
         this.start = start;
         this.end = end;
+        // 获取rpcHook
+        RPCHook rpcHook = null;
+        try {
+            Field rpcHookField = DefaultMQPushConsumerImpl.class.getDeclaredField("rpcHook");
+            rpcHookField.setAccessible(true);
+            rpcHook = (RPCHook) rpcHookField.get(rocketMQConsumer.getConsumer().getDefaultMQPushConsumerImpl());
+        } catch (Exception e) {
+            logger.warn("get rpcHook error:{}", e.toString());
+        }
         // 构建pullConsumer
-        pullConsumer = new DefaultMQPullConsumer(MixAll.CID_RMQ_SYS_PREFIX + rocketMQConsumer.getGroup());
-        // 设置集群id
-        pullConsumer.setUnitName(String.valueOf(rocketMQConsumer.getClusterInfoDTO().getClusterId()));
+        pullConsumer = new DefaultMQPullConsumer(MixAll.CID_RMQ_SYS_PREFIX + rocketMQConsumer.getGroup(), rpcHook);
+        String nAddr = rocketMQConsumer.getConsumer().getDefaultMQPushConsumerImpl().getmQClientFactory()
+                .getMQClientAPIImpl().getNameServerAddressList().stream().collect(Collectors.joining(";"));
+        pullConsumer.setNamesrvAddr(nAddr);
         // 开始时间和结束时间作为实例id
         String instance = start + "@" + end;
         pullConsumer.setInstanceName(instance);
@@ -65,7 +78,7 @@ public class TimespanConsumer {
             // 为DefaultMQPullConsumer赋予NORebalanceDefaultMQPullConsumer
             Field field = DefaultMQPullConsumer.class.getDeclaredField("defaultMQPullConsumerImpl");
             field.setAccessible(true);
-            field.set(pullConsumer, new NORebalanceDefaultMQPullConsumer(pullConsumer, null));
+            field.set(pullConsumer, new NORebalanceDefaultMQPullConsumer(pullConsumer, rpcHook));
         } catch (Exception e) {
             throw new IllegalStateException(e);
         }

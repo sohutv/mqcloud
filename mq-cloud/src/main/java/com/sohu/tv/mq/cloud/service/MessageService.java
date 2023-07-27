@@ -33,20 +33,18 @@ import org.apache.rocketmq.client.trace.TraceType;
 import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.TopicConfig;
 import org.apache.rocketmq.common.UtilAll;
-import org.apache.rocketmq.common.admin.ConsumeStats;
-import org.apache.rocketmq.common.admin.OffsetWrapper;
 import org.apache.rocketmq.common.message.*;
-import org.apache.rocketmq.common.protocol.ResponseCode;
-import org.apache.rocketmq.common.protocol.body.ClusterInfo;
-import org.apache.rocketmq.common.protocol.body.Connection;
-import org.apache.rocketmq.common.protocol.body.ConsumeMessageDirectlyResult;
-import org.apache.rocketmq.common.protocol.body.ConsumerConnection;
-import org.apache.rocketmq.common.protocol.heartbeat.SubscriptionData;
-import org.apache.rocketmq.common.protocol.route.BrokerData;
-import org.apache.rocketmq.common.protocol.route.QueueData;
-import org.apache.rocketmq.common.protocol.route.TopicRouteData;
-import org.apache.rocketmq.remoting.common.RemotingHelper;
-import org.apache.rocketmq.remoting.exception.RemotingException;
+import org.apache.rocketmq.remoting.protocol.ResponseCode;
+import org.apache.rocketmq.remoting.protocol.admin.ConsumeStats;
+import org.apache.rocketmq.remoting.protocol.admin.OffsetWrapper;
+import org.apache.rocketmq.remoting.protocol.body.ClusterInfo;
+import org.apache.rocketmq.remoting.protocol.body.Connection;
+import org.apache.rocketmq.remoting.protocol.body.ConsumeMessageDirectlyResult;
+import org.apache.rocketmq.remoting.protocol.body.ConsumerConnection;
+import org.apache.rocketmq.remoting.protocol.heartbeat.SubscriptionData;
+import org.apache.rocketmq.remoting.protocol.route.BrokerData;
+import org.apache.rocketmq.remoting.protocol.route.QueueData;
+import org.apache.rocketmq.remoting.protocol.route.TopicRouteData;
 import org.apache.rocketmq.tools.admin.MQAdminExt;
 import org.apache.rocketmq.tools.admin.api.MessageTrack;
 import org.apache.rocketmq.tools.admin.api.TrackType;
@@ -59,9 +57,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.util.HtmlUtils;
 
 import java.net.InetSocketAddress;
-import java.net.SocketAddress;
 import java.util.*;
 import java.util.Map.Entry;
+import java.util.function.BiFunction;
 
 /**
  * 消息服务
@@ -99,6 +97,9 @@ public class MessageService {
     @Autowired
     private TopicService topicService;
 
+    @Autowired
+    private BrokerService brokerService;
+
     /**
      * 根据key查询消息
      * 
@@ -111,10 +112,13 @@ public class MessageService {
      */
     public Result<List<DecodedMessage>> queryMessageByKey(Cluster cluster, String topic, String key, long begin,
             long end) {
+        Result<?> clusterInfoResult = examineBrokerClusterInfo(cluster);
+        if (clusterInfoResult.isNotOK()) {
+            return (Result<List<DecodedMessage>>) clusterInfoResult;
+        }
+        ClusterInfo clusterInfo = (ClusterInfo) clusterInfoResult.getResult();
         return mqAdminTemplate.execute(new MQAdminCallback<Result<List<DecodedMessage>>>() {
             public Result<List<DecodedMessage>> callback(MQAdminExt mqAdmin) throws Exception {
-                // 获取broker集群信息
-                ClusterInfo clusterInfo = mqAdmin.examineBrokerClusterInfo();
                 // 其实这里只能查询64条消息，broker端有限制
                 QueryResult queryResult = mqAdmin.queryMessage(topic, key, 100, begin, end);
                 List<MessageExt> messageExtList = queryResult.getMessageList();
@@ -171,34 +175,24 @@ public class MessageService {
      * @return
      */
     public Result<DecodedMessage> queryMessage(Cluster cluster, String topic, String msgId) {
-        return mqAdminTemplate.execute(new MQAdminCallback<Result<DecodedMessage>>() {
-            public Result<DecodedMessage> callback(MQAdminExt mqAdmin) throws Exception {
-                // 获取消息
-                MessageExt messageExt = mqAdmin.viewMessage(topic, msgId);
-                byte[] bytes = messageExt.getBody();
-                if (bytes == null || bytes.length == 0) {
-                    logger.warn("MessageExt={}, MessageBody is null", messageExt);
-                    return Result.getResult(Status.NO_RESULT);
-                }
-                // 特定类型使用自定义的classloader
-                if (mqCloudConfigHelper.getClassList() != null &&
-                        mqCloudConfigHelper.getClassList().contains(topic)) {
-                    Thread.currentThread().setContextClassLoader(messageTypeClassLoader);
-                }
-                // 获取broker集群信息
-                ClusterInfo clusterInfo = mqAdmin.examineBrokerClusterInfo();
-                return Result.getResult(toDecodedMessage(messageExt, clusterInfo));
-            }
-
-            public Result<DecodedMessage> exception(Exception e) throws Exception {
-                logger.error("queryMessage cluster:{} topic:{} msgId:{}", cluster, topic, msgId, e);
-                return Result.getWebErrorResult(e);
-            }
-
-            public Cluster mqCluster() {
-                return cluster;
-            }
-        });
+        Result<?> messageExtResult = viewMessage(cluster, topic, msgId);
+        if (messageExtResult.isNotOK()) {
+            return (Result<DecodedMessage>) messageExtResult;
+        }
+        MessageExt messageExt = (MessageExt) messageExtResult.getResult();
+        byte[] bytes = messageExt.getBody();
+        if (bytes == null || bytes.length == 0) {
+            logger.warn("MessageExt={}, MessageBody is null", messageExt);
+            return Result.getResult(Status.NO_RESULT);
+        }
+        // 特定类型使用自定义的classloader
+        if (mqCloudConfigHelper.getClassList() != null &&
+                mqCloudConfigHelper.getClassList().contains(topic)) {
+            Thread.currentThread().setContextClassLoader(messageTypeClassLoader);
+        }
+        // 获取broker集群信息
+        ClusterInfo clusterInfo = examineBrokerClusterInfo(cluster).getResult();
+        return Result.getResult(toDecodedMessage(messageExt, clusterInfo));
     }
 
     /**
@@ -353,7 +347,7 @@ public class MessageService {
     private DecodedMessage toDecodedMessage(MessageExt msg, ClusterInfo clusterInfo) {
         String broker = null;
         if (clusterInfo != null) {
-            HashMap<String, BrokerData> brokerAddressMap = clusterInfo.getBrokerAddrTable();
+            Map<String, BrokerData> brokerAddressMap = clusterInfo.getBrokerAddrTable();
             InetSocketAddress inetSocketAddress = (InetSocketAddress) msg.getStoreHost();
             String addr = inetSocketAddress.getAddress().getHostAddress();
             for (BrokerData brokerData : brokerAddressMap.values()) {
@@ -416,7 +410,7 @@ public class MessageService {
             m.setMessageBodyType(MessageBodyType.OBJECT);
             m.setDecodedBody(JSONUtil.toJSONString(decodedBody));
         }
-        BeanUtils.copyProperties(msg, m);
+        BeanUtils.copyProperties(msg, m, "deliverTimeMs");
         m.setBroker(broker);
         // 设置topic原始信息
         String realTopic = msg.getProperty(MessageConst.PROPERTY_REAL_TOPIC);
@@ -602,28 +596,13 @@ public class MessageService {
         if (consumerListResult.isEmpty()) {
             return consumerListResult;
         }
-        List<Consumer> consumerList = consumerListResult.getResult();
         // 查询消息轨迹
-        Result<?> result = mqAdminTemplate.execute(new MQAdminCallback<Result<?>>() {
-            public Result<?> callback(MQAdminExt mqAdmin) throws Exception {
-                List<MessageTrack> result = new ArrayList<MessageTrack>();
-                for (Consumer consumer : consumerList) {
-                    MessageTrack mt = messageTrack(mqAdmin, consumer.getName(), mp, consumer.isBroadcast());
-                    result.add(mt);
-                }
-                return Result.getResult(result);
-            }
-
-            public Result<?> exception(Exception e) throws Exception {
-                logger.error("cluster:{} topic:{} error", mqCluster, mp.getTopic(), e);
-                return Result.getWebErrorResult(e);
-            }
-
-            public Cluster mqCluster() {
-                return mqCluster;
-            }
-        });
-        return result;
+        List<MessageTrack> result = new ArrayList<MessageTrack>();
+        for (Consumer consumer : consumerListResult.getResult()) {
+            MessageTrack mt = messageTrack(mqCluster, consumer, mp);
+            result.add(mt);
+        }
+        return Result.getResult(result);
     }
 
     /**
@@ -635,81 +614,55 @@ public class MessageService {
      * @return
      * @throws Exception
      */
-    private MessageTrackExt messageTrack(MQAdminExt mqAdmin, String group, MessageParam mp,
-            boolean isBroadcast) throws Exception {
+    private MessageTrackExt messageTrack(Cluster cluster, Consumer consumer, MessageParam mp) {
         MessageTrackExt mt = new MessageTrackExt();
-        mt.setConsumerGroup(group);
+        mt.setConsumerGroup(consumer.getName());
         mt.setTrackType(TrackType.UNKNOWN);
-        ConsumerConnection cc = null;
-        try {
-            cc = mqAdmin.examineConsumerConnectionInfo(group);
-        } catch (MQBrokerException e) {
-            if (ResponseCode.CONSUMER_NOT_ONLINE == e.getResponseCode()) {
+        // 检查消费者是否在线
+        Result<ConsumerConnection> result = consumerService.examineConsumerConnectionInfo(consumer.getName(), cluster,
+                consumer.isProxyRemoting());
+        ConsumerConnection cc = result.getResult();
+        if (cc == null) {
+            if (Status.NO_ONLINE.getKey() == result.getStatus()) {
                 mt.setTrackType(TrackType.NOT_ONLINE);
             }
-            mt.setExceptionDesc("CODE:" + e.getResponseCode() + " DESC:" + e.getErrorMessage());
-            return mt;
-        } catch (Exception e) {
-            mt.setExceptionDesc(RemotingHelper.exceptionSimpleDesc(e));
+            mt.setExceptionDesc("ERROR:" + result.getException().toString());
             return mt;
         }
 
         // 检查定时消息
         if (mp.getMsgId() != null) {
-            try {
-                MessageExt messageExt = mqAdmin.viewMessage(mp.getTopic(), mp.getMsgId());
+            Result<MessageExt> messageExtResult = viewMessage(cluster, mp.getTopic(), mp.getMsgId());
+            MessageExt messageExt = messageExtResult.getResult();
+            if (messageExt != null) {
                 mp.setQueueId(messageExt.getQueueId());
                 mp.setOffset(messageExt.getQueueOffset());
                 InetSocketAddress inetSocketAddress = (InetSocketAddress) messageExt.getStoreHost();
                 mp.setStoreHost(inetSocketAddress.getAddress().getHostAddress() + ":" + inetSocketAddress.getPort());
-            } catch (MQClientException e) {
-                if (208 == e.getResponseCode()) {
-                    mt.setTrackType(TrackType.NOT_CONSUME_YET);
-                } else {
-                    mt.setExceptionDesc("CODE:" + e.getResponseCode() + " DESC:" + e.getErrorMessage());
-                }
-                return mt;
-            } catch (MQBrokerException e) {
-                mt.setExceptionDesc("CODE:" + e.getResponseCode() + " DESC:" + e.getErrorMessage());
-                return mt;
-            } catch (Exception e) {
-                mt.setExceptionDesc(RemotingHelper.exceptionSimpleDesc(e));
+            } else {
+                setException(mt, messageExtResult.getException());
                 return mt;
             }
         }
 
-        ClusterInfo ci = mqAdmin.examineBrokerClusterInfo();
-
+        ClusterInfo ci = examineBrokerClusterInfo(cluster).getResult();
         switch (cc.getConsumeType()) {
             case CONSUME_ACTIVELY:
                 mt.setTrackType(TrackType.PULL);
                 break;
             case CONSUME_PASSIVELY:
-                boolean ifConsumed = false;
-                try {
-                    if (isBroadcast) {
-                        ifConsumed = this.consumed(mqAdmin, cc.getConnectionSet(), mp, group, ci.getBrokerAddrTable());
-                    } else {
-                        ifConsumed = this.consumed(mqAdmin, mp, group, ci.getBrokerAddrTable());
-                    }
-                } catch (MQClientException e) {
-                    if (ResponseCode.CONSUMER_NOT_ONLINE == e.getResponseCode()) {
-                        mt.setTrackType(TrackType.NOT_ONLINE);
-                    }
-                    mt.setExceptionDesc("CODE:" + e.getResponseCode() + " DESC:" + e.getErrorMessage());
-                    return mt;
-                } catch (MQBrokerException e) {
-                    if (ResponseCode.CONSUMER_NOT_ONLINE == e.getResponseCode()) {
-                        mt.setTrackType(TrackType.NOT_ONLINE);
-                    }
-                    mt.setExceptionDesc("CODE:" + e.getResponseCode() + " DESC:" + e.getErrorMessage());
-                    return mt;
-                } catch (Exception e) {
-                    mt.setExceptionDesc(RemotingHelper.exceptionSimpleDesc(e));
+                Result<?> consumeResult = null;
+                if (consumer.isBroadcast()) {
+                    consumeResult = consumed(cluster, cc.getConnectionSet(), mp, consumer, ci.getBrokerAddrTable());
+                } else {
+                    consumeResult = consumed(cluster, mp, consumer.getName(), ci.getBrokerAddrTable());
+                }
+                if (consumeResult.isNotOK()) {
+                    setException(mt, consumeResult.getException());
                     return mt;
                 }
 
-                if (ifConsumed) {
+                if ((Boolean) consumeResult.getResult()) {
                     mt.setTrackType(TrackType.CONSUMED);
                     Iterator<Entry<String, SubscriptionData>> it = cc.getSubscriptionTable().entrySet().iterator();
                     while (it.hasNext()) {
@@ -732,6 +685,25 @@ public class MessageService {
         return mt;
     }
 
+    private void setException(MessageTrackExt mt, Exception e) {
+        if (e == null) {
+            return;
+        }
+        if (e instanceof MQClientException) {
+            MQClientException mqClientException = (MQClientException) e;
+            if (208 == mqClientException.getResponseCode()) {
+                mt.setTrackType(TrackType.NOT_CONSUME_YET);
+            } else {
+                mt.setExceptionDesc("CODE:" + mqClientException.getResponseCode() + " DESC:" + mqClientException.getErrorMessage());
+            }
+        } else if (e instanceof MQBrokerException) {
+            MQBrokerException mqBrokerException = (MQBrokerException) e;
+            mt.setExceptionDesc("CODE:" + mqBrokerException.getResponseCode() + " DESC:" + mqBrokerException.getErrorMessage());
+        } else {
+            mt.setExceptionDesc(UtilAll.exceptionSimpleDesc(e));
+        }
+    }
+
     /**
      * 是否消费过
      * 
@@ -741,16 +713,18 @@ public class MessageService {
      * @return
      * @throws Exception
      */
-    private boolean consumed(MQAdminExt mqAdmin, MessageParam mp, String group,
-            Map<String, BrokerData> brokerAddrTable) throws Exception {
-        ConsumeStats consumeStats = mqAdmin.examineConsumeStats(group);
-        HashMap<MessageQueue, OffsetWrapper> offsetTable = consumeStats.getOffsetTable();
+    private Result<?> consumed(Cluster cluster, MessageParam mp, String group, Map<String, BrokerData> brokerAddrTable) {
+        Result<?> consumeStatsResult = consumerService.examineConsumeStats(cluster, group);
+        if (consumeStatsResult.isNotOK()) {
+            return consumeStatsResult;
+        }
+        ConsumeStats consumeStats = (ConsumeStats) consumeStatsResult.getResult();
+        Map<MessageQueue, OffsetWrapper> offsetTable = consumeStats.getOffsetTable();
         Map<MessageQueue, Long> consumerOffsetMap = new HashMap<>();
         for (MessageQueue messageQueue : offsetTable.keySet()) {
             consumerOffsetMap.put(messageQueue, offsetTable.get(messageQueue).getConsumerOffset());
         }
-
-        return consumed(consumerOffsetMap, mp, brokerAddrTable);
+        return Result.getResult(consumed(consumerOffsetMap, mp, brokerAddrTable));
     }
 
     /**
@@ -764,20 +738,21 @@ public class MessageService {
      * @return
      * @throws Exception
      */
-    private boolean consumed(MQAdminExt mqAdmin, Set<Connection> connSet, MessageParam messageParam, String consumer,
-            Map<String, BrokerData> brokerAddrTable) throws Exception {
+    private Result<?> consumed(Cluster cluster, Set<Connection> connSet, MessageParam messageParam, Consumer consumer,
+                               Map<String, BrokerData> brokerAddrTable) {
         for (Connection conn : connSet) {
             // 抓取状态
-            Map<MessageQueue, Long> mqOffsetMap = consumerService.fetchConsumerStatus(mqAdmin, messageParam.getTopic(),
-                    consumer, conn);
-            if (mqOffsetMap == null) {
-                return false;
+            Result<Map<MessageQueue, Long>> mqOffsetMapResult = (Result<Map<MessageQueue, Long>>)
+                    consumerService.fetchConsumerStatus(cluster, messageParam.getTopic(), consumer.getName(), conn,
+                            consumer.isProxyRemoting());
+            if (mqOffsetMapResult.isNotOK()) {
+                return mqOffsetMapResult;
             }
-            if (!consumed(mqOffsetMap, messageParam, brokerAddrTable)) {
-                return false;
+            if (!consumed(mqOffsetMapResult.getResult(), messageParam, brokerAddrTable)) {
+                return Result.getResult(false);
             }
         }
-        return true;
+        return Result.getResult(true);
     }
 
     /**
@@ -862,34 +837,90 @@ public class MessageService {
      * @param consumer
      * @return
      */
-    public Result<List<ResentMessageResult>> resendDirectly(Cluster cluster, String msgId, String consumer) {
-        return mqAdminTemplate.execute(new MQAdminCallback<Result<List<ResentMessageResult>>>() {
-            public Result<List<ResentMessageResult>> callback(MQAdminExt mqAdmin) throws Exception {
-                ConsumerConnection ccs = mqAdmin.examineConsumerConnectionInfo(consumer);
-                List<ResentMessageResult> list = new ArrayList<>();
-                Result<List<ResentMessageResult>> allResult = Result.getOKResult();
-                for (Connection conn : ccs.getConnectionSet()) {
-                    ConsumeMessageDirectlyResult result = mqAdmin.consumeMessageDirectly(consumer, conn.getClientId(),
-                            msgId);
-                    ResentMessageResult resentMessageResult = new ResentMessageResult(conn.getClientId(), result);
-                    list.add(resentMessageResult);
-                    if (!resentMessageResult.isOK()) {
-                        allResult.setStatus(Status.WEB_ERROR.getKey());
-                    }
+    public Result<?> resendDirectly(Cluster cluster, String topic, String msgId, String consumer,
+                                    boolean isProxyRemoting) {
+        // 获取consumer连接
+        Result<ConsumerConnection> consumerConnectionResult = consumerService.examineConsumerConnectionInfo(consumer,
+                cluster, isProxyRemoting);
+        ConsumerConnection consumerConnection = consumerConnectionResult.getResult();
+        if (consumerConnection == null) {
+            return consumerConnectionResult;
+        }
+        Set<Connection> connectionSet = consumerConnection.getConnectionSet();
+        if (isProxyRemoting) {
+            Result<MessageExt> messageExtResult = viewMessage(cluster, topic, msgId);
+            MessageExt messageExt = messageExtResult.getResult();
+            if (messageExt == null) {
+                return Result.getResult(Status.NO_RESULT);
+            }
+            InetSocketAddress inetSocketAddress = (InetSocketAddress) messageExt.getStoreHost();
+            String brokerAddr = inetSocketAddress.getAddress().getHostAddress() + ":" + inetSocketAddress.getPort();
+            Properties properties = brokerService.fetchBrokerConfig(cluster, brokerAddr).getResult();
+            if (properties == null) {
+                return Result.getResult(Status.NO_RESULT);
+            }
+            messageExt.setBrokerName(properties.getProperty("brokerName"));
+            return resendDirectly(connectionSet, cluster, msgId, consumer, true, (admin, clientId) -> {
+                try {
+                    SohuMQAdmin sohuMQAdmin = (SohuMQAdmin) admin;
+                    return sohuMQAdmin.consumeMessageDirectlyOfProxy(topic, consumer, clientId, msgId, messageExt);
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
                 }
-                allResult.setResult(list);
-                return allResult;
-            }
-
-            public Result<List<ResentMessageResult>> exception(Exception e) throws Exception {
-                logger.error("cluster:{} consumer:{} msgId:{}, send msg err", cluster, consumer, msgId, e);
-                return Result.getWebErrorResult(e);
-            }
-
-            public Cluster mqCluster() {
-                return cluster;
+            });
+        }
+        return resendDirectly(connectionSet, cluster, msgId, consumer, false, (admin, clientId) -> {
+            try {
+                return admin.consumeMessageDirectly(consumer, clientId, topic, msgId);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
             }
         });
+    }
+
+    /**
+     * 直接发送消息
+     * @param connectionSet
+     * @param cluster
+     * @param msgId
+     * @param consumer
+     * @param isProxyRemoting
+     * @param sendFun
+     * @return
+     */
+    public Result<List<ResentMessageResult>> resendDirectly(Set<Connection> connectionSet, Cluster cluster, String msgId,
+                                                            String consumer, boolean isProxyRemoting,
+                                                            BiFunction<MQAdminExt, String, ConsumeMessageDirectlyResult> sendFun) {
+        Result<List<ResentMessageResult>> allResult = Result.getOKResult();
+        List<ResentMessageResult> list = new ArrayList<>();
+        for (Connection conn : connectionSet) {
+            ConsumeMessageDirectlyResult result = mqAdminTemplate.execute(new MQAdminCallback<ConsumeMessageDirectlyResult>() {
+                public ConsumeMessageDirectlyResult callback(MQAdminExt mqAdmin) throws Exception {
+                    return sendFun.apply(mqAdmin, conn.getClientId());
+                }
+
+                public ConsumeMessageDirectlyResult exception(Exception e) throws Exception {
+                    logger.error("cluster:{} consumer:{} msgId:{}, send msg err", cluster, consumer, msgId, e);
+                    return null;
+                }
+
+                public Cluster mqCluster() {
+                    return cluster;
+                }
+
+                @Override
+                public boolean isProxyRemoting() {
+                    return isProxyRemoting;
+                }
+            });
+            ResentMessageResult resentMessageResult = new ResentMessageResult(conn.getClientId(), result);
+            list.add(resentMessageResult);
+            if (!resentMessageResult.isOK()) {
+                allResult.setStatus(Status.WEB_ERROR.getKey());
+            }
+        }
+        allResult.setResult(list);
+        return allResult;
     }
 
     /**
@@ -1012,5 +1043,44 @@ public class MessageService {
                 }
             }
         }
+    }
+
+    public Result<MessageExt> viewMessage(Cluster cluster, String topic, String msgId) {
+        return mqAdminTemplate.execute(new MQAdminCallback<Result<MessageExt>>() {
+            public Result<MessageExt> callback(MQAdminExt mqAdmin) throws Exception {
+                return Result.getResult(mqAdmin.viewMessage(topic, msgId));
+            }
+
+            public Result<MessageExt> exception(Exception e) throws Exception {
+                logger.error("queryMessage cluster:{} topic:{} msgId:{}", cluster, topic, msgId, e);
+                return Result.getWebErrorResult(e);
+            }
+            public Cluster mqCluster() {
+                return cluster;
+            }
+        });
+    }
+
+    /**
+     * 查询Broker集群信息
+     *
+     * @param cluster
+     * @return
+     */
+    public Result<ClusterInfo> examineBrokerClusterInfo(Cluster cluster) {
+        return mqAdminTemplate.execute(new MQAdminCallback<Result<ClusterInfo>>() {
+            public Result<ClusterInfo> callback(MQAdminExt mqAdmin) throws Exception {
+                return Result.getResult(mqAdmin.examineBrokerClusterInfo());
+            }
+
+            public Result<ClusterInfo> exception(Exception e) throws Exception {
+                logger.error("examineBrokerClusterInfo cluster:{}", cluster, e);
+                return Result.getWebErrorResult(e);
+            }
+
+            public Cluster mqCluster() {
+                return cluster;
+            }
+        });
     }
 }

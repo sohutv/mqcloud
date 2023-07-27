@@ -26,8 +26,8 @@ public interface ConsumerDao {
      * @param consumer
      */
     @Options(useGeneratedKeys = true, keyProperty = "consumer.id")
-    @Insert("insert into consumer(tid, name, consume_way, create_date, trace_enabled, info, http_consume_enabled) values("
-            + "#{consumer.tid},#{consumer.name},#{consumer.consumeWay},now(),#{consumer.traceEnabled},#{consumer.info},#{consumer.httpConsumeEnabled})")
+    @Insert("insert into consumer(tid, name, consume_way, create_date, trace_enabled, info, protocol) values("
+            + "#{consumer.tid},#{consumer.name},#{consumer.consumeWay},now(),#{consumer.traceEnabled},#{consumer.info},#{consumer.protocol})")
     public Integer insert(@Param("consumer") Consumer consumer);
             
     /**

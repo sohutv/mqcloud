@@ -5,7 +5,7 @@ import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper;
 import org.apache.rocketmq.client.exception.MQBrokerException;
 import org.apache.rocketmq.client.exception.MQClientException;
 import org.apache.rocketmq.common.MixAll;
-import org.apache.rocketmq.common.protocol.ResponseCode;
+import org.apache.rocketmq.remoting.protocol.ResponseCode;
 import org.apache.rocketmq.remoting.RPCHook;
 import org.apache.rocketmq.remoting.exception.*;
 
@@ -138,7 +138,7 @@ public class DefaultSohuMQAdmin extends SohuMQAdmin {
         throw new MQBrokerException(response.getCode(), response.getRemark(), brokerAddr);
     }
 
-    public GetMetaDataResponseHeader getControllerMetaData(final String controllerAddress) throws Exception {
+    public GetMetaDataResponseHeader getControllerMetaDataSohu(final String controllerAddress) throws Exception {
         final RemotingCommand request = RemotingCommand.createRequestCommand(1005, null);
         final RemotingCommand response = getMQClientInstance().getMQClientAPIImpl().getRemotingClient().invokeSync(controllerAddress, request, 3000);
         assert response != null;

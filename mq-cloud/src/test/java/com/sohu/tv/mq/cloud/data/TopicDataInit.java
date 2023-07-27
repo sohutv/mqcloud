@@ -2,9 +2,9 @@ package com.sohu.tv.mq.cloud.data;
 
 import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.TopicConfig;
-import org.apache.rocketmq.common.protocol.body.ClusterInfo;
-import org.apache.rocketmq.common.protocol.body.TopicConfigSerializeWrapper;
-import org.apache.rocketmq.common.protocol.body.TopicList;
+import org.apache.rocketmq.remoting.protocol.body.ClusterInfo;
+import org.apache.rocketmq.remoting.protocol.body.TopicConfigSerializeWrapper;
+import org.apache.rocketmq.remoting.protocol.body.TopicList;
 import org.apache.rocketmq.tools.admin.MQAdminExt;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -48,7 +48,7 @@ public class TopicDataInit {
                 // 获取一个master地址
                 String brokerAddr = clusterInfo.getBrokerAddrTable().entrySet().iterator().next().getValue().getBrokerAddrs().get(0L);
                 // 获取所有topic配置
-                TopicConfigSerializeWrapper allTopicConfig = mqAdmin.getAllTopicGroup(brokerAddr, 5000);
+                TopicConfigSerializeWrapper allTopicConfig = mqAdmin.getAllTopicConfig(brokerAddr, 5000);
                 // 获取路由信息
                 Topic topicObject = new Topic();
                 topicObject.setClusterId(mqCluster.getId());
@@ -82,7 +82,7 @@ public class TopicDataInit {
                     // 获取一个master地址
                     String brokerAddr = clusterInfo.getBrokerAddrTable().entrySet().iterator().next().getValue().getBrokerAddrs().get(0L);
                     // 获取所有topic配置
-                    TopicConfigSerializeWrapper allTopicConfig = mqAdmin.getAllTopicGroup(brokerAddr, 5000);
+                    TopicConfigSerializeWrapper allTopicConfig = mqAdmin.getAllTopicConfig(brokerAddr, 5000);
                     // 获取所有topic
                     TopicList topicList = mqAdmin.fetchAllTopicList();
                     for(String topic : topicList.getTopicList()) {

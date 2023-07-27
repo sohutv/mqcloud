@@ -12,9 +12,9 @@ public interface AuditTopicDao {
      * @param auditTopic
      */
     @Insert("insert into audit_topic(aid,name,queue_num,producer,ordered,qpd,qps,trace_enabled,"
-            + "transaction_enabled,test_enabled,delay_enabled,serializer,http_enabled) values(#{auditTopic.aid},#{auditTopic.name},#{auditTopic.queueNum},"
+            + "transaction_enabled,test_enabled,delay_enabled,serializer,protocol) values(#{auditTopic.aid},#{auditTopic.name},#{auditTopic.queueNum},"
             + "#{auditTopic.producer},#{auditTopic.ordered},#{auditTopic.qpd},#{auditTopic.qps},#{auditTopic.traceEnabled},"
-            + "#{auditTopic.transactionEnabled},#{auditTopic.testEnabled},#{auditTopic.delayEnabled},#{auditTopic.serializer},#{auditTopic.httpEnabled})")
+            + "#{auditTopic.transactionEnabled},#{auditTopic.testEnabled},#{auditTopic.delayEnabled},#{auditTopic.serializer},#{auditTopic.protocol})")
     public void insert(@Param("auditTopic") AuditTopic auditTopic);
 
     /**

@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.rocketmq.store.stats.BrokerStatsManager;
+import org.apache.rocketmq.common.stats.Stats;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -52,6 +52,6 @@ public class ConsumerRetryTrafficService extends HourTrafficService{
     }
 
     protected String getCountKey() {
-        return BrokerStatsManager.SNDBCK_PUT_NUMS;
+        return Stats.SNDBCK_PUT_NUMS;
     }
 }

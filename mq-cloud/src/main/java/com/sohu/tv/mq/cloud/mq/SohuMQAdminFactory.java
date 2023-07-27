@@ -15,7 +15,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * @author yongfeigao
  * @date 2020年4月28日
  */
-public class SohuMQAdminFactory {
+public class SohuMQAdminFactory implements ISohuMQAdminFactory {
 
     private MQCloudConfigHelper mqCloudConfigHelper;
 
@@ -34,7 +34,6 @@ public class SohuMQAdminFactory {
      */
     @SuppressWarnings("unchecked")
 	public SohuMQAdmin getInstance(Cluster key) throws Exception {
-		System.setProperty(Constant.ROCKETMQ_NAMESRV_DOMAIN, mqCloudConfigHelper.getDomain());
 		SohuMQAdmin sohuMQAdmin = null;
 		if (mqCloudConfigHelper.isAdminAclEnable()) {
 			SessionCredentials credentials = new SessionCredentials(mqCloudConfigHelper.getAdminAccessKey(),

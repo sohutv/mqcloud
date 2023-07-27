@@ -1,14 +1,15 @@
 package com.sohu.tv.mq.cloud.task.monitor;
 
-import com.sohu.tv.mq.cloud.bo.*;
+import com.sohu.tv.mq.cloud.bo.Cluster;
+import com.sohu.tv.mq.cloud.bo.Consumer;
+import com.sohu.tv.mq.cloud.bo.QueueOffset;
+import com.sohu.tv.mq.cloud.bo.TypedUndoneMsgs;
+import com.sohu.tv.mq.cloud.mq.DefaultCallback;
+import com.sohu.tv.mq.cloud.mq.MQAdminTemplate;
 import com.sohu.tv.mq.cloud.service.ConsumerService;
-import com.sohu.tv.mq.cloud.service.NameServerService;
-import com.sohu.tv.mq.cloud.util.Jointer;
-import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper;
+import com.sohu.tv.mq.cloud.service.TopicService;
 import com.sohu.tv.mq.cloud.util.Result;
 import com.sohu.tv.mq.util.CommonUtil;
-import org.apache.rocketmq.acl.common.AclClientRPCHook;
-import org.apache.rocketmq.acl.common.SessionCredentials;
 import org.apache.rocketmq.client.consumer.DefaultMQPullConsumer;
 import org.apache.rocketmq.client.consumer.DefaultMQPushConsumer;
 import org.apache.rocketmq.client.consumer.PullResult;
@@ -19,21 +20,21 @@ import org.apache.rocketmq.client.exception.MQBrokerException;
 import org.apache.rocketmq.client.exception.MQClientException;
 import org.apache.rocketmq.common.MQVersion;
 import org.apache.rocketmq.common.MixAll;
-import org.apache.rocketmq.common.admin.ConsumeStats;
-import org.apache.rocketmq.common.admin.OffsetWrapper;
-import org.apache.rocketmq.common.admin.TopicOffset;
-import org.apache.rocketmq.common.admin.TopicStatsTable;
 import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.common.message.MessageQueue;
-import org.apache.rocketmq.common.protocol.body.Connection;
-import org.apache.rocketmq.common.protocol.body.ConsumerConnection;
-import org.apache.rocketmq.common.protocol.body.ConsumerRunningInfo;
-import org.apache.rocketmq.common.protocol.body.TopicList;
-import org.apache.rocketmq.common.protocol.heartbeat.MessageModel;
-import org.apache.rocketmq.common.protocol.topic.OffsetMovedEvent;
 import org.apache.rocketmq.common.topic.TopicValidator;
 import org.apache.rocketmq.remoting.exception.RemotingException;
-import org.apache.rocketmq.tools.admin.DefaultMQAdminExt;
+import org.apache.rocketmq.remoting.protocol.admin.ConsumeStats;
+import org.apache.rocketmq.remoting.protocol.admin.OffsetWrapper;
+import org.apache.rocketmq.remoting.protocol.admin.TopicOffset;
+import org.apache.rocketmq.remoting.protocol.admin.TopicStatsTable;
+import org.apache.rocketmq.remoting.protocol.body.Connection;
+import org.apache.rocketmq.remoting.protocol.body.ConsumerConnection;
+import org.apache.rocketmq.remoting.protocol.body.ConsumerRunningInfo;
+import org.apache.rocketmq.remoting.protocol.body.TopicList;
+import org.apache.rocketmq.remoting.protocol.heartbeat.MessageModel;
+import org.apache.rocketmq.remoting.protocol.topic.OffsetMovedEvent;
+import org.apache.rocketmq.tools.admin.MQAdminExt;
 import org.apache.rocketmq.tools.monitor.DeleteMsgsEvent;
 import org.apache.rocketmq.tools.monitor.UndoneMsgs;
 import org.slf4j.Logger;
@@ -56,49 +57,32 @@ public class MonitorService {
 
     private SohuMonitorListener monitorListener;
 
-    private DefaultMQAdminExt defaultMQAdminExt;
     private DefaultMQPullConsumer defaultMQPullConsumer;
     private DefaultMQPushConsumer defaultMQPushConsumer;
     
-    private String clusterName;
-    
-    private String nsAddr;
+    private Cluster cluster;
     
     private boolean initialized;
     
     private ConsumerService consumerService;
 
-    public MonitorService(NameServerService nameServerService, Cluster mqCluster, SohuMonitorListener monitorListener,
-            MQCloudConfigHelper mqCloudConfigHelper) {
-        Result<List<NameServer>> nameServerListResult = nameServerService.query(mqCluster.getId());
-        if(nameServerListResult.isEmpty()) {
-            logger.error("monitor cluster:{} init err!", mqCluster);
-            return;
-        }
-        this.nsAddr = Jointer.BY_SEMICOLON.join(nameServerListResult.getResult(), ns -> ns.getAddr());
-        this.clusterName = mqCluster.getName();
+    private MQAdminTemplate mqAdminTemplate;
+
+    private TopicService topicService;
+
+    public MonitorService(Cluster mqCluster, SohuMonitorListener monitorListener) {
+        this.cluster = mqCluster;
         this.monitorListener = monitorListener;
-        
+
         this.defaultMQPullConsumer = new DefaultMQPullConsumer(MixAll.TOOLS_CONSUMER_GROUP);
         this.defaultMQPullConsumer.setInstanceName(instanceName());
-        this.defaultMQPullConsumer.setNamesrvAddr(nsAddr);
+        this.defaultMQPullConsumer.setUnitName(String.valueOf(mqCluster.getId()));
         this.defaultMQPullConsumer.setVipChannelEnabled(mqCluster.isEnableVipChannel());
-        
-        if (mqCloudConfigHelper.isAdminAclEnable()) {
-            SessionCredentials adminSessionCredentials = new SessionCredentials(
-                    mqCloudConfigHelper.getAdminAccessKey(), mqCloudConfigHelper.getAdminSecretKey());
-            this.defaultMQAdminExt = new DefaultMQAdminExt(new AclClientRPCHook(adminSessionCredentials));
-        } else {
-            this.defaultMQAdminExt = new DefaultMQAdminExt();
-        }
-        this.defaultMQAdminExt.setVipChannelEnabled(mqCluster.isEnableVipChannel());
-        this.defaultMQAdminExt.setInstanceName(instanceName());
-        this.defaultMQAdminExt.setNamesrvAddr(nsAddr);
         
         this.defaultMQPushConsumer = new DefaultMQPushConsumer(MixAll.MONITOR_CONSUMER_GROUP);
         this.defaultMQPushConsumer.setVipChannelEnabled(mqCluster.isEnableVipChannel());
         this.defaultMQPushConsumer.setInstanceName(instanceName());
-        this.defaultMQPushConsumer.setNamesrvAddr(nsAddr);
+        this.defaultMQPushConsumer.setUnitName(String.valueOf(mqCluster.getId()));
         try {
             this.defaultMQPushConsumer.setConsumeThreadMin(1);
             this.defaultMQPushConsumer.setConsumeThreadMax(1);
@@ -128,26 +112,27 @@ public class MonitorService {
         try {
             start();
             initialized = true;
-        } catch (MQClientException e) {
-            logger.error("start err", e);
+        } catch (Exception e) {
+            logger.error("start err, cluster:{}", cluster, e);
             throw new RuntimeException(e);
+        } finally {
+            if (!initialized) {
+                shutdown();
+            }
         }
     }
 
     private String instanceName() {
-        String name = System.currentTimeMillis() + new Random().nextInt() + this.nsAddr;
-        return "MonitorService_" + name.hashCode();
+        return "MonitorService_" + System.nanoTime();
     }
 
     public void start() throws MQClientException {
         this.defaultMQPullConsumer.start();
-        this.defaultMQAdminExt.start();
         this.defaultMQPushConsumer.start();
     }
 
     public void shutdown() {
         this.defaultMQPullConsumer.shutdown();
-        this.defaultMQAdminExt.shutdown();
         this.defaultMQPushConsumer.shutdown();
     }
 
@@ -158,8 +143,19 @@ public class MonitorService {
         }
         long beginTime = System.currentTimeMillis();
         this.monitorListener.beginRound();
+        // 获取所有topic
+        TopicList topicList = mqAdminTemplate.execute(new DefaultCallback<TopicList>(){
+            public TopicList callback(MQAdminExt mqAdmin) throws Exception {
+                return mqAdmin.fetchAllTopicList();
+            }
+            public Cluster mqCluster() {
+                return cluster;
+            }
+        });
+        if (topicList == null) {
+            return;
+        }
         // 检测集群模式消费者
-        TopicList topicList = defaultMQAdminExt.fetchAllTopicList();
         for (String topic : topicList.getTopicList()) {
             if (CommonUtil.isRetryTopic(topic)) {
                 String consumerGroup = topic.substring(MixAll.RETRY_GROUP_TOPIC_PREFIX.length());
@@ -168,31 +164,28 @@ public class MonitorService {
                     continue;
                 }
                 // 链接在线检测
-                ConsumerConnection cc = getConsumerConnection(consumerGroup);
-                if(cc == null) {
+                Consumer consumer = consumerService.queryConsumerByName(consumerGroup).getResult();
+                if (consumer == null) {
+                    consumer = new Consumer();
+                    consumer.setName(consumerGroup);
+                }
+                ConsumerConnection cc = consumerService.examineConsumerConnectionInfo(consumerGroup, cluster, consumer.isProxyRemoting()).getResult();
+                if (cc == null) {
                     continue;
                 }
 
-                Consumer consumer = null;
-                Result<Consumer> consumerResult = consumerService.queryConsumerByName(consumerGroup);
-                if (consumerResult.isNotOK()) {
-                    logger.warn("consumer:{} not exist");
-                } else {
-                    consumer = consumerResult.getResult();
-                }
-
                 // http consumer 监控
-                if (consumer != null && consumer.httpConsumeEnabled()) {
+                if (consumer.isHttpProtocol()) {
                     reportHttpUndoneMsgs(consumer, cc);
                 } else {
                     try {
-                        this.reportUndoneMsgs(consumerGroup, cc);
+                        this.reportUndoneMsgs(consumer, cc);
                     } catch (Exception e) {
                         logger.warn("reportUndoneMsgs Exception", e);
                     }
 
                     try {
-                        this.reportConsumerRunningInfo(consumerGroup, cc);
+                        this.reportConsumerRunningInfo(consumer, cc);
                     } catch (Exception e) {
                         logger.warn("reportConsumerRunningInfo Exception", e);
                     }
@@ -207,30 +200,13 @@ public class MonitorService {
         }
         this.monitorListener.endRound();
         long spentTimeMills = System.currentTimeMillis() - beginTime;
-        logger.info("{} monitor use: {}ms", clusterName, spentTimeMills);
+        logger.info("{} monitor use: {}ms", cluster, spentTimeMills);
     }
     
-    private ConsumerConnection getConsumerConnection(String consumerGroup) {
-        try {
-            return defaultMQAdminExt.examineConsumerConnectionInfo(consumerGroup);
-        } catch (Exception e) {
-            if(logger.isDebugEnabled()) {
-                logger.debug("examineConsumerConnectionInfo consumerGroup:{}, err:{}", consumerGroup, e.getMessage());
-            }
-        }
-        return null;
-    }
-
-    private void reportUndoneMsgs(String consumerGroup, ConsumerConnection cc) {
+    private void reportUndoneMsgs(Consumer consumer, ConsumerConnection cc) {
         if(cc.getMessageModel() == MessageModel.CLUSTERING) {
-            ConsumeStats cs = null;
-            try {
-                cs = defaultMQAdminExt.examineConsumeStats(consumerGroup);
-            } catch (Exception e) {
-                logger.info("examineConsumeStats consumerGroup:{}, err:{}", consumerGroup, e.getMessage());
-                return;
-            }
-            if(cs == null) {
+            ConsumeStats cs = consumerService.examineConsumeStats(cluster, consumer.getName()).getResult();
+            if (cs == null) {
                 return;
             }
             HashMap<String/* Topic */, ConsumeStats> csByTopic = new HashMap<String, ConsumeStats>();
@@ -253,7 +229,7 @@ public class MonitorService {
                 while (it.hasNext()) {
                     Entry<String, ConsumeStats> next = it.next();
                     TypedUndoneMsgs undoneMsgs = new TypedUndoneMsgs();
-                    undoneMsgs.setConsumerGroup(consumerGroup);
+                    undoneMsgs.setConsumerGroup(consumer.getName());
                     undoneMsgs.setTopic(next.getKey());
                     undoneMsgs.setClustering(true);
                     this.computeUndoneMsgs(undoneMsgs, next.getValue());
@@ -265,24 +241,18 @@ public class MonitorService {
             }
         } else {
             String topic = cc.getSubscriptionTable().keySet().iterator().next();
-            TopicStatsTable topicStatsTable = null;
-            try {
-                topicStatsTable = defaultMQAdminExt.examineTopicStats(topic);
-            } catch (Exception e) {
-                logger.warn("examineTopicStats topic:{}, err:{}", topic, e.getMessage());
-                return;
-            }
+            TopicStatsTable topicStatsTable = topicService.stats(cluster, topic);
             if(topicStatsTable == null || topicStatsTable.getOffsetTable().size() == 0) {
                 return;
             }
             TypedUndoneMsgs undoneMsgs = new TypedUndoneMsgs();
             undoneMsgs.setTopic(topic);
-            undoneMsgs.setConsumerGroup(consumerGroup);
+            undoneMsgs.setConsumerGroup(consumer.getName());
             
             Set<Connection> connSet = cc.getConnectionSet();
             for(Connection conn : connSet) {
-                Map<MessageQueue, Long> mqOffsetMap = consumerService.fetchConsumerStatus(defaultMQAdminExt, topic,
-                        consumerGroup, conn);
+                Map<MessageQueue, Long> mqOffsetMap = (Map<MessageQueue, Long>) consumerService.fetchConsumerStatus(
+                        cluster, topic, consumer.getName(), conn, consumer.isProxyRemoting()).getResult();
                 if (mqOffsetMap == null) {
                     return;
                 }
@@ -295,7 +265,7 @@ public class MonitorService {
         }
     }
 
-    public void reportConsumerRunningInfo(String consumerGroup, ConsumerConnection cc) throws InterruptedException,
+    public void reportConsumerRunningInfo(Consumer consumer, ConsumerConnection cc) throws InterruptedException,
             MQBrokerException, RemotingException, MQClientException {
         TreeMap<String, ConsumerRunningInfo> infoMap = new TreeMap<String, ConsumerRunningInfo>();
         for (Connection c : cc.getConnectionSet()) {
@@ -305,15 +275,15 @@ public class MonitorService {
                 continue;
             }
 
-            try {
-                ConsumerRunningInfo info = defaultMQAdminExt.getConsumerRunningInfo(consumerGroup, clientId, false);
+            ConsumerRunningInfo info = consumerService.getConsumerRunningInfo(cluster, consumer.getName(), clientId,
+                    consumer.isProxyRemoting()).getResult();
+            if (info != null) {
                 infoMap.put(clientId, info);
-            } catch (Exception e) {
             }
         }
 
         if (!infoMap.isEmpty()) {
-            this.monitorListener.reportConsumerRunningInfo(consumerGroup, infoMap);
+            this.monitorListener.reportConsumerRunningInfo(consumer.getName(), infoMap);
         }
     }
 
@@ -324,13 +294,7 @@ public class MonitorService {
      */
     private void reportHttpUndoneMsgs(Consumer consumer, ConsumerConnection cc) {
         String topic = cc.getSubscriptionTable().keySet().iterator().next();
-        TopicStatsTable topicStatsTable = null;
-        try {
-            topicStatsTable = defaultMQAdminExt.examineTopicStats(topic);
-        } catch (Exception e) {
-            logger.warn("examineTopicStats topic:{}, err:{}", topic, e.getMessage());
-            return;
-        }
+        TopicStatsTable topicStatsTable = topicService.stats(cluster, topic);
         if (topicStatsTable == null || topicStatsTable.getOffsetTable().size() == 0) {
             return;
         }
@@ -438,5 +402,13 @@ public class MonitorService {
 
     public void setConsumerService(ConsumerService consumerService) {
         this.consumerService = consumerService;
+    }
+
+    public void setMqAdminTemplate(MQAdminTemplate mqAdminTemplate) {
+        this.mqAdminTemplate = mqAdminTemplate;
+    }
+
+    public void setTopicService(TopicService topicService) {
+        this.topicService = topicService;
     }
 }

@@ -13,13 +13,13 @@ import com.sohu.tv.mq.util.CommonUtil;
 import com.sohu.tv.mq.util.Constant;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.rocketmq.common.MixAll;
-import org.apache.rocketmq.common.admin.ConsumeStats;
-import org.apache.rocketmq.common.admin.OffsetWrapper;
-import org.apache.rocketmq.common.admin.TopicStatsTable;
 import org.apache.rocketmq.common.message.MessageQueue;
-import org.apache.rocketmq.common.protocol.body.Connection;
-import org.apache.rocketmq.common.protocol.body.ConsumerConnection;
-import org.apache.rocketmq.common.protocol.body.ConsumerRunningInfo;
+import org.apache.rocketmq.remoting.protocol.admin.ConsumeStats;
+import org.apache.rocketmq.remoting.protocol.admin.OffsetWrapper;
+import org.apache.rocketmq.remoting.protocol.admin.TopicStatsTable;
+import org.apache.rocketmq.remoting.protocol.body.Connection;
+import org.apache.rocketmq.remoting.protocol.body.ConsumerConnection;
+import org.apache.rocketmq.remoting.protocol.body.ConsumerRunningInfo;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -29,6 +29,7 @@ import org.springframework.web.util.HtmlUtils;
 import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * 消费者接口
@@ -112,13 +113,15 @@ public class ConsumerController extends ViewController {
 
         Topic topic = topicTopology.getTopic();
         Cluster cluster = clusterService.getMQClusterById(topic.getClusterId());
-
+        // 获取消费者版本
+        Map<String, String> clientVersionMap = queryClientVersionMap(topic.getName(), consumerSelector);
         // 构建集群数据
         List<ConsumerProgressVO> clusterList = buildClusteringConsumerProgressVOList(cluster, topic.getName(),
                 consumerSelector.getClusteringConsumerList(), consumerMap);
         // 获取消费者配置
         for (ConsumerProgressVO vo : clusterList) {
             vo.setConsumerConfig(consumerConfigService.getConsumerConfig(vo.getConsumer().getName()));
+            vo.setVersion(clientVersionMap.get(vo.getConsumer().getName()));
         }
         // 组装集群模式消费者信息
         setResult(map, clusterList);
@@ -129,6 +132,7 @@ public class ConsumerController extends ViewController {
         // 获取消费者配置
         for (ConsumerProgressVO vo : list) {
             vo.setConsumerConfig(consumerConfigService.getConsumerConfig(vo.getConsumer().getName()));
+            vo.setVersion(clientVersionMap.get(vo.getConsumer().getName()));
         }
         // 组装广播模式消费者信息
         setResult(map, "resultExt", Result.getResult(list));
@@ -145,6 +149,28 @@ public class ConsumerController extends ViewController {
         userFootprint.setTid(tid);
         userFootprintService.save(userFootprint);
         return view;
+    }
+
+    /**
+     * 查询消费者版本
+     * @param topic
+     * @param consumerSelector
+     * @return
+     */
+    private Map<String, String> queryClientVersionMap(String topic, ConsumerSelector consumerSelector) {
+        List<String> consumers = consumerSelector.getClusteringConsumerList().stream()
+                .map(Consumer::getName)
+                .collect(Collectors.toList());
+        consumerSelector.getBroadcastConsumerList().stream().map(Consumer::getName).forEach(consumers::add);
+        if (consumers.isEmpty()) {
+            return Collections.emptyMap();
+        }
+        Result<List<ClientVersion>> clientVersionListResult = clientVersionService.query(topic, consumers);
+        if (clientVersionListResult.isEmpty()) {
+            return Collections.emptyMap();
+        }
+        return clientVersionListResult.getResult().stream()
+                .collect(Collectors.toMap(ClientVersion::getClient, ClientVersion::getVersion));
     }
 
     /**
@@ -192,7 +218,7 @@ public class ConsumerController extends ViewController {
             consumerProgressVO.setConsumeTps(consumeStats.getConsumeTps());
 
             // 拆分正常队列和重试队列
-            HashMap<MessageQueue, OffsetWrapper> offsetTable = consumeStats.getOffsetTable();
+            Map<MessageQueue, OffsetWrapper> offsetTable = consumeStats.getOffsetTable();
             Map<MessageQueue, OffsetWrapper> offsetMap = new TreeMap<MessageQueue, OffsetWrapper>();
             Map<MessageQueue, OffsetWrapper> retryOffsetMap = new TreeMap<MessageQueue, OffsetWrapper>();
             for (MessageQueue mq : offsetTable.keySet()) {
@@ -430,9 +456,10 @@ public class ConsumerController extends ViewController {
 
         // 校验是否还有链接
         String consumer = consumerResult.getResult().getName();
-        if (!consumerResult.getResult().httpConsumeEnabled()) {
+        if (!consumerResult.getResult().isHttpProtocol()) {
             Cluster cluster = clusterService.getMQClusterById(topicResult.getResult().getClusterId());
-            Result<ConsumerConnection> connectionResult = consumerService.examineConsumerConnectionInfo(consumer, cluster);
+            Result<ConsumerConnection> connectionResult = consumerService.examineConsumerConnectionInfo(consumer,
+                    cluster, consumerResult.getResult().isProxyRemoting());
             if (connectionResult.isOK()) {
                 return Result.getResult(Status.CONSUMER_CONNECTION_EXIST_ERROR);
             }
@@ -692,10 +719,12 @@ public class ConsumerController extends ViewController {
     @ResponseBody
     @RequestMapping("/queue/owner")
     public Result<?> queueRoute(UserInfo userInfo, @RequestParam("cid") int cid,
-            @RequestParam("consumer") String consumer) throws Exception {
+            @RequestParam("consumer") String consumerName) throws Exception {
         Cluster cluster = clusterService.getMQClusterById(cid);
         // 获取消费者运行时信息
-        Map<String, ConsumerRunningInfo> map = consumerService.getConsumerRunningInfo(cluster, consumer);
+        Consumer consumer = consumerService.queryConsumerByName(consumerName).getResult();
+        Map<String, ConsumerRunningInfo> map = consumerService.getConsumerRunningInfo(cluster, consumerName,
+                consumer.isProxyRemoting());
         if (map == null) {
             return Result.getResult(Status.NO_RESULT);
         }
@@ -924,7 +953,9 @@ public class ConsumerController extends ViewController {
     public Result<?> connection(UserInfo userInfo, @RequestParam("cid") int cid,
             @RequestParam("group") String group, Map<String, Object> map) throws Exception {
         Cluster cluster = clusterService.getMQClusterById(cid);
-        Result<ConsumerConnection> result = consumerService.examineConsumerConnectionInfo(group, cluster);
+        Consumer consumer = consumerService.queryConsumerByName(group).getResult();
+        Result<ConsumerConnection> result = consumerService.examineConsumerConnectionInfo(group, cluster,
+                consumer.isProxyRemoting());
         if (result.isNotOK()) {
             if (Status.NO_ONLINE.getKey() == result.getStatus()) {
                 return result;
@@ -974,7 +1005,8 @@ public class ConsumerController extends ViewController {
         }
         Cluster cluster = clusterService.getMQClusterById(topicResult.getResult().getClusterId());
         // 获取线程指标
-        Result<List<StackTraceMetric>> result = consumerService.getConsumeThreadMetrics(cluster, clientId, consumer);
+        Result<List<StackTraceMetric>> result = consumerService.getConsumeThreadMetrics(cluster, clientId, consumer,
+                consumerResult.getResult().isProxyRemoting());
         // 排序
         List<StackTraceMetric> threadMetricList = result.getResult();
         if (threadMetricList != null) {
@@ -1021,7 +1053,8 @@ public class ConsumerController extends ViewController {
         }
         Cluster cluster = clusterService.getMQClusterById(topicResult.getResult().getClusterId());
         // 获取线程指标
-        Result<List<StackTraceMetric>> result = consumerService.getConsumeFailedMetrics(cluster, clientId, consumer);
+        Result<List<StackTraceMetric>> result = consumerService.getConsumeFailedMetrics(cluster, clientId, consumer,
+                consumerResult.getResult().isProxyRemoting());
         // 排序
         List<StackTraceMetric> threadMetricList = result.getResult();
         if (threadMetricList != null) {
@@ -1152,7 +1185,7 @@ public class ConsumerController extends ViewController {
 
         private void addConsumer(Consumer consumer) {
             cidList.add(consumer.getId());
-            if (consumer.isClustering() && !consumer.httpConsumeEnabled()) {
+            if (consumer.isClustering() && !consumer.isHttpProtocol()) {
                 clusteringConsumerList.add(consumer);
             } else {
                 broadcastConsumerList.add(consumer);

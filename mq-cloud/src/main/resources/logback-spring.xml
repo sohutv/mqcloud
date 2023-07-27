@@ -26,15 +26,6 @@
 				<charset class="java.nio.charset.Charset">UTF-8</charset>
 			</encoder>
 		</appender>
-		<logger name="RocketmqCommon" level="INFO" additivity="false">
-			<appender-ref ref="RocketmqClientAppender" />
-		</logger>
-		<logger name="RocketmqRemoting" level="INFO" additivity="false">
-			<appender-ref ref="RocketmqClientAppender" />
-		</logger>
-		<logger name="RocketmqClient" level="INFO" additivity="false">
-			<appender-ref ref="RocketmqClientAppender" />
-		</logger>
 		<logger name="com.sohu.tv.index.cloud.metrics" level="warn" additivity="false">
 	        <appender-ref ref="stdout" />
 	    </logger>
@@ -54,15 +45,6 @@
 		</appender>
 		<!-- show sql -->
 		<logger name="com.sohu.tv.mq.cloud.dao" level="DEBUG" additivity="false">
-			<appender-ref ref="stdout" />
-		</logger>
-		<logger name="RocketmqCommon" level="INFO" additivity="false">
-			<appender-ref ref="stdout" />
-		</logger>
-		<logger name="RocketmqRemoting" level="INFO" additivity="false">
-			<appender-ref ref="stdout" />
-		</logger>
-		<logger name="RocketmqClient" level="INFO" additivity="false">
 			<appender-ref ref="stdout" />
 		</logger>
 		<root level="INFO">

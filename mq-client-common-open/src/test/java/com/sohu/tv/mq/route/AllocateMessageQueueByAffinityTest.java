@@ -1,7 +1,6 @@
 package com.sohu.tv.mq.route;
 
 import com.sohu.tv.mq.util.CommonUtil;
-import org.apache.rocketmq.client.log.ClientLogger;
 import org.apache.rocketmq.common.message.MessageQueue;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -21,7 +20,6 @@ public class AllocateMessageQueueByAffinityTest {
 
     @BeforeClass
     public static void init() {
-        System.setProperty(ClientLogger.CLIENT_LOG_USESLF4J, "true");
     }
 
     @Test

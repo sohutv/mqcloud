@@ -140,9 +140,20 @@ public class BrokerService {
      * @return
      */
     public Result<Properties> fetchBrokerConfig(int cid, String brokerAddr) {
+        Cluster cluster = clusterService.getMQClusterById(cid);
+        return fetchBrokerConfig(cluster, brokerAddr);
+    }
+
+    /**
+     * 抓取broker配置
+     * @param cluster
+     * @param brokerAddr
+     * @return
+     */
+    public Result<Properties> fetchBrokerConfig(Cluster cluster, String brokerAddr) {
         return mqAdminTemplate.execute(new DefaultCallback<Result<Properties>>() {
             public Cluster mqCluster() {
-                return clusterService.getMQClusterById(cid);
+                return cluster;
             }
 
             public Result<Properties> callback(MQAdminExt mqAdmin) throws Exception {
@@ -151,7 +162,7 @@ public class BrokerService {
             }
 
             public Result<Properties> exception(Exception e) {
-                logger.error("cid:{} brokerAddr:{}, getBrokerConfig err", cid, brokerAddr, e);
+                logger.error("cluster:{} brokerAddr:{}, getBrokerConfig err", cluster, brokerAddr, e);
                 return Result.getDBErrorResult(e);
             }
         });

@@ -19,12 +19,12 @@ import com.sohu.tv.mq.util.CommonUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.rocketmq.common.MQVersion;
 import org.apache.rocketmq.common.MixAll;
-import org.apache.rocketmq.common.admin.TopicOffset;
-import org.apache.rocketmq.common.admin.TopicStatsTable;
 import org.apache.rocketmq.common.message.MessageQueue;
-import org.apache.rocketmq.common.protocol.body.Connection;
-import org.apache.rocketmq.common.protocol.body.ConsumerConnection;
-import org.apache.rocketmq.common.protocol.body.ProducerConnection;
+import org.apache.rocketmq.remoting.protocol.admin.TopicOffset;
+import org.apache.rocketmq.remoting.protocol.admin.TopicStatsTable;
+import org.apache.rocketmq.remoting.protocol.body.Connection;
+import org.apache.rocketmq.remoting.protocol.body.ConsumerConnection;
+import org.apache.rocketmq.remoting.protocol.body.ProducerConnection;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -143,7 +143,7 @@ public class TopicController extends ViewController {
         // 获取topic状态
         TopicStatsTable topicStatsTable = topicService.stats(topic);
         // 对topic状态进行排序
-        HashMap<MessageQueue, TopicOffset> offsetTable = topicStatsTable.getOffsetTable();
+        Map<MessageQueue, TopicOffset> offsetTable = topicStatsTable.getOffsetTable();
         BrokersQueueOffsetVO brokersQueueOffsetVO = toBrokersQueueOffsetVO(offsetTable);
         brokersQueueOffsetVO.setTopic(topic.getName());
         brokersQueueOffsetVO.setTopicId(topic.getId());
@@ -151,7 +151,7 @@ public class TopicController extends ViewController {
         return view;
     }
     
-    private BrokersQueueOffsetVO toBrokersQueueOffsetVO(HashMap<MessageQueue, TopicOffset> offsetTable) {
+    private BrokersQueueOffsetVO toBrokersQueueOffsetVO(Map<MessageQueue, TopicOffset> offsetTable) {
         // 合并&排序
         Map<String, TreeMap<MessageQueue, TopicOffset>> topicOffsetMap = new TreeMap<>();
         for (MessageQueue mq : offsetTable.keySet()) {
@@ -308,12 +308,12 @@ public class TopicController extends ViewController {
         auditAssociateProducer.setTid(tid);
         auditAssociateProducer.setUid(uid);
         // 获取存在的生产者
-        int httpEnabled = 0;
+        int protocol = 0;
         Result<List<UserProducer>> upListResult = userProducerService.queryUserProducer(producer);
         if (!upListResult.isEmpty()) {
-            httpEnabled = upListResult.getResult().get(0).getHttpEnabled();
+            protocol = upListResult.getResult().get(0).getProtocol();
         }
-        auditAssociateProducer.setHttpEnabled(httpEnabled);
+        auditAssociateProducer.setProtocol(protocol);
         // 构建Audit
         Audit audit = new Audit();
         audit.setType(TypeEnum.ASSOCIATE_PRODUCER.getType());
@@ -363,7 +363,7 @@ public class TopicController extends ViewController {
         auditAssociateProducer.setProducer(producer);
         auditAssociateProducer.setTid(tid);
         auditAssociateProducer.setUid(uid);
-        auditAssociateProducer.setHttpEnabled(associateProducerParam.getHttpEnabled());
+        auditAssociateProducer.setProtocol(associateProducerParam.getProtocol());
         // 构建Audit
         Audit audit = new Audit();
         audit.setType(TypeEnum.NEW_PRODUCER.getType());
@@ -534,13 +534,34 @@ public class TopicController extends ViewController {
         HashSet<Connection> connectionSet = null;
         Integer clientType = ClientLanguage.PRODUCER_CLIENT_GROUP_TYPE;
         if (type == 1) {
+            Result<List<UserProducer>> upListResult = userProducerService.queryUserProducer(group);
+            if (upListResult.isEmpty()) {
+                return view;
+            }
+            UserProducer up = upListResult.getResult().get(0);
             Result<ProducerConnection> result = userProducerService.examineProducerConnectionInfo(group, topic,
-                    cluster);
+                    cluster, up.isProxyRemoting());
             if (result.isOK()) {
                 connectionSet = result.getResult().getConnectionSet();
             }
+            // trace topic生产者需要到proxy查询下连接
+            if (cluster.isEnableTrace() && CommonUtil.isTraceTopicProducer(group)) {
+                result = userProducerService.examineProducerConnectionInfo(group, topic, cluster, true);
+                if (result.isOK()) {
+                    if (connectionSet == null) {
+                        connectionSet = result.getResult().getConnectionSet();
+                    } else {
+                        connectionSet.addAll(result.getResult().getConnectionSet());
+                    }
+                }
+            }
         } else {
-            Result<ConsumerConnection> result = consumerService.examineConsumerConnectionInfo(group, cluster);
+            Result<Consumer> consumerResult = consumerService.queryConsumerByName(group);
+            if (consumerResult.isNotOK()) {
+                return view;
+            }
+            Result<ConsumerConnection> result = consumerService.examineConsumerConnectionInfo(group, cluster,
+                    consumerResult.getResult().isProxyRemoting());
             clientType = ClientLanguage.CONSUMER_CLIENT_GROUP_TYPE;
             if (result.isOK()) {
                 connectionSet = result.getResult().getConnectionSet();

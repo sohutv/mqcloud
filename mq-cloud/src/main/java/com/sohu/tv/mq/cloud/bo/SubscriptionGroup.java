@@ -3,9 +3,9 @@ package com.sohu.tv.mq.cloud.bo;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.rocketmq.common.DataVersion;
+import org.apache.rocketmq.remoting.protocol.DataVersion;
 import org.apache.rocketmq.common.MixAll;
-import org.apache.rocketmq.common.subscription.SubscriptionGroupConfig;
+import org.apache.rocketmq.remoting.protocol.subscription.SubscriptionGroupConfig;
 
 /**
  * 订阅组

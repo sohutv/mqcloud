@@ -5,8 +5,8 @@ import com.sohu.tv.mq.cloud.bo.Consumer;
 import com.sohu.tv.mq.cloud.bo.ConsumerConfig;
 import com.sohu.tv.mq.cloud.bo.User;
 import com.sohu.tv.mq.cloud.util.WebUtil;
-import org.apache.rocketmq.common.admin.OffsetWrapper;
-import org.apache.rocketmq.common.admin.TopicOffset;
+import org.apache.rocketmq.remoting.protocol.admin.OffsetWrapper;
+import org.apache.rocketmq.remoting.protocol.admin.TopicOffset;
 import org.apache.rocketmq.common.message.MessageQueue;
 
 import java.util.Iterator;
@@ -44,6 +44,9 @@ public class ConsumerProgressVO {
     private long diffTotal;
     // 消费者配置
     private ConsumerConfig consumerConfig;
+
+    // 客户端版本
+    private String version;
 
     public Consumer getConsumer() {
         return consumer;
@@ -240,5 +243,13 @@ public class ConsumerProgressVO {
             return "集群";
         }
         return "广播";
+    }
+
+    public String getVersion() {
+        return version;
+    }
+
+    public void setVersion(String version) {
+        this.version = version;
     }
 }

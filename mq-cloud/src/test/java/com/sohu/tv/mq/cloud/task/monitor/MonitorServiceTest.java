@@ -35,8 +35,7 @@ public class MonitorServiceTest {
     
     @Test
     public void test() throws MQClientException, RemotingException, InterruptedException {
-        MonitorService monitorService = new MonitorService(nameServerService, clusterService.getMQClusterById(2), 
-                sohuMonitorListener, mqCloudConfigHelper);
+        MonitorService monitorService = new MonitorService(clusterService.getMQClusterById(2), sohuMonitorListener);
         monitorService.setConsumerService(consumerService);
         monitorService.doMonitorWork();
     }

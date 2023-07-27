@@ -1,14 +1,26 @@
 package com.sohu.tv.mq.cloud.conf;
 
-import java.io.UnsupportedEncodingException;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.TimeUnit;
-
-import javax.annotation.PreDestroy;
-
+import ch.ethz.ssh2.Connection;
+import com.sohu.tv.mq.cloud.bo.BrokerTraffic;
+import com.sohu.tv.mq.cloud.bo.Cluster;
+import com.sohu.tv.mq.cloud.bo.User;
+import com.sohu.tv.mq.cloud.cache.LocalCache;
+import com.sohu.tv.mq.cloud.cache.LocalCacheStats;
+import com.sohu.tv.mq.cloud.common.Destroyable;
+import com.sohu.tv.mq.cloud.common.MemoryMQ;
+import com.sohu.tv.mq.cloud.common.service.LoginService;
+import com.sohu.tv.mq.cloud.common.service.SmsSender;
+import com.sohu.tv.mq.cloud.common.service.impl.AbstractLoginService;
+import com.sohu.tv.mq.cloud.common.util.CipherHelper;
+import com.sohu.tv.mq.cloud.mq.MQAdminPooledObjectFactory;
+import com.sohu.tv.mq.cloud.mq.SohuMQAdminFactory;
+import com.sohu.tv.mq.cloud.mq.SohuMQProxyAdminFactory;
+import com.sohu.tv.mq.cloud.service.ClientStatsConsumer;
+import com.sohu.tv.mq.cloud.service.ProxyService;
+import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper;
+import com.sohu.tv.mq.cloud.util.SSHPooledObjectFactory;
+import com.sohu.tv.mq.stats.dto.ClientStats;
+import com.sohu.tv.mq.util.Constant;
 import okhttp3.ConnectionPool;
 import okhttp3.OkHttpClient;
 import org.apache.commons.pool2.impl.GenericKeyedObjectPool;
@@ -24,27 +36,15 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.client.OkHttp3ClientHttpRequestFactory;
 import org.springframework.jmx.export.MBeanExporter;
-
-import com.sohu.tv.mq.cloud.bo.BrokerTraffic;
-import com.sohu.tv.mq.cloud.bo.Cluster;
-import com.sohu.tv.mq.cloud.bo.User;
-import com.sohu.tv.mq.cloud.cache.LocalCache;
-import com.sohu.tv.mq.cloud.cache.LocalCacheStats;
-import com.sohu.tv.mq.cloud.common.Destroyable;
-import com.sohu.tv.mq.cloud.common.MemoryMQ;
-import com.sohu.tv.mq.cloud.common.service.LoginService;
-import com.sohu.tv.mq.cloud.common.service.SmsSender;
-import com.sohu.tv.mq.cloud.common.service.impl.AbstractLoginService;
-import com.sohu.tv.mq.cloud.common.util.CipherHelper;
-import com.sohu.tv.mq.cloud.mq.MQAdminPooledObjectFactory;
-import com.sohu.tv.mq.cloud.mq.SohuMQAdminFactory;
-import com.sohu.tv.mq.cloud.service.ClientStatsConsumer;
-import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper;
-import com.sohu.tv.mq.cloud.util.SSHPooledObjectFactory;
-import com.sohu.tv.mq.stats.dto.ClientStats;
-
-import ch.ethz.ssh2.Connection;
 import org.springframework.web.client.RestTemplate;
+
+import javax.annotation.PreDestroy;
+import java.io.UnsupportedEncodingException;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 /**
  * 通用配置
@@ -63,6 +63,9 @@ public class CommonConfiguration {
 
     @Autowired
     private MQCloudConfigHelper mqCloudConfigHelper;
+
+    @Autowired
+    private ProxyService proxyService;
 
     // 登录类
     @Value("${login.class}")
@@ -148,6 +151,7 @@ public class CommonConfiguration {
     
     @Bean
     public GenericKeyedObjectPool<Cluster, MQAdminExt> mqPool() {
+        System.setProperty(Constant.ROCKETMQ_NAMESRV_DOMAIN, mqCloudConfigHelper.getDomain());
         GenericKeyedObjectPoolConfig genericKeyedObjectPoolConfig = new GenericKeyedObjectPoolConfig();
         genericKeyedObjectPoolConfig.setTestWhileIdle(true);
         genericKeyedObjectPoolConfig.setMaxTotalPerKey(5);
@@ -157,6 +161,24 @@ public class CommonConfiguration {
         genericKeyedObjectPoolConfig.setTimeBetweenEvictionRunsMillis(20000);
         MQAdminPooledObjectFactory mqAdminPooledObjectFactory = new MQAdminPooledObjectFactory();
         SohuMQAdminFactory sohuMQAdminFactory = new SohuMQAdminFactory(mqCloudConfigHelper);
+        mqAdminPooledObjectFactory.setSohuMQAdminFactory(sohuMQAdminFactory);
+        GenericKeyedObjectPool<Cluster, MQAdminExt> genericKeyedObjectPool = new GenericKeyedObjectPool<Cluster, MQAdminExt>(
+                mqAdminPooledObjectFactory,
+                genericKeyedObjectPoolConfig);
+        return genericKeyedObjectPool;
+    }
+
+    @Bean
+    public GenericKeyedObjectPool<Cluster, MQAdminExt> mqProxyPool() {
+        GenericKeyedObjectPoolConfig genericKeyedObjectPoolConfig = new GenericKeyedObjectPoolConfig();
+        genericKeyedObjectPoolConfig.setTestWhileIdle(true);
+        genericKeyedObjectPoolConfig.setMaxTotalPerKey(2);
+        genericKeyedObjectPoolConfig.setMaxIdlePerKey(1);
+        genericKeyedObjectPoolConfig.setMinIdlePerKey(1);
+        genericKeyedObjectPoolConfig.setMaxWaitMillis(10000);
+        genericKeyedObjectPoolConfig.setTimeBetweenEvictionRunsMillis(20000);
+        MQAdminPooledObjectFactory mqAdminPooledObjectFactory = new MQAdminPooledObjectFactory();
+        SohuMQProxyAdminFactory sohuMQAdminFactory = new SohuMQProxyAdminFactory(mqCloudConfigHelper, proxyService);
         mqAdminPooledObjectFactory.setSohuMQAdminFactory(sohuMQAdminFactory);
         GenericKeyedObjectPool<Cluster, MQAdminExt> genericKeyedObjectPool = new GenericKeyedObjectPool<Cluster, MQAdminExt>(
                 mqAdminPooledObjectFactory,

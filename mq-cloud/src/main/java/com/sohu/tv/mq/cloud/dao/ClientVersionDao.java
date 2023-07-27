@@ -33,4 +33,12 @@ public interface ClientVersionDao {
      */
     @Select("select * from client_version where topic = #{topic} and role = #{role} and client = #{client}")
     public ClientVersion selectClientVersion(@Param("topic") String topic, @Param("client") String client, @Param("role") int role);
+
+    /**
+     * 查询
+     */
+    @Select("<script>select * from client_version where topic = #{topic} and role = #{role} and client in "
+            + "<foreach collection=\"clients\" item=\"client\" separator=\",\" open=\"(\" close=\")\">#{client}</foreach> "
+            + "</script>")
+    public List<ClientVersion> selectClientVersionList(@Param("topic") String topic, @Param("clients") List<String> clients, @Param("role") int role);
 }

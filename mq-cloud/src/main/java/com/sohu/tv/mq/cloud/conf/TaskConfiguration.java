@@ -1,28 +1,16 @@
 package com.sohu.tv.mq.cloud.conf;
 
-import com.sohu.tv.mq.cloud.bo.Cluster;
-import com.sohu.tv.mq.cloud.service.ClusterService;
-import com.sohu.tv.mq.cloud.service.ConsumerService;
-import com.sohu.tv.mq.cloud.service.NameServerService;
 import com.sohu.tv.mq.cloud.task.*;
-import com.sohu.tv.mq.cloud.task.monitor.MonitorService;
-import com.sohu.tv.mq.cloud.task.monitor.SohuMonitorListener;
-import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper;
 import net.javacrumbs.shedlock.core.LockProvider;
 import net.javacrumbs.shedlock.provider.jdbc.JdbcLockProvider;
 import net.javacrumbs.shedlock.spring.ScheduledLockConfiguration;
 import net.javacrumbs.shedlock.spring.ScheduledLockConfigurationBuilder;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import javax.sql.DataSource;
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * 任务配置
@@ -33,14 +21,6 @@ import java.util.List;
 @Configuration
 @ConditionalOnProperty(name = "task.enabled", havingValue = "true")
 public class TaskConfiguration {
-    
-    private final Logger logger = LoggerFactory.getLogger(this.getClass());
-    
-    @Autowired
-    private ClusterService clusterService;
-    
-    @Autowired
-    private ConsumerService consumerService;
     
     @Bean
     public TrafficTask TopicTrafficTask() {
@@ -79,25 +59,8 @@ public class TaskConfiguration {
     }
     
     @Bean
-    public MonitorServiceTask monitorServiceTask(MQCloudConfigHelper mqCloudConfigHelper,
-                                                 NameServerService nameServerService,
-                                                 SohuMonitorListener sohuMonitorListener) {
+    public MonitorServiceTask monitorServiceTask() {
         MonitorServiceTask monitorServiceTask = new MonitorServiceTask();
-        if(clusterService.getAllMQCluster() == null) {
-            logger.warn("monitorServiceList mqcluster is null");
-            return monitorServiceTask;
-        }
-        List<MonitorService> list = new ArrayList<MonitorService>();
-        for(Cluster mqCluster : clusterService.getAllMQCluster()) {
-            // 测试环境，监控所有的集群；online环境，只监控online集群
-            if (!mqCloudConfigHelper.isOnline() || mqCluster.online()) {
-                MonitorService monitorService = new MonitorService(nameServerService, mqCluster, sohuMonitorListener,
-                        mqCloudConfigHelper);
-                monitorService.setConsumerService(consumerService);
-                list.add(monitorService);
-            }
-        }
-        monitorServiceTask.setSohuMonitorServiceList(list);
         return monitorServiceTask;
     }
     

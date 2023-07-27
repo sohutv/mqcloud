@@ -2,7 +2,7 @@ package com.sohu.tv.mq.cloud.bo;
 
 import java.util.Date;
 
-import org.apache.rocketmq.common.protocol.body.BrokerStatsData;
+import org.apache.rocketmq.remoting.protocol.body.BrokerStatsData;
 
 import com.sohu.tv.mq.cloud.util.WebUtil;
 /**

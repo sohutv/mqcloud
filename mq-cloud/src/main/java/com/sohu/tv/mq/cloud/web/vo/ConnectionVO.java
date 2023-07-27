@@ -1,7 +1,7 @@
 package com.sohu.tv.mq.cloud.web.vo;
 
 import org.apache.rocketmq.common.MQVersion;
-import org.apache.rocketmq.common.protocol.body.Connection;
+import org.apache.rocketmq.remoting.protocol.body.Connection;
 
 public class ConnectionVO {
     private Connection connection;

@@ -290,13 +290,13 @@ public interface TopicDao {
     /**
      * 查询http消费的消费者
      */
-    @Select("select topic.name topic, consumer.name consumer, consumer.consume_way consumeWay from topic,consumer where consumer.http_consume_enabled = 1 and consumer.tid = topic.id")
+    @Select("select topic.name topic, consumer.name consumer, consumer.consume_way consumeWay from topic,consumer where consumer.protocol = 1 and consumer.tid = topic.id")
     List<TopicConsumer> selectHttpTopicConsumer();
 
 
     /**
      * 查询http生产者
      */
-    @Select("select distinct topic.name topic, user_producer.producer producer from topic,user_producer where user_producer.http_enabled = 1 and user_producer.tid = topic.id")
+    @Select("select distinct topic.name topic, user_producer.producer producer from topic,user_producer where user_producer.protocol = 1 and user_producer.tid = topic.id")
     List<TopicProducer> selectHttpTopicProducer();
 }

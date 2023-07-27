@@ -15,7 +15,7 @@ public class StatsProducer {
     private Traffic traffic;
 
     // 是否开启http生产
-    private int httpEnabled;
+    private int protocol;
 
     public boolean isStats() {
         return stats;
@@ -41,12 +41,12 @@ public class StatsProducer {
         this.traffic = traffic;
     }
 
-    public int getHttpEnabled() {
-        return httpEnabled;
+    public int getProtocol() {
+        return protocol;
     }
 
-    public void setHttpEnabled(int httpEnabled) {
-        this.httpEnabled = httpEnabled;
+    public void setProtocol(int protocol) {
+        this.protocol = protocol;
     }
 
     public void copyTraffic(Traffic traffic) {

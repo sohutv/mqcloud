@@ -1,5 +1,7 @@
 package com.sohu.tv.mq.common;
 
+import com.sohu.tv.mq.acl.AclClientRPCHook;
+import com.sohu.tv.mq.acl.SessionCredentials;
 import com.sohu.tv.mq.dto.ClusterInfoDTO;
 import com.sohu.tv.mq.serializable.MessageSerializer;
 import com.sohu.tv.mq.serializable.MessageSerializerEnum;
@@ -7,14 +9,17 @@ import com.sohu.tv.mq.trace.SohuAsyncTraceDispatcher;
 import com.sohu.tv.mq.trace.TraceRocketMQProducer;
 import com.sohu.tv.mq.util.CommonUtil;
 import com.sohu.tv.mq.util.Constant;
+import com.sohu.tv.mq.util.MQProtocol;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.rocketmq.client.ClientConfig;
-import org.apache.rocketmq.client.log.ClientLogger;
 import org.apache.rocketmq.client.trace.AsyncTraceDispatcher;
 import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.UtilAll;
+import org.apache.rocketmq.remoting.RPCHook;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.lang.reflect.Field;
 
 /**
  * 公共配置
@@ -74,8 +79,6 @@ public abstract class AbstractConfig {
     public AbstractConfig(String group, String topic) {
         this.topic = topic;
         this.group = group;
-        // use slf4j
-        System.setProperty(ClientLogger.CLIENT_LOG_USESLF4J, "true");
         // 设置亲和性
         setAffinity();
     }
@@ -183,6 +186,13 @@ public abstract class AbstractConfig {
         if(getInstanceName() != null) {
             clientConfig.setInstanceName(getInstanceName());
         }
+        // 设置acl
+        if (StringUtils.isNotBlank(clusterInfoDTO.getAccessKey())) {
+            setAclRPCHook(new AclClientRPCHook(new SessionCredentials(clusterInfoDTO.getAccessKey(), clusterInfoDTO.getSecretKey())));
+        }
+        // 设置路由参数
+        setRouteParamClientGroup(getGroup());
+        setRouteParamProtocol(clusterInfoDTO.getProtocol());
     }
     
     /**
@@ -228,6 +238,9 @@ public abstract class AbstractConfig {
             // 采用外部生产者或消费者的亲和设置
             traceRocketMQProducer.setAffinityEnabled(affinityEnabled);
             traceRocketMQProducer.setAffinityBrokerSuffix(affinityBrokerSuffix);
+            if (clusterInfoDTO.isProxyRemoting()) {
+                traceRocketMQProducer.setRouteParamProtocol(clusterInfoDTO.getProtocol());
+            }
             // 启动trace producer
             traceRocketMQProducer.start();
             // 初始化TraceDispatcher
@@ -361,4 +374,48 @@ public abstract class AbstractConfig {
     public boolean isAffinityIfBrokerNotSet() {
         return CommonUtil.MQ_AFFINITY_DEFAULT.equals(affinityBrokerSuffix);
     }
+
+    /**
+     * 设置AclRPCHook
+     * @throws Exception
+     */
+    public abstract void setAclRPCHook(RPCHook rpcHook);
+
+    /**
+     * 设置路由参数
+     *
+     * @throws Exception
+     */
+    protected void setRouteParamClientGroup(String group) {
+        // 设置路由参数
+        try {
+            Field clientGroupField = ClientConfig.class.getDeclaredField("clientGroup");
+            clientGroupField.setAccessible(true);
+            clientGroupField.set(getMQClient(), group);
+        } catch (Exception e) {
+            logger.warn("setRouteParamClientGroup error:{}", e.toString());
+        }
+    }
+
+    /**
+     * 设置路由参数
+     *
+     * @throws Exception
+     */
+    protected void setRouteParamProtocol(int protocol) {
+        // 设置路由参数
+        try {
+            Field protocolField = ClientConfig.class.getDeclaredField("protocol");
+            protocolField.setAccessible(true);
+            int prevProtocol = protocolField.getInt(getMQClient());
+            // 如果之前没有设置过protocol，才设置
+            if (prevProtocol == 0) {
+                protocolField.set(getMQClient(), protocol);
+            }
+        } catch (Exception e) {
+            logger.warn("setRouteParamRole error:{}", e.toString());
+        }
+    }
+
+    protected abstract Object getMQClient();
 }

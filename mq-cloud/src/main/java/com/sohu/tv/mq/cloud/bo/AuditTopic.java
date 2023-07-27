@@ -37,8 +37,8 @@ public class AuditTopic {
     // 序列化器
     private int serializer;
 
-    // 是否开启http生产
-    private int httpEnabled;
+    // 通信协议
+    private int protocol;
     
     public long getAid() {
         return aid;
@@ -152,12 +152,12 @@ public class AuditTopic {
         this.serializer = serializer;
     }
 
-    public int getHttpEnabled() {
-        return httpEnabled;
+    public int getProtocol() {
+        return protocol;
     }
 
-    public void setHttpEnabled(int httpEnabled) {
-        this.httpEnabled = httpEnabled;
+    public void setProtocol(int protocol) {
+        this.protocol = protocol;
     }
 
     @Override
@@ -175,7 +175,7 @@ public class AuditTopic {
                 ", testEnabled=" + testEnabled +
                 ", delayEnabled=" + delayEnabled +
                 ", serializer=" + serializer +
-                ", httpEnabled=" + httpEnabled +
+                ", protocol=" + protocol +
                 '}';
     }
 }

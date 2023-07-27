@@ -16,8 +16,8 @@ public class AssociateProducerParam {
     // producer
     @NotBlank
     private String producer;
-    // 是否开启http生产
-    private int httpEnabled;
+    // 通信协议
+    private int protocol;
     public long getTid() {
         return tid;
     }
@@ -31,11 +31,11 @@ public class AssociateProducerParam {
         this.producer = producer;
     }
 
-    public int getHttpEnabled() {
-        return httpEnabled;
+    public int getProtocol() {
+        return protocol;
     }
 
-    public void setHttpEnabled(int httpEnabled) {
-        this.httpEnabled = httpEnabled;
+    public void setProtocol(int protocol) {
+        this.protocol = protocol;
     }
 }

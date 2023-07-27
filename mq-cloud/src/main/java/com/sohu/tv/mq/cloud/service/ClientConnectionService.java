@@ -14,10 +14,10 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.ibatis.session.SqlSession;
 import org.apache.ibatis.session.SqlSessionFactory;
 import org.apache.rocketmq.common.MQVersion;
-import org.apache.rocketmq.common.protocol.body.Connection;
-import org.apache.rocketmq.common.protocol.body.ConsumerConnection;
-import org.apache.rocketmq.common.protocol.body.ConsumerRunningInfo;
-import org.apache.rocketmq.common.protocol.body.ProducerConnection;
+import org.apache.rocketmq.remoting.protocol.body.Connection;
+import org.apache.rocketmq.remoting.protocol.body.ConsumerConnection;
+import org.apache.rocketmq.remoting.protocol.body.ConsumerRunningInfo;
+import org.apache.rocketmq.remoting.protocol.body.ProducerConnection;
 import org.apache.rocketmq.remoting.protocol.LanguageCode;
 import org.apache.rocketmq.tools.admin.MQAdminExt;
 import org.slf4j.Logger;
@@ -219,7 +219,7 @@ public class ClientConnectionService {
      * @param: * @param: connectionSet
      * @param: consumerGroup
      * @param: cluster
-     * @return: java.util.HashSet<org.apache.rocketmq.common.protocol.body.Connection>
+     * @return: java.util.HashSet<org.apache.rocketmq.remoting.protocol.body.Connection>
      * @author fengwang219475
      * @date: 2022/5/5 10:17
      */
@@ -280,7 +280,7 @@ public class ClientConnectionService {
      * 其他版本信息暂时没有获取到
      * @param: * @param: consumerRunningInfo
      * @param: connection
-     * @return: org.apache.rocketmq.common.protocol.body.Connection
+     * @return: org.apache.rocketmq.remoting.protocol.body.Connection
      * @author fengwang219475
      * @date: 2022/5/5 10:18
      */
@@ -319,7 +319,7 @@ public class ClientConnectionService {
      * @param: * @param: connectionSet
      * @param: consumerGroup
      * @param: mqCluster
-     * @return: java.util.HashSet<org.apache.rocketmq.common.protocol.body.Connection>
+     * @return: java.util.HashSet<org.apache.rocketmq.remoting.protocol.body.Connection>
      * @author fengwang219475
      * @date: 2022/5/13 16:33
      */
