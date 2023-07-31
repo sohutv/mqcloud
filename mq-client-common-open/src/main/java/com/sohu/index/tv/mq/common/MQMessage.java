@@ -174,7 +174,7 @@ public class MQMessage<T> {
      * @return
      */
     public MQMessage<T> setDeliveryTimestamp(long deliveryTimestamp) {
-        innerMessage.putUserProperty("TIMER_DELIVER_MS", String.valueOf(deliveryTimestamp));
+        innerMessage.setDeliverTimeMs(deliveryTimestamp);
         return this;
     }
     
