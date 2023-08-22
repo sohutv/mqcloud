@@ -24,6 +24,32 @@
 		<dependency>
 			<groupId>org.apache.rocketmq</groupId>
 			<artifactId>rocketmq-client</artifactId>
+			<exclusions>
+				<exclusion>
+					<artifactId>grpc-netty-shaded</artifactId>
+					<groupId>io.grpc</groupId>
+				</exclusion>
+				<exclusion>
+					<artifactId>grpc-stub</artifactId>
+					<groupId>io.grpc</groupId>
+				</exclusion>
+				<exclusion>
+					<artifactId>opentelemetry-exporter-logging</artifactId>
+					<groupId>io.opentelemetry</groupId>
+				</exclusion>
+				<exclusion>
+					<artifactId>opentelemetry-exporter-otlp</artifactId>
+					<groupId>io.opentelemetry</groupId>
+				</exclusion>
+				<exclusion>
+					<artifactId>opentelemetry-exporter-prometheus</artifactId>
+					<groupId>io.opentelemetry</groupId>
+				</exclusion>
+				<exclusion>
+					<artifactId>okio-jvm</artifactId>
+					<groupId>com.squareup.okio</groupId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 		<dependency>
             <groupId>io.protostuff</groupId>

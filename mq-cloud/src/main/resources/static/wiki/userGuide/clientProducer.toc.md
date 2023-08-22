@@ -10,3 +10,5 @@
 - [八、同步发送消息问题](#sync)
 - [九、异步发送消息问题](#async)
 - [十、oneway发送消息问题](#oneway)
+- [十一、定时消息](#timerWheel)
+- [十二、取消定时消息](#cancelTimeWheel)

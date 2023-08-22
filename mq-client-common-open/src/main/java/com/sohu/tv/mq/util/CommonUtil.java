@@ -2,11 +2,14 @@ package com.sohu.tv.mq.util;
 
 import com.sohu.tv.mq.dto.ClusterInfoDTO;
 import com.sohu.tv.mq.dto.DTOResult;
+import com.sohu.tv.mq.dto.WebResult;
+import org.apache.rocketmq.client.producer.SendResult;
 import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.utils.HttpTinyClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.util.ArrayList;
 import java.util.List;
@@ -24,6 +27,8 @@ public class CommonUtil {
     public static final String MQ_AFFINITY_DELIMITER = "_";
 
     public static final String MQ_AFFINITY_DEFAULT = "default";
+
+    private static final String CANCEL_DELAY_URL = "/topic/message/cancelWheelMsg";
     
     /**
      * mqcloud-test-topic -> mqcloud-test-trace-topic
@@ -139,5 +144,35 @@ public class CommonUtil {
                     (System.currentTimeMillis() - start), e);
         }
         return null;
+    }
+
+    public static WebResult<String> cancelDelayedMsg(String topic, String uniqId,
+                                                         String token, String domain) {
+        List<String> paramValues = new ArrayList<String>();
+        // topic
+        paramValues.add("topic");
+        paramValues.add(topic);
+        // uniqId
+        paramValues.add("uniqIds");
+        paramValues.add(uniqId);
+        // headers
+        List<String> headers = new ArrayList<String>();
+        headers.add("Cookie");
+        headers.add("TOKEN=" + token);
+        // real post
+        try {
+            HttpTinyClient.HttpResult result = HttpTinyClient.httpPost("http://" + domain + CANCEL_DELAY_URL,
+                    headers, paramValues, "UTF-8", 5000);
+            if (HttpURLConnection.HTTP_OK == result.code) {
+                WebResult sendResult = JSONUtil.parse(result.content, WebResult.class,
+                        String.class);
+                return sendResult;
+            } else {
+                return WebResult.setFail(result.code, result.content);
+            }
+        } catch (Exception e) {
+            logger.error("cancelDelayedMsg err, topic:{}, uniqId:{}", topic, uniqId, e);
+            return WebResult.setFail(500, e.getMessage());
+        }
     }
 }

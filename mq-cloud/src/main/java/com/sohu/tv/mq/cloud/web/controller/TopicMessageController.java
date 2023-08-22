@@ -1,18 +1,23 @@
 package com.sohu.tv.mq.cloud.web.controller;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
 
+import com.google.common.base.Joiner;
+import com.sohu.tv.mq.cloud.bo.*;
+import com.sohu.tv.mq.cloud.service.*;
+import com.sohu.tv.mq.cloud.util.*;
+import com.sohu.tv.mq.cloud.web.controller.param.DelayCancelParam;
+import com.sohu.tv.mq.cloud.web.vo.DecodedTimerMessageVo;
 import com.sohu.tv.mq.util.JSONUtil;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.MutableTriple;
+import org.apache.rocketmq.common.message.MessageClientIDSetter;
 import org.apache.rocketmq.remoting.protocol.admin.TopicOffset;
 import org.apache.rocketmq.remoting.protocol.admin.TopicStatsTable;
 import org.apache.rocketmq.remoting.protocol.body.ClusterInfo;
@@ -24,38 +29,16 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
-import com.sohu.tv.mq.cloud.bo.Audit;
 import com.sohu.tv.mq.cloud.bo.Audit.TypeEnum;
-import com.sohu.tv.mq.cloud.bo.AuditResendMessage;
-import com.sohu.tv.mq.cloud.bo.AuditResendMessageConsumer;
-import com.sohu.tv.mq.cloud.bo.Cluster;
-import com.sohu.tv.mq.cloud.bo.Consumer;
-import com.sohu.tv.mq.cloud.bo.DecodedMessage;
-import com.sohu.tv.mq.cloud.bo.MessageData;
-import com.sohu.tv.mq.cloud.bo.MessageQueryCondition;
-import com.sohu.tv.mq.cloud.bo.Topic;
-import com.sohu.tv.mq.cloud.bo.UserConsumer;
-import com.sohu.tv.mq.cloud.bo.UserProducer;
 import com.sohu.tv.mq.cloud.mq.DefaultCallback;
 import com.sohu.tv.mq.cloud.mq.MQAdminTemplate;
-import com.sohu.tv.mq.cloud.service.AlertService;
-import com.sohu.tv.mq.cloud.service.AuditService;
-import com.sohu.tv.mq.cloud.service.ClusterService;
-import com.sohu.tv.mq.cloud.service.ConsumerService;
-import com.sohu.tv.mq.cloud.service.MessageService;
-import com.sohu.tv.mq.cloud.service.TopicService;
-import com.sohu.tv.mq.cloud.service.UserConsumerService;
-import com.sohu.tv.mq.cloud.service.UserProducerService;
-import com.sohu.tv.mq.cloud.util.CompressUtil;
-import com.sohu.tv.mq.cloud.util.FreemarkerUtil;
-import com.sohu.tv.mq.cloud.util.Result;
-import com.sohu.tv.mq.cloud.util.SplitUtil;
-import com.sohu.tv.mq.cloud.util.Status;
 import com.sohu.tv.mq.cloud.web.controller.param.MessageParam;
 import com.sohu.tv.mq.cloud.web.vo.TraceViewVO;
 import com.sohu.tv.mq.cloud.web.vo.TraceViewVO.RequestViewVO;
 import com.sohu.tv.mq.cloud.web.vo.UserInfo;
 import com.sohu.tv.mq.util.CommonUtil;
+
+import static com.sohu.tv.mq.cloud.service.MessageService.RMQ_SYS_WHEEL_TIMER;
 
 /**
  * topic消息
@@ -69,6 +52,9 @@ import com.sohu.tv.mq.util.CommonUtil;
 public class TopicMessageController extends ViewController {
 
     public static final int TIME_SPAN = 5 * 60 * 1000;
+
+    @Autowired
+    private MQCloudConfigHelper mqCloudConfigHelper;
 
     @Autowired
     private MessageService messageService;
@@ -89,6 +75,9 @@ public class TopicMessageController extends ViewController {
     private AuditService auditService;
 
     @Autowired
+    private CancelUniqIdService cancelUniqIdService;
+
+    @Autowired
     private AlertService alertService;
 
     @Autowired
@@ -96,6 +85,7 @@ public class TopicMessageController extends ViewController {
 
     @Autowired
     private ConsumerService consumerService;
+
 
     /**
      * 首页
@@ -208,6 +198,7 @@ public class TopicMessageController extends ViewController {
                          @RequestParam("append") boolean append,
                          @RequestParam(name = "timerWheelKey", required = false) String key,
                          @RequestParam(name = "messageParam") String messageParam,
+                         @RequestParam(name = "showSysMsg", required = false) boolean showSysMsg,
                          Map<String, Object> map) throws Exception {
         String view = viewModule() + "/timerWheelSearch";
         // 解析参数对象
@@ -222,9 +213,106 @@ public class TopicMessageController extends ViewController {
             return view;
         }
         messageQueryCondition.setTimerWheelSearch(true);
+        messageQueryCondition.setShowSysMessage(showSysMsg);
         // 消息查询
         Result<MessageData> result = messageService.queryMessage(messageQueryCondition, false);
+        // 消息标记
+        MessageData messageData = result.getResult();
+        Optional.ofNullable(result.getResult())
+                .ifPresent(t -> {
+                    List<DecodedMessage> msgList = messageData.getMsgList();
+                    List<DecodedMessage> msgListVo = new ArrayList<>(msgList.size());
+                    for (DecodedMessage decodedMessage : msgList) {
+                        DecodedTimerMessageVo decodedMessageVo = new DecodedTimerMessageVo(decodedMessage);
+                        Result<CancelUniqId> cancelResult = cancelUniqIdService.queryOneByUniqId(decodedMessage.getMsgId());
+                        boolean isCancel = cancelResult.isOK() && cancelResult.getResult() != null;
+                        decodedMessageVo.initTimerDeliverTimeDesc(showSysMsg, isCancel, false);
+                        msgListVo.add(decodedMessageVo);
+                    }
+                    messageData.setMsgList(msgListVo);
+                });
         setResult(map, result);
+        setTraceEnabled(map, messageQueryCondition.getTopic());
+        return view;
+    }
+
+    @RequestMapping("/timerWheel/searchRollTrace")
+    public String timerWheelSearch(UserInfo userInfo,
+                                   HttpServletRequest request,
+                                   HttpServletResponse response,
+                                   @RequestParam(name = "messageParam") String messageParam,
+                                   @RequestParam(name = "cid") Long cid,
+                                   @RequestParam(name = "broker" ,required = false) String broker,
+                                   @RequestParam("traceUniqKey") String traceUniqKey,
+                                   Map<String, Object> map) throws Exception {
+        String view = viewModule() + "/timerWheelRollTraceSearch";
+        // 参数进行trim
+        if (StringUtils.isEmpty(traceUniqKey)) {
+            setResult(map, Result.getResult(Status.PARAM_ERROR));
+            return view;
+        }
+        // 解析uniqKey
+        Long beginTime = 0L;
+        try {
+            beginTime = MessageClientIDSetter.getNearlyTimeFromID(traceUniqKey).getTime() - 5 * 60 * 1000L;
+        } catch (Exception e) {
+            setResult(map, Result.getResult(Status.PARAM_ERROR));
+            return view;
+        }
+        Cluster cluster = clusterService.getMQClusterById(cid);
+        if (StringUtils.isBlank(broker)) {
+            Result<DecodedMessage> messageResult = messageService.queryMessage(cluster, RMQ_SYS_WHEEL_TIMER, traceUniqKey);
+            if (messageResult.isNotOK()) {
+                setResult(map, Result.getResult(Status.PARAM_ERROR));
+                return view;
+            }
+            broker = messageResult.getResult().getBroker();
+        }
+        // 查询原始消息
+        Result<List<DecodedMessage>> originalTimerMessageResult = messageService.queryTimerMessage(cluster, traceUniqKey,
+                broker, beginTime, 0L, true);
+        if (originalTimerMessageResult.isNotOK()) {
+            setResult(map, originalTimerMessageResult);
+            return view;
+        }
+        List<DecodedMessage> result = originalTimerMessageResult.getResult();
+        // 查询对应的取消类的消息
+        String realTopic = originalTimerMessageResult.getResult().get(0).getRealTopic();
+        String key = realTopic + "_" + traceUniqKey;
+        Result<List<DecodedMessage>> cancelTimerMessageResult = messageService.queryTimerMessage(cluster, key,
+                broker, beginTime, 0L, false);
+        if (cancelTimerMessageResult.isOK() && cancelTimerMessageResult.getResult() != null) {
+            result.addAll(cancelTimerMessageResult.getResult());
+        }
+        // 排序，按照存储时间排序
+        Collections.sort(result, new Comparator<DecodedMessage>() {
+            @Override
+            public int compare(DecodedMessage o1, DecodedMessage o2) {
+                return (int) (o1.getStoreTimestamp() - o2.getStoreTimestamp());
+            }
+        });
+        // 转换为前端展示的对象
+        List<DecodedMessage> msgListVo = new ArrayList<>(result.size());
+        for (int i = 0; i < result.size(); i++) {
+            DecodedMessage decodedMessage = result.get(i);
+            DecodedTimerMessageVo decodedMessageVo = new DecodedTimerMessageVo(decodedMessage);
+            msgListVo.add(decodedMessageVo);
+        }
+        // 按照不同的消息类型进行话术组装
+        Map<Boolean, List<DecodedMessage>> resultGroup = msgListVo.stream().collect(Collectors.partitioningBy(t -> {
+            DecodedTimerMessageVo vo = (DecodedTimerMessageVo) t;
+            return vo.isSysCancelMessage();
+        }));
+        for (Map.Entry<Boolean, List<DecodedMessage>> entry : resultGroup.entrySet()) {
+            for (int i = 0; i < entry.getValue().size(); i++) {
+                DecodedTimerMessageVo decodedMessageVo = (DecodedTimerMessageVo) entry.getValue().get(i);
+                Result<CancelUniqId> cancelResult = cancelUniqIdService.queryOneByUniqId(decodedMessageVo.getMsgId());
+                boolean isCancel = cancelResult.isOK() && cancelResult.getResult() != null;
+                decodedMessageVo.initTimerDeliverTimeDesc(true, isCancel, i != entry.getValue().size() - 1);
+            }
+        }
+        MessageQueryCondition messageQueryCondition = parseParam(0L, 1L, null, messageParam, false);
+        setResult(map, msgListVo);
         setTraceEnabled(map, messageQueryCondition.getTopic());
         return view;
     }
@@ -741,6 +829,111 @@ public class TopicMessageController extends ViewController {
                 String tip = " topic:<b>" + topicResult.getResult().getName() + "</b> 消息量:" + msgIdArray.length;
                 alertService.sendAuditMail(userInfo.getUser(), TypeEnum.RESEND_MESSAGE, tip);
             }
+        }
+        return Result.getWebResult(result);
+    }
+
+    /**
+     * 定时消息取消
+     *
+     * @param userInfo
+     * @param DelayCancelParam
+     * @param map
+     * @return
+     * @throws Exception
+     */
+    @RequestMapping("/cancelWheelMsg")
+    @ResponseBody
+    public Result<?> cancelWheelMsg(UserInfo userInfo,
+                                            @Valid DelayCancelParam delayCancelParam,
+                                            Map<String, Object> map) throws Exception {
+        //检查Topic是否存在
+        Result<Topic> topicResult = delayCancelParam.getTopic() == null ?
+                topicService.queryTopic(delayCancelParam.getTid()) : topicService.queryTopic(delayCancelParam.getTopic());
+        if (topicResult.isNotOK()) {
+            return Result.getResult(Status.PARAM_ERROR).setMessage("Topic不存在");
+        }
+        Topic topic = topicResult.getResult();
+        Cluster cluster = clusterService.getMQClusterById(topic.getClusterId());
+        List<String> uniqIdList = delayCancelParam.getUniqueIdList();
+        List<MutableTriple<DecodedMessage, String, Long>> msgDetail = new ArrayList<>();
+        // 校验消息ID是否合法
+        for (String uniqId : uniqIdList) {
+            try {
+                Long beginTime = MessageClientIDSetter.getNearlyTimeFromID(uniqId).getTime() - 5 * 60 * 1000L;
+                MutableTriple<DecodedMessage, String, Long> msg = new MutableTriple<>(null, uniqId, beginTime);
+                msgDetail.add(msg);
+            } catch (Exception e) {
+                return Result.getResult(Status.INVALID_UNIQID).formatMessage(uniqId);
+            }
+        }
+        // 校验消息是否重复
+        Result<List<String>> existUniqIds = auditService.queryWheelCancelByUniqIdsAndTid(uniqIdList,
+                topic.getId());
+        if (existUniqIds.isNotOK()) {
+            return existUniqIds;
+        }
+        if (existUniqIds.isNotEmpty()) {
+            List<String> result = existUniqIds.getResult();
+            return Result.getResult(Status.EXISTED_CANCEL_APPLY).formatMessage(Joiner.on(",").join(result));
+        }
+        // 校验该用户是否有相关权限
+        boolean haveAuthor = userInfo.getUser().isAdmin()
+                || mqCloudConfigHelper.checkApiAuditUserEmail(userInfo.getUser().getEmail());
+        if (!haveAuthor) {
+            Result<UserProducer> userProducer = userProducerService.findUserProducer(userInfo.getUser().getId(), topic.getId());
+            if (userProducer.isNotOK()) {
+                return Result.getResult(Status.DB_ERROR);
+            }
+            haveAuthor = StringUtils.isNotBlank(userProducer.getResult().getProducer());
+        }
+        if (!haveAuthor) {
+            return Result.getResult(Status.PERMISSION_DENIED_ERROR);
+        }
+        for (MutableTriple<DecodedMessage, String, Long> detail : msgDetail) {
+            // 校验消息是否存在
+            Result<List<DecodedMessage>> result = messageService.queryMessageByKey(cluster, RMQ_SYS_WHEEL_TIMER,
+                    detail.middle, detail.right, Long.MAX_VALUE, true);
+            if (result.isEmpty()) {
+                return Result.getResult(Status.INVALID_UNIQID).formatMessage(detail.middle);
+            }
+            // 校验消息是否是时间轮消息
+            DecodedMessage decodedMessage = result.getResult().get(0);
+            long timerDeliverMs = decodedMessage.getTimerDeliverTime();
+            if (timerDeliverMs == 0) {
+                return Result.getResult(Status.NON_WHEEL_DELAY).formatMessage(detail.middle);
+            }
+            // 校验消息延时是否超出取消范围
+            if (!userInfo.getUser().isAdmin()) {
+                boolean isExpire = timerDeliverMs - System.currentTimeMillis() < AuditWheelMessageCancel.DEFAULT_EXPIRE_CANCEL_TIME;
+                if (isExpire) {
+                    return Result.getResult(Status.EXPIRED_UNIQID).formatMessage(detail.middle);
+                }
+            }
+            detail.setLeft(decodedMessage);
+        }
+        // 构造审核记录
+        Audit audit = new Audit();
+        audit.setType(TypeEnum.CANCEL_WHEEL_MSG.getType());
+        audit.setUid(userInfo.getUser().getId());
+        // 构造重置对象
+        List<AuditWheelMessageCancel> cancelList = new ArrayList<>();
+        Date currentTime = new Date();
+        for (MutableTriple<DecodedMessage, String, Long> mutableTriple : msgDetail) {
+            AuditWheelMessageCancel auditWheelMessageCancel = new AuditWheelMessageCancel();
+            auditWheelMessageCancel.setBrokerName(mutableTriple.getLeft().getBroker());
+            auditWheelMessageCancel.setTid(topic.getId());
+            auditWheelMessageCancel.setUniqueId(mutableTriple.getMiddle());
+            auditWheelMessageCancel.setDeliverTime(mutableTriple.getLeft().getTimerDeliverTime());
+            auditWheelMessageCancel.setUid(userInfo.getUser().getId());
+            auditWheelMessageCancel.setCreateTime(currentTime);
+            cancelList.add(auditWheelMessageCancel);
+        }
+        // 保存记录
+        Result<?> result = auditService.saveAuditAndAuditWheelMessageCancels(audit, cancelList);
+        if (result.isOK() && !mqCloudConfigHelper.checkApiAuditUserEmail(userInfo.getUser().getEmail())) {
+            String tip = " topic:<b>" + topicResult.getResult().getName() + "</b> 待取消消息数量:" + cancelList.size();
+            alertService.sendAuditMail(userInfo.getUser(), TypeEnum.getEnumByType(audit.getType()), tip);
         }
         return Result.getWebResult(result);
     }

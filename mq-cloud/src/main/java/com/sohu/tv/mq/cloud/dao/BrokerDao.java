@@ -18,7 +18,7 @@ public interface BrokerDao {
      */
     @Select("select * from broker where cid = #{cid}")
     public List<Broker> selectByClusterId(@Param("cid") int cid);
-    
+
     /**
      * 查询
      * 

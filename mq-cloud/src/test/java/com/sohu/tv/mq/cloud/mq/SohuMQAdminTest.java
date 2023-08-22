@@ -3,10 +3,12 @@ package com.sohu.tv.mq.cloud.mq;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.rocketmq.client.QueryResult;
 import org.apache.rocketmq.client.producer.SendResult;
 import org.apache.rocketmq.client.producer.SendStatus;
 import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.message.Message;
+import org.apache.rocketmq.common.message.MessageClientIDSetter;
 import org.apache.rocketmq.remoting.protocol.body.ConsumerRunningInfo;
 import org.apache.rocketmq.tools.admin.MQAdminExt;
 import org.junit.Assert;
@@ -93,6 +95,31 @@ public class SohuMQAdminTest {
             public Cluster mqCluster() {
                 return clusterService.getMQClusterById(5);
             }
+            @Override
+            public Void exception(Exception e) throws Exception {
+                e.printStackTrace();
+                return null;
+            }
+        });
+    }
+
+    @Test
+    public void testQueryTimerMessage() {
+        mqAdminTemplate.execute(new MQAdminCallback<Void>() {
+            public Void callback(MQAdminExt mqAdmin) throws Exception {
+                SohuMQAdmin sohuMQAdmin = (SohuMQAdmin) mqAdmin;
+                String uniqKey = "0A0728383CB018B4AAC2037F3FE50001";
+                Long beginTime = MessageClientIDSetter.getNearlyTimeFromID(uniqKey).getTime() - 5 * 60 * 1000L;
+                QueryResult queryResult = sohuMQAdmin.queryTimerMessageByUniqKey("broker-2", uniqKey
+                        , beginTime, 0L, true);
+                Assert.assertTrue(queryResult.getMessageList().size() > 1);
+                return null;
+            }
+
+            public Cluster mqCluster() {
+                return clusterService.getMQClusterById(7);
+            }
+
             @Override
             public Void exception(Exception e) throws Exception {
                 e.printStackTrace();

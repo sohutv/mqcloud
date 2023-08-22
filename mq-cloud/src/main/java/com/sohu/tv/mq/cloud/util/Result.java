@@ -253,6 +253,11 @@ public class Result<T> {
 		return this;
 	}
 
+    public Result<T> formatMessage(Object... args) {
+        this.message = String.format(this.message, args);
+        return this;
+    }
+
 	public T getResult() {
 		return result;
 	}

@@ -1,0 +1,64 @@
+<#if response.notOK>
+<div class="modal-body">
+	<div class="form-body">
+		<div class="form-group">
+			<div>异常数据</div>
+		</div>
+	</div>
+</div>
+<#else>
+<div class="modal-body">
+	<div class="row">
+		<div class="col-md-12">
+			<div class="form-body">
+				<div class="form-group">
+					<label class="control-label col-md-2"> Topic: </label>
+					<div class="col-md-8">
+						<input type="text" value="${response.result.topicName}" readonly="readonly" class="form-control" />
+					</div>
+				</div>
+				<div class="form-group">
+					<label class="control-label col-md-2"> 取消数量: </label>
+					<div class="col-md-8">
+						<input type="text" value="${response.result.validCancelNum}" readonly="readonly" class="form-control" />
+					</div>
+				</div>
+				<div class="form-group">
+					<label class="control-label col-md-2"> 申请明细: </label>
+					<div class="col-md-9">
+						<table class="table table-striped table-hover" style="margin-top: 0px;word-break:break-all; word-wrap:break-all;">
+							<colgroup>
+								<col width="40%">
+								<col width="30%">
+								<col width="20%">
+							</colgroup>
+							<thead>
+							<tr>
+								<td class="center">uniqId</td>
+								<td>预计投递时间</td>
+								<td>状态</td>
+							</tr>
+							</thead>
+							<tbody style="font-size: 12px;">
+							<#if response.result.cancelMsgApplys?? && response.result.cancelMsgApplys?size gt 0>
+							<#list response.result.cancelMsgApplys as apply>
+							<tr>
+								<td>${apply.uniqId!}</td>
+								<td>${apply.formatTime!}</td>
+								<td id="${apply.uniqId!}_status">${apply.status!}</td>
+							</tr>
+							</#list>
+							<#else>
+							<tr>
+								<td>暂无数据</td>
+							</tr>
+						</#if>
+						</tbody>
+						</table>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+</#if>

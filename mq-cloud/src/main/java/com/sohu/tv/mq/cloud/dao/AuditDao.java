@@ -15,8 +15,12 @@ public interface AuditDao {
     @Options(useGeneratedKeys = true, keyProperty = "audit.id")
     @Insert("<script>insert into audit(uid,type"
             + "<if test=\"audit.info != null\">,info</if>"
+            + "<if test=\"audit.status != null\">,status</if>"
+            + "<if test=\"audit.auditor != null\">,auditor</if>"
             + ") values(#{audit.uid},#{audit.type}"
             + "<if test=\"audit.info != null\">,#{audit.info}</if>"
+            + "<if test=\"audit.status != null\">,#{audit.status}</if>"
+            + "<if test=\"audit.auditor != null\">,#{audit.auditor}</if>"
             + ")</script>")
     public Long insert(@Param("audit") Audit audit);
 

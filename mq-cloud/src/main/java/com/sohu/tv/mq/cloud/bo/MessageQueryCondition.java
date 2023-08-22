@@ -46,6 +46,8 @@ public class MessageQueryCondition {
     private Integer queueId;
     // 是否是定时消息搜索
     private transient boolean timerWheelSearch;
+    // 是否显示系统消息-发送的取消类消息
+    private boolean showSysMessage;
 
     public List<MQOffset> getMqOffsetList() {
         return mqOffsetList;
@@ -252,5 +254,13 @@ public class MessageQueryCondition {
     
     public boolean useStoreTime() {
         return CommonUtil.isDeadTopic(topic) || CommonUtil.isRetryTopic(topic);
+    }
+
+    public boolean isShowSysMessage() {
+        return showSysMessage;
+    }
+
+    public void setShowSysMessage(boolean showSysMessage) {
+        this.showSysMessage = showSysMessage;
     }
 }

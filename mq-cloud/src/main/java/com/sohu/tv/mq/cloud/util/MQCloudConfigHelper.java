@@ -175,6 +175,9 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware, Comm
     // 使用旧的请求码的broker
     private Set<String> oldReqestCodeBrokerSet;
 
+    // api接口token用户
+    private List<String> apiAuditUserEmail;
+
     // proxy acl
     private List<Map<String, Object>> proxyAcls;
 
@@ -643,6 +646,21 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware, Comm
 
     public boolean consumeTimespanMessageSupported(String version) {
         return compareTo(version, consumeTimespanMessageSupportedVersion) >= 0;
+    }
+
+    public List<String> getApiAuditUserEmail() {
+        return apiAuditUserEmail;
+    }
+
+    public void setApiAuditUserEmail(List<String> apiAuditUserEmail) {
+        this.apiAuditUserEmail = apiAuditUserEmail;
+    }
+
+    public boolean checkApiAuditUserEmail(String email) {
+        if (apiAuditUserEmail == null) {
+            return false;
+        }
+        return apiAuditUserEmail.contains(email);
     }
 
     /**

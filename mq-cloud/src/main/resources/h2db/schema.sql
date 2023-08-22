@@ -800,3 +800,25 @@ CREATE TABLE IF NOT EXISTS `proxy` (
     `config`       text COMMENT '配置',
     UNIQUE KEY `p_cid` (`cid`, `addr`)
 );
+
+create table IF NOT EXISTS `audit_wheel_message_cancel`
+(
+    `id`          int(11)       not null AUTO_INCREMENT,
+    `uid`         int(11)       not null COMMENT '申请用户ID',
+    `aid`         int(11)       not null COMMENT '审核记录ID',
+    `tid`         int(11)       not null COMMENT 'topic ID',
+    `uniqueId`    varchar(50)   not null COMMENT '待取消消息uniqId',
+    `brokerName`  varchar(50)   not null COMMENT '待取消消息所在的brokerName',
+    `deliverTime` bigint        not null COMMENT '定时时间',
+    `status`      tinyint(4)    default 0 comment '状态 0失败 1成功 ',
+    `createTime`  datetime      null,
+    PRIMARY KEY (`id`)
+);
+
+create table IF NOT EXISTS `cancel_uniqid`
+(
+    `tid`          int(11)     not null COMMENT 'topic id',
+    `uniqueId`     varchar(50) not null COMMENT '取消消息uniqueId',
+    `createTime`   datetime    not null COMMENT '生成时间',
+    UNIQUE KEY  uniqIndex (uniqueId)
+);

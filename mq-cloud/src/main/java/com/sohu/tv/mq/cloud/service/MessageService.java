@@ -54,12 +54,15 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.util.HtmlUtils;
 
 import java.net.InetSocketAddress;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.function.BiFunction;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * 消息服务
@@ -77,6 +80,8 @@ public class MessageService {
     public static final String SUB_EXPRESSION = "*";
 
     public static final String RMQ_SYS_WHEEL_TIMER = "rmq_sys_wheel_timer";
+
+    public static final String DEFAULT_CANCEL_MESSAGE_TAGS = "wheelTime_message_cancel";
 
     @Autowired
     private MQAdminTemplate mqAdminTemplate;
@@ -98,7 +103,15 @@ public class MessageService {
     private TopicService topicService;
 
     @Autowired
+    private CancelUniqIdService cancelUniqIdService;
+
+    @Autowired
     private BrokerService brokerService;
+
+    public Result<List<DecodedMessage>> queryMessageByKey(Cluster cluster, String topic, String key, long begin,
+                                                          long end) {
+        return queryMessageByKey(cluster, topic, key, begin, end, false);
+    }
 
     /**
      * 根据key查询消息
@@ -111,7 +124,7 @@ public class MessageService {
      * @return
      */
     public Result<List<DecodedMessage>> queryMessageByKey(Cluster cluster, String topic, String key, long begin,
-            long end) {
+            long end, boolean isUniqueKey) {
         Result<?> clusterInfoResult = examineBrokerClusterInfo(cluster);
         if (clusterInfoResult.isNotOK()) {
             return (Result<List<DecodedMessage>>) clusterInfoResult;
@@ -120,33 +133,19 @@ public class MessageService {
         return mqAdminTemplate.execute(new MQAdminCallback<Result<List<DecodedMessage>>>() {
             public Result<List<DecodedMessage>> callback(MQAdminExt mqAdmin) throws Exception {
                 // 其实这里只能查询64条消息，broker端有限制
-                QueryResult queryResult = mqAdmin.queryMessage(topic, key, 100, begin, end);
-                List<MessageExt> messageExtList = queryResult.getMessageList();
-                if (messageExtList == null || messageExtList.size() == 0) {
+                QueryResult queryResult = null;
+                if (isUniqueKey) {
+                    SohuMQAdmin sohuMQAdmin = (SohuMQAdmin) mqAdmin;
+                    queryResult = sohuMQAdmin.queryMessageByUniqKey(topic, key, 32, begin, end);
+                } else {
+                    queryResult = mqAdmin.queryMessage(topic, key, 100, begin, end);
+                }
+                List<DecodedMessage> decodedMessages = decodeMessages(queryResult, topic, clusterInfo);
+                if (decodedMessages == null ) {
                     logger.warn("msg list is null, cluster:{} topic:{} msgId:{}", cluster, topic, key);
                     return Result.getResult(Status.NO_RESULT);
                 }
-                // 特定类型使用自定义的classloader
-                if (mqCloudConfigHelper.getClassList() != null &&
-                        mqCloudConfigHelper.getClassList().contains(topic)) {
-                    Thread.currentThread().setContextClassLoader(messageTypeClassLoader);
-                }
-                List<DecodedMessage> messageList = new ArrayList<DecodedMessage>();
-                for (MessageExt msg : messageExtList) {
-                    byte[] bytes = msg.getBody();
-                    if (bytes == null || bytes.length == 0) {
-                        logger.warn("MessageExt={}, MessageBody is null", msg);
-                        continue;
-                    }
-                    messageList.add(toDecodedMessage(msg, clusterInfo));
-                }
-                // 按时间排序
-                Collections.sort(messageList, new Comparator<DecodedMessage>() {
-                    public int compare(DecodedMessage o1, DecodedMessage o2) {
-                        return (int) (o1.getBornTimestamp() - o2.getBornTimestamp());
-                    }
-                });
-                return Result.getResult(messageList);
+                return Result.getResult(decodedMessages);
             }
 
             public Result<List<DecodedMessage>> exception(Exception e) throws Exception {
@@ -175,7 +174,10 @@ public class MessageService {
      * @return
      */
     public Result<DecodedMessage> queryMessage(Cluster cluster, String topic, String msgId) {
-        Result<?> messageExtResult = viewMessage(cluster, topic, msgId);
+        Result<?> messageExtResult = viewMessageByUniqKey(cluster, topic, msgId);
+        if(messageExtResult.isNotOK()){
+            messageExtResult = viewMessage(cluster, topic, msgId);
+        }
         if (messageExtResult.isNotOK()) {
             return (Result<DecodedMessage>) messageExtResult;
         }
@@ -234,8 +236,15 @@ public class MessageService {
                     break;
                 }
             }
-            // 排序
-            sort(messageList);
+            // 如果是查询定时消息，则可能出现滚动重复消息，需要去重
+            if (messageQueryCondition.isTimerWheelSearch() && !messageQueryCondition.isShowSysMessage()) {
+                messageList = deduplicateRollWheelMessage(messageList);
+                // 重置记录数
+                messageQueryCondition.setCurSize(messageList.size());
+            } else {
+                // 排序
+                sort(messageList, MessageExt::getStoreTimestamp);
+            }
         } catch (Exception e) {
             logger.error("queryMessage", e);
             return Result.getWebErrorResult(e);
@@ -254,6 +263,55 @@ public class MessageService {
         md.setMp(messageQueryCondition);
         md.setMsgList(messageList);
         return Result.getResult(md);
+    }
+
+    /**
+     * 抓取时间轮定时消息
+     *
+     * @param cluster
+     * @param key
+     * @param broker
+     * @param begin
+     * @param end
+     * @param isUniqueKey
+     * @return
+     * @throws MQClientException
+     */
+    public Result<List<DecodedMessage>> queryTimerMessage(Cluster cluster,String key,
+                                                          String broker, long begin,
+                                                          long end, boolean isUniqueKey) {
+        Result<?> clusterInfoResult = examineBrokerClusterInfo(cluster);
+        if (clusterInfoResult.isNotOK()) {
+            return (Result<List<DecodedMessage>>) clusterInfoResult;
+        }
+        ClusterInfo clusterInfo = (ClusterInfo) clusterInfoResult.getResult();
+        return mqAdminTemplate.execute(new MQAdminCallback<Result<List<DecodedMessage>>>() {
+            @Override
+            public Result<List<DecodedMessage>> callback(MQAdminExt mqAdmin) throws Exception {
+                SohuMQAdmin sohuMQAdmin = (SohuMQAdmin) mqAdmin;
+                QueryResult queryResult = sohuMQAdmin.queryTimerMessageByUniqKey(broker, key, begin, end, isUniqueKey);
+                List<DecodedMessage> decodedMessages = decodeMessages(queryResult, RMQ_SYS_WHEEL_TIMER, clusterInfo);
+                if (decodedMessages == null) {
+                    return Result.getResult(Status.NO_RESULT);
+                }
+                return Result.getResult(decodedMessages);
+            }
+
+            public Result<List<DecodedMessage>> exception(Exception e) throws Exception {
+                logger.error("queryMessage cluster:{}  key:{}, err:{}", cluster, key, e.getMessage());
+                // 此异常代表查无数据，不进行异常提示
+                if (e instanceof MQClientException) {
+                    if (((MQClientException) e).getResponseCode() == ResponseCode.NO_MESSAGE) {
+                        return Result.getOKResult();
+                    }
+                }
+                return Result.getWebErrorResult(e);
+            }
+
+            public Cluster mqCluster() {
+                return cluster;
+            }
+        });
     }
 
     /**
@@ -307,6 +365,11 @@ public class MessageService {
                         logger.warn("MessageExt={}, MessageBody is null", msg);
                         continue;
                     }
+                    // 是否过滤系统消息
+                    String tags = msg.getTags();
+                    if (!messageQueryCondition.isShowSysMessage() && DEFAULT_CANCEL_MESSAGE_TAGS.equals(tags)) {
+                        continue;
+                    }
                     DecodedMessage m = toDecodedMessage(msg, mqOffset.getMq().getBrokerName());
                     // 判断是否包含关键字
                     if (messageQueryCondition.getKey() == null) {
@@ -336,6 +399,42 @@ public class MessageService {
                 throw e;
             }
         }
+    }
+
+    /**
+     * 解析查询消息
+     *
+     * @param queryResult
+     * @param topic
+     * @param clusterInfo
+     * @return
+     */
+    private List<DecodedMessage> decodeMessages(QueryResult queryResult, String topic, ClusterInfo clusterInfo) {
+        List<MessageExt> messageExtList = queryResult.getMessageList();
+        if (messageExtList == null || messageExtList.size() == 0) {
+            return null;
+        }
+        // 特定类型使用自定义的classloader
+        if (mqCloudConfigHelper.getClassList() != null &&
+                mqCloudConfigHelper.getClassList().contains(topic)) {
+            Thread.currentThread().setContextClassLoader(messageTypeClassLoader);
+        }
+        List<DecodedMessage> messageList = new ArrayList<DecodedMessage>();
+        for (MessageExt msg : messageExtList) {
+            byte[] bytes = msg.getBody();
+            if (bytes == null || bytes.length == 0) {
+                logger.warn("MessageExt={}, MessageBody is null", msg);
+                continue;
+            }
+            messageList.add(toDecodedMessage(msg, clusterInfo));
+        }
+        // 按时间排序
+        Collections.sort(messageList, new Comparator<DecodedMessage>() {
+            public int compare(DecodedMessage o1, DecodedMessage o2) {
+                return (int) (o1.getBornTimestamp() - o2.getBornTimestamp());
+            }
+        });
+        return messageList;
     }
 
     /**
@@ -410,7 +509,13 @@ public class MessageService {
             m.setMessageBodyType(MessageBodyType.OBJECT);
             m.setDecodedBody(JSONUtil.toJSONString(decodedBody));
         }
-        BeanUtils.copyProperties(msg, m, "deliverTimeMs");
+        // fix json 反序列化空指针异常
+        try {
+            msg.getDeliverTimeMs();
+        } catch (Exception e) {
+            msg.setDeliverTimeMs(-1);
+        }
+        BeanUtils.copyProperties(msg, m);
         m.setBroker(broker);
         // 设置topic原始信息
         String realTopic = msg.getProperty(MessageConst.PROPERTY_REAL_TOPIC);
@@ -426,6 +531,9 @@ public class MessageService {
         if (timerDeliverTime != null) {
             m.setTimerDeliverTime(NumberUtils.toLong(timerDeliverTime));
         }
+        // 设置滚动次数(时间轮定时消息特有属性)
+        String times = Optional.ofNullable(msg.getProperty("TIMER_ROLL_TIMES")).orElse("0");
+        m.setTimerRollTimes(NumberUtils.toInt(times));
         return m;
     }
 
@@ -568,15 +676,39 @@ public class MessageService {
      * 
      * @param messageList
      */
-    private void sort(List<DecodedMessage> messageList) {
+    private void sort(List<DecodedMessage> messageList, Function<MessageExt, Long> function) {
         Collections.sort(messageList, new Comparator<MessageExt>() {
             public int compare(MessageExt o1, MessageExt o2) {
-                if (o1.getStoreTimestamp() - o2.getStoreTimestamp() == 0) {
+                if (function.apply(o1) - function.apply(o2) == 0) {
                     return 0;
                 }
-                return (o1.getStoreTimestamp() > o2.getStoreTimestamp()) ? -1 : 1;
+                return (function.apply(o1) > function.apply(o2)) ? -1 : 1;
             }
         });
+    }
+
+    /**
+     * 滚动消息过滤
+     *
+     * @param messageList
+     * @return List<DecodedMessage>
+     */
+    private List<DecodedMessage> deduplicateRollWheelMessage(List<DecodedMessage> messageList) {
+        List<DecodedMessage> result = new ArrayList<>();
+        Map<String, List<DecodedMessage>> decodeGroup = messageList.stream().collect(Collectors.groupingBy(DecodedMessage::getMsgId));
+        for (Entry<String, List<DecodedMessage>> entry : decodeGroup.entrySet()) {
+            List<DecodedMessage> value = entry.getValue();
+            if (value.size() > 1) {
+                DecodedMessage decodedMessage = value.stream()
+                        .sorted(Comparator.comparing(DecodedMessage::getTimerRollTimes))
+                        .findFirst().get();
+                result.add(decodedMessage);
+            }else {
+                result.addAll(value);
+            }
+        }
+        sort(result, MessageExt::getBornTimestamp);
+        return result;
     }
 
     /**
@@ -728,6 +860,29 @@ public class MessageService {
     }
 
     /**
+     * @description 检查是否存在取消消息
+     * @param topic
+     * @param uniqId
+     * @param beginTime
+     * @param cluster
+     * @return com.sohu.tv.mq.cloud.util.Result<java.lang.Boolean>
+     * @author fengwang219475
+     * @date 2023/7/13 09:27:00
+     */
+    public Result<Boolean> checkCancelMessageByKey(String topic, String uniqId, long beginTime, Cluster cluster) {
+        String keys = topic + "_" + uniqId;
+        Result<List<DecodedMessage>> cancelMsgResult = this.queryMessageByKey(cluster, RMQ_SYS_WHEEL_TIMER, keys,
+                beginTime, Long.MAX_VALUE, false);
+        if (cancelMsgResult.isNotOK()) {
+            return Result.getWebErrorResult(cancelMsgResult.getException());
+        }
+        if (cancelMsgResult.isNotEmpty()) {
+            return Result.getResult(true);
+        }
+        return Result.getResult(false);
+    }
+
+    /**
      * 广播模式，需要判断每个链接
      * 
      * @param mqAdmin
@@ -821,6 +976,68 @@ public class MessageService {
 
             public Result<SendResult> exception(Exception e) throws Exception {
                 logger.error("cluster:{} topic:{} msgId:{}, send msg err", cluster, topic, msgId, e);
+                return Result.getDBErrorResult(e);
+            }
+
+            public Cluster mqCluster() {
+                return cluster;
+            }
+        });
+    }
+
+    /**
+     * 发送定时消息取消消息
+     * 需要增加事务，如果发送失败，回滚cancelUniqId表插入，保证该消息能被下次申请取消
+     * 如果消息在broker端落地成功，但响应失败，也回滚，controller端已对该类消息进行兼容处理
+     *
+     * @param cluster 集群
+     * @param topic 主题
+     * @param uniqId msgId
+     * @param brokerName brokerName
+     * @param deliveryTime 延迟时间
+     * @return Result<SendResult>
+     */
+    @Transactional
+    public Result<SendResult> sendWheelCancelMsgAndSaveCancelUniqId(Cluster cluster, Topic topic,
+                                                 String uniqId, String brokerName,
+                                                 Long deliveryTime) {
+        cancelUniqIdService.save(topic.getId(), uniqId);
+        Result<SendResult> sendResultResult = sendWheelCancelMsg(cluster, topic.getName(), uniqId, brokerName, deliveryTime);
+        if (sendResultResult.isNotOK()) {
+            throw new RuntimeException(sendResultResult.getException());
+        }
+        return sendResultResult;
+    }
+
+
+    /**
+     * 指定MessageQueue发送定时消息取消消息
+     *
+     * @param cluster
+     * @param topic
+     * @param uniqId
+     * @param brokerName
+     * @param deliveryTime
+     * @return Result<SendResult>
+     */
+    public Result<SendResult> sendWheelCancelMsg(Cluster cluster, String topic,
+                                                 String uniqId, String brokerName,
+                                                 Long deliveryTime) {
+        return mqAdminTemplate.execute(new MQAdminCallback<Result<SendResult>>() {
+            public Result<SendResult> callback(MQAdminExt mqAdmin) throws Exception {
+                SohuMQAdmin sohuMQAdmin = (SohuMQAdmin) mqAdmin;
+                // 构建消息体
+                Message message = new Message(topic, DEFAULT_CANCEL_MESSAGE_TAGS, topic + "_" + uniqId, "时间轮定时消息取消类消息".getBytes());
+                MessageAccessor.putProperty(message, "TIMER_DEL_UNIQKEY", uniqId);
+                MessageAccessor.putProperty(message, "TIMER_DELIVER_MS", deliveryTime + "");
+                MessageQueue messageQueue = new MessageQueue(topic, brokerName, 0);
+                // 发送消息
+                SendResult sr = sohuMQAdmin.sendMessage(message, messageQueue);
+                return Result.getResult(sr);
+            }
+
+            public Result<SendResult> exception(Exception e) throws Exception {
+                logger.error("cluster:{} topic:{} uniqId:{}, send msg err", cluster, topic, uniqId, e);
                 return Result.getDBErrorResult(e);
             }
 
@@ -1050,7 +1267,6 @@ public class MessageService {
             public Result<MessageExt> callback(MQAdminExt mqAdmin) throws Exception {
                 return Result.getResult(mqAdmin.viewMessage(topic, msgId));
             }
-
             public Result<MessageExt> exception(Exception e) throws Exception {
                 logger.error("queryMessage cluster:{} topic:{} msgId:{}", cluster, topic, msgId, e);
                 return Result.getWebErrorResult(e);
@@ -1059,6 +1275,35 @@ public class MessageService {
                 return cluster;
             }
         });
+    }
+
+    public Result<MessageExt> viewMessageByUniqKey(Cluster cluster, String topic, String msgId) {
+            try {
+                // 检查是否是uniqKey
+                MessageDecoder.decodeMessageId(msgId);
+                return Result.getResult(Status.NO_RESULT);
+            } catch (Exception e) {
+            }
+            long beginQueryTime = MessageClientIDSetter.getNearlyTimeFromID(msgId).getTime() - 1000 * 60 * 5L;
+            return mqAdminTemplate.execute(new MQAdminCallback<Result<MessageExt>>() {
+                public Result<MessageExt> callback(MQAdminExt mqAdmin) throws Exception {
+                    SohuMQAdmin sohuMQAdmin = (SohuMQAdmin) mqAdmin;
+                    QueryResult queryResult = sohuMQAdmin.queryMessageByUniqKey(topic, msgId, 32, beginQueryTime, Long.MAX_VALUE);
+                    if(queryResult.getMessageList() == null || queryResult.getMessageList().size() == 0){
+                        return Result.getResult(Status.NO_RESULT);
+                    }
+                    return Result.getResult(queryResult.getMessageList().get(0));
+                }
+
+                public Result<MessageExt> exception(Exception e) throws Exception {
+                    logger.error("queryMessage cluster:{} topic:{} msgId:{}", cluster, topic, msgId, e);
+                    return Result.getWebErrorResult(e);
+                }
+
+                public Cluster mqCluster() {
+                    return cluster;
+                }
+            });
     }
 
     /**

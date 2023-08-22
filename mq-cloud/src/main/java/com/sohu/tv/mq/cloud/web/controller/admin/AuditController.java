@@ -6,10 +6,12 @@ import com.sohu.tv.mq.cloud.bo.Audit.TypeEnum;
 import com.sohu.tv.mq.cloud.service.*;
 import com.sohu.tv.mq.cloud.service.MQProxyService.ConsumerConfigParam;
 import com.sohu.tv.mq.cloud.util.DateUtil;
+import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper;
 import com.sohu.tv.mq.cloud.util.Result;
 import com.sohu.tv.mq.cloud.util.Status;
 import com.sohu.tv.mq.cloud.web.controller.param.PaginationParam;
 import com.sohu.tv.mq.cloud.web.vo.*;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.rocketmq.remoting.protocol.body.Connection;
 import org.apache.rocketmq.remoting.protocol.body.ProducerConnection;
@@ -113,6 +115,12 @@ public class AuditController extends AdminViewController {
 
     @Autowired
     private MQProxyService mqProxyService;
+
+    @Autowired
+    private AuditWheelMessageCancelService auditWheelMessageCancelService;
+
+    @Autowired
+    private MQCloudConfigHelper mqCloudConfigHelper;
 
     /**
      * 审核主列表
@@ -1186,12 +1194,19 @@ public class AuditController extends AdminViewController {
      * @return
      */
     private boolean agreeAndTip(Audit audit, String auditMail, String tip) {
+        return agreeAndTip(audit, auditMail, tip, false);
+    }
+
+    private boolean agreeAndTip(Audit audit, String auditMail, String tip, boolean skipSendEmail) {
         Audit updateAudit = new Audit();
         updateAudit.setId(audit.getId());
         updateAudit.setAuditor(auditMail);
         updateAudit.setStatus(StatusEnum.AGREE.getStatus());
         Result<Integer> updateResult = auditService.updateAudit(updateAudit);
         if (updateResult.isOK()) {
+            if (skipSendEmail) {
+                return true;
+            }
             UserMessage userMessage = new UserMessage();
             TypeEnum typeEnum = TypeEnum.getEnumByType(audit.getType());
             StringBuilder sb = new StringBuilder("您");
@@ -1251,6 +1266,49 @@ public class AuditController extends AdminViewController {
         }
         // 更新申请状态
         boolean updateOK = agreeAndTip(audit, userInfo.getUser().getEmail(), null);
+        if (updateOK) {
+            return Result.getOKResult();
+        }
+        return Result.getResult(Status.DB_UPDATE_ERR_DELETE_RESET_OFFSET_OK);
+    }
+
+    /**
+     * cancel wheel message
+     *
+     * @param aid
+     * @param map
+     * @return
+     */
+    @ResponseBody
+    @RequestMapping(value = "/cancelWheelMsg", method = RequestMethod.POST)
+    public Result<?> cancelWheelMessage(UserInfo userInfo, @RequestParam("aid") long aid) {
+        // 获取audit
+        Result<Audit> auditResult = auditService.queryAudit(aid);
+        if (auditResult.isNotOK()) {
+            return auditResult;
+        }
+        // 校验状态是否合法
+        Audit audit = auditResult.getResult();
+        if (StatusEnum.INIT.getStatus() != audit.getStatus()) {
+            return getAuditStatusError(audit.getStatus());
+        }
+        // 查询审核记录中未成功发送的消息
+        Result<List<AuditWheelMessageCancel>> listResult = auditWheelMessageCancelService.queryNotCancelAuditByAid(aid);
+        if (listResult.isNotOK()) {
+            return listResult;
+        }
+        // 未全部重发成功不可审核
+        if (CollectionUtils.isNotEmpty(listResult.getResult())) {
+            return Result.getResult(Status.AUDIT_MESSAGE_CANNOT_AUTID_WHEN_NOT_SEND_OK);
+        }
+        Result<User> userResult = userService.query(audit.getUid());
+        // 是否跳过邮件发送
+        boolean skipSendEmail = userResult.isOK()
+                && userResult.getResult().getEmail() != null
+                // 如果是http接入的默认用户，则不需要发送邮件
+                && mqCloudConfigHelper.checkApiAuditUserEmail(userResult.getResult().getEmail());
+        // 更新申请状态
+        boolean updateOK = agreeAndTip(audit, userInfo.getUser().getEmail(), null, skipSendEmail);
         if (updateOK) {
             return Result.getOKResult();
         }

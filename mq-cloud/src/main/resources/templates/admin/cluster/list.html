@@ -1808,6 +1808,9 @@ function showBrokerConfigModal(addr){
     });	
 }
 
+const fileReservedTime = [];
+const timerRollWindowSlot = [];
+
 function modifyBrokerConfig(){
 	var tip = "";
 	var needReboot = false;
@@ -1815,14 +1818,44 @@ function modifyBrokerConfig(){
 	$("#brokerConfigBody input:text").each(function(){
 		var nowValue = $.trim($(this).val());
 		var prevValue = $(this).attr("data");
+		var optionName = $(this).attr("name");
+		if (optionName == "fileReservedTime") {
+			fileReservedTime[0] = nowValue;
+		} else if (optionName == "timerRollWindowSlot") {
+			timerRollWindowSlot[0] = prevValue;
+			timerRollWindowSlot[1] = nowValue;
+		}
 		if(nowValue != prevValue){
 			if($(this).attr("dynamic") == "false"){
 				needReboot = true;
 			}
-			tip += $(this).attr("name") + "修改为" + nowValue + "\n";
+			tip += optionName + "修改为" + nowValue + "\n";
 			configParam += $(this).attr("name") + ":" + nowValue + ";";
 		}
 	})
+	if (fileReservedTime.length > 0 || timerRollWindowSlot.length > 0) {
+		var fileReservedTimeValue = fileReservedTime[0];
+		if (fileReservedTime.length == 0){
+			fileReservedTimeValue = 72;
+		}
+		fileReservedTimeValue = fileReservedTimeValue * 3600;
+		var timerRollWindowSlotOldValue = timerRollWindowSlot[0];
+		var timerRollWindowSlotNewValue = timerRollWindowSlot[1];
+		if (timerRollWindowSlot.length == 0){
+			timerRollWindowSlotOldValue = 86400;
+			timerRollWindowSlotNewValue = 86400;
+		}
+		timerRollWindowSlot.length = 0;
+		fileReservedTime.length = 0;
+		if (timerRollWindowSlotNewValue > fileReservedTimeValue) {
+			alert("fileReservedTime配置值必须大于timerRollWindowSlot配置值, 否则可能造成定时消息丢失");
+			return;
+		}
+		if (timerRollWindowSlotOldValue != timerRollWindowSlotNewValue && timerRollWindowSlotOldValue > fileReservedTimeValue){
+			alert("当前fileReservedTime配置值必须大于timerRollWindowSlot修改前的旧值, 否则可能造成定时消息丢失");
+			return;
+		}
+	}
 	$("#brokerConfigBody input:radio:checked").each(function(){
 		var nowValue = $.trim($(this).val());
 		var prevValue = $(this).attr("data");
@@ -1874,7 +1907,7 @@ function startupBroker(ipAddr, brokerName, dir){
             	reload(5000);   
 		    } else {
 		    	toastr.error("启动失败！"+data.message);  
-		    	enable(dir+"Btn");
+		    	enable(brokerName+"Btn");
 		    }
        }, 'json');
 }

@@ -70,6 +70,10 @@ public enum Status {
     CONSUMER_REPEAT(702, "与其他消费者名称重复"),
     CONSUMER_TRACE_OPEN(703, "请先关闭消费者的trace"),
     AUDITED(704, "已审核完毕"),
+    INVALID_UNIQID(705, "无效的uniqid: %s"),
+    EXPIRED_UNIQID(706, "uniqid:%s 已超过取消时间，无法取消"),
+    NON_WHEEL_DELAY(707, "uniqid:%s 非时间轮定时消息，无法取消"),
+    EXISTED_CANCEL_APPLY(708, "uniqid:%s 取消申请已存在"),
     
     // 8XX用于创建Trace topic时详细描述异常信息
     TRACE_CLUSTER_ID_IS_NULL(800, "Trace集群ID为空"),

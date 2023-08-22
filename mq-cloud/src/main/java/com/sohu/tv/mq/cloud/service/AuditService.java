@@ -9,6 +9,7 @@ import com.sohu.tv.mq.cloud.dao.UserProducerDao;
 import com.sohu.tv.mq.cloud.util.Result;
 import com.sohu.tv.mq.cloud.util.Status;
 import com.sohu.tv.mq.cloud.web.vo.*;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.rocketmq.remoting.protocol.body.ConsumerConnection;
 import org.slf4j.Logger;
@@ -106,6 +107,12 @@ public class AuditService {
 
     @Autowired
     private AuditTimespanMessageConsumeService auditTimespanMessageConsumeService;
+
+    @Autowired
+    private AuditWheelMessageCancelService auditWheelMessageCancelService;
+
+    @Autowired
+    private CancelUniqIdService cancelUniqIdService;
 
     @Autowired
     private ClusterService clusterService;
@@ -486,6 +493,60 @@ public class AuditService {
     }
 
     /**
+     * 保存审核以及定时消息取消申请
+     *
+     * @param audit
+     * @param auditWheelMessageCancels
+     * @return
+     */
+    @Transactional
+    public Result<?> saveAuditAndAuditWheelMessageCancels(Audit audit, List<AuditWheelMessageCancel> auditWheelMessageCancels){
+        Long count = null;
+        try {
+            count = auditDao.insert(audit);
+            if (count != null && count > 0) {
+                Long auditId = audit.getId();
+                auditWheelMessageCancels.forEach(auditWheelMessageCancel -> auditWheelMessageCancel.setAid(auditId));
+                auditWheelMessageCancelService.saveBatch(auditWheelMessageCancels);
+            }
+        } catch (Exception e) {
+            logger.error("insert err, audit:{}", audit, e);
+            TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+            return Result.getDBErrorResult(e);
+        }
+        return Result.getOKResult();
+    }
+
+    /**
+     * 查询取消类消息是否重复申请
+     * 检查是否cancelUniqId表记录 || 检查申请记录（待审核）
+     * @param uniqIds
+     * @param tid
+     * @return status
+     */
+    public Result<List<String>> queryWheelCancelByUniqIdsAndTid(List<String> uniqIds, Long tid) {
+        // 第一步 校验该uniqId是否已经成功取消
+        Result<List<CancelUniqId>> cancelUniqIdResult = cancelUniqIdService.queryByUniqIds(uniqIds, tid);
+        if (cancelUniqIdResult.isNotOK()) {
+            return Result.getDBErrorResult(cancelUniqIdResult.getException());
+        }
+        if (CollectionUtils.isNotEmpty(cancelUniqIdResult.getResult())) {
+            List<String> existUniqIds = cancelUniqIdResult.getResult().stream()
+                    .map(CancelUniqId::getUniqueId).collect(Collectors.toList());
+            return Result.getResult(existUniqIds);
+        }
+        // 到了这一步说明还没成功取消，还需校验是否存在处于正在审核中的取消申请
+        Result<List<String>> auditWheelCheckResult = auditWheelMessageCancelService.checkExistsByUniqIdAndTopic(tid, uniqIds);
+        if (auditWheelCheckResult.isNotOK()) {
+            return Result.getDBErrorResult(auditWheelCheckResult.getException());
+        }
+        if (CollectionUtils.isNotEmpty(auditWheelCheckResult.getResult())) {
+            return Result.getResult(auditWheelCheckResult.getResult());
+        }
+        return Result.getOKResult();
+    }
+
+    /**
      * 查询
      * 
      * @param type
@@ -695,6 +756,8 @@ public class AuditService {
                 return getUpdateTopicTrafficWarnResult(aid);
             case TIMESPAN_MESSAGE_CONSUME:
                 return getTimespanMessageConsumeResult(aid);
+            case CANCEL_WHEEL_MSG:
+                return getCancelWheelMsgResult(aid);
         }
         return null;
     }
@@ -1492,6 +1555,10 @@ public class AuditService {
      */
     private Result<?> getTimespanMessageConsumeResult(long aid) {
         return auditTimespanMessageConsumeService.query(aid);
+    }
+
+    private Result<?> getCancelWheelMsgResult(long aid) {
+        return auditWheelMessageCancelService.checkCancel(aid);
     }
 
     /**

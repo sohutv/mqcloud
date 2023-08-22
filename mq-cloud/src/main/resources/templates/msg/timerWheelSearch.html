@@ -2,8 +2,15 @@
 	<#if response.result.msgList?? && response.result.msgList?size gt 0>
 		<tbody id="page_${response.result.mqc.times}">
 			<#list response.result.msgList as msg>
-				<tr data="${msg.offsetMsgId}" dataIdx="${msg_index + 1 + response.result.mqc.prevSize}">
-					<td>${msg_index + 1 + response.result.mqc.prevSize}</td>
+				<tr data="${msg.offsetMsgId}" id="${msg.msgId}" dataIdx="${msg_index + 1 + response.result.mqc.prevSize}" rollTimes="${msg.timerRollTimes}"
+					deliverTime="${msg.timerDeliverTime}">
+					<#if msg.timerStatus == 3>
+						<td data-tooltip="true" title="跳转至key消息查询页面" onclick="loadKeySearch('${msg.msgId}')">${msg_index + 1 + response.result.mqc.prevSize}</td>
+					<#elseif msg.timerStatus == 1|| msg.timerStatus ==2>
+						<td data-tooltip="true" title="跳转至定时消息追踪页面" onclick="loadRollTraceSearch('${msg.msgId}','${msg.broker!}')">${msg_index + 1 + response.result.mqc.prevSize}</td>
+					<#elseif msg.timerStatus == 4 >
+						<td data-tooltip="true" title="跳转至定时消息追踪页面" onclick="loadRollTraceSearch('${msg.msgId}','${msg.broker!}')">${msg_index + 1 + response.result.mqc.prevSize}</td>
+					</#if>
 					<td>${msg.bornHostString}</td>
 					<td data-tooltip="true" title="存储时间:${msg.storeTimestamp?number_to_datetime?string("yyyy-MM-dd HH:mm:ss.SSS")}">${msg.bornTimestamp?number_to_datetime?string("yyyy-MM-dd HH:mm:ss.SSS")}</td>
 					<td data-tooltip="true" title="偏移量:${msg.queueOffset}">${msg.broker!}:${msg.queueId}</td>
@@ -11,9 +18,32 @@
 					<td>${msg.keys!}</td>
 					<td>${msg.tags!}</td>
 					<#if traceEnabled>
-						<td class="text-center"><span class="glyphicon glyphicon-time" data-tooltip="true" title="<#if !msg.deliverTimeUp>预计</#if>投递时间:${msg.timerDeliverTime?number_to_datetime?string("yyyy-MM-dd HH:mm:ss.SSS")}" onclick="traceHasTime('${msg.msgId}')" <#if !msg.deliverTimeUp>style="color:blue"</#if>></span></td>
+						<td class="text-center"><span
+							<#if msg.timerStatus == 3 >
+								class="iconfont icon-dingshi"
+							<#elseif msg.timerStatus == 4 >
+								class="iconfont icon-dingshi" style="color: #6A6AFF"
+							<#elseif msg.timerStatus == 1 || msg.timerStatus == 2>
+								class="iconfont icon-quxiaodingshi"
+							</#if>
+							data-tooltip="true"
+							data-html="true"
+							title="${msg.timerDeliverTimeDesc}"
+							onclick="traceHasTime('${msg.msgId}')" ></span></td>
 					<#else>
-						<td class="text-center"><span class="glyphicon glyphicon-time" data-tooltip="true" title="<#if !msg.deliverTimeUp>预计</#if>投递时间:${msg.timerDeliverTime?number_to_datetime?string("yyyy-MM-dd HH:mm:ss.SSS")}" onclick=track(${msg.toJson()}) data-target="#trackModal" data-toggle="modal" <#if !msg.deliverTimeUp>style="color:blue"</#if>></span></td>
+						<td class="text-center"><span
+							<#if msg.timerStatus == 3 >
+								class="iconfont icon-dingshi"
+							<#elseif msg.timerStatus == 4 >
+								class="iconfont icon-dingshi" style="color: #6A6AFF"
+							<#elseif msg.timerStatus == 1 || msg.timerStatus == 2>
+								class="iconfont icon-quxiaodingshi"
+							</#if>
+							data-tooltip="true" data-html="true"
+							title="${msg.timerDeliverTimeDesc}"
+							onclick=track(${msg.toJson()})
+							data-target="#trackModal"
+							data-toggle="modal"></span></td>
 					</#if>
 				</tr>
 			</#list>

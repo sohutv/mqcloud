@@ -37,6 +37,8 @@ public class DecodedMessage extends MessageExt {
 
     private long timerDeliverTime;
 
+    private int timerRollTimes;
+
     public String getBroker() {
         return broker;
     }
@@ -173,6 +175,14 @@ public class DecodedMessage extends MessageExt {
 
     public boolean isDeliverTimeUp() {
         return System.currentTimeMillis() >= timerDeliverTime;
+    }
+
+    public int getTimerRollTimes() {
+        return timerRollTimes;
+    }
+
+    public void setTimerRollTimes(int timerRollTimes) {
+        this.timerRollTimes = timerRollTimes;
     }
 
     /**

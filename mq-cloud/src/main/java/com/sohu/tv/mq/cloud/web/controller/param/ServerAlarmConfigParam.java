@@ -1,5 +1,7 @@
 package com.sohu.tv.mq.cloud.web.controller.param;
 
+import org.apache.commons.lang3.StringUtils;
+
 /**
  * 服务器预警配置项
  * 
@@ -126,6 +128,6 @@ public class ServerAlarmConfigParam {
      * @return
      */
     private int string2Int(String arg) {
-        return arg == "" ? 0 : Integer.parseInt(arg);
+        return StringUtils.isBlank(arg) ? 0 : Integer.parseInt(arg);
     }
 }

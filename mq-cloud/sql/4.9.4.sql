@@ -65,24 +65,24 @@ insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynami
 insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) values(26, 'compactionCqMappedFileSize', '10485760', 'CompactinConsumeQueue文件大小', '默认10m', 4, 0, null, 0);
 insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) values(26, 'enableCompaction', 'true', '是否启用压缩', null, 5, 0, 'true:是;false:否;', 0);
 
-insert into broker_config_group(`id`, `group`, `order`) values(27, '时间轮延迟消息', 27);
+insert into broker_config_group(`id`, `group`, `order`) values(27, '时间轮定时消息', 27);
 insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) values(27, 'mappedFileSizeTimerLog', '104857600', 'TimerLog文件大小', '默认100m', 1, 0, null, 0);
 insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) values(27, 'timerPrecisionMs', '1000', '时间轮精度', '单位毫秒', 2, 0, null, 0);
-insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) values(27, 'timerRollWindowSlot', '172800', '超长延迟消息滚动窗口', '默认超过2天会滚动，单位ms', 3, 0, null, 0);
-insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) values(27, 'timerFlushIntervalMs', '1000', '延迟消息刷新间隔', '默认1秒，单位ms', 4, 1, null, 0);
+insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) values(27, 'timerRollWindowSlot', '172800', '超长定时消息滚动窗口', '默认超过2天会滚动，单位s', 3, 0, null, 0);
+insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) values(27, 'timerFlushIntervalMs', '1000', '定时消息刷新间隔', '默认1秒，单位ms', 4, 1, null, 0);
 insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) values(27, 'timerGetMessageThreadNum', '3', '出dequeueGetQueue从commitLog拉取消息，放入dequeuePutQueue的线程数', null, 5, 0, null, 0);
 insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) values(27, 'timerPutMessageThreadNum', '3', '出dequeuePutQueue放入原始队列线程数', null, 6, 0, null, 0);
 insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) values(27, 'timerEnableDisruptor', 'false', '是否使用Disruptor', null, 7, 0, 'true:是;false:否;', 0);
 insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) values(27, 'timerEnableCheckMetrics', 'true', '是否检查指标', null, 8, 0, 'true:是;false:否;', 0);
 insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) values(27, 'timerCheckMetricsWhen', '05', '指标检查时间', null, 9, 0, null, 0);
-insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) values(27, 'timerMaxDelaySec', '259200', '延迟消息最大延迟', '默认3天，单位s', 10, 1, null, 0);
-insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) values(27, 'timerWheelEnable', 'true', '是否启用时间轮延迟消息', null, 11, 0, 'true:是;false:否;', 0);
+insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) values(27, 'timerMaxDelaySec', '259200', '定时消息最大延迟', '默认3天，单位s', 10, 1, null, 0);
+insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) values(27, 'timerWheelEnable', 'true', '是否启用时间轮定时消息', null, 11, 0, 'true:是;false:否;', 0);
 insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) values(27, 'timerStopEnqueue', 'false', '是否停止写入enqueuePutQueue', null, 12, 1, 'true:是;false:否;', 0);
 insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) values(27, 'timerStopDequeue', 'false', '是否停止写入dequeueGetQueue', null, 13, 1, 'true:是;false:否;', 0);
 insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) values(27, 'timerSkipUnknownError', 'false', '发生未知错误时是否跳过', null, 14, 0, null, 0);
 insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) values(27, 'timerCongestNumEachSlot', '2147483647', '每个槽最大消息量', null, 15, 1, null, 0);
 insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) values(27, 'timerMetricSmallThreshold', '1000000', '指标小阈值', null, 16, 0, null, 0);
-insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) values(27, 'timerProgressLogIntervalMs', '10000', '延迟消息处理日志打印间隔', '默认10秒，单位ms', 17, 1, null, 0);
+insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) values(27, 'timerProgressLogIntervalMs', '10000', '定时消息处理日志打印间隔', '默认10秒，单位ms', 17, 1, null, 0);
 insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) values(27, 'timerWarmEnable', 'false', '已废弃', null, 18, 0, null, 0);
 insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) values(27, 'timerInterceptDelayLevel', 'false', '已废弃', null, 19, 0, null, 0);
 

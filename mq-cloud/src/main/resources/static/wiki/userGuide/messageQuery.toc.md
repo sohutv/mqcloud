@@ -6,3 +6,4 @@
 - [四、按照时间段查询](#time)
 - [五、按照消息id查询](#msgId)
 - [六、按照trace查询](#trace)
+- [七、查询定时消息](#queryWheelMessage)

@@ -404,7 +404,7 @@ Result<SendResult> result = new PublishCommand(producer, map).execute();
 
 ## 十一、<span id="timerWheel">定时消息</span>
 
-目前已支持任意维度的定时消息，使用方式如下：
+目前已支持30天内任意维度的定时消息，使用方式如下：
 
 ```
 // 24小时后投递消息
@@ -416,4 +416,77 @@ if (!sendResult.isSuccess) { // 发送失败
 }
 ```
 
-注意：投递消息的时间尽量分散，不建议在同一时间大量投递消息。
+#### 注意：
+- 投递消息的时间尽量分散，不建议在同一时间大量投递消息。
+- 定时投递在少数特殊情况下会产生重复消息，业务端需自行实现幂等
+- 如需取消定时消息，请自行保存msgId,获取方式如下：
+  ```
+  sendResult.getResult().getMsgId()
+  ```
+  使用方法参见[取消定时消息](#cancelTimeWheel)
+
+## 十二、<span id="cancelTimeWheel">取消定时消息</span>
+当前支持两种方式取消定时消息：
+
+1. 页面取消
+   
+   [消息查询-定时消息](messageQuery#queryWheelMessage)页面支持手动取消定时消息，如下图所示。
+
+   ![](img/cancelMsg_web.png)
+
+2. 接口取消
+
+   1. 接口地址：
+      ```
+       POST /topic/message/cancelWheelMsg
+      ```
+   2. 接口参数： 
+      * topic：消息主题
+      * uniqIds：消息唯一id(msgId)，多个id用逗号分隔，单次最多支持20个id
+      * token：验证token，可咨询管理员获取
+   
+   3. 响应说明：
+      ```
+      {
+       "status": 200, 
+       "message": 
+      }
+      ```
+      1. status：：标识本次响应的状态码，包括但不限于如下值：
+         * status：300 参数错误，topic不存在
+         * status：303 权限不足，无法取消
+         * status：705 uniqId无效，无法定位消息
+         * status：706 uniqid对应的消息已超出取消时间范围，无法取消
+         * status：707 uniqid对应的消息为非时间轮定时消息，无法取消
+         * status：708 uniqid的取消申请已存在，不能重复申请
+         * status：200 取消成功
+      2. message：当响应状态码非200时的提示信息。
+   
+   4. 生产示例：
+     ```
+      // 设置请求头
+      HttpHeaders headers = new HttpHeaders();
+      headers.add("Cookie", "TOKEN=" + token);
+      headers.setContentType(MediaType.MULTIPART_FORM_DATA);
+      // 设置请求参数
+      MultiValueMap<String, String> multiValueMap = new LinkedMultiValueMap<>();
+      multiValueMap.add("topic", "basic-delay-cancel-topic");
+      multiValueMap.add("uniqIds", uniqIds);
+      // 发送POST请求
+      HttpEntity httpEntity = new HttpEntity<>(multiValueMap, headers);
+      ResponseEntity<WebResult> response =
+              restTemplate.postForEntity(CANCEL_DELAY_URL, httpEntity, WebResult.class);
+      WebResult body = response.getBody();
+      if (body.ok()) {
+          log.info("取消定时消息成功, uniqIds:{}", uniqIds);
+      }
+     ```
+#### 注意：
+- 能被取消的定时消息的定时时间需大于当前时间5分钟以上，如需取消小于该范围的消息，请联系管理员。
+- 该功能能保障绝大部分情况下的取消，但仍有极少数情况下无法取消，如：
+  - 集群机器不可用，取消消息写入失败，定时无法取消
+  - MQCloud服务不可用，取消消息发送失败，定时无法取消
+  - 网络故障，取消消息无法在定时消息触发前发送，定时无法取消
+  
+  如需严格保证，请先咨询管理员。
+- 该功能仅支持rocketmq 5.x版本的时间轮定时消息。

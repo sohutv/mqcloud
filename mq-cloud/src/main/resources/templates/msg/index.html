@@ -12,6 +12,10 @@
 		overflow-y:hidden;
 	}
 </style>
+<link rel="stylesheet" href="/icon/remove-timer/iconfont.css">
+<link rel="stylesheet" href="/icon/roll-timer/iconfont.css">
+<link rel="stylesheet" href="/icon/timer/iconfont.css">
+<link rel="stylesheet" href="/icon/cancel/iconfont.css">
 <div class="row">
 <div class="col-md-12">
 	<div style="float:left;margin:10px 5px;">
@@ -27,6 +31,7 @@
 					<option value="trace">trace</option>
 				</#if>
 				<option value="timerWheel">定时消息</option>
+				<option value="timerWheelTrace">定时消息追踪</option>
 			</select>
 		</div>
 		<span class="nostyleA" data-toggle="tooltip" data-placement="top" title="点击查看各种方式区别"><a href="/wiki/userGuide/messageQuery" target=_blank class="glyphicon glyphicon-question-sign"></a></span>
@@ -107,6 +112,12 @@
 			</div>
 			<div class="form-group timerWheel" style="display:none;">
 				<input type="text" class="form-control" id="timerWheelKey" name="timerWheelKey" value="${response.result.key!}" placeholder="关键字，支持模糊匹配">
+				<input hidden class="form-check-input" type="checkbox" name="showSysMsg" value="true" id="showSysMsg">
+			</div>
+
+			<div class="form-group timerWheelTrace" style="display:none;">
+				<input type="text" class="form-control" id="traceUniqKey" name="traceUniqKey" placeholder="msgId">
+				<input hidden type="text" name="broker" id="broker">
 			</div>
 
 			<!-- 时间段查询参数 -->
@@ -129,6 +140,10 @@
 			<button type="button" data-toggle='tooltip' title="按trace查询${response.result.topic}" onclick="searchTraceMessage()" class="btn btn-search trace" style="display:none;"><span class="glyphicon glyphicon-search" aria-hidden="true"></span></button>
 			<!-- 时间段查询 -->
 			<button type="button" data-toggle='tooltip' title="按定时查询${response.result.topic}" onclick="searchTimerWheelMessage(false)" class="btn btn-search timerWheel" style="display:none;"><span class="glyphicon glyphicon-search" aria-hidden="true"></span></button>
+			<!-- 定时任务取消 -->
+			<button type="button" data-toggle='tooltip' title="取消${response.result.topic}中的定时消息" onclick="cancelTimerWheelMessage()" class="btn timerWheel" style="display:none;"><span class="iconfont icon-quxiaodingshi" aria-hidden="true"></span></button>
+			<!-- 定时任务足迹查询 -->
+			<button type="button" data-toggle='tooltip' title="查询${response.result.topic}中的定时消息滚动足迹" onclick="searchTimerWheelMessageRollTrace()" class="btn timerWheelTrace" style="display:none;"><span class="glyphicon glyphicon-search" aria-hidden="true"></span></button>
 
 			<!-- 消息重发 -->
 			<#if consumer == 1>
@@ -266,6 +281,34 @@
 </div>
 <div id="scriptDiv" style="display:none;"></div>
 
+<!-- 定时消息取消确认 -->
+<div id="cancelMsgModal" class="modal fade" tabindex="-1" data-width="400">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+				<h4 class="modal-title">定时消息取消</h4>
+			</div>
+			<div class="modal-body">
+				<form class="form-horizontal form-bordered form-row-stripped">
+					<div class="form-group">
+						<label class="control-label col-md-5" title="消息消费时间距当前大于5分钟的消息"> 待取消消息序号: </label>
+						<div class="col-md-7">
+							<div class="form-control-static">
+								&nbsp;<b id="cancelIdx" style="word-break:break-all"></b>
+							</div>
+							<input hidden id="validUniqIds">
+					</div>
+				</form>
+			</div>
+			<div class="modal-footer">
+				<button type="button" data-dismiss="modal" class="btn" >取消</button>
+				<button type="button" class="btn btn-primary" id="cancelBtn" onclick="cancelMessage()">确定</button>
+			</div>
+		</div>
+	</div>
+</div>
+
 <!-- 消费时间段消息 -->
 <div id="consumeTimespanMessageModel" class="modal fade" tabindex="-1" aria-hidden="true">
 	<div class="modal-dialog">
@@ -319,6 +362,48 @@
 </div><!-- 消费时间段消息 -->
 
 <script>
+
+	var prevSearchType = "key";
+
+	$(function() {
+		var queryType = getQueryString("queryType");
+		if (queryType) {
+			prevSearchType = queryType;
+		}
+		if (queryType == "msgId") {
+			var msgId = getQueryString("unqId");
+			changeQueryType(queryType);
+			$("#msgId").val(msgId);
+			viewMessage();
+			return;
+		}
+		if (queryType == "timerWheelTrace"){
+			var msgId = getQueryString("unqId");
+			var broker = getQueryString("broker");
+			changeQueryType(queryType);
+			$("#broker").val(broker);
+			$("#traceUniqKey").val(msgId);
+			$("#resendMessageBtn").hide();
+			searchTimerWheelMessageRollTrace();
+			return;
+		}
+	});
+
+	function changeQueryType(queryType) {
+		$("#searchCondition").selectpicker('val', queryType);
+		$("#searchCondition").selectpicker('refresh');
+		var selectpicker = $("#searchCondition");
+		var options = selectpicker.find("option");
+		options.each(function() {
+			var value = $(this).val();
+			if (value == queryType) {
+				$("." + queryType).show();
+			} else {
+				$("." + value).hide();
+			}
+		});
+	}
+
 var pageNum = 0;
 //显示分页
 function showPage(num){
@@ -357,10 +442,12 @@ function next(){
 		if($("#data_"+(pageNum+1)).length > 0){
 			showPage(pageNum+1);
 		} else {
-			if($("#offsetStart").is(":visible")){
+			if("offset" == prevSearchType){
 				searchOffsetMessage(true);
-			} else {
+			} else if ("time" == prevSearchType) {
 				searchMessage(true);
+			} else if ("timerWheel" == prevSearchType) {
+				searchTimerWheelMessage(true);
 			}
 		}
 	}
@@ -439,6 +526,14 @@ function searchTimerWheelMessage(append){
 			$("#dataTable tbody").remove();
 			$("#dataTable input").remove();
 		}
+		$("#dataTable").append(data);
+	});
+}
+// 定时消息轨迹查询
+function searchTimerWheelMessageRollTrace() {
+	post('${request.contextPath}/topic/message/timerWheel/searchRollTrace', $("#msgSearchForm").serialize(), function(data){
+		$("#dataTable tbody").remove();
+		$("#dataTable input").remove();
 		$("#dataTable").append(data);
 	});
 }
@@ -555,8 +650,6 @@ function drawTrackTopology(){
 	myTrackChart = echarts.init(dom);
 	myTrackChart.setOption(trackOption, true);
 }
-
-var prevSearchType = "key";
 function changeSearchType(type){
 	// 无改变
 	if(prevSearchType == type){
@@ -567,9 +660,15 @@ function changeSearchType(type){
 		$("."+prevSearchType).hide();
 	}
 	prevSearchType = type;
-	
+
+
 	$("#pager").hide();
 	hideAndResetBrokerSelect();
+	if ("timerWheelTrace" == type) {
+		$("#resendMessageBtn").hide();
+	} else {
+		$("#resendMessageBtn").show();
+	}
 	if("trace" == type){
 		// 清空数据
 		$("#traceDataTable tbody").remove();
@@ -596,7 +695,7 @@ $(function(){
  	});
  	// search type tooltip
  	$("#searchCondition").selectpicker({
-		width : 120
+		width : 130
  	}).on('changed.bs.select', function(){
  	  	changeSearchType($('#searchCondition option:selected').val());
  	});
@@ -772,6 +871,49 @@ function initMultiSelect(bodyId){
 	<#if consumer == 1>
 		$('#dataTable ' + bodyId).multiSelect();
 	</#if>
+}
+
+// 定时消息取消 cancelMsgModal
+function cancelTimerWheelMessage(){
+	var dataIdxArray = new Array();
+	var uniqIds = new Array();
+	var offsetMsgIds = new Array();
+	var deliverTime = new Array();
+	let nowTime = new Date().getTime() + 5 * 60 * 1000;
+	$('#dataTable tbody tr.selected').each(function(){
+		let delayedTime = $(this).attr("deliverTime");
+		if (parseInt(delayedTime) > nowTime) {
+			dataIdxArray.push($(this).attr("dataIdx"));
+			uniqIds.push($(this).attr("id"));
+			offsetMsgIds.push($(this).attr("data"));
+			deliverTime.push(delayedTime);
+		}
+	});
+	if(dataIdxArray.length == 0) {
+		alert("请先选择投递时间距当前时间大于5分钟的消息(支持shift和ctrl)");
+		return;
+	}
+	$("#cancelIdx").html(dataIdxArray.toString());
+	$("#validUniqIds").val(uniqIds.toString());
+	$('#cancelMsgModal').modal('show');
+}
+
+function cancelMessage(){
+	let validUniqIds = $("#validUniqIds").val();
+	$.post('${request.contextPath}/topic/message/cancelWheelMsg',
+			{
+				tid: ${RequestParameters.tid},
+				uniqIds: validUniqIds,
+			},
+			function(data){
+				enable("cancelBtn");
+				if(data.status == 200){
+					toastr.success("申请成功！请耐心等待！");
+					$('#cancelMsgModal').modal('hide');
+				}else{
+					toastr.error("申请失败！"+data.message);
+				}
+			}, 'json');
 }
 
 // 重发消息 提示
@@ -1077,5 +1219,22 @@ function consumeTimespanMessage(){
 		    	enable("submitTimespanMessageBtn");
 		    }
     	}, 'json');
+}
+
+// 解析请求URL
+function getQueryString(name){
+	var reg = new RegExp("(^|&)"+ name +"=([^&]*)(&|$)");
+	var r = window.location.search.substr(1).match(reg);
+	if(r!=null)return  unescape(r[2]); return null;
+}
+
+// 跳转id搜索
+function loadKeySearch (msgId) {
+	window.open("${request.contextPath}/user/topic/${RequestParameters.tid}/detail?tab=msg&queryType=msgId&unqId="+msgId,'_blank')
+}
+
+// 跳转rollTrace搜索
+function loadRollTraceSearch (msgId, broker) {
+	window.open("${request.contextPath}/user/topic/${RequestParameters.tid}/detail?tab=msg&queryType=timerWheelTrace&unqId="+msgId + "&broker=" + broker, '_blank')
 }
 </script>

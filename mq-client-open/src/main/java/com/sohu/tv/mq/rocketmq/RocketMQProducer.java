@@ -5,15 +5,18 @@ import com.sohu.index.tv.mq.common.Result;
 import com.sohu.tv.mq.common.AbstractConfig;
 import com.sohu.tv.mq.common.MQRateLimitException;
 import com.sohu.tv.mq.common.SohuSendMessageHook;
+import com.sohu.tv.mq.dto.WebResult;
 import com.sohu.tv.mq.metric.MQMetricsExporter;
 import com.sohu.tv.mq.route.AffinityMQStrategy;
 import com.sohu.tv.mq.stats.StatsHelper;
+import com.sohu.tv.mq.util.CommonUtil;
 import org.apache.rocketmq.client.exception.MQClientException;
 import org.apache.rocketmq.client.impl.consumer.DefaultMQPushConsumerImpl;
 import org.apache.rocketmq.client.impl.producer.DefaultMQProducerImpl;
 import org.apache.rocketmq.client.producer.*;
 import org.apache.rocketmq.client.trace.AsyncTraceDispatcher;
 import org.apache.rocketmq.client.trace.hook.SendMessageTraceHookImpl;
+import org.apache.rocketmq.common.ServiceState;
 import org.apache.rocketmq.common.message.Message;
 import org.apache.rocketmq.remoting.RPCHook;
 import org.apache.rocketmq.remoting.exception.RemotingException;
@@ -727,6 +730,21 @@ public class RocketMQProducer extends AbstractConfig {
                 return processException(e);
             }
         }
+    }
+
+    /**
+     * 取消延迟消息
+     *
+     * @param uniqueId 消息ID
+     * @param token token
+     * @return 发送结果
+     */
+    public WebResult<String> cancelDelayedMessage(String uniqueId, String token) {
+        DefaultMQProducerImpl defaultMQProducerImpl = getProducer().getDefaultMQProducerImpl();
+        if (defaultMQProducerImpl.getServiceState() != ServiceState.RUNNING) {
+            return WebResult.setFail(500, "producer is not running");
+        }
+        return CommonUtil.cancelDelayedMsg(topic, uniqueId, token, getMqCloudDomain());
     }
     
     /**

@@ -139,6 +139,12 @@ public class AutoAuditService {
                     case TIMESPAN_MESSAGE_CONSUME:
                         result = auditController.timespanMessageConsume(userInfo, aid);
                         break;
+                    case CANCEL_WHEEL_MSG:
+                        Result<?> cancelResult = adminMessageController.cancelWheelMsg(userInfo, aid);
+                        if (cancelResult.isOK()) {
+                            auditController.cancelWheelMessage(userInfo, aid);
+                        }
+                        break;
                 }
                 if (result != null) {
                     ++auditCount;
