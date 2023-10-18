@@ -151,7 +151,7 @@
                     <div class="form-group row justify-content-center" id="topicInputID" style="display: none">
                         <label class="col-md-4"> topic: </label>
                         <div class="col-md-5">
-                            <select id="topicSearchSelect" class="selectpicker form-control" title="请选择" name="topic"></select>
+                            <select id="topicSearchSelect" class="selectpicker form-control" title="请选择" name="topic" data-live-search-placeholder="搜索" data-live-search="true"></select>
                         </div>
                     </div>
                     <div class="form-group row justify-content-center" id="alarmReceiverInputID">
@@ -208,7 +208,7 @@
                     <input type="hidden" id="isAddAlarmRecord" />
                 </div>
                 <div class="modal-footer">
-                    <button type="button" data-dismiss="modal" class="btn" >取消</button>
+                    <button type="button" data-dismiss="modal" class="btn btn-light" >取消</button>
                     <button type="button" class="btn btn-primary" onclick="submitUpdateAlarmThreshold()" id="updateAlarmThresholdBtn">确定</button>
                 </div>
             </form>
@@ -241,7 +241,7 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" data-dismiss="modal" class="btn" >取消</button>
+                    <button type="button" data-dismiss="modal" class="btn btn-light" >取消</button>
                     <button type="button" id="deleteAlarmBtn" onclick="submitDeleteAlarm()" class="btn btn-primary">确定</button>
                 </div>
 
