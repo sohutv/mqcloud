@@ -37,7 +37,9 @@ INSERT IGNORE INTO `common_config` VALUES ('28', 'oldReqestCodeBrokerSet', '', '
 INSERT IGNORE INTO `common_config` VALUES ('29', 'rocketmq5FilePath', 'classpath:static/software/rocketmq5.zip', 'rocketmq5安装文件路径，支持以下三种资源加载方式,例如 1:classpath:static/software/rocketmq5.zip 2：file:///tmp/rocketmq5.zip 3：http://127.0.0.1:8080/software/rocketmq5.zip');
 INSERT IGNORE INTO `common_config` VALUES ('30', 'clientGroupNSConfig', '{}', '客户端ns配置');
 INSERT IGNORE INTO `common_config` VALUES ('31', 'proxyAcls', '', 'proxy的acl列表，例如：[{"clusterId":1,"accessKey":"RocketMQ","secretKey":"12345678"}]');
-
+INSERT IGNORE INTO `common_config` VALUES ('32', 'exportedMessageLocalPath', '/tmp', '消息导出时的本地路径，例如/tmp');
+INSERT IGNORE INTO `common_config` VALUES ('33', 'exportedMessageRemotePath', '', '消息导出时的远程地址，例如127.0.0.1:/tmp，请赋予mqcloud权限');
+INSERT IGNORE INTO `common_config` VALUES ('34', 'exportedMessageDownloadUrlPrefix', '', '消息导出时的下载地址，例如http://127.0.0.1/tmp/，请用http开头');
 -- ----------------------------
 -- warn_config init
 -- ----------------------------
@@ -46,7 +48,7 @@ INSERT IGNORE INTO `warn_config`(accumulate_time,accumulate_count,block_time,con
 -- ----------------------------
 -- notice init
 -- ----------------------------
-INSERT IGNORE INTO `notice` VALUES (1, '欢迎您使用MQCloud，为了更好为您的服务，请花一分钟时间看下快速指南，如果有任何问题，欢迎联系我们^_^', 1, now());
+INSERT IGNORE INTO `notice` VALUES (1, '欢迎您使用MQCloud，为了更好为您的服务，请花一分钟时间看下文档，如果有任何问题，欢迎联系我们^_^', 1, now());
 
 -- ----------------------------
 -- user message init

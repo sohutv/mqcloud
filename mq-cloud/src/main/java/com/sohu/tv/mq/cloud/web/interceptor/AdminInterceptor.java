@@ -27,7 +27,12 @@ public class AdminInterceptor extends AuthInterceptor {
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler)
             throws Exception {
         boolean pass = super.preHandle(request, response, handler);
-        if(pass) {
+        if (pass) {
+            if (WebUtil.getAttribute(request, "aosUser") != null) {
+                WebUtil.print(response, Result.getJsonResult(Status.PERMISSION_DENIED_ERROR));
+                logger.warn("{}, aosUser:{} acess:{}", Status.PERMISSION_DENIED_ERROR.getValue(), WebUtil.getAttribute(request, "aosUser"), request.getRequestURL());
+                return false;
+            }
             UserInfo userInfo = (UserInfo) WebUtil.getAttribute(request, UserInfo.USER_INFO);
             if(userInfo.getUser().isAdmin()) {
                 return true;

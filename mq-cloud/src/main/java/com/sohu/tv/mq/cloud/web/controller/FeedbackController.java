@@ -13,6 +13,9 @@ import com.sohu.tv.mq.cloud.service.AlertService;
 import com.sohu.tv.mq.cloud.service.FeedbackService;
 import com.sohu.tv.mq.cloud.util.Result;
 import com.sohu.tv.mq.cloud.web.vo.UserInfo;
+
+import java.util.Map;
+
 /**
  * 反馈
  * 
@@ -21,7 +24,7 @@ import com.sohu.tv.mq.cloud.web.vo.UserInfo;
  */
 @Controller
 @RequestMapping("/feedback")
-public class FeedbackController {
+public class FeedbackController extends ViewController {
 
     private static String FEED_BACK_TITLE = "MQCloud用户反馈";
     
@@ -30,6 +33,18 @@ public class FeedbackController {
     
     @Autowired
     private AlertService alertService;
+
+    /**
+     * feedback add page
+     * @param map
+     * @return
+     * @throws Exception
+     */
+    @RequestMapping(value = "/add", method = RequestMethod.GET)
+    public String add(Map<String, Object> map) throws Exception {
+        setView(map, "add", "我要反馈");
+        return view();
+    }
 
     /**
      * add
@@ -48,5 +63,10 @@ public class FeedbackController {
         alertService.sendMail(FEED_BACK_TITLE, "您好!<br> 我们已收到您的反馈，感谢您为MQCloud做出的贡献 !<br>反馈内容如下:<br>" + content,
                 userInfo.getUser().getEmail());
         return Result.getWebResult(result);
+    }
+
+    @Override
+    public String viewModule() {
+        return "feedback";
     }
 }

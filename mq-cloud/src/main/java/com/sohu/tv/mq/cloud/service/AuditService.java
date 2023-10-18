@@ -117,6 +117,9 @@ public class AuditService {
     @Autowired
     private ClusterService clusterService;
 
+    @Autowired
+    private AuditTimespanMessageExportService auditTimespanMessageExportService;
+
     /**
      * 查询列表
      * 
@@ -493,6 +496,26 @@ public class AuditService {
     }
 
     /**
+     * 保存审核以及时间段消息导出
+     */
+    @Transactional
+    public Result<?> saveAuditAndAuditTimespanMessageExport(Audit audit, AuditTimespanMessageExport auditTimespanMessageExport) {
+        Long count = null;
+        try {
+            count = auditDao.insert(audit);
+            if (count != null && count > 0) {
+                auditTimespanMessageExport.setAid(audit.getId());
+                auditTimespanMessageExportService.save(auditTimespanMessageExport);
+            }
+        } catch (Exception e) {
+            logger.error("insert err, audit:{}", audit, e);
+            TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+            return Result.getDBErrorResult(e);
+        }
+        return Result.getOKResult();
+    }
+
+    /**
      * 保存审核以及定时消息取消申请
      *
      * @param audit
@@ -569,10 +592,10 @@ public class AuditService {
      * @param type
      * @return status
      */
-    public Result<Integer> updateAudit(Audit audit) {
+    public Result<Integer> updateAudit(Audit audit, int oldStatus) {
         Integer result = null;
         try {
-            result = auditDao.update(audit);
+            result = auditDao.update(audit, oldStatus);
             if (result == 0) {
                 return Result.getResult(Status.AUDITED);
             }
@@ -589,15 +612,12 @@ public class AuditService {
      * @param type
      * @return status
      */
-    public Result<Integer> updateAuditStatus(Audit audit) {
+    public Result<Integer> updateAuditStatus(long aid, int newStatus, int oldStatus) {
         Integer result = null;
         try {
-            result = auditDao.updateStatus(audit);
-            if (result == 0) {
-                return Result.getResult(Status.AUDITED);
-            }
+            result = auditDao.updateStatus(aid, newStatus, oldStatus);
         } catch (Exception e) {
-            logger.error("updateAuditStatus err, audit:{}", audit, e);
+            logger.error("updateAuditStatus err, aid:{} newStatus:{} oldStatus:{}", aid, newStatus, oldStatus, e);
             return Result.getDBErrorResult(e);
         }
         return Result.getResult(result);
@@ -758,6 +778,8 @@ public class AuditService {
                 return getTimespanMessageConsumeResult(aid);
             case CANCEL_WHEEL_MSG:
                 return getCancelWheelMsgResult(aid);
+            case TIMESPAN_MESSAGE_EXPORT:
+                return getTimespanMessageExportResult(aid);
         }
         return null;
     }
@@ -1555,6 +1577,10 @@ public class AuditService {
      */
     private Result<?> getTimespanMessageConsumeResult(long aid) {
         return auditTimespanMessageConsumeService.query(aid);
+    }
+
+    private Result<?> getTimespanMessageExportResult(long aid) {
+        return auditTimespanMessageExportService.query(aid);
     }
 
     private Result<?> getCancelWheelMsgResult(long aid) {

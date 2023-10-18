@@ -21,7 +21,7 @@
 								<#if shouldShow>
 									<div style="font-weight:bold;">&nbsp;&nbsp;&nbsp;&nbsp;${stackTrace.className!}.${stackTrace.methodName!}(${stackTrace.fileName!}:<#if stackTrace.nativeMethod>native<#else>${stackTrace.lineNumber!}</#if>)</div>
 								<#else>
-									<div onclick="toggleThreadStack(this)" style="cursor:pointer"><span class="mqcloudcollapse">&nbsp;&nbsp;&nbsp;&nbsp;</span>${stackTrace.className!}.${stackTrace.methodName!}(${stackTrace.fileName!}:<#if stackTrace.nativeMethod>native<#else>${stackTrace.lineNumber!}</#if>)</div>
+									<div onclick="toggleThreadStack(this)" style="cursor:pointer"><span class="text-blue fas fa-caret-right"></span>&nbsp;&nbsp;${stackTrace.className!}.${stackTrace.methodName!}(${stackTrace.fileName!}:<#if stackTrace.nativeMethod>native<#else>${stackTrace.lineNumber!}</#if>)</div>
 								</#if>
 							<#else>
 								<div style="display:none;">&nbsp;&nbsp;&nbsp;&nbsp;${stackTrace.className!}.${stackTrace.methodName!}(${stackTrace.fileName!}:<#if stackTrace.nativeMethod>native<#else>${stackTrace.lineNumber!}</#if>)</div>
@@ -31,7 +31,7 @@
 				</td>
 				<td>
 					<#list stackTraceMetric.msgIdList as msgId>
-						<a href="#" onclick="showThreadMessage('${msgId}')">${msgId}</a><br>
+						<a href="javascript:void(0)" onclick="showThreadMessage('${msgId}')">${msgId}</a><br>
 					</#list>
 				</td>
 			</tr>

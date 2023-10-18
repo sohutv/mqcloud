@@ -1,32 +1,53 @@
-<div class="col-md-6" style="padding-right:0px;">
-	<div id="containerRead"
-		style="min-width: 310px; height: 400px; margin: 0 auto"></div>
-</div>
-<div class="col-md-6" style="padding:0px;">
-	<div id="containerWrite"
-		style="min-width: 310px; height: 400px; margin: 0 auto"></div>
-</div>
-<div class="col-md-6" style="padding-right:0px;">
-	<div id="containerBusy"
-		style="min-width: 310px; height: 400px; margin: 0 auto"></div>
-</div>
-<div class="col-md-6" style="padding:0px;">
-	<div id="containerIops"
-		style="min-width: 310px; height: 400px; margin: 0 auto"></div>
-</div>
-<div class="col-md-6" style="padding-right:0px;">
-	<div id="containerSpace"
-		style="min-width: 310px; height: 400px; margin: 0 auto"></div>
+<div class="row">
+	<div class="col-md-6">
+		<div class="card mt-2">
+			<div class="card-body">
+				<div id="containerRead"
+					 style="min-width: 310px; height: 400px; margin: 0 auto">
+				</div>
+			</div>
+		</div>
+		<div class="card">
+			<div class="card-body">
+				<div id="containerBusy"
+					 style="min-width: 310px; height: 400px; margin: 0 auto">
+				</div>
+			</div>
+		</div>
+		<div class="card">
+			<div class="card-body">
+				<div id="containerSpace"
+					 style="min-width: 310px; height: 400px; margin: 0 auto">
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="col-md-6">
+		<div class="card mt-2">
+			<div class="card-body">
+				<div id="containerWrite"
+					 style="min-width: 310px; height: 400px; margin: 0 auto">
+				</div>
+			</div>
+		</div>
+		<div class="card">
+			<div class="card-body">
+				<div id="containerIops"
+					 style="min-width: 310px; height: 400px; margin: 0 auto">
+				</div>
+			</div>
+		</div>
+	</div>
 </div>
 	
 <script type="text/javascript">
-	$(document).ready(function() {
+	setTimeout(function (){
 		initReadChart();
 		initWriteChart();
 		initBusyChart();
 		initIopsChart();
 		initSpaceChart();
-	});
+	},200)
 	
 	function initReadChart(){
 		var options = getOptions("containerRead", "read", "max:${read.max?string('#.##')}k/s avg:${read.avg}k/s");

@@ -57,14 +57,6 @@ public class MonitorController extends AdminViewController {
         // 消费状态获取
         List<ConsumerStat> list = consumerMonitorService.getConsumerStatInfo(paginationParam.getBegin(),
                 paginationParam.getNumOfPage());
-        if (list != null && list.size() > 0) {
-            for (ConsumerStat cs : list) {
-                if (StringUtils.isNotBlank(cs.getTopic())) {
-                    cs.setConsumerLink(mqCloudConfigHelper.getTopicConsumeHrefLink(cs.getTopic(),
-                            cs.getConsumerGroup()));
-                }
-            }
-        }
         consumerMonitorVO.setConsumerStat(list);
         
         // 报警全部配置

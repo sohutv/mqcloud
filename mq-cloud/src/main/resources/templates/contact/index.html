@@ -1,31 +1,48 @@
-<#if operatorList??>
-	<div>如果您有任何问题，可以随时联系如下运维人员：</div>
-	<br>
-	<table class="table table-striped table-hover noborder" style="margin-top: 0px;word-break:break-all; word-wrap:break-all;">
-		<thead>
-			<tr>
-				<td>姓名</td>
-				<td>分机</td>
-				<td>手机</td>
-				<td>QQ</td>
-				<td>邮箱</td>
-			</tr>
-		</thead>
-		<tbody>
+<div class="card card-solid">
+	<div class="card-body pb-0">
+		<div class="row">
+			<#if operatorList??>
 			<#list operatorList as operator>
-				<tr>
-					<td>${operator.name}</td>
-					<td>${operator.phone}</td>
-					<td>${operator.mobile}</td>
-					<td>${operator.qq}</td>
-					<td>${operator.email}</td>
-				</tr>
+			<div class="col-12 col-sm-6 col-md-4 d-flex align-items-stretch flex-column">
+				<div class="card bg-light d-flex flex-fill">
+					<div class="card-header text-muted border-bottom-0">
+						联系人
+					</div>
+					<div class="card-body pt-0">
+						<div class="row">
+							<div class="col-7">
+								<h2 class="lead"><b>${operator.name}</b></h2>
+								<ul class="ml-4 mb-0 fa-ul text-muted">
+									<li class="small"><span class="fa-li"><i class="fas fa-phone-alt"></i></span> ${operator.mobile}</li>
+									<li class="small"><span class="fa-li"><i class="fas fa-blender-phone"></i></span> ${operator.phone}</li>
+									<li class="small"><span class="fa-li"><i class="fas fa-envelope"></i></span> ${operator.email}</li>
+									<li class="small"><span class="fa-li"><i class="fab fa-qq"></i></span> ${operator.qq}</li>
+								</ul>
+							</div>
+							<#if operator.wechat??>
+							<div class="col-4 text-center">
+								<#if operator.wechat?index_of("http") == 0>
+									<img src="${operator.wechat}" alt="微信" class="img-fluid">
+								<#else>
+									<img src="${request.contextPath}${operator.wechat}" alt="微信" class="img-fluid">
+								</#if>
+							</div>
+							</#if>
+						</div>
+					</div>
+				</div>
+			</div>
 			</#list>
-		</tbody>
-	</table>
-<#else>
-暂无联系方式
-</#if>
-<#if specialThx??>
-感谢为MQCloud做出贡献的小伙伴：<b>${specialThx}</b>
-</#if>
+			<#else>
+			<div class="col-12">
+				暂无联系方式
+			</div>
+			</#if>
+		</div>
+	</div>
+	<#if specialThx??>
+	<div class="card-footer">
+		感谢为MQCloud做出贡献的小伙伴：<b>${specialThx}</b>
+	</div>
+	</#if>
+</div>

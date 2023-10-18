@@ -53,7 +53,7 @@ public class MQDeployer {
     
     public static final String TMP_DIR = "/tmp/";
     
-    public static final String PID = "`sudo netstat -npl | grep \":%s\" | awk '{print $NF}' | awk -F\"/java\" '{print $1}'`";
+    public static final String PID = "tmpVar=`sudo netstat -npl | grep \":%s\" | awk '{print $NF}' | awk -F\"/java\" '{print $1}'` && [ ! -z \"$tmpVar\" ] && ";
     
     public static final String RUN_FILE = "run.sh";
     
@@ -115,7 +115,7 @@ public class MQDeployer {
     }
     
     /**
-     * 获取jdk版本
+     * 获取进程信息
      * @param ip
      * @return
      */
@@ -124,12 +124,32 @@ public class MQDeployer {
         try {
             sshResult = sshTemplate.execute(ip, new SSHCallback() {
                 public SSHResult call(SSHSession session) {
-                    SSHResult sshResult = session.executeCommand("sudo ps -fp " + String.format(PID, port));
+                    SSHResult sshResult = session.executeCommand(String.format(PID, port) + "sudo ps -fp $tmpVar");
                     return sshResult;
                 }
             });
         } catch (SSHException e) {
             logger.error("getProgram, ip:{},port{}", ip, port, e);
+        }
+        return wrapSSHResult(sshResult);
+    }
+
+    /**
+     * 获取进程信息
+     * @param ip
+     * @return
+     */
+    public Result<?> getProgram(String ip, String keyword){
+        SSHResult sshResult = null;
+        try {
+            sshResult = sshTemplate.execute(ip, new SSHCallback() {
+                public SSHResult call(SSHSession session) {
+                    SSHResult sshResult = session.executeCommand("sudo ps -ef | grep java | grep -v 'grep' | grep '/" + keyword + "/'");
+                    return sshResult;
+                }
+            });
+        } catch (SSHException e) {
+            logger.error("getProgram, ip:{}, keyword:{}", ip, keyword, e);
         }
         return wrapSSHResult(sshResult);
     }
@@ -809,7 +829,7 @@ public class MQDeployer {
      * @param ip
      * @return
      */
-    public Result<?> startup(String ip, String absoluteDir){
+    public Result<?> startup(String ip, String absoluteDir, int port){
         SSHResult sshResult = null;
         try {
             sshResult = sshTemplate.execute(ip, new SSHCallback() {
@@ -822,7 +842,32 @@ public class MQDeployer {
             logger.error("startup, ip:{},home:{}", ip, absoluteDir, e);
             return Result.getWebErrorResult(e);
         }
-        return wrapSSHResult(sshResult);
+        Result<?> result = wrapSSHResult(sshResult);
+        if (result.isOK()) {
+            // 检测是否已经启动
+            for (int i = 0; i < 40; ++i) {
+                Result<?> programResult = getProgram(ip, port);
+                if (programResult != null && programResult.isOK() && programResult.getResult() != null) {
+                    break;
+                }
+                try {
+                    logger.info("starting up, ip:{},port:{}, times:{}", ip, port, i);
+                    Thread.sleep(3000);
+                } catch (InterruptedException e) {
+                    break;
+                }
+            }
+        }
+        return result;
+    }
+
+    /**
+     * shutdown
+     * @param ip
+     * @return
+     */
+    public Result<?> shutdown(String ip, int port){
+        return shutdown(ip, port, null);
     }
     
     /**
@@ -830,12 +875,12 @@ public class MQDeployer {
      * @param ip
      * @return
      */
-    public Result<?> shutdown(String ip, int port){
+    public Result<?> shutdown(String ip, int port, String name){
         SSHResult sshResult = null;
         try {
             sshResult = sshTemplate.execute(ip, new SSHCallback() {
                 public SSHResult call(SSHSession session) {
-                    SSHResult sshResult = session.executeCommand("sudo kill " + String.format(PID, port));
+                    SSHResult sshResult = session.executeCommand(String.format(PID, port)  + "sudo kill $tmpVar");
                     return sshResult;
                 }
             });
@@ -843,7 +888,23 @@ public class MQDeployer {
             logger.error("shutdown, ip:{},port:{}", ip, port, e);
             return Result.getWebErrorResult(e);
         }
-        return wrapSSHResult(sshResult);
+        Result<?> result = wrapSSHResult(sshResult);
+        if (name != null && result.isOK()) {
+            // 检测broker是否已经关闭
+            for (int i = 0; i < 20; ++i) {
+                Result<?> programResult = getProgram(ip, name);
+                if (programResult != null && programResult.isOK() && programResult.getResult() == null) {
+                    break;
+                }
+                try {
+                    logger.info("shutting down, ip:{}, port:{}, times:{}", ip, port, i);
+                    Thread.sleep(3000);
+                } catch (InterruptedException e) {
+                    break;
+                }
+            }
+        }
+        return result;
     }
     
     /**

@@ -32,11 +32,14 @@ public class LineChart {
     // 鼠标移到该点时，提示该点跳转的名字
     private String urlTitle;
     // 曲线边框宽度，默认带边框
-    private int borderWidth = 1;
+    private int borderWidth = 0;
     // 是否单独占一行显示
     private boolean oneline;
     // 设置x轴步长
     private int tickInterval;
+
+    // 曲线图概述
+    private String overview;
     
     private Map<?, ?> dataMap;
 
@@ -150,6 +153,14 @@ public class LineChart {
 
     public void setHeight(int height) {
         this.height = height;
+    }
+
+    public String getOverview() {
+        return overview;
+    }
+
+    public void setOverview(String overview) {
+        this.overview = overview;
     }
 
     /**

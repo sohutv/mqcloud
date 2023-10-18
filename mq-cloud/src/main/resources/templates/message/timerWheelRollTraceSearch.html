@@ -1,0 +1,57 @@
+<#if response.OK>
+	<#if response.result?? && response.result?size gt 0>
+		<tbody>
+			<#list response.result as msg>
+				<tr data="${msg.offsetMsgId}" id="${msg.msgId}" dataIdx="${msg_index + 1}" rollTimes="${msg.timerRollTimes}"
+					deliverTime="${msg.timerDeliverTime}">
+					<td rowspan="2" class="text-center" style="padding-left:0px;">${msg_index + 1}</td>
+					<td>${msg.bornHostString}</td>
+					<td data-tooltip="true" title="存储时间:${msg.storeTimestamp?number_to_datetime?string("yyyy-MM-dd HH:mm:ss.SSS")}">${msg.bornTimestamp?number_to_datetime?string("yyyy-MM-dd HH:mm:ss.SSS")}</td>
+					<td data-tooltip="true" title="偏移量:${msg.queueOffset}">${msg.broker!}:${msg.queueId}</td>
+					<td>${msg.keys!}</td>
+					<td>${msg.tags!}</td>
+					<td>&nbsp;&nbsp;<i data-tooltip="true" data-html="true" title="<p class='text-left vw-100'>${msg.timerDeliverTimeDesc}</p>"
+					<#if msg.timerStatus == 7 >
+						class="fas fa-sync-alt"
+					<#elseif msg.timerStatus == 3 >
+						class="fas fa-clock"
+					<#elseif msg.timerStatus == 4 >
+						class="fas fa-clock text-primary"
+					<#elseif msg.timerStatus == 1>
+						class="fas fa-stopwatch"
+					<#elseif msg.timerStatus == 2>
+						class="fas fa-stopwatch text-primary"
+					<#elseif msg.timerStatus == 5>
+						class="fas fa-times-circle"
+					<#elseif msg.timerStatus == 6>
+						class="fas fa-times-circle text-primary"
+					</#if>
+					<#if traceEnabled>
+						onclick="traceHasTime('${msg.msgId}')"
+					<#else>
+						onclick=track(${msg.toJson()}) data-target="#trackModal" data-toggle="modal"
+					</#if>
+					></i></td>
+					<td></td>
+				</tr>
+				<tr>
+					<td style="border-top-width: 0px;" colspan="7" data-tooltip="true" title="序列化方式:<#if msg.messageBodySerializer??>${msg.messageBodySerializer.getName()}(${msg.messageBodyTypeString!})<#else>${msg.messageBodyTypeString!}</#if>,大小:${msg.formatMsgLength}"><#if msg.decodedBody?length gt 1000><pre>${msg.decodedBody}</pre><#else>${msg.decodedBody}</#if></td>
+				</tr>
+			</#list>
+		</tbody>
+	<#else>
+		<tr class="no_more_data"><td colspan=8 class="text-center">本次查无数据</td></tr>
+	</#if>
+	<script>
+		$("#pager").hide();
+		$(function() {
+	        $('[data-tooltip="true"]').tooltip({
+				boundary: 'window'
+	        });
+		});
+	</script>
+<#else>
+	<tbody>
+		<tr class="no_more_data"><td colspan=8 class="text-center">查询异常！${response.message}</td></tr>
+	</tbody>
+</#if>

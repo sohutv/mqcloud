@@ -1,13 +1,12 @@
 package com.sohu.tv.mq.rocketmq.consumer;
 
-import java.util.List;
-
-import org.apache.rocketmq.common.message.MessageExt;
-
 import com.sohu.index.tv.mq.common.MQMessage;
 import com.sohu.tv.mq.metric.ConsumeStatManager;
 import com.sohu.tv.mq.metric.ConsumeThreadStat;
 import com.sohu.tv.mq.rocketmq.RocketMQConsumer;
+import org.apache.rocketmq.common.message.MessageExt;
+
+import java.util.List;
 
 /**
  * 批量消息消费
@@ -40,7 +39,7 @@ public class BatchMessageConsumer<C> extends AbstractMessageConsumer<Object, C> 
                     rocketMQConsumer.getTopic(), rocketMQConsumer.getGroup(), msgList.size(), e);
             ConsumeStatManager.getInstance().getConsumeFailedMetrics(rocketMQConsumer.getGroup())
                     .set(buildMessageExceptionMetric(msgList, e));
-            return ConsumeStatus.FAIL;
+            return ConsumeStatus.fail(e);
         } finally {
             metric.remove();
         }

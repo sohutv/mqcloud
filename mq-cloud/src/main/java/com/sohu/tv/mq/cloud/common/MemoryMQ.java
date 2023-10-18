@@ -146,7 +146,10 @@ public class MemoryMQ<T> implements Destroyable {
         }
         int size = list.size();
         list.clear();
-        logger.info("batch consume size:{} use:{}ms", size, (System.currentTimeMillis() - start));
+        long use = System.currentTimeMillis() - start;
+        if (use >= 50) {
+            logger.info("batch consume size:{} use:{}ms", size, use);
+        }
     }
 
     /**

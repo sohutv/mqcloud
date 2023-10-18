@@ -1,136 +1,85 @@
-<div id="mqcloud-warning"><span class="glyphicon glyphicon-volume-up" style="position:relative;top:2px;" aria-hidden="true"></span> <b id="warning-content"></b></div>
 <div class="row">
-    <div class="col-md-12">
-        <div class="page-header">
-            <h4>Topic列表</h4>
-        </div>
-		<div class="form-body">
-			<div class="form-group">
-				<div class="col-md-6" style="padding-left:0px;">
-				</div>
-		        <div class="col-md-6 text-right" style="padding-right:0px;">
-		       	 	<form class="form-inline" id="topicList">
-	       		  	   <#if userInfo.user.type == 1>
-				  	     <div class="form-group">
-						    <select id="topicSearchSelect" class="selectpicker" title="搜索topic" data-live-search-placeholder="输入任意字母" name="topic" data-live-search="true"></select>
-				 	     </div>
-				 	   <#else>
-				 	     <div class="form-group">
-				    	    <input type="text" class="form-control" name="topic" value="<#if response.OK>${response.result.queryTopic!}</#if>" placeholder="Topic名字">
-				  	     </div>
-						 <button type="submit" onclick="searchTopic()" class="btn btn-search"><span class="glyphicon glyphicon-search" aria-hidden="true"></span></button>
-				  	   </#if>
-				  	</form>
+	<div class="col-12">
+		<div class="card">
+			<div class="card-header">
+				<div class="row">
+					<div class="col-md-6 col-sm-1">
+					</div>
+					<div class="col-md-6 col-sm-11">
+						<form id="topicList">
+						<#if userInfo.user.type == 1>
+						<select id="topicSearchSelect" class="selectpicker form-control" title="搜索topic" data-live-search-placeholder="输入任意字母" name="topic" data-live-search="true"></select>
+						<#else>
+						<div class="input-group input-group-sm">
+							<input type="text" name="topic" size=30 class="form-control float-right" value="<#if response.OK>${response.result.queryTopic!}</#if>" placeholder="Topic名字">
+							<div class="input-group-append">
+								<button type="submit" class="btn btn-default" onclick="searchTopic()">
+									<i class="fas fa-search"></i>
+								</button>
+							</div>
+						</div>
+						</#if>
+						</form>
+					</div>
 				</div>
 			</div>
-		</div>
-	</div>
-</div>
-<div class="row">
-	<br/>
-	<div class="col-md-12">
-        <table class="table table-striped table-hover" style="margin-top: 0px">
-		        <colgroup>
-					<col width="50px">
-					<col>
-					<col width="100px">
-					<col width="100px">
-					<col width="100px">
-					<col width="100px">
-					<col width="300px">
-					<col width="45px">
-				</colgroup>
-                <thead>
-	                <tr>
-	                	<td>序号</td>
-	                    <td>Topic</td>
-	                    <td data-toggle="tooltip" title="上一分钟生产的消息数量">生产量</td>
-	                    <td data-toggle="tooltip" title="上一分钟消费的消息数量">消费量</td>
-	                    <td data-toggle="tooltip" title="上一分钟生产的消息大小">生产大小</td>
-	                    <td data-toggle="tooltip" title="上一分钟消费的消息大小">消费大小</td>
-	                    <td>用途</td>
-	                    <td>操作</td>
-	                </tr>
-                </thead>
-                <tbody>
-	                <#if !response.OK || !response.result.topicTrafficVOList??>
-					     <tr>
-		                    <td colspan="8" class="text-center" >
-		                    	暂无数据
-		                    </td>
-		                <tr>
+			<!-- /.card-header -->
+			<div class="card-body p-0">
+				<div class="list-group list-striped">
+					<#if !response.OK || !response.result.topicTrafficVOList??>
+						<div class="list-group-item">
+							<p class="text-center">暂无数据</p>
+						</div>
 					<#else>
 						<#list response.result.topicTrafficVOList as topicTrafficVO>
-							<tr>
-								<td>${(pagination.result.currentPage - 1)*pagination.result.numOfPage + topicTrafficVO_index + 1}</td>
-		                    	<td><a title="查看详情" href="${request.contextPath}/user/topic/${topicTrafficVO.id}/detail">${topicTrafficVO.name}</a></td>
-		                    	<#if topicTrafficVO.topicTraffic??>
-		                    		<td>${topicTrafficVO.topicTraffic.countFormat}</td>
-		                    	<#else>
-		                    		<td>0</td>
-								</#if>
-		                    	<#if topicTrafficVO.consumerTraffic??>
-		                    		<td>${topicTrafficVO.consumerTraffic.countFormat}</td>
-		                    	<#else>
-		                    		<td>0</td>
-								</#if>
-								<#if topicTrafficVO.topicTraffic??>
-		                    		<td>${topicTrafficVO.topicTraffic.sizeFormat}</td>
-		                    	<#else>
-		                    		<td>0</td>
-								</#if>
-								<#if topicTrafficVO.consumerTraffic??>
-		                    		<td>${topicTrafficVO.consumerTraffic.sizeFormat}</td>
-		                    	<#else>
-		                    		<td>0</td>
-								</#if>
-								<#if topicTrafficVO.own>
-									<td class="edit-text">
-										<#if topicTrafficVO.info?? && topicTrafficVO.info !=''> 
-											<span style="cursor:pointer" data-toggle="tooltip" title="修改用途" onclick="updateTopicInfoShow(${topicTrafficVO.id}, '${topicTrafficVO.name}', '${topicTrafficVO.info}')">${topicTrafficVO.info!}</span>
-				           				<#else>
-			            					<span onclick="updateTopicInfoShow(${topicTrafficVO.id}, '${topicTrafficVO.name}', '${topicTrafficVO.info!}')" class="glyphicon glyphicon-pencil pointer" data-toggle="tooltip" title="添加用途" aria-hidden="true"></span>
-				           				</#if>
-									</td>
-								<#else>
-									<td>${topicTrafficVO.info!}</td>
-								</#if>
-								<td>
+							<div class="list-group-item">
+								<p class="mb-3">
+									<a class="ml-1" data-toggle="tooltip" title="查看详情" href="${request.contextPath}/user/topic/${topicTrafficVO.id}/detail">${topicTrafficVO.name}</a>
 									<#if topicTrafficVO.own>
-										<button type="button" class="btn btn-warning btn-xs" data-target="#deleteTopicModal${topicTrafficVO_index}" data-toggle="modal" title="删除${topicTrafficVO.name}"><span class="glyphicon glyphicon-trash" aria-hidden="true"></span></button>
-										<!-- 删除topic -->
-										<div id="deleteTopicModal${topicTrafficVO_index}" class="modal fade" tabindex="-1">
-											<div class="modal-dialog" style="width:400px">
-												<div class="modal-content">
-													<div class="modal-header">
-														<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-														<h4 class="modal-title">删除确认</h4>
-													</div>
-													<form class="form-inline form-bordered form-row-stripped">
-														<div class="modal-body">
-																<div class="form-group text-center">
-																	<span>确定删除 <b>${topicTrafficVO.name}</b> 吗?</span>
-																</div>
-														</div>
-														<div class="modal-footer">
-															<button type="button" data-dismiss="modal" class="btn" >取消</button>
-															<button type="button" class="btn btn-primary" onclick="deleteTopic(${topicTrafficVO.id})" id="deleteTopicBtn${topicTrafficVO.id}">确定</button>
-														</div>
-													</form>
-												</div>
-											</div>
-										</div>
+										<button type="button" class="btn btn-xs btn-outline-secondary float-right" onclick="deleteTopicModalShow(${topicTrafficVO.id}, '${topicTrafficVO.name}')" data-toggle="tooltip" title="删除${topicTrafficVO.name}"><i class="fas fa-trash-alt"></i></button>
 									</#if>
-								</td>
-		                   	</tr>
+								</p>
+								<ul class="row nav small">
+									<li class="col-md-3">
+										<p class="m-1"><span class="text-muted">创建于:</span>&nbsp;&nbsp;${topicTrafficVO.createDateFormat}</p>
+									</li>
+									<li class="col-md-3">
+										<p class="m-1" data-toggle="tooltip" title="上一分钟生产的消息数量和大小"><span class="text-muted">生产:</span>&nbsp;&nbsp;<#if topicTrafficVO.topicTraffic??>${topicTrafficVO.topicTraffic.countFormat}/分 ${topicTrafficVO.topicTraffic.sizeFormat}/分<#else>0/分 0/分</#if></p>
+									</li>
+									<li class="col-md-3">
+										<p class="m-1" data-toggle="tooltip" title="上一分钟消费的消息数量和大小"><span class="text-muted">消费:</span>&nbsp;&nbsp;<#if topicTrafficVO.consumerTraffic??>${topicTrafficVO.consumerTraffic.countFormat}/分 ${topicTrafficVO.consumerTraffic.sizeFormat}/分<#else>0/分 0/分</#if>
+										</p>
+									</li>
+									<li class="col-md-3">
+										<p class="m-1"><span class="text-muted">用途:</span>&nbsp;&nbsp;
+											<#if topicTrafficVO.own>
+												<#if topicTrafficVO.info?? && topicTrafficVO.info !=''>
+													${topicTrafficVO.info!} <span class="align-middle" data-toggle="tooltip" title="修改用途"><i onclick="updateTopicInfoShow(${topicTrafficVO.id}, '${topicTrafficVO.name}', '${topicTrafficVO.info}')" class="fas fa-edit fa-xs text-secondary pointer"></i></span>
+												<#else>
+													<span class="align-middle" data-toggle="tooltip" title="添加用途"><i onclick="updateTopicInfoShow(${topicTrafficVO.id}, '${topicTrafficVO.name}', '${topicTrafficVO.info!}')" class="far fa-edit fa-xs text-secondary pointer"></i></span>
+												</#if>
+											<#else>
+												${topicTrafficVO.info!}
+											</#if>
+										</p>
+									</li>
+								</ul>
+							</div>
 						</#list>
 					</#if>
-                </tbody>
-           </table>
-    </div>
+				</div>
+			</div> <!-- /.card-body -->
+			<#if pagination.OK && pagination.result.totalPages gt 1>
+				<div class="card-footer clearfix">
+					<ul id="pagination" data-url="${request.contextPath}/user/topic?topic=<#if response.OK>${response.result.queryTopic!}</#if>" style="float:right"></ul>
+				</div>
+			</#if>
+		</div>
+		<!-- /.card -->
+	</div>
 </div>
+<!-- /.row -->
 
-<ul id="pagination" data-url="${request.contextPath}/user/topic?topic=<#if response.OK>${response.result.queryTopic!}</#if>" style="float:right"></ul>
 <#include "../inc/pagination.html">
 
 <#--修改topic描述-->
@@ -138,33 +87,49 @@
 	<div class="modal-dialog">
 		<div class="modal-content">
 			<div class="modal-header">
+				<h5 class="modal-title"><span id="topicName"></span>描述更新</h5>
 				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-				<h4 class="modal-title"><b id="topicName"></b>描述更新</h4>
 			</div>
-			<form class="form-horizontal form-bordered form-row-stripped" id="addUserProducerModalForm">
-				<div class="modal-body">
-					<div class="row">
-						<div class="col-md-12">
-							<div class="form-body">
-								<div class="form-group">
-									<label class="control-label col-md-3"> 用途: </label>
-									<div class="col-md-8">
-										<input type="hidden" id="topicId">
-										<textarea id="topicInfo" rows="5" class="form-control"></textarea>
-									</div>
-								</div>
-							</div>
+			<div class="modal-body">
+				<form id="addUserProducerModalForm">
+					<div class="input-group mb-2">
+						<label class="col-md-2"> 用途: </label>
+						<div class="col-md-10">
+							<input type="hidden" id="topicId">
+							<textarea id="topicInfo" rows="5" class="form-control"></textarea>
 						</div>
 					</div>
-				</div>
-				<div class="modal-footer">
-					<button type="button" data-dismiss="modal" class="btn" >取消</button>
-					<button type="button" class="btn btn-primary" id="updateTopicInfoBtn" onclick="updateTopicInfo()">确定</button>
-				</div>
-			</form>
+				</form>
+			</div>
+			<div class="modal-footer justify-content-between">
+				<button type="button" data-dismiss="modal" class="btn btn-default" >取消</button>
+				<button type="button" class="btn btn-primary" id="updateTopicInfoBtn" onclick="updateTopicInfo()">确定</button>
+			</div>
 		</div>
 	</div>
-</div> 
+</div>
+
+<!-- 删除topic -->
+<div id="deleteTopicModal" class="modal fade">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title">删除确认</h5>
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+			</div>
+			<div class="modal-body">
+				<div class="form-group text-center">
+					<span>确定删除 <b id="topicNameInput"></b> 吗?</span>
+					<input type="hidden" id="topicIdInput">
+				</div>
+			</div>
+			<div class="modal-footer justify-content-between">
+				<button type="button" data-dismiss="modal" class="btn btn-default" >取消</button>
+				<button type="button" class="btn btn-primary" onclick="deleteTopic()" id="deleteTopicBtn">确定</button>
+			</div>
+		</div>
+	</div>
+</div>
 
 <script type="text/javascript">
 	/**
@@ -175,14 +140,8 @@
 	}
 	
 	$(function(){
-		$("[data-toggle='tooltip']").tooltip({container: 'body'});
-		$("[data-toggle='modal']").tooltip();
-		
 		// 初始化topic列表
   		<#if userInfo.user.type == 1>
-	  		$("#topicSearchSelect").selectpicker({
-	  			width : 300
-	  	 	});
 	  		initTopicList();
  	 	</#if>
 		
@@ -195,20 +154,25 @@
 	/**
 	 * 删除topic
 	 */
-	function deleteTopic(tid){
-		disable("deleteTopicBtn"+tid);
+	function deleteTopic(){
+		var tid = $("#topicIdInput").val();
+		disable("deleteTopicBtn");
 		$.post('${request.contextPath}/topic/delete/'+tid,
 	        function(data){
 	            if(data.status == 200){
-	            	toastr.success("申请成功！请耐心等待！");  
-	            	modalHide(3000, function(){
-	            		enable("deleteTopicBtn"+tid);
-	            	});
+					toastr.success("申请成功，请稍后查看！即将跳转到我的工单");
+					toMyAuditPage();
 			    }else{
 			    	toastr.error("申请失败！"+data.message);  
-			    	enable("deleteTopicBtn"+tid);
+			    	enable("deleteTopicBtn");
 			    }
         }, 'json');
+	}
+
+	function deleteTopicModalShow(tid, topicName){
+		$("#topicIdInput").val(tid);
+		$("#topicNameInput").html(topicName);
+		$('#deleteTopicModal').modal('show');
 	}
 	
 	function updateTopicInfoShow(tid, topicName, info){

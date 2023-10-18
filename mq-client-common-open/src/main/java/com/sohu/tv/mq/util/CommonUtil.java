@@ -3,13 +3,12 @@ package com.sohu.tv.mq.util;
 import com.sohu.tv.mq.dto.ClusterInfoDTO;
 import com.sohu.tv.mq.dto.DTOResult;
 import com.sohu.tv.mq.dto.WebResult;
-import org.apache.rocketmq.client.producer.SendResult;
 import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.utils.HttpTinyClient;
+import org.apache.rocketmq.common.utils.NetworkUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.util.ArrayList;
 import java.util.List;
@@ -17,6 +16,8 @@ import java.util.List;
 public class CommonUtil {
 
     private static final Logger logger = LoggerFactory.getLogger(CommonUtil.class);
+
+    public static final String IP = NetworkUtil.getLocalAddress();
 
     public static final String TRACE_TOPIC_SUFFIX = "-trace-topic";
 

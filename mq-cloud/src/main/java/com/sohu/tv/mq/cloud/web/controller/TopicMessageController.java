@@ -1,27 +1,31 @@
 package com.sohu.tv.mq.cloud.web.controller;
 
-import java.io.IOException;
-import java.util.*;
-import java.util.stream.Collectors;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.validation.Valid;
-
 import com.google.common.base.Joiner;
 import com.sohu.tv.mq.cloud.bo.*;
+import com.sohu.tv.mq.cloud.bo.Audit.TypeEnum;
+import com.sohu.tv.mq.cloud.mq.DefaultCallback;
+import com.sohu.tv.mq.cloud.mq.MQAdminTemplate;
 import com.sohu.tv.mq.cloud.service.*;
 import com.sohu.tv.mq.cloud.util.*;
 import com.sohu.tv.mq.cloud.web.controller.param.DelayCancelParam;
+import com.sohu.tv.mq.cloud.web.controller.param.MessageParam;
+import com.sohu.tv.mq.cloud.web.controller.param.PaginationParam;
+import com.sohu.tv.mq.cloud.web.controller.param.TimespanMessageExportParam;
 import com.sohu.tv.mq.cloud.web.vo.DecodedTimerMessageVo;
+import com.sohu.tv.mq.cloud.web.vo.TraceViewVO;
+import com.sohu.tv.mq.cloud.web.vo.TraceViewVO.RequestViewVO;
+import com.sohu.tv.mq.cloud.web.vo.UserInfo;
+import com.sohu.tv.mq.util.CommonUtil;
 import com.sohu.tv.mq.util.JSONUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.MutableTriple;
+import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.message.MessageClientIDSetter;
 import org.apache.rocketmq.remoting.protocol.admin.TopicOffset;
 import org.apache.rocketmq.remoting.protocol.admin.TopicStatsTable;
 import org.apache.rocketmq.remoting.protocol.body.ClusterInfo;
 import org.apache.rocketmq.tools.admin.MQAdminExt;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -29,14 +33,12 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
-import com.sohu.tv.mq.cloud.bo.Audit.TypeEnum;
-import com.sohu.tv.mq.cloud.mq.DefaultCallback;
-import com.sohu.tv.mq.cloud.mq.MQAdminTemplate;
-import com.sohu.tv.mq.cloud.web.controller.param.MessageParam;
-import com.sohu.tv.mq.cloud.web.vo.TraceViewVO;
-import com.sohu.tv.mq.cloud.web.vo.TraceViewVO.RequestViewVO;
-import com.sohu.tv.mq.cloud.web.vo.UserInfo;
-import com.sohu.tv.mq.util.CommonUtil;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.validation.Valid;
+import java.io.IOException;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import static com.sohu.tv.mq.cloud.service.MessageService.RMQ_SYS_WHEEL_TIMER;
 
@@ -551,10 +553,11 @@ public class TopicMessageController extends ViewController {
      * @throws Exception
      */
     @RequestMapping(value = "/track", method = RequestMethod.POST)
-    public String track(UserInfo userInfo, @Valid MessageParam messageParam, Map<String, Object> map)
-            throws Exception {
+    public String track(UserInfo userInfo, @Valid MessageParam messageParam, @Valid PaginationParam paginationParam,
+                        Map<String, Object> map) throws Exception {
         String view = viewModule() + "/track";
-        Result<?> trackResult = messageService.track(messageParam);
+        setPagination(map, paginationParam);
+        Result<?> trackResult = messageService.track(messageParam, paginationParam);
         setResult(map, trackResult);
         FreemarkerUtil.set("splitUtil", SplitUtil.class, map);
         return view;
@@ -939,6 +942,43 @@ public class TopicMessageController extends ViewController {
     }
 
     /**
+     * 时间段消息导出
+     */
+    @ResponseBody
+    @RequestMapping("/export")
+    public Result<?> timespanMessageExport(UserInfo userInfo,
+                                            @Valid TimespanMessageExportParam timespanMessageExportParam, Map<String, Object> map) throws Exception {
+        // 合法性校验
+        if (CommonUtil.isDeadTopic(timespanMessageExportParam.getTopic())) {
+            Result<Consumer> consResult = consumerService.queryConsumerByName(timespanMessageExportParam.getTopic()
+                    .substring(MixAll.DLQ_GROUP_TOPIC_PREFIX.length()));
+            if (consResult.isNotOK()) {
+                return consResult;
+            }
+        } else {
+            Result<Topic> topicResult = topicService.queryTopic(timespanMessageExportParam.getTopic());
+            if (topicResult.isNotOK()) {
+                return topicResult;
+            }
+        }
+        Audit audit = new Audit();
+        audit.setType(TypeEnum.TIMESPAN_MESSAGE_EXPORT.getType());
+        audit.setUid(userInfo.getUser().getId());
+        AuditTimespanMessageExport auditTimespanMessageExport = new AuditTimespanMessageExport();
+        BeanUtils.copyProperties(timespanMessageExportParam, auditTimespanMessageExport);
+        // 保存记录
+        Result<?> result = auditService.saveAuditAndAuditTimespanMessageExport(audit, auditTimespanMessageExport);
+        if (result.isOK()) {
+            StringBuilder tip = new StringBuilder();
+            tip.append("topic:<b>");
+            tip.append(auditTimespanMessageExport.getTopic());
+            tip.append("</b>");
+            alertService.sendAuditMail(userInfo.getUser(), TypeEnum.getEnumByType(audit.getType()), tip.toString());
+        }
+        return Result.getWebResult(result);
+    }
+
+    /**
      * 设置是否是消费者
      * 
      * @param userInfo
@@ -970,7 +1010,7 @@ public class TopicMessageController extends ViewController {
 
     @Override
     public String viewModule() {
-        return "msg";
+        return "message";
     }
 
 }

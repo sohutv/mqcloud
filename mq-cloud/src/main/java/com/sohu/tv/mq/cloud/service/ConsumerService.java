@@ -1027,7 +1027,6 @@ public class ConsumerService {
         }
         Result<Map<String, Map<MessageQueue, Long>>> consumeStatusResult = getConsumeStatus(cluster, topic, consumer,
                 connection.getClientId(), isProxyRemoting);
-        System.out.println(consumeStatusResult);
         if (consumeStatusResult.isNotOK()) {
             return consumeStatusResult;
         }

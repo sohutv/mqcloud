@@ -10,6 +10,7 @@ import java.util.List;
  */
 public class ServerWarn {
     private String ip;
+    private String host;
     private String ipLink;
 
     private List<ServerWarnItem> list;
@@ -20,6 +21,14 @@ public class ServerWarn {
 
     public void setIp(String ip) {
         this.ip = ip;
+    }
+
+    public String getHost() {
+        return host;
+    }
+
+    public void setHost(String host) {
+        this.host = host;
     }
 
     public String getIpLink() {

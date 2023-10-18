@@ -3,156 +3,155 @@
 		max-width: 500px;
 	}
 </style>
-<div class="main">
-	<form class="form-inline" role="form">
-		<div class="form-group">
-			<label> 机器列表: </label>
-			<button type="button" class="btn btn-success" data-target="#addServerModal" data-toggle="modal"><span class="glyphicon glyphicon-plus" aria-hidden="true"></span>&nbsp;机器</button>
-			<button type="button" data-toggle="tooltip" title="批量修改预警阈值" class="btn btn-success" onclick="batchUpdateServerAlarmConfig()"><span class="glyphicon glyphicon-cog" aria-hidden="true"></span>&nbsp;预警阈值</button>
+<div class="card mt-2">
+	<div class="card-body">
+		<div class="input-group">
+			<label class="col-form-label"> 机器列表:  </label>
+			<div class="btn-group ml-1">
+				<button type="button" class="btn btn-default" data-target="#addServerModal" data-toggle="modal"><span class="fas fa-plus" aria-hidden="true"></span><span class="d-none d-lg-inline">机器</span></button>
+				<button type="button" data-toggle="tooltip" title="批量修改预警阈值" class="btn btn-default" onclick="batchUpdateServerAlarmConfig()"><span class="fas fa-cog" aria-hidden="true"></span><span class="d-none d-lg-inline">预警阈值</span></button>
+			</div>
 		</div>
-	</form>
-	<hr/>
-	<table class="table table-striped table-hover" id="serverTable" style="margin-top: 0px;word-break:break-all; word-wrap:break-all;">
-		<thead>
+	</div>
+</div>
+<div class="card">
+	<div class="card-body table-responsive p-0">
+		<table class="table table table-striped text-nowrap" style="table-layout: fixed;">
 			<colgroup>
-			  <col width='20px'>
-			  <col width='46px'>
-			  <col width='110px'>
-			  <col>
-			  <col width='120px'>
-			  <col>
-			  <col>
-			  <col>
-			  <col>
-			  <col>
-			  <col>
-			  <col>
-			  <col width='140px'>
-			  <col>
+				<col width="40px">
+				<col width="120px">
+				<col width="50px">
+				<col width="95px">
+				<col width="60px">
+				<col width="60px">
+				<col width="60px">
+				<col width="100px">
+				<col width="100px">
+				<col width="60px">
+				<col width="60px">
+				<col width="100px">
+				<col width="90px">
 			</colgroup>
-			<tr>
-				<td><input class="pointer" type="checkbox" name="monitor" id="checkAll" onclick="checkAll(this)" data-toggle="tooltip" title="单击全选或反选"/></td>
-				<td>序号</td>
-				<td>ip</td>
-				<td data-toggle="tooltip" title="cpu核数">cpu</td>
-				<td data-toggle="tooltip" title="使用/总内存">内存</td>
-				<td data-toggle="tooltip" title="一分钟load">load</td>
-				<td data-toggle="tooltip" title="磁盘io速率 交互次数/s">iops</td>
-				<td data-toggle="tooltip" title="tcp estab连接数">连接</td>
-				<td data-toggle="tooltip" title="该服务器归属于哪个RocketMQ集群">集群</td>
-				<td data-toggle="tooltip" title="该服务器的部署">部署</td>
-				<td>类型</td>
-				<td>机房</td>
-				<td>收集时间</td>
-				<td>操作</td>
-			</tr>
-		</thead>
-		<tbody>
-            <#if response.empty>
-			     <tr>
-                    <td colspan="14" class="text-center" >
-                    	暂无数据
-                    </td>
-                <tr>
-			<#else>
-				<#list response.result as server>
-					<#if server.serverRoleVO??>
-						<#assign rowspan=server.serverRoleVO.roleVOList?size>
-					<#else>
-						<#assign rowspan=1>
-					</#if>
+			<thead>
+				<tr>
+					<th><input class="pointer" type="checkbox" name="monitor" id="checkAll" onclick="checkAll(this)" data-toggle="tooltip" title="单击全选或反选"/></th>
+					<th>ip</th>
+					<th data-toggle="tooltip" title="cpu核数">cpu</th>
+					<th data-toggle="tooltip" title="使用/总内存">内存</th>
+					<th data-toggle="tooltip" title="一分钟load">load</th>
+					<th data-toggle="tooltip" title="磁盘io速率 交互次数/s">iops</th>
+					<th data-toggle="tooltip" title="tcp estab连接数">连接</th>
+					<th data-toggle="tooltip" title="该服务器归属于哪个RocketMQ集群">集群</th>
+					<th data-toggle="tooltip" title="该服务器的部署">部署</th>
+					<th>类型</th>
+					<th>机房</th>
+					<th>收集时间</th>
+					<th>操作</th>
+				</tr>
+			</thead>
+			<tbody>
+				<#if response.empty>
+					 <tr>
+						<td colspan="13" class="text-center" >
+							暂无数据
+						</td>
 					<tr>
-						<td rowspan="${rowspan}"><input class="pointer" type="checkbox" name="monitor" value="${server.ip}" onclick="checkThis(this)" /></td>
-						<td rowspan="${rowspan}">${server_index + 1}</td>
-						<td rowspan="${rowspan}"><a href="#" data="${server.ip}" onclick="setIp('${server.ip}')" data-target="#monitorModal" data-toggle="modal">${server.ip}</a></td>
-						<td rowspan="${rowspan}">${server.cpus!}</td>
-						<td rowspan="${rowspan}">
-							<#if server.mtotal != 0>
-								<div class="progress" style="margin-bottom:10px;">
-		                         	<div class="progress-bar progress-bar-info" aria-valuenow="60"  aria-valuemax="100" aria-valuemin="0" style="width:${(server.mtotal-server.mfree)*100.0/server.mtotal}%;">
-		        						<span>${((server.mtotal-server.mfree)/1024)?string("#.#")}g/${(server.mtotal/1024)?string("#.#")}g</span>
-		        					</div>
-		        				</div>
-							</#if>
-						</td>
-						<td rowspan="${rowspan}">${server.cload1?string(",###.##")}</td>
-						<td rowspan="${rowspan}" style="color:#337ab7" data-html="true" data-trigger="hover" data-container="body"
-							data-toggle="popover" data-placement="top"
-							data-content="磁盘读速率：${server.dread?string(",###.##")}K/s<br>磁盘写速率：${server.dwrite?string(",###.##")}K/s<br>磁盘io带宽使用百分比：${server.dbusy?string("##.##")}%">
-							${server.diops?string(",###.##")}
-						</td>
-						<td rowspan="${rowspan}" style="color:#337ab7" data-html="true" data-trigger="hover" data-container="body"
-							data-toggle="popover" data-placement="top"
-							data-content="入网流量：${server.nin?string(",###.#")}K/s<br>出网流量：${server.nout?string(",###.#")}K/s">
-							${server.tuse?string(",###")}
-						</td>
-						<#if server.serverRoleVO??>
-							<td>
-								<a href="${request.contextPath}/admin/<#if server.serverRoleVO.firstRoleVO.broker>cluster<#else>nameserver</#if>/list?cid=${server.serverRoleVO.firstRoleVO.clusterId}" target="_blank">${server.serverRoleVO.firstRoleVO.clusterName}</a>
-							</td>
-							<td style="color:#337ab7" data-html="true" data-trigger="hover" data-container="body"
+				<#else>
+					<#list response.result as server>
+						<tr>
+							<td><input class="pointer" type="checkbox" name="monitor" value="${server.ip}" onclick="checkThis(this)" /></td>
+							<td><a href="#" title="${server_index + 1}" data="${server.ip}" onclick="setIp('${server.ip}')" data-target="#monitorModal" data-toggle="modal">${server.ip}</a></td>
+							<td>${server.cpus!}</td>
+							<td data-html="true" data-trigger="hover" data-container="body"
 								data-toggle="popover" data-placement="top"
-								data-content="端口：${server.serverRoleVO.firstRoleVO.port}<br>安装路径：${server.serverRoleVO.firstRoleVO.baseDir}">
-								${server.serverRoleVO.firstRoleVO.deployment}
+								data-content="${((server.mtotal-server.mfree)/1024)?string("#.#")}g/${(server.mtotal/1024)?string("#.#")}g">
+								<#if server.mtotal != 0>
+									<div class="progress mt-1" style="margin-bottom:10px;">
+										<div class="progress-bar bg-info" role="progressbar" aria-valuenow="60" aria-valuemax="100" aria-valuemin="0" style="width:${(server.mtotal-server.mfree)*100.0/server.mtotal}%;">
+											<span>${((server.mtotal-server.mfree)/1024)?string("#.#")}g/${(server.mtotal/1024)?string("#.#")}g</span>
+										</div>
+									</div>
+								</#if>
 							</td>
-						<#else>
-							<td></td>
-							<td></td>
-						</#if>
-						<td rowspan="${rowspan}">
-							<#if server.machineType??>
-								${server.machineTypeName}
+							<td>${server.cload1?string(",###.##")}</td>
+							<td data-html="true" data-trigger="hover" data-container="body"
+								data-toggle="popover" data-placement="top"
+								data-content="磁盘读速率：${server.dread?string(",###.##")}K/s<br>磁盘写速率：${server.dwrite?string(",###.##")}K/s<br>磁盘io带宽使用百分比：${server.dbusy?string("##.##")}%">
+								${server.diops?string(",###.##")}
+							</td>
+							<td data-html="true" data-trigger="hover" data-container="body"
+								data-toggle="popover" data-placement="top"
+								data-content="入网流量：${server.nin?string(",###.#")}K/s<br>出网流量：${server.nout?string(",###.#")}K/s">
+								${server.tuse?string(",###")}
+							</td>
+							<#if server.serverRoleVO??>
+								<td class="text-wrap">
+									<#list server.serverRoleVO.roleVOList as roleVO>
+										<div class="row">
+											<div class="col-12">
+												<a href="${request.contextPath}/admin/<#if roleVO.broker>cluster<#else>nameserver</#if>/list?cid=${roleVO.clusterId}" target="_blank">${roleVO.clusterName}</a>
+											</div>
+										</div>
+									</#list>
+								</td>
+								<td>
+									<#list server.serverRoleVO.roleVOList as roleVO>
+										<div class="row" data-html="true" data-trigger="hover" data-container="body"
+											 data-toggle="popover" data-placement="top"
+											 data-content="端口：${roleVO.port}<br>安装路径：${roleVO.baseDir}">
+											<div class="col-12">
+												${roleVO.deployment}
+											</div>
+										</div>
+									</#list>
+								</td>
 							<#else>
-								<button type="button" data-toggle="tooltip" title="添加机器类型" onclick="updateServer('${server.ip}');" class="btn-xs btn-success"><span class="glyphicon glyphicon-plus" aria-hidden="true"></span></button>
+								<td></td>
+								<td></td>
 							</#if>
-						</td>
-						<td rowspan="${rowspan}">${server.room!}</td>
-						<td rowspan="${rowspan}">
-						<#if server.cdate??>
-							${server.cdate!} ${server.ctime?substring(0,2)}:${server.ctime?substring(2)}
-						</#if>
-						</td>
-						<td rowspan="${rowspan}">
-							<button type="button" onclick="deleteServer('${server.ip}');" class="btn-xs btn-warning"><span class="glyphicon glyphicon-trash" aria-hidden="true"></span></button>
-							<button type="button" data-toggle="tooltip" title="修改预警阈值" onclick="updateServerWarnConfig('${server.ip}');" class="btn-xs btn-info"><span class="glyphicon glyphicon-bell" aria-hidden="true"></span></button>
-						</td>
-					</tr>
-					<#if server.serverRoleVO??>
-						<#list server.serverRoleVO.roleVOList as roleVO>
-							<#if roleVO_index gt 0>
-								<tr>
-									<td><a href="${request.contextPath}/admin/<#if roleVO.broker>cluster<#else>nameserver</#if>/list?cid=${roleVO.clusterId}" target="_blank">${roleVO.clusterName}</a></td>
-									<td style="color:#337ab7" data-html="true" data-trigger="hover" data-container="body"
-										data-toggle="popover" data-placement="top"
-										data-content="端口：${roleVO.port}<br>安装路径：${roleVO.baseDir}">
-										${roleVO.deployment}
-									</td>
-								</tr>
+							<td>
+								<#if server.machineType??>
+									${server.machineTypeName}
+								<#else>
+									<button type="button" data-toggle="tooltip" title="添加机器类型" onclick="updateServer('${server.ip}');" class="btn-xs btn-primary"><i class="fas fa-fw fa-plus"></i></button>
+								</#if>
+							</td>
+							<td>${server.room!}</td>
+							<td class="text-wrap">
+							<#if server.cdate??>
+								${server.cdate!} ${server.ctime?substring(0,2)}:${server.ctime?substring(2)}
 							</#if>
-						</#list>
-					</#if>
-				</#list>
-			</#if>
-		</tbody>
-	</table>
+							</td>
+							<td>
+								<button type="button" data-toggle="tooltip" title="修改预警阈值" onclick="updateServerWarnConfig('${server.ip}');" class="btn btn-xs btn-info"><span class="fas fa-bell" aria-hidden="true"></span></button>
+								<button type="button" onclick="deleteServer('${server.ip}');" class="btn btn-xs btn-danger"><span class="far fa-trash-alt" aria-hidden="true"></span></button>
+							</td>
+						</tr>
+					</#list>
+				</#if>
+			</tbody>
+		</table>
+	</div>
 </div>
 
 <!-- 添加机器 -->
 <div id="addServerModal" class="modal fade" tabindex="-1" data-width="400">
-	<div class="modal-dialog" style="width:800px;">
+	<div class="modal-dialog modal-lg">
 		<div class="modal-content">
 			<div class="modal-header">
 				<h4 class="modal-title">添加机器</h4>
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
 			</div>
 			<form class="form-horizontal form-bordered form-row-stripped" id="addServerForm">
 				<div class="modal-body">
 					<div class="row">
 						<div class="col-md-12">
 							<div class="form-body">
-								<div class="form-group">
-									<label class="control-label col-md-2" data-toggle="tooltip" title="需要root权限的用户在目标机器执行"> 初始化脚本: </label>
-									<div class="col-md-9">
-										<textarea type="text" rows="5" class="form-control" readonly>1. useradd ${username}
+								<div class="form-group row justify-content-center">
+									<label class="col-form-label col-md-2" data-toggle="tooltip" title="需要root权限的用户在目标机器执行"> 初始化脚本: </label>
+									<div class="col-md-8">
+										<textarea type="text" rows="8" class="form-control" readonly>
+1. useradd ${username}
 2. passwd ${username} （密码为：${password}）
 3. echo "${username}     ALL=(ALL)       NOPASSWD: ALL" >> /etc/sudoers
 4. sed -i "s/Defaults    requiretty/#Defaults    requiretty/g" /etc/sudoers
@@ -166,22 +165,22 @@ mqcloud如果发现通用配置的privateKey不为空，将优先使用公钥验
 以上步骤1,2只需要操作一次，即只用生成一次公私钥对，添加至通用配置即可。</textarea>
 									</div>
 								</div>
-								<div class="form-group">
-									<label class="control-label col-md-2"> 机器IP: </label>
-									<div class="col-md-5">
+								<div class="form-group row justify-content-center">
+									<label class="col-form-label col-md-2"> 机器IP: </label>
+									<div class="col-md-8">
 										<input type="text" id="ipInput" name="ip" value="" placeholder="IP" class="form-control" />
 									</div>
 								</div>
-								<div class="form-group">
-									<label class="control-label col-md-2"> 机器类型: </label>
-							        <div class="col-md-5">
-			    						<select id="machineTypeSearchSelect" class="selectpicker" title="请选择"  name="machineType"></select>
+								<div class="form-group row justify-content-center">
+									<label class="col-form-label col-md-2"> 机器类型: </label>
+							        <div class="col-md-8">
+			    						<select id="machineTypeSearchSelect" class="selectpicker border form-control" title="请选择"  name="machineType"></select>
 									</div>
 								</div>
-								<div class="form-group">
-									<label class="control-label col-md-2"> 机房: </label>
-									<div class="col-md-5">
-										<select id="machineRoomSelect" class="selectpicker" title="请选择"  name="machineRoom">
+								<div class="form-group row justify-content-center">
+									<label class="col-form-label col-md-2"> 机房: </label>
+									<div class="col-md-8">
+										<select id="machineRoomSelect" class="selectpicker border form-control" title="请选择"  name="machineRoom">
 											<#if machineRoom??>
 												<#list machineRoom as room>
 													<option value='${room}'>${room}</option>
@@ -197,7 +196,7 @@ mqcloud如果发现通用配置的privateKey不为空，将优先使用公钥验
 					</div>
 				</div>
 				<div class="modal-footer">
-					<button type="button" data-dismiss="modal" class="btn" >取消</button>
+					<button type="button" data-dismiss="modal" class="btn btn-light" >取消</button>
 					<button type="button" class="btn btn-primary" id="addTopicBtn" onclick="addServer()">确定</button>
 				</div>
 			</form>
@@ -206,10 +205,11 @@ mqcloud如果发现通用配置的privateKey不为空，将优先使用公钥验
 </div>
 <!-- 修改机器报警配置 -->
 <div id="addServerAlarmConfigModal" class="modal fade" tabindex="-1" data-width="400">
-	<div class="modal-dialog">
+	<div class="modal-dialog modal-lg">
 		<div class="modal-content">
 			<div class="modal-header">
 				<h4 class="modal-title">配置预警阈值</h4>
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
 			</div>
 			<form class="form-horizontal form-bordered form-row-stripped" id="addAlarmConfigForm">
 				<div class="modal-body">
@@ -226,17 +226,19 @@ mqcloud如果发现通用配置的privateKey不为空，将优先使用公钥验
 								</fieldset>
 								<fieldset>
            							<legend>负载</legend>
-									<div class="form-group">
-										<label class="control-label col-md-4"> CPU使用率(User): </label>
+									<div class="form-group row justify-content-center">
+										<label class="col-form-label col-md-2"> CPU使用率(User): </label>
 										<div class="col-md-6">
 											<div class="input-group">
 												<input type="text" id="cpuUseRateInput" name="cpuUsageRate" value="" placeholder="建议70%" class="form-control" />
-												<span class="input-group-addon">%</span>
+												<div class="input-group-append">
+													<span class="input-group-text">%</span>
+												</div>
 		    								</div>
 										</div>
 									</div>
-									<div class="form-group">
-										<label class="control-label col-md-4"> 一分钟Load: </label>
+									<div class="form-group row justify-content-center">
+										<label class="col-form-label col-md-2"> 一分钟Load: </label>
 										<div class="col-md-6">
 											<input type="text" id="load1Input" name="load1" value="" placeholder="建议逻辑核数*80%" class="form-control" />
 										</div>
@@ -244,75 +246,87 @@ mqcloud如果发现通用配置的privateKey不为空，将优先使用公钥验
 								</fieldset>
 								<fieldset>
            							<legend>内存</legend>
-									<div class="form-group">
-										<label class="control-label col-md-4"> 内存使用率: </label>
+									<div class="form-group row justify-content-center">
+										<label class="col-form-label col-md-2"> 内存使用率: </label>
 										<div class="col-md-6">
 											<div class="input-group">
 												<input type="text" id="memoryUseRateInput" name="memoryUsageRate" value="" placeholder="建议为60%" class="form-control" />
-												<span class="input-group-addon">%</span>
+												<div class="input-group-append">
+													<span class="input-group-text">%</span>
+												</div>
 		    								</div>
 										</div>
 									</div>
 								</fieldset>
 								<fieldset>
            							<legend>网络</legend>
-									<div class="form-group">
-										<label class="control-label col-md-4"> 连接数: </label>
+									<div class="form-group row justify-content-center">
+										<label class="col-form-label col-md-2"> 连接数: </label>
 										<div class="col-md-6">
 											<input type="text" id="connectInput" name="connect" value="" class="form-control" />
 										</div>
 									</div>
-									<div class="form-group">
-										<label class="control-label col-md-4" data-placement="right" data-toggle="modal" title="TIME_WAIT状态的连接数"> 等待关闭数: </label>
+									<div class="form-group row justify-content-center">
+										<label class="col-form-label col-md-2" data-placement="right" data-toggle="modal" title="TIME_WAIT状态的连接数"> 等待关闭数: </label>
 										<div class="col-md-6">
 											<input type="text" id="waitInput" name="wait" value="" class="form-control" />
 										</div>
 									</div>
-									<div class="form-group">
-										<label class="control-label col-md-4"> 入流量: </label>
+									<div class="form-group row justify-content-center">
+										<label class="col-form-label col-md-2"> 入流量: </label>
 										<div class="col-md-6">
 											<div class="input-group">
 												<input type="text" id="netInInput" name="netIn" class="form-control" />
-												<span class="input-group-addon">k/s</span>
+												<div class="input-group-append">
+													<span class="input-group-text">k/s</span>
+												</div>
 		    								</div>
 										</div>
 									</div>
-									<div class="form-group">
-										<label class="control-label col-md-4"> 出流量: </label>
+									<div class="form-group row justify-content-center">
+										<label class="col-form-label col-md-2"> 出流量: </label>
 										<div class="col-md-6">
 											<div class="input-group">
 												<input type="text" id="netOutInput" name="netOut" class="form-control" />
-												<span class="input-group-addon">k/s</span>
+												<div class="input-group-append">
+													<span class="input-group-text">k/s</span>
+												</div>
 		    								</div>
 										</div>
 									</div>
 								</fieldset>
 								<fieldset>
            							<legend>磁盘</legend>
-									<div class="form-group">
-										<label class="control-label col-md-4" data-placement="right" data-toggle="modal" title="io繁忙程度，最大100%，同iostat %util字段"> iobusy: </label>
+									<div class="form-group row justify-content-center">
+										<label class="col-form-label col-md-2" data-placement="right" data-toggle="modal" title="io繁忙程度，最大100%，同iostat %util字段"> iobusy: </label>
 										<div class="col-md-6">
 											<div class="input-group">
 												<input type="text" id="ioBusyInput" name="iobusy" value="" placeholder="建议20%" class="form-control" />
-												<span class="input-group-addon">%</span>
+												<div class="input-group-append">
+													<span class="input-group-text">%</span>
+												</div>
 		    								</div>
 										</div>
 									</div>
-									<div class="form-group">
-										<label data-placement="right" data-toggle="modal" title="磁盘io速率：交互次数/s" class="control-label col-md-4"> iops: </label>
+									<div class="form-group row justify-content-center">
+										<label data-placement="right" data-toggle="modal" title="磁盘io速率：交互次数/s" class="col-form-label col-md-2"> iops: </label>
 										<div class="col-md-6">
 											<div class="input-group">
 												<input type="text" id="iopsInput" name="iops" class="form-control" />
-												<span class="input-group-addon">次/秒</span>
+												<div class="input-group-append">
+													<span class="input-group-text">次/秒</span>
+												</div>
 		    								</div>
 										</div>
 									</div>
-									<div class="form-group">
-										<label  class="control-label col-md-4"> 使用率: </label>
+									<div class="form-group row justify-content-center">
+										<label  class="col-form-label col-md-2"> 使用率: </label>
 										<div class="col-md-6">
 											<div class="input-group">
 												<input type="text" id="ioUsageRateInput" name="ioUsageRate" placeholder="各分区使用率，建议90%" class="form-control" />
-												<span class="input-group-addon">%</span>
+												<div class="input-group-append">
+													<span class="input-group-text">%</span>
+												</div>
 		    								</div>
 										</div>
 									</div>
@@ -322,7 +336,7 @@ mqcloud如果发现通用配置的privateKey不为空，将优先使用公钥验
 					</div>
 				</div>
 				<div class="modal-footer">
-					<button type="button" data-dismiss="modal" class="btn" >取消</button>
+					<button type="button" data-dismiss="modal" class="btn btn-light" >取消</button>
 					<button type="button" class="btn btn-primary" onclick="submitUpdateServerAlarmConfig()" id="addAlarmConfigBtn">确定</button>
 				</div>
 			</form>
@@ -333,9 +347,9 @@ mqcloud如果发现通用配置的privateKey不为空，将优先使用公钥验
 <div class="modal fade" id="deleteServerModal" aria-hidden="true">  
   <div class="modal-dialog">  
     <div class="modal-content message_align">  
-      <div class="modal-header">  
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">×</span></button>  
-        <h4 class="modal-title">确定要删除当前服务器吗？</h4>  
+      <div class="modal-header">
+		  <h4 class="modal-title">确定要删除当前服务器吗？</h4>
+		  <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">×</span></button>
       </div>  
 		<form class="form-horizontal form-bordered form-row-stripped">
 			<div class="modal-body">
@@ -344,9 +358,9 @@ mqcloud如果发现通用配置的privateKey不为空，将优先使用公钥验
 					<div class="col-md-12">
 						<!-- form-body开始 -->
 						<div class="form-body">
-							<div class="form-group">
-								<label class="control-label col-md-3"> IP: </label>
-								<div class="col-md-5">
+							<div class="form-group row justify-content-center">
+								<label class="col-form-label col-md-2"> IP: </label>
+								<div class="col-md-6">
 									<input type="text" id="deleteIpInput" class="form-control" readonly="readonly"/>
 								</div>
 							</div>
@@ -358,7 +372,7 @@ mqcloud如果发现通用配置的privateKey不为空，将优先使用公钥验
 				</div>
 			</div>
 			<div class="modal-footer">
-				<button type="button" data-dismiss="modal" class="btn" >取消</button>
+				<button type="button" data-dismiss="modal" class="btn btn-light" >取消</button>
 				<button type="button" id="deleteServerBtn" onclick="deleteServerConfirm()" class="btn btn-primary">确定</button>
 			</div>
 		</form>
@@ -366,76 +380,107 @@ mqcloud如果发现通用配置的privateKey不为空，将优先使用公钥验
   </div>
 </div>
 <!-- 修改 -->
-<div class="modal fade" id="updateServerModal" aria-hidden="true">  
-  <div class="modal-dialog">  
-    <div class="modal-content message_align">  
-      <div class="modal-header">  
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">×</span></button>  
-        <h4 class="modal-title"><b id="updateIpInput"></b> 服务器类型修改</h4>  
-      </div>  
-		<form class="form-horizontal form-bordered form-row-stripped">
+<div class="modal fade" id="updateServerModal" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content message_align">
+			<div class="modal-header">
+				<h4 class="modal-title"><b id="updateIpInput"></b> 服务器类型修改</h4>
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">×</span></button>
+			</div>
 			<div class="modal-body">
-				<div class="row">
-					<!-- 控件开始 -->
-					<div class="col-md-12">
-						<!-- form-body开始 -->
-						<div class="form-body">
-							<div class="form-group">
-								<label class="control-label col-md-3"> 机器类型: </label>
-								<div class="col-md-5">
-									<select id="machineTypeSelect" class="selectpicker" title="请选择"  name="machineType"></select>
-								</div>
-							</div>
-						</div>
-						<!-- form-body 结束 -->
+				<div class="form-group">
+					<label class="col-md-3"> 机器类型: </label>
+					<div class="col-md-8">
+						<select id="machineTypeSelect" class="selectpicker  form-control" title="请选择" name="machineType"></select>
 					</div>
-					<!-- 控件结束 -->
 				</div>
 			</div>
-			<div class="modal-footer">
-				<button type="button" data-dismiss="modal" class="btn" >取消</button>
+			<div class="modal-footer justify-content-between">
+				<button type="button" data-dismiss="modal" class="btn btn-default">取消</button>
 				<button type="button" id="updateServerBtn" onclick="updateServerConfirm()" class="btn btn-primary">确定</button>
 			</div>
-		</form>
-    </div>
-  </div>
+		</div>
+	</div>
 </div>
 <!-- 监控 -->
 <div id="monitorModal" class="modal fade" tabindex="-1">
-	<div class="modal-dialog" style="width:1200px;height:90%;">
+	<div class="modal-dialog modal-xl">
 		<div class="modal-content">
 			<div class="modal-header">
-				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
 				<h4 class="modal-title"><b id="ipB"></b> 状况</h4>
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
 			</div>
 			<div class="container" style="padding:0px;margin:0px;">
 			    <div class="tabbable-custom">
-			        <ul class="nav nav-pills" id="server_app_tabs">
-			            <li class="active"><a href="#overview" data-url="${request.contextPath}/admin/server/overview" data-toggle="tab">概览</a></li>
-			            <li><a href="#cpu" data-url="${request.contextPath}/admin/server/cpu" data-toggle="tab">cpu</a></li>
-			            <li><a href="#net" data-url="${request.contextPath}/admin/server/net" data-toggle="tab">net</a></li>
-			        	<li><a href="#disk" data-url="${request.contextPath}/admin/server/disk" data-toggle="tab">disk</a></li>
-						<li style="float: right">
+			        <ul class="nav nav-tabs" id="server_app_tabs" role="tablist">
+			            <li class="nav-item"><a class="nav-link active" role="tab" aria-controls="custom-content-below-home" aria-selected="true" href="#overview" data-url="${request.contextPath}/admin/server/overview" data-toggle="tab">概览</a></li>
+			            <li class="nav-item"><a class="nav-link" role="tab" aria-controls="custom-content-below-home" aria-selected="false" href="#cpu" data-url="${request.contextPath}/admin/server/cpu" data-toggle="tab">cpu</a></li>
+			            <li class="nav-item"><a class="nav-link" role="tab" aria-controls="custom-content-below-home" aria-selected="false" href="#net" data-url="${request.contextPath}/admin/server/net" data-toggle="tab">net</a></li>
+			        	<li class="nav-item"><a class="nav-link" role="tab" aria-controls="custom-content-below-home" aria-selected="false" href="#disk" data-url="${request.contextPath}/admin/server/disk" data-toggle="tab">disk</a></li>
+						<li style=" margin-left: auto;margin-right: 5px;">
 							<form class="form-inline">
-								<input type="text"
-									style="width: 120px; height: 34px; cursor: pointer;"
-									name="dateInput" id="dateInput" readonly="readonly"
-									class="Wdate form-control" value="${.now?date}"
-									onclick="WdatePicker({ dateFmt: 'yyyy-MM-dd',maxDate:'%y-%M-%d'})" />
-								<button type="button" onclick="showOverview()" class="btn">
-									<span class="glyphicon glyphicon-search" aria-hidden="true"></span>
-								</button>
+								<div class="input-group date" id="server_date" data-target-input="nearest" style="width:210px;">
+									<div class="input-group-prepend">
+										<button id="server_prevBtn" type="button" class="btn btn-default" onclick="serverPrevDate()"><i class="fa-solid fa-caret-left"></i></button>
+									</div>
+									<input type="text" name="dateInput" id="dateInput" class="form-control datetimepicker-input" data-target="#server_date">
+									<div class="input-group-append">
+										<button id="server_nextBtn" type="button" class="btn btn-default" onclick="serverNextDate()"><i class="fa-solid fa-caret-right"></i></button>
+									</div>
+									<div class="input-group-append" data-target="#server_date" data-toggle="datetimepicker">
+										<div class="input-group-text"><i class="fa fa-calendar"></i></div>
+									</div>
+								</div>
+								<script>
+									$(function () {
+										$('#server_date').datetimepicker({
+											format: 'L',
+											minDate: moment().subtract(28, 'days'),
+											maxDate: '${.now?string("yyyy-MM-dd")}',
+											defaultDate: '${.now?string("yyyy-MM-dd")}',
+											focusOnShow: false
+										});
+										$('#server_date').on("change.datetimepicker", function (e) {
+											serverChangeButtonStatus();
+											showOverview();
+										});
+										serverChangeButtonStatus();
+									});
+									function serverNextDate(){
+										var curMoment = $('#server_date').datetimepicker('viewDate');
+										$('#server_date').datetimepicker('date', curMoment.add(1, 'days'));
+									}
+									function serverPrevDate(){
+										var curMoment = $('#server_date').datetimepicker('viewDate');
+										$('#server_date').datetimepicker('date', curMoment.subtract(1, 'days'));
+									}
+									function serverChangeButtonStatus() {
+										var curMoment = $('#server_date').datetimepicker('viewDate');
+										var minDate = $('#server_date').datetimepicker('minDate');
+										var maxDate = $('#server_date').datetimepicker('maxDate');
+										if (curMoment.unix() <= minDate.unix()) {
+											$('#server_prevBtn').prop('disabled', true);
+										} else {
+											$('#server_prevBtn').prop('disabled', false);
+										}
+										if (curMoment.unix() >= maxDate.unix()) {
+											$('#server_nextBtn').prop('disabled', true);
+										} else {
+											$('#server_nextBtn').prop('disabled', false);
+										}
+									}
+								</script>
 							</form>
 						</li>
 					</ul>
 			        <div class="tab-content" style="padding-left:2px;">
-			            <div class="tab-pane active" id="overview">
+			            <div class="tab-pane fade active show" id="overview">
 			            </div>
-			            <div class="tab-pane" id="cpu">
+			            <div class="tab-pane fade" id="cpu">
 			            </div>
-			            <div class="tab-pane" id="net">
+			            <div class="tab-pane fade" id="net">
 			            </div>
-			            <div class="tab-pane" id="disk">
+			            <div class="tab-pane fade" id="disk">
 			            </div>
 			        </div>
 			    </div>
@@ -590,6 +635,7 @@ $('#server_app_tabs a').click(function (e) {
 function setIp(ip){
 	$("#ipInput").val(ip);
 	$("#ipB").html(ip);
+	$("#server_app_tabs li a.active").click();
 }
 $('#monitorModal').on('shown.bs.modal', function (e) {
 	$("#server_app_tabs li.active a").click();

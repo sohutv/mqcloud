@@ -1,16 +1,5 @@
 package com.sohu.tv.mq.cloud.web.controller;
 
-import java.util.Map;
-
-import javax.servlet.http.HttpServletResponse;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
-
 import com.sohu.tv.mq.cloud.bo.User;
 import com.sohu.tv.mq.cloud.common.util.CipherHelper;
 import com.sohu.tv.mq.cloud.common.util.WebUtil;
@@ -18,6 +7,17 @@ import com.sohu.tv.mq.cloud.service.UserService;
 import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper;
 import com.sohu.tv.mq.cloud.util.Result;
 import com.sohu.tv.mq.cloud.util.Status;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import javax.servlet.http.HttpServletResponse;
+import java.util.Map;
 
 /**
  * 登录相关
@@ -27,7 +27,9 @@ import com.sohu.tv.mq.cloud.util.Status;
  */
 @Controller
 @RequestMapping("/login")
-public class LoginController extends ViewController {
+public class LoginController {
+
+    private Logger logger = LoggerFactory.getLogger(this.getClass());
 
     @Autowired
     private UserService userService;
@@ -40,9 +42,8 @@ public class LoginController extends ViewController {
 
     @RequestMapping
     public String index(Map<String, Object> map) {
-        setView(map, "index");
-        setResult(map,mqCloudConfigHelper.getIsOpenRegister());      
-        return view();
+        Result.setResult(map, mqCloudConfigHelper.getIsOpenRegister());
+        return "login/index";
     }
 
     /**
@@ -67,10 +68,5 @@ public class LoginController extends ViewController {
         // 设置到cookie中
         WebUtil.setLoginCookie(response, cipherHelper.encrypt(userResult.getResult().getEmail()));
         return Result.getOKResult();
-    }
-
-    @Override
-    public String viewModule() {
-        return "login";
     }
 }

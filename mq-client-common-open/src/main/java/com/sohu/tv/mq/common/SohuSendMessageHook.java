@@ -1,14 +1,12 @@
 package com.sohu.tv.mq.common;
 
+import com.sohu.tv.mq.stats.StatsHelper;
 import org.apache.rocketmq.client.hook.SendMessageContext;
 import org.apache.rocketmq.client.hook.SendMessageHook;
 import org.apache.rocketmq.client.producer.DefaultMQProducer;
 import org.apache.rocketmq.client.trace.TraceContext;
-import org.apache.rocketmq.common.UtilAll;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.sohu.tv.mq.stats.StatsHelper;
 
 /**
  * 对发送消息进行hook
@@ -28,8 +26,6 @@ public class SohuSendMessageHook implements SendMessageHook {
         statsHelper.setProducer(producer.getProducerGroup());
         // 最大耗时，延后500毫秒
         statsHelper.init(producer.getSendMsgTimeout() + 500);
-        // 客户端id
-        statsHelper.setClientId(buildMQClientId(producer));
     }
 
     @Override
@@ -65,28 +61,6 @@ public class SohuSendMessageHook implements SendMessageHook {
         } catch (Throwable e) {
             logger.warn("stats err", e);
         }
-    }
-
-    /**
-     * copy from org.apache.rocketmq.client.ClientConfig.buildMQClientId()
-     * 将changeInstanceNameToPID逻辑加了进来
-     * @param producer
-     * @return
-     */
-    private String buildMQClientId(DefaultMQProducer producer) {
-        StringBuilder sb = new StringBuilder();
-        sb.append(producer.getClientIP());
-        sb.append("@");
-        if (producer.getInstanceName().equals("DEFAULT")) {
-            sb.append(String.valueOf(UtilAll.getPid()));
-        } else {
-            sb.append(producer.getInstanceName());
-        }
-        if (!UtilAll.isBlank(producer.getUnitName())) {
-            sb.append("@");
-            sb.append(producer.getUnitName());
-        }
-        return sb.toString();
     }
 
     public StatsHelper getStatsHelper() {

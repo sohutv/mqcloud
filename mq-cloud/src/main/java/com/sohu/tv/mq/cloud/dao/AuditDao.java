@@ -67,9 +67,9 @@ public interface AuditDao {
     @Update("<script> update audit set auditor=#{audit.auditor} " +
             "<if test=\"audit.status != -1\">,status=#{audit.status} </if>" +
             "<if test=\"audit.refuseReason !=null\">,refuse_reason=#{audit.refuseReason} </if>" +
-            " where id=#{audit.id} and status = 0 " +
+            " where id=#{audit.id} and status = #{os} " +
             "</script>")
-    public Integer update(@Param("audit") Audit audit);
+    public Integer update(@Param("audit") Audit audit, @Param("os") int oldStatus);
     
     /**
      * 根据uid查询审核记录
@@ -91,6 +91,6 @@ public interface AuditDao {
      * 更新状态
      * @param audit
      */
-    @Update("update audit set status=#{audit.status} where id=#{audit.id} and status = 0")
-    public Integer updateStatus(@Param("audit") Audit audit);
+    @Update("update audit set status=#{ns} where id=#{id} and status = #{os}")
+    public Integer updateStatus(@Param("id") long id, @Param("ns") int newStatus, @Param("os") int oldStatus);
 }

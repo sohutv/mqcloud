@@ -59,6 +59,7 @@ public class UserWarn {
         SERVER_WARN(14, "服务器异常", "serverWarn.html"),
         CONTROLLER_ERROR(13, "Controller异常", "mqError.html"),
         PROXY_ERROR(14, "Proxy异常", "mqError.html"),
+        MESSAGE_EXPORT_ERROR(15, "消息导出过慢", "messageExportFailed.html"),
 
         UNKNOWN(100, "未知", "unknown.html"),
         ;

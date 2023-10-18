@@ -1,16 +1,5 @@
 package com.sohu.tv.mq.cloud.web.controller;
 
-import java.util.Map;
-
-import javax.validation.Valid;
-
-import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.ResponseBody;
-
 import com.sohu.tv.mq.cloud.bo.Audit;
 import com.sohu.tv.mq.cloud.bo.Audit.TypeEnum;
 import com.sohu.tv.mq.cloud.bo.User;
@@ -20,6 +9,17 @@ import com.sohu.tv.mq.cloud.service.UserService;
 import com.sohu.tv.mq.cloud.util.Result;
 import com.sohu.tv.mq.cloud.util.Status;
 import com.sohu.tv.mq.cloud.web.vo.UserInfo;
+import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import javax.validation.Valid;
+import java.util.Map;
 
 /**
  * 用户引导
@@ -29,7 +29,9 @@ import com.sohu.tv.mq.cloud.web.vo.UserInfo;
  */
 @Controller
 @RequestMapping("/user/guide")
-public class UserGuideController extends ViewController {
+public class UserGuideController {
+
+    private Logger logger = LoggerFactory.getLogger(this.getClass());
     
     @Autowired
     private UserService userService;
@@ -42,8 +44,7 @@ public class UserGuideController extends ViewController {
     
     @RequestMapping
     public String index(UserInfo userInfo, Map<String, Object> map) {
-        setView(map, "index");
-        return view();
+        return "user/guide";
     }
     
     @ResponseBody
@@ -76,20 +77,5 @@ public class UserGuideController extends ViewController {
             logger.info("admin request:{}", userParam);
         }
         return Result.getWebResult(rst);
-    }
-    
-    @ResponseBody
-    @RequestMapping(value="/skip", method = RequestMethod.POST)
-    public Result<User> skip(UserInfo userInfo) {
-        User user = new User();
-        user.setEmail(userInfo.getLoginId());
-        user.setType(User.ORDINARY);
-        Result<User> rst = userService.save(user);
-        return rst;
-    }
-
-    @Override
-    public String viewModule() {
-        return "user/guide";
     }
 }

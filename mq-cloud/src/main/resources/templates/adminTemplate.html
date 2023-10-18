@@ -1,18 +1,62 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-  	<#include "inc/adminInclude.html">
-  	<title>MQCloud管理中台</title>
-  </head>
-  <body class="page-header-fixed">
-  	<#include "inc/adminNav.html">
-  	<div class="container-fluid">
-  		<div class="admin-row">
-		 	<#include "inc/left.html">
-		  	<#include "${view}.html">
-  		</div>
-	</div>
-  </body>
-  <#include "inc/foot.html">
+	<head>
+		<#include "inc/adminInclude.html">
+		<title>MQCloud</title>
+		<style type="text/css">
+			.main-sidebar, .main-sidebar::before {
+				width: 165px;
+			}
+			body:not(.sidebar-mini-md) .content-wrapper, body:not(.sidebar-mini-md) .main-footer,
+			body:not(.sidebar-mini-md) .main-header {
+				margin-left: 165px;
+			}
+			.sidebar-mini.sidebar-collapse .main-sidebar:hover, .sidebar-mini.sidebar-collapse .main-sidebar.sidebar-focused {
+				width: 165px;
+			}
+			@media (min-width: 768px) {
+				body:not(.sidebar-mini-md):not(.sidebar-mini-xs):not(.layout-top-nav) .content-wrapper,
+				body:not(.sidebar-mini-md):not(.sidebar-mini-xs):not(.layout-top-nav) .main-footer,
+				body:not(.sidebar-mini-md):not(.sidebar-mini-xs):not(.layout-top-nav) .main-header {
+					margin-left: 165px;
+				}
+			}
+			@media (min-width: 768px) {
+				.sidebar-mini-md .content-wrapper,
+				.sidebar-mini-md .main-footer,
+				.sidebar-mini-md .main-header {
+					margin-left: 165px;
+				}
+			}
+			@media (min-width: 768px) {
+				.sidebar-mini-xs .content-wrapper,
+				.sidebar-mini-xs .main-footer,
+				.sidebar-mini-xs .main-header {
+					margin-left: 165px;
+				}
+			}
+			.sidebar-mini .main-sidebar .nav-link,
+			.sidebar-mini-md .main-sidebar .nav-link,
+			.sidebar-mini-xs .main-sidebar .nav-link {
+				width: calc(165px - 0.5rem * 2);
+			}
+		</style>
+	</head>
+	<body class="hold-transition layout-fixed sidebar-mini">
+		<div class="wrapper">
+			<#include "inc/adminNav.html">
+			<div class="content-wrapper">
+				<div class="content">
+					<div class="container-fluid">
+						<div class="row">
+							<div class="col-12">
+								<#include "${view}.html">
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		<#include "inc/foot.html">
+		</div>
+	</body>
 </html>
-

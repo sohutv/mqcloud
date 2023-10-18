@@ -1,77 +1,74 @@
 <#if response.notOK>
 <div class="modal-body">
-	<div class="form-body">
-		<div class="form-group">
-			<div>异常数据</div>
-		</div>
+	<div class="form-group">
+		<div class="text-center">异常数据</div>
 	</div>
 </div>
 <#else>
 <div class="modal-body">
-	<div class="form-body">
-		<div class="form-group">
-			<label class="control-label col-md-2"> Topic: </label>
-	        <div class="col-md-10">
-				<input type="text" value="${response.result.topic}" readonly="readonly" class="form-control" />
-			</div>
+	<div class="form-group row justify-content-center">
+		<label class="col-md-2 col-form-label"> Topic: </label>
+		<div class="col-md-10">
+			<input type="text" value="${response.result.topic}" readonly="readonly" class="form-control" />
 		</div>
-		<div class="form-group">
-			<label class="control-label col-md-2"> 消息: </label>
-	        <div class="col-md-10">
-				<table class="table table-striped table-hover" style="margin-top: 0px;word-break:break-all; word-wrap:break-all;">
-					<colgroup>
-						<col width="50px">
-						<col width="100px">
-						<col width="160px">
-						<col width="50px">
-						<col width="80px">
-						<col width="50px">
-					</colgroup>
-					<thead>
-						<tr>
-							<td>序号</td>
-							<td>msgId</td>
-							<td>重发时间</td>
-							<td data-toggle='tooltip' title="重发次数">次数</td>
-							<td>状态</td>
-							<td>操作</td>
-						</tr>
-					</thead>
-					<tbody>
-						<#list response.result.msgList as msg>
+	</div>
+	<div class="form-group row justify-content-center">
+		<label class="col-md-2 col-form-label"> 消息: </label>
+		<div class="col-md-10">
+			<div class="card">
+				<div class="card-body table-responsive p-0">
+					<table class="table table-striped table-hover" style="table-layout: fixed">
+						<colgroup>
+							<col width="100px">
+							<col width="160px">
+							<col width="50px">
+							<col width="80px">
+							<col width="50px">
+						</colgroup>
+						<thead>
 							<tr>
-								<td>${msg_index + 1}</td>
-								<td>${msg.msgId}</td>
-								<td id="${msg.msgId}_time">
-									<#if msg.sendTime??>
-										${msg.sendTime?string("yyyyMMdd HH:mm:ss")}
-									</#if>
-								</td>
-								<td id="${msg.msgId}_times">${msg.times}</td>
-								<td id="${msg.msgId}_status">${msg.statusDesc}</td>
-								<td><span onclick=resendOneMessage('${msg.msgId}') data-toggle='tooltip' title="重发此消息" class="pointer glyphicon glyphicon-send"></span></td>
+								<td>msgId</td>
+								<td>重发时间</td>
+								<td data-toggle='tooltip' title="重发次数">次数</td>
+								<td>状态</td>
+								<td>操作</td>
 							</tr>
-						</#list>
-					</tbody>
-				</table>
+						</thead>
+						<tbody>
+							<#list response.result.msgList as msg>
+								<tr>
+									<td>${msg.msgId}</td>
+									<td id="${msg.msgId}_time">
+										<#if msg.sendTime??>
+											${msg.sendTime?string("yyyyMMdd HH:mm:ss")}
+										</#if>
+									</td>
+									<td id="${msg.msgId}_times">${msg.times}</td>
+									<td id="${msg.msgId}_status">${msg.statusDesc}</td>
+									<td><span onclick=resendOneMessage('${msg.msgId}') data-toggle='tooltip' title="重发此消息"><i class="far fa-paper-plane pointer custom"></i></span></td>
+								</tr>
+							</#list>
+						</tbody>
+					</table>
+				</div>
 			</div>
 		</div>
-		<div class="form-group">
-			<label class="control-label col-md-2"> 消费者: </label>
-	        <div class="col-md-10">
-				<input type="text" value="${response.result.consumer!}" readonly="readonly" class="form-control" />
-			</div>
+	</div>
+	<div class="form-group row justify-content-center">
+		<label class="col-md-2 col-form-label"> 消费者: </label>
+		<div class="col-md-10">
+			<input type="text" value="${response.result.consumer!}" readonly="readonly" class="form-control" />
 		</div>
-		<div class="form-group custom">
-			<label class="control-label col-md-2"> 拒绝理由: </label>
-			<div class="col-md-10">
-				<textarea type="text" id="refuseReason" rows="3" class="form-control" placeholder="请填写"></textarea>
-			</div>
+	</div>
+	<div class="form-group row custom">
+		<label class="col-md-2 col-form-label"> 拒绝理由: </label>
+		<div class="col-md-10">
+			<textarea type="text" id="refuseReason" rows="3" class="form-control" placeholder="请填写"></textarea>
 		</div>
 	</div>
 </div>
 <div class="modal-footer custom">
-	<button type="button" data-dismiss="modal" class="btn" >取消</button>
+	<button type="button" data-dismiss="modal" class="btn btn-light" >取消</button>
 	<button type="button" id="cancelBtn" class="btn btn-warning" onclick="cancelAudit()">撤销</button>
 	<button type="button" class="btn btn-warning" id="refuseBtn" onclick="refuse()">拒绝</button>
 	<button type="button" class="btn btn-primary" data-toggle='tooltip' title="发送全部的消息(不包括已经已经发送成功的)" id="resendMessageBtn" onclick="resendMessage()">全部发送</button>

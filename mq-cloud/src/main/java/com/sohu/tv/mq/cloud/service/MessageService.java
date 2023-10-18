@@ -10,6 +10,7 @@ import com.sohu.tv.mq.cloud.mq.MQAdminTemplate;
 import com.sohu.tv.mq.cloud.util.*;
 import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper.MQCloudConfigEvent;
 import com.sohu.tv.mq.cloud.web.controller.param.MessageParam;
+import com.sohu.tv.mq.cloud.web.controller.param.PaginationParam;
 import com.sohu.tv.mq.cloud.web.vo.TraceViewVO;
 import com.sohu.tv.mq.cloud.web.vo.TraceViewVO.RequestViewVO;
 import com.sohu.tv.mq.serializable.DefaultMessageSerializer;
@@ -211,14 +212,20 @@ public class MessageService {
             // 获取消费者
             Cluster cluster = clusterService.getMQClusterById(messageQueryCondition.getCid());
             consumer = getConsumer(cluster);
-            // 初始化参数
-            if (messageQueryCondition.getMqOffsetList() == null) {
+            // 队列为空或者剩余消息不多且还有未搜索的队列，获取队列偏移量
+            if (messageQueryCondition.getMqOffsetList() == null
+                    || (messageQueryCondition.getLeftSize() <= 32
+                    && messageQueryCondition.getTotalQueueNum() > messageQueryCondition.getMqOffsetList().size())) {
                 List<MQOffset> mqOffsetList = getMQOffsetList(cluster, consumer, messageQueryCondition, true,
                         offsetSearch);
                 if (mqOffsetList == null) {
                     return Result.getResult(Status.NO_RESULT);
                 }
-                messageQueryCondition.setMqOffsetList(mqOffsetList);
+                if (messageQueryCondition.getMqOffsetList() == null) {
+                    messageQueryCondition.setMqOffsetList(mqOffsetList);
+                } else {
+                    messageQueryCondition.getMqOffsetList().addAll(mqOffsetList);
+                }
             }
             // 特定类型使用自定义的classloader
             if (mqCloudConfigHelper.getClassList() != null &&
@@ -299,12 +306,6 @@ public class MessageService {
 
             public Result<List<DecodedMessage>> exception(Exception e) throws Exception {
                 logger.error("queryMessage cluster:{}  key:{}, err:{}", cluster, key, e.getMessage());
-                // 此异常代表查无数据，不进行异常提示
-                if (e instanceof MQClientException) {
-                    if (((MQClientException) e).getResponseCode() == ResponseCode.NO_MESSAGE) {
-                        return Result.getOKResult();
-                    }
-                }
                 return Result.getWebErrorResult(e);
             }
 
@@ -469,7 +470,7 @@ public class MessageService {
      * @param msg
      * @return DecodedMessage
      */
-    private DecodedMessage toDecodedMessage(MessageExt msg, String broker) {
+    public DecodedMessage toDecodedMessage(MessageExt msg, String broker) {
         DecodedMessage m = new DecodedMessage();
         byte[] bytes = msg.getBody();
         m.setMsgLength(bytes.length);
@@ -554,13 +555,26 @@ public class MessageService {
                 topic = RMQ_SYS_WHEEL_TIMER;
             }
             Set<MessageQueue> mqs = consumer.fetchSubscribeMessageQueues(topic);
+            messageQueryCondition.setTotalQueueNum(mqs.size());
+            if (offsetSearch) {
+                // 偏移量搜索，过滤掉不符合条件的消息队列
+                mqs = mqs.stream().filter(mq -> isContainsBrokerOrQueue(mq, messageQueryCondition.getBrokerName(),
+                        messageQueryCondition.getQueueId())).collect(Collectors.toSet());
+            } else {
+                // 普通搜索，第一次最多搜索50个队列
+                if (messageQueryCondition.getMqOffsetList() == null) {
+                    if (mqs.size() > mqCloudConfigHelper.getMaxQueueNumOfFirstSearch()) {
+                        mqs = mqs.stream().limit(mqCloudConfigHelper.getMaxQueueNumOfFirstSearch()).collect(Collectors.toSet());
+                    }
+                } else {
+                    // 普通搜索，第二次开始，过滤掉已经搜索过的队列
+                    mqs = mqs.stream().filter(mq -> messageQueryCondition.getMqOffsetList().stream()
+                            .noneMatch(mqOffset -> mqOffset.getMq().equals(mq)))
+                            .collect(Collectors.toSet());
+                }
+            }
             offsetList = new ArrayList<MQOffset>();
             for (MessageQueue mq : mqs) {
-                // 判断当前消息队列是否符合条件
-                if (!isContainsBrokerOrQueue(mq, messageQueryCondition.getBrokerName(),
-                        messageQueryCondition.getQueueId())) {
-                    continue;
-                }
                 long minOffset = 0;
                 long maxOffset = 0;
                 try {
@@ -717,7 +731,7 @@ public class MessageService {
      * @param msg
      * @return
      */
-    public Result<?> track(MessageParam mp) {
+    public Result<?> track(MessageParam mp, PaginationParam paginationParam) {
         // 获取集群
         Cluster mqCluster = clusterService.getMQClusterById(mp.getCid());
         if (mqCluster == null) {
@@ -728,9 +742,17 @@ public class MessageService {
         if (consumerListResult.isEmpty()) {
             return consumerListResult;
         }
+        List<Consumer> consumerList = consumerListResult.getResult();
+        paginationParam.caculatePagination(consumerList.size());
+        consumerList.sort(new Comparator<Consumer>() {
+            public int compare(Consumer o1, Consumer o2) {
+                return (int) (o1.getId() - o2.getId());
+            }
+        });
+        consumerList = consumerList.subList(paginationParam.getBegin(), paginationParam.getEnd());
         // 查询消息轨迹
         List<MessageTrack> result = new ArrayList<MessageTrack>();
-        for (Consumer consumer : consumerListResult.getResult()) {
+        for (Consumer consumer : consumerList) {
             MessageTrack mt = messageTrack(mqCluster, consumer, mp);
             result.add(mt);
         }
@@ -1327,5 +1349,9 @@ public class MessageService {
                 return cluster;
             }
         });
+    }
+
+    public MessageTypeClassLoader getMessageTypeClassLoader() {
+        return messageTypeClassLoader;
     }
 }

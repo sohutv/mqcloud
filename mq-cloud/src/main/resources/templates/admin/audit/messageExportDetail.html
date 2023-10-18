@@ -1,0 +1,95 @@
+<#if response.notOK>
+<div class="modal-body">
+    <div class="form-group">
+        <div class="text-center">异常数据</div>
+    </div>
+</div>
+<#else>
+<div class="modal-body">
+    <div class="form-group row">
+        <label class="col-md-3 col-form-label"> 执行任务的机器: </label>
+        <div class="col-md-9">
+            <input type="text" value="${response.result.ip}" readonly="readonly" class="form-control" />
+        </div>
+    </div>
+    <div class="form-group row">
+        <label class="col-md-3 col-form-label"> 开始时间: </label>
+        <div class="col-md-9">
+            <input type="text" value="${response.result.createTime?string('yyyy-MM-dd HH:mm:ss')}" readonly="readonly" class="form-control" />
+        </div>
+    </div>
+    <div class="form-group row">
+        <label class="col-md-3 col-form-label"> 导出用时: </label>
+        <div class="col-md-9 input-group">
+            <input type="text" value='${(response.result.exportCostTime/1000)?string(",###.###")}' readonly="readonly" class="form-control" />
+            <div class="input-group-append">
+                <span class="input-group-text">秒</span>
+            </div>
+        </div>
+    </div>
+    <div class="form-group row">
+        <label class="col-md-3 col-form-label"> 压缩用时: </label>
+        <div class="col-md-9 input-group">
+            <input type="text" value='${(response.result.compressCostTime/1000)?string(",###.###")}' readonly="readonly" class="form-control" />
+            <div class="input-group-append">
+                <span class="input-group-text">秒</span>
+            </div>
+        </div>
+    </div>
+    <div class="form-group row">
+        <label class="col-md-3 col-form-label"> 传输到远程服务器用时: </label>
+        <div class="col-md-9 input-group">
+            <input type="text" value='${(response.result.scpCostTime/1000)?string(",###.###")}' readonly="readonly" class="form-control" />
+            <div class="input-group-append">
+                <span class="input-group-text">秒</span>
+            </div>
+        </div>
+    </div>
+    <div class="form-group row">
+        <label class="col-md-3 col-form-label"> 消息文件本地路径: </label>
+        <div class="col-md-9">
+            <input type="text" value="${response.result.exportedFilePath!}" readonly="readonly" class="form-control" />
+        </div>
+    </div>
+    <div class="form-group row">
+        <label class="col-md-3 col-form-label"> 更新时间: </label>
+        <div class="col-md-9">
+            <input type="text" value="${response.result.updateTime?string('yyyy-MM-dd HH:mm:ss')}" readonly="readonly" class="form-control" />
+        </div>
+    </div>
+    <#if response.result.exportCostTime == 0>
+    <div class="form-group row">
+        <label class="col-md-3 col-form-label"> 进度: </label>
+        <div class="col-md-9">
+            <div class="form-control">
+                <div class="progress" style="height: 100%">
+                    <div class="progress-bar bg-warning progress-bar-striped progress-bar-animated" style="width:${response.result.exportedProcess}">
+                        <span>总量:${response.result.totalMsgCount},已导出:${response.result.exportedMsgCount},还需:${(response.result.leftTime/1000)?string(",###")}秒</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <#else>
+    <div class="form-group row">
+        <label class="col-md-3 col-form-label"> 导出消息: </label>
+        <div class="col-md-9 input-group">
+            <input type="text" value="${response.result.exportedMsgCount}" readonly="readonly" class="form-control" />
+            <div class="input-group-append">
+                <span class="input-group-text">条</span>
+            </div>
+        </div>
+    </div>
+    </#if>
+    <div class="form-group row">
+        <label class="col-md-3 col-form-label"> 信息: </label>
+        <div class="col-md-9">
+            <textarea class="form-control" rows="2" readonly="readonly">${response.result.info!}</textarea>
+        </div>
+    </div>
+</div>
+<div class="modal-footer">
+    <button type="button" data-dismiss="modal" class="btn btn-light" >取消</button>
+    <button type="button" id="reExportBtn" class="btn btn-warning" onclick="messageReExport('${response.result.aid?c}')">重新导出</button>
+</div>
+</#if>

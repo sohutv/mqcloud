@@ -145,6 +145,9 @@ public class AutoAuditService {
                             auditController.cancelWheelMessage(userInfo, aid);
                         }
                         break;
+                    case TIMESPAN_MESSAGE_EXPORT:
+                        result = auditController.timespanMessageExport(userInfo, aid);
+                        break;
                 }
                 if (result != null) {
                     ++auditCount;

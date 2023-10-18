@@ -43,7 +43,7 @@ public class AuditDaoTest {
         audit.setType(0);
         audit.setId(1L);
         audit.setRefuseReason("change1111");
-        auditDao.update(audit);
+        auditDao.update(audit, 0);
         System.out.println(audit.getId());
     }
 }

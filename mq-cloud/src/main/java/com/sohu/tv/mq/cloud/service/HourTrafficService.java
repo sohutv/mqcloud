@@ -3,6 +3,7 @@ package com.sohu.tv.mq.cloud.service;
 import java.util.Date;
 import java.util.List;
 
+import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper;
 import org.apache.rocketmq.tools.admin.MQAdminExt;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -36,6 +37,9 @@ public abstract class HourTrafficService extends TrafficService<Traffic> {
     @Autowired
     private ClusterService clusterService;
 
+    @Autowired
+    private MQCloudConfigHelper mqCloudConfigHelper;
+
     /**
      * 收集流量
      * 
@@ -48,8 +52,14 @@ public abstract class HourTrafficService extends TrafficService<Traffic> {
             logger.error("cannot get TopicConsumer");
             return 0;
         }
+        int consumerSize = 0;
         List<TopicConsumer> topicConsumerList = topicConsumerListResult.getResult();
         for (TopicConsumer topicConsumer : topicConsumerList) {
+            Cluster cluster = clusterService.getMQClusterById(topicConsumer.getClusterId());
+            // 测试环境，监控所有的集群；online环境，只监控online集群
+            if (!mqCloudConfigHelper.needMonitor(cluster.online())) {
+                continue;
+            }
             mqAdminTemplate.execute(new DefaultInvoke() {
                 public void invoke(MQAdminExt mqAdmin) throws Exception {
                     String statKey = topicConsumer.getTopic() + "@" + topicConsumer.getConsumer();
@@ -66,11 +76,12 @@ public abstract class HourTrafficService extends TrafficService<Traffic> {
                 }
 
                 public Cluster mqCluster() {
-                    return clusterService.getMQClusterById(topicConsumer.getClusterId());
+                    return cluster;
                 }
             });
+            ++consumerSize;
         }
-        return topicConsumerList.size();
+        return consumerSize;
     }
     
     protected abstract void alert(TopicHourTraffic topicTraffic, TopicConsumer topicConsumer, List<User> userList);

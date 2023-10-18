@@ -34,15 +34,47 @@ public interface IMessageConsumer<C> {
     public ConsumeOrderlyStatus consumeMessage(List<MessageExt> msgs, ConsumeOrderlyContext context);
 
     /**
+     * 设置clientId
+     *
+     * @param clientId
+     */
+    public void setClientId(String clientId);
+
+    /**
      * 消费状态
      * 
      * @author yongfeigao
      * @date 2021年8月31日
      */
-    public enum ConsumeStatus {
-        OK, 
-        FAIL,
-        ;
+    public class ConsumeStatus {
+        private boolean ok;
+        private Throwable exception;
+        public static final ConsumeStatus OK = new ConsumeStatus(true);
+
+        private ConsumeStatus() {
+        }
+
+        private ConsumeStatus(boolean ok) {
+            this.ok = ok;
+        }
+
+        public static ConsumeStatus fail(Throwable e) {
+            ConsumeStatus status = new ConsumeStatus();
+            status.exception = e;
+            return status;
+        }
+
+        public boolean isOk() {
+            return ok;
+        }
+
+        public boolean isFail() {
+            return !ok;
+        }
+
+        public Throwable getException() {
+            return exception;
+        }
     }
 
     /**

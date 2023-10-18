@@ -1,107 +1,124 @@
-<div class="main">
-	<form class="form-inline" role="form" action="${request.contextPath}/admin/consumer/list">
-		<div class="form-group">
-			<label for="cid"> 集群: </label>
-			<div class="form-group">
-				<select id="cid" class="selectpicker" title="搜索集群" data-live-search-placeholder="输入搜索内容" name="cid" data-live-search="true"></select>
+<div class="card mt-2">
+	<div class="card-body pb-0">
+		<form class="form" role="form" action="${request.contextPath}/admin/consumer/list">
+			<div class="row">
+				<div class="form-group col-sm-12 col-md-2">
+					<label for="cid"> 集群: </label>
+					<div class="form-group">
+						<select id="cid" class="selectpicker border form-control" title="搜索集群" data-live-search-placeholder="输入搜索内容" name="cid" data-live-search="true"></select>
+					</div>
+				</div>
+				<div class="form-group col-sm-12 col-md-2">
+					<label for="gid"> 组织: </label>
+					<div class="form-group">
+						<select id="gid" class="selectpicker border form-control" title="搜索组织" data-live-search-placeholder="输入搜索内容" name="gid" data-live-search="true"></select>
+					</div>
+				</div>
+				<div class="form-group col-sm-12 col-md-2">
+					<label for="uid"> 人员: </label>
+					<div class="form-group">
+						<select id="uid" class="selectpicker border form-control" title="搜索人员" data-live-search-placeholder="输入搜索内容" name="uid" data-live-search="true"></select>
+					</div>
+				</div>
+				<div class="form-group col-sm-12 col-md-2">
+					<label for="noneConsumerFlows"> 当日无消费量: </label>
+					<div class="input-group-append">
+						<select id="noneConsumerFlows" class="selectpicker border form-control" title="搜索" data-live-search-placeholder="输入搜索内容" name="noneConsumerFlows" data-live-search="false">
+							<option value="" selected="selected">全部</option>
+							<option value=true>是</option>
+						</select>
+						<div class="input-group-append">
+							<button type="submit" class="btn btn-light ml-1"><span class="fas fa-search" aria-hidden="true"></span></button>
+						</div>
+					</div>
+				</div>
 			</div>
-		</div>
-		<div class="form-group">
-			<label for="gid"> 组织: </label>
-			<div class="form-group">
-				<select id="gid" class="selectpicker" title="搜索组织" data-live-search-placeholder="输入搜索内容" name="gid" data-live-search="true"></select>
-			</div>
-		</div>
-		<div class="form-group">
-			<label for="uid"> 人员: </label>
-			<div class="form-group">
-				<select id="uid" class="selectpicker" title="搜索人员" data-live-search-placeholder="输入搜索内容" name="uid" data-live-search="true"></select>
-			</div>
-		</div>
-		<div class="form-group">
-			<label for="noneConsumerFlows"> 当日无消费量: </label>
-			<div class="form-group">
-				<select id="noneConsumerFlows" class="selectpicker" title="搜索" data-live-search-placeholder="输入搜索内容" name="noneConsumerFlows" data-live-search="false">
-					<option value="" selected="selected">全部</option>
-					<option value=true>是</option>
-				</select>
-			</div>
-		</div>
-    <button type="submit" class="btn btn-search"><span class="glyphicon glyphicon-search" aria-hidden="true"></span></button>
-	</form>
-	<hr/>
-	<table class="table table-striped table-hover" style="margin-top: 0px;word-break:break-all; word-wrap:break-all;">
-		<thead>
-			<colgroup>
-				<col width="8%">
-				<col width="20%">
-				<col width="20%">
-				<col width="12%">
-				<col width="8%">
-				<col width="10%">
-				<col>
-			</colgroup>
-			<tr>
-				<td style="text-align:center;vertical-align:middle;">序号</td>
-				<td style="text-align:center;vertical-align:middle;">关联主题</td>
-				<td style="text-align:center;vertical-align:middle;">消费者名称</td>
-				<td style="text-align:center;vertical-align:middle;">消费者创建时间</td>
-				<td style="text-align:center;vertical-align:middle;" data-toggle="tooltip" title="当前时间前5分钟的消费量统计">消费量</td>
-				<td style="text-align:center;vertical-align:middle;">消费者描述</td>
-				<td style="text-align:center;vertical-align:middle;">操作</td>
-			</tr>
-		</thead>
-		<tbody>
-			<#if listResult.empty>
+		</form>
+	</div>
+</div>
+<div class="card">
+	<div class="card-body table-responsive p-0">
+		<table class="table table table-hover" style="word-break:break-all; word-wrap:break-all;table-layout: fixed">
+			<thead>
+				<colgroup>
+					<col width="70px">
+					<col width="200px">
+					<col width="200px">
+					<col width="100px">
+					<col width="80px">
+					<col width="200px">
+					<col width="150px">
+				</colgroup>
 				<tr>
-					<td colspan=10 style="text-align:center">
-						暂无数据
-					</td>
+					<td style="text-align:center;vertical-align:middle;">序号</td>
+					<td style="text-align:center;vertical-align:middle;">关联主题</td>
+					<td style="text-align:center;vertical-align:middle;">消费者名称</td>
+					<td style="text-align:center;vertical-align:middle;">创建时间</td>
+					<td style="text-align:center;vertical-align:middle;" data-toggle="tooltip" title="当前时间前5分钟的消费量统计">消费量</td>
+					<td style="text-align:center;vertical-align:middle;">消费者描述</td>
+					<td style="text-align:center;vertical-align:middle;">操作</td>
 				</tr>
-			<#else>
-				<#list listResult.result as manager>
+			</thead>
+			<tbody>
+				<#if listResult.empty>
 					<tr>
-						<td style="text-align:center;vertical-align:middle;">${manager.index}</td>
-						<td style="text-align:center;vertical-align:middle;">${manager.topic.name!}</td>
-						<td style="text-align:center;vertical-align:middle;"><a title="查看详情" href="${request.contextPath}/user/topic/${manager.topic.id}/detail?tab=consume&consumer=${manager.consumer.name}">${manager.consumer.name!}</a></td>
-						<td style="text-align:center;vertical-align:middle;">${manager.consumer.createDate?string("yyyy-MM-dd")}</td>
-						<td style="text-align:center;vertical-align:middle;">${manager.lastFiveMinusConsumerFlow}</td>
-						<td style="text-align:center;vertical-align:middle;">${manager.consumer.info!}</td>
-						<td style="text-align:center;vertical-align:middle;">
-							<button type="button" class="btn btn-sm btn-success" title="属性修改" data-target="#editConsumerModel" data-toggle="modal" onclick="loadTopicEdit('${manager.consumer.id}');"><span class="glyphicon glyphicon-cog" aria-hidden="true"></span></button>
-							<button type="button" class="btn btn-sm btn-success" title="检查consumer" data-target="#consumerDeleteCheck" data-toggle="modal" onclick="loadDeleteCheck('${manager.consumer.id}','${manager.topic.id}','${manager.consumer.name!}','${manager.topic.name!}');"><span class="glyphicon glyphicon-check" aria-hidden="true"></span></button>
+						<td colspan=10 style="text-align:center">
+							暂无数据
 						</td>
 					</tr>
-				</#list>
-			</#if>
-		</tbody>
-	</table>
-<ul id="pagination" data-url="${request.contextPath}/admin/consumer/list?${queryParams.queryStr!}" style="float:right"></ul>
-<#include "../../inc/pagination.html">
+				<#else>
+					<#list listResult.result as manager>
+						<tr>
+							<td style="text-align:center;vertical-align:middle;">${manager.index}</td>
+							<td style="text-align:center;vertical-align:middle;">${manager.topic.name!}</td>
+							<td style="text-align:center;vertical-align:middle;"><a target="_blank" href="${request.contextPath}/user/topic/${manager.topic.id}/detail?tab=consume&consumer=${manager.consumer.name}">${manager.consumer.name!}</a></td>
+							<td style="text-align:center;vertical-align:middle;">${manager.consumer.createDate?string("yyyy-MM-dd")}</td>
+							<td style="text-align:center;vertical-align:middle;">${manager.lastFiveMinusConsumerFlow}</td>
+							<td style="text-align:center;vertical-align:middle;">${manager.consumer.info!}</td>
+							<td style="text-align:center;vertical-align:middle;">
+								<button type="button" class="btn btn-sm btn-warning" title="属性修改" data-target="#editConsumerModel" data-toggle="modal" onclick="loadTopicEdit('${manager.consumer.id}');"><span class="fas fa-edit" aria-hidden="true"></span></button>
+								<button type="button" class="btn btn-sm btn-info" title="检查consumer" data-target="#consumerDeleteCheck" data-toggle="modal" onclick="loadDeleteCheck('${manager.consumer.id}','${manager.topic.id}','${manager.consumer.name!}','${manager.topic.name!}');"><span class="fas fa-check-square" aria-hidden="true"></span></button>
+							</td>
+						</tr>
+					</#list>
+				</#if>
+			</tbody>
+		</table>
+	</div>
+	<#if pagination.OK && pagination.result.totalPages gt 1>
+		<div class="card-footer clearfix">
+			<ul id="pagination" data-url="${request.contextPath}/admin/consumer/list?${queryParams.queryStr!}" style="float:right"></ul>
+		</div>
+	</#if>
 </div>
 
-
-<div id="editConsumerModel" class="modal fade" tabindex="-1" data-width="400">
-	<div class="modal-dialog">
+<div id="editConsumerModel" class="modal fade" tabindex="-1">
+	<div class="modal-dialog modal-lg">
 		<div class="modal-content">
 			<div class="modal-header">
-				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
 				<h4 class="modal-title">属性修改</h4>
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
 			</div>
-			<div class="form-group">
-				<form class="form-horizontal form-bordered form-row-stripped" id="consumerTypeEdit">
-					<div class="form-body">
-						<label class="control-label col-md-4"> 消费者消费模式: </label>
-						<input type="hidden" name="editId" id="editId" class="form-control" />
-						<label class="checkbox-inline" title="每条消息只能被消费者组内某个实例消费">
-							<input type="radio" name="Consumertype" value="0"><span>集群消费</span></input>
-						</label>
-						<label class="checkbox-inline" title="每条消息将被消费者组内所有实例消费">
-							<input type="radio" name="Consumertype" value="1" ><span>广播消费</span></input>
-						</label>
+			<form class="form-horizontal form-bordered form-row-stripped" id="consumerTypeEdit">
+					<div class="modal-body">
+						<div class="row">
+							<div class="col-md-12">
+								<div class="form-group row justify-content-center">
+								<label class="col-md-3"> 消费者消费模式: </label>
+								<div class="col-md-5 checkbox">
+									<input type="hidden" name="editId" id="editId" class="form-control" />
+									<label data-toggle="tooltip" title="每条消息只能被消费者组内某个实例消费">
+										<input type="radio" name="Consumertype" value="0"><span>集群消费</span></input>
+									</label>
+									<label data-toggle="tooltip" title="每条消息将被消费者组内所有实例消费">
+										<input type="radio" name="Consumertype" value="1" ><span>广播消费</span></input>
+									</label>
+								</div>
+							</div>
+						</div>
 					</div>
-				</form>
-			</div>
+				</div>
+			</form>
 			<div class="modal-footer">
 				<button type="button" class="btn btn-default" data-dismiss="modal">
 					关闭
@@ -114,48 +131,48 @@
 	</div>
 </div>
 
-<div id="consumerDeleteCheck" class="modal fade" tabindex="-1" data-width="500">
-	<div class="modal-dialog">
+<div id="consumerDeleteCheck" class="modal fade" tabindex="-1">
+	<div class="modal-dialog modal-lg">
 		<div class="modal-content">
 			<div class="modal-header">
-				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
 				<h4 class="modal-title">删除校验</h4>
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
 			</div>
 			<form class="form-horizontal form-bordered form-row-stripped" id="addTopicForm">
 				<div class="modal-body">
 					<div class="row">
 						<div class="col-md-12">
 							<div class="form-body">
-								<div class="form-group">
-									<label class="control-label col-md-4"> 当前消费者名称: </label>
-									<div class="col-md-7">
+								<div class="form-group row justify-content-center">
+									<label class="col-form-label col-md-3"> 当前消费者名称: </label>
+									<div class="col-md-5">
 										<input type="hidden" name="cid" id="c_check_id" class="form-control" />
-										<div class="form-control-static" style="border:0;border-radius:5px;background-color:rgba(241,241,241,.98);padding-left:10px">
+										<div class="form-control" style="border:0;border-radius:5px;background-color:rgba(241,241,241,.98);padding-left:10px">
 											<span id="cName" style="word-break:break-all;text-align: center"></span>
 										</div>
 									</div>
 								</div>
-								<div class="form-group">
-									<label class="control-label col-md-4"> 当前关联Topic: </label>
-									<div class="col-md-7">
-										<div class="form-control-static" style="border:0;border-radius:5px;background-color:rgba(241,241,241,.98);padding-left:10px">
+								<div class="form-group row justify-content-center">
+									<label class="col-form-label col-md-3"> 当前关联Topic: </label>
+									<div class="col-md-5">
+										<div class="form-control" style="border:0;border-radius:5px;background-color:rgba(241,241,241,.98);padding-left:10px">
 											<span id="rtopic" style="word-break:break-all;text-align: center"></span>
 										</div>
 										<input type="hidden" name="tid" id="t_check_id" class="form-control" />
 									</div>
 								</div>
-								<div class="form-group">
-									<label class="control-label col-md-4"> topic是否唯一关联:  </label>
+								<div class="form-group row justify-content-center">
+									<label class="col-form-label col-md-3"> topic是否唯一关联:  </label>
 									<div class="col-md-5">
-										<div class="form-control-static" style="border:0;border-radius:5px;background-color:rgba(241,241,241,.98);padding-left:10px">
+										<div class="form-control" style="border:0;border-radius:5px;background-color:rgba(241,241,241,.98);padding-left:10px">
 											<span id="onlyRelation" style="word-break:break-all;text-align: center"></span>
 										</div>
 									</div>
 								</div>
-								<div class="form-group">
-									<label class="control-label col-md-4"> 近30天消费消息量:   </label>
+								<div class="form-group row justify-content-center">
+									<label class="col-form-label col-md-3"> 近30天消费消息量:   </label>
 									<div class="col-md-5">
-										<div class="form-control-static" style="border:0;border-radius:5px;background-color:rgba(241,241,241,.98);padding-left:10px">
+										<div class="form-control" style="border:0;border-radius:5px;background-color:rgba(241,241,241,.98);padding-left:10px">
 											<span id="monFlow" style="word-break:break-all;text-align: center"></span>
 										</div>
 									</div>
@@ -181,21 +198,9 @@
 <script>
 
 	$(function(){
-		$('#cid').selectpicker({
-			width: '130px'
-		});
 		initClusterList("cid");
-		$('#gid').selectpicker({
-			width: '130px'
-		});
 		initGroupList("gid");
-		$('#uid').selectpicker({
-			width: '220px'
-		});
 		initUserList("uid")
-		$('#noneConsumerFlows').selectpicker({
-			width: '100px'
-		});
 		initConsumerFlows("noneConsumerFlows")
 	});
 
@@ -374,4 +379,5 @@
 				}, 'json');
 	}
 </script>
+<#include "../../inc/pagination.html">
 

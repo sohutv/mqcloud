@@ -8,20 +8,71 @@
 					<input type="text" class="form-control" name="${searchItem.key}" value="${searchItem.value!}" placeholder="${searchItem.title}">
 				</#if>
 				<#if searchItem.type == 1>
-					<select name="${searchItem.key}" class="form-control select2_category">
+					<select name="${searchItem.key}" class="form-control selectpicker">
 						<#list searchItem.kvList as kv>
 							<option value="${kv.k}" <#if kv.v == searchItem.value> selected="selected" </#if>>${kv.v}</option>
 						</#list>
 					</select>
 			  	</#if>
 				<#if searchItem.type == 2>
-					<input type="text" name="${searchItem.key}" class="Wdate form-control" onclick="WdatePicker({ dateFmt: 'yyyy-MM-dd',maxDate:'%y-%M-%d',minDate:'%y-%M-{%d-<#if searchItem.daysBefore ==0>28<#else>${searchItem.daysBefore}</#if>}'})" style="width:120px;height:34px;cursor:pointer;" readonly="readonly"
-  								value="${.now?string("yyyy-MM-dd")}">
+					<div class="input-group date" id="${response.result.path}_date" data-target-input="nearest" style="width:210px;">
+						<div class="input-group-prepend">
+							<button id="${response.result.path}_prevBtn" type="button" class="btn btn-default" onclick="${response.result.path}prevDate()"><i class="fa-solid fa-caret-left"></i></button>
+						</div>
+						<input type="text" name="${searchItem.key}" class="form-control datetimepicker-input" data-target="#${response.result.path}_date"/>
+						<div class="input-group-append">
+							<button id="${response.result.path}_nextBtn" type="button" class="btn btn-default" onclick="${response.result.path}nextDate()"><i class="fa-solid fa-caret-right"></i></button>
+						</div>
+						<div class="input-group-append" data-target="#${response.result.path}_date" data-toggle="datetimepicker">
+							<div class="input-group-text"><i class="fa fa-calendar"></i></div>
+						</div>
+					</div>
+					<script>
+						$(function () {
+							$('#${response.result.path}_date').datetimepicker({
+								format: 'L',
+								minDate: moment({h:0, m:0, s:0, ms:0}).subtract(<#if searchItem.daysBefore == 0>28<#else>${searchItem.daysBefore}</#if>, 'days'),
+								maxDate: '${.now?string("yyyy-MM-dd")}',
+								defaultDate: '${.now?string("yyyy-MM-dd")}',
+								focusOnShow: false
+							});
+							$('#${response.result.path}_date').on("change.datetimepicker", function (e) {
+								${response.result.path}changeButtonStatus();
+								drawLineChart('${response.result.path}');
+							});
+							${response.result.path}changeButtonStatus();
+						});
+						function ${response.result.path}nextDate(){
+							var curMoment = $('#${response.result.path}_date').datetimepicker('viewDate');
+							$('#${response.result.path}_date').datetimepicker('date', curMoment.add(1, 'days'));
+						}
+						function ${response.result.path}prevDate(){
+							var curMoment = $('#${response.result.path}_date').datetimepicker('viewDate');
+							$('#${response.result.path}_date').datetimepicker('date', curMoment.subtract(1, 'days'));
+						}
+						function ${response.result.path}changeButtonStatus() {
+							var curMoment = $('#${response.result.path}_date').datetimepicker('viewDate');
+							var minDate = $('#${response.result.path}_date').datetimepicker('minDate');
+							var maxDate = $('#${response.result.path}_date').datetimepicker('maxDate');
+							if (curMoment.unix() <= minDate.unix()) {
+								$('#${response.result.path}_prevBtn').prop('disabled', true);
+							} else {
+								$('#${response.result.path}_prevBtn').prop('disabled', false);
+							}
+							if (curMoment.unix() >= maxDate.unix()) {
+								$('#${response.result.path}_nextBtn').prop('disabled', true);
+							} else {
+								$('#${response.result.path}_nextBtn').prop('disabled', false);
+							}
+						}
+					</script>
+				</#if>
+			</#if>
+			<#if !searchItem_has_next>
+				<#if response.result.searchHeader.searchFieldList??>
+<!--				<button type="button" onclick="drawLineChart('${response.result.path}')" class="btn btn-outline-secondary ml-1"><i class="fas fa-search"></i></button>-->
 				</#if>
 			</#if>
 		</#list>
-	</#if>
-	<#if response.result.searchHeader.searchFieldList??>
-		  <button type="button" onclick="drawLineChart('${response.result.path}')" class="btn"><span class="glyphicon glyphicon-search" aria-hidden="true"></span></button>
 	</#if>
 </form>

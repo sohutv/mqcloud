@@ -1,0 +1,42 @@
+<style type="text/css">
+    .notice-content-wrapper {
+        background-color: #f4f6f9;
+    }
+    .dark-mode .notice-content-wrapper {
+        background-color: #454d55;
+        color: #fff;
+    }
+</style>
+<div class="notice-content-wrapper">
+    <div class="content">
+        <div class="container" id="mqcloud-warning" style="display: none;">
+            <div class="card card-default" style="margin-bottom: 0px;">
+                <div class="card-header callout callout-warning" style="margin-bottom: 0px;">
+                    <h6 class="card-title">
+                        <i class="fas fa-bullhorn" style="color: #d39e00;"></i>
+                        <span id="warning-content" class="text-sm"></span>
+                    </h6>
+                    <div class="card-tools">
+                        <button type="button" onclick="closeNotice()" class="btn btn-tool" data-card-widget="remove"><i class="fas fa-times"></i></button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    $(function () {
+        // 获取通知
+        if ("close" != storageGet('notice')) {
+            $.get(contextPath + '/notice', function (data) {
+                if (data.status == 200) {
+                    $('#mqcloud-warning').show();
+                    $('#warning-content').html(data.result.content);
+                }
+            }, 'json');
+        }
+    });
+    function closeNotice() {
+        storageSet('notice', 'close', 86400);
+    }
+</script>

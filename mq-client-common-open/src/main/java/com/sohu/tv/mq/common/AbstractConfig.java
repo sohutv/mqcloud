@@ -20,6 +20,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Field;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * 公共配置
@@ -31,6 +32,10 @@ import java.lang.reflect.Field;
 public abstract class AbstractConfig {
 
     protected final Logger logger = LoggerFactory.getLogger(this.getClass());
+
+    public static final AtomicLong PRODUCER_INSTANCE_INDEX = new AtomicLong();
+
+    public static final AtomicLong CONSUMER_INSTANCE_INDEX = new AtomicLong();
 
     protected final int PRODUCER = 1;
 
@@ -81,6 +86,12 @@ public abstract class AbstractConfig {
         this.group = group;
         // 设置亲和性
         setAffinity();
+        // 设置instance name
+        if (role() == PRODUCER) {
+            setInstanceName("p" + PRODUCER_INSTANCE_INDEX.incrementAndGet());
+        } else {
+            setInstanceName("c" + CONSUMER_INSTANCE_INDEX.incrementAndGet());
+        }
     }
 
     public void setAffinity(){

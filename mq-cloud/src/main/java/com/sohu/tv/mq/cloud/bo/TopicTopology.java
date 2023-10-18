@@ -112,6 +112,35 @@ public class TopicTopology {
         this.totalConsumerTraffic = totalConsumerTraffic;
     }
 
+    public double getProducePercent() {
+        if (totalTopicTraffic == null || totalTopicTraffic.getCount() == 0) {
+            return 0;
+        }
+        return format(totalTopicTraffic.getCount() * 100d / getTotalCount());
+    }
+
+    public double getConsumePercent() {
+        if (totalConsumerTraffic == null || totalConsumerTraffic.getCount() == 0) {
+            return 0;
+        }
+        return format(totalConsumerTraffic.getCount() * 100d / getTotalCount());
+    }
+
+    private double format(double d) {
+        return (int) (d * 100) / 100d;
+    }
+
+    private long getTotalCount() {
+        long totalCount = 0;
+        if (totalTopicTraffic != null) {
+            totalCount += totalTopicTraffic.getCount();
+        }
+        if (totalConsumerTraffic != null) {
+            totalCount += totalConsumerTraffic.getCount();
+        }
+        return totalCount;
+    }
+
     public Map<StatsProducer, List<UserProducer>> getProducerFilterMap() {
         return producerFilterMap;
     }

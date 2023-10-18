@@ -822,3 +822,44 @@ create table IF NOT EXISTS `cancel_uniqid`
     `createTime`   datetime    not null COMMENT '生成时间',
     UNIQUE KEY  uniqIndex (uniqueId)
 );
+
+CREATE TABLE IF NOT EXISTS `audit_timespan_message_export` (
+    `aid` int(11) NOT NULL COMMENT '审核id',
+    `topic` varchar(64) NOT NULL COMMENT 'topic',
+    `start` bigint(20) DEFAULT NULL COMMENT '消费开始时间戳',
+    `end` bigint(20) DEFAULT NULL COMMENT '消费结束时间戳'
+);
+
+CREATE TABLE IF NOT EXISTS `message_export`
+(
+    `aid`   int(11) NOT NULL COMMENT '审核id',
+    `ip` varchar(255) NOT NULL COMMENT '执行导出的机器ip',
+    `total_msg_count` bigint(20) COMMENT '总消息量',
+    `exported_msg_count` bigint(20) COMMENT '导出的消息量',
+    `left_time` bigint(20) COMMENT '剩余时间',
+    `export_cost_time` bigint(20) COMMENT '导出用时',
+    `compress_cost_time` bigint(20) COMMENT '压缩用时',
+    `scp_cost_time` bigint(20) COMMENT 'scp用时',
+    `exported_file_path` varchar(255) COMMENT '导出文件路径',
+    `info` text COMMENT '任务执行的信息',
+    `create_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `update_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    primary key (`aid`)
+);
+
+CREATE TABLE IF NOT EXISTS `consumer_client_metrics`
+(
+    `id`          int(11) NOT NULL AUTO_INCREMENT,
+    `consumer`    varchar(64)  NOT NULL COMMENT 'consumer',
+    `client`      varchar(100) NOT NULL COMMENT 'client',
+    `max`         int(11) NOT NULL COMMENT '最大耗时',
+    `avg`         double       NOT NULL COMMENT '平均耗时',
+    `count`       int(11) NOT NULL COMMENT '调用次数',
+    `exception`   text COMMENT '异常记录',
+    `create_date` int(11) NOT NULL COMMENT '创建日期',
+    `create_time` char(4)      NOT NULL COMMENT '创建分钟,格式:HHMM',
+    `stat_time`   int(11) NOT NULL COMMENT '统计时间',
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `s_s_c` (`consumer`,`stat_time`,`client`),
+    KEY           `create_date` (`create_date`,`consumer`)
+);

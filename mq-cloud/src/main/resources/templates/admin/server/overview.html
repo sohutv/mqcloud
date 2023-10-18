@@ -1,81 +1,105 @@
-<div class="col-md-6" style="padding-right:0px;">
-	<table class="table table-striped table-hover" border=1>
-		<tr>
-		    <td>ip&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>
-		    <td>${info.ip}</td>
-		</tr>
-		<tr>
-		    <td>host</td>
-		    <td>${info.host!}</td>
-		</tr>
-		<tr>
-		    <td>cpu核数</td>
-		    <td>${info.cpus}</td>
-		</tr>
-		<tr>
-		    <td>nmon版本</td>
-		    <td>${info.nmon!}</td>
-		</tr>
-		<tr>
-		    <td>max file</td>
-		    <td>${file!}</td>
-		</tr>
-		<tr>
-		    <td>max procs</td>
-		    <td>${process!}</td>
-		</tr>
-		<tr>
-			<td>cpu型号</td>
-		    <td>${info.cpuModel!}</td>
-		</tr>
-		<tr>
-		    <td>发行版本</td>
-		    <td>${info.dist!}</td>
-		</tr>
-		<tr>
-		   <td>内核版本</td>
-		   <td>${info.kernel!}</td>
-		</tr>
-	</table>
-</div>
-<div class="col-md-6" style="padding:0px;">
-	<div id="containerLoad"
-		style="min-width: 310px; height: 400px; margin: 0 auto;"></div>
-</div>
-<div class="col-md-6" style="padding-right:0px;">
-	<div id="containerCpu"
-		style="min-width: 310px; height: 400px; margin: 0 auto;"></div>
-</div>
-<div class="col-md-6" style="padding:0px;">
-	<div id="containerMemory"
-		style="min-width: 310px; height: 400px; margin: 0 auto"></div>
-</div>
-<div class="col-md-6" style="padding-right:0px;">
-	<div id="containerSwap"
-		style="min-width: 310px; height: 400px; margin: 0 auto;"></div>
-</div>
-<div class="col-md-6" style="padding:0px;">
-	<div id="containerNet"
-		style="min-width: 310px; height: 400px; margin: 0 auto"></div>
-</div>
-<div class="col-md-6" style="padding-right:0px;">
-	<div id="containerTcp"
-		style="min-width: 310px; height: 400px; margin: 0 auto;"></div>
-</div>
-<div class="col-md-6" style="padding:0px;">
-	<div id="containerDisk"
-		style="min-width: 310px; height: 400px; margin: 0 auto"></div>
+<div class="row">
+	<div class="col-md-6">
+		<div class="card mt-2">
+			<div class="card-body table-responsive p-0">
+				<table class="table table-striped table-hover">
+					<tr>
+						<td>ip&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>
+						<td>${info.ip}</td>
+					</tr>
+					<tr>
+						<td>host</td>
+						<td>${info.host!}</td>
+					</tr>
+					<tr>
+						<td>cpu核数</td>
+						<td>${info.cpus}</td>
+					</tr>
+					<tr>
+						<td>nmon版本</td>
+						<td>${info.nmon!}</td>
+					</tr>
+					<tr>
+						<td>max file</td>
+						<td>${file!}</td>
+					</tr>
+					<tr>
+						<td>max procs</td>
+						<td>${process!}</td>
+					</tr>
+					<tr>
+						<td>cpu型号</td>
+						<td>${info.cpuModel!}</td>
+					</tr>
+					<tr>
+						<td>发行版本</td>
+						<td>${info.dist!}</td>
+					</tr>
+					<tr>
+						<td>内核版本</td>
+						<td>${info.kernel!}</td>
+					</tr>
+				</table>
+			</div>
+		</div>
+		<div class="card">
+			<div class="card-body">
+			<div id="containerCpu"
+				 style="min-width: 310px; height: 400px; margin: 0 auto;">
+			</div>
+			</div>
+		</div>
+		<div class="card">
+			<div class="card-body">
+				<div id="containerSwap" style="min-width: 310px; height: 400px; margin: 0 auto;">
+				</div>
+			</div>
+		</div>
+		<div class="card">
+			<div class="card-body">
+				<div id="containerTcp" 
+					 style="min-width: 310px; height: 400px; margin: 0 auto;">
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="col-md-6">
+		<div class="card mt-2">
+			<div class="card-body">
+			<div id="containerLoad" 
+				 style="min-width: 310px; height: 400px; margin: 0 auto;"></div>
+			</div>
+		</div>
+		<div class="card">
+			<div class="card-body">
+			<div id="containerMemory"
+				 style="min-width: 310px; height: 400px; margin: 0 auto"></div>
+			</div>
+		</div>
+		<div class="card">
+			<div class="card-body">
+			<div id="containerNet"
+				 style="min-width: 310px; height: 400px; margin: 0 auto"></div>
+			</div>
+		</div>
+		<div class="card">
+			<div class="card-body">
+			<div id="containerDisk"
+				 style="min-width: 310px; height: 400px; margin: 0 auto"></div>
+			</div>
+		</div>
+	</div>
 </div>
 <script type="text/javascript">
-	$(function() {
-			initLoadChart();
-			initCpuChart();
-			initMemoryChart();
-			initSwapChart();
-			initNetChart();
-			initTcpChart();
-			initDiskChart();
-	});
+	setTimeout(function (){
+		initLoadChart();
+		initCpuChart();
+		initMemoryChart();
+		initSwapChart();
+		initNetChart();
+		initTcpChart();
+		initDiskChart();
+	},200)
 	
 	function initLoadChart(){
 		var options = getOptions("containerLoad", "load", "1-min-max:${maxLoad1} 1-min-avg:${avgLoad1}");
@@ -167,12 +191,12 @@
 	   	var options = {
 			chart: {
 				renderTo: renderTo,
-				borderWidth: 1,
+				borderWidth: 0,
 				zoomType: "xy",
 				type: chartType,
 				marginRight: marginRight
 			},
-            title: {
+			title: {
             	useHTML:true,
                 text: title
             },
@@ -233,6 +257,6 @@
 	   	return options;
 	}
 	function showOverview(){
-		$("#server_app_tabs li.active a").click();
+		$("#server_app_tabs li a.active").click();
 	}
 </script>

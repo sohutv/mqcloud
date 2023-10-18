@@ -1,36 +1,26 @@
-<div id="associateProducerModal" class="modal fade" tabindex="-1" data-width="400">
-	<div class="modal-dialog">
-		<div class="modal-content">
-			<div class="modal-header">
-				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-				<span class="h4">关联生产者</span> <span class="nostyleA" data-toggle="tooltip" data-placement="bottom" title="点击查看下面各项的详细释义"><a href="/wiki/userGuide/produceAndConsume#oldUser" target=_blank class="glyphicon glyphicon-question-sign"></a></span>
-			</div>
-			<form class="form-horizontal form-bordered form-row-stripped" id="associateProducerForm">
-				<div class="modal-body">
-					<div class="row">
-						<div class="col-md-12">
-							<div class="form-body">
-								<div class="form-group">
-									<label class="control-label col-md-3"> Topic: </label>
-									<div class="col-md-5">
-										<select id="associateProducerTopicSelect" class="selectpicker" title="请选择" data-live-search-placeholder="搜索" name="tid" data-live-search="true">
-										</select>
-									</div>
-								</div>
-								<div class="form-group">
-									<label class="control-label col-md-3"> 生产者: </label>
-									<div class="col-md-5">
-										<select id="producerSelect" class="selectpicker" title="请选择produer group" data-live-search-placeholder="搜索" name="producer" data-live-search="true">
-										</select>
-									</div>
-								</div>
-							</div>
+<div class="row">
+	<div class="col-md-6 offset-md-3">
+		<div class="card card-outline card-secondary">
+			<form id="associateProducerForm">
+				<div class="card-body">
+					<p class="login-box-msg">关联生产者</p>
+					<div class="input-group mb-3">
+						<label class="col-form-label col-md-3"> Topic: </label>
+						<div class="col-md-8">
+							<select id="associateProducerTopicSelect" class="selectpicker  form-control" title="请选择" data-live-search-placeholder="搜索" name="tid" data-live-search="true">
+							</select>
+						</div>
+					</div>
+					<div class="input-group mb-3">
+						<label class="col-form-label col-md-3"> 生产者: </label>
+						<div class="col-md-8">
+							<select id="producerSelect" class="selectpicker  form-control" title="请选择produer group" data-live-search-placeholder="搜索" name="producer" data-live-search="true">
+							</select>
 						</div>
 					</div>
 				</div>
-				<div class="modal-footer">
-					<button type="button" data-dismiss="modal" class="btn" >取消</button>
-					<button type="button" class="btn btn-primary" id="associateProducerBtn" onclick="associateProducer()">确定</button>
+				<div class="card-footer">
+					<button type="button" onclick="associateProducer()" class="btn btn-primary float-right" id="associateProducerBtn">确定</button>
 				</div>
 			</form>
 		</div>
@@ -38,16 +28,11 @@
 </div>
 <script type="text/javascript">
 	$(function(){
-		$('#associateProducerTopicSelect').selectpicker({
-		    width: '269px'
-		});
-		$('#producerSelect').selectpicker({
-		    width: '269px'
-		});
 		// 下拉框change事件
 		$('#associateProducerTopicSelect').on('changed.bs.select',function(e, clickedIndex, newValue, oldValue){
 			refreshProducerSelect($(this).val());
 		});
+		initProducerAssociateTopicList();
 	});
 	/**
 	 * 初始化topic下拉列表
@@ -62,11 +47,8 @@
 		            		content += "<option value='"+topic.id+"'>"+topic.name+"</option>";
 		            	}
 		        		$("#associateProducerTopicSelect").html(content);
-		        		$('#associateProducerTopicSelect').selectpicker({
-		        		    width: '269px'
-		        		});
 		        		$("#associateProducerTopicSelect").selectpicker('refresh');
-						var curTopicId = $("#curTopicId").val();
+						var curTopicId = getQueryString("tid");
 						if (curTopicId) {
 							$('#associateProducerTopicSelect').selectpicker('val', curTopicId);
 							refreshProducerSelect(curTopicId);
@@ -95,9 +77,6 @@
 		            		content += "<option value='"+producer.producer+"'>"+producer.producer+"</option>";
 		            	}
 		        		$("#producerSelect").html(content);
-		        		$('#producerSelect').selectpicker({
-		        		    width: '269px'
-		        		});
 		        		$("#producerSelect").selectpicker('refresh');
 				    }else{
 				    	toastr.error("数据获取失败！"+data.message);  
@@ -117,15 +96,12 @@
 			return;
 		}
 		disable("associateProducerBtn");
-		$.post('${request.contextPath}/topic/associate',
+		$.post('${request.contextPath}/producer/associate',
 				$("#associateProducerForm").serialize(),
 		        function(data){
 		            if(data.status == 200){
-		            	toastr.success("申请成功！请耐心等待！");  
-		            	modalHide(3000, function(){
-		            		enable("associateProducerBtn");
-			            	$("#associateProducerForm")[0].reset();
-		            	});
+						toastr.success("申请成功，请稍后查看！即将跳转到我的工单");
+						toMyAuditPage();
 				    }else{
 				    	toastr.error("申请失败！"+data.message);  
 				    	enable("associateProducerBtn");

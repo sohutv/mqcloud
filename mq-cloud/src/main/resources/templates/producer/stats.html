@@ -1,7 +1,6 @@
 <!-- 	准备搜索部分 -->
 <div class="row">
 	<div class="col-md-12">
-		<div style="float:left;margin:10px 5px;"><h5><b>${RequestParameters.producer}</b>客户端耗时统计图</h5></div>
 		<div id="pstats_search" style="float:right;margin:10px 0px;"></div>
 	</div>
 </div>
@@ -29,12 +28,12 @@ $(function() {
 		chart.tooltip = {
 				formatter: function () {
 					var s = '';
-					s += "<table style='background-color:white;'><thead><tr>";
-					s += "<td>时间</td>";
+					s += "<table class='table table-hover table-striped table-bordered'><thead><tr>";
+					s += "<th class='border-0'>时间</th>";
 					$.each(this.points, function () {
-						s += "<td><font color='"+this.series.color+"'>" + this.series.name + "</font></td>";
+						s += "<th class='border-0'><font color='"+this.series.color+"'>" + this.series.name + "</font></th>";
 					});
-					s += "</tr></thead><tr>";
+					s += "</tr class='border-0'></thead><tr>";
 					s += "<td>"+this.x+"</td>";
 					$.each(this.points, function () {
 						s += "<td><font color='"+this.series.color+"'>";
@@ -55,7 +54,7 @@ $(function() {
 					if(statId){
 						var stats = statMap[statId];
 						if(stats){
-							s += "<table><thead><tr><td>broker</td><td>count</td><td>max</td><td>avg</td></tr></thead>";
+							s += "<table class='table table-hover table-striped table-bordered'><thead><tr><th>broker</th><th>count</th><th>max</th><th>avg</th></tr></thead>";
 							for(var i in stats){
 								var stat = stats[i];
 			            		s += "<tr>";
@@ -81,6 +80,6 @@ $(function() {
 			};
 		// 使用grafana click效果
 		grafanaClick(chart);
-	});
+	}, true);
 });
 </script>

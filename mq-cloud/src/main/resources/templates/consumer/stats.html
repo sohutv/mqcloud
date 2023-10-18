@@ -1,0 +1,52 @@
+<!-- 	准备搜索部分 -->
+<div class="row">
+	<div class="col-md-12">
+		<div id="cstats_search" style="float:right;margin:10px 0px;"></div>
+	</div>
+</div>
+<!-- 	准备曲线图 -->
+<div id="cstats_lineChart"><center>正在加载。。。</center></div>
+<script>
+$(function() {
+	lineChart("cstats", function (){
+		$("#consumerGroupStats").val("${RequestParameters.consumer}");
+	}, function chartToolTip(chart){
+		if(!chart){
+			return;
+		}
+		chart.tooltip = {
+				formatter: function () {
+					var s = '';
+					s += "<table class='table table-hover table-bordered'><thead><tr>";
+					s += "<th class='border-0'>时间</th>";
+					$.each(this.points, function () {
+						s += "<th class='border-0'><font color='"+this.series.color+"'>" + this.series.name + "</font></th>";
+					});
+					s += "</tr class='border-0'></thead><tr>";
+					s += "<td>"+this.x+"</td>";
+					$.each(this.points, function () {
+						s += "<td><font color='"+this.series.color+"'>";
+						s += this.y;
+						if(this.series.name == "调用量"){
+							s += "次";
+						} else {
+							s += "ms";
+						}
+						s += "</font></td>";
+					});
+					if(this.points[this.points.length - 1].point.dt){
+						s += "</tr><tr><td colspan="+(this.points.length+1)+">"+this.points[this.points.length - 1].point.dt+"</td></tr></table>";
+					} else {
+						s += "</tr></table>";
+					}
+					return s;
+				},
+				backgroundColor: '#FFF',
+				useHTML: true,
+				shared: true
+			};
+		// 使用grafana click效果
+		grafanaClick(chart);
+	}, true);
+});
+</script>

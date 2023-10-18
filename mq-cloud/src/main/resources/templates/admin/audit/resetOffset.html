@@ -1,56 +1,50 @@
 <#if response.notOK>
 <div class="modal-body">
-	<div class="form-body">
-		<div class="form-group">
-			<div>异常数据</div>
-		</div>
+	<div class="form-group">
+		<div class="text-center">异常数据</div>
 	</div>
 </div>
 <#else>
 <div class="modal-body">
-	<div class="row">
-		<div class="col-md-12">
-			<div class="form-body">
-				<div class="form-group">
-					<label class="control-label col-md-3"> Topic: </label>
-			        <div class="col-md-6">
-						<input type="text" value="${response.result.topic}" readonly="readonly" class="form-control" />
-					</div>
-				</div>
-				<div class="form-group">
-					<label class="control-label col-md-3"> 消费者: </label>
-			        <div class="col-md-6">
-						<input type="text" value="${response.result.consumer}" readonly="readonly" class="form-control" />
-					</div>
-				</div>
-				<div class="form-group">
-					<label class="control-label col-md-3"> 重置到: </label>
-			        <div class="col-md-6">
-			        	<#if response.result.offset??>
-							<input type="text" value="${response.result.offset}" readonly="readonly" class="form-control" />
-			        	<#else>
-			        		<input type="text" value="最新时间" readonly="readonly" class="form-control" />
-			        	</#if>
-					</div>
-				</div>
-				<div class="form-group">
-					<label class="control-label col-md-3"> 消息key: </label>
-			        <div class="col-md-6">
-						<input type="text" value="${response.result.messageKey!}" readonly="readonly" class="form-control" />
-					</div>
-				</div>
-				<div class="form-group custom">
-					<label class="control-label col-md-3"> 拒绝理由: </label>
-					<div class="col-md-6">
-						<textarea type="text" id="refuseReason" rows="3" class="form-control" placeholder="请填写"></textarea>
-					</div>
-				</div>
+	<div class="form-body">
+		<div class="form-group row">
+			<label class="col-md-3 col-form-label"> Topic: </label>
+			<div class="col-md-9">
+				<input type="text" value="${response.result.topic}" readonly="readonly" class="form-control" />
+			</div>
+		</div>
+		<div class="form-group row">
+			<label class="col-md-3 col-form-label"> 消费者: </label>
+			<div class="col-md-9">
+				<input type="text" value="${response.result.consumer}" readonly="readonly" class="form-control" />
+			</div>
+		</div>
+		<div class="form-group row">
+			<label class="col-md-3 col-form-label"> 重置到: </label>
+			<div class="col-md-9">
+				<#if response.result.offset??>
+					<input type="text" value="${response.result.offset}" readonly="readonly" class="form-control" />
+				<#else>
+					<input type="text" value="最新时间" readonly="readonly" class="form-control" />
+				</#if>
+			</div>
+		</div>
+		<div class="form-group row">
+			<label class="col-md-3 col-form-label"> 消息key: </label>
+			<div class="col-md-9">
+				<input type="text" value="${response.result.messageKey!}" readonly="readonly" class="form-control" />
+			</div>
+		</div>
+		<div class="form-group row custom">
+			<label class="col-md-3 col-form-label"> 拒绝理由: </label>
+			<div class="col-md-9">
+				<textarea type="text" id="refuseReason" rows="3" class="form-control" placeholder="请填写"></textarea>
 			</div>
 		</div>
 	</div>
 </div>
 <div class="modal-footer custom">
-	<button type="button" data-dismiss="modal" class="btn" >取消</button>
+	<button type="button" data-dismiss="modal" class="btn btn-light" >取消</button>
 	<button type="button" id="cancelBtn" class="btn btn-warning" onclick="cancelAudit()">撤销</button>
 	<button type="button" class="btn btn-warning" id="refuseBtn" onclick="refuse()">拒绝</button>
 	<button type="button" class="btn btn-primary" id="agreeBtn" onclick="agree()">同意</button>

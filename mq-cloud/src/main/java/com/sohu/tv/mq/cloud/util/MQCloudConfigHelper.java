@@ -181,6 +181,18 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware, Comm
     // proxy acl
     private List<Map<String, Object>> proxyAcls;
 
+    // 第一次搜索的最大队列数
+    private int maxQueueNumOfFirstSearch = 50;
+
+    // 导出消息的本地存储目录，格式：/mqcloud/download
+    private String exportedMessageLocalPath;
+
+    // 导出消息的远程目录，格式：ip:/mqcloud/download
+    private String exportedMessageRemotePath;
+
+    // 导出消息的下载url前缀，格式：http://mqcloud.com/download/
+    private String exportedMessageDownloadUrlPrefix;
+
     @Autowired
     private CommonConfigService commonConfigService;
 
@@ -238,6 +250,24 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware, Comm
 
     public boolean isOnline() {
         return "online".equals(profile) || "online-sohu".equals(profile);
+    }
+
+    public boolean isSohu() {
+        return profile.contains("sohu");
+    }
+
+    public boolean isTestSohu() {
+        return profile.contains("test-sohu");
+    }
+
+    /**
+     * 是否需要监控
+     * 测试环境，需要监控；online环境，只监控online集群
+     *
+     * @return
+     */
+    public boolean needMonitor(boolean onlineCluster) {
+        return !isOnline() || onlineCluster;
     }
 
     public boolean isLocal() {
@@ -349,7 +379,7 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware, Comm
         return getPrefix() + "admin/cluster/list?cid=" + cid;
     }
 
-    private String getPrefix() {
+    public String getPrefix() {
         return HTTP_SCHEMA + getDomain() + getContextPath();
     }
 
@@ -654,6 +684,38 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware, Comm
 
     public void setApiAuditUserEmail(List<String> apiAuditUserEmail) {
         this.apiAuditUserEmail = apiAuditUserEmail;
+    }
+
+    public int getMaxQueueNumOfFirstSearch() {
+        return maxQueueNumOfFirstSearch;
+    }
+
+    public void setMaxQueueNumOfFirstSearch(int maxQueueNumOfFirstSearch) {
+        this.maxQueueNumOfFirstSearch = maxQueueNumOfFirstSearch;
+    }
+
+    public String getExportedMessageRemotePath() {
+        return exportedMessageRemotePath;
+    }
+
+    public void setExportedMessageRemotePath(String exportedMessageRemotePath) {
+        this.exportedMessageRemotePath = exportedMessageRemotePath;
+    }
+
+    public String getExportedMessageLocalPath() {
+        return exportedMessageLocalPath;
+    }
+
+    public void setExportedMessageLocalPath(String exportedMessageLocalPath) {
+        this.exportedMessageLocalPath = exportedMessageLocalPath;
+    }
+
+    public String getExportedMessageDownloadUrlPrefix() {
+        return exportedMessageDownloadUrlPrefix;
+    }
+
+    public void setExportedMessageDownloadUrlPrefix(String exportedMessageDownloadUrlPrefix) {
+        this.exportedMessageDownloadUrlPrefix = exportedMessageDownloadUrlPrefix;
     }
 
     public boolean checkApiAuditUserEmail(String email) {

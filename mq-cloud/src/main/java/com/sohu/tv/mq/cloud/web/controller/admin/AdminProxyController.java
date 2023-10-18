@@ -140,7 +140,7 @@ public class AdminProxyController extends AdminViewController {
                              @RequestParam(name = "cid") int cid,
                              @RequestParam(name = "config") String config) {
         logger.warn("startup, ip:{}, dir:{}, user:{}", ip, dir, ui);
-        Result<?> result = mqDeployer.startup(ip, dir);
+        Result<?> result = mqDeployer.startup(ip, dir, port);
         if (result.isOK()) {
             Proxy proxy = new Proxy();
             proxy.setCid(cid);

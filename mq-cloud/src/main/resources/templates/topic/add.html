@@ -1,183 +1,177 @@
-<!-- 新建topic -->
-<div id="addTopicModal" class="modal fade" tabindex="-1" data-width="400">
-	<div class="modal-dialog">
-		<div class="modal-content">
-			<div class="modal-header">
-				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-				<span class="h4">新建Topic</span> <span class="nostyleA" data-toggle="tooltip" data-placement="bottom" title="点击查看下面各项的详细释义"><a href="/wiki/userGuide/produceAndConsume#createTopic" target=_blank class="glyphicon glyphicon-question-sign"></a></span>
-			</div>
-			<form class="form-horizontal form-bordered form-row-stripped" id="addTopicForm">
-				<div class="modal-body">
-					<div class="row">
-						<div class="col-md-12">
-							<div class="form-body">
-								<div class="form-group">
-									<label class="control-label col-md-3"> 组名: </label>
-							        <div class="col-md-5">
-										<input type="text" id="teamNameInput" name="teamName" value="" placeholder="组名简称" class="form-control" />
-									</div>
-								</div>
-								<div class="form-group">
-									<label class="control-label col-md-3"> 业务名: </label>
-							        <div class="col-md-5">
-										<input type="text" id="bizNameInput" name="bizName" value="" placeholder="业务简称" class="form-control" />
-									</div>
-								</div>
-								<div class="form-group">
-										<label class="control-label col-md-3"> Topic: </label>
-							        <div class="col-md-5">
-										<input type="text" id="topicNameInput" name="name" value="" readonly="readonly"
-											placeholder="组名-业务名-topic" class="form-control" />
-									</div>
-								</div>
-								<div class="form-group">
-									<label class="control-label col-md-3" data-toggle="modal" title="这里的队列数量是指每个broker上的队列数，一般至少有4个broker，如果这里填8，那么共有32个队列"> 队列数量: </label>
-									<div class="col-md-5">
-										<input type="text" id="topicNumInput" name="queueNum" value="8" 
-										placeholder="默认为8，不建议修改" class="form-control" />
-									</div>
-								</div>
-								<div class="form-group">
-									<label class="control-label col-md-3"> 生产者: </label>
-									<div class="col-md-5">
-										<input type="text" id="producerInput" name="producer" value="" readonly="readonly"
-										placeholder="组名-业务名-topic-producer" class="form-control" />
-									</div>
-								</div>
-								<div class="form-group">
-									<label class="control-label col-md-3"> 消息量: </label>
-									<div class="col-md-5">
-										<div class="input-group">
-											<select name="qpd" class="form-control">
-												<option value="10000">1万</option>
-												<option value="100000">10万</option>
-												<option value="1000000">100万</option>
-												<option value="10000000">1000万</option>
-												<option value="100000000">1亿</option>
-												<option value="1000000000">10亿</option>
-											</select>
-											<span class="input-group-addon">条/天</span>
-	    								</div>
-									</div>
-								</div>
-								<div class="form-group">
-									<label class="control-label col-md-3"> 高峰消息量: </label>
-									<div class="col-md-5">
-										<div class="input-group">
-											<select name="qps" class="form-control">
-												<option value="100">100</option>
-												<option value="1000">1000</option>
-												<option value="10000">1万</option>
-												<option value="100000">10万</option>
-												<option value="1000000">100万</option>
-												<option value="10000000">1000万</option>
-											</select>
-											<span class="input-group-addon">条/秒</span>
-	    								</div>
-									</div>
-								</div>
-								<div class="form-group">
-									<label class="control-label col-md-3"> 使用环境: </label>
-									<div class="col-md-5 checkbox">
-										<label data-toggle="tooltip" title="开启后，会在线上集群上创建该topic">
-										    <input onclick="enableTestEnv()" type="radio" name="testEnabled" value="0" checked>线上
-										</label>
-										<label data-toggle="tooltip" title="开启后，会在测试集群上创建该topic">
-										    <input onclick="disableTestEnv()" type="radio" name="testEnabled" value="1">测试
-										</label>
-									</div>
-								</div>
-								<div class="form-group">
-									<label class="control-label col-md-3" data-toggle="tooltip" title="序列化方式一旦选择，不可更改，请谨慎！"> 序列化方式: </label>
-									<div class="col-md-5 checkbox">
-										<label data-toggle="tooltip" title="优点：大多数情况下压缩比高，性能好。缺点：兼容性差，消费方须用Protobuf反序列化。不推荐使用。">
-									    	<input type="radio" name="serializer" value="0" disabled><span class="delete">Protobuf</span></input>
-									    </label>
-									    <label data-toggle="tooltip" title="优点：可以使用json或xml，跨语言。缺点：性能和压缩比不高。如果此topic别人消费，建议使用此种方式序列化。">
-									    	<input type="radio" name="serializer" value="1" checked="checked">String</input>
-										</label>
-									</div>
-								</div>
-								<div class="form-group">
-									<label class="control-label col-md-3"> 通信协议: </label>
-									<div class="col-md-8 checkbox">
-										<label data-toggle="tooltip" title="java语言请保持默认选项">
-											<input type="radio" name="protocol" value="0" checked>RocketMQ
-										</label>
-										<label data-toggle="tooltip" title="非java语言建议使用http协议生产">
-											<input type="radio" name="protocol" value="1">HTTP <span class="nostyleA" data-toggle="tooltip" data-placement="bottom" title="点击查看http协议生产"><a href="/wiki/userGuide/http#producer" target=_blank class="glyphicon glyphicon-question-sign"></a></span>
-										</label>
-										<label data-toggle="tooltip" title="代理模式的remoting协议">
-											<input type="radio" name="protocol" value="2">Proxy Remoting
-										</label>
-									</div>
-								</div>
-								<div class="form-group">
-									<label class="control-label col-md-3"> 用途: </label>
-									<div class="col-md-5">
-										<textarea type="text" name="info" rows="2" class="form-control" placeholder="请填写"></textarea>
-									</div>
-								</div>
-								<div class="form-group">
-									<label class="control-label col-md-3">更多设置</label>
-									<div class="col-md-5 checkbox">
-									<span onclick="showExtendConfig(this)" class="pointer glyphicon mqcloudcollapse" aria-hidden="true">&nbsp;&nbsp;&nbsp;</span>
-									</div>
-								</div>
-								<!-- 以下选项默认隐藏 -->
-								<div id="extendConfig" class="hide">
-									<div class="form-group">
-										<label class="control-label col-md-3"> 消息顺序: </label>
-										<div class="col-md-5 checkbox nostyleA">
-											<label data-toggle="tooltip" title="点击查看释义">
-											    <input type="radio" name="ordered" value="0" checked><a target=_blank href="/wiki/userGuide/clientConsumer#normalOrder">局部有序</a>
-											</label>
-											<label data-toggle="tooltip" title="在分布式系统中保持全局消息有序有性能损耗，请谨慎使用。点击查看释义。">
-												<input type="radio" name="ordered" value="1"><a target=_blank  href="/wiki/userGuide/clientConsumer#strictOrder">全局有序</a>
-											</label>
-										</div>
-									</div>
-									<div class="form-group" id="traceForm">
-										<label class="control-label col-md-3"> 开启trace: </label>
-										<div class="col-md-5 checkbox">
-											<label>
-											    <input type="radio" name="traceEnabled" value="0" checked>否
-											</label>
-											<label data-toggle="tooltip" title="开启后，生产者会自动启用trace功能">
-											    <input type="radio" name="traceEnabled" value="1">是
-											</label>
-										</div>
-									</div>
-									<div class="form-group">
-										<label class="control-label col-md-3"> 支持事务: </label>
-										<div class="col-md-5 checkbox">
-											<label>
-											    <input type="radio" name="transactionEnabled" value="0" checked>否
-											</label>
-											<label data-toggle="tooltip" title="开启后，会在事务集群上创建该topic">
-											    <input type="radio" name="transactionEnabled" value="1">是
-											</label>
-										</div>
-									</div>
-									<div class="form-group">
-										<label class="control-label col-md-3"> 消息延迟: </label>
-										<div class="col-md-5 checkbox">
-											<label data-toggle="tooltip" title="该topic内不会发送延迟消息">
-											    <input type="radio" name="delayEnabled" value="0" checked>否
-											</label>
-										   	<label data-toggle="tooltip" title="该topic内会发送延迟消息">
-											    <input type="radio" name="delayEnabled" value="1">是
-										   	</label>
-										</div>
-									</div>
+<div class="row">
+	<div class="col-md-6 offset-md-3">
+		<div class="card card-outline card-secondary">
+			<form id="addTopicForm">
+				<div class="card-body">
+					<p class="login-box-msg">新建Topic <a target=_blank href="${request.contextPath}/wiki/userGuide/produceAndConsume#createTopic" title="点击查看下面各项的详细释义" data-toggle="tooltip"><i class="fas fa-question-circle fa-sm"></i></a></p>
+					<div class="input-group mb-3">
+						<label for="teamNameInput" class="col-form-label col-md-3"> 组名: </label>
+						<div class="col-md-7 validate-span">
+							<input type="text" id="teamNameInput" name="teamName" value="" placeholder="组名简称" class="form-control" />
+						</div>
+					</div>
+					<div class="input-group mb-3">
+						<label for="bizNameInput" class="col-form-label col-md-3"> 业务名: </label>
+						<div class="col-md-7 validate-span">
+							<input type="text" id="bizNameInput" name="bizName" value="" placeholder="业务简称" class="form-control" />
+						</div>
+					</div>
+					<div class="input-group mb-3">
+						<label for="topicNameInput" class="col-form-label col-md-3"> Topic: </label>
+						<div class="col-md-7">
+							<input type="text" id="topicNameInput" name="name" value="" readonly="readonly"
+								placeholder="组名-业务名-topic" class="form-control" />
+						</div>
+					</div>
+					<div class="input-group mb-3">
+						<label for="topicNumInput" class="col-form-label col-md-3" data-toggle="modal" title="这里的队列数量是指每个broker上的队列数，一般至少有4个broker，如果这里填8，那么共有32个队列"> 队列数量: </label>
+						<div class="col-md-7 validate-span">
+							<input type="text" id="topicNumInput" name="queueNum" value="8"
+							placeholder="默认为8，不建议修改" class="form-control" />
+						</div>
+					</div>
+					<div class="input-group mb-3">
+						<label for="producerInput" class="col-form-label col-md-3"> 生产者: </label>
+						<div class="col-md-7">
+							<input type="text" id="producerInput" name="producer" value="" readonly="readonly"
+							placeholder="组名-业务名-topic-producer" class="form-control" />
+						</div>
+					</div>
+					<div class="input-group mb-3">
+						<label class="col-form-label col-md-3"> 消息量: </label>
+						<div class="col-md-7">
+							<div class="input-group">
+								<select name="qpd" class="form-control selectpicker">
+									<option value="10000">1万</option>
+									<option value="100000">10万</option>
+									<option value="1000000">100万</option>
+									<option value="10000000">1000万</option>
+									<option value="100000000">1亿</option>
+									<option value="1000000000">10亿</option>
+								</select>
+								<div class="input-group-append">
+									<span class="input-group-text">条/天</span>
 								</div>
 							</div>
 						</div>
 					</div>
+					<div class="input-group mb-3">
+						<label class="col-form-label col-md-3"> 高峰消息量: </label>
+						<div class="col-md-7">
+							<div class="input-group">
+								<select name="qps" class="form-control selectpicker">
+									<option value="100">100</option>
+									<option value="1000">1000</option>
+									<option value="10000">1万</option>
+									<option value="100000">10万</option>
+									<option value="1000000">100万</option>
+									<option value="10000000">1000万</option>
+								</select>
+								<div class="input-group-append">
+									<span class="input-group-text">条/秒</span>
+								</div>
+							</div>
+						</div>
+					</div>
+					<div class="input-group mb-3">
+						<label class="col-md-3"> 使用环境: </label>
+						<div class="col-md-7 checkbox">
+							<label data-toggle="tooltip" title="开启后，会在线上集群上创建该topic">
+								<input onclick="enableTestEnv()" type="radio" name="testEnabled" value="0" checked>线上
+							</label>
+							<label data-toggle="tooltip" title="开启后，会在测试集群上创建该topic">
+								<input onclick="disableTestEnv()" type="radio" name="testEnabled" value="1">测试
+							</label>
+						</div>
+					</div>
+					<div class="input-group mb-3">
+						<label class="col-md-3" data-toggle="tooltip" title="序列化方式一旦选择，不可更改，请谨慎！"> 序列化方式: </label>
+						<div class="col-md-7 checkbox">
+							<label data-toggle="tooltip" title="优点：大多数情况下压缩比高，性能好。缺点：兼容性差，消费方须用Protobuf反序列化。不推荐使用。">
+								<input type="radio" name="serializer" value="0" disabled><span style="text-decoration:line-through">Protobuf</span></input>
+							</label>
+							<label data-toggle="tooltip" title="优点：可以使用json或xml，跨语言。缺点：性能和压缩比不高。如果此topic别人消费，建议使用此种方式序列化。">
+								<input type="radio" name="serializer" value="1" checked="checked">String</input>
+							</label>
+						</div>
+					</div>
+					<div class="input-group mb-3">
+						<label class="col-md-3"> 通信协议: </label>
+						<div class="col-md-8 checkbox">
+							<label data-toggle="tooltip" title="java语言请保持默认选项">
+								<input type="radio" name="protocol" value="0" checked>RocketMQ
+							</label>
+							<label data-toggle="tooltip" title="非java语言建议使用http协议生产">
+								<input type="radio" name="protocol" value="1">HTTP <a href="${request.contextPath}/wiki/userGuide/http#producer" data-toggle="tooltip" data-placement="bottom" title="点击查看http协议生产" target=_blank><i class="fas fa-question-circle fa-sm"></i></a>
+							</label>
+							<label data-toggle="tooltip" title="代理模式的remoting协议">
+								<input type="radio" name="protocol" value="2">Proxy Remoting
+							</label>
+						</div>
+					</div>
+					<div class="input-group mb-3">
+						<label class="col-form-label col-md-3"> 用途: </label>
+						<div class="col-md-7 validate-span">
+							<textarea type="text" name="info" rows="2" class="form-control" placeholder="请填写"></textarea>
+						</div>
+					</div>
+					<div class="input-group mb-3">
+						<label class="col-md-3">更多设置</label>
+						<div class="col-md-7">
+							<a href="javascript:void(0)"><i onclick="toggleExtendConfig(this)" class="fas fa-lg fa-caret-right"></i></a>
+						</div>
+					</div>
+					<!-- 以下选项默认隐藏 -->
+					<div id="extendConfig" style="display: none">
+						<div class="input-group mb-3">
+							<label class="col-md-3"> 消息顺序: </label>
+							<div class="col-md-7 checkbox nostyleA">
+								<label data-toggle="tooltip" title="点击查看释义">
+									<input type="radio" name="ordered" value="0" checked>局部有序
+								</label>
+								<label data-toggle="tooltip" title="在分布式系统中保持全局消息有序有性能损耗，请谨慎使用。点击查看释义。">
+									<input type="radio" name="ordered" value="1">全局有序
+								</label>
+								<a href="${request.contextPath}/wiki/userGuide/clientConsumer#normalOrder" data-toggle="tooltip" data-placement="bottom" title="点击查看释义" target=_blank><i class="fas fa-question-circle fa-sm"></i></a>
+							</div>
+						</div>
+						<div class="input-group mb-3" id="traceForm">
+							<label class="col-md-3"> 开启trace: </label>
+							<div class="col-md-7 checkbox">
+								<label>
+									<input type="radio" name="traceEnabled" value="0" checked>否
+								</label>
+								<label data-toggle="tooltip" title="开启后，生产者会自动启用trace功能">
+									<input type="radio" name="traceEnabled" value="1">是
+								</label>
+							</div>
+						</div>
+						<div class="input-group mb-3">
+							<label class="col-md-3"> 支持事务: </label>
+							<div class="col-md-7 checkbox">
+								<label>
+									<input type="radio" name="transactionEnabled" value="0" checked>否
+								</label>
+								<label data-toggle="tooltip" title="开启后，会在事务集群上创建该topic">
+									<input type="radio" name="transactionEnabled" value="1">是
+								</label>
+							</div>
+						</div>
+						<div class="input-group mb-3">
+							<label class="col-md-3"> 消息延迟: </label>
+							<div class="col-md-7 checkbox">
+								<label data-toggle="tooltip" title="该topic内不会发送延迟消息">
+									<input type="radio" name="delayEnabled" value="0" checked>否
+								</label>
+								<label data-toggle="tooltip" title="该topic内会发送延迟消息">
+									<input type="radio" name="delayEnabled" value="1">是
+								</label>
+							</div>
+						</div>
+					</div> <!-- extendConfig -->
 				</div>
-				<div class="modal-footer">
-					<button type="button" data-dismiss="modal" class="btn" >取消</button>
-					<button type="submit" class="btn btn-primary" id="addTopicBtn" disabled="disabled">确定</button>
+				<div class="card-footer">
+					<button type="submit" class="btn btn-primary float-right" id="addTopicBtn">确定</button>
 				</div>
 			</form>
 		</div>
@@ -185,80 +179,65 @@
 </div>
 <script>
 	$(function () {
-		// 用户topic表单校验
-        $('#addTopicForm').bootstrapValidator({
-    　　　　　　	message: 'This value is not valid',
-                fields: {
-                	teamName: {
-                        validators: {
-                        	notEmpty: {
-                                message: '组名不能为空'
-                            },
-    	                     regexp: {
-    	                         regexp: /^[a-zA-Z0-9_\-]+$/,
-    	                         message: '只能包含大小写英文字符，数字，下划线，中划线'
-    	                     }
-                        }
-                    },
-                    bizName: {
-                        validators: {
-                        	notEmpty: {
-                                message: '业务名不能为空'
-                            },
-    	                     regexp: {
-    	                         regexp: /^[a-zA-Z0-9_\-]+$/,
-    	                         message: '只能包含大小写英文字符，数字，下划线，中划线'
-    	                     }
-                        }
-                    },
-                    queueNum: {
-                        validators: {
-                            notEmpty: {
-                                message: '队列数量不能为空'
-                            },
-                            between: {
-    	                         min: 1,
-    	                         max: 20,
-    	                         message: '队列数量需介于1和20之间'
-    	                     }
-                        }
-                    },
-                    serializer: {
-                    	validators: {
-                            notEmpty: {
-                                message: '请选择序列化方式'
-                            }
-                        }
-                    },
-                    info: {
-                    	validators: {
-                            notEmpty: {
-                                message: '请填写用途'
-                            }
-                        }
-                    }
-                }
-        }).on('success.form.bv', function(e) {
-            // 阻止默认事件提交
-            e.preventDefault();
- 		   	disable("addTopicBtn");
-    		$.post('${request.contextPath}/topic/add',
-   				$("#addTopicForm").serialize(),
-   		        function(data){
-   		            if(data.status == 200){
-   						toastr.success("操作成功，请稍后查看");  
-   						modalHide(3000, function(){
-	   						$("#addTopicForm")[0].reset();
-	   						$("#addTopicForm").data('bootstrapValidator').resetForm();
-	   						enable("addTopicBtn");
-   						});
-   				    }else{
-   				    	toastr.error("操作失败！"+data.message);  
-   				    	enable("addTopicBtn");
-   				    }
-   		        }, 'json');
-        });
-		
+		$('#addTopicForm').validate({
+			submitHandler: function () {
+				disable("addTopicBtn");
+				$.post('${request.contextPath}/topic/add', $("#addTopicForm").serialize(), function(data){
+					if(data.status == 200){
+						toastr.success("申请成功，请稍后查看！即将跳转到我的工单");
+						toMyAuditPage();
+					}else{
+						toastr.error("操作失败！"+data.message);
+						enable("addTopicBtn");
+					}
+				}, 'json');
+			},
+			rules: {
+				teamName: {
+					required: true,
+					regexp: /^[a-zA-Z0-9_-]+$/
+				},
+				bizName: {
+					required: true,
+					regexp: /^[a-zA-Z0-9_-]+$/
+				},
+				queueNum: {
+					required: true,
+					min: 1,
+					max: 20
+				},
+				info: {
+					required: true
+				},
+			},
+			messages: {
+				teamName: {
+					required: "组名不能为空",
+					regexp: '只能包含大小写英文字符，数字，下划线，中划线'
+				},
+				bizName: {
+					required: "业务名不能为空",
+					regexp: '只能包含大小写英文字符，数字，下划线，中划线'
+				},
+				queueNum: {
+					required: "队列数量不能为空",
+					min: "队列数量不能小于1",
+					max: "队列数量不能大于20"
+				},
+				info: "请填写用途"
+			},
+			errorElement: 'span',
+			errorPlacement: function (error, element) {
+				error.addClass('invalid-feedback');
+				element.closest('.validate-span').append(error);
+			},
+			highlight: function (element, errorClass, validClass) {
+				$(element).addClass('is-invalid');
+			},
+			unhighlight: function (element, errorClass, validClass) {
+				$(element).removeClass('is-invalid');
+			}
+		});
 		// topic change事件
 		$("#teamNameInput").bind('input propertychange', function(){
 			$("#topicNameInput").val($(this).val()+"-"+$("#bizNameInput").val()+"-topic");
@@ -270,13 +249,10 @@
 		});
 	});
 	
-	function showExtendConfig(obj){
-		if ($(obj).hasClass("mqcloudcollapse")){
-			$("#extendConfig").removeClass('hide');
-			$(obj).removeClass("mqcloudcollapse").addClass("mqclouexpand");
-		} else {
-			$("#extendConfig").addClass('hide');
-			$(obj).removeClass("mqclouexpand").addClass("mqcloudcollapse");
+	function toggleExtendConfig(obj){
+		if($("#extendConfig").is(":visible")){
+			$("#extendConfig").hide();
+			$(obj).removeClass("fa-caret-down").addClass("fa-caret-right");
 			// 重置默认
 			$("input[name='traceEnabled'][value='1']").prop("checked",false);
 			$("input[name='traceEnabled'][value='0']").prop("checked",true);
@@ -286,6 +262,9 @@
 			$("input[name='delayEnabled'][value='0']").prop("checked",true);
 			$("input[name='ordered'][value='1']").prop("checked",false);
 			$("input[name='ordered'][value='0']").prop("checked",true);
+		} else {
+			$("#extendConfig").show();
+			$(obj).removeClass("fa-caret-right").addClass("fa-caret-down");
 		}
 	}
 	

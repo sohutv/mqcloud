@@ -4,19 +4,45 @@
   	<#include "inc/include.html">
   	<title>MQCloud</title>
   </head>
-  <body role="document">
- 	<#include "inc/nav.html">
- 	<#if header??>
- 		<#include "${header}.html">
- 	</#if>
-    <div class="container">
-		<#include "${view}.html">
-    </div>
-  </body>
+  <body class="hold-transition sidebar-collapse layout-top-nav">
+  	<div class="wrapper">
+		<#include "inc/nav.html">
+		<#include "inc/sidebar.html">
+		<#include "inc/notice.html">
+		<div class="content-wrapper">
+			<#if pageName??>
+				<div class="content-header">
+					<div class="container">
+						<div class="row mb-2">
+							<div class="col-6">
+								<h4 class="m-0">${pageName}</h4>
+							</div>
+							<div class="col-6">
+								<ol class="breadcrumb float-right">
+									<li class="breadcrumb-item"><a href="${request.contextPath}/">首页</a></li>
+									<li class="breadcrumb-item active">${pageName}</li>
+								</ol>
+							</div>
+						</div>
+					</div>
+				</div>
+			</#if>
+			<div class="content">
+				<div class="container">
+					<#include "${view}.html">
+				</div>
+			</div>
+		</div>
+		<#include "inc/controlSidebar.html">
+		<#include "inc/foot.html">
+  	</div>
 	<script>
-		$(function() {
-			$("#homeLi").addClass("active");
+		$(document).on('shown.lte.pushmenu', function () {
+			$("#sidebar-overlay").show();
+		});
+		$(document).on('collapsed-done.lte.pushmenu', function () {
+			$("#sidebar-overlay").hide();
 		});
 	</script>
-<#include "inc/foot.html">
+  </body>
 </html>

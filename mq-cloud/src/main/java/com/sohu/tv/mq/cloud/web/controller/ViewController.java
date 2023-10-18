@@ -2,6 +2,7 @@ package com.sohu.tv.mq.cloud.web.controller;
 
 import java.util.Map;
 
+import com.sohu.tv.mq.util.Version;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -18,17 +19,31 @@ import com.sohu.tv.mq.cloud.web.controller.param.PaginationParam;
 public abstract class ViewController {
 
     protected Logger logger = LoggerFactory.getLogger(this.getClass());
-    
+
+    /**
+     * 设置返回的模板
+     *
+     * @param map
+     * @param view
+     */
+    protected void setView(Map<String, Object> map, String view) {
+        setView(map, view, null);
+    }
+
     /**
      * 设置返回的模板
      * 
      * @param map
      * @param view
      */
-    protected void setView(Map<String, Object> map, String view) {
+    protected void setView(Map<String, Object> map, String view, String pageName) {
         Result.setView(map, viewModule() + "/" + view);
         //默认设置一个空数据
         Result.setResult(map, (Object)null);
+        setResult(map, "version", Version.get());
+        if (pageName != null) {
+            setPageName(map, pageName);
+        }
     }
 
     /**
@@ -69,6 +84,10 @@ public abstract class ViewController {
      */
     protected <T> void setPagination(Map<String, Object> map, PaginationParam paginationParam) {
         Result.setResult(map, paginationParam);
+    }
+
+    protected void setPageName(Map<String, Object> map, String pageName) {
+        setResult(map, "pageName", pageName);
     }
 
     /**

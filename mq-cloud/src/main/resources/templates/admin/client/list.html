@@ -1,54 +1,59 @@
-<div class="main">
-	<form class="form-inline" role="form">
-		<div class="form-group">
-			<label> 客户端版本列表: </label>
-		</div>
-	</form>
-	<hr/>
-	<table class="table table-striped table-hover" style="margin-top: 0px;word-break:break-all; word-wrap:break-all;">
-		<colgroup>
-		  <col width="45px">
-		  <col width="280px">
-		  <col width="280px">
-		  <col width="90px">
-		  <col width="80px">
-		  <col>
-		  <col width="120px">
-		  <col width="160px">
-		</colgroup>
-		<thead>
-			<tr>
-				<td>序号</td>
-				<td>topic</td>
-				<td>客户端</td>
-				<td>类型</td>
-				<td>版本</td>
-				<td>归属于</td>
-				<td>创建日期</td>
-				<td>修改时间</td>
-			</tr>
-		</thead>
-		<tbody>
-            <#if response.empty>
-			     <tr>
-                    <td colspan="8"class="text-center" >
-                    	暂无数据
-                    </td>
-                <tr>
+<div class="card mt-2">
+	<div class="card-header">
+		<b>客户端版本列表:</b>
+	</div>
+	<div class="card-body table-responsive p-0">
+		<table class="table table-striped text-wrap" style="margin-top: 0px;word-break:break-all; table-layout: fixed">
+			<colgroup>
+				<col width="80px">
+				<col width="120px">
+				<col width="150px">
+				<col width="100px">
+				<col width="90px">
+				<col width="180px">
+				<col width="100px">
+				<col width="120px">
+			</colgroup>
+			<thead>
+				<tr>
+					<th>序号</th>
+					<th>topic</th>
+					<th>客户端</th>
+					<th>类型</th>
+					<th>版本</th>
+					<th>归属于</th>
+					<th>创建日期</th>
+					<th>修改时间</th>
+				</tr>
+			</thead>
+			<tbody>
+			<#if response.empty>
+				<tr>
+					<td colspan="8"class="text-center" >
+						暂无数据
+					</td>
+				<tr>
 			<#else>
 				<#list response.result as client>
-					<tr>
-						<td>${client_index+1}</td>
-						<td><a href="/topic/detail?topic=${client.topic}">${client.topic}</a></td>
-						<td>${client.client}</td>
-						<td>${client.roleDesc}</td>
-						<td>${client.version}</td>
-						<td>${client.ownersString}</td>
-						<td>${client.createDate?string("yyyy-MM-dd")}</td>
-						<td>${client.updateTime?string("yyyy-MM-dd HH:mm:ss")}</td>
-					</tr>
+				<tr>
+					<td>${client_index+1}</td>
+					<td>${client.topic}</td>
+					<td>
+						<#if client.role == 1>
+							<a target="_blank" href="${request.contextPath}/topic/detail?topic=${client.topic}">${client.client}</a>
+						<#else>
+							<a target="_blank" href="${request.contextPath}/consumer/detail?consumer=${client.client}">${client.client}</a>
+						</#if>
+					</td>
+					<td>${client.roleDesc}</td>
+					<td>${client.version}</td>
+					<td>${client.ownersString}</td>
+					<td>${client.createDate?string("yyyy-MM-dd")}</td>
+					<td>${client.updateTime?string("yyyy-MM-dd HH:mm:ss")}</td>
+				</tr>
 				</#list>
 			</#if>
-		</tbody>
-	</table>
+			</tbody>
+		</table>
+	</div>
 </div>

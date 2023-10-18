@@ -19,7 +19,7 @@ public class ConsumerStat {
 	//单队列最大未处理消息数
 	private String undone1qMsgCount;
 	//未处理消息时延(broker最新消息存储时间-最新消费时间),ms
-	private int undoneDelay;
+	private long undoneDelay;
 	//错误的订阅关系
 	private String sbscription;
 	//记录更新时间
@@ -57,10 +57,10 @@ public class ConsumerStat {
 	public void setUndone1qMsgCount(String undone1qMsgCount) {
 		this.undone1qMsgCount = undone1qMsgCount;
 	}
-	public int getUndoneDelay() {
+	public long getUndoneDelay() {
 		return undoneDelay;
 	}
-	public void setUndoneDelay(int undoneDelay) {
+	public void setUndoneDelay(long undoneDelay) {
 		this.undoneDelay = undoneDelay;
 	}
 	public String getSbscription() {

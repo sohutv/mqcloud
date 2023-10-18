@@ -41,10 +41,8 @@ public class InvokeStats {
 
     /**
      * 记录异常
-     * 
-     * @param timeInMillis
      */
-    public void record(Exception exception) {
+    public void record(Throwable exception) {
         statsArray[indexer].getExceptionStats().record(exception);
     }
 

@@ -1,6 +1,7 @@
 package com.sohu.tv.mq.cloud.web.vo;
 
 import com.sohu.tv.mq.util.CommonUtil;
+import org.apache.rocketmq.remoting.protocol.body.ConsumerRunningInfo;
 
 /**
  * 队列的消费者
@@ -14,6 +15,9 @@ public class QueueOwnerVO {
     private String clientId;
     private String topic;
     private String ip;
+
+    private String consumerRunningInfoJson;
+
     public String getBrokerName() {
         return brokerName;
     }
@@ -44,6 +48,15 @@ public class QueueOwnerVO {
     public void setIp(String ip) {
         this.ip = ip;
     }
+
+    public String getConsumerRunningInfoJson() {
+        return consumerRunningInfoJson;
+    }
+
+    public void setConsumerRunningInfoJson(String consumerRunningInfoJson) {
+        this.consumerRunningInfoJson = consumerRunningInfoJson;
+    }
+
     public int getTopicType() {
         if(CommonUtil.isRetryTopic(topic)) {
             return 1;

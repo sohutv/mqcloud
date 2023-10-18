@@ -139,7 +139,7 @@ public class AdminNameServerController extends AdminViewController {
     public Result<?> startup(UserInfo ui, @RequestParam(name = "ip") String ip, @RequestParam(name = "listenPort") int port,
             @RequestParam(name = "dir") String dir, @RequestParam(name = "cid") int cid) {
         logger.warn("startup, ip:{}, dir:{}, user:{}", ip, dir, ui);
-        Result<?> result = mqDeployer.startup(ip, dir);
+        Result<?> result = mqDeployer.startup(ip, dir, port);
         if (result.isOK()) {
             nameServerService.save(cid, ip + ":" + port, dir);
         }

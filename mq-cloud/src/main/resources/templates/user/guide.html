@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<#include "../inc/include.html">
+	<title>MQCloud</title>
+</head>
+<body class="hold-transition register-page">
+<div class="register-box">
+	<div class="card card-outline card-secondary">
+		<div class="card-header text-center">
+			<a href="javascript:void(0)" class="h1"><b>MQ</b>Cloud</a>
+		</div>
+		<form id="updateUserGuideForm">
+			<div class="card-body">
+				<p class="login-box-msg">您好，欢迎使用MQCloud</p>
+				<div class="input-group mb-3">
+					<input type="email" class="form-control" readonly="readonly" value="${userInfo.loginId}" name="email" id="email">
+					<div class="input-group-append">
+						<div class="input-group-text">
+							<span class="fas fa-envelope"></span>
+						</div>
+					</div>
+				</div>
+				<div class="input-group mb-3 validate-span">
+					<input type="text" class="form-control" placeholder="姓名" name="name" id="username">
+					<div class="input-group-append">
+						<div class="input-group-text">
+							<span class="fas fa-user"></span>
+						</div>
+					</div>
+				</div>
+				<div class="input-group mb-3 validate-span">
+					<input type="text" class="form-control" placeholder="手机" name="mobile">
+					<div class="input-group-append">
+						<div class="input-group-text">
+							<span class="fas fa-phone"></span>
+						</div>
+					</div>
+				</div>
+				<div class="form-group">
+					<label for="roleType" data-toggle="tooltip" title="成为管理员需要审核">成为管理员：</label>
+					<input type="checkbox" name="type" id="roleType" value="0" data-bootstrap-switch>
+				</div>
+				<button type="submit" class="btn btn-primary btn-block" id="updateUserGuideBtn">注册</button>
+			</div>
+		</form>
+	</div>
+</div>
+<script>
+	$(function () {
+		$('#updateUserGuideForm').validate({
+			submitHandler: function () {
+				disable("updateUserGuideBtn");
+				$.post('${request.contextPath}/user/guide/update', $("#updateUserGuideForm").serialize(), function (data) {
+					if (data.status == 200) {
+						toastr.success("操作成功，系统将自动刷新");
+						setTimeout("toTopicList()", 2000);
+					} else {
+						toastr.error("操作失败！" + data.message);
+						enable("updateUserGuideBtn");
+					}
+				}, 'json');
+			},
+			rules: {
+				name: {
+					required: true
+				},
+				mobile: {
+					required: true,
+					regexp: /^1(3|4|5|7|8)\d{9}$/,
+				}
+			},
+			messages: {
+				name: {
+					required: "姓名不能为空"
+				},
+				mobile: {
+					required: "手机号不能为空",
+					regexp: "请输入正确的手机号码"
+				}
+			},
+			errorElement: 'span',
+			errorPlacement: function (error, element) {
+				error.addClass('invalid-feedback');
+				element.closest('.validate-span').append(error);
+			},
+			highlight: function (element, errorClass, validClass) {
+				$(element).addClass('is-invalid');
+			},
+			unhighlight: function (element, errorClass, validClass) {
+				$(element).removeClass('is-invalid');
+			}
+		});
+
+		$("#roleType").bootstrapSwitch({
+			'state': $(this).prop('checked'),
+			'onText': '是',
+			'offText': '否',
+			onSwitchChange: function (event, state) {
+				if (state == true) {
+					if (confirm("管理员权限需要审核，你确定需要成为管理员?")) {
+						$(this).val(1);
+					} else {
+						$("#roleType").bootstrapSwitch('state', false, true);
+					}
+				} else {
+					$(this).val(0);
+				}
+			}
+		});
+	})
+
+	function toTopicList() {
+		window.location.href = "${request.contextPath}/user/topic";
+	}
+</script>
+</body>
+</html>

@@ -1,7 +1,7 @@
 <#if response.notEmpty>
     <#list response.result as brokerConfigGroupVO>
     	<#list brokerConfigGroupVO.brokerConfigList as brokerConfig>
-   			<tr>
+   			<tr class="text-wrap">
 	   			<#if brokerConfig_index == 0>
 	    		<td rowspan=${brokerConfigGroupVO.brokerConfigList?size}>${brokerConfigGroupVO.brokerConfigGroup.group}</td>
 	    		<#else>

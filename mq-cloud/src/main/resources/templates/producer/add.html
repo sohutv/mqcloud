@@ -1,0 +1,113 @@
+<div class="row">
+	<div class="col-md-6 offset-md-3">
+		<div class="card card-outline card-secondary">
+			<form id="producerForm">
+				<div class="card-body">
+					<p class="login-box-msg">新建生产者</p>
+					<div class="input-group mb-3">
+						<label for="newProducerTopicSelect" class="col-form-label col-md-3"> Topic: </label>
+						<div class="col-md-8 validate-span">
+							<select id="newProducerTopicSelect" class="selectpicker form-control" title="请选择" data-live-search-placeholder="搜索" name="tid" data-live-search="true">
+							</select>
+						</div>
+					</div>
+					<div class="input-group mb-3">
+						<label for="newProducerInput" class="col-form-label col-md-3"> 生产者: </label>
+						<div class="col-md-8 validate-span">
+							<input type="text" id="newProducerInput" name="producer" value="" placeholder="topic名-producer" class="form-control">
+						</div>
+					</div>
+					<div class="input-group mb-3">
+						<label class="col-md-3"> 通信协议: </label>
+						<div class="col-md-9 checkbox">
+							<label data-toggle="tooltip" title="java语言请保持默认选项">
+								<input type="radio" name="protocol" value="0" checked>RocketMQ
+							</label>
+							<label data-toggle="tooltip" title="非java语言建议使用http协议生产">
+								<input type="radio" name="protocol" value="1">HTTP <a href="${request.contextPath}/wiki/userGuide/http#producer" data-toggle="tooltip" data-placement="bottom" title="点击查看http协议生产" target=_blank><i class="fas fa-question-circle fa-sm"></i></a>
+							</label>
+							<label data-toggle="tooltip" title="代理模式的remoting协议">
+								<input type="radio" name="protocol" value="2">Proxy Remoting
+							</label>
+						</div>
+					</div>
+				</div>
+				<div class="card-footer">
+					<button type="submit" class="btn btn-primary float-right" id="addProducerBtn">确定</button>
+				</div>
+			</form>
+		</div>
+	</div>
+</div>
+<script type="text/javascript">
+	$(function(){
+		// 用户消费表单校验
+		$('#producerForm').validate({
+			submitHandler: function () {
+				disable("addProducerBtn");
+				$.post('${request.contextPath}/producer/add', $("#producerForm").serialize(), function(data){
+					if(data.status == 200){
+						toastr.success("申请成功，请稍后查看！即将跳转到我的工单");
+						toMyAuditPage();
+					}else{
+						toastr.error("申请失败！"+data.message);
+						enable("addProducerBtn");
+					}
+				}, 'json');
+			},
+			rules: {
+				producer: {
+					required: true,
+					regexp: /^[a-zA-Z0-9_-]+$/
+				},
+				tid: {
+					required: true,
+				}
+			},
+			messages: {
+				producer: {
+					required: "生产者者不能为空",
+					regexp: '只能包含大小写英文字符，数字，下划线，中划线'
+				},
+				tid: {
+					required: "请选择Topic"
+				}
+			},
+			errorElement: 'span',
+			errorPlacement: function (error, element) {
+				error.addClass('invalid-feedback');
+				element.closest('.validate-span').append(error);
+			},
+			highlight: function (element, errorClass, validClass) {
+				$(element).addClass('is-invalid');
+			},
+			unhighlight: function (element, errorClass, validClass) {
+				$(element).removeClass('is-invalid');
+			}
+		});
+		initNewProducerAssociateTopicList();
+	});
+	/**
+	 * 初始化topic下拉列表
+	 */
+	function initNewProducerAssociateTopicList(){
+		$.get('${request.contextPath}/topic/list',
+		        function(data){
+		            if(data.status == 200){
+		            	var content = "";
+		            	for(var i in data.result){
+		            		var topic = data.result[i];
+		            		content += "<option value='"+topic.id+"'>"+topic.name+"</option>";
+		            	}
+		        		$("#newProducerTopicSelect").html(content);
+		        		$("#newProducerTopicSelect").selectpicker('refresh');
+						var curTopicId = getQueryString("tid");
+						if (curTopicId) {
+							$('#newProducerTopicSelect').selectpicker('val', curTopicId);
+						}
+				    }else{
+				    	toastr.error("数据获取失败！"+data.message);  
+				    }
+	        }, 'json');
+	}
+</script>

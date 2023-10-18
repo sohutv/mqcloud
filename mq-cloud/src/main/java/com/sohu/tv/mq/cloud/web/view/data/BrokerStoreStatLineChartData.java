@@ -199,12 +199,12 @@ public class BrokerStoreStatLineChartData implements LineChartData {
         lineChart.setyAxisGroupList(yAxisGroupList);
 
         lineChart.setHeight(500);
-        lineChart.setSubTitle("<table cellspacing='0' cellpadding='0' style='background-color: #f5f5f5'><thead><tr>"
-                + "<td>最大耗时</td><td>最大写入</td><td>总写入</td></tr></thead>"
+        lineChart.setOverview("<table class='table table-sm'><thead><tr>"
+                + "<th>最大耗时</th><th>最大写入</th><th>总写入</th></tr></thead>"
                 + "<tbody><tr>"
-                + "<td>"+formatCount(max)+"ms</td>"
-                + "<td>"+formatCount(maxTotal)+"次/分</td>"
-                + "<td>"+formatCount(totalCount)+"次</td>"
+                + "<td title='"+max+"'>"+formatCount(max)+"ms</td>"
+                + "<td title='"+maxTotal+"'>"+formatCount(maxTotal)+"次/分</td>"
+                + "<td title='"+totalCount+"'>"+formatCount(totalCount)+"次</td>"
                 + "</tr></tbody></table>");
         lineChartList.add(lineChart);
         

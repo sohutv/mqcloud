@@ -1,5 +1,6 @@
 package com.sohu.tv.mq.cloud.web.view.data;
 
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -7,7 +8,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
+import com.sohu.tv.mq.cloud.web.service.LineChartService;
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -35,6 +39,7 @@ import com.sohu.tv.mq.cloud.web.view.chart.LineChartData;
  */
 @Component
 public class ProducerStatsLineChartData implements LineChartData {
+    private Logger logger = LoggerFactory.getLogger(getClass());
 
     // 搜索区域
     private SearchHeader searchHeader;
@@ -118,7 +123,7 @@ public class ProducerStatsLineChartData implements LineChartData {
             return lineChartList;
         }
         // 转为map
-        Map<String, Map<String, ProducerTotalStat>> totalMap = list2Map(result.getResult());
+        Map<String, Map<String, ProducerTotalStat>> totalMap = list2Map(producer, date, result.getResult());
         
         // 获取producer 详细统计
         Result<List<ProducerStat>> producerTotalStatListResult = producerStatService.query(producer, date);
@@ -172,21 +177,21 @@ public class ProducerStatsLineChartData implements LineChartData {
         
             YAxis percent90Yaxis = new YAxis();
             percent90Yaxis.setName("90%");
-            percent90Yaxis.setColor("#00FF55");
+            percent90Yaxis.setColor("#ffc107");
             List<Number> percent90DataList = new ArrayList<Number>();
             percent90Yaxis.setData(percent90DataList);
             yAxisList.add(percent90Yaxis);
             
             YAxis percent99Yaxis = new YAxis();
             percent99Yaxis.setName("99%");
-            percent99Yaxis.setColor("#00FF99");
+            percent99Yaxis.setColor("#28a745");
             List<Number> percent99DataList = new ArrayList<Number>();
             percent99Yaxis.setData(percent99DataList);
             yAxisList.add(percent99Yaxis);
             
             YAxis avgYaxis = new YAxis();
             avgYaxis.setName("avg");
-            avgYaxis.setColor("#33CC33");
+            avgYaxis.setColor("green");
             List<Number> avgDataList = new ArrayList<Number>();
             avgYaxis.setData(avgDataList);
             yAxisList.add(avgYaxis);
@@ -274,22 +279,62 @@ public class ProducerStatsLineChartData implements LineChartData {
         return maxCountShow;
     }
 
-    private Map<String/*client*/, Map<String/*time*/, ProducerTotalStat>> list2Map(List<ProducerTotalStat> list) {
+    private Map<String/*client*/, Map<String/*time*/, ProducerTotalStat>> list2Map(String producer, Date date,
+                                                                                   List<ProducerTotalStat> list) {
         Map<String, Map<String, ProducerTotalStat>> map = new HashMap<String, Map<String, ProducerTotalStat>>();
         if (list == null) {
             return map;
         }
+        int searchedDate = DateUtil.format(date);
         for (ProducerTotalStat producerTotalStat : list) {
             Map<String, ProducerTotalStat> timeMap = map.get(producerTotalStat.getClient());
-            if(timeMap == null) {
+            if (timeMap == null) {
                 timeMap = new HashMap<>();
                 map.put(producerTotalStat.getClient(), timeMap);
             }
             int statTime = producerTotalStat.getStatTime();
             long t = statTime * 60000L;
-            String key = DateUtil.getFormat(DateUtil.HHMM).format(new Date(t));
+            Date statDate = new Date(t);
+            // 只统计搜索日期的数据
+            if (searchedDate != DateUtil.format(statDate)) {
+                continue;
+            }
+            String key = DateUtil.getFormat(DateUtil.HHMM).format(statDate);
             timeMap.put(key, producerTotalStat);
         }
+        // 查询当天的数据，不必补充23:59的数据
+        if (searchedDate == DateUtil.format(new Date())) {
+            return map;
+        }
+        boolean lastDataExist = true;
+        for (Map<String, ProducerTotalStat> timeMap : map.values()) {
+            if (!timeMap.containsKey("2359")) {
+                lastDataExist = false;
+                break;
+            }
+        }
+        if (lastDataExist) {
+            return map;
+        }
+        // 补充23:59的数据
+        int lastStatTime = 0;
+        try {
+            Date dt = DateUtil.getFormat(DateUtil.YMDHM).parse(searchedDate+"2359");
+            lastStatTime = (int) (dt.getTime() / 60000);
+        } catch (ParseException e) {
+            logger.warn("parse date error", e);
+            return map;
+        }
+        Result<List<ProducerTotalStat>> listResult = producerTotalStatService.queryByStatTime(producer, lastStatTime);
+        if (listResult.isEmpty()) {
+            return map;
+        }
+        listResult.getResult().stream().forEach(totalStat -> {
+            Map<String, ProducerTotalStat> timeMap = map.get(totalStat.getClient());
+            if(timeMap != null && !timeMap.containsKey("2359")) {
+                timeMap.put("2359", totalStat);
+            }
+        });
         return map;
     }
     

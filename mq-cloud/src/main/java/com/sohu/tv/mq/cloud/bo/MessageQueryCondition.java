@@ -48,6 +48,8 @@ public class MessageQueryCondition {
     private transient boolean timerWheelSearch;
     // 是否显示系统消息-发送的取消类消息
     private boolean showSysMessage;
+    // 总队列数
+    private int totalQueueNum;
 
     public List<MQOffset> getMqOffsetList() {
         return mqOffsetList;
@@ -114,6 +116,9 @@ public class MessageQueryCondition {
             if (size > 0) {
                 leftSize += size;
             }
+        }
+        if (leftSize == 0 && totalQueueNum > getMqOffsetList().size()) {
+            leftSize = 1;
         }
         setLeftSize(leftSize);
     }
@@ -221,6 +226,7 @@ public class MessageQueryCondition {
         setKey(null);
         setBrokerName(null);
         setQueueId(null);
+        setTotalQueueNum(0);
     }
 
     public long getMaxOffset() {
@@ -262,5 +268,17 @@ public class MessageQueryCondition {
 
     public void setShowSysMessage(boolean showSysMessage) {
         this.showSysMessage = showSysMessage;
+    }
+
+    public boolean deadTopic() {
+        return CommonUtil.isDeadTopic(topic);
+    }
+
+    public int getTotalQueueNum() {
+        return totalQueueNum;
+    }
+
+    public void setTotalQueueNum(int totalQueueNum) {
+        this.totalQueueNum = totalQueueNum;
     }
 }

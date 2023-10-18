@@ -9,17 +9,18 @@
 }
 </style>
 <div class="row">
-	<br/>
-	<div class="col-md-12">
-        <table class="table table-striped table-hover" style="margin-top: 0px">
+<div class="col-md-12">
+	<div class="card">
+		<div class="card-body table-responsive p-0">
+			<table class="table table-striped table-hover text-nowrap">
                 <thead>
 	                <tr>
-	                    <td>Broker</td>
-	                    <td>队列</td>
-	                    <td>最小偏移量</td>
-	                    <td>最大偏移量</td>
-	                    <td>消息量</td>
-	                    <td>最后更新时间</td>
+	                    <th>Broker</th>
+	                    <th>队列</th>
+	                    <th class="d-none d-sm-table-cell">最小偏移量</th>
+	                    <th class="d-none d-sm-table-cell">最大偏移量</th>
+	                    <th>消息量</th>
+	                    <th>最后更新时间</th>
 	                </tr>
                 </thead>
                 <tbody>
@@ -32,10 +33,10 @@
 					<#else>
 						<#list response.result.brokerQueueOffsetList as brokerQueueOffset>
 							<tr onclick="toggleTR('${brokerQueueOffset.broker}')" style="cursor:pointer">
-								<td id='${brokerQueueOffset.broker}' _rowspan="${brokerQueueOffset.queueOffsetList?size+1}"><span id="${brokerQueueOffset.broker}_span" class="mqcloudcollapse">&nbsp;&nbsp;&nbsp;</span> ${brokerQueueOffset.broker}</td>
+								<td id='${brokerQueueOffset.broker}' _rowspan="${brokerQueueOffset.queueOffsetList?size+1}"><i id="${brokerQueueOffset.broker}_close" class="fas fa-caret-right text-muted"></i><i id="${brokerQueueOffset.broker}_open" class="fas fa-caret-down text-muted" style="display: none"></i> ${brokerQueueOffset.broker}</td>
 								<td>全部</td>
-								<td>${brokerQueueOffset.minOffset?string(",###")}</td>
-	                    		<td>${brokerQueueOffset.maxOffset?string(",###")}</td>
+								<td class="d-none d-sm-table-cell">${brokerQueueOffset.minOffset?string(",###")}</td>
+	                    		<td class="d-none d-sm-table-cell">${brokerQueueOffset.maxOffset?string(",###")}</td>
 	                    		<td>${brokerQueueOffset.messageCount?string(",###")}</td>
 	                    		<td>
 		                    		<#if brokerQueueOffset.lastUpdateTimestamp <= 0>
@@ -48,8 +49,8 @@
                     		<#list brokerQueueOffset.queueOffsetList as queueOffset>
                     			<tr class="${brokerQueueOffset.broker}" style="display:none;">
 			                    	<td>${queueOffset.queueId}</td>
-			                    	<td>${queueOffset.minOffset}</td>
-			                    	<td>${queueOffset.maxOffset}</td>
+			                    	<td class="d-none d-sm-table-cell">${queueOffset.minOffset}</td>
+			                    	<td class="d-none d-sm-table-cell">${queueOffset.maxOffset}</td>
 			                    	<td>${queueOffset.maxOffset - queueOffset.minOffset}</td>
 			                    	<td>
 			                    		<#if queueOffset.lastUpdateTimestamp <= 0>
@@ -64,16 +65,17 @@
 					</#if>
                 </tbody>
            </table>
+		</div>
     </div>
+</div>
 </div>
 
 <!-- 	准备搜索部分 -->
 <div class="row">
-<div class="col-md-12">
-	<div class="border-top"></div>
-	<div style="float:left;margin:10px 5px;"><h5><b>${response.result.topic!}</b> 生产流量图</h5></div>
-	<div id="produce_search" style="float:right;margin:10px 0px;"></div>
-</div>
+	<div class="col-md-12">
+		<div style="float:left;margin:10px 5px;"><h5><b>${response.result.topic!}</b> 生产流量图</h5></div>
+		<div id="produce_search" style="float:right;margin:10px 0px;"></div>
+	</div>
 </div>
 <!-- 	准备曲线图 -->
 <div id="produce_lineChart"><center>暂无数据</center></div>
@@ -83,11 +85,13 @@ function toggleTR(clz){
 	if($("tr."+clz).is(':visible')){
 		$("tr."+clz).hide();
 		$("#"+clz).removeAttr("rowspan");
-		$("#"+clz+"_span").removeClass("mqclouexpand").addClass("mqcloudcollapse");
+		$("#"+clz+"_close").show();
+		$("#"+clz+"_open").hide();
 	} else {
 		$("tr."+clz).show();
 		$("#"+clz).attr("rowspan", $("#"+clz).attr("_rowspan"));
-		$("#"+clz+"_span").removeClass("mqcloudcollapse").addClass("mqclouexpand");
+		$("#"+clz+"_close").hide();
+		$("#"+clz+"_open").show();
 	}
 }
 <#if response.OK>

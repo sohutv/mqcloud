@@ -1,0 +1,62 @@
+<script>
+<#if response.OK>
+    var nodes = new vis.DataSet([{
+        id: 'pNode',
+            label: trackMsg.client,
+        x: 0,
+        y: 400,
+        group: 'producer',
+        title: '生产者IP'
+    },{
+        id: 'bNode',
+            label: trackMsg.broker,
+            shape: 'circle',
+            x: 300,
+            y: 400,
+            group: 'broker',
+            title: 'Broker IP'
+    }]);
+    var edges = new vis.DataSet([{
+        id: 'p_e',
+            from: 'pNode',
+            to: 'bNode',
+            label: formatDate(trackMsg.born),
+            font : { align: 'middle', size : 12 },
+        group: 'producer'
+    }]);
+    <#assign consumerY = 800>
+    <#if response.result?size == 1>
+        $("#trackDiv").attr("style", "height:200px;");
+    <#elseif response.result?size == 2>
+        <#assign consumerY = 400>
+        $("#trackDiv").attr("style", "height:400px;");
+    <#else>
+        <#assign consumerY = 800/response.result?size>
+        $("#trackDiv").attr("style", "height:600px;");
+    </#if>
+	<#list response.result as mt>
+        nodes.add({
+            id: 'c_${mt_index}',
+            label: '${splitUtil.getNewLine(mt.consumerGroup, 20)}',
+            x: 600,
+            y: ${mt_index * consumerY + consumerY / 2},
+            <#if mt.exceptionDesc??>
+            title: '${splitUtil.getBRLine(mt.exceptionDesc, 40)}',
+            </#if>
+            group: 'consumer'
+        });
+        edges.add({
+            id: 'c_e_${mt_index}',
+            from: 'bNode',
+            to: 'c_${mt_index}',
+            label: '${mt.trackTypeDesc}',
+            font : { align: 'middle', size : 12 },
+            group: 'consumer'
+        });
+	</#list>
+    network = new vis.Network(document.getElementById("trackDiv"), {nodes: nodes, edges: edges}, networkOptions);
+<#else>
+    alert("数据错误："+${response.message});
+</#if>
+</script>
+<#include "messageTrackPagination.html">

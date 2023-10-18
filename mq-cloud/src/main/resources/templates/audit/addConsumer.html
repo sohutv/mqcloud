@@ -1,58 +1,44 @@
 <#if response.notOK>
-<div class="modal-body">
-	<div class="form-body">
-		<div class="form-group">
-			<div>异常数据</div>
-		</div>
-	</div>
-</div>
+	<div class="text-center">异常数据</div>
 <#else>
-<div class="modal-body">
-	<div class="row">
-		<div class="col-md-12">
-			<div class="form-body">
-				<div class="form-group">
-					<label class="control-label col-md-3"> Topic: </label>
-			        <div class="col-md-7">
-						<input type="text" value="${response.result.topic}" readonly="readonly" class="form-control" />
-					</div>
-				</div>
-				<div class="form-group">
-					<label class="control-label col-md-3"> 消费者: </label>
-					<div class="col-md-7">
-						<input type="text" value="${response.result.consumer}" readonly="readonly" class="form-control" >
-					</div>
-				</div>
-				<div class="form-group">
-					<label class="control-label col-md-3"> 消费方式: </label>
-					<div class="col-md-6 checkbox">
-					    <input type="radio" name="ordered" value="0" disabled="disabled" <#if response.result.consumeWay == 0>checked</#if>>集群消费
-					    <input type="radio" name="ordered" value="1" disabled="disabled" <#if response.result.consumeWay == 1>checked</#if>>广播消费
-					</div>
-				</div>
-				<div class="form-group">
-					<label class="control-label col-md-3"> 限速: </label>
-			        <div class="col-md-6">
-			        	<input type="text" value="${response.result.permitsPerSecond!}" readonly="readonly" class="form-control" />
-					</div>
-				</div>
-				<div class="form-group">
-					<label class="control-label col-md-3"> 是否trace: </label>
-					<div class="col-md-6 checkbox">
-					    <input type="radio" value="0" disabled="disabled" <#if response.result.traceEnabled == 0>checked</#if>>否
-					    <input type="radio" value="1" disabled="disabled" <#if response.result.traceEnabled == 1>checked</#if>>是
-					</div>
-				</div>
-				<div class="form-group">
-					<label class="control-label col-md-3"> 消费协议: </label>
-					<div class="col-md-6 checkbox">
-						<input type="radio" value="0" disabled="disabled" <#if response.result.protocol == 0>checked</#if>>RocketMQ
-						<input type="radio" value="1" disabled="disabled" <#if response.result.protocol == 1>checked</#if>>HTTP
-						<input type="radio" value="2" disabled="disabled" <#if response.result.protocol == 2>checked</#if>>Proxy Remoting
-					</div>
-				</div>
-			</div>
+	<div class="form-group row">
+		<label class="col-form-label col-md-3"> Topic: </label>
+		<div class="col-md-7">
+			<input type="text" value="${response.result.topic}" readonly="readonly" class="form-control" />
 		</div>
 	</div>
-</div>
+	<div class="form-group row">
+		<label class="col-form-label col-md-3"> 消费者: </label>
+		<div class="col-md-7">
+			<input type="text" value="${response.result.consumer}" readonly="readonly" class="form-control" >
+		</div>
+	</div>
+	<div class="form-group row">
+		<label class="col-md-3"> 消费方式: </label>
+		<div class="col-md-7 checkbox">
+			<input type="radio" name="ordered" value="0" disabled="disabled" <#if response.result.consumeWay == 0>checked</#if>>集群消费
+			<input type="radio" name="ordered" value="1" disabled="disabled" <#if response.result.consumeWay == 1>checked</#if>>广播消费
+		</div>
+	</div>
+	<div class="form-group row">
+		<label class="col-form-label col-md-3"> 限速: </label>
+		<div class="col-md-7">
+			<input type="text" value="${response.result.permitsPerSecond!}" readonly="readonly" class="form-control" />
+		</div>
+	</div>
+	<div class="form-group row">
+		<label class="col-md-3"> 是否trace: </label>
+		<div class="col-md-7 checkbox">
+			<input type="radio" value="0" disabled="disabled" <#if response.result.traceEnabled == 0>checked</#if>>否
+			<input type="radio" value="1" disabled="disabled" <#if response.result.traceEnabled == 1>checked</#if>>是
+		</div>
+	</div>
+	<div class="form-group row">
+		<label class="col-md-3"> 消费协议: </label>
+		<div class="col-md-7 checkbox">
+			<input type="radio" value="0" disabled="disabled" <#if response.result.protocol == 0>checked</#if>>RocketMQ
+			<input type="radio" value="1" disabled="disabled" <#if response.result.protocol == 1>checked</#if>>HTTP
+			<input type="radio" value="2" disabled="disabled" <#if response.result.protocol == 2>checked</#if>>Proxy Remoting
+		</div>
+	</div>
 </#if>

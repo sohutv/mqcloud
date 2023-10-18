@@ -1,38 +1,24 @@
-<div id="switchUserModal" class="modal fade" tabindex="-1" data-width="400">
+<div class="modal fade" id="switchUserModal">
 	<div class="modal-dialog">
 		<div class="modal-content">
 			<div class="modal-header">
-				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
 				<h4 class="modal-title">切换身份</h4>
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+					<span aria-hidden="true">&times;</span>
+				</button>
 			</div>
-			<form class="form-horizontal form-bordered form-row-stripped" id="switchUserForm">
-				<div class="modal-body">
-					<div class="row">
-						<div class="col-md-12">
-							<div class="form-body">
-								<div class="form-group">
-									<label class="control-label col-md-3"> 选择用户: </label>
-							        <div class="col-md-5">
-			    						<select id="switchUserSelect" class="selectpicker" title="请选择" data-live-search-placeholder="搜索" name="user" data-live-search="true"></select> 	  			
-									</div>
-								</div>
-							</div>
-						</div>
-					</div>
-				</div>
-				<div class="modal-footer">
-					<button type="button" data-dismiss="modal" class="btn" >取消</button>
-					<button type="button" class="btn btn-primary" id="switchUserBtn" onclick="switchUser()">确定</button>
-				</div>
-			</form>
+			<div class="modal-body text-center">
+				<select id="switchUserSelect" class="selectpicker  form-control" title="请选择" data-live-search-placeholder="搜索" name="user" data-live-search="true"></select>
+			</div>
+			<div class="modal-footer justify-content-between">
+				<button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+				<button type="button" class="btn btn-primary" id="switchUserBtn" onclick="switchUser()">确定</button>
+			</div>
 		</div>
 	</div>
 </div>
 <script>
 	$(function(){
-		$('#switchUserSelect').selectpicker({
-		    width: '300px'
-		});
 		$('#switchUserModal').on('shown.bs.modal', function() {
 			initSwitchUserList();
 		});
@@ -55,7 +41,7 @@
 		            		content += "<option value='"+user.id+"'>"+value+"</option>";	
 		            	}
 		        		$("#switchUserSelect").html(content);
-		        		$("#switchUserSelect").selectpicker('refresh');
+						$("#switchUserSelect").selectpicker('refresh');
 				    }else{
 				    	toastr.error("数据获取失败！"+data.message);  
 				    }

@@ -2,15 +2,18 @@ package com.sohu.tv.mq.cloud.web.controller;
 
 import com.sohu.tv.mq.cloud.bo.*;
 import com.sohu.tv.mq.cloud.bo.Audit.TypeEnum;
+import com.sohu.tv.mq.cloud.common.util.WebUtil;
 import com.sohu.tv.mq.cloud.service.*;
 import com.sohu.tv.mq.cloud.util.*;
 import com.sohu.tv.mq.cloud.web.controller.param.*;
 import com.sohu.tv.mq.cloud.web.vo.ConsumerProgressVO;
+import com.sohu.tv.mq.cloud.web.vo.ConsumerRunningInfoVO;
 import com.sohu.tv.mq.cloud.web.vo.QueueOwnerVO;
 import com.sohu.tv.mq.cloud.web.vo.UserInfo;
 import com.sohu.tv.mq.metric.StackTraceMetric;
 import com.sohu.tv.mq.util.CommonUtil;
 import com.sohu.tv.mq.util.Constant;
+import com.sohu.tv.mq.util.JSONUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.message.MessageQueue;
@@ -27,6 +30,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.HtmlUtils;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -78,6 +82,9 @@ public class ConsumerController extends ViewController {
     @Autowired
     private UserFootprintService userFootprintService;
 
+    @Autowired
+    private TopicTrafficService topicTrafficService;
+
     /**
      * 消费进度
      * 
@@ -116,7 +123,7 @@ public class ConsumerController extends ViewController {
         // 获取消费者版本
         Map<String, String> clientVersionMap = queryClientVersionMap(topic.getName(), consumerSelector);
         // 构建集群数据
-        List<ConsumerProgressVO> clusterList = buildClusteringConsumerProgressVOList(cluster, topic.getName(),
+        List<ConsumerProgressVO> clusterList = buildClusteringConsumerProgressVOList(cluster, topic,
                 consumerSelector.getClusteringConsumerList(), consumerMap);
         // 获取消费者配置
         for (ConsumerProgressVO vo : clusterList) {
@@ -195,7 +202,7 @@ public class ConsumerController extends ViewController {
      * @param consumerMap
      * @return
      */
-    private List<ConsumerProgressVO> buildClusteringConsumerProgressVOList(Cluster cluster, String topic,
+    private List<ConsumerProgressVO> buildClusteringConsumerProgressVOList(Cluster cluster, Topic topic,
             List<Consumer> consumerList, Map<Long, List<User>> consumerMap) {
         List<ConsumerProgressVO> list = new ArrayList<ConsumerProgressVO>();
         if (consumerList.isEmpty()) {
@@ -203,9 +210,19 @@ public class ConsumerController extends ViewController {
         }
         Map<Long, ConsumeStats> consumeStatsMap = consumerService.fetchClusteringConsumeProgress(cluster, consumerList);
 
+        // 获取topic上一分钟流量
+        Date oneMinuteAgo = new Date(System.currentTimeMillis() - 60000);
+        String time = DateUtil.getFormat(DateUtil.HHMM).format(oneMinuteAgo);
+        Result<TopicTraffic> trafficResult = topicTrafficService.query(topic.getId(), oneMinuteAgo, time);
+        if (trafficResult.isOK()) {
+            topic.setCount(trafficResult.getResult().getCount());
+        } else {
+            topic.setCount(0);
+        }
+
         // 组装集群模式vo
         for (Consumer consumer : consumerList) {
-            ConsumerProgressVO consumerProgressVO = buildConsumerProgressVO(topic, consumerMap, consumer);
+            ConsumerProgressVO consumerProgressVO = buildConsumerProgressVO(topic.getName(), consumerMap, consumer);
             if (consumeStatsMap == null) {
                 list.add(consumerProgressVO);
                 continue;
@@ -216,6 +233,7 @@ public class ConsumerController extends ViewController {
                 continue;
             }
             consumerProgressVO.setConsumeTps(consumeStats.getConsumeTps());
+            consumerProgressVO.setProduceTps(topic.getCount() / 60);
 
             // 拆分正常队列和重试队列
             Map<MessageQueue, OffsetWrapper> offsetTable = consumeStats.getOffsetTable();
@@ -507,6 +525,13 @@ public class ConsumerController extends ViewController {
         return Result.getWebResult(consumerListResult);
     }
 
+    @RequestMapping(value = "/associate", method = RequestMethod.GET)
+    public String associate(Map<String, Object> map)
+            throws Exception {
+        setView(map, "associate", "关联消费者");
+        return view();
+    }
+
     /**
      * 关联消费者
      * 
@@ -580,6 +605,13 @@ public class ConsumerController extends ViewController {
             alertService.sendAuditMail(userInfo.getUser(), TypeEnum.ASSOCIATE_CONSUMER, tip);
         }
         return Result.getWebResult(result);
+    }
+
+    @RequestMapping(value = "/add", method = RequestMethod.GET)
+    public String add(Map<String, Object> map)
+            throws Exception {
+        setView(map, "add", "新建消费者");
+        return view();
     }
 
     /**
@@ -731,10 +763,18 @@ public class ConsumerController extends ViewController {
         // 组装vo
         List<QueueOwnerVO> queueConsumerVOList = new ArrayList<QueueOwnerVO>();
         for (String clientId : map.keySet()) {
+            boolean addConsumerRunningInfo = false;
             String ip = clientId.substring(0, clientId.indexOf("@"));
             ConsumerRunningInfo consumerRunningInfo = map.get(clientId);
             for (MessageQueue messageQueue : consumerRunningInfo.getMqTable().keySet()) {
                 QueueOwnerVO queueOwnerVO = new QueueOwnerVO();
+                if (!addConsumerRunningInfo
+                        && !CommonUtil.isRetryTopic(messageQueue.getTopic())
+                        && !CommonUtil.isDeadTopic(messageQueue.getTopic())) {
+                    ConsumerRunningInfoVO consumerRunningInfoVO = ConsumerRunningInfoVO.toConsumerRunningInfoVO(consumerRunningInfo);
+                    queueOwnerVO.setConsumerRunningInfoJson(JSONUtil.toJSONString(consumerRunningInfoVO));
+                    addConsumerRunningInfo = true;
+                }
                 BeanUtils.copyProperties(messageQueue, queueOwnerVO);
                 queueOwnerVO.setClientId(clientId);
                 queueOwnerVO.setIp(ip);
@@ -1131,6 +1171,43 @@ public class ConsumerController extends ViewController {
             alertService.sendAuditMail(userInfo.getUser(), TypeEnum.getEnumByType(audit.getType()), tip);
         }
         return Result.getWebResult(result);
+    }
+
+    /**
+     * 消费者详情 只供管理员使用
+     *
+     * @return
+     * @throws Exception
+     */
+    @ResponseBody
+    @RequestMapping(value = "/detail")
+    public String detail(UserInfo userInfo, HttpServletResponse response, HttpServletRequest request,
+                         @RequestParam(name = "consumer") String consumer) throws Exception {
+        if (!userInfo.getUser().isAdmin()) {
+            return Result.getResult(Status.PERMISSION_DENIED_ERROR).toJson();
+        }
+        if (CommonUtil.isRetryTopic(consumer)) {
+            consumer = consumer.substring(MixAll.RETRY_GROUP_TOPIC_PREFIX.length());
+        }
+        Result<Consumer> consumerResult = consumerService.queryConsumerByName(consumer);
+        if (consumerResult.isNotOK()) {
+            return Result.getWebResult(consumerResult).toJson();
+        }
+        WebUtil.redirect(response, request,
+                "/user/topic/" + consumerResult.getResult().getTid() + "/detail?tab=consume&consumer=" + consumer);
+        return null;
+    }
+
+    /**
+     * 状况展示
+     *
+     * @return
+     * @throws Exception
+     */
+    @RequestMapping(value = "/stats")
+    public String stats(UserInfo userInfo, @RequestParam("consumer") String consumer, Map<String, Object> map)
+            throws Exception {
+        return viewModule() + "/stats";
     }
 
     @Override

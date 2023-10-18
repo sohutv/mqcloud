@@ -1,0 +1,42 @@
+<#if response.OK>
+	<#if response.result?? && response.result?size gt 0>
+		<tbody id="page">
+			<#list response.result as msg>
+				<tr>
+					<td rowspan="2" class="text-center" style="padding-left:0px;" class="d-none d-sm-table-cell" data-tooltip="true" title="msgId:${msg.msgId}">${msg_index + 1}</td>
+					<td class="d-none d-sm-table-cell">${msg.bornHostString}</td>
+					<td data-tooltip="true" title="起始时间:${msg.bornTimestamp?number_to_datetime?string("yyyy-MM-dd HH:mm:ss.SSS")}">${msg.storeTimestamp?number_to_datetime?string("yyyy-MM-dd HH:mm:ss.SSS")}</td>
+					<#if RequestParameters.traceEnabled?? && RequestParameters.traceEnabled == "true">
+						<td class="d-none d-sm-table-cell" data-tooltip="true" title="点击查看追踪信息"><a href="${request.contextPath}/user/topic/${RequestParameters.topicId}/detail?tab=msg&msgId=${msg.msgId}&time=${msg.storeTimestamp?c}" target=_blank>第<b>${msg.reconsumeTimes}</b>次</a></td>
+					<#else>
+						<td class="d-none d-sm-table-cell">第${msg.reconsumeTimes}次</td>
+					</#if>
+					<td class="d-none d-sm-table-cell">${msg.keys!}</td>
+					<td>
+						<#if response.result.mqc.deadTopic()>
+						<input title="选择消息：${msg_index + 1}" data-tooltip="true" type="checkbox" data="${msg.offsetMsgId}" dataIdx="${msg_index + 1}">
+						</#if>
+					</td>
+				</tr>
+				<tr>
+					<td style="border-top-width: 0px;" colspan="5" data-tooltip="true" title="序列化方式:<#if msg.messageBodySerializer??>${msg.messageBodySerializer.getName()}(${msg.messageBodyTypeString!})<#else>${msg.messageBodyTypeString!}</#if>,大小:${msg.formatMsgLength}"><#if msg.decodedBody?length gt 1000><pre>${msg.decodedBody}</pre><#else>${msg.decodedBody}</#if></td>
+				</tr>
+			</#list>
+		</tbody>
+		<script>
+			$(function() {
+		        $('[data-tooltip="true"]').tooltip({
+					boundary: 'window'
+		        });
+			});
+		</script>
+	<#else>
+		<tbody>
+			<tr class="no_more_data"><td colspan=6 class="text-center">本次查无数据</td></tr>
+		</tbody>
+	</#if>
+<#else>
+	<tbody>
+		<tr><td colspan=6 class="text-center">查询异常！${response.message}</td></tr>
+	</tbody>
+</#if>

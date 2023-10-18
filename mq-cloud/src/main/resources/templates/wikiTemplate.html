@@ -2,54 +2,56 @@
 <html lang="en">
   <head>
   	<#include "inc/include.html">
-  	<link href="${request.contextPath}/resources/prettify/prettify.css" rel="stylesheet">
-  	<link href="${request.contextPath}/css/githubmd.css" rel="stylesheet">
-  	<!-- 滚动插件 -->
-	<script src="${request.contextPath}/resources/nicescroll/jquery.nicescroll.min.js"></script>
-	<script type="text/javascript" src="${request.contextPath}/resources/prettify/prettify.js"></script>
-	<meta name="referrer" content="no-referrer">
-	<style>
-		th, td{padding:.5em;border:1px solid #000;}
-	</style>
   	<title>MQCloud</title>
+  	<style type="text/css">
+		.bd-toc { -ms-flex-order: 2; order: 2; padding-top: 1.5rem; padding-bottom: 1.5rem; font-size: .875rem }
+		@supports ((position:-webkit-sticky) or (position:sticky)) {
+			.bd-toc {position:-webkit-sticky;position:sticky;top:4rem;max-height:calc(100vh - 4rem);overflow-y:auto;}
+		}
+		.bd-toc h5 {font-size: .875rem;color: #99979c;padding-left: 0.875rem;}
+		.bd-toc ul {padding-left: 1rem;border-left: 1px solid #eee;}
+		.bd-toc ul li { display: block }
+		.bd-toc ul li a {display: block;color: #99979c;}
+		.bd-toc ul li a:hover { color: #007bff; text-decoration: none }
+  	</style>
   </head>
-  <body role="document">
- 	<#include "inc/nav.html">
-    <div class="container">
-		<div class="row">
-			<div class="col-md-2">
-				<#include "inc/wikiLeft.html">
-			</div>
-			<div class="col-md-10 markdown-body">
-				<#if response.OK>
-					${response.result}
-				<#else>
-					${response.message}
-				</#if>
+  <body class="hold-transition sidebar-mini layout-fixed">
+  	<div class="wrapper">
+		<#include "inc/nav.html">
+		<#include "inc/sidebar.html">
+		<div class="content-wrapper px-4 py-4">
+			<div class="content">
+				<div class="row">
+					<div class="col-md-10">
+						<#if response.OK>
+							${response.result}
+						<#else>
+							${response.message}
+						</#if>
+					</div>
+					<div class="d-none d-xl-block col-md-2 bd-toc">
+						${toc!}
+					</div>
+				</div>
 			</div>
 		</div>
+		<#include "inc/controlSidebar.html">
+		<#include "inc/foot.html">
     </div>
-	<div class="right-side-bar">${toc!}</div>
   </body>
-  <#include "inc/foot.html">
+
   <script>
-	$(function(){
-		$("body").niceScroll({
-			cursorcolor:"#ddd",
-		  	cursorwidth:"12px",
-			cursorminheight: 64,
-			horizrailenabled : false
-		});
-		$('pre').each(function(i, pre) {
-            $(pre).addClass("prettyprint");
-        });
-		PR.prettyPrint();
-		if(window.location.hash && $(window.location.hash).offset()){
-			$("html,body").animate({scrollTop: $(window.location.hash).offset().top - 52}, 500);
-		}
-		$("#introLi").addClass("active");
-		$("#notifyBox").hide();
-		$("#operationBox").hide();
-	});
-  </script>
+	  hljs.highlightAll();
+	  $(function(){
+		  $('.nav-link').each(function(i,n){
+			  if(window.location.pathname == $(this).attr("href")){
+				  $(this).addClass("active");
+				  $("#" + $(this).attr("name")).addClass("active")
+						  .parent().addClass("menu-open").addClass("menu-is-opening")
+						  .siblings().removeClass("menu-open").removeClass("menu-is-opening");
+			  }
+		  });
+		  $("table").addClass("table table-striped table-hover table-sm table-bordered");
+	  });
+  </script>	
 </html>

@@ -1,199 +1,218 @@
 <!-- 无集群 -->
 <#if response.notOK>
-<div class="main">
-	<form class="form-inline" role="form">
-		<div class="form-group">
-			<label for="mqClusterSelect"> 集群: 暂无数据 </label>
-		</div>
-		<div class="form-group">
-			<button type="button" class="btn btn-success" data-target="#addClusterModal" data-toggle="modal"><span class="glyphicon glyphicon-plus" aria-hidden="true"></span>&nbsp;集群记录</button>
-		</div>
-	</form>
-	<hr/>
+<div class="card mt-2">
+	<div class="card-body">
+		<form class="form-inline" role="form">
+			<div class="form-group">
+				<label for="mqClusterSelect"> 集群: 暂无数据 </label>
+			</div>
+			<div class="form-group">
+				<button type="button" class="btn btn-primary" data-target="#addClusterModal" data-toggle="modal"><span class="fas fa-plus" aria-hidden="true"></span>&nbsp;集群记录</button>
+			</div>
+		</form>
+	</div>
 </div>
 <#else>
-<!-- 有集群 -->
-<div class="main">
-	<form class="form-inline" role="form">
-		<div class="form-group">
-			<label for="mqClusterSelect"> 集群: </label>
-			<select name="type" id="mqClusterSelect" class="form-control select2_category">
-				<#list clusters as cluster>
-					<option value="${cluster.id}"
-						<#if cluster.id == selectedCluster.id>selected="selected"</#if>
-					>${cluster.name}</option>
-				</#list>
-			</select>
+<div class="card mt-2">
+	<div class="card-body">
+		<!-- 有集群 -->
+		<div class="input-group">
+			<label for="mqClusterSelect" class="col-form-label"> 集群: </label>
+			<div class="ml-1 mr-1">
+				<select name="type" id="mqClusterSelect" class="form-control selectpicker border">
+					<#list clusters as cluster>
+						<option value="${cluster.id}"
+							<#if cluster.id == selectedCluster.id>selected="selected"</#if>
+						>${cluster.name}</option>
+					</#list>
+				</select>
+			</div>
+			<div class="btn-group">
+				<button type="button" class="btn btn-default" title="新建集群" data-target="#addClusterModal" data-toggle="modal"><span class="fas fa-plus"></span><span class="d-none d-lg-inline">集群</span></button>
+				<button type="button" class="btn btn-default dropdown-toggle dropdown-hover dropdown-icon" data-toggle="dropdown">
+					<span class="sr-only">Toggle Dropdown</span>
+				</button>
+				<div class="dropdown-menu" role="menu">
+					<a class="dropdown-item" href="#" title="新建NameServer" onclick="addNameSrv()" data-target="#addNameSrvModal" data-toggle="modal"><span class="fas fa-plus fa-fw"></span>&nbsp;NameServer</a>
+					<a class="dropdown-item" href="#" data-placement="bottom" title="关联已有NameServer集群到MQCloud中" data-target="#associateNameSrvModal" data-toggle="modal"><span class="fas fa-link fa-fw"></span>&nbsp;NameServer</a>
+				</div>
+			</div>
 		</div>
-		<div class="form-group">
-			<button type="button" class="btn btn-success" data-target="#addClusterModal" data-toggle="modal"><span class="glyphicon glyphicon-plus" aria-hidden="true"></span>&nbsp;集群记录</button>
-		</div>
-		<div class="form-group">
-			<button type="button" class="btn btn-success" onclick="addNameSrv()" data-target="#addNameSrvModal" data-toggle="modal"><span class="glyphicon glyphicon-plus" aria-hidden="true"></span>&nbsp;NameServer</button>
-		</div>
-		<div class="form-group" style="float:right;">
-			<button type="button" class="btn btn-success" data-placement="bottom" title="该功能用于已有NameServer集群关联到MQCloud中" data-target="#associateNameSrvModal" data-toggle="modal">关联NameServer</button>
-		</div>
-	</form>
-	<hr/>
-	<div style="vertical-align: middle;margin-bottom:10px;"><b>NameServer列表:</b></div>
-	<table class="table table-striped table-hover" style="margin-top: 0px">
-		<thead>
-			<tr>
-				<td>序号</td>
-				<td>addr</td>
-				<td>创建时间</td>
-				<td data-toggle="tooltip" title="MQCloud会定时监控NameServer是否存活">状态</td>
-				<td>监控时间</td>
-				<td>操作</td>
-			</tr>
-		</thead>
-		<tbody>
-			<#if response.empty>
-				<tr class="text-center"><td colspan=6>暂无数据</td></tr>
-			<#else>
-				<#list response.result as ns>
-					<tr>
-						<td>${ns_index + 1}</td>
-						<td>${ns.addr}</td>
-						<td>${ns.createTime?string("yyyy-MM-dd HH:mm:ss")}</td>
-						<td>
-							<#if ns.checkStatus == 2>
-								<font style='font-weight:bold' color='red'>${ns.checkStatusDesc}</font>
-							<#else>
-								${ns.checkStatusDesc}
-							</#if>
-						</td>
-						<td>
-							<#if ns.checkTime??>
-								${ns.checkTime?string("yyyy-MM-dd HH:mm:ss")}
-							</#if>
-						</td>
-						<td>
-							<button type="button" class="btn btn-sm btn-success" title="kill Name Server进程并删除Name Server地址" data-target="#nameServerOfflineModal" data-toggle="modal" onclick="offlineNameServer('${ns.addr}');">下线</button>
-							<button type="button" class="btn btn-sm btn-success" title="删除Name Server地址" data-target="#nameServerDeleteModal" data-toggle="modal" onclick="deleteNameServer('${ns.addr}');"><span class="glyphicon glyphicon-trash" aria-hidden="true"></span></button>
-						</td>
-					</tr>
-				</#list>
-			</#if>
-		</tbody>
-	</table>
+	</div>
+</div>
+<div class="card">
+	<div class="card-body table-responsive p-0">
+		<table class="table table-hover table-striped text-nowrap">
+			<colgroup>
+				<col width="160px">
+				<col width="100px">
+				<col width="100px">
+				<col width="100px">
+				<col width="120px">
+			</colgroup>
+			<thead>
+				<tr>
+					<td>addr</td>
+					<td>创建时间</td>
+					<td data-toggle="tooltip" title="MQCloud会定时监控NameServer是否存活">状态</td>
+					<td>监控时间</td>
+					<td>操作</td>
+				</tr>
+			</thead>
+			<tbody>
+				<#if response.empty>
+					<tr class="text-center"><td colspan=5>暂无数据</td></tr>
+				<#else>
+					<#list response.result as ns>
+						<tr>
+							<td>${ns.addr}</td>
+							<td>${ns.createTime?string("yyyy-MM-dd HH:mm:ss")}</td>
+							<td>
+								<#if ns.checkStatus == 2>
+									<font style='font-weight:bold' color='red'>${ns.checkStatusDesc}</font>
+								<#else>
+									${ns.checkStatusDesc}
+								</#if>
+							</td>
+							<td>
+								<#if ns.checkTime??>
+									${ns.checkTime?string("yyyy-MM-dd HH:mm:ss")}
+								</#if>
+							</td>
+							<td>
+								<button type="button" class="btn btn-sm btn-warning" title="Kill Name Server进程" data-target="#nameServerOfflineModal" data-toggle="modal" onclick="offlineNameServer('${ns.addr}');">下线</button>
+								<button type="button" class="btn btn-sm btn-danger" title="删除Name Server地址" data-target="#nameServerDeleteModal" data-toggle="modal" onclick="deleteNameServer('${ns.addr}');"><span class="fas fa-trash-alt" aria-hidden="true"></span></button>
+							</td>
+						</tr>
+					</#list>
+				</#if>
+			</tbody>
+		</table>
+	</div>
 </div>
 
 <!-- 新建namesrv -->
 <div id="addNameSrvModal" class="modal fade" tabindex="-1">
-	<div class="modal-dialog" style="width:1000px;">
+	<div class="modal-dialog modal-xl">
 		<div class="modal-content">
 			<div class="modal-header">
-				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
 				<h4 class="modal-title">新建NameServer</h4>
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
 			</div>
 			<div class="modal-body">
-				<div class="row bs-wizard" style="border-bottom:0;">
-	                <div id="nsServer" class="col-xs-1 bs-wizard-step disabled">
-	                  <div class="text-center bs-wizard-stepnum">服务器选择</div>
-	                  <div class="progress"><div class="progress-bar"></div></div>
-	                  <a href="#" class="bs-wizard-dot"></a>
-	                  <div class="bs-wizard-info text-center">安装到哪</div>
-	                </div>
-	                
-	                <div id="nsJdk" class="col-xs-2 bs-wizard-step disabled">
-	                  <div class="text-center bs-wizard-stepnum">JDK校验</div>
-	                  <div class="progress"><div class="progress-bar"></div></div>
-	                  <a href="#" class="bs-wizard-dot"></a>
-	                  <div class="bs-wizard-info text-center">校验jdk是否配置完成，版本要求>=1.8</div>
-	                </div>
-	                
-	                <div id="nsPort" class="col-xs-1 bs-wizard-step disabled">
-	                  <div class="text-center bs-wizard-stepnum">端口校验</div>
-	                  <div class="progress"><div class="progress-bar"></div></div>
-	                  <a href="#" class="bs-wizard-dot"></a>
-	                  <div class="bs-wizard-info text-center">检查端口是否被占用</div>
-	                </div>
-	                
-	                <div id="nsDir" class="col-xs-1 bs-wizard-step disabled">
-	                  <div class="text-center bs-wizard-stepnum">目录校验</div>
-	                  <div class="progress"><div class="progress-bar"></div></div>
-	                  <a href="#" class="bs-wizard-dot"></a>
-	                  <div class="bs-wizard-info text-center">检查安装目录是否被占用</div>
-	                </div>
-	                
-	                <div id="nsScp" class="col-xs-2 bs-wizard-step disabled">
-	                  <div class="text-center bs-wizard-stepnum">下载安装包</div>
-	                  <div class="progress"><div class="progress-bar"></div></div>
-	                  <a href="#" class="bs-wizard-dot"></a>
-	                  <div class="bs-wizard-info text-center">从仓库下载安装包到服务器/tmp下</div>
-	                </div>
-	                <div id="nsUnzip" class="col-xs-1 bs-wizard-step disabled">
-	                  <div class="text-center bs-wizard-stepnum">解压安装包</div>
-	                  <div class="progress"><div class="progress-bar"></div></div>
-	                  <a href="#" class="bs-wizard-dot"></a>
-	                  <div class="bs-wizard-info text-center">解压到安装目录下</div>
-	                </div>
-	                <div id="nsConfig" class="col-xs-2 bs-wizard-step disabled">
-	                  <div class="text-center bs-wizard-stepnum">生成配置文件</div>
-	                  <div class="progress"><div class="progress-bar"></div></div>
-	                  <a href="#" class="bs-wizard-dot"></a>
-	                  <div class="bs-wizard-info text-center">生成mq.conf和run.sh</div>
-	                </div>
-	                <div id="nsStartup" class="col-xs-1 bs-wizard-step disabled">
-	                  <div class="text-center bs-wizard-stepnum">启动</div>
-	                  <div class="progress"><div class="progress-bar"></div></div>
-	                  <a href="#" class="bs-wizard-dot"></a>
-	                  <div class="bs-wizard-info text-center">启动NameServer</div>
-	                </div>
-	                <div id="nsProgram" class="col-xs-1 bs-wizard-step disabled">
-	                  <div class="text-center bs-wizard-stepnum">完成</div>
-	                  <div class="progress"><div class="progress-bar"></div></div>
-	                  <a href="#" class="bs-wizard-dot"></a>
-	                  <div class="bs-wizard-info text-center">获取启动后的进程信息</div>
-	                </div>
-	            </div>
+				<div class="sw sw-justified" id="addNewNameServer">
+					<ul class="nav nav-progress">
+						<li class="nav-item">
+							<a class="nav-link default" href="#step-1">
+								<div class="num">1</div>
+								<div style="font-size: small; font-weight: bold">服务器选择</div>
+								<span style="font-size: small;color: #0b2e13;">安装到哪</span>
+							</a>
+						</li>
+						<li class="nav-item">
+							<a class="nav-link default" href="#step-2">
+								<div class="num">2</div>
+								<div style="font-size: small; font-weight: bold">JDK校验</div>
+								<span style="font-size: small;color: #0b2e13;">校验jdk是否配置完成，版本要求>=1.8</span>
+							</a>
+						</li>
+						<li class="nav-item">
+							<a class="nav-link default" href="#step-3">
+								<div class="num">3</div>
+								<div style="font-size: small; font-weight: bold">端口校验</div>
+								<span style="font-size: small;color: #0b2e13;">检查端口是否被占用</span>
+							</a>
+						</li>
+						<li class="nav-item">
+							<a class="nav-link default" href="#step-4">
+								<div class="num">4</div>
+								<div style="font-size: small; font-weight: bold">目录校验</div>
+								<span style="font-size: small;color: #0b2e13;">检查安装目录是否被占用</span>
+							</a>
+						</li>
+						<li class="nav-item">
+							<a class="nav-link default" href="#step-5">
+								<div class="num">5</div>
+								<div style="font-size: small; font-weight: bold">下载安装包</div>
+								<span style="font-size: small;color: #0b2e13;">从仓库下载安装包到服务器/tmp下</span>
+							</a>
+						</li>
+						<li class="nav-item">
+							<a class="nav-link default" href="#step-6">
+								<div class="num">6</div>
+								<div style="font-size: small; font-weight: bold">解压安装包</div>
+								<span style="font-size: small;color: #0b2e13;">解压到安装目录下</span>
+							</a>
+						</li>
+						<li class="nav-item">
+							<a class="nav-link default" href="#step-7">
+								<div class="num">7</div>
+								<div style="font-size: small; font-weight: bold">生成配置文件</div>
+								<span style="font-size: small;color: #0b2e13;">生成mq.conf和run.sh</span>
+							</a>
+						</li>
+						<li class="nav-item">
+							<a class="nav-link default" href="#step-8">
+								<div class="num">8</div>
+								<div style="font-size: small; font-weight: bold">启动</div>
+								<span style="font-size: small;color: #0b2e13;">启动NameServer</span>
+							</a>
+						</li>
+						<li class="nav-item">
+							<a class="nav-link default" href="#step-9">
+								<div class="num">9</div>
+								<div style="font-size: small; font-weight: bold">完成</div>
+								<span style="font-size: small;color: #0b2e13;">获取启动后的进程信息</span>
+							</a>
+						</li>
+					</ul>
+					<div class="tab-content"></div>
+				</div>
 				<form class="form-horizontal form-bordered form-row-stripped" id="ns">
 					<div class="form-body">
-						<div class="form-group">
-							<label class="control-label col-md-3"> RocketMQ版本: </label>
+						<div class="form-group row justify-content-center">
+							<label class="col-md-2"> RocketMQ版本: </label>
 							<div class="col-md-8 checkbox-inline">
 								<label>
-									<input type="radio" name="v" value="4" checked>4.x
+									<input type="radio" name="v" value="4">4.x
 								</label>&nbsp;&nbsp;
 								<label>
-									<input type="radio" name="v" value="5">5.x
+									<input type="radio" name="v" value="5" checked>5.x
 								</label>
 							</div>
 						</div>
-						<div class="form-group">
-							<label class="control-label col-md-3"> 服务器: </label>
+						<div class="form-group row justify-content-center">
+							<label class="col-form-label col-md-2"> 服务器: </label>
 					        <div class="col-md-8">
-								<select id="nsServerSelect" class="selectpicker" title="请选择" data-live-search-placeholder="搜索" name="ip" data-live-search="true"></select>
+								<select id="nsServerSelect" class="form-control selectpicker border" title="请选择" data-live-search-placeholder="搜索" name="ip" data-live-search="true"></select>
 							</div>
 						</div>
-						<div class="form-group">
-							<label class="control-label col-md-3"> jvm内存: </label>
+						<div class="form-group row justify-content-center">
+							<label class="col-form-label col-md-2"> jvm内存: </label>
 							<div class="col-md-8">
 								<input type="text" id="jvmOptExt" name="jvmOptExt" value="" placeholder="-Xms4g -Xmx4g -Xmn2g" data-toggle="tooltip" title="不填将会保持默认配置" class="form-control" />
 							</div>
 						</div>
-						<div class="form-group">
-							<label class="control-label col-md-3"> 监听端口: </label>
+						<div class="form-group row justify-content-center">
+							<label class="col-form-label col-md-2"> 监听端口: </label>
 					        <div class="col-md-8">
 								<input type="text" id="nsListenPort" name="listenPort" placeholder="默认监听端口为9876" value="9876" class="form-control" />
 							</div>
 						</div>
-						<div class="form-group">
-							<label class="control-label col-md-3" data-toggle="tooltip" title="NameServer在服务器上的绝对路径(包含NameServer自身)"> 安装路径: </label>
+						<div class="form-group row justify-content-center">
+							<label class="col-form-label col-md-2" data-toggle="tooltip" title="NameServer在服务器上的绝对路径(包含NameServer自身)"> 安装路径: </label>
 					        <div class="col-md-8">
 								<input type="text" name="dir" value="/opt/mqcloud/ns" class="form-control"/>
 							</div>
 						</div>
-						<div class="form-group">
-							<label class="control-label col-md-3"> 进程信息: </label>
+						<div class="form-group row justify-content-center">
+							<label class="col-form-label col-md-2"> 进程信息: </label>
 					        <div class="col-md-8">
 								<textarea id="nsProgramInfo" type="text" rows="1" class="form-control" readonly></textarea>
 							</div>
 						</div>
-						<div class="form-group">
-							<label class="control-label col-md-3"> 提示: </label>
+						<div class="form-group row justify-content-center">
+							<label class="col-form-label col-md-2"> 提示: </label>
 					        <div class="col-md-8">
 								<div class="form-control-static">如果安装遇到错误警告，请登录服务器解决后再<b>继续</b>执行</div>
 							</div>
@@ -211,23 +230,23 @@
 
 <!-- 下线 -->
 <div id="nameServerOfflineModal" class="modal fade" tabindex="-1" data-width="400">
-	<div class="modal-dialog" style="width:1000px">
+	<div class="modal-dialog modal-xl">
 		<div class="modal-content">
 			<div class="modal-header">
-				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
 				<h4 class="modal-title">确定要下线NameServer?</h4>
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
 			</div>
 			<div class="modal-body">
 				<form class="form-horizontal form-bordered form-row-stripped" id="nameServerOfflineForm">
 					<div class="form-body">
-						<div class="form-group">
-							<label class="control-label col-md-1"> 地址: </label>
-					        <div class="col-md-4">
+						<div class="form-group row justify-content-center">
+							<label class="col-md-1"> 地址: </label>
+					        <div class="col-md-10">
 								<input type="text" name="addr" id="nameServerAddr" class="form-control" readonly />
 							</div>
 						</div>
-						<div class="form-group">
-							<label class="control-label col-md-1"> 进程: </label>
+						<div class="form-group row justify-content-center">
+							<label class="col-md-1"> 进程: </label>
 					        <div class="col-md-10">
 								<textarea id="nameServerProgram" type="text" rows="10" class="form-control" readonly></textarea>
 							</div>
@@ -237,7 +256,7 @@
 				</form>
 			</div>
 			<div class="modal-footer">
-				<button type="button" data-dismiss="modal" class="btn" >取消</button>
+				<button type="button" data-dismiss="modal" class="btn btn-light" >取消</button>
 				<button type="button" class="btn btn-primary" onclick="nameServerOffline()" id="nameServerOfflineBtn">确定</button>
 			</div>
 		</div>
@@ -249,24 +268,22 @@
 	<div class="modal-dialog">
 		<div class="modal-content">
 			<div class="modal-header">
-				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
 				<h4 class="modal-title">关联已有的NameServer</h4>
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
 			</div>
 			<div class="modal-body">
-				<form class="form-horizontal form-bordered form-row-stripped" id="associateNameSrvForm">
-					<div class="form-body">
-						<div class="form-group">
-							<label class="control-label col-md-4"> 地址: </label>
-					        <div class="col-md-4">
-								<input type="text" name="addr" class="form-control" placeholder="ip:port" />
-							</div>
+				<form id="associateNameSrvForm">
+					<div class="form-group row justify-content-center">
+						<label class="col-form-label col-md-2"> 地址: </label>
+						<div class="col-md-6">
+							<input type="text" name="addr" class="form-control" placeholder="ip:port" />
 						</div>
 					</div>
 					<input type="hidden" name="cid" value="${selectedCluster.id}">
 				</form>
 			</div>
 			<div class="modal-footer">
-				<button type="button" data-dismiss="modal" class="btn" >取消</button>
+				<button type="button" data-dismiss="modal" class="btn btn-light" >取消</button>
 				<button type="button" class="btn btn-primary" onclick="associateNameSrv()" id="associateNameSrvBtn">确定</button>
 			</div>
 		</div>
@@ -278,15 +295,15 @@
 	<div class="modal-dialog">
 		<div class="modal-content">
 			<div class="modal-header">
-				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
 				<h4 class="modal-title">确定要删除NameServer记录?</h4>
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
 			</div>
 			<div class="modal-body">
 				<form class="form-horizontal form-bordered form-row-stripped" id="nameServerDeleteForm">
 					<div class="form-body">
-						<div class="form-group">
-							<label class="control-label col-md-4"> 地址: </label>
-					        <div class="col-md-4">
+						<div class="form-group row justify-content-center">
+							<label class="col-form-label col-md-2"> 地址: </label>
+					        <div class="col-md-6">
 								<input type="text" name="addr" id="nameServerAddrDelete" class="form-control" readonly />
 							</div>
 						</div>
@@ -295,7 +312,7 @@
 				</form>
 			</div>
 			<div class="modal-footer">
-				<button type="button" data-dismiss="modal" class="btn" >取消</button>
+				<button type="button" data-dismiss="modal" class="btn btn-light" >取消</button>
 				<button type="button" class="btn btn-primary" onclick="nameServerDelete()" id="nameServerDeleteBtn">确定</button>
 			</div>
 		</div>
@@ -303,6 +320,24 @@
 </div>
 
 <script>
+
+$(function () {
+	$('#addNewNameServer').smartWizard({
+		selected: -1,
+		theme: 'dots',
+		justified: true,
+		autoAdjustHeight: false,
+		enableUrlHash: false,
+		backButtonSupport: false, // Enable the back button support
+		toolbar: {
+			position: 'none'
+		},
+		anchor: {
+			enableNavigation: false,
+		}
+	});
+});	
+	
 var installId = "";
 var method = "";
 /**
@@ -310,6 +345,7 @@ var method = "";
  */
 function install(id){
 	installId = id;
+	active_smartwizard('addNewNameServer', 0)
 	if(!$('#'+id+'ServerSelect').val()){
 		alert("请先选择服务器");
 		return;
@@ -333,25 +369,24 @@ function goOn(m){
  * 校验jdk
  */
 function validateJDK(){
-	var wizardId = installId+"Jdk";
-	active(wizardId);
+	active_smartwizard('addNewNameServer', 1);
 	$.get('${request.contextPath}/admin/deploy/check/jdk',
 		$("#"+installId).serialize(),
         function(data){
             if(data.status == 200){
             	var version = data.result.substring(0, 3);
             	if(version >= 1.8){
-            		complete(wizardId);
+            		complete_smartwizard('addNewNameServer', 1);
             		// 校验端口
             		setTimeout('checkPort()', 1000);
             	} else {
             		alert("jdk环境校验失败，最低为1.8，目前版本为："+data.result);
-            		warn(wizardId);
+            		warn_smartwizard('addNewNameServer', 1);
             		goOn("validateJDK");
             	}
 		    }else{
 		    	toastr.error("数据获取失败！"+data.message);  
-		    	warn(wizardId);
+		    	warn_smartwizard('addNewNameServer', 1);
 		    	goOn("validateJDK");
 		    }
        }, 'json');
@@ -364,22 +399,21 @@ function checkPort(){
 		alert("请输入监听端口");
 		return;
 	}
-	var wizardId = installId+"Port";
-	active(wizardId);
+	active_smartwizard('addNewNameServer', 2);
 	$.post('${request.contextPath}/admin/deploy/check/port',
 		$("#"+installId).serialize(),
         function(data){
             if(data.status == 200){
-            	complete(wizardId);
+            	complete_smartwizard('addNewNameServer', 2);
             	// 校验目录
             	setTimeout('checkDir()', 1000);
 		    } else if(data.status == 500){
 		    	toastr.error("端口被该程序占用："+data.result);  
-		    	warn(wizardId);
+		    	warn_smartwizard('addNewNameServer', 2);
 		    	goOn("checkPort");
 		    } else {
 		    	toastr.error("校验失败！"+data.message);  
-		    	warn(wizardId);
+		    	warn_smartwizard('addNewNameServer', 2);
 		    	goOn("checkPort");
 		    }
        }, 'json');
@@ -388,18 +422,17 @@ function checkPort(){
  * 目录校验
  */
 function checkDir(){
-	var wizardId = installId+"Dir";
-	active(wizardId);
+	active_smartwizard('addNewNameServer', 3);
 	$.post('${request.contextPath}/admin/deploy/check/dir',
 		$("#"+installId).serialize(),
         function(data){
             if(data.status == 200){
-            	complete(wizardId);
+            	complete_smartwizard('addNewNameServer', 3);
             	// 下载文件
         		setTimeout('scp()', 1000);
 		    } else {
 		    	toastr.error("校验失败！"+data.message);  
-		    	warn(wizardId);
+		    	warn_smartwizard('addNewNameServer', 3);
 		    	goOn("checkDir");
 		    }
        }, 'json');
@@ -408,18 +441,17 @@ function checkDir(){
  * scp
  */
 function scp(){
-	var wizardId = installId+"Scp";
-	active(wizardId);
+	active_smartwizard('addNewNameServer', 4);
 	$.post('${request.contextPath}/admin/deploy/scp',
 		$("#"+installId).serialize(),
         function(data){
             if(data.status == 200){
-            	complete(wizardId);
+            	complete_smartwizard('addNewNameServer', 4);
             	// 解压文件
         		setTimeout('unzip()', 1000);
 		    } else {
 		    	toastr.error("下载失败！"+data.message);  
-		    	warn(wizardId);
+		    	warn_smartwizard('addNewNameServer', 4);
 		    	goOn("scp");
 		    }
        }, 'json');
@@ -428,18 +460,17 @@ function scp(){
  * 解压
  */
 function unzip(){
-	var wizardId = installId+"Unzip";
-	active(wizardId);
+	active_smartwizard('addNewNameServer', 5);
 	$.post('${request.contextPath}/admin/deploy/unzip',
 		$("#"+installId).serialize(),
         function(data){
             if(data.status == 200){
-            	complete(wizardId);
+            	complete_smartwizard('addNewNameServer', 5);
             	// 配置
         		setTimeout('config()', 1000);
 		    } else {
 		    	toastr.error("解压失败！"+data.message);  
-		    	warn(wizardId);
+		    	warn_smartwizard('addNewNameServer', 5);
 		    	goOn("unzip");
 		    }
        }, 'json');
@@ -448,17 +479,16 @@ function unzip(){
  * 配置
  */
 function config(){
-	var wizardId = installId+"Config";
-	active(wizardId);
+	active_smartwizard('addNewNameServer', 6);
 	$.post('${request.contextPath}/admin/deploy/config/' + installId,
 		$("#"+installId).serialize(),
         function(data){
             if(data.status == 200){
-            	complete(wizardId);
+            	complete_smartwizard('addNewNameServer', 6);
 	        	setTimeout('startup()', 1000);
 		    } else {
 		    	toastr.error("配置失败！"+data.message);  
-		    	warn(wizardId);
+		    	warn_smartwizard('addNewNameServer', 6);
 		    	goOn("config");
 		    }
        }, 'json');
@@ -467,19 +497,18 @@ function config(){
  * 启动实例
  */
 function startup(){
-	var wizardId = installId+"Startup";
-	active(wizardId);
+	active_smartwizard('addNewNameServer', 7);
 	$.post('${request.contextPath}/admin/nameserver/startup',
 		$("#"+installId).serialize(),
         function(data){
             if(data.status == 200){
-            	complete(wizardId);
+            	complete_smartwizard('addNewNameServer', 7);
             	var time = 5000;
             	// 检测进程
         		setTimeout('checkProgram()', time);
 		    } else {
 		    	toastr.error("启动失败！"+data.message);  
-		    	warn(wizardId);
+		    	warn_smartwizard('addNewNameServer', 7);
 		    	goOn("startup");
 		    }
        }, 'json');
@@ -488,19 +517,18 @@ function startup(){
  * 检测启动的进程
  */
 function checkProgram(){
-	var wizardId = installId+"Program";
-	active(wizardId);
+	active_smartwizard('addNewNameServer', 8);
 	$.post('${request.contextPath}/admin/deploy/check/program',
 		$("#"+installId).serialize(),
         function(data){
             if(data.status == 200){
             	$("#"+installId+"ProgramInfo").attr("rows", 5).html(data.result);
-            	complete(wizardId);
+            	complete_smartwizard('addNewNameServer', 8);
             	alert("恭喜你，安装完成啦！");
             	$("#"+installId+"Install").parent().attr("disabled", "disabled");
 		    } else {
 		    	toastr.error("检查失败！"+data.message);  
-		    	warn(wizardId);
+		    	warn_smartwizard('addNewNameServer', 8);
 		    	goOn("checkProgram");
 		    }
        }, 'json');
@@ -607,6 +635,22 @@ function active(id){
 function complete(id){
 	$("#"+id).removeClass("active").removeClass("warn").addClass("complete");
 }
+function active_smartwizard(content, index) {
+	$('#'+ content).smartWizard("goToStep", index);
+}
+
+function complete_smartwizard(content, index) {
+	$('#'+ content).smartWizard("unsetState", [index], "warning");
+	$('#'+ content).smartWizard("setState", [index], "done");
+}
+
+function warn_smartwizard(content, index) {
+	$('#'+ content).smartWizard("setState", [index], "warning");
+}
+
+function disable_smartwizard(content, index) {
+	$('#'+ content).smartWizard("setState", [index], "disable");
+}
 </script>
 </#if>
 
@@ -616,6 +660,7 @@ function complete(id){
 
 			<div class="modal-header">
 				<h4 class="modal-title">新增集群记录</h4>
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
 			</div>
 
 			<form class="form-horizontal form-bordered form-row-stripped" id="addClusterForm">
@@ -623,21 +668,21 @@ function complete(id){
 					<div class="row">
 						<div class="col-md-12">
 							<div class="form-body">
-								<div class="form-group">
-									<label class="control-label col-md-4"> 集群id: </label>
-									<div class="col-md-5">
+								<div class="form-group row justify-content-center">
+									<label class="col-form-label col-md-3"> 集群id: </label>
+									<div class="col-md-8">
 										<input type="text" name="id" placeholder="集群id" data-toggle="modal" title="集群id将作为name server的一部分，使用递增的数字，自己保证唯一。" class="form-control" />
 									</div>
 								</div>
-								<div class="form-group">
-									<label class="control-label col-md-4"> 集群名: </label>
-									<div class="col-md-5">
+								<div class="form-group row justify-content-center">
+									<label class="col-form-label col-md-3"> 集群名: </label>
+									<div class="col-md-8">
 										<input type="text" name="name" placeholder="即brokerClusterName的值" class="form-control" />
 									</div>
 								</div>
-								<div class="form-group">
-									<label class="control-label col-md-4"> 虚拟通道: </label>
-									<div class="col-md-5 checkbox">
+								<div class="form-group row justify-content-center">
+									<label class="col-md-3"> 虚拟通道: </label>
+									<div class="col-md-8 checkbox">
 										<label data-toggle="tooltip" title="rocketmq4.x设置为开启">
 										    <input type="radio" name="vipChannelEnabled" value="1" checked>开启
 										</label>
@@ -646,9 +691,9 @@ function complete(id){
 										</label>
 									</div>
 								</div>
-								<div class="form-group">
-									<label class="control-label col-md-4"> 环境: </label>
-									<div class="col-md-5 checkbox">
+								<div class="form-group row justify-content-center">
+									<label class="col-md-3"> 环境: </label>
+									<div class="col-md-8 checkbox">
 										<label data-toggle="tooltip" title="线上集群，会开启流量抓取和监控">
 										    <input type="radio" name="online" value="1" checked>线上
 										</label>
@@ -657,9 +702,9 @@ function complete(id){
 										</label>
 									</div>
 								</div>
-								<div class="form-group">
-									<label class="control-label col-md-4"> Trace: </label>
-									<div class="col-md-5 checkbox">
+								<div class="form-group row justify-content-center">
+									<label class="col-md-3"> Trace: </label>
+									<div class="col-md-8 checkbox">
 										<label>
 									    	<input type="radio" name="traceEnabled" value="1">支持
 									    </label>
@@ -668,9 +713,9 @@ function complete(id){
 									    </label>
 									</div>
 								</div>
-								<div class="form-group">
-									<label class="control-label col-md-4"> 事务: </label>
-									<div class="col-md-5 checkbox">
+								<div class="form-group row justify-content-center">
+									<label class="col-md-3"> 事务: </label>
+									<div class="col-md-8 checkbox">
 										<label>
 										    <input type="radio" name="transactionEnabled" value="1">支持
 										</label>

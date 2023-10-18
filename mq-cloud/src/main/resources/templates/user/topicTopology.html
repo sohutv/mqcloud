@@ -1,653 +1,459 @@
-<#if (response.result.totalTopicTraffic?? && response.result.totalTopicTraffic.count gt 0) ||
-	(response.result.totalConsumerTraffic?? && response.result.totalConsumerTraffic.count gt 0)>
-	<#assign trafficPie = true>
-<#else>
-	<#assign trafficPie = false>
-</#if>
-<!-- 	拓扑部分 -->
-<div class="row border-bottom">
-	<div class="col-md-6 border-right">
-		<h3 class="text-center">topic信息</h3>
-		<table class="table table-striped table-hover" style="margin-top: 0px;word-break:break-all; word-wrap:break-all;">
-			<thead>
-				<colgroup>
-					<col width="40%"></col>
-					<col width="60%"></col>
-				</colgroup>
-			</thead>
-			<tbody>
-				<tr>
-					<td>topic:</td>
-					<td><a style="vertical-align: middle" href="javascript:void();" class="copied" data-toggle="tooltip" title="点击复制topic"
-						   data-clipboard-text="${response.result.topic.name}">${response.result.topic.name}</a>
-						<span id="favorite" style="vertical-align: middle;<#if response.result.favoriteId != 0>display: none;</#if>" class="glyphicon glyphicon-heart-empty pointer-cursor" data-toggle="tooltip" title="收藏" onclick="favorite()"></span>
-						<span id="unfavorite" style="vertical-align: middle;<#if response.result.favoriteId == 0>display: none;</#if>" class="glyphicon glyphicon-heart pointer-cursor" data-toggle="tooltip" title="取消收藏" onclick="unfavorite()"></span>
-					</td>
-				</tr>
-				<tr>
-					<td>所属集群:</td>
-					<td><a href="javascript:void();" class="copied" data-toggle="tooltip" title="点击复制集群路由地址" data-clipboard-text="http://${mqcloudDomain}/rocketmq/nsaddr-${response.result.topic.cluster.id}">${response.result.topic.cluster.name}</a></td>
-				</tr>
-				<tr>
-					<td>每个broker上的队列数:</td>
-					<td <#if response.result.own>class="edit-text"</#if>>
-						<#if response.result.own><a href="javascript:void();" data-toggle="tooltip" title="修改队列数" onclick="updateTopicRouteShow()"></#if>${response.result.topic.queueNum}<#if response.result.own></a></#if> 
-            		</td>
-				</tr>
-				<tr>
-					<td>整个集群队列数:</td>
-					<td>${response.result.topic.queueNum*response.result.brokerSize}</td>
-				</tr>
-				<tr>
-					<td>消息顺序:</td>
-					<td>
-						<#if response.result.topic.ordered == 0>
-							<a data-toggle="tooltip" title="查看释义" target=_blank href="/wiki/userGuide/clientConsumer#normalOrder">局部有序</a>
-						<#else>
-							<a data-toggle="tooltip" title="查看释义" target=_blank href="/wiki/userGuide/clientConsumer#strictOrder">全局有序</a>
-						</#if>
-					</td>
-				</tr>
-				<tr>
-					<td>序列化方式:</td>
-					<td>
-						<#if response.result.topic.serializer == 1>
-							<a href="/wiki/userGuide/clientProducer#produceJson"target=_blank  data-toggle="tooltip" title="查看生产JSON样例">${response.result.topic.serializerName!}</a>
-						<#else>
-							<a href="/wiki/userGuide/clientProducer#produceObject" target=_blank data-toggle="tooltip" title="查看生产对象或Map样例">${response.result.topic.serializerName!}</a>
-						</#if>
-					</td>
-				</tr>
-				<tr>
-					<td>trace状态</td>
-					<td>
-						<#if response.result.own && !response.result.topic.cluster.isEnableTrace()>
-							<#if response.result.topic.traceEnabled()>
-								<a href="#"><span class="glyphicon glyphicon-eye-open" data-toggle="tooltip" title="关闭trace?" onclick="updateTopicTraceShow(1)"></span></a>
-							<#else>
-								<a href="#"><span class="glyphicon glyphicon-eye-close" data-toggle="tooltip" title="开启trace?" onclick="updateTopicTraceShow(0)"></span></a>
-							</#if>
-						<#else>
-							<#if response.result.topic.traceEnabled()>
-								已开启
-							<#else>
-								已关闭
-							</#if>
-           				</#if>
-					</td>
-				</tr>
-				<tr>
-					<td>流量预警</td>
-					<td>
-						<#if response.result.topic.trafficWarnEnabled()>
-							<a href="javascript:void();" data-toggle="tooltip" title="关闭预警?" onclick="updateTopicTrafficWarnShow(1,${response.result.topic.id})">已开启</a>
-						<#else>
-							<a href="javascript:void();" data-toggle="tooltip" title="开启预警?" onclick="updateTopicTrafficWarnShow(0)">已关闭</a>
-						</#if>
-					</td>
-				</tr>
-				<tr>
-					<td>所属用户</td>
-					<td>生产者(producer group)</td>
-				</tr>
-			 	<#if response.result.producerFilterMap?? && response.result.producerFilterMap?size gt 0>
-			 	    <#list response.result.producerFilterMap as key, producers>
-			 	   		<tr>
-						    <td>
-						    	<#assign flag = 0>
-						    	<#assign userName = userInfo.user.name!userInfo.user.getEmailName()>
-						    	<#list producers as producer>
-							    	<#if producer.username == userName>
-							    	  <#assign flag = 1>
-							    	</#if>
-						    	</#list>
-						    	<#if flag == 1 || userInfo.user.type == 1>
-							    	<#list producers as producer>
-							    		<#if producer_index != 0>
-							    		,
-							    		</#if>
-							    		<span onclick="prepareDeleteUserProducer(${producer.id})" data-toggle="tooltip" title="移除${producer.username}?" id="producer_${producer.id}" class="producer_delete pointer">${producer.username}</span>
-								    </#list>
-							    	<a href="#"><span class="glyphicon glyphicon-plus-sign" data-toggle="tooltip" title="授权其他用户查看${response.result.topic.name}?" onclick="associateUserProducer('${key.producer}')"></span></a>
-							    <#else>
-							    	<#list producers as producer>
-							    		<#if producer_index != 0>
-							    		,
-							    		</#if>
-							    		<span>${producer.username}</span>
-							    	</#list>
-							    </#if>					    	
-						    </td>
-						    <td><a href="javacript:void();" class="copied" data-toggle="tooltip" title="点击复制生产者" data-clipboard-text="${key.producer}">${key.producer}</a> <#if key.protocol == 1><span style="vertical-align: middle;" data-toggle="tooltip" title="HTTP协议生产者" class="glyphicon glyphicon-info-sign"></span></#if><#if key.protocol == 2><span style="vertical-align: middle;" data-toggle="tooltip" title="Proxy Remoting协议生产者" class="glyphicon glyphicon-info-sign"></span></#if></td>
+<div class="row">
+	<div class="col-12 col-sm-6 col-md-6">
+		<div class="card">
+			<div class="card-header">
+				<h3 class="card-title text-muted">Topic信息</h3>
+			</div>
+			<!-- /.card-header -->
+			<div class="card-body table-responsive p-0">
+				<table class="table table-striped table-hover text-wrap">
+					<tbody>
+						<tr>
+							<td class="text-muted">topic</td>
+							<td colspan="3">
+								<a href="javascript:void(0)" class="copied" data-toggle="tooltip" title="点击复制${response.result.topic.name}" data-clipboard-text="${response.result.topic.name}">${response.result.topic.name}</a>
+								<span data-toggle="tooltip" title="收藏"><i id="favorite" class="far fa-heart align-middle fa-xs text-secondary pointer" <#if response.result.favoriteId != 0>style="display:none;"</#if> onclick="favorite()"></i></span>
+								<span data-toggle="tooltip" title="取消收藏"><i id="unfavorite" class="fas fa-heart align-middle fa-xs text-secondary pointer" <#if response.result.favoriteId == 0>style="display:none;"</#if> onclick="unfavorite()"></i></span>
+							</td>
 						</tr>
-					</#list>
-				<#else>
-					<tr>
-					<td colspan=2 class="text-center">生产者还未进行关联</td>
-					</tr>
-				</#if>
-			</tbody>
-		</table>
+						<tr>
+							<td class="text-muted"><span class="d-none d-lg-inline">所属</span>集群</td>
+							<td colspan="3"><a href="javascript:void(0)" class="copied" data-toggle="tooltip" title="点击复制集群路由地址" data-clipboard-text="http://${mqcloudDomain}/rocketmq/nsaddr-${response.result.topic.cluster.id}">${response.result.topic.cluster.name}</a></td>
+						</tr>
+						<tr>
+							<td class="text-muted"><span class="d-none d-lg-inline">broker</span>队列</td>
+							<td <#if response.result.own>class="edit-text"</#if>>
+								<#if response.result.own><a href="javascript:void(0)" data-toggle="tooltip" title="每个broker上的队列数为${response.result.topic.queueNum}" onclick="updateTopicRouteShow()"></#if>${response.result.topic.queueNum}<#if response.result.own></a></#if>
+							</td>
+							<td class="text-muted">总队列</td>
+							<td data-toggle="tooltip" title="整个集群队列数为${response.result.topic.queueNum*response.result.brokerSize}">${response.result.topic.queueNum*response.result.brokerSize}</td>
+						</tr>
+						<tr>
+							<td class="text-muted"><span class="d-none d-lg-inline">消息</span>顺序</td>
+							<td>
+								<#if response.result.topic.ordered == 0>
+									<a data-toggle="tooltip" title="查看释义" target=_blank href="${request.contextPath}/wiki/userGuide/clientConsumer#normalOrder">局部<span class="d-none d-lg-inline">有序</span></a>
+								<#else>
+									<a data-toggle="tooltip" title="查看释义" target=_blank href="${request.contextPath}/wiki/userGuide/clientConsumer#strictOrder">全局<span class="d-none d-lg-inline">有序</span></a>
+								</#if>
+							</td>
+							<td class="text-muted">序列化<span class="d-none d-lg-inline">方式</span></td>
+							<td>
+								<#if response.result.topic.serializer == 1>
+									<a href="${request.contextPath}/wiki/userGuide/clientProducer#produceJson"target=_blank  data-toggle="tooltip" title="查看生产JSON样例">${response.result.topic.serializerName!}</a>
+								<#else>
+									<a href="${request.contextPath}/wiki/userGuide/clientProducer#produceObject" target=_blank data-toggle="tooltip" title="查看生产对象或Map样例">${response.result.topic.serializerName!}</a>
+								</#if>
+							</td>
+						</tr>
+						<tr>
+							<td class="text-muted">trace<span class="d-none d-lg-inline">状态</span></td>
+							<td>
+								<#if response.result.own && !response.result.topic.cluster.isEnableTrace()>
+									<#if response.result.topic.traceEnabled()>
+										<span data-toggle="tooltip" title="关闭trace?"><i class="fas fa-toggle-on text-secondary pointer" onclick="updateTopicTraceShow(1)"></i></span>
+									<#else>
+										<span data-toggle="tooltip" title="开启trace?"><i class="fas fa-toggle-off text-secondary pointer" onclick="updateTopicTraceShow(0)"></i></span>
+									</#if>
+								<#else>
+									<#if response.result.topic.traceEnabled()>
+										<i class="fas fa-toggle-on"></i>
+									<#else>
+										<i class="fas fa-toggle-off"></i>
+									</#if>
+								</#if>
+							</td>
+							<td class="text-muted">流量<span class="d-none d-lg-inline">预警</span></td>
+							<td>
+								<#if response.result.own>
+									<#if response.result.topic.trafficWarnEnabled()>
+										<span data-toggle="tooltip" title="关闭预警?"><i onclick="updateTopicTrafficWarnShow(1,${response.result.topic.id})" class="fas fa-toggle-on text-secondary pointer"></i></span>
+									<#else>
+										<span data-toggle="tooltip" title="开启预警?"><i onclick="updateTopicTrafficWarnShow(0)" class="fas fa-toggle-off text-secondary pointer"></i></span>
+									</#if>
+								<#else>
+									<#if response.result.topic.trafficWarnEnabled()>
+										<i class="fas fa-toggle-on"></i>
+									<#else>
+										<i class="fas fa-toggle-off"></i>
+									</#if>
+								</#if>
+							</td>
+						</tr>
+					</tbody>
+				</table>
+			</div>
+		</div>
 	</div>
-	<div class="col-md-6">
-		<h3 class="text-center">今日流量</h3>
-		<div id="trafficPie" style="height:230px;"></div>
+	<div class="col-12 col-sm-6 col-md-6">
+		<div class="card">
+			<div class="card-header">
+				<h3 class="card-title text-muted">生产者信息</h3>
+			</div> <!-- /.card-header -->
+			<div class="card-body table-responsive p-0">
+				<table class="table table-striped text-wrap">
+					<tbody>
+						<tr>
+							<td class="text-muted" title="producer group" data-toggle="tooltip">生产者</td>
+							<td class="text-muted"><span class="d-none d-lg-inline">所属</span>用户</td>
+						</tr>
+						<#if response.result.producerFilterMap?? && response.result.producerFilterMap?size gt 0>
+							<#list response.result.producerFilterMap as key, producers>
+								<tr>
+									<td><a href="javascript:void(0)" onclick="showProducerStats('${key.producer}')" data-html="true" data-placement="bottom" data-toggle="tooltip" title="点击查看客户端状况<br><#if key.protocol == 0>协议：RocketMQ</#if><#if key.protocol == 1>协议：HTTP</#if><#if key.protocol == 2>协议：Proxy Remoting</#if>">${key.producer}</a> <span data-toggle="tooltip" title="点击复制${key.producer}"><i class="fas fa-copy fa-xs copied text-secondary pointer" data-clipboard-text="${key.producer}"></i></span></td>
+									<td>
+										<#assign flag = 0>
+										<#assign userName = userInfo.user.name!userInfo.user.getEmailName()>
+										<#list producers as producer>
+											<#if producer.username == userName>
+											  <#assign flag = 1>
+											</#if>
+										</#list>
+										<#if flag == 1 || userInfo.user.type == 1>
+											<#list producers as producer>
+												<#if producer_index != 0>
+												,
+												</#if>
+												<span onclick="prepareDeleteUserProducer(${producer.id})" data-toggle="tooltip" title="移除${producer.username}?" id="producer_${producer.id}" class="producer_delete text-secondary pointer text-sm">${producer.username}</span>
+											</#list>
+											<span data-toggle="tooltip" title="授权其他用户查看${response.result.topic.name}?"><i class="fas fa-user-plus fa-xs text-secondary pointer" onclick="associateUserProducer('${key.producer}')"></i></span>
+										<#else>
+											<#list producers as producer>
+												<#if producer_index != 0>
+												,
+												</#if>
+												<span>${producer.username}</span>
+											</#list>
+										</#if>
+									</td>
+								</tr>
+							</#list>
+						<#else>
+							<tr>
+							<td colspan=2 class="text-center">生产者还未进行关联</td>
+							</tr>
+						</#if>
+					</tbody>
+				</table>
+			</div> <!-- /.card-body -->
+		</div> <!-- /.card -->
+		<div class="card">
+			<div class="card-header">
+				<h3 class="card-title text-muted">今日流量</h3>
+			</div>
+			<div class="card-body table-responsive p-0">
+				<table class="table">
+					<tbody>
+					<tr>
+						<td>
+							<div class="progress progress-sm">
+								<div class="progress-bar bg-success" style="width: ${response.result.producePercent}%"></div>
+								<div class="progress-bar bg-warning" style="width: ${response.result.consumePercent}%"></div>
+							</div>
+							<small>
+								<span class="text-muted">生产</span> ${response.result.producePercent}%
+							</small>
+							<small class="float-right">
+								<span class="text-muted">消费</span> ${response.result.consumePercent}%
+							</small>
+						</td>
+					</tr>
+					</tbody>
+				</table>
+			</div>
+		</div>
 	</div>
 </div>
 <!-- 	拓扑部分 -->
 <div class="row">
-	<h3 class="text-center">拓扑</h3>
-	<div class="col-md-12">
-		<center><div id="topologyDiv" style="height:550px;width:100%;"></div></center>
+	<div class="col-12">
+		<div class="card">
+			<div class="card-header">
+				<h3 class="card-title text-muted">Topic拓扑</h3>
+			</div>
+			<!-- /.card-header -->
+			<div class="card-body table-responsive p-0">
+				<div id="topologyDiv" style="height:500px;"></div>
+			</div>
+			<#if pagination.OK && pagination.result.totalPages gt 1>
+			<div class="card-footer clearfix">
+				<ul id="pagination" style="margin:0px;float: right;" style="float:right" data-url="${request.contextPath}/user/topic/${response.result.topic.id}/detail?tab=topology"></ul>
+			</div>
+			</#if>
+		</div>
 	</div>
-	<center><ul id="pagination" style="margin:0px;" data-url="${request.contextPath}/user/topic/${response.result.topic.id}/detail?tab=topology"></ul></center>
-	<#include "../inc/paginationNoNav.html">
 </div>
 <script>
 var curProducer;
-var ipCache = new Array();
 <#if response.OK>
 <#setting number_format="#">
 $(function() {
 	<#if response.result.consumerList??>
 		<#if response.result.consumerList?size <= 1>
-			$("#topologyDiv").attr("style", "height:200px;width:70%;");
+			$("#topologyDiv").attr("style", "height:200px;");
 		<#elseif response.result.consumerList?size <= 2>
-			$("#topologyDiv").attr("style", "height:400px;width:80%;");
+			$("#topologyDiv").attr("style", "height:400px;");
 		<#elseif response.result.consumerList?size <= 5>
-			$("#topologyDiv").attr("style", "height:450px;width:80%;");
+			$("#topologyDiv").attr("style", "height:450px;");
+		<#elseif response.result.consumerList?size <= 10>
+			$("#topologyDiv").attr("style", "height:600px;");
 		</#if>
 	</#if>
 	<#if response.result.producerFilterMap??>
 		<#if response.result.producerFilterMap?size gt 1 && response.result.consumerList?size <= 1>
-			$("#topologyDiv").attr("style", "height:400px;width:70%;");
+			$("#topologyDiv").attr("style", "height:400px;");
 		</#if>
 	</#if>
-	// 绘制拓扑
-	var dom = document.getElementById("topologyDiv");
-	var myChart = echarts.init(dom);
-	var option = {
-	    tooltip: {
-	    	confine: true,
-	    	enterable: true,
-	    	trigger : 'item',
-	    	backgroundColor : 'white',
-	    	padding : 0,
-	    	textStyle: {
-	    		color: 'no',
-	    	},
-	    	borderWidth: 1,
-	    	formatter: function (params, ticket, callback) {
-	    		if(params.dataType == 'node'){
-		    		if(params.data._type){
-		    			if(ipCache[params.data._group]){
-		    				if(ipCache[params.data._group] != 1 && ipCache[params.data._group] != 2){
-			    				return ipCache[params.data._group];
-		    				}
-		    			} else {
-		    				ipCache[params.data._group] = params.data._type;
-				    	    $.post('${request.contextPath}/topic/connection', {
-				    	    	topic: params.data._topic,
-				    	    	type: params.data._type,
-				    	    	cid: params.data._cid,
-				    	    	group: params.data._group
-				    	    },function (content) {
-				    	    	ipCache[params.data._group] = content;
-				    	    	callback(ticket, content);
-				    	    	console.log($("#ipList").val());
-				    	    });
-		    			}
-		    		} else {
-		    			return '';
-		    		}
-	    		} else if(params.dataType == 'edge') {
-    				if(params.data.target == 0){
-		    			return '生产消息量和生产消息大小';
-    				} else {
-    					return '消费消息量和消费消息大小';
-    				}
-	    		} else {
-	    			return '';
-	    		}
-	    	    return '加载中...';
-	    	}
-	    },
-	    animationDurationUpdate: 1500,
-	    animationEasingUpdate: 'quinticInOut',
-	    series : [
-	        {
-	            type: 'graph',
-	            layout: 'none',
-	            roam: true,
-	            label: {
-	                normal: {
-	                    show: true
-	                }
-	            },
-	            edgeSymbol: ['circle', 'arrow'],
-	            edgeSymbolSize: [4, 10],
-	            edgeLabel: {
-	                normal: {
-	                    textStyle: {
-	                        fontSize: 12
-	                    }
-	                }
-	            },
-	            data: [{
-	                name: '${splitUtil.getNewLine(response.result.topic.name, 20)}',
-	                x: 500,
-	                y: 400,
-	                symbolSize: 150,
-	                hoverAnimation: false,
-	                itemStyle : {
-	                	normal: {
-                        	color: {
-                        	    type: 'linear',
-                        	    x: 0,
-                        	    y: 0,
-                        	    x2: 0,
-                        	    y2: 1,
-                        	    colorStops: [{
-                        	        offset: 0, color: 'rgb(255,99,0)' // 0% 处的颜色
-                        	    }, {
-                        	        offset: 1, color: 'rgb(255,182,0)' // 100% 处的颜色
-                        	    }],
-                        	    globalCoord: false // 缺省为 false
-                        	}
-	                    },
-	                    emphasis: {
-	                        barBorderWidth: 1,
-	                        shadowBlur: 20,
-	                        shadowOffsetX: 0,
-	                        shadowOffsetY: 0,
-	                        shadowColor: 'rgba(0,0,0,0.5)'
-	                    }
-	                }
-	            }
-	            <#if response.result.consumerList?? && response.result.consumerList?size gt 0>
-		            <#if response.result.consumerList?size == 1>
-		            	<#assign symbolSize = "100">
-		            	<#assign consumerY = 800>
-		            <#elseif response.result.consumerList?size == 2>
-		            	<#assign symbolSize = "90">
-	            		<#assign consumerY = 800/response.result.consumerList?size>
-		            <#else>
-		            	<#assign symbolSize = "[80, 28]">
-		            	<#assign consumerY = 800/response.result.consumerList?size>
-		            </#if>
-	            	<#list response.result.consumerList as consumer>
-	            	, {
-		                name: '${consumer.name}_c',
-		                tag: '${consumer.name}_1',
-		                _type: 2,
-		                _group: '${consumer.name}',
-		                _topic: '${response.result.topic.name}',
-		                _cid: ${response.result.topic.clusterId},
-		                x: 1000,
-		                y: ${consumer_index * consumerY + consumerY / 2},
-		                symbolSize: ${symbolSize},
-		                itemStyle : {
-		                	normal: {
-		                        color: 'rgb(255,182,13)'
-		                    },
-		                    emphasis: {
-		                        barBorderWidth: 1,
-		                        shadowBlur: 20,
-		                        shadowOffsetX: 0,
-		                        shadowOffsetY: 0,
-		                        shadowColor: 'rgba(0,0,0,0.5)'
-		                    }
-		                },
-		                label : {
-		                	color: '#000',
-		                	textShadowColor: '#808A87',
-		                	textShadowBlur : '3',
-		                    formatter: function (){
-		                    	return "${splitUtil.getNewLine(consumer.name, 20)}";
-		                    }
-		                }
-		            }
-	            	</#list>
-		        <#else>
-		            , {
-		                name: '暂无消费者',
-		                x: 1000,
-		                y: 400,
-		                symbolSize: 100,
-		                hoverAnimation: false,
-		                itemStyle : {
-		                	normal: {
-		                        color: 'rgb(255,182,13)'
-		                    },
-		                    emphasis: {
-		                        barBorderWidth: 1,
-		                        shadowBlur: 20,
-		                        shadowOffsetX: 0,
-		                        shadowOffsetY: 0,
-		                        shadowColor: 'rgba(0,0,0,0.5)'
-		                    }
-		                }
-		            }
-	            </#if>
-	            <#if response.result.producerFilterMap?? && response.result.producerFilterMap?size gt 0>
-		            <#if response.result.producerFilterMap?size == 1>
-		            	<#assign producerY = 800>
-		            <#else>
-		            	<#assign producerY = 800/response.result.producerFilterMap?size>
-		            </#if>
-	            	<#list response.result.producerFilterMap as producer, v>
-	            	, {
-		                name: '${producer.producer}_p',
-		                tag: '${producer}_0',
-		                _type: 1,
-		                _group: '${producer.producer}',
-		                _topic: '${response.result.topic.name}',
-		                _cid: ${response.result.topic.clusterId},
-		                <#if !producer.stats>
-		                	_stats: 0,
-		                	hoverAnimation: false,
-		                <#else>
-		                	_stats: 1,
-		                </#if>
-		                x: 0,
-		                y: ${producer_index * producerY + producerY / 2},
-		                symbolSize: 100,
-		                itemStyle : {
-		                	normal: {
-		                        color: 'rgb(255,99,2)'
-		                    },
-		                    emphasis: {
-		                        barBorderWidth: 1,
-		                        shadowBlur: 20,
-		                        shadowOffsetX: 0,
-		                        shadowOffsetY: 0,
-		                        shadowColor: 'rgba(0,0,0,0.5)'
-		                    }
-		                },
-		                label : {
-		                    formatter: function (){
-		                    	return "${splitUtil.getNewLine(producer.producer, 20)}";
-		                    }
-		                }
-		            }
-	            	</#list>
-	            <#else>
-	            	, {
-		                name: '暂无生产者',
-		                x: 0,
-		                y: 400,
-		                symbolSize: 100,
-		                hoverAnimation: false,
-		                itemStyle : {
-		                	normal: {
-		                        color: 'rgb(255,99,2)'
-		                    },
-		                    emphasis: {
-		                        barBorderWidth: 1,
-		                        shadowBlur: 20,
-		                        shadowOffsetX: 0,
-		                        shadowOffsetY: 0,
-		                        shadowColor: 'rgba(0,0,0,0.5)'
-		                    }
-		                }
-		            }
-	            </#if>
-	           ],
-	            links: [
-	            <#if response.result.consumerList?? && response.result.consumerList?size gt 0>
-	            	<#list response.result.consumerList as consumer>
-	            	{
-	            		source: 0,
-		                target: ${consumer_index + 1},
-		                lineStyle : {
-                        	color: {
-                        	    type: 'linear',
-                        	    x: 0,
-                        	    y: 0,
-                        	    x2: 0,
-                        	    y2: 1,
-                        	    colorStops: [{
-                        	        offset: 0, color: 'rgb(255,182,0)' // 0% 处的颜色
-                        	    }, {
-                        	        offset: 1, color: 'rgb(255,182,13)' // 100% 处的颜色
-                        	    }],
-                        	    globalCoord: false // 缺省为 false
-                        	},
-                        	type : 'dotted'
-		                },
-		                label: {
-		                    show: true,
-		                    formatter: function (){
-		                    	<#if consumer.consumerTraffic??>
-			                    	return "${consumer.consumerTraffic.countFormat}/分 ${consumer.consumerTraffic.sizeFormat}/分";
-			                    <#else>
-		                    		return "";
-		                    	</#if>
-		                    }
-		                },
-		            },
-	            	</#list>
-	            </#if>
-	            <#if response.result.producerFilterMap?? && response.result.producerFilterMap?size gt 0>
-		            <#if response.result.consumerList?size == 0>
-		            	<#assign consumerSize = 1>
-		            <#else>
-		            	<#assign consumerSize = response.result.consumerList?size>
-		            </#if>
-	            	<#list response.result.producerFilterMap as producer, v>
-	            	{
-	            		source: ${producer_index + 1 + consumerSize},
-		                target: 0,
-		                lineStyle : {
-                        	color: {
-                        	    type: 'linear',
-                        	    x: 0,
-                        	    y: 0,
-                        	    x2: 0,
-                        	    y2: 1,
-                        	    colorStops: [{
-                        	        offset: 0, color: 'rgb(255,99,2)' // 0% 处的颜色
-                        	    }, {
-                        	        offset: 1, color: 'rgb(255,99,0)' // 100% 处的颜色
-                        	    }],
-                        	    globalCoord: false // 缺省为 false
-                        	},
-                        	type : 'dotted'
-		                },
-		                label: {
-		                    show: true,
-		                    formatter: function (){
-		                    	<#if response.result.producerHasTraffic>
-				                    <#if producer.traffic??>
-				                    	return "${producer.traffic.countFormat}/分 ${producer.traffic.sizeFormat}/分";
-				                    <#else>
-			                    		return "";
-			                    	</#if>
-		                    	<#else>
-		                    		<#if response.result.topicTraffic??>
-				                    	return "${response.result.topicTraffic.countFormat}/分 ${response.result.topicTraffic.sizeFormat}/分";
-				                    <#else>
-			                    		return "";
-			                    	</#if>
-		                    	</#if>
-		                    }
-		                },
-		            },
-	            	</#list>
-	            </#if>	
-	           	],
-	            lineStyle: {
-	                normal: {
-	                    opacity: 0.9,
-	                    width: 2,
-	                    curveness: 0
-	                }
-	            }
-	        }
-	    ]
-	};
-	myChart.setOption(option, true);
-	myChart.on('click', function (params) {
-	    if(params.data._type){
-	    	if(params.data._type == 2){
-	    		location.href="${request.contextPath}/user/topic/${response.result.topic.id}/detail?tab=consume&consumer=" + params.data._group;
-	    	} else {
-	    		if(params.data._stats == 1){
-	    			curProducer = params.data._group;
-	    			$("#producerStatsChart").empty();
-		    		$('#producerStatsModal').modal('show');
-	    		} else {
-		    		location.href="${request.contextPath}/user/topic/${response.result.topic.id}/detail?tab=produce";
-	    		}
-	    	}
-	    }
-	});
-	
-	// 绘制流量饼图
-	<#if trafficPie>
-		// 绘制流量饼图
-	   var chart = {
-	       plotBackgroundColor: null,
-	       plotBorderWidth: null,
-	       plotShadow: false
-	   };
-	   var tooltip = {
-	      pointFormat: '{series.name}: <b>{point.percentage:.1f}%</b>'
-	   };
-	   var plotOptions = {
-	      pie: {
-	         allowPointSelect: true,
-	         cursor: 'pointer',
-	         dataLabels: {
-	            enabled: true,
-	            distance:-50,
-	            formatter:function(){
-	            	var tip = '<b>'+ this.point.name +'</b>:'+ Highcharts.numberFormat(this.percentage, 1) + "%";
-	            	return tip;
-                }
-	         },
-	         showInLegend: false,
-	         events: { 
-                click: function(e) { 
-                	if(e.point.name == "生产"){
-                		location.href="${request.contextPath}/user/topic/${response.result.topic.id}/detail?tab=produce"
-                	} else {
-	                	location.href="${request.contextPath}/user/topic/${response.result.topic.id}/detail?tab=consume"
-                	}
-                } 
-	         } 
-	      }
-	   };
-	   var colors = [
-           'rgb(255,99,0)',
-           'rgb(255,182,0)'
-       ];
-	   var series= [{
-	      type: 'pie',
-	      name: '消息量',
-	      data: [
-	         ['消费',   <#if response.result.totalConsumerTraffic??>${response.result.totalConsumerTraffic.count}<#else>0</#if>],
-	         ['生产',   <#if response.result.totalTopicTraffic??>${response.result.totalTopicTraffic.count}<#else>0</#if>]
-	      ]
-	   }];     
-	   var json = {};   
-	   json.chart = chart; 
-	   json.tooltip = tooltip;  
-	   json.colors = colors;
-	   json.title = "";
-	   json.series = series;
-	   json.plotOptions = plotOptions;
-	   $('#trafficPie').highcharts(json); 
+
+    // 拓扑
+	var nodes = new vis.DataSet([
+		{
+			id: 'topic',
+			label: '${splitUtil.getNewLine(response.result.topic.name, 20)}',
+			data: '${response.result.topic.name}',
+			shape: 'circle',
+			x: 0,
+			y: 400,
+			group: 'topic'
+		}
+	]);
+
+	var edges = new vis.DataSet();
+	<#if response.result.consumerList?? && response.result.consumerList?size gt 0>
+		<#if response.result.consumerList?size == 1>
+			<#assign consumerY = 800>
+		<#else>
+			<#assign consumerY = 800/response.result.consumerList?size>
+		</#if>
+		<#list response.result.consumerList as consumer>
+			nodes.add({
+				id: 'c_${consumer_index}',
+				label: '${splitUtil.getNewLine(consumer.name, 25)}',
+				data: '${consumer.name}',
+				title: '点击查看客户端链接信息',
+				x: 300,
+				y: ${consumer_index * consumerY + consumerY / 2},
+				group: 'consumer'
+			});
+			edges.add({
+		        id: 'c_e_${consumer_index}',
+				from: 'topic',
+				to: 'c_${consumer_index}',
+				label: '<#if consumer.consumerTraffic??>${consumer.consumerTraffic.countFormat}/分\n${consumer.consumerTraffic.sizeFormat}/分</#if>',
+				font : { align: 'middle', size : 12 },
+				group: 'consumer'
+			});
+		</#list>
 	<#else>
-		$('#trafficPie').html("暂无数据").addClass("text-center");
+		nodes.add({
+			id: 'c_0',
+			label: '暂无消费者',
+			x: 300,
+			y: 400,
+			group: 'consumer'
+		});
 	</#if>
+
+	<#if response.result.producerFilterMap?? && response.result.producerFilterMap?size gt 0>
+		<#if response.result.producerFilterMap?size == 1>
+			<#assign producerY = 800>
+		<#else>
+			<#assign producerY = 800/response.result.producerFilterMap?size>
+		</#if>
+		<#list response.result.producerFilterMap as producer, v>
+			nodes.add({
+				id: 'p_${producer_index}',
+				label: '${splitUtil.getNewLine(producer.producer, 20)}',
+				data: '${producer.producer}',
+				title: '点击查看客户端链接信息',
+				x: -300,
+				y: ${producer_index * producerY + producerY / 2},
+				group: 'producer'
+			});
+			edges.add({
+			    id: 'p_e_${producer_index}',
+				from: 'p_${producer_index}',
+				to: 'topic',
+				label: '<#if response.result.producerHasTraffic><#if producer.traffic??>${producer.traffic.countFormat}/分\n${producer.traffic.sizeFormat}/分</#if><#else><#if response.result.topicTraffic??>${response.result.topicTraffic.countFormat}/分\n${response.result.topicTraffic.sizeFormat}</#if></#if>',
+				font : { align: 'middle', size : 12 },
+				group: 'producer'
+			});
+		</#list>
+	<#else>
+		nodes.add({
+			id: 'p_0',
+			label: '暂无生产者',
+			x: -300,
+			y: 400,
+			group: 'producer'
+		});
+	</#if>
+
+	var options = {
+		interaction:{
+			hover:true,
+			dragView: false
+		},
+		physics: {
+			enabled: false
+		},
+		nodes: {
+			shape: 'box',
+			borderWidth: 1,
+			shadow:true
+		},
+		edges: {
+			width: 1,
+			shadow:true,
+			font: {align: 'middle', size:12},
+			arrows:'to',
+			color: 'rgb(255,99,0)',
+			dashes:true
+		},
+		groups:{
+			producer:{
+				color: {background:'white', border:'rgb(255,182,30)', highlight:{background:'rgb(255,182,30)'}, hover:{background:'rgb(255,182,30)'}}
+			},
+			consumer:{
+				color: {background:'white', border:'rgb(255,182,13)', highlight:{background:'rgb(255,182,13)'}, hover:{background:'rgb(255,182,13)'}}
+			},
+			topic:{
+				color: {background:'white', border:'rgb(255,182,0)', highlight:{background:'rgb(255,182,0)'}, hover:{background:'rgb(255,182,0)'}}
+			}
+		}
+	};
+	var container = document.getElementById("topologyDiv");
+	var data = {nodes: nodes, edges: edges};
+	var network = new vis.Network(container, data, options);
+
+	// 添加动画
+	var edgeArray = edges.get();
+	var consumerEdges = [];
+	var producerEdges = [];
+	for (var n in edgeArray) {
+		if (edgeArray[n].group === 'consumer') {
+			consumerEdges.push({edge:edgeArray[n].id, trafficSize:5});
+		} else if(edgeArray[n].group === 'producer') {
+			producerEdges.push({edge:edgeArray[n].id, trafficSize:5});
+		}
+	}
+	network.on("hoverNode", function (params) {
+		if (params.node === 'topic') {
+			network.animateTraffic(producerEdges, null, null, null, function () {
+				network.animateTraffic(consumerEdges);
+			});
+			return;
+		}
+		var edges = data.edges.get({
+			filter: function(item) {
+				return item.from === params.node;
+			}
+		});
+		var list = [];
+		for (var n in edges) {
+			list.push({edge:edges[n].id, trafficSize:5});
+		}
+		if (list.length !== 0) {
+			network.animateTraffic(list, null, null, null, function () {
+				network.animateTraffic(consumerEdges);
+			});
+		}
+	});
+	network.on("click", function (params) {
+		var nodes = data.nodes.get({
+			filter: function(item) {
+				return item.id === params.nodes[0];
+			}
+		});
+		if (nodes.length === 0) {
+			return;
+		}
+		var node = nodes[0];
+		if (!node.data) {
+			return;
+		}
+		if (node.group === 'topic') {
+			return;
+		}
+		var type = 1;
+		if (node.group === 'consumer') {
+			type = 2;
+		}
+		showClientConnection(type, node.data);
+	});
 });
 </#if>
 </script>
+
+<!-- 客户端链接 -->
+<div id="clientConnectionModal" class="modal fade">
+	<div class="modal-dialog modal-lg">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h4 class="modal-title"><span id="clientGroup"></span>的链接</h4>
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+			</div>
+			<div class="modal-body" id="clientConnectionBody">
+			</div>
+		</div>
+	</div>
+</div>
 
 <!-- 修改路由 -->
 <div id="updateTopicRouteModal" class="modal fade" tabindex="-1" data-width="400">
 	<div class="modal-dialog">
 		<div class="modal-content">
-
 			<div class="modal-header">
-				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
 				<h4 class="modal-title">队列数量修改</h4>
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
 			</div>
-
-			<form class="form-horizontal form-bordered form-row-stripped" id="updateTopicRouteForm">
-				<div class="modal-body">
-					<div class="row">
-						<!-- 控件开始 -->
-						<div class="col-md-12">
-							<!-- form-body开始 -->
-							<div class="form-body">
-								<div class="form-group">
-									<label class="control-label col-md-3"> 队列数: </label>
-									<div class="col-md-8">
-										<input type="text" name="queueNum" value="${response.result.topic.queueNum}" placeholder="队列数" class="form-control" />
-									</div>
-								</div>
-								<div class="form-group">
-									<label class="control-label col-md-3"> 申请原因: </label>
-									<div class="col-md-8">
-										<textarea type="text" name="info" rows="3" class="form-control" placeholder="请填写"></textarea>
-									</div>
-								</div>
-								<input type="hidden" name="tid" value="${response.result.topic.id}"/>
-							</div>
-							<!-- form-body 结束 -->
+			<div class="modal-body">
+				<form id="updateTopicRouteForm">
+					<div class="input-group mb-3">
+						<label for="queueNum" class="col-form-label col-md-3"> 队列数: </label>
+						<div class="col-md-8">
+							<input type="text" id="queueNum" name="queueNum" value="${response.result.topic.queueNum}" placeholder="队列数" class="form-control" />
 						</div>
-						<div id="info"></div>
-						<!-- 控件结束 -->
 					</div>
-				</div>
-				
-				<div class="modal-footer">
-					<button type="button" data-dismiss="modal" class="btn" >取消</button>
-					<button type="submit" id="updateTopicBtn" class="btn btn-primary">确定</button>
-				</div>
-			
-			</form>
+					<div class="input-group mb-3">
+						<label for="info" class="col-form-label col-md-3"> 申请原因: </label>
+						<div class="col-md-8">
+							<textarea type="text" id="info" name="info" rows="3" class="form-control" placeholder="请填写"></textarea>
+						</div>
+					</div>
+					<input type="hidden" name="tid" value="${response.result.topic.id}"/>
+				</form>
+			</div>
+			<div class="modal-footer justify-content-between">
+				<button type="button" data-dismiss="modal" class="btn btn-default" >取消</button>
+				<button type="button" onclick="updateTopicRoute()" id="updateTopicBtn" class="btn btn-primary">确定</button>
+			</div>
 		</div>
 	</div>
 </div>
 <!-- 提示弹窗 -->
 <div class="modal fade" id="deleteUserProducerModal" aria-hidden="true">  
   <div class="modal-dialog">  
-    <div class="modal-content message_align">  
-      <div class="modal-header">  
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">×</span></button>  
-        <h4 class="modal-title">确定要移除用户吗？</h4>  
-      </div>  
-		<form class="form-horizontal form-bordered form-row-stripped">
-			<div class="modal-body">
-				<div class="row">
-					<!-- 控件开始 -->
-					<div class="col-md-12">
-						<!-- form-body开始 -->
-						<div class="form-body">
-							<div class="form-group">
-								<label class="control-label col-md-3"> 用户: </label>
-								<div class="col-md-5">
-									<input type="text" id="producer" class="form-control" readonly="readonly"/>
-								</div>
-							</div>
-							<input type="hidden" id="pid" name="pid"/>
-						</div>
-						<!-- form-body 结束 -->
+    <div class="modal-content">
+		<div class="modal-header">
+		  <h4 class="modal-title">确定要移除用户吗？</h4>
+		  <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">×</span></button>
+		</div>
+		<div class="modal-body">
+			<form class="form-horizontal form-bordered form-row-stripped">
+				<div class="form-group row">
+					<label class="col-form-label col-md-3"> 用户: </label>
+					<div class="col-md-9">
+						<input type="text" id="producer" class="form-control" readonly="readonly"/>
 					</div>
-					<div id="info"></div>
-					<!-- 控件结束 -->
 				</div>
-			</div>
-			
-			<div class="modal-footer">
-				<button type="button" data-dismiss="modal" class="btn" >取消</button>
-				<button type="button" id="deleteProducerBtn" onclick="deleteUserProducer()" class="btn btn-primary">确定</button>
-			</div>
-		
-		</form>
+				<input type="hidden" id="pid" name="pid"/>
+			</form>
+		</div>
+		<div class="modal-footer justify-content-between">
+			<button type="button" data-dismiss="modal" class="btn btn-default" >取消</button>
+			<button type="button" id="deleteProducerBtn" onclick="deleteUserProducer()" class="btn btn-primary">确定</button>
+		</div>
     </div>
   </div>
 </div>
@@ -655,54 +461,54 @@ $(function() {
 	<div class="modal-dialog">
 		<div class="modal-content">
 			<div class="modal-header">
-				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
 				<h4 class="modal-title">授权其他用户</h4>
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
 			</div>
-			<form class="form-horizontal form-bordered form-row-stripped" id="addUserProducerModalForm">
-				<div class="modal-body">
-					<div class="row">
-						<div class="col-md-12">
-							<div class="form-body">
-								<div class="form-group">
-									<label class="control-label col-md-3"> Topic: </label>
-									<div class="col-md-5">
-										<input type="text" name="tid" value="${response.result.topic.name}" data-toggle="tooltip"  title="${response.result.topic.name}" readonly="readonly" class="form-control"/>
-										<input id="currentTopicID" type="hidden" value="${response.result.topic.id}"/>
-									</div>
-								</div>
-								<div id="producerGroup" class="form-group"  style="display:none;">
-									<label class="control-label col-md-3"> 生产者: </label>
-									<div class="col-md-5">
-										<input type="text" name="producer" id="producerGroupName" data-toggle="tooltip" readonly="readonly" class="form-control" />
-									</div>
-								</div>
-								<div class="form-group">
-									<label class="control-label col-md-3"> 选择用户: </label>
-							        <div class="col-md-5">
-										<#if response.result?? && response.result?size gt 0>
-			    						<select id="userSearchSelect" class="selectpicker" title="请选择" data-live-search-placeholder="搜索" name="user" data-live-search="true"></select> 	  			
-										<#else>
-										<input type="text" value="拉取用户列表失败"/>
-									    </#if>
-									</div>
-								</div>
-							</div>
+			<div class="modal-body">
+				<form id="addUserProducerModalForm">
+					<div class="input-group mb-3">
+						<label for="topicId" class="col-form-label col-md-3"> Topic: </label>
+						<div class="col-md-9">
+							<input id="topicId" type="text" name="tid" value="${response.result.topic.name}" data-toggle="tooltip"  title="${response.result.topic.name}" readonly="readonly" class="form-control"/>
+							<input id="currentTopicID" type="hidden" value="${response.result.topic.id}"/>
 						</div>
 					</div>
-				</div>
-				<div class="modal-footer">
-					<button type="button" data-dismiss="modal" class="btn" >取消</button>
-					<button type="button" class="btn btn-primary" id="associateBtn" onclick="addUserProducerRelationship()">确定</button>
-				</div>
-			</form>
+					<div id="producerGroup" class="input-group mb-3"  style="display:none;">
+						<label for="producerGroupName" class="col-form-label col-md-3"> 生产者: </label>
+						<div class="col-md-9">
+							<input type="text" name="producer" id="producerGroupName" readonly="readonly" class="form-control" />
+						</div>
+					</div>
+					<div class="input-group mb-3">
+						<label for="userSearchSelect" class="col-form-label col-md-3"> 选择用户: </label>
+						<div class="col-md-9">
+							<#if response.result?? && response.result?size gt 0>
+							<select id="userSearchSelect" class="selectpicker  form-control" title="请选择" data-live-search-placeholder="搜索" name="user" data-live-search="true"></select>
+							<#else>
+							<input type="text" value="拉取用户列表失败"/>
+							</#if>
+						</div>
+					</div>
+				</form>
+			</div>
+			<div class="modal-footer justify-content-between">
+				<button type="button" data-dismiss="modal" class="btn btn-default" >取消</button>
+				<button type="button" class="btn btn-primary" id="associateBtn" onclick="addUserProducerRelationship()">确定</button>
+			</div>
 		</div>
 	</div>
 </div> 
 <!-- 客户端统计 -->
-<div id="producerStatsModal" class="modal fade" tabindex="-1" data-width="400">
-	<div class="modal-dialog" style="width:1100px;">
+<div id="producerStatsModal" class="modal fade"  style="overflow-y: auto;">
+	<div class="modal-dialog  modal-xl">
 		<div class="modal-content">
-			<div class="modal-body" style="padding-top:5px;">
+			<div class="modal-header">
+				<h5 class="modal-title" id="producerStatsTitle"></h5>
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+					<span aria-hidden="true">&times;</span>
+				</button>
+			</div>
+			<div class="modal-body">
 				<div id="producerStatsChart"></div>
 			</div>
 		</div>
@@ -711,122 +517,67 @@ $(function() {
 
 <#--修改topic trace-->
 <div id="updateTopicTraceModal" class="modal fade" tabindex="-1" data-width="400">
-	<div class="modal-dialog" style="width:400px;">
+	<div class="modal-dialog">
 		<div class="modal-content">
 			<div class="modal-header">
-				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-				<h4 class="modal-title">${response.result.topic.name}</h4>
+				<h5 class="modal-title">修改追踪</h5>
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+					<span aria-hidden="true">&times;</span>
+				</button>
 			</div>
-			<form class="form-horizontal form-bordered form-row-stripped" id="updateTopicTraceModalForm">
-				<div class="modal-body">
-					<div class="row">
-						<div class="col-md-12">
-							<div class="form-body">
-								<div class="form-group">
-									<div class="col-md-4"></div>
-									<div class="col-md-8">
-										<div class="form-control-static">
-											<b><span id='traceSelect'></span> trace ?</b>
-	    								</div>
-									</div>
-								</div>
-							</div>
+			<div class="modal-body text-center">
+				<form id="updateTopicTraceModalForm">
+					<div class="form-group">
+						<div class="form-control-static">
+							<b><span id='traceSelect'></span> trace ?</b>
 						</div>
 					</div>
-				</div>
-				<div class="modal-footer">
-					<button type="button" data-dismiss="modal" class="btn" >取消</button>
-					<button type="button" class="btn btn-primary" id="updateTopicTraceBtn" onclick="updateTopicTrace()">确定</button>
-				</div>
-			</form>
+				</form>
+			</div>
+			<div class="modal-footer justify-content-between">
+				<button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+				<button type="button" class="btn btn-primary" id="updateTopicTraceBtn" onclick="updateTopicTrace()">确定</button>
+			</div>
 		</div>
 	</div>
 </div>
 <!-- 开启/关闭topic流量预警 -->
-<div id="updateTopicTrafficWarnModal" class="modal fade" tabindex="-1" data-width="400">
+<div id="updateTopicTrafficWarnModal" class="modal fade" data-width="400">
 	<div class="modal-dialog">
 		<div class="modal-content">
 			<div class="modal-header">
-				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-				<span class="h4">${response.result.topic.name}流量预警开关</span>
-				<span class="nostyleA" data-toggle="tooltip" data-placement="bottom" title="了解详情"><a href="/wiki/userGuide/monitorAndWarn#trafficMonitor" target=_blank class="glyphicon glyphicon-question-sign"></a></span>
+				<h5>流量预警 </h5><a target=_blank href="${request.contextPath}/wiki/userGuide/monitorAndWarn#trafficMonitor" title="了解详情" data-toggle="tooltip"><i class="fas fa-question-circle fa-sm"></i></a>
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+					<span aria-hidden="true">&times;</span>
+				</button>
 			</div>
-			<form class="form-horizontal form-bordered form-row-stripped" id="updateTopicTrafficWarnForm">
-				<div class="modal-body">
-					<div class="row">
-						<div class="col-md-12">
-							<div class="form-body">
-								<div class="form-group">
-									<div class="col-md-4"></div>
-									<div class="col-md-8">
-										<div class="form-control-static">
-											<b><span id='topicTrafficWarnSelect'></span> 流量预警 ?</b>
-										</div>
-									</div>
-								</div>
-							</div>
+			<div class="modal-body text-center">
+				<form id="updateTopicTrafficWarnForm">
+					<div class="form-group">
+						<div class="form-control-static">
+							<b><span id='topicTrafficWarnSelect'></span> 流量预警 ?</b>
 						</div>
 					</div>
-				</div>
-				<div class="modal-footer">
-					<button type="button" data-dismiss="modal" class="btn" >取消</button>
-					<button type="button" id="updateTopicTrafficWarnBtn" class="btn btn-primary" onclick="updateTopicTrafficWarn()">确定</button>
+				</form>
+			</div>
+			<div class="modal-footer justify-content-between">
+				<button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+				<button type="button" class="btn btn-primary" id="updateTopicTrafficWarnBtn" onclick="updateTopicTrafficWarn()">确定</button>
+			</div>
 		</div>
-
-		</form>
 	</div>
-</div>
 </div>
 
 <script>
 	$(function () {
-		// 初始化提示组件
-		$("[data-toggle='tooltip']").tooltip();
 		// 初始化user列表
 		initUserList('userSearchSelect');
-		// 绑定更新topic校验
-        $('#updateTopicRouteForm').bootstrapValidator({
-　　　　　　	message: 'This value is not valid',
-            　		feedbackIcons: {
-                　　　　　　　　valid: 'glyphicon glyphicon-ok',
-                　　　　　　　　invalid: 'glyphicon glyphicon-remove',
-                　　　　　　　　validating: 'glyphicon glyphicon-refresh'
-            　　　　　　　　   },
-            fields: {
-            	queueNum: {
-                    validators: {
-                        between: {
-			               message: '队列最小为1,最大为20',
-			               min: '1',
-			               max: '20'
-                        }
-                    }
-                }
-            }
-        }).on('success.form.bv', function(e) {
-        // 阻止默认事件提交
-        e.preventDefault();
-        disable("updateTopicBtn");
-		$.post('${request.contextPath}/topic/updateRoute',
-				$("#updateTopicRouteForm").serialize(),
-		        function(data){
-		            if(data.status == 200){
-						toastr.success("申请成功！请耐心等待！");  
-						modalHide(3000, function(){
-							$("#updateTopicRouteForm").data('bootstrapValidator').resetForm();
-						});
-				    }else{
-				    	toastr.error("申请失败！"+data.message);  
-				    	enable("updateTopicBtn");
-				    }
-		        }, 'json');
-    	});
-        
+
         //添加删除特效
         $(".producer_delete").hover(function(){
-        	$(this).addClass("delete");
+        	$(this).addClass("text-delete");
         },function(){
-        	$(this).removeClass("delete");
+        	$(this).removeClass("text-delete");
         });
         
         // fix bootstrap model & highcharts resize
@@ -861,7 +612,6 @@ $(function() {
 	// 关联用户
 	function associateUserProducer(producerGroupName){		
 	  $("#producerGroupName").val(producerGroupName);
-	  $("#producerGroupName").attr("title",producerGroupName).tooltip('fixTitle');
 	  $('#associateBtn').attr("disabled",false);
 	  $("#addUserProducerModal").modal('show');
 	}
@@ -897,7 +647,7 @@ function addUserProducerRelationship(){
 		return;
 	}
 	disable("associateBtn");
-	$.post('${request.contextPath}/topic/auth/associate',
+	$.post('${request.contextPath}/producer/auth/associate',
 			{
 				producer: $("#producerGroupName").val(),
 				tid: $("#currentTopicID").val(),
@@ -905,7 +655,7 @@ function addUserProducerRelationship(){
 			},
 	        function(data){
 	            if(data.status == 200){
-	            	toastr.success("申请成功！请耐心等待！");  	            	
+	            	toastr.success("申请成功，请稍后查看！即将自动刷新");
 	            	reload(1000);            	
 			    }else{
 			    	toastr.error("申请失败！"+data.message);  
@@ -930,7 +680,9 @@ function producerStats(){
 function showProducerStats(producer){
 	curProducer = producer;
 	$("#producerStatsChart").empty();
+	$("#producerStatsTitle").html(producer+"客户端状况统计");
 	$('#producerStatsModal').modal('show');
+	$("[data-toggle='tooltip']").tooltip('hide');
 }
 
 function updateTopicRouteShow(){
@@ -1000,18 +752,18 @@ function updateTopicTrafficWarn(){
  */
 function favorite(){
 	$.post('${request.contextPath}/user/favorite',
-			{
-				tid: ${response.result.topic.id}
-			},
-			function(data){
-				if(data.status == 200){
-					toastr.success("收藏成功");
-					$("#favorite").hide();
-					$("#unfavorite").show();
-				}else{
-					toastr.error("收藏失败！"+data.message);
-				}
-			}, 'json');
+	{
+		tid: ${response.result.topic.id}
+	},
+	function(data){
+		if(data.status == 200){
+			toastr.success("收藏成功");
+			$("#favorite").hide();
+			$("#unfavorite").show();
+		}else{
+			toastr.error("收藏失败！"+data.message);
+		}
+	}, 'json');
 }
 
 /**
@@ -1020,28 +772,56 @@ function favorite(){
  */
 function unfavorite(){
 	$.post('${request.contextPath}/user/unfavorite',
-		{
-			tid: ${response.result.topic.id}
-		},
-		function(data){
-			if(data.status == 200){
-				toastr.success("取消收藏成功");
-				$("#unfavorite").hide();
-				$("#favorite").show();
-			}else{
-				toastr.error("取消收藏失败！"+data.message);
-			}
-		}, 'json');
+	{
+		tid: ${response.result.topic.id}
+	},
+	function(data){
+		if(data.status == 200){
+			toastr.success("取消收藏成功");
+			$("#unfavorite").hide();
+			$("#favorite").show();
+		}else{
+			toastr.error("取消收藏失败！"+data.message);
+		}
+	}, 'json');
+}
+
+function updateTopicRoute() {
+	var queueNum = $("#queueNum").val();
+	if (Number(queueNum) < 1 || Number(queueNum) > 20) {
+		alert("队列最小为1,最大为20");
+		return;
+	}
+	disable("updateTopicBtn");
+	$.post('${request.contextPath}/topic/updateRoute', $("#updateTopicRouteForm").serialize(), function (data) {
+		if (data.status == 200) {
+			toastr.success("申请成功，请稍后查看！即将自动刷新页面");
+			reload(2000);
+		} else {
+			toastr.error("申请失败！" + data.message);
+			enable("updateTopicBtn");
+		}
+	}, 'json');
+}
+
+function showClientConnection(type, group) {
+	$("#clientGroup").html(group);
+	post('${request.contextPath}/topic/connection', {
+		topic: '${response.result.topic.name}',
+		type: type,
+		cid: ${response.result.topic.clusterId},
+		group: group
+	}, function (content) {
+		$("#clientConnectionBody").html(content);
+		$('#clientConnectionModal').modal('show');
+		console.log($("#ipList").val());
+	});
 }
 
 $(function () {
 	<#if RequestParameters.from??>
 		showProducerStats('${RequestParameters.from}')
 	</#if>
-	
-	var clipboard = new ClipboardJS('.copied');
-	clipboard.on('success', function(e) {
-		toastr.success("复制成功");
-	});
 });
 </script>
+<#include "../inc/pagination.html">

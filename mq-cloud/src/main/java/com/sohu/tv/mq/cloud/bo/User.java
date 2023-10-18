@@ -29,8 +29,7 @@ public class User {
     // 手机
     private String mobile;
     // 用户类型
-    @Range(min = 0, max = 1)
-    private int type = -1;
+    private int type;
     // 创建日期
     private Date createDate;
     // 更新日期
@@ -43,7 +42,7 @@ public class User {
     private String password;
     
     // 接收手机通知 0：不接收，1：接收
-    private int receivePhoneNotice = -1;
+    private int receivePhoneNotice;
     
     // 用户组id
     private long gid = -1;
@@ -145,11 +144,16 @@ public class User {
 
     public String notBlankName(){
         if (StringUtils.isBlank(getName())) {
-            return getEmailName();
+            return getEmailName().split("@")[0];
         }
        return getName();
     }
-    
+
+    public String capitalizeName(){
+        return notBlankName().substring(0, 1).toUpperCase();
+    }
+
+
     public long getGid() {
         return gid;
     }

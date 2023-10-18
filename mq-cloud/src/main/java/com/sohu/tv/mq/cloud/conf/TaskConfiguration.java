@@ -2,7 +2,7 @@ package com.sohu.tv.mq.cloud.conf;
 
 import com.sohu.tv.mq.cloud.task.*;
 import net.javacrumbs.shedlock.core.LockProvider;
-import net.javacrumbs.shedlock.provider.jdbc.JdbcLockProvider;
+import net.javacrumbs.shedlock.provider.jdbc.MQCloudJdbcLockProvider;
 import net.javacrumbs.shedlock.spring.ScheduledLockConfiguration;
 import net.javacrumbs.shedlock.spring.ScheduledLockConfigurationBuilder;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -63,6 +63,12 @@ public class TaskConfiguration {
         MonitorServiceTask monitorServiceTask = new MonitorServiceTask();
         return monitorServiceTask;
     }
+
+    @Bean
+    public ExportMessageMonitorTask exportMessageMonitorTask() {
+        ExportMessageMonitorTask exportMessageMonitorTask = new ExportMessageMonitorTask();
+        return exportMessageMonitorTask;
+    }
     
     @Bean
     public AlarmConfigTask alarmConfigTask() {
@@ -82,6 +88,11 @@ public class TaskConfiguration {
     @Bean
     public AutoAuditTask autoAuditTask() {
         return new AutoAuditTask();
+    }
+
+    @Bean
+    public ConsumerClientMetricsTask consumerClientMetricsTask() {
+        return new ConsumerClientMetricsTask();
     }
 
     @Bean
@@ -117,7 +128,7 @@ public class TaskConfiguration {
      */
     @Bean
     public LockProvider lockProvider(DataSource dataSource) {
-        return new JdbcLockProvider(dataSource);
+        return new MQCloudJdbcLockProvider(dataSource);
     }
     
     /**

@@ -1,5 +1,6 @@
 package com.sohu.tv.mq.cloud.web.controller.admin;
 
+import com.sohu.tv.mq.cloud.bo.Broker;
 import com.sohu.tv.mq.cloud.service.BrokerService;
 import com.sohu.tv.mq.cloud.service.MQDeployer;
 import com.sohu.tv.mq.cloud.util.Result;
@@ -211,9 +212,11 @@ public class AdminDeployController extends AdminViewController {
      * @return
      */
     @RequestMapping(value="/startup", method=RequestMethod.POST)
-    public Result<?> startup(UserInfo ui, @RequestParam(name="ip") String ip, @RequestParam(name="dir") String dir) {
+    public Result<?> startup(UserInfo ui, @RequestParam(name="ip") String ip,
+                             @RequestParam(name="dir") String dir,
+                             @RequestParam(name = "listenPort") int port) {
         logger.warn("startup, ip:{}, dir:{}, user:{}", ip, dir, ui);
-        return mqDeployer.startup(ip, dir);
+        return mqDeployer.startup(ip, dir, port);
     }
     
     /**
@@ -244,7 +247,7 @@ public class AdminDeployController extends AdminViewController {
             return result;
         }
         // 启动
-        return mqDeployer.startup(ip, dir);
+        return mqDeployer.startup(ip, dir, port);
     }
     
     /**
@@ -254,16 +257,20 @@ public class AdminDeployController extends AdminViewController {
      * @return
      */
     @RequestMapping(value="/shutdown", method=RequestMethod.POST)
-    public Result<?> shutdown(UserInfo ui, @RequestParam(name="cid") int cid, @RequestParam(name="addr") String addr) {
+    public Result<?> shutdown(UserInfo ui, @RequestParam(name = "cid") int cid, @RequestParam(name = "addr") String addr) {
         logger.warn("shutdown:{}, user:{}", addr, ui);
         String[] addrs = addr.split(":");
         String ip = addrs[0];
         String portStr = addrs[1];
         int port = NumberUtils.toInt(portStr);
-        if(port == 0) {
+        if (port == 0) {
             return Result.getResult(Status.PARAM_ERROR);
         }
-        Result<?> shutdownResult = mqDeployer.shutdown(ip, port);
+        Result<Broker> brokerResult = brokerService.queryBroker(cid, addr);
+        if (brokerResult.isNotOK()) {
+            return brokerResult;
+        }
+        Result<?> shutdownResult = mqDeployer.shutdown(ip, port, brokerResult.getResult().getBrokerName());
         if (shutdownResult.isOK()) {
             // 关闭后的broker更新状态
             brokerService.updateWritable(cid, addr, true);

@@ -1,55 +1,45 @@
 <#if response.notOK>
-<div class="modal-body">
-	<div class="form-body">
-		<div class="form-group">
-			<div>异常数据</div>
+    <div class="text-center">异常数据</div>
+<#else>
+	<div class="form-group row">
+		<label class="col-form-label col-md-3"> Topic: </label>
+		<div class="col-md-7">
+			<input type="text" value="${response.result.topic.name}" readonly="readonly" class="form-control" />
 		</div>
 	</div>
-</div>
-<#else>
-<div class="modal-body">
-	<div class="row">
-		<div class="col-md-12">
-			<div class="form-body">
-				<div class="form-group">
-					<label class="control-label col-md-3"> Topic: </label>
-			        <div class="col-md-7">
-						<input type="text" value="${response.result.topic.name}" readonly="readonly" class="form-control" />
-					</div>
-				</div>
-				<div class="form-group">
-					<label class="control-label col-md-3"> 消费者: </label>
-			        <div class="col-md-7">
-						<input type="text" value="${response.result.consumer.name}" readonly="readonly" class="form-control" />
-					</div>
-				</div>
-				<div class="form-group">
-					<label class="control-label col-md-3"> 所属用户: </label>
-			        <div class="col-md-6">
-						<table class="table table-striped table-hover noborder" style="margin-top: 0px">
-							<thead>
-								<tr>
-									<td>用户</td>
-								</tr>
-							</thead>
-							<tbody>
-								<#if response.result.user?? && response.result.user?size gt 0>
-									<#list response.result.user as u>
-										<tr>
-											<td>${u.name!u.emailName}</td>
-										</tr>
-									</#list>
-								<#else>
+	<div class="form-group row">
+		<label class="col-form-label col-md-3"> 消费者: </label>
+		<div class="col-md-7">
+			<input type="text" value="${response.result.consumer.name}" readonly="readonly" class="form-control" />
+		</div>
+	</div>
+	<div class="form-group row">
+		<label class="col-form-label col-md-3"> 所属用户: </label>
+		<div class="col-md-7">
+			<div class="card">
+				<div class="card-body table-responsive p-0">
+					<table class="table table-hover text-nowrap">
+						<thead>
+							<tr>
+								<td>用户</td>
+							</tr>
+						</thead>
+						<tbody>
+							<#if response.result.user?? && response.result.user?size gt 0>
+								<#list response.result.user as u>
 									<tr>
-										<td>暂无数据</td>
+										<td>${u.name!u.emailName}</td>
 									</tr>
-								</#if>
-							</tbody>
-						</table>
-					</div>
+								</#list>
+							<#else>
+								<tr>
+									<td>暂无数据</td>
+								</tr>
+							</#if>
+						</tbody>
+					</table>
 				</div>
 			</div>
 		</div>
 	</div>
-</div>
 </#if>

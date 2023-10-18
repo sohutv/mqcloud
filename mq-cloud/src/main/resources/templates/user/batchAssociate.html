@@ -1,24 +1,134 @@
-<#if response.notOK>
-	<tr><td colspan=4 class='text-center'>暂无数据</td></tr>
-<#else>
-	<#list response.result as topicInfoVO>
-		<tr>
-			<td rowspan="${topicInfoVO.producerList?size+topicInfoVO.consumerList?size+1}">${topicInfoVO_index + 1}</td>
-			<td rowspan="${topicInfoVO.producerList?size+topicInfoVO.consumerList?size+1}">${topicInfoVO.topic.name}</td>
-		</tr>
-		<#list topicInfoVO.producerList as userProducer>		
-			<tr>
-				<td>生产者</td>
-				<td>${userProducer.producer}</td>
-				<td><input class="authBox" type="checkbox" dataType="1" value="${userProducer.id}"></td>
-			</tr>
-		</#list>	
-		<#list topicInfoVO.consumerList as consumer>		
-			<tr>
-				<td>消费者</td>
-				<td>${consumer.name}</td>
-				<td><input class="authBox" type="checkbox" dataType="2" value="${consumer.id}"></td>
-			</tr>
-		</#list>
-	</#list>
-</#if>
+<div class="row">
+	<div class="col-md-10 offset-md-1">
+		<div class="card card-outline card-secondary">
+			<form id="addTopicForm">
+				<div class="card-body table-responsive">
+					<p class="login-box-msg">批量授权 <a target=_blank href="${request.contextPath}/wiki/userGuide/produceAndConsume#batchAuth" title="点击查看下面各项的详细释义" data-toggle="tooltip"><i class="fas fa-question-circle fa-sm"></i></a></p>
+					<div class="form-group">
+						<label for="batchAssociateUserSearchSelect">第一步，选择用户: </label>
+						<select id="batchAssociateUserSearchSelect" multiple class="selectpicker  form-control" title="请选择" data-live-search-placeholder="搜索" name="user" data-live-search="true"></select>
+					</div>
+					<div class="form-group">
+						<label>第二步，选择生产者、消费者: </label>
+						<div class="card">
+							<div class="card-body table-responsive p-0">
+								<table class="table table-hover text-nowrap">
+									<thead>
+									<tr>
+										<th>序号</th>
+										<th>Topic</th>
+										<th>角色</th>
+										<th></th>
+										<th><input onclick="clickAll()" id="allBox" type="checkbox"></th>
+									</tr>
+									</thead>
+									<tbody>
+									<#if response.notOK>
+										<tr><td colspan=4 class='text-center'>暂无数据</td></tr>
+									<#else>
+										<#list response.result as topicInfoVO>
+										<tr>
+											<td rowspan="${topicInfoVO.producerList?size+topicInfoVO.consumerList?size+1}">${topicInfoVO_index + 1}</td>
+											<td rowspan="${topicInfoVO.producerList?size+topicInfoVO.consumerList?size+1}">${topicInfoVO.topic.name}</td>
+										</tr>
+											<#list topicInfoVO.producerList as userProducer>
+											<tr>
+												<td>生产者</td>
+												<td>${userProducer.producer}</td>
+												<td><input class="authBox" type="checkbox" dataType="1" value="${userProducer.id}"></td>
+											</tr>
+											</#list>
+											<#list topicInfoVO.consumerList as consumer>
+											<tr>
+												<td>消费者</td>
+												<td>${consumer.name}</td>
+												<td><input class="authBox" type="checkbox" dataType="2" value="${consumer.id}"></td>
+											</tr>
+											</#list>
+										</#list>
+									</#if>
+									</tbody>
+								</table>
+							</div>
+						</div>
+					</div>
+				</div> <!-- /.card-body -->
+				<div class="card-footer">
+					<button type="button" class="btn btn-primary float-right" id="batchAssociateBtn" onclick="batchAssociate()">确定</button>
+				</div>
+			</form>
+		</div>
+	</div>
+</div>
+<script>
+	$(function(){
+		initBatchAssociateUserList();
+	});
+
+	/**
+	 * 初始化user下拉列表
+	 */
+	function initBatchAssociateUserList(){
+		$.post('${request.contextPath}/user/list', function(data){
+			if(data.status == 200){
+				var content = "";
+				for(var i in data.result){
+					var user = data.result[i];
+					var value = user.email.substring(0, user.email.indexOf("@"));
+					if(user.name && user.name != value && "${userInfo.user.email}" != user.email){
+						value = user.name + "【" + value +"】";
+					}
+					content += "<option value='"+user.id+"'>"+value+"</option>";
+				}
+				$("#batchAssociateUserSearchSelect").html(content);
+				$("#batchAssociateUserSearchSelect").selectpicker('refresh');
+			}else{
+				toastr.error("数据获取失败！"+data.message);
+			}
+		}, 'json');
+	}
+
+	function clickAll(){
+		$(".authBox").prop("checked", $("#allBox").prop('checked'));
+	}
+
+	/**
+	 * 批量关联
+	 */
+	function batchAssociate(){
+		var uids = $("#batchAssociateUserSearchSelect").val();
+		if(!uids || uids.length == 0){
+			alert("请选择用户!");
+			return;
+		}
+		var producerIds = new Array();
+		var consumerIds = new Array();
+		$(".authBox:checked").each(function(){
+			if($(this).attr("dataType") == 1) {
+				producerIds.push($(this).val());
+			} else {
+				consumerIds.push($(this).val());
+			}
+		});
+		if(producerIds.length == 0 && consumerIds.length == 0){
+			alert("请选择生产者或消费者!");
+			return;
+		}
+		if(confirm("确定授权给这"+uids.length+"个用户吗？")){
+			disable("batchAssociateBtn");
+			$.post('${request.contextPath}/user/batch/associate',{
+				uids: uids.join(","),
+				producerIds: producerIds.join(","),
+				consumerIds: consumerIds.join(",")
+			},function(data){
+				if(data.status == 200){
+					toastr.success("申请成功，请稍后查看！即将跳转到我的工单");
+					toMyAuditPage();
+				}else{
+					toastr.error("申请失败！"+data.message);
+					enable("batchAssociateBtn");
+				}
+			}, 'json');
+		}
+	}
+</script>

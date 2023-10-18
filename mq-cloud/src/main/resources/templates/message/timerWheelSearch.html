@@ -1,0 +1,54 @@
+<#if response.OK>
+	<tbody id="page_${response.result.mqc.times}">
+		<#if response.result.msgList?? && response.result.msgList?size gt 0>
+			<#list response.result.msgList as msg>
+				<tr>
+					<#if msg.timerStatus == 3>
+						<td rowspan="2" class="text-center" style="padding-left:0px;"><a data-tooltip="true" title="查看原始消息" href="javascript:void(0)" onclick="loadKeySearch('${msg.msgId}')">${msg_index + 1 + response.result.mqc.prevSize}</a></td>
+					<#elseif msg.timerStatus == 1 || msg.timerStatus ==2 || msg.timerStatus == 4>
+						<td rowspan="2" class="text-center" style="padding-left:0px;"><a data-tooltip="true" title="查看定时消息轨迹" href="javascript:void(0)" onclick="loadRollTraceSearch('${msg.msgId}','${msg.broker!}')">${msg_index + 1 + response.result.mqc.prevSize}</a></td>
+					</#if>
+					<td>${msg.bornHostString}</td>
+					<td data-tooltip="true" title="存储时间:${msg.storeTimestamp?number_to_datetime?string("yyyy-MM-dd HH:mm:ss.SSS")}">${msg.bornTimestamp?number_to_datetime?string("yyyy-MM-dd HH:mm:ss.SSS")}</td>
+					<td data-tooltip="true" title="偏移量:${msg.queueOffset}">${msg.broker!}:${msg.queueId}</td>
+					<td>${msg.keys!}</td>
+					<td>${msg.tags!}</td>
+					<td>&nbsp;&nbsp;<i data-tooltip="true" data-html="true" title="${msg.timerDeliverTimeDesc}"
+					<#if msg.timerStatus == 3 >
+						class="fas fa-clock pointer"
+					<#elseif msg.timerStatus == 4 >
+						class="fas fa-clock pointer text-primary"
+					<#elseif msg.timerStatus == 1 || msg.timerStatus == 2>
+						class="fas fa-stopwatch pointer"
+					</#if>
+					<#if traceEnabled>
+						onclick="traceHasTime('${msg.msgId}')"
+					<#else>
+						onclick=track(${msg.toJson()}) data-target="#trackModal" data-toggle="modal"
+					</#if>
+					></i></td>
+					<td><input title="选择消息：${msg_index + 1 + response.result.mqc.prevSize}" data-tooltip="true" type="checkbox" data="${msg.offsetMsgId}" dataIdx="${msg_index + 1 + response.result.mqc.prevSize}" id="${msg.msgId}" rollTimes="${msg.timerRollTimes}" deliverTime="${msg.timerDeliverTime}"></td>
+				</tr>
+				<tr>
+					<td style="border-top-width: 0px;" colspan="7" data-tooltip="true" title="序列化方式:<#if msg.messageBodySerializer??>${msg.messageBodySerializer.getName()}(${msg.messageBodyTypeString!})<#else>${msg.messageBodyTypeString!}</#if>,大小:${msg.formatMsgLength}"><#if msg.decodedBody?length gt 1000><pre>${msg.decodedBody}</pre><#else>${msg.decodedBody}</#if></td>
+				</tr>
+			</#list>
+		<#else>
+			<tr class="no_more_data"><td colspan=8 class="text-center">本次查无数据</td></tr>
+		</#if>
+		<input type="hidden" id="data_${response.result.mqc.times}" data_size="${response.result.msgList?size}"  data_search="${response.result.mqc.searchedSize?c}" data_left="${response.result.mqc.leftSize?c}">
+	</tbody>
+	<script>
+		showPage(${response.result.mqc.times});
+		$("#messageParam").val('${response.result.mqc.serialize()}');
+		$(function() {
+	        $('[data-tooltip="true"]').tooltip({
+				boundary: 'window'
+	        });
+		});
+	</script>
+	<#else>
+	<tbody>
+		<tr class="no_more_data"><td colspan=8 class="text-center">查询异常！${response.message}</td></tr>
+	</tbody>
+</#if>

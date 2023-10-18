@@ -1,36 +1,22 @@
 <#if response.notOK>
-<div class="modal-body">
-	<div class="form-body">
-		<div class="form-group">
-			<div>异常数据</div>
-		</div>
-	</div>
-</div>
+    <div class="text-center">异常数据</div>
 <#else>
-<div class="modal-body">
-	<div class="row">
-		<div class="col-md-12">
-			<div class="form-body">
-				<div class="form-group">
-					<label class="control-label col-md-3"> Topic: </label>
-			        <div class="col-md-7">
-						<input type="text" value="${response.result.topic.name}" readonly="readonly" class="form-control" />
-					</div>
-				</div>
-				<div class="form-group">
-					<label class="control-label col-md-3"> 当前队列: </label>
-			        <div class="col-md-6">
-						<input type="text" value="${response.result.topic.queueNum}" readonly="readonly" class="form-control" />
-					</div>
-				</div>
-				<div class="form-group">
-					<label class="control-label col-md-3"> 扩容为: </label>
-			        <div class="col-md-6">
-						<input type="text" value="${response.result.queueNum}" readonly="readonly" class="form-control" />
-					</div>
-				</div>
-			</div>
+	<div class="form-group row">
+		<label class="col-form-label col-md-3"> Topic: </label>
+		<div class="col-md-7">
+			<input type="text" value="${response.result.topic.name}" readonly="readonly" class="form-control" />
 		</div>
 	</div>
-</div>
+	<div class="form-group row">
+		<label class="col-form-label col-md-3"> 当前队列: </label>
+		<div class="col-md-7">
+			<input type="text" value="${response.result.topic.queueNum}" readonly="readonly" class="form-control" />
+		</div>
+	</div>
+	<div class="form-group row">
+		<label class="col-form-label col-md-3"> 扩容为: </label>
+		<div class="col-md-7">
+			<input type="text" value="${response.result.queueNum}" readonly="readonly" class="form-control" />
+		</div>
+	</div>
 </#if>

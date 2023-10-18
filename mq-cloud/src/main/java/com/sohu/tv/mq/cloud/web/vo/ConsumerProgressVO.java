@@ -4,10 +4,11 @@ import com.sohu.tv.mq.cloud.bo.ConsumeStatsExt;
 import com.sohu.tv.mq.cloud.bo.Consumer;
 import com.sohu.tv.mq.cloud.bo.ConsumerConfig;
 import com.sohu.tv.mq.cloud.bo.User;
+import com.sohu.tv.mq.cloud.util.DateUtil;
 import com.sohu.tv.mq.cloud.util.WebUtil;
+import org.apache.rocketmq.common.message.MessageQueue;
 import org.apache.rocketmq.remoting.protocol.admin.OffsetWrapper;
 import org.apache.rocketmq.remoting.protocol.admin.TopicOffset;
-import org.apache.rocketmq.common.message.MessageQueue;
 
 import java.util.Iterator;
 import java.util.List;
@@ -47,6 +48,8 @@ public class ConsumerProgressVO {
 
     // 客户端版本
     private String version;
+
+    private long produceTps;
 
     public Consumer getConsumer() {
         return consumer;
@@ -251,5 +254,58 @@ public class ConsumerProgressVO {
 
     public void setVersion(String version) {
         this.version = version;
+    }
+
+    public String getCreateDateFormat() {
+        return DateUtil.getFormat(DateUtil.YMD_DASH).format(consumer.getCreateDate());
+    }
+
+    public long getProduceTps() {
+        return produceTps;
+    }
+
+    public void setProduceTps(long produceTps) {
+        this.produceTps = produceTps;
+    }
+
+    public boolean needShowLeftTime() {
+        if (consumer.isBroadcast()) {
+            return false;
+        }
+        if (consumeTps == 0) {
+            return false;
+        }
+        if (diffTotal < 10000) {
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * 剩余时间
+     *
+     * @return
+     */
+    public String getLeftTimeFormat() {
+        double tps = consumeTps - produceTps;
+        if (tps <= 0) {
+            return "消费速度小于生产速度，无法计算剩余时间";
+        }
+        int leftTime = (int) (diffTotal / tps);
+        int days = leftTime / 86400;
+        int hours = (leftTime % 86400) / 3600;
+        int minutes = (leftTime % 3600) / 60;
+        StringBuilder sb = new StringBuilder("预计还需");
+        if (days > 0) {
+            sb.append(days).append("天");
+        }
+        if (hours > 0) {
+            sb.append(hours).append("时");
+        }
+        if (minutes > 0) {
+            sb.append(minutes).append("分");
+        }
+        sb.append("消费完");
+        return sb.toString();
     }
 }

@@ -1,197 +1,175 @@
-<div class="main">
-	<form class="form-inline" id="all" role="form" action="${request.contextPath}/admin/topicManager/list">
-		<div class="form-group">
-			<label for="cid"> 集群: </label>
-			<div class="form-group">
-				<select id="cid" class="selectpicker" title="搜索集群" data-live-search-placeholder="输入搜索内容" name="cid" data-live-search="true"></select>
-			</div>
-		</div>
-		<div class="form-group">
-			<label for="gid"> 组织: </label>
-			<div class="form-group">
-				<select id="gid" class="selectpicker" title="搜索组织" data-live-search-placeholder="输入搜索内容" name="gid" data-live-search="true"></select>
-			</div>
-		</div>
-		<div class="form-group">
-			<label for="uid"> 人员: </label>
-			<div class="form-group">
-				<select id="uid" class="selectpicker" title="搜索人员" data-live-search-placeholder="输入搜索内容" name="uid" data-live-search="true"></select>
-			</div>
-		</div>
-		<div class="form-group">
-			<label for="nonePrducerFlows"> 当日无生产量: </label>
-			<div class="form-group">
-				<select id="nonePrducerFlows" class="selectpicker" title="搜索" data-live-search-placeholder="输入搜索内容" name="nonePrducerFlows" data-live-search="false">
-					<option value="" selected="selected">全部</option>
-					<option value=true>是</option>
-				</select>
-			</div>
-		</div>
-		<div class="form-group">
-			<label for="noneConsumers"> 是否无消费者: </label>
-			<div class="form-group">
-				<select id="noneConsumers" class="selectpicker" title="搜索" data-live-search-placeholder="输入搜索内容" name="noneConsumers" data-live-search="false">
-					<option value="" selected="selected">全部</option>
-					<option value=true>是</option>
-				</select>
-			</div>
-		</div>
-		<div class="form-group">
-			<label for="orderType"> 排序方式: </label>
-			<div class="form-group">
-				<select id="orderType" class="selectpicker" title="搜索" data-live-search-placeholder="输入搜索内容" name="orderType" data-live-search="false">
-					<option value=1 selected="selected">按照流量倒序</option>
-					<option value=2>按照名称正序</option>
-					<option value=3>按照创建时间正序</option>
-				</select>
-			</div>
-		</div>
-		<div class="form-group">
-			<label for="topic"> topic: </label>
-			<div class="form-group">
-				<input id="topic" type="text" class="form-control" name="topic" value="" placeholder="Topic名字">
-			</div>
-		</div>
-		<button type="submit" class="btn btn-search""><span class="glyphicon glyphicon-search" aria-hidden="true"></span></button>
-	</form>
-	<hr/>
-	<table class="table table-striped table-hover" style="margin-top: 0px;word-break:break-all; word-wrap:break-all;">
-		<thead>
-		<colgroup>
-			<col width="8%">
-			<col width="10%">
-			<col width="20%">
-			<col width="10%">
-			<col width="8%">
-			<col width="8%">
-			<col width="15%">
-			<col width="8%">
-			<col>
-		</colgroup>
-		<tr>
-			<td style="text-align:center;vertical-align:middle;">序号</td>
-			<td style="text-align:center;vertical-align:middle;">集群名称</td>
-			<td style="text-align:center;vertical-align:middle;">主题</td>
-			<td style="text-align:center;vertical-align:middle;">主题创建时间</td>
-			<td style="text-align:center;vertical-align:middle;" data-toggle="tooltip" title="当前时间前5分钟的生产量统计">生产量</td>
-			<td style="text-align:center;vertical-align:middle;" data-toggle="tooltip" title="当前时间前5分钟的消费量统计">消费量</td>
-			<td style="text-align:center;vertical-align:middle;">主题描述</td>
-			<td style="text-align:center;vertical-align:middle;">是否确认</td>
-			<td style="text-align:center;vertical-align:middle;">操作</td>
-		</tr>
-		</thead>
-		<tbody>
-		<#if listResult.empty>
-		<tr>
-			<td colspan=10 style="text-align:center">
-				暂无数据
-			</td>
-		</tr>
-		<#else>
-		<#list listResult.result as manager>
-		<tr>
-			<td style="text-align:center;vertical-align:middle;">${manager.index}</td>
-			<td style="text-align:center;vertical-align:middle;">${manager.topic.cluster.name!}</td>
-			<td style="text-align:center;vertical-align:middle;"><a title="查看详情" href="${request.contextPath}/user/topic/${manager.topic.id}/detail">${manager.topic.name!}</a></td>
-			<td style="text-align:center;vertical-align:middle;">${manager.topic.createDate?string("yyyy-MM-dd")}</td>
-			<td style="text-align:center;vertical-align:middle;">${manager.lastFiveMinusProducerFlow}</td>
-			<td style="text-align:center;vertical-align:middle;">${manager.lastFiveMinusConsumerFlow}</td>
-			<td style="text-align:center;vertical-align:middle;">${manager.topic.info!}</td>
-			<td style="text-align:center;vertical-align:middle;">
-				<#if manager.topic.effective == 1>
-				<span style="color: #d58512">已使用</span>
-				<#else>
-				<span style="color: #0f0f0f">未确认</span>
-			</#if>
-			</td>
-			<td style="text-align:center;vertical-align:middle;">
-				<button type="button" class="btn btn-sm btn-success" title="检查Topic" data-target="#topicDeleteCheck" data-toggle="modal" onclick="loadDeleteCheck('${manager.topic.name}','${manager.topic.id}','${manager.topic.effective}');"><span class="glyphicon glyphicon-check" aria-hidden="true"></span></button>
-				<button type="button" class="btn btn-sm btn-success" title="迁移Topic" data-target="#copyTopicModal" data-toggle="modal" onclick="copyTopicShow('${manager.topic.id}','${manager.topic.name}','${manager.topic.clusterId}','${manager.topic.cluster.name}');"><span class="glyphicon glyphicon-copy" aria-hidden="true"></span></button>
-			</td>
-		</tr>
-		</#list>
-	</#if>
-	</tbody>
-	</table>
-	<ul id="pagination" data-url="${request.contextPath}/admin/topicManager/list?${queryParams.queryStr!}" style="float:right"></ul>
-	<input id="queryNode" hidden value="${queryParams.queryStr!}">
-	<#include "../../inc/pagination.html">
-</div>
-
-<div id="editTopic" class="modal fade" tabindex="-1" data-width="400">
-	<div class="modal-dialog">
-		<div class="modal-content">
-			<div class="modal-header">
-				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-				<h4 class="modal-title">属性修改</h4>
-			</div>
-			<div class="form-group">
-				<form class="form-horizontal form-bordered form-row-stripped" id="consumerTypeEdit">
-					<div class="form-body">
-						<label class="control-label col-md-4"> 消费者消费模式: </label>
-						<input type="hidden" name="editId" id="editId" class="form-control" />
-						<label class="checkbox-inline" title="每条消息只能被消费者组内某个实例消费">
-							<input type="radio" name="Consumertype" value="0"><span>集群消费</span></input>
-						</label>
-						<label class="checkbox-inline" title="每条消息将被消费者组内所有实例消费">
-							<input type="radio" name="Consumertype" value="1" ><span>广播消费</span></input>
-						</label>
+<div class="card mt-2">
+	<div class="card-body">
+		<form class="form" id="all" role="form" action="${request.contextPath}/admin/topicManager/list">
+			<div class="row">
+				<div class="form-group col-sm-12 col-md-2">
+					<label for="cid"> 集群: </label>
+					<div class="form-group">
+						<select id="cid" class="selectpicker border form-control" title="搜索集群" data-live-search-placeholder="输入搜索内容" name="cid" data-live-search="true"></select>
 					</div>
-				</form>
+				</div>
+				<div class="form-group col-sm-12 col-md-2">
+					<label for="gid"> 组织: </label>
+					<div class="form-group">
+						<select id="gid" class="selectpicker border form-control" title="搜索组织" data-live-search-placeholder="输入搜索内容" name="gid" data-live-search="true"></select>
+					</div>
+				</div>
+				<div class="form-group col-sm-12 col-md-2">
+					<label for="uid"> 人员: </label>
+					<div class="form-group">
+						<select id="uid" class="selectpicker border form-control" title="搜索人员" data-live-search-placeholder="输入搜索内容" name="uid" data-live-search="true"></select>
+					</div>
+				</div>
+				<div class="form-group col-sm-12 col-md-2">
+					<label for="nonePrducerFlows"> 当日无生产量: </label>
+					<div class="form-group">
+						<select id="nonePrducerFlows" class="selectpicker border form-control" title="搜索" data-live-search-placeholder="输入搜索内容" name="nonePrducerFlows" data-live-search="false">
+							<option value="" selected="selected">全部</option>
+							<option value=true>是</option>
+						</select>
+					</div>
+				</div>
+				<div class="form-group col-sm-12 col-md-2">
+					<label for="noneConsumers"> 是否无消费者: </label>
+					<div class="form-group">
+						<select id="noneConsumers" class="selectpicker border form-control" title="搜索" data-live-search-placeholder="输入搜索内容" name="noneConsumers" data-live-search="false">
+							<option value="" selected="selected">全部</option>
+							<option value=true>是</option>
+						</select>
+					</div>
+				</div>
+				<div class="form-group col-sm-12 col-md-2">
+					<label for="orderType"> 排序方式: </label>
+					<div class="form-group">
+						<select id="orderType" class="selectpicker border form-control" title="搜索" data-live-search-placeholder="输入搜索内容" name="orderType" data-live-search="false">
+							<option value=1 selected="selected">按照流量倒序</option>
+							<option value=2>按照名称正序</option>
+							<option value=3>按照创建时间正序</option>
+						</select>
+					</div>
+				</div>
 			</div>
-			<div class="modal-footer">
-				<button type="button" class="btn btn-default" data-dismiss="modal">
-					关闭
-				</button>
-				<button type="button" id="editAttribute" class="btn btn-primary" onclick="EditType()">
-					保存
-				</button>
+			<div class="row">
+				<div class="form-group col-sm-12 col-md-12">
+					<div class="input-group input-group">
+						<div class="input-group-prepend">
+							<span class="input-group-text">
+							  Topic:
+							</span>
+						</div>
+						<input id="topic" type="search" class="form-control form-control" name="topic" placeholder="请输入Topic名字">
+						<div class="input-group-append">
+							<button type="submit" class="btn btn btn-default">
+								<i class="fa fa-search"></i>
+							</button>
+						</div>
+					</div>
+				</div>
 			</div>
-		</div>
+		</form>
 	</div>
+</div>
+<div class="card mt-2">
+	<div class="card-body table-responsive p-0">
+		<table class="table table-hover text-nowrap">
+			<thead>
+			<tr>
+				<th>序号</th>
+				<th>集群名称</th>
+				<th>主题</th>
+				<th>创建时间</th>
+				<th data-toggle="tooltip" title="当前时间前5分钟的生产量统计">生产量</th>
+				<th data-toggle="tooltip" title="当前时间前5分钟的消费量统计">消费量</th>
+				<th>主题描述</th>
+				<th>是否确认</th>
+				<th>操作</th>
+			</tr>
+			</thead>
+			<tbody>
+			<#if listResult.empty>
+			<tr>
+				<td colspan=10 style="text-align:center">
+					暂无数据
+				</td>
+			</tr>
+			<#else>
+			<#list listResult.result as manager>
+			<tr>
+				<td>${manager.index}</td>
+				<td>${manager.topic.cluster.name!}</td>
+				<td class="text-wrap"><a target="_blank" href="${request.contextPath}/user/topic/${manager.topic.id}/detail">${manager.topic.name!}</a></td>
+				<td>${manager.topic.createDate?string("yyyy-MM-dd")}</td>
+				<td>${manager.lastFiveMinusProducerFlow}</td>
+				<td>${manager.lastFiveMinusConsumerFlow}</td>
+				<td class="text-wrap">${manager.topic.info!}</td>
+				<td>
+					<#if manager.topic.effective == 1>
+					<span style="color: #d58512">已使用</span>
+					<#else>
+					<span style="color: #0f0f0f">未确认</span>
+				</#if>
+				</td>
+				<td>
+					<button type="button" class="btn btn-sm btn-info" title="检查Topic" data-target="#topicDeleteCheck" data-toggle="modal" onclick="loadDeleteCheck('${manager.topic.name}','${manager.topic.id}','${manager.topic.effective}');"><span class="fas fa-check-circle" aria-hidden="true"></span></button>
+					<div class="d-inline-flex">
+						<button type="button" class="btn btn-sm btn-warning" title="迁移Topic" data-target="#copyTopicModal" data-toggle="modal" onclick="copyTopicShow('${manager.topic.id}','${manager.topic.name}','${manager.topic.clusterId}','${manager.topic.cluster.name}');"><span class="fas fa-clone" aria-hidden="true"></span></button>
+					</div>
+				</td>
+			</tr>
+			</#list>
+		</#if>
+		</tbody>
+		</table>
+	</div>
+	<#if pagination.OK && pagination.result.totalPages gt 1>
+	<div class="card-footer clearfix">
+		<ul id="pagination" data-url="${request.contextPath}/admin/topicManager/list?${queryParams.queryStr!}" style="float:right"></ul>
+		<input id="queryNode" hidden value="${queryParams.queryStr!}">
+	</div>
+	</#if>
 </div>
 
 <div id="topicDeleteCheck" class="modal fade" tabindex="-1" data-width="500">
-	<div class="modal-dialog">
+	<div class="modal-dialog modal-lg">
 		<div class="modal-content">
 			<div class="modal-header">
-				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
 				<h4 class="modal-title">删除校验</h4>
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
 			</div>
 			<form class="form-horizontal form-bordered form-row-stripped" id="addTopicForm">
 				<div class="modal-body">
 					<div class="row">
 						<div class="col-md-12">
 							<div class="form-body">
-								<div class="form-group">
-									<label class="control-label col-md-4"> 当前topic名称: </label>
-									<div class="col-md-7">
+								<div class="form-group row justify-content-center">
+									<label class="col-form-label col-md-3"> 当前topic名称: </label>
+									<div class="col-md-5">
 										<input type="hidden" name="tid" id="checkId" class="form-control" />
-										<div class="form-control-static" style="border:0;border-radius:5px;background-color:rgba(241,241,241,.98);padding-left:10px">
+										<div class="form-control" style="border:0;border-radius:5px;background-color:rgba(241,241,241,.98);">
 											<span id="tName" style="word-break:break-all;text-align: center"></span>
 										</div>
 									</div>
 								</div>
-								<div class="form-group">
-									<label class="control-label col-md-4"> 当前关联消费者数量: </label>
-									<div class="col-md-7">
-										<div class="form-control-static" style="border:0;border-radius:5px;background-color:rgba(241,241,241,.98);padding-left:10px">
+								<div class="form-group row justify-content-center">
+									<label class="col-form-label col-md-3"> 当前关联消费者数量: </label>
+									<div class="col-md-5">
+										<div class="form-control" style="border:0;border-radius:5px;background-color:rgba(241,241,241,.98);">
 											<span id="cn" style="word-break:break-all;text-align: center"></span>
 										</div>
 									</div>
 								</div>
-								<div class="form-group">
-									<label class="control-label col-md-4"> 近30天生产消息量: </label>
+								<div class="form-group row justify-content-center">
+									<label class="col-form-label col-md-3"> 近30天生产消息量: </label>
 									<div class="col-md-5">
-										<div class="form-control-static" style="border:0;border-radius:5px;background-color:rgba(241,241,241,.98);padding-left:10px">
+										<div class="form-control" style="border:0;border-radius:5px;background-color:rgba(241,241,241,.98);">
 											<span id="mn" style="word-break:break-all;text-align: center"></span>
 										</div>
 									</div>
 								</div>
-								<div class="form-group">
-									<label class="control-label col-md-4"> 近30天消费消息量: </label>
+								<div class="form-group row justify-content-center">
+									<label class="col-form-label col-md-3"> 近30天消费消息量: </label>
 									<div class="col-md-5">
-										<div class="form-control-static" style="border:0;border-radius:5px;background-color:rgba(241,241,241,.98);padding-left:10px">
+										<div class="form-control" style="border:0;border-radius:5px;background-color:rgba(241,241,241,.98);">
 											<span id="ad" style="word-break:break-all;text-align: center"></span>
 										</div>
 									</div>
@@ -207,7 +185,7 @@
 					<button type="button" id="excuteDefine" class="btn btn-primary" onclick="excuteDefineTopic()">
 						确认使用
 					</button>
-					<button type="button" id="excuteDelete" class="btn btn-primary" onclick="excuteDeleteTopic()">
+					<button type="button" id="excuteDelete" class="btn btn-danger" onclick="excuteDeleteTopic()">
 						去删除
 					</button>
 				</div>
@@ -218,93 +196,83 @@
 
 <!-- topic迁移 -->
 <div id="copyTopicModal" class="modal fade" tabindex="-1">
-	<div class="modal-dialog" style="width:800px;">
+	<div class="modal-dialog modal-xl">
 		<div class="modal-content">
 			<div class="modal-header">
-				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
 				<h4 class="modal-title">topic跨集群迁移</h4>
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
 			</div>
-			<div class="modal-content" style="height:500px;overflow-y:scroll;overflow-x:hidden;">
+			<div class="modal-body">
+				<h5>第一步：复制资源</h5>
 				<div class="row">
-					<div class="col-md-12">
-						<div class="form-body">
-							<fieldset>
-								<legend style="margin:0px;font-size:14px;font-weight:bold;">第一步：复制资源</legend>
-								<div class="col-sm-6">
-									<table class="table table-striped table-hover table-bordered" style="margin: 0px;word-break:break-all; word-wrap:break-all;">
-										<thead>
-										<colgroup>
-											<col width="80px">
-											<col>
-											<col width="20px">
-										</colgroup>
-										</thead>
-										<tbody>
-										<tr>
-											<td style="text-align:center;vertical-align:middle;height: 51px">源集群</td>
-											<td id="copyFromCluster" style="text-align:center;vertical-align:middle;"></td>
-											<td rowspan="3" style="text-align:center;vertical-align:middle;">
-												<button type="button" title="在目标集群上创建同名topic及其消费者" data-toggle="tooltip" id="copyTopicBtn" class="btn btn-xs btn-success" onclick="copyTopic()">复制</button>
-												<button type="button" title="删除源集群上的topic及其消费者" data-toggle="tooltip" id="deleteSourceTopicBtn" class="btn btn-xs btn-success" onclick="deleteSourceTopic()"><span class="glyphicon glyphicon-trash" aria-hidden="true"></span></button>
-											</td>
-										</tr>
-										<tr>
-											<td style="text-align:center;vertical-align:middle;">topic</td>
-											<td id="copyTopicName"></td>
-										</tr>
-										<tr>
-											<td style="text-align:center;vertical-align:middle;">消费者</td>
-											<td id="copyTopicConsumer"></td>
-										</tr>
-										</tbody>
-									</table>
-								</div>
-								<div class="col-sm-6">
-									<table class="table table-striped table-hover table-bordered" style="margin: 0px;word-break:break-all; word-wrap:break-all;">
-										<thead>
-										<colgroup>
-											<col width="80px">
-											<col>
-											<col width="20px">
-										</colgroup>
-										</thead>
-										<tbody>
-										<tr>
-											<td style="text-align:center;vertical-align:middle;">目标集群</td>
-											<td>
-												<select id="destTopicCid" class="selectpicker" title="集群" data-live-search-placeholder="输入搜索内容" name="cid" data-live-search="true"></select>
-											</td>
-											<td rowspan="3" style="text-align:center;vertical-align:middle;">
-												<button type="button" title="查询目标集群上的topic及其消费者" data-toggle="tooltip" id="destTopicBtn" class="btn btn-xs btn-success" onclick="topicConsumerList()"><span class="glyphicon glyphicon-search" aria-hidden="true"></span></button>
-												<button type="button" title="删除目标集群上的topic及其消费者" data-toggle="tooltip" id="deleteTopicBtn" class="btn btn-xs btn-success" onclick="deleteDestTopic()"><span class="glyphicon glyphicon-trash" aria-hidden="true"></span></button>
-											</td>
-										</tr>
-										<tr>
-											<td style="text-align:center;vertical-align:middle;">topic</td>
-											<td id="destTopic"></td>
-										</tr>
-										<tr>
-											<td style="text-align:center;vertical-align:middle;">消费者</td>
-											<td id="destTopicConsumer"></td>
-										</tr>
-										</tbody>
-									</table>
-								</div>
-							</fieldset>
-							<fieldset>
-								<legend style="margin:0px;font-size:14px;font-weight:bold;">第二步：修改路由</legend>
-								<table class="table table-striped table-hover table-bordered" style="margin: 0px;word-break:break-all; word-wrap:break-all;">
-									<thead>
-									<colgroup>
-										<col>
-										<col width="100px">
-									</colgroup>
-									</thead>
-									<tbody id="sourceResouceBody">
+					<div class="col-md-6">
+						<div class="card">
+							<div class="card-body table-responsive p-0">
+								<table class="table table-hover table-bordered">
+									<tbody>
+									<tr>
+										<td>源集群</td>
+										<td id="copyFromCluster"></td>
+										<td rowspan="3">
+											<button type="button" title="在目标集群上创建同名topic及其消费者" data-toggle="tooltip" id="copyTopicBtn" class="btn btn-xs btn-info" onclick="copyTopic()">复制</button>
+											<button type="button" title="删除源集群上的topic及其消费者" data-toggle="tooltip" id="deleteSourceTopicBtn" class="btn btn-xs btn-danger" onclick="deleteSourceTopic()"><span class="fas fa-trash" aria-hidden="true"></span></button>
+										</td>
+									</tr>
+									<tr>
+										<td>topic</td>
+										<td id="copyTopicName"></td>
+									</tr>
+									<tr>
+										<td>消费者</td>
+										<td id="copyTopicConsumer"></td>
+									</tr>
 									</tbody>
 								</table>
-							</fieldset>
+							</div>
 						</div>
+					</div>
+					<div class="col-md-6">
+						<div class="card">
+							<div class="card-body table-responsive p-0">
+								<table class="table table-hover table-bordered">
+									<tbody>
+									<tr>
+										<td>目标集群</td>
+										<td>
+											<select id="destTopicCid" class="selectpicker" title="集群" data-live-search-placeholder="输入搜索内容" name="cid" data-live-search="true"></select>
+										</td>
+										<td rowspan="3">
+											<button type="button" title="查询目标集群上的topic及其消费者" data-toggle="tooltip" id="destTopicBtn" class="btn btn-xs btn-info" onclick="topicConsumerList()"><span class="fas fa-search" aria-hidden="true"></span></button>
+											<button type="button" title="删除目标集群上的topic及其消费者" data-toggle="tooltip" id="deleteTopicBtn" class="btn btn-xs btn-danger" onclick="deleteDestTopic()"><span class="fas fa-trash" aria-hidden="true"></span></button>
+										</td>
+									</tr>
+									<tr>
+										<td>topic</td>
+										<td id="destTopic"></td>
+									</tr>
+									<tr>
+										<td>消费者</td>
+										<td id="destTopicConsumer"></td>
+									</tr>
+									</tbody>
+								</table>
+							</div>
+						</div>
+					</div>
+				</div>
+				<h5>第二步：修改路由</h5>
+				<div class="card">
+					<div class="card-body table-responsive p-0">
+						<table class="table table-striped table-hover table-bordered">
+							<thead>
+							<colgroup>
+								<col>
+								<col width="100px">
+							</colgroup>
+							</thead>
+							<tbody id="sourceResouceBody">
+							</tbody>
+						</table>
 					</div>
 				</div>
 			</div>
@@ -315,31 +283,10 @@
 <script>
 
 	$(function(){
-		$('#cid').selectpicker({
-			width: '130px'
-		});
 		initClusterList("cid");
-		$('#gid').selectpicker({
-			width: '130px'
-		});
 		initGroupList("gid");
-		$('#uid').selectpicker({
-			width: '220px'
-		});
 		initUserList("uid")
-		$('#nonePrducerFlows').selectpicker({
-			width: '100px'
-		});
 		initProducerList("nonePrducerFlows")
-		$('#noneConsumers').selectpicker({
-			width: '100px'
-		});
-		$('#orderType').selectpicker({
-			width: '150px'
-		});
-		$('#destTopicCid').selectpicker({
-			width: '200px'
-		});
 		initNoneConsumers("noneConsumers")
 		<#if queryParams.queryStr?? && queryParams.topic??>
 			$('#topic').val('${queryParams.topic}');
@@ -586,7 +533,7 @@
 							var resource = consumer.name;
 							consumerContent += "<tr>";
 							consumerContent += "<td>" + resource + "</td>";
-							consumerContent += "<td><button type='button' class='btn btn-xs btn-success' onClick=changeRoute('"+resource+"',0)>添加</button> <button type='button' class='btn btn-xs btn-success' onClick=changeRoute('"+resource+"',-1)><span class='glyphicon glyphicon-trash' aria-hidden='true'></span></button></td>";
+							consumerContent += "<td><button type='button' class='btn btn-xs btn-primary' onClick=changeRoute('"+resource+"',0)>添加</button> <button type='button' class='btn btn-xs btn-danger' onClick=changeRoute('"+resource+"',-1)><span class='fas fa-trash' aria-hidden='true'></span></button></td>";
 							consumerContent += "</tr>";
 						}
 						content += "</ul>";
@@ -613,7 +560,7 @@
 							content += "<tr>";
 							var resource = data.result[i].producer;
 							content += "<td>" + resource + "</td>";
-							content += "<td><button type='button' class='btn btn-xs btn-success' onClick=changeRoute('"+resource+"',0)>添加</button> <button type='button' class='btn btn-xs btn-success' onClick=changeRoute('"+resource+"',-1)><span class='glyphicon glyphicon-trash' aria-hidden='true'></span></button></td>";
+							content += "<td><button type='button' class='btn btn-xs btn-primary' onClick=changeRoute('"+resource+"',0)>添加</button> <button type='button' class='btn btn-xs btn-danger' onClick=changeRoute('"+resource+"',-1)><span class='fas fa-trash' aria-hidden='true'></span></button></td>";
 							content += "</tr>";
 						}
 						$("#sourceResouceBody").html(content);
@@ -773,4 +720,5 @@
 				}, 'json');
 	}
 </script>
+<#include "../../inc/pagination.html">
 

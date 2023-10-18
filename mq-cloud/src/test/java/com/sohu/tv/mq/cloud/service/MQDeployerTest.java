@@ -77,4 +77,18 @@ public class MQDeployerTest {
         Result<?> rst = mqDeployer.scpStoreEntry(sourceIp, sourceHome, destIp, destHome, storeFile);
         Assert.assertEquals(true, rst.isOK());
     }
+
+    @Test
+    public void testShutdown() {
+        String ip = "test.mqcloud.com";
+        Result<?> rst = mqDeployer.shutdown(ip, 10911, "broker-log-13");
+        Assert.assertEquals(true, rst.isOK());
+    }
+
+    @Test
+    public void testStartup() {
+        String ip = "test.mqcloud.com";
+        Result<?> rst = mqDeployer.startup(ip, "/opt/mqcloud/broker-log-13", 10911);
+        Assert.assertEquals(true, rst.isOK());
+    }
 }

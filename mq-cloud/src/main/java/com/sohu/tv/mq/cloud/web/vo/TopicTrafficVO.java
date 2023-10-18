@@ -1,6 +1,9 @@
 package com.sohu.tv.mq.cloud.web.vo;
 
 import com.sohu.tv.mq.cloud.bo.Traffic;
+import com.sohu.tv.mq.cloud.util.DateUtil;
+
+import java.util.Date;
 
 /**
  * topic流量vo
@@ -23,6 +26,9 @@ public class TopicTrafficVO {
 
     // topic描述
     private String info;
+
+    // 创建日期
+    private Date createDate;
     
     public long getId() {
         return id;
@@ -70,6 +76,18 @@ public class TopicTrafficVO {
 
     public void setInfo(String info) {
         this.info = info;
+    }
+
+    public Date getCreateDate() {
+        return createDate;
+    }
+
+    public String getCreateDateFormat() {
+        return DateUtil.getFormat(DateUtil.YMD_DASH).format(createDate);
+    }
+
+    public void setCreateDate(Date createDate) {
+        this.createDate = createDate;
     }
 
     @Override

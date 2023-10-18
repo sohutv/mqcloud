@@ -8,6 +8,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -83,6 +84,7 @@ public class ServerWarningTask {
             }
             ServerWarn serverWarn = new ServerWarn();
             serverWarn.setIp(serverInfoExt.getIp());
+            serverWarn.setHost(serverInfoExt.getHost());
             serverWarn.setIpLink(mqCloudConfigHelper.getServerLink(serverWarn.getIp()));
             serverWarn.setList(alarmList);
             serverWarnList.add(serverWarn);
@@ -103,24 +105,66 @@ public class ServerWarningTask {
             logger.warn("server info list is empty!");
             return null;
         }
-        // 保存ip与配置信息的映射关系
-        Map<String, ServerAlarmConfig> configMap = new HashMap<String, ServerAlarmConfig>();
         // 获取所有的报警配置
+        Map<String, ServerAlarmConfig> configMap = null;
         Result<List<ServerAlarmConfig>> allConfig = serverAlarmConfigService.queryAll();
         if (allConfig.isNotOK()) {
             logger.error("get server alarm config err!");
-            return configMap;
+            configMap = new HashMap<>();
+        } else {
+            // 保存ip与配置信息的映射关系
+            configMap = allConfig.getResult().stream().collect(Collectors.toMap(ServerAlarmConfig::getIp, config -> config));
         }
-        Set<String> ipList = new HashSet<>();
-        for (ServerInfo serverInfo : serverList) {
-            ipList.add(serverInfo.getIp());
+        final Map<String, ServerAlarmConfig> map = configMap;
+        return serverList.stream().map(serverInfo -> {
+            return getServerAlarmConfig(map, serverInfo);
+        }).collect(Collectors.toMap(ServerAlarmConfig::getIp, config -> config));
+    }
+
+    /**
+     * 获取报警配置
+     * @param configMap
+     * @param serverInfo
+     * @return
+     */
+    private ServerAlarmConfig getServerAlarmConfig(Map<String, ServerAlarmConfig> configMap, ServerInfo serverInfo) {
+        ServerAlarmConfig serverAlarmConfig = configMap.get(serverInfo.getIp());
+        if (serverAlarmConfig == null) {
+            serverAlarmConfig = new ServerAlarmConfig();
+            serverAlarmConfig.setIp(serverInfo.getIp());
         }
-        for (ServerAlarmConfig serverAlarmConfig : allConfig.getResult()) {
-            if (ipList.contains(serverAlarmConfig.getIp())) {
-                configMap.put(serverAlarmConfig.getIp(), serverAlarmConfig);
-            }
+        // 如果配置为空，则设置默认值
+        if (serverAlarmConfig.getLoad1() == 0) {
+            serverAlarmConfig.setLoad1(serverInfo.getCpus() * 80);
         }
-        return configMap;
+        if (serverAlarmConfig.getCpuUsageRate() == 0) {
+            serverAlarmConfig.setCpuUsageRate(90);
+        }
+        if (serverAlarmConfig.getConnect() == 0) {
+            serverAlarmConfig.setConnect(10000);
+        }
+        if (serverAlarmConfig.getWait() == 0) {
+            serverAlarmConfig.setWait(10000);
+        }
+        if (serverAlarmConfig.getMemoryUsageRate() == 0) {
+            serverAlarmConfig.setMemoryUsageRate(90);
+        }
+        if (serverAlarmConfig.getNetIn() == 0) {
+            serverAlarmConfig.setNetIn(102400);
+        }
+        if (serverAlarmConfig.getNetOut() == 0) {
+            serverAlarmConfig.setNetOut(102400);
+        }
+        if (serverAlarmConfig.getIops() == 0) {
+            serverAlarmConfig.setIops(10000);
+        }
+        if (serverAlarmConfig.getIobusy() == 0) {
+            serverAlarmConfig.setIobusy(60);
+        }
+        if (serverAlarmConfig.getIoUsageRate() == 0) {
+            serverAlarmConfig.setIoUsageRate(80);
+        }
+        return serverAlarmConfig;
     }
 
     /**

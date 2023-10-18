@@ -29,6 +29,7 @@ public class ContactUSController extends ViewController {
      */
     @RequestMapping
     public String index(Map<String, Object> map) throws Exception {
+        setView(map, "index", "联系我们");
         List<Map<String, String>> operatorList = mqCloudConfigHelper.getOperatorContact();
         if(operatorList != null) {
             setResult(map, "operatorList", operatorList);
@@ -37,7 +38,7 @@ public class ContactUSController extends ViewController {
         if(specialThx != null) {
             setResult(map, "specialThx", specialThx);
         }
-        return viewModule() + "/index";
+        return view();
     }
     
     @Override

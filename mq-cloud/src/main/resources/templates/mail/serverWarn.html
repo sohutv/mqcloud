@@ -3,6 +3,7 @@
 	<thead>
 		<tr>
 			<td>ip</td>
+			<td>host</td>
 			<td>报警类别</td>
 			<td>监控值</td>
 			<td>阈值</td>
@@ -10,16 +11,17 @@
 	</thead>
 	<tbody>
 		<#list list as serverWarn>
-		<#list serverWarn.list as serverWarnItem>
-		<tr>
-			<#if serverWarnItem_index==0>
-			<td rowspan=${serverWarn.list?size}>${serverWarn.ipLink}</td>
-			</#if>
-			<td>${serverWarnItem.type}</td>
-			<td style='color: red'>${serverWarnItem.value}</td>
-			<td>${serverWarnItem.threshold}</td>
-		</tr>
-		</#list>
+			<#list serverWarn.list as serverWarnItem>
+			<tr>
+				<#if serverWarnItem_index==0>
+					<td rowspan=${serverWarn.list?size}>${serverWarn.ipLink}</td>
+					<td rowspan=${serverWarn.list?size}>${serverWarn.host!}</td>
+				</#if>
+				<td>${serverWarnItem.type}</td>
+				<td style='color: red'>${serverWarnItem.value}</td>
+				<td>${serverWarnItem.threshold}</td>
+			</tr>
+			</#list>
 		</#list>
 	</tbody>
 </table>

@@ -9,7 +9,6 @@ import com.sohu.tv.mq.cloud.service.*;
 import com.sohu.tv.mq.cloud.util.*;
 import com.sohu.tv.mq.cloud.web.controller.param.PaginationParam;
 import com.sohu.tv.mq.cloud.web.vo.*;
-import com.sohu.tv.mq.util.Version;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.rocketmq.remoting.protocol.body.ClusterInfo;
@@ -100,6 +99,12 @@ public class UserController extends ViewController {
         return Result.getOKResult();
     }
 
+    @RequestMapping(value = "/resetPassword", method = RequestMethod.GET)
+    public String resetPassword(Map<String, Object> map) throws Exception {
+        setView(map, "resetPassword", "密码重置");
+        return view();
+    }
+
     /**
      * 用户密码重置
      * 
@@ -112,7 +117,7 @@ public class UserController extends ViewController {
     @RequestMapping(value = "/resetPassword", method = RequestMethod.POST)
     public Result<?> resetPassword(@RequestParam("uid") int uid,
             @RequestParam("passwordOld") String passwordOld,
-            @RequestParam("passwordNew") String passwordNew) {
+            @RequestParam("passwordNew") String passwordNew, HttpServletResponse response) {
         if (uid < 0 || passwordOld == "" || passwordNew == "") {
             return Result.getResult(Status.PARAM_ERROR);
         }
@@ -126,6 +131,7 @@ public class UserController extends ViewController {
             return Result.getResult(Status.OLD_PASSWORD_ERROR);
         }
         Result<Integer> result = userService.resetPassword(uid, passwordNew);
+        WebUtil.deleteLoginCookie(response);
         return result;
     }
 
@@ -138,13 +144,20 @@ public class UserController extends ViewController {
     @ResponseBody
     @RequestMapping(value = "/list", method = RequestMethod.POST)
     public Result<?> list(UserInfo userInfo) throws Exception {
-        // 管理员查看所有用户，普通用户查看普通用户
         Result<List<User>> userListResult = userService.queryAll();
-        if (!userInfo.getUser().isAdmin()) {
-            Result<List<User>> adminListResult = userService.queryAdmin();
-            userListResult.getResult().removeAll(adminListResult.getResult());
-        }
         return Result.getWebResult(userListResult);
+    }
+
+    /**
+     * 更新用户信息
+     * @param map
+     * @return
+     * @throws Exception
+     */
+    @RequestMapping(value = "/update", method = RequestMethod.GET)
+    public String updatePage(Map<String, Object> map) throws Exception {
+        setView(map, "update", "我的资料");
+        return view();
     }
 
     /**
@@ -179,7 +192,7 @@ public class UserController extends ViewController {
             @RequestParam(name = "topic", required = false) String queryTopic,
             Map<String, Object> map) throws Exception {
         // 设置返回视图
-        setView(map, "topic");
+        setView(map, "topic", "Topic列表");
         // 设置分页参数
         setPagination(map, paginationParam);
         // 解析查询参数
@@ -354,8 +367,8 @@ public class UserController extends ViewController {
      */
     @RequestMapping("/topic/{tid}/detail")
     public String detail(UserInfo userInfo, @PathVariable long tid, Map<String, Object> map) throws Exception {
-        setView(map, "topicDetail");
-        setResult(map, tid);
+        setView(map, "topicDetail", "我的Topic");
+        setResult(map, "tid",tid);
         return view();
     }
 
@@ -423,7 +436,7 @@ public class UserController extends ViewController {
                     return clusterService.getMQClusterById(topic.getClusterId());
                 }
             });
-            int brokerSize = clusterInfo.getBrokerAddrTable().size();
+            int brokerSize = clusterInfo == null ? 0 : clusterInfo.getBrokerAddrTable().size();
             result.getResult().setBrokerSize(brokerSize);
             // 获取topic生产者
             List<UserProducer> upList = result.getResult().getPrevProducerList();
@@ -508,7 +521,6 @@ public class UserController extends ViewController {
 
         setResult(map, result);
         FreemarkerUtil.set("splitUtil", SplitUtil.class, map);
-        setResult(map, "version", Version.get());
         setResult(map, "mqcloudDomain", mqCloudConfigHelper.getDomain());
         return viewModule() + "/topicTopology";
     }
@@ -534,9 +546,7 @@ public class UserController extends ViewController {
      */
     @RequestMapping(value = "/batch/associate", method = RequestMethod.GET)
     public String batchAssociate(UserInfo userInfo, Map<String, Object> map) throws Exception {
-        String view = viewModule() + "/batchAssociate";
-        // 默认设置一个空数据
-        Result.setResult(map, (Object) null);
+        setView(map, "batchAssociate", "批量授权");
 
         // 获取生产者
         Result<List<UserProducer>> userProducerListResult = userProducerService
@@ -563,14 +573,14 @@ public class UserController extends ViewController {
         }
 
         if (topicIdSet.isEmpty()) {
-            return view;
+            return view();
         }
 
         // 获取topic列表
         Result<List<Topic>> topicListResult = topicService.queryTopicList(topicIdSet);
 
         if (topicListResult.isEmpty()) {
-            return view;
+            return view();
         }
 
         // 拼装vo
@@ -584,7 +594,7 @@ public class UserController extends ViewController {
         }
 
         setResult(map, topicInfoVOList);
-        return view;
+        return view();
     }
 
     /**
@@ -668,25 +678,24 @@ public class UserController extends ViewController {
      * @return
      * @throws Exception
      */
-    @RequestMapping("/warn/list")
+    @RequestMapping("/warn")
     public String warn(UserInfo userInfo, @Valid PaginationParam paginationParam, Map<String, Object> map)
             throws Exception {
-        // 设置返回视图
-        String view = viewModule() + "/warnList";
+        setView(map, "warn", "我的预警");
         // 设置分页参数
         setPagination(map, paginationParam);
         // 获取警告数量
         long uid = userInfo.getUser().getId();
         Result<Integer> countResult = userWarnService.queryUserWarnCount(uid);
         if (!countResult.isOK()) {
-            return view;
+            return view();
         }
         paginationParam.caculatePagination(countResult.getResult());
         // 获取警告列表
         Result<List<UserWarn>> result = userWarnService.queryUserWarnList(uid, paginationParam.getBegin(),
                 paginationParam.getNumOfPage());
         setResult(map, result.getResult());
-        return view;
+        return view();
     }
     
     /**
@@ -741,26 +750,23 @@ public class UserController extends ViewController {
     /**
      * 用户足迹
      */
-    @RequestMapping("/footprint/list")
-    public String footprintList(UserInfo userInfo, @Valid PaginationParam paginationParam, Map<String, Object> map)
+    @RequestMapping("/footprint")
+    public String footprint(UserInfo userInfo, @Valid PaginationParam paginationParam, Map<String, Object> map)
             throws Exception {
-        // 设置返回视图
-        String view = viewModule() + "/footprintList";
-        // 默认设置一个空数据
-        Result.setResult(map, (Object) null);
+        setView(map, "footprint", "历史浏览");
         // 设置分页参数
         setPagination(map, paginationParam);
         long uid = userInfo.getUser().getId();
         Result<Integer> countResult = userFootprintService.queryCount(uid);
         if (!countResult.isOK()) {
-            return view;
+            return view();
         }
         paginationParam.caculatePagination(countResult.getResult());
         // 获取列表
         Result<List<UserFootprint>> result = userFootprintService.queryByPage(uid, paginationParam.getBegin(),
                 paginationParam.getNumOfPage());
         if (result.isEmpty()) {
-            return view;
+            return view();
         }
         // 获取topic id列表
         List<UserFootprint> userFootprintList = result.getResult();
@@ -771,7 +777,7 @@ public class UserController extends ViewController {
         }).collect(Collectors.toList());
         Result<List<Topic>> topicListResult = topicService.queryTopicList(idList);
         if (topicListResult.isEmpty()) {
-            return view;
+            return view();
         }
         // 转化为vo
         footprintVOList.forEach(fp -> {
@@ -783,32 +789,30 @@ public class UserController extends ViewController {
             });
         });
         setResult(map, footprintVOList);
-        return view;
+        return view();
     }
 
     /**
      * 用户收藏
      */
-    @RequestMapping("/favorite/list")
-    public String favoriteList(UserInfo userInfo, @Valid PaginationParam paginationParam, Map<String, Object> map)
+    @RequestMapping("/favorite")
+    public String favorite(UserInfo userInfo, @Valid PaginationParam paginationParam, Map<String, Object> map)
             throws Exception {
         // 设置返回视图
-        String view = viewModule() + "/favoriteList";
-        // 默认设置一个空数据
-        Result.setResult(map, (Object) null);
+        setView(map, "favorite", "我的收藏");
         // 设置分页参数
         setPagination(map, paginationParam);
         long uid = userInfo.getUser().getId();
         Result<Integer> countResult = userFavoriteService.queryCount(uid);
         if (!countResult.isOK()) {
-            return view;
+            return view();
         }
         paginationParam.caculatePagination(countResult.getResult());
         // 获取列表
         Result<List<UserFavorite>> result = userFavoriteService.queryByPage(uid, paginationParam.getBegin(),
                 paginationParam.getNumOfPage());
         if (result.isEmpty()) {
-            return view;
+            return view();
         }
         // 获取topic id列表
         List<UserFavorite> userFavoriteList = result.getResult();
@@ -819,7 +823,7 @@ public class UserController extends ViewController {
         }).collect(Collectors.toList());
         Result<List<Topic>> topicListResult = topicService.queryTopicList(idList);
         if (topicListResult.isEmpty()) {
-            return view;
+            return view();
         }
         // 转化为vo
         favoriteVOList.forEach(ft -> {
@@ -831,7 +835,7 @@ public class UserController extends ViewController {
             });
         });
         setResult(map, favoriteVOList);
-        return view;
+        return view();
     }
 
     /**

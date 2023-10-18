@@ -1,87 +1,73 @@
-<!-- 新建消费者 -->
-<div id="addConsumerModal" class="modal fade" tabindex="-1" data-width="400">
-	<div class="modal-dialog">
-		<div class="modal-content">
-			<div class="modal-header">
-				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-				<span class="h4">消费Topic</span> <span class="nostyleA" data-toggle="tooltip" data-placement="bottom" title="点击查看下面各项的详细释义"><a href="/wiki/userGuide/produceAndConsume#consumeTopic" target=_blank class="glyphicon glyphicon-question-sign"></a></span>
-			</div>
-			<form class="form-horizontal form-bordered form-row-stripped" id="addConsumerForm">
-				<div class="modal-body">
-					<div class="row">
-						<div class="col-md-12">
-							<div class="form-body">
-								<div class="form-group">
-									<label class="control-label col-md-3"> Topic: </label>
-									<div class="col-md-6">
-										<select id="topicSelectForConsumer" class="selectpicker" title="请选择" data-live-search-placeholder="搜索" name="tid" data-live-search="true">
-										</select>
-									</div>
-								</div>
-								<div class="form-group">
-										<label class="control-label col-md-3"> 消费者: </label>
-							        <div class="col-md-6">
-										<input type="text" id="consumerNameInput" name="consumer" value=""
-											placeholder="组名-业务名-部分topic名-consumer" class="form-control" />
-									</div>
-								</div>
-								<div class="form-group">
-									<label class="control-label col-md-3"> 消费方式: </label>
-									<div class="col-md-6 checkbox">
-										<label data-toggle="tooltip" title="所有的消费实例均分消息进行消费">
-										    <input onclick="consumerWayChange(0)" type="radio" name="consumeWay" value="0" checked>集群消费
-										</label>
-									    <label data-toggle="tooltip" title="每个消费实例会消费所有消息">
-										    <input onclick="consumerWayChange(1)" type="radio" name="consumeWay" value="1">广播消费
-									    </label>
-									</div>
-								</div>
-								<div class="form-body">
-									<div class="form-group">
-										<label class="control-label col-md-3" data-toggle="tooltip" title="消息流量控制"> 流控: </label>
-										<div class="col-md-6">
-											<input type="text" id="consumerAddPermitsPerSecondInput" data-toggle="tooltip" name="permitsPerSecond" value="" placeholder="最小为1，建议设为20，根据业务设置" data-toggle="tooltip" title="每个实例每秒最多消费多少条消息" class="form-control" />
-										</div>
-									</div>
-								</div>
-								<div class="form-group hide" id="addConsumerTraceDiv">
-									<label class="control-label col-md-3"> 开启Trace: </label>
-									<div class="col-md-6 checkbox">
-										<label data-toggle="tooltip" title="广播模式下不建议开启Trace">
-											<input type="radio" name="traceEnable" value="0" checked>否
-										</label>
-										<label data-toggle="tooltip" title="开启后，消费者会自动启用trace功能">
-										    <input type="radio" name="traceEnable" value="1">是
-										</label>
-									</div>
-								</div>
-								<div class="form-group">
-									<label class="control-label col-md-3"> 消费协议: </label>
-									<div class="col-md-8 checkbox">
-										<label data-toggle="tooltip" title="java语言请保持默认选项">
-											<input type="radio" name="protocol" value="0" checked>RocketMQ
-										</label>
-										<label data-toggle="tooltip" title="非java语言建议使用http协议消费">
-											<input type="radio" name="protocol" value="1">HTTP <span class="nostyleA" data-toggle="tooltip" data-placement="bottom" title="点击查看http协议消费"><a href="/wiki/userGuide/http#consumer" target=_blank class="glyphicon glyphicon-question-sign"></a></span>
-										</label>
-										<label data-toggle="tooltip" title="代理模式的remoting协议">
-											<input type="radio" name="protocol" value="2">Proxy Remoting
-										</label>
-									</div>
-								</div>
-								<div class="form-group">
-									<label class="control-label col-md-3"> 用途: </label>
-									<div class="col-md-6">
-										<textarea type="text" name="info" rows="3" class="form-control" placeholder="请填写"></textarea>
-									</div>
-								</div>
-							</div>
+<div class="row">
+	<div class="col-md-6 offset-md-3">
+		<div class="card card-outline card-secondary">
+			<form id="addConsumerForm">
+				<div class="card-body">
+					<p class="login-box-msg">新建消费者 <a target=_blank href="${request.contextPath}/wiki/userGuide/produceAndConsume#consumeTopic" title="点击查看下面各项的详细释义" data-toggle="tooltip"><i class="fas fa-question-circle fa-sm"></i></a></p>
+					<div class="input-group mb-3">
+						<label for="topicSelectForConsumer" class="col-form-label col-md-3"> Topic: </label>
+						<div class="col-md-7 validate-span">
+							<select id="topicSelectForConsumer" class="selectpicker  form-control" title="请选择" data-live-search-placeholder="搜索" name="tid" data-live-search="true">
+							</select>
+						</div>
+					</div>
+					<div class="input-group mb-3">
+						<label for="consumerNameInput" class="col-form-label col-md-3"> 消费者: </label>
+						<div class="col-md-7 validate-span">
+							<input type="text" id="consumerNameInput" name="consumer" value="" placeholder="组名-业务名-部分topic名-consumer" class="form-control" />
+						</div>
+					</div>
+					<div class="input-group mb-3">
+						<label class="col-md-3"> 消费方式: </label>
+						<div class="col-md-7 checkbox">
+							<label data-toggle="tooltip" title="所有的消费实例均分消息进行消费">
+								<input onclick="consumerWayChange(0)" type="radio" name="consumeWay" value="0" checked>集群消费
+							</label>
+							<label data-toggle="tooltip" title="每个消费实例会消费所有消息">
+								<input onclick="consumerWayChange(1)" type="radio" name="consumeWay" value="1">广播消费
+							</label>
+						</div>
+					</div>
+					<div class="input-group mb-3">
+						<label for="consumerAddPermitsPerSecondInput" class="col-form-label col-md-3" data-toggle="tooltip" title="消息流量控制"> 流控: </label>
+						<div class="col-md-7 validate-span">
+							<input type="text" id="consumerAddPermitsPerSecondInput" data-toggle="tooltip" name="permitsPerSecond" value="" placeholder="最小为1，建议设为20，根据业务设置" data-toggle="tooltip" title="每个实例每秒最多消费多少条消息" class="form-control" />
+						</div>
+					</div>
+					<div class="input-group mb-3 hide" id="addConsumerTraceDiv">
+						<label class="col-md-3"> 开启Trace: </label>
+						<div class="col-md-7 checkbox">
+							<label data-toggle="tooltip" title="广播模式下不建议开启Trace">
+								<input type="radio" name="traceEnable" value="0" checked>否
+							</label>
+							<label data-toggle="tooltip" title="开启后，消费者会自动启用trace功能">
+								<input type="radio" name="traceEnable" value="1">是
+							</label>
+						</div>
+					</div>
+					<div class="input-group mb-3">
+						<label class="col-md-3"> 消费协议: </label>
+						<div class="col-md-8 checkbox">
+							<label data-toggle="tooltip" title="java语言请保持默认选项">
+								<input type="radio" name="protocol" value="0" checked>RocketMQ
+							</label>
+							<label data-toggle="tooltip" title="非java语言建议使用http协议消费">
+								<input type="radio" name="protocol" value="1">HTTP <a target=_blank href="${request.contextPath}/wiki/userGuide/http#consumer" title="点击查看http协议消费" data-toggle="tooltip"><i class="fas fa-question-circle fa-sm"></i></a>
+							</label>
+							<label data-toggle="tooltip" title="代理模式的remoting协议">
+								<input type="radio" name="protocol" value="2">Proxy Remoting
+							</label>
+						</div>
+					</div>
+					<div class="input-group mb-3">
+						<label for="infoId" class="col-form-label col-md-3"> 用途: </label>
+						<div class="col-md-7 validate-span">
+							<textarea id="infoId" type="text" name="info" rows="3" class="form-control" placeholder="请填写"></textarea>
 						</div>
 					</div>
 				</div>
-				<div class="modal-footer">
-					<button type="button" data-dismiss="modal" class="btn" >取消</button>
-					<button type="submit" class="btn btn-primary" id="addConsumerBtn" disabled="disabled">确定</button>
+				<div class="card-footer">
+					<button type="submit" class="btn btn-primary float-right" id="addConsumerBtn">确定</button>
 				</div>
 			</form>
 		</div>
@@ -89,9 +75,6 @@
 </div>
 <script type="text/javascript">
 	$(function(){
-		$('#topicSelectForConsumer').selectpicker({
-		    width: '269px'
-		});
 		// 下拉框change事件
 		$('#topicSelectForConsumer').on('changed.bs.select',function(e, clickedIndex, newValue, oldValue){
 			if (topicMap[$(this).val()] == 0){
@@ -104,80 +87,62 @@
 		});
 
 		// 用户消费表单校验
-        $('#addConsumerForm').bootstrapValidator({
-    　　　　　　	message: 'This value is not valid',
-                　		feedbackIcons: {
-                    　　　　　　　　valid: 'glyphicon glyphicon-ok',
-                    　　　　　　　　invalid: 'glyphicon glyphicon-remove',
-                    　　　　　　　　validating: 'glyphicon glyphicon-refresh'
-                　　　　　　　　   },
-                fields: {
-                	consumer: {
-                        validators: {
-                        	notEmpty: {
-                                message: '消费者不能为空'
-                            },
-    	                     regexp: {
-    	                         regexp: /^[a-zA-Z0-9_-]+$/,
-    	                         message: '只能包含大小写英文字母,数字,下划线,中划线'
-    	                     }
-                        }
-                    },
-                    tid: {
-                        validators: {
-                        	notEmpty: {
-                                message: '请选择Topic'
-                            }
-                        }
-                    },
-                    permitsPerSecond: {
-                        validators: {
-                            notEmpty: {
-                                message: '流控值不能为空'
-                            },
-                            callback: {
-                                message: '流控值只能为正整数',
-                                callback: function(value, validator) {
-                                    var tps = Number($("#consumerAddPermitsPerSecondInput").val());
-                                	if(tps < 1){
-                                		return false;
-                                	}
-                                	if(!Number.isInteger(tps)){
-                                		return false;
-                                	}
-                                	return true;
-                                }
-                            }
-                        }
-                    },
-                    info: {
-                    	validators: {
-                            notEmpty: {
-                                message: '请填写用途'
-                            }
-                        }
-                    }
-                }
-        }).on('success.form.bv', function(e) {
-            // 阻止默认事件提交
-            e.preventDefault();
- 		   	disable("addConsumerBtn");
-    		$.post('${request.contextPath}/consumer/add',
-   				$("#addConsumerForm").serialize(),
-   		        function(data){
-   		            if(data.status == 200){
-   						toastr.success("操作成功，请稍后查看");  
-   						modalHide(3000, function(){
-	   						$("#addConsumerForm")[0].reset();
-	   						$("#addConsumerForm").data('bootstrapValidator').resetForm();
-	   						enable("addConsumerBtn");
-   						});
-   				    }else{
-   				    	toastr.error("操作失败！"+data.message);
-   				    	enable("addConsumerBtn");
-   				    }
-   		        }, 'json');
+        $('#addConsumerForm').validate({
+			submitHandler: function () {
+				disable("addConsumerBtn");
+				$.post('${request.contextPath}/consumer/add', $("#addConsumerForm").serialize(), function(data){
+					if(data.status == 200){
+						toastr.success("申请成功，请稍后查看！即将跳转到我的工单");
+						toMyAuditPage();
+					}else{
+						toastr.error("操作失败！"+data.message);
+						enable("addConsumerBtn");
+					}
+				}, 'json');
+			},
+			rules: {
+				consumer: {
+					required: true,
+					regexp: /^[a-zA-Z0-9_-]+$/
+				},
+				tid: {
+					required: true,
+				},
+				permitsPerSecond: {
+					required: true,
+					regexp: /^[1-9]\d*$/
+				},
+				info: {
+					required: true
+				},
+			},
+			messages: {
+				consumer: {
+					required: "消费者不能为空",
+					regexp: '只能包含大小写英文字符，数字，下划线，中划线'
+				},
+				tid: {
+					required: "请选择Topic"
+				},
+				permitsPerSecond: {
+					required: "流控值不能为空",
+					regexp: "流控值只能为正整数"
+				},
+				info: "请填写用途"
+			},
+			errorElement: 'span',
+			errorPlacement: function (error, element) {
+				error.addClass('invalid-feedback');
+				element.closest('.validate-span').append(error);
+			},
+			highlight: function (element, errorClass, validClass) {
+				$(element).addClass('is-invalid');
+			},
+			unhighlight: function (element, errorClass, validClass) {
+				$(element).removeClass('is-invalid');
+			}
         });
+		initConsumerAddTopicList();
 	});
 	/**
 	 * 初始化topic下拉列表
@@ -195,11 +160,8 @@
 	            			topicMap[topic.id] = topic.traceEnabled;
 		            	}
 		        		$("#topicSelectForConsumer").html(content);
-		        		$('#topicSelectForConsumer').selectpicker({
-		        		    width: '269px'
-		        		});
 		        		$("#topicSelectForConsumer").selectpicker('refresh');
-						var curTopicId = $("#curTopicId").val();
+						var curTopicId = getQueryString("tid");
 						if (curTopicId) {
 							$('#topicSelectForConsumer').selectpicker('val', curTopicId);
 						}

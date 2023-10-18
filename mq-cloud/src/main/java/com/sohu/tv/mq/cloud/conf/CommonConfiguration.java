@@ -16,10 +16,12 @@ import com.sohu.tv.mq.cloud.mq.MQAdminPooledObjectFactory;
 import com.sohu.tv.mq.cloud.mq.SohuMQAdminFactory;
 import com.sohu.tv.mq.cloud.mq.SohuMQProxyAdminFactory;
 import com.sohu.tv.mq.cloud.service.ClientStatsConsumer;
+import com.sohu.tv.mq.cloud.service.ConsumerClientStatsConsumer;
 import com.sohu.tv.mq.cloud.service.ProxyService;
 import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper;
 import com.sohu.tv.mq.cloud.util.SSHPooledObjectFactory;
 import com.sohu.tv.mq.stats.dto.ClientStats;
+import com.sohu.tv.mq.stats.dto.ConsumerClientStats;
 import com.sohu.tv.mq.util.Constant;
 import okhttp3.ConnectionPool;
 import okhttp3.OkHttpClient;
@@ -217,6 +219,20 @@ public class CommonConfiguration {
         memoryMQ.setMinBatchDealSize(3);
         memoryMQ.setReconsume(true);
         memoryMQ.setMemoryMQConsumer(clientStatsConsumer);
+        memoryMQ.init();
+        return memoryMQ;
+    }
+
+    @Bean
+    public MemoryMQ<ConsumerClientStats> consumerClientStatsMemoryMQ(ConsumerClientStatsConsumer consumerClientStatsConsumer) {
+        MemoryMQ<ConsumerClientStats> memoryMQ = new MemoryMQ<>();
+        memoryMQ.setConsumerName("consumerClientStats");
+        memoryMQ.setBufferSize(10000);
+        memoryMQ.setConsumerThreadNum(2);
+        memoryMQ.setMinDealIntervalBufferSize(1);
+        memoryMQ.setMinBatchDealSize(3);
+        memoryMQ.setReconsume(true);
+        memoryMQ.setMemoryMQConsumer(consumerClientStatsConsumer);
         memoryMQ.init();
         return memoryMQ;
     }

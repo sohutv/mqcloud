@@ -106,6 +106,6 @@ public class TrafficMonitorController extends AdminViewController {
 
     @Override
     public String viewModule() {
-        return "trafficWarn";
+        return "trafficMonitor";
     }
 }

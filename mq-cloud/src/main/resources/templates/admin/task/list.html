@@ -1,0 +1,37 @@
+<div class="card mt-2">
+	<div class="card-header">
+		<b>任务列表:</b>
+	</div>
+	<div class="card-body table-responsive p-0">
+		<table class="table table-striped text-nowrap">
+			<thead>
+				<tr>
+					<th>序号</th>
+					<th>任务名称</th>
+					<th>执行时间</th>
+					<th>锁定到</th>
+					<th>执行机器</th>
+				</tr>
+			</thead>
+			<tbody>
+			<#if response.empty>
+				<tr>
+					<td colspan="5" class="text-center" >
+						暂无数据
+					</td>
+				<tr>
+			<#else>
+				<#list response.result as shedLock>
+				<tr>
+					<td>${shedLock_index+1}</td>
+					<td>${shedLock.name}</td>
+					<td>${shedLock.lockedAtFormat!}</td>
+					<td>${shedLock.lockUntilFormat!}</td>
+					<td class="text-wrap">${shedLock.lockedBy!}</td>
+				</tr>
+				</#list>
+			</#if>
+			</tbody>
+		</table>
+	</div>
+</div>

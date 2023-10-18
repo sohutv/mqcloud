@@ -63,7 +63,24 @@ public class ProducerTotalStatService {
         }
         return Result.getResult(result);
     }
-    
+
+    /**
+     * 查询记录
+     *
+     * @param producer
+     * @param date
+     * @return
+     */
+    public Result<List<ProducerTotalStat>> queryByStatTime(String producer, int statTime) {
+        List<ProducerTotalStat> result = null;
+        try {
+            result = producerTotalStatDao.selectByStatTime(producer, statTime);
+        } catch (Exception e) {
+            logger.error("query err, producer:{}, statTime:{}", producer, statTime, e);
+            return Result.getDBErrorResult(e);
+        }
+        return Result.getResult(result);
+    }
     
     /**
      * 删除记录

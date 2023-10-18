@@ -1,0 +1,41 @@
+<#if response.OK>
+	<tbody id="page_${response.result.mqc.times}">
+		<#if response.result.msgList?? && response.result.msgList?size gt 0>
+			<#list response.result.msgList as msg>
+				<tr id="${msg.msgId}" date-data="${msg.storeTimestamp?c}">
+					<td rowspan="2" class="text-center" style="padding-left:0px;">${msg_index + 1 + response.result.mqc.prevSize}</td>
+					<td>${msg.bornHostString}</td>
+					<td data-tooltip="true" title="存储时间:${msg.storeTimestamp?number_to_datetime?string("yyyy-MM-dd HH:mm:ss.SSS")}">${msg.bornTimestamp?number_to_datetime?string("yyyy-MM-dd HH:mm:ss.SSS")}</td>
+					<td data-tooltip="true" title="偏移量:${msg.queueOffset}">${msg.broker!}:${msg.queueId}</td>
+					<td>${msg.keys!}</td>
+					<td>${msg.tags!}</td>
+					<td>&nbsp;<button type="button" class="btn btn-xs btn-outline-secondary" data-tooltip="true" title="查看消息轨迹" onclick=track(${msg.toJson()}) data-target="#trackModal" data-toggle="modal"><i class="fas fa-eye pointer"></i></button>
+					<#if traceEnabled>
+						<button type="button" class="btn btn-xs btn-outline-secondary" data-tooltip="true" title="查看追踪信息" onclick="traceNoTime('${msg.msgId}')"><i class="fas fa-shoe-prints"></i></button>
+					</#if>
+					</td>
+					<td><input title="选择消息：${msg_index + 1 + response.result.mqc.prevSize}" data-tooltip="true" type="checkbox" data="${msg.offsetMsgId}" dataIdx="${msg_index + 1 + response.result.mqc.prevSize}"></td>
+				</tr>
+				<tr>
+					<td style="border-top-width: 0px;" colspan="7" data-tooltip="true" title="序列化方式:<#if msg.messageBodySerializer??>${msg.messageBodySerializer.getName()}(${msg.messageBodyTypeString!})<#else>${msg.messageBodyTypeString!}</#if>,大小:${msg.formatMsgLength}"><#if msg.decodedBody?length gt 1000><pre>${msg.decodedBody}</pre><#else>${msg.decodedBody}</#if></td>
+				</tr>
+			</#list>
+		<#else>
+			<tr class="no_more_data"><td colspan=8 class="text-center">本次查无数据</td></tr>
+		</#if>
+		<input type="hidden" id="data_${response.result.mqc.times}" data_size="${response.result.msgList?size}"  data_search="${response.result.mqc.searchedSize?c}" data_left="${response.result.mqc.leftSize?c}">
+	</tbody>
+	<script>
+		showPage(${response.result.mqc.times});
+		$("#messageParam").val('${response.result.mqc.serialize()}');
+		$(function() {
+	        $('[data-tooltip="true"]').tooltip({
+				boundary: 'window'
+	        });
+		});
+	</script>
+<#else>
+	<tbody>
+		<tr class="no_more_data"><td colspan=8 class="text-center">查询异常！${response.message}</td></tr>
+	</tbody>
+</#if>

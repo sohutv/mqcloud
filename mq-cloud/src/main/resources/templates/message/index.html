@@ -1,0 +1,1317 @@
+<style type="text/css">
+	pre {
+		font-size: 11px;
+		line-height: 1;
+		padding: 0;
+		margin: 0;
+		border: 0;
+		background-color: transparent;
+		white-space: pre-wrap;
+		overflow-y:hidden;
+	}
+</style>
+
+<div class="row">
+	<div class="col-md-12">
+		<div class="card">
+			<div class="card-body text-sm">
+				<form id="msgSearchForm">
+					<div class="row">
+						<div class="col-md-2 mb-3">
+							<label for="searchCondition">查询方式: <a data-toggle="tooltip" data-placement="top" title="点击查看各种方式区别" href="${request.contextPath}/wiki/userGuide/messageQuery" target=_blank><i class="fas fa-question-circle fa-sm"></i></a></label>
+							<select id="searchCondition" class="form-control selectpicker border">
+								<option value="key">key</option>
+								<option value="time">时间段</option>
+								<option value="offset">偏移量</option>
+								<option value="msgId">消息id</option>
+								<#if traceEnabled>
+								<option value="trace">trace</option>
+								</#if>
+								<option value="timerWheel">定时消息</option>
+								<option value="timerWheelTrace">定时消息轨迹</option>
+							</select>
+						</div>
+						<div class="col-md-3">
+							<!-- key查询 -->
+							<div class="form-group key">
+								<label for="keyStartTimePicker"> 开始时间: </label>
+								<div class="input-group mb-3" id="keyStartTimePicker" data-target-input="nearest">
+									<input type="text" id="keyStartTimePickerInput" class="form-control datetimepicker-input" data-target="#keyStartTimePicker"/>
+									<div class="input-group-append" data-target="#keyStartTimePicker" data-toggle="datetimepicker">
+										<div class="input-group-text"><i class="far fa-clock"></i></div>
+									</div>
+								</div>
+							</div>
+							<!-- 时间段查询 -->
+							<div class="form-group time" style="display:none;">
+								<label> 开始时间: </label>
+								<div class="input-group mb-3" id="timeStartTimePicker" data-target-input="nearest">
+									<input type="text" id="timeStartTimePickerInput" class="form-control datetimepicker-input" data-target="#timeStartTimePicker"/>
+									<div class="input-group-append" data-target="#timeStartTimePicker" data-toggle="datetimepicker">
+										<div class="input-group-text"><i class="far fa-clock"></i></div>
+									</div>
+								</div>
+							</div>
+							<!-- 偏移量查询 -->
+							<div class="form-group offset" style="display:none;">
+								<label for="offsetStart" data-toggle='tooltip' title="参考生产详情里的最小偏移量"> 起始偏移量: </label>
+								<input id="offsetStart" name="offsetStart" type="text" class="form-control" placeholder="broker最小偏移量" value="${response.result.minOffset?c}">
+							</div>
+							<!-- trace查询 -->
+							<div class="form-group trace" style="display:none;">
+								<label> 开始时间: </label>
+								<div class="input-group mb-3" id="traceStartTimePicker" data-target-input="nearest">
+									<input type="text" id="traceStartTimePickerInput" class="form-control datetimepicker-input" data-target="#traceStartTimePicker"/>
+									<div class="input-group-append" data-target="#traceStartTimePicker" data-toggle="datetimepicker">
+										<div class="input-group-text"><i class="far fa-clock"></i></div>
+									</div>
+								</div>
+							</div>
+							<!-- 定时消息查询 -->
+							<div class="form-group timerWheel" style="display:none;">
+								<label> 开始时间: </label>
+								<div class="input-group mb-3" id="timerWheelStartTimePicker" data-target-input="nearest">
+									<input type="text" id="timerWheelStartTimePickerInput" class="form-control datetimepicker-input" data-target="#timerWheelStartTimePicker"/>
+									<div class="input-group-append" data-target="#timerWheelStartTimePicker" data-toggle="datetimepicker">
+										<div class="input-group-text"><i class="far fa-clock"></i></div>
+									</div>
+								</div>
+							</div>
+						</div>
+						<div class="col-md-3">
+							<!-- key查询 -->
+							<div class="form-group key">
+								<label for="keyEndTimePicker"> 结束时间: </label>
+								<div class="input-group mb-3" id="keyEndTimePicker" data-target-input="nearest">
+									<input type="text" id="keyEndTimePickerInput" class="form-control datetimepicker-input" data-target="#keyEndTimePicker"/>
+									<div class="input-group-append" data-target="#keyEndTimePicker" data-toggle="datetimepicker">
+										<div class="input-group-text"><i class="far fa-clock"></i></div>
+									</div>
+								</div>
+							</div>
+							<!-- 时间段查询 -->
+							<div class="form-group time" style="display:none;">
+								<label>结束时间: </label>
+								<div class="input-group" id="timeEndTimePicker" data-target-input="nearest">
+									<input type="text" id="timeEndTimePickerInput" class="form-control datetimepicker-input" data-target="#timeEndTimePicker"/>
+									<div class="input-group-append" data-target="#timeEndTimePicker" data-toggle="datetimepicker">
+										<div class="input-group-text"><i class="far fa-clock"></i></div>
+									</div>
+								</div>
+							</div>
+							<!-- 偏移量查询 -->
+							<div class="form-group offset" style="display:none;">
+								<label for="offsetEnd" data-toggle='tooltip' title="参考生产详情里的最大偏移量"> 结束偏移量: </label>
+								<input id="offsetEnd" name="offsetEnd" type="text" class="form-control" placeholder="broker最大偏移量" value="${response.result.maxOffset?c}">
+							</div>
+							<!-- trace查询 -->
+							<div class="form-group trace" style="display:none;">
+								<label for="traceEndTimePicker">结束时间: </label>
+								<div class="input-group" id="traceEndTimePicker" data-target-input="nearest">
+									<input type="text" id="traceEndTimePickerInput" class="form-control datetimepicker-input" data-target="#traceEndTimePicker"/>
+									<div class="input-group-append" data-target="#traceEndTimePicker" data-toggle="datetimepicker">
+										<div class="input-group-text"><i class="far fa-clock"></i></div>
+									</div>
+								</div>
+							</div>
+							<!-- 定时消息查询 -->
+							<div class="form-group timerWheel" style="display:none;">
+								<label for="timerWheelEndTimePicker">结束时间: </label>
+								<div class="input-group" id="timerWheelEndTimePicker" data-target-input="nearest">
+									<input type="text" id="timerWheelEndTimePickerInput" class="form-control datetimepicker-input" data-target="#timerWheelEndTimePicker"/>
+									<div class="input-group-append" data-target="#timerWheelEndTimePicker" data-toggle="datetimepicker">
+										<div class="input-group-text"><i class="far fa-clock"></i></div>
+									</div>
+								</div>
+							</div>
+						</div>
+						<div class="col-md-4">
+							<!-- key查询 -->
+							<div class="form-group key">
+								<label> 查询: </label>
+									<div class="input-group">
+									<input type="text" class="form-control input-group-sm" id="msgKey" name="msgKey" placeholder="消息key">
+									<div class="input-group-append">
+										<button type="button" class="btn btn-default" data-toggle='tooltip' title="按key查询${response.result.topic}" onclick="searchKeyMessage()">
+											<i class="fa fa-search"></i>
+										</button>
+									</div>
+									<!-- 消息重发 -->
+									<#if consumer == 1>
+										<button type="button" data-toggle='tooltip' title="重发消息" onclick="resendMessageTip()" class="ml-1 btn btn-default resendMessageBtn"><i class="far fa-paper-plane"></i></button>
+									</#if>
+								</div>
+							</div>
+
+							<!-- 时间段查询 -->
+							<div class="form-group time" style="display:none;">
+								<label> 查询: </label>
+								<div class="input-group">
+									<input type="text" class="form-control" id="key" name="key" value="${response.result.key!}" placeholder="关键字，支持模糊匹配">
+									<div class="input-group-append">
+										<button type="button" data-toggle='tooltip' title="按时间段查询${response.result.topic}" class="btn btn-default" onclick="searchMessage(false)">
+											<i class="fa fa-search"></i>
+										</button>
+									</div>
+									<!-- 时间段消费 -->
+									<#if consumer == 1>
+										<button type="button" id="exportTimespanMessageBtn" data-toggle='tooltip' title="导出该时间段内的消息" onclick="exportTimespanMessageTip()" class="ml-1 btn btn-sm btn-default time" style="display:none;"><i class="fa-solid fa-file-export"></i></button>
+										<button type="button" id="consumeTimespanMessageBtn" data-toggle='tooltip' title="重新消费该时间段内的消息" onclick="consumeTimespanMessageTip()" class="ml-1 btn btn-default"><i class="fas fa-sm fa-reply"></i></button>
+										<button type="button" data-toggle='tooltip' title="重发消息" onclick="resendMessageTip()" class="ml-1 btn btn-default resendMessageBtn"><i class="far fa-paper-plane"></i></button>
+									</#if>
+								</div>
+							</div>
+
+							<!-- 偏移量查询 -->
+							<div class="form-group offset" style="display:none;">
+								<div class="row">
+									<div class="col-md-6 mb-2">
+										<label> 选择broker: </label>
+										<div class="input-group">
+											<select id="brokerNameSearchSelect" class="selectpicker border form-control" name="toBrokerName" onchange="brokerNameSelectChange(this)"></select>
+										</div>
+									</div>
+									<div class="col-md-6 mb-2">
+										<label> 选择队列: </label>
+										<div class="input-group">
+											<select id="queueSearchSelect" class="selectpicker border form-control" name="toQueue" onchange="queueSelectChange(this)">
+												<option value="-1">全部队列</option>
+											</select>
+										</div>
+									</div>
+								</div>
+							</div>
+							<!-- 消息id查询 -->
+							<div class="form-group msgId" style="display:none;">
+								<label> 查询: </label>
+								<div class="input-group">
+									<input type="text" class="form-control" id="msgId" name="msgId" value="${response.result.msgId!}" placeholder="消息id">
+									<div class="input-group-append">
+										<button type="button" data-toggle='tooltip' title="按消息id查询${response.result.topic}" class="btn btn-default" onclick="viewMessage()">
+											<i class="fa fa-search"></i>
+										</button>
+									</div>
+									<!-- 消息重发 -->
+									<#if consumer == 1>
+										<button type="button" data-toggle='tooltip' title="重发消息" onclick="resendMessageTip()" class="ml-1 btn btn-default resendMessageBtn"><i class="far fa-paper-plane"></i></button>
+									</#if>
+								</div>
+							</div>
+							<!-- trace查询 -->
+							<div class="form-group trace" style="display:none;">
+								<label> 查询: </label>
+								<div class="input-group">
+									<input type="text" class="form-control" id="traceKey" name="traceKey" placeholder="消息key或msgId">
+									<div class="input-group-append">
+										<button type="button" data-toggle='tooltip' title="按trace查询${response.result.topic}" class="btn btn-default" onclick="searchTraceMessage()">
+											<i class="fa fa-search"></i>
+										</button>
+									</div>
+								</div>
+							</div>
+							<!-- 定时消息查询 -->
+							<div class="form-group timerWheel" style="display:none;">
+								<label> 查询: </label>
+								<div class="input-group">
+									<input type="text" class="form-control input-group-sm" id="timerWheelKey" name="timerWheelKey" value="${response.result.key!}" placeholder="关键字，支持模糊匹配">
+									<div class="input-group-append">
+										<button type="button" class="btn btn-default" data-toggle='tooltip' title="按定时查询${response.result.topic}" onclick="searchTimerWheelMessage(false)">
+											<i class="fa fa-search"></i>
+										</button>
+									</div>
+									<button type="button" data-toggle='tooltip' title="取消${response.result.topic}中的定时消息" onclick="cancelTimerWheelMessage()" class="ml-1 btn btn-default"><i class="fas fa-stopwatch"></i></button>
+									<!-- 消息重发 -->
+									<#if consumer == 1>
+										<button type="button" data-toggle='tooltip' title="重发消息" onclick="resendMessageTip()" class="ml-1 btn btn-default resendMessageBtn"><i class="far fa-paper-plane"></i></button>
+									</#if>
+								</div>
+							</div>
+							<!-- 定时消息trace查询 -->
+							<div class="form-group timerWheelTrace" style="display:none;">
+								<label> 查询: </label>
+								<div class="input-group">
+									<input type="text" class="form-control" id="traceUniqKey" name="traceUniqKey" placeholder="msgId">
+									<div class="input-group-append">
+										<button type="button" data-toggle='tooltip' title="按定时消息trace查询${response.result.topic}" class="btn btn-default" onclick="searchTimerWheelMessageRollTrace()">
+											<i class="fa fa-search"></i>
+										</button>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+					<div class="row offset" style="display:none;">
+						<div class="col-md-12">
+							<!-- 偏移量查询 -->
+							<div class="form-group">
+								<div class="input-group">
+									<input type="text" class="form-control" id="offsetKey" name="offsetKey" value="${response.result.key!}" placeholder="关键字，支持模糊匹配">
+									<div class="input-group-append">
+										<button type="button" class="btn btn-default" data-toggle='tooltip' title="按偏移量查询${response.result.topic}" onclick="searchOffsetMessage(false)">
+											<i class="fa fa-search"></i>
+										</button>
+									</div>
+									<!-- 消息重发 -->
+									<#if consumer == 1>
+										<button type="button" data-toggle='tooltip' title="重发消息" onclick="resendMessageTip()" class="ml-1 btn btn-default resendMessageBtn"><i class="far fa-paper-plane"></i></button>
+									</#if>
+								</div>
+							</div>
+						</div>
+					</div>
+					<input hidden type="text" name="broker" id="broker">
+					<input type="hidden" name="keyStartTime" id="keyStartTime">
+					<input type="hidden" name="keyEndTime" id="keyEndTime" value="${response.result.end?c}">
+					<input type="hidden" name="startTime" id="timeStartTime" value="${response.result.start?c}">
+					<input type="hidden" name="endTime" id="timeEndTime" value="${response.result.end?c}">
+					<input type="hidden" id="cid" name="cid" value="${response.result.cid}">
+					<input type="hidden" id="topicDiv" name="topic" value="${response.result.topic}">
+					<input type="hidden" id="append" name="append" value="false">
+					<input type="hidden" id="messageParam" name="messageParam" value="${response.result.serialize()}">
+					<input type="hidden" name="traceStartTime" id="traceStartTime">
+					<input type="hidden" name="traceEndTime" id="traceEndTime" value="${response.result.end?c}">
+					<input type="hidden" name="timerWheelStartTime" id="timerWheelStartTime" value="${response.result.start?c}">
+					<input type="hidden" name="timerWheelEndTime" id="timerWheelEndTime" value="${response.result.end?c}">
+				</form>
+			</div> <!-- card-body end -->
+		</div>
+		<div class="card">
+			<div class="card-body table-responsive p-0">
+				<table id="dataTable" class="table table-striped table-hover table-sm" style="margin-top: 0px;word-break:break-all; word-wrap:break-all;table-layout:fixed;">
+					<colgroup>
+						<col width="35px">
+						<col width="130px">
+						<col width="190px">
+						<col width="100px">
+						<col width="150px">
+						<col width="50px">
+						<col width="65px">
+						<col width="20px">
+					</colgroup>
+					<thead>
+						<tr class="text-sm">
+							<th class="text-center" style="padding-left:0px;">序号</th>
+							<th>客户端</th>
+							<th>发送时间</th>
+							<th>broker:队列</th>
+							<th id="keysTD">keys</th>
+							<th id="tagsTD">tags</th>
+							<th id="detailTD">详情</th>
+							<th><input title="全选或取消全选" data-toggle="tooltip" onclick="toggleMsgCheck(this)" type="checkbox"></th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr class="no_more_data"><td colspan=8 class="text-center">暂无数据</td></tr>
+					</tbody>
+				</table>
+				<!-- trace 消息显示 -->
+				<table id="traceDataTable" class="table table-striped table-hover table-sm" style="display:none;margin-top: 0px;word-break:break-all; word-wrap:break-all;table-layout:fixed;">
+					<colgroup>
+						<col width="35px">
+						<col width="210px">
+						<col width="185px">
+						<col width="55px">
+						<col width="70px">
+						<col width="210px">
+						<col width="185px">
+						<col width="55px">
+						<col width="70px">
+					</colgroup>
+					<thead class="text-center text-sm">
+						<tr>
+							<th class="text-center" colspan=5>
+								生产者
+							</th>
+							<th class="text-center" colspan=4>消费者</th>
+						</tr>
+						<tr>
+							<th class="text-center" style="padding-left:0px;">序号</th>
+							<th>生产组</th>
+							<th>发送时间</th>
+							<th>状态</th>
+							<th>耗时</th>
+							<th>消费组</th>
+							<th>消费时间</th>
+							<th>状态</th>
+							<th>耗时</th>
+						</tr>
+					</thead>
+					<tbody>
+					<tr class="no_more_data"><td colspan=9 class="text-center">暂无数据</td></tr>
+					</tbody>
+				</table>
+			</div>
+			<div class="card-footer clearfix" id="pager" style="display:none;">
+				<div class="d-flex justify-content-between">
+					<button id="previous" class="btn btn-outline-primary btn-xs" title="上一页" data-toggle="tooltip" onclick="previous()"><i class="fas fa-backward"></i></button>
+					<div class="text-primary text-sm">第<b id="pageNum"></b>页，命中数：<b id="sizeNum"></b>，检索数：<b id="searchNum"></b><span class="d-none d-lg-inline">，预估剩余数：<b id="leftNum"></b></span></div>
+					<button id="next" class="btn btn-outline-primary btn-xs" title="下一页" data-toggle="tooltip" onclick="next()"><i class="fas fa-forward"></i></button>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+<!-- 消息轨迹 -->
+<div id="trackModal" class="modal fade">
+	<div class="modal-dialog modal-lg">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title">消息轨迹</h5>
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+			</div>
+			<div class="modal-body">
+				<div id="trackDiv"> </div>
+			</div>
+			<div class="modal-footer" style="display: none" id="paginationFooter">
+				<ul id="pagination" style="margin:0px;float: right;" style="float:right"></ul>
+			</div>
+		</div>
+	</div>
+</div>
+<!-- 消息重发确认 -->
+<div id="resendMsgModal" class="modal fade" tabindex="-1" data-width="400">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title">消息重发</h5>
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+			</div>
+			<div class="modal-body">
+				<div class="input-group">
+					<label class="col-md-3"> 消息序号: </label>
+					<div class="col-md-9">
+						<div class="form-control-static">
+							&nbsp;<b id="dataIdx" style="word-break:break-all"></b>
+						</div>
+					</div>
+				</div>
+				<div class="input-group">
+					<label class="col-form-label col-md-3"> 发给: </label>
+					<div class="col-md-9">
+						<select id="consumerSelect" class="selectpicker form-control" title="请选择" data-live-search-placeholder="搜索" data-live-search="true"></select>
+					</div>
+				</div>
+			</div>
+			<div class="modal-footer justify-content-between">
+				<button type="button" data-dismiss="modal" class="btn btn-default" >取消</button>
+				<button type="button" class="btn btn-primary" id="resendBtn" onclick="resendMessage()">确定</button>
+			</div>
+		</div>
+	</div>
+</div>
+<div id="scriptDiv" style="display:none;"></div>
+
+<!-- 定时消息取消确认 -->
+<div id="cancelMsgModal" class="modal fade" tabindex="-1" data-width="400">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title">定时消息取消</h5>
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+			</div>
+			<div class="modal-body">
+				<form class="form-horizontal form-bordered form-row-stripped">
+					<div class="input-group">
+						<label class="col-md-5" title="消息消费时间距当前大于5分钟的消息"> 待取消消息序号: </label>
+						<div class="col-md-7">
+							<div class="form-control-static">
+								&nbsp;<b id="cancelIdx" style="word-break:break-all"></b>
+							</div>
+							<input hidden id="validUniqIds">
+						</div>
+					</div>
+				</form>
+			</div>
+			<div class="modal-footer justify-content-between">
+				<button type="button" data-dismiss="modal" class="btn btn-default">取消</button>
+				<button type="button" class="btn btn-primary" id="cancelBtn" onclick="cancelMessage()">确定</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- 消费时间段消息 -->
+<div id="consumeTimespanMessageModal" class="modal fade">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<span class="h5">重新消费</span> <a data-toggle="tooltip" data-placement="top" title="点击查看各种方式区别" href="${request.contextPath}/wiki/userGuide/clientConsumer#retryTimespan" target=_blank><i class="fas fa-question-circle fa-sm"></i></a>
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+			</div>
+			<div class="modal-body">
+				<form id="consumeTimespanMessageForm">
+					<input type="hidden" id="timespanConsumeTopic" name="topic" value="${response.result.topic}">
+					<input type="hidden" id="timespanConsumeStart" name="start">
+					<input type="hidden" id="timespanConsumeEnd" name="end">
+					<div class="input-group mb-3">
+						<label class="col-md-3"> 开始时间: </label>
+						<div class="col-md-9">
+							<input type="text" readonly="readonly" id="timespanConsumeStartShow" class="form-control" />
+						</div>
+					</div>
+					<div class="input-group mb-3">
+						<label class="col-md-3"> 结束时间: </label>
+						<div class="col-md-9">
+							<input type="text" readonly="readonly" id="timespanConsumeEndShow" class="form-control" />
+						</div>
+					</div>
+					<div class="input-group mb-3">
+						<label class="col-md-3"> 消费者: </label>
+						<div class="col-md-9">
+							<select id="timespanConsumeConsumerSelect" class="selectpicker form-control" title="请选择" data-live-search-placeholder="搜索" name="consumerId"  data-live-search="true"></select>
+						</div>
+					</div>
+					<div class="input-group mb-3">
+						<label class="col-md-3"> 客户端: </label>
+						<div class="col-md-9">
+							<select id="timespanConsumeClientIdSelect" class="selectpicker form-control" title="选择消费消息的实例" name="clientId" data-live-search="true">
+							</select>
+						</div>
+					</div>
+				</form>
+			</div>
+			<div  class="modal-footer justify-content-between">
+				<button type="button" data-dismiss="modal" class="btn btn-default" >取消</button>
+				<button type="button" id="submitTimespanMessageBtn" disabled="disabled" class="btn btn-primary" onclick="consumeTimespanMessage()">确定</button>
+			</div>
+		</div>
+	</div>
+</div><!-- 消费时间段消息 -->
+
+<!-- 导出时间段消息 -->
+<div id="exportTimespanMessageModel" class="modal fade">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<span class="h5">消息导出</span>
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+			</div>
+			<div class="modal-body">
+				<form id="exportTimespanMessageForm">
+					<input type="hidden" id="timespanExportStart" name="start">
+					<input type="hidden" id="timespanExportEnd" name="end">
+					<div class="form-body">
+						<div class="input-group mb-3">
+							<label class="col-form-label col-md-3"> Topic: </label>
+							<div class="col-md-9">
+								<input type="text" readonly="readonly" name="topic" id="timespanExportTopic" class="form-control" />
+							</div>
+						</div>
+					</div>
+					<div class="form-body">
+						<div class="input-group mb-3">
+							<label class="col-form-label col-md-3"> 开始时间: </label>
+							<div class="col-md-9">
+								<input type="text" readonly="readonly" id="timespanExportStartShow" class="form-control" />
+							</div>
+						</div>
+					</div>
+					<div class="form-body">
+						<div class="input-group mb-3">
+							<label class="col-form-label col-md-3"> 结束时间: </label>
+							<div class="col-md-9">
+								<input type="text" readonly="readonly" id="timespanExportEndShow" class="form-control" />
+							</div>
+						</div>
+					</div>
+				</form>
+			</div>
+			<div  class="modal-footer justify-content-between">
+				<button type="button" data-dismiss="modal" class="btn btn-default" >取消</button>
+				<button type="button" id="submitExportMessageBtn" class="btn btn-primary" onclick="exportTimespanMessage()">确定</button>
+			</div>
+		</div>
+	</div>
+</div><!-- 导出时间段消息 -->
+
+<!-- trace详情 -->
+<div id="traceDetailModel" class="modal fade">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Trace详情</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6" id="pCol">
+                        <div class="card">
+                            <div class="card-header">
+                                生产追踪数据
+                            </div>
+                            <div class="card-body" id="jsonviewProducer">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6" id="cCol">
+                        <div class="card">
+                            <div class="card-header">
+                                消费追踪数据
+                            </div>
+                            <div class="card-body" id="jsonviewConsumer">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+
+var prevSearchType = "key";
+
+function changeQueryType(queryType) {
+	prevSearchType = queryType;
+	$("#searchCondition").selectpicker('val', queryType);
+	var selectpicker = $("#searchCondition");
+	var options = selectpicker.find("option");
+	options.each(function() {
+		var value = $(this).val();
+		if (value == queryType) {
+			$("." + queryType).show();
+		} else {
+			$("." + value).hide();
+		}
+	});
+}
+
+var pageNum = 0;
+//显示分页
+function showPage(num){
+	pageNum = num;
+	var comp = $("#data_"+num);
+	var size = comp.attr("data_size");
+	var search = comp.attr("data_search");
+	var left = comp.attr("data_left");
+	$("#pageNum").html(num);
+	$("#sizeNum").html(size);
+	$("#searchNum").html(search);
+	$("#leftNum").html(left);
+	$("#pager").show();
+	if(num == 1){
+		$("#previous").addClass("disabled");
+	} else {
+		$("#previous").removeClass("disabled");
+	}
+	if(left > 0){
+		$("#next").removeClass("disabled");
+	} else {
+		$("#next").addClass("disabled");
+	}
+	// 展示数据
+	$("#page_"+pageNum).show().siblings("tbody").hide();
+}
+// 上一页
+function previous(){
+	if(!$("#previous").hasClass("disabled")){
+		showPage(pageNum - 1);
+	}
+}
+// 下一页
+function next(){
+	if(!$("#next").hasClass("disabled")){
+		if($("#data_"+(pageNum+1)).length > 0){
+			showPage(pageNum+1);
+		} else {
+			if("offset" == prevSearchType){
+				searchOffsetMessage(true);
+			} else if ("time" == prevSearchType) {
+				searchMessage(true);
+			} else if ("timerWheel" == prevSearchType) {
+				searchTimerWheelMessage(true);
+			}
+		}
+	}
+}
+// 消息搜索
+function searchMessage(append){
+	$("#append").val(append);
+	post('${request.contextPath}/topic/message/search', $("#msgSearchForm").serialize(), function(data){
+		if(!append){
+			$("#dataTable tbody").remove();
+		}
+       	$("#dataTable").append(data);
+    });
+}
+//偏移量消息搜索
+function searchOffsetMessage(append){
+	if(!$("#offsetStart").val()){
+		alert("起始偏移量不能为空");
+		return;
+	}
+	if(!$("#offsetEnd").val()){
+		alert("结束偏移量不能为空");
+		return;
+	}
+	$("#append").val(append);
+	post('${request.contextPath}/topic/message/offset/search', $("#msgSearchForm").serialize(), function(data){
+		if(!append){
+			$("#dataTable tbody").remove();
+		}
+       	$("#dataTable").append(data);
+    });
+}
+//消息id搜索
+function viewMessage(){
+	if(!$("#msgId").val()){
+		alert("消息id不能为空");
+		return;
+	}
+	post('${request.contextPath}/topic/message/id/search', $("#msgSearchForm").serialize(), function(data){
+		$("#dataTable tbody").remove();
+       	$("#dataTable").append(data);
+    });
+}
+// 消息key搜索
+function searchKeyMessage() {
+	if(!$("#msgKey").val()){
+		alert("消息key不能为空");
+		return;
+	}
+	post('${request.contextPath}/topic/message/key/search', $("#msgSearchForm").serialize(), function(data){
+		$("#dataTable tbody").remove();
+       	$("#dataTable").append(data);
+    });
+}
+//消息Trace搜索
+function searchTraceMessage() {
+	if(!$("#traceKey").val()){
+		alert("trace key不能为空");
+		return;
+	}
+	post('${request.contextPath}/topic/message/trace/search', $("#msgSearchForm").serialize(), function(data){
+		$("#traceDataTable tbody").remove();
+       	$("#traceDataTable").append(data);
+    });
+}
+// 定时消息搜索
+function searchTimerWheelMessage(append){
+	$("#append").val(append);
+	post('${request.contextPath}/topic/message/timerWheel/search', $("#msgSearchForm").serialize(), function(data){
+		if(!append){
+			$("#dataTable tbody").remove();
+		}
+		$("#dataTable").append(data);
+	});
+}
+// 定时消息轨迹查询
+function searchTimerWheelMessageRollTrace() {
+	post('${request.contextPath}/topic/message/timerWheel/searchRollTrace', $("#msgSearchForm").serialize(), function(data){
+		$("#dataTable tbody").remove();
+		$("#dataTable").append(data);
+	});
+}
+// 轨迹
+var networkOptions = {
+	interaction:{
+		hover:true,
+		dragView: false
+	},
+	physics: {
+		enabled: false
+	},
+	nodes: {
+		shape: 'box',
+		borderWidth: 1,
+		shadow:true
+	},
+	edges: {
+		width: 1,
+		shadow:true,
+		font: {align: 'middle', size:12},
+		arrows:'to',
+		color: 'rgb(255,99,0)',
+		dashes:true
+	},
+	groups:{
+		producer:{
+			color: {background:'white', border:'rgb(255,182,30)', highlight:{background:'rgb(255,182,30)'}, hover:{background:'rgb(255,182,30)'}}
+		},
+		consumer:{
+			color: {background:'white', border:'rgb(255,182,13)', highlight:{background:'rgb(255,182,13)'}, hover:{background:'rgb(255,182,13)'}}
+		},
+		broker:{
+			color: {background:'white', border:'rgb(255,182,0)', highlight:{background:'rgb(255,182,0)'}, hover:{background:'rgb(255,182,0)'}}
+		}
+	}
+};
+var network = null;
+var trackMsg = null;
+function track(msg){
+	trackMsg = msg;
+}
+function trackShow(currentPage){
+	if(currentPage == undefined){
+		currentPage = 1;
+	}
+	if(network){
+		network.destroy();
+	}
+	trackMsg.cid = $("#cid").val();
+	trackMsg.topic = $("#topicDiv").val();
+	trackMsg.tid = ${RequestParameters.tid};
+	post('${request.contextPath}/topic/message/track?currentPage='+currentPage, trackMsg, function(data){
+		$("#scriptDiv").html(data);
+	});
+}
+function changeSearchType(type){
+	// 无改变
+	if(prevSearchType == type){
+		return;
+	}
+	$("."+type).show();
+	if(prevSearchType) {
+		$("."+prevSearchType).hide();
+	}
+	prevSearchType = type;
+
+	$("#pager").hide();
+	hideAndResetBrokerSelect();
+	if ("timerWheelTrace" == type) {
+		$(".resendMessageBtn").hide();
+	} else {
+		$(".resendMessageBtn").show();
+	}
+	if("trace" == type){
+		// 清空数据
+		$("#traceDataTable tbody").remove();
+		$("#traceDataTable").append("<tbody><tr class='no_more_data'><td colspan=9 class='text-center'>暂无数据</td></tr></tbody>");
+		$(".resendMessageBtn").addClass("disabled");
+		$("#dataTable").hide();
+		$("#traceDataTable").show();
+	} else {
+		// 清空数据
+		$("#dataTable tbody").remove();
+		$("#dataTable").append("<tbody><tr class='no_more_data'><td colspan=8 class='text-center'>暂无数据</td></tr></tbody>");
+		$("#dataTable").show();
+		$("#traceDataTable").hide();
+		$(".resendMessageBtn").removeClass("disabled");
+	}
+	if("offset" == type) {
+		//初始化broker列表
+		if($('#brokerNameSearchSelect option').length == 0){
+			initBrokerList('brokerNameSearchSelect');
+		}
+		hideAndResetBrokerSelect();
+	}
+}
+
+$(function(){
+ 	// search type tooltip
+	$("#searchCondition").selectpicker().on('changed.bs.select', function(){
+ 	  	changeSearchType($('#searchCondition option:selected').val());
+ 	});
+ 	$("#timespanConsumeConsumerSelect").selectpicker().on('changed.bs.select', function(){
+ 		consumerChange();
+ 	});
+ 	$("#timespanConsumeClientIdSelect").selectpicker().on('changed.bs.select', function(){
+ 		consumerIdChange();
+ 	});
+ 	$("#timespanConsumeClientIdSelect").selectpicker('refresh');
+
+ 	var defaultTimerOption = {
+		format: 'YYYY-MM-DD HH:mm:ss',
+		minDate: moment({h:0, m:0, s:0, ms:0}).subtract(${cluster.fileReservedDays}, 'days'),
+		maxDate: '${.now?string("yyyy-MM-dd HH:mm:ss")}',
+		icons: { time: 'far fa-clock' },
+		focusOnShow: false
+	}
+	$("#timeStartTimePicker").datetimepicker(defaultTimerOption);
+	$("#timeStartTimePickerInput").val('${response.result.start?number_to_datetime?string("yyyy-MM-dd HH:mm:ss")}');
+	$("#timeStartTimePicker").on("change.datetimepicker", function (e) {
+		timeChange("timeStartTime");
+	});
+
+	$("#timerWheelStartTimePicker").datetimepicker(defaultTimerOption);
+	$("#timerWheelStartTimePickerInput").val('${response.result.start?number_to_datetime?string("yyyy-MM-dd HH:mm:ss")}');
+	$("#timerWheelStartTimePicker").on("change.datetimepicker", function (e) {
+		timeChange("timerWheelStartTime");
+	});
+	var dayTimerOption = {
+		format: 'YYYY-MM-DD HH:mm:ss',
+		minDate: moment({h:0, m:0, s:0, ms:0}).subtract(${cluster.fileReservedDays}, 'days'),
+		maxDate: '${.now?string("yyyy-MM-dd HH:mm:ss")}',
+		icons: { time: 'far fa-clock' },
+		focusOnShow: false
+	}
+	$("#keyStartTimePicker").datetimepicker(dayTimerOption);
+	$("#keyStartTimePickerInput").val('${response.result.start?number_to_datetime?string("yyyy-MM-dd 00:00:00")}');
+	$("#keyStartTimePicker").on("change.datetimepicker", function (e) {
+		timeChange("keyStartTime");
+	});
+
+	$("#traceStartTimePicker").datetimepicker(dayTimerOption);
+	$("#traceStartTimePickerInput").val('${response.result.start?number_to_datetime?string("yyyy-MM-dd 00:00:00")}');
+	$("#traceStartTimePicker").on("change.datetimepicker", function (e) {
+		timeChange("traceStartTime");
+	});
+
+	var endTimeOption = {
+		format: 'YYYY-MM-DD HH:mm:ss',
+		minDate: moment({h:0, m:0, s:0, ms:0}).subtract(${cluster.fileReservedDays}, 'days'),
+		maxDate: '${.now?string("yyyy-MM-dd HH:mm:ss")}',
+		defaultDate: '${.now?string("yyyy-MM-dd HH:mm:ss")}',
+		icons: { time: 'far fa-clock' },
+		focusOnShow: false
+	};
+	$("#timeEndTimePicker").datetimepicker(endTimeOption);
+	$("#timeEndTimePicker").on("change.datetimepicker", function (e) {
+		timeChange("timeEndTime");
+	});
+	$("#keyEndTimePicker").datetimepicker(endTimeOption);
+	$("#keyEndTimePicker").on("change.datetimepicker", function (e) {
+		timeChange("keyEndTime");
+	});
+	$("#traceEndTimePicker").datetimepicker(endTimeOption);
+	$("#traceEndTimePicker").on("change.datetimepicker", function (e) {
+		timeChange("traceEndTime");
+	});
+	$("#timerWheelEndTimePicker").datetimepicker(endTimeOption);
+	$("#timerWheelEndTimePicker").on("change.datetimepicker", function (e) {
+		timeChange("timerWheelEndTime");
+	});
+
+	var queryType = getQueryString("queryType");
+	if (queryType == "msgId") {
+		var msgId = getQueryString("unqId");
+		changeQueryType(queryType);
+		$("#msgId").val(msgId);
+		viewMessage();
+	}
+	if (queryType == "timerWheelTrace"){
+		var msgId = getQueryString("unqId");
+		var broker = getQueryString("broker");
+		changeQueryType(queryType);
+		$("#broker").val(broker);
+		$("#traceUniqKey").val(msgId);
+		$(".resendMessageBtn").hide();
+		searchTimerWheelMessageRollTrace();
+	}
+
+	// 初始化key查询方式的时间
+	timeChange('keyStartTime');
+	//初始化trace查询方式的时间
+	timeChange('traceStartTime');
+
+	$('#trackModal').on('shown.bs.modal', function () {
+		trackShow();
+	})
+
+	// 搜索trace
+	<#if RequestParameters.msgId??>
+		trace('${RequestParameters.msgId}', false, ${RequestParameters.time});
+	</#if>
+});
+
+function timeChange(id){
+	var dt = $("#" + id + "PickerInput").val();
+	var tm = parseDate(dt);
+	$("#" + id).val(tm);
+}
+
+// 定时消息取消 cancelMsgModal
+function cancelTimerWheelMessage(){
+	var dataIdxArray = new Array();
+	var uniqIds = new Array();
+	var offsetMsgIds = new Array();
+	var deliverTime = new Array();
+	let nowTime = new Date().getTime() + 5 * 60 * 1000;
+	$('#dataTable tbody input[type=checkbox]:checked').each(function(){
+		let delayedTime = $(this).attr("deliverTime");
+		if (parseInt(delayedTime) > nowTime) {
+			dataIdxArray.push($(this).attr("dataIdx"));
+			uniqIds.push($(this).attr("id"));
+			offsetMsgIds.push($(this).attr("data"));
+			deliverTime.push(delayedTime);
+		}
+	});
+	if(dataIdxArray.length == 0) {
+		alert("请先选择投递时间距当前时间大于5分钟的消息");
+		return;
+	}
+	$("#cancelIdx").html(dataIdxArray.toString());
+	$("#validUniqIds").val(uniqIds.toString());
+	$('#cancelMsgModal').modal('show');
+}
+
+function cancelMessage(){
+	let validUniqIds = $("#validUniqIds").val();
+	$.post('${request.contextPath}/topic/message/cancelWheelMsg',
+			{
+				tid: ${RequestParameters.tid},
+				uniqIds: validUniqIds,
+			},
+			function(data){
+				enable("cancelBtn");
+				if(data.status == 200){
+					toastr.success("申请成功！请耐心等待！");
+					$('#cancelMsgModal').modal('hide');
+				}else{
+					toastr.error("申请失败！"+data.message);
+				}
+			}, 'json');
+}
+
+// 重发消息 提示
+function resendMessageTip(){
+	var dataIdxArray = new Array();
+	$('#dataTable tbody input[type=checkbox]:checked').each(function(){
+		dataIdxArray.push($(this).attr("dataIdx"));
+	});
+	if(dataIdxArray.length == 0) {
+		alert("请先选择消息");
+		return;
+	}
+	$("#dataIdx").html(dataIdxArray.toString());
+	// 获取消费者
+	$.get('${request.contextPath}/userConsumer/list',
+		{
+			tid: ${RequestParameters.tid}
+		},
+        function(data){
+            if(data.status == 200){
+            	if(data.result.length == 0) {
+	        		$("#consumerSelect").html("<option value='-1'>无关联的消费者</option>");
+	        		$("#consumerSelect").selectpicker('val', "-1");
+	        		disable("resendBtn");
+        		} else {
+	            	var content = "";
+	            	for(var i in data.result){
+	            		var consumer = data.result[i];
+	            		content += "<option value='"+consumer.id+"'>"+consumer.name+"</option>";
+	            	}
+	        		$("#consumerSelect").html(content);
+	        		$("#consumerSelect").selectpicker('refresh');
+	        		if(data.result.length == 1) {
+		        		$("#consumerSelect").selectpicker('val', data.result[0].id);
+	        		}
+        		}
+				$('#resendMsgModal').modal('show');
+		    }else{
+		    	toastr.error("错误！"+data.message);  
+		    }
+    }, 'json');
+}
+
+//重发消息 
+function resendMessage(){
+	var dataArray = new Array();
+	$('#dataTable tbody input[type=checkbox]:checked').each(function(){
+		dataArray.push($(this).attr("data"));
+	});
+	if(dataArray.length == 0) {
+		alert("请先选择消息");
+		return;
+	}
+	if($("#consumerSelect").val().length == 0){
+		alert("请选择消费者");
+		return;
+	}
+	disable("resendBtn");
+	$.post('${request.contextPath}/topic/message/resend',
+		{
+			msgIds: dataArray.toString(),
+			tid: ${RequestParameters.tid},
+			cid: $("#consumerSelect").val()
+		},
+        function(data){
+			enable("resendBtn");
+            if(data.status == 200){
+            	toastr.success("申请成功！请耐心等待！");  	            	
+            	$('#resendMsgModal').modal('hide');       	
+		    }else{
+		    	toastr.error("申请失败！"+data.message);  
+		    }
+    }, 'json');
+}
+
+function hideAndResetBrokerSelect(){
+	//重置broker下拉框状态
+    $("#brokerNameSearchSelect").selectpicker('val', "all");
+    $("#queueSearchSelect").selectpicker('val', "-1");
+}
+/**
+ * 初始化broker下拉列表
+ */
+var brokerNameMap = null;
+function initBrokerList(componentId){
+	$.get('${request.contextPath}/topic/brokerName/list',
+			{
+				topic: $("#topicDiv").val(),
+				clusterId : $("#cid").val()
+			},
+	        function(data){
+	            if(data.status == 200){
+	            	brokerNameMap = data.result;
+	            	var content = "<option value='all'>全部</option>";
+	            	for (var key in brokerNameMap){
+	            		content += "<option value='"+key+"'>"+key+"</option>";
+	            	}
+	        		$("#"+componentId).html(content);
+	        		$("#"+componentId).selectpicker('refresh');
+			    }else{
+			    	toastr.error("数据获取失败！"+data.message);  
+			    }
+        }, 'json');
+}
+var maxAllOffset = ${response.result.maxOffset?c};
+var minAllOffset = ${response.result.minOffset?c};
+var queueOffsetMap = null;
+function brokerNameSelectChange(obj){
+	var value = obj.options[obj.selectedIndex].value;
+	if (value == "all"){
+		$("#queueSearchSelect").html("<option value='-1'>全部</option>");
+		$("#queueSearchSelect").selectpicker('refresh');
+		$("#offsetStart").val(minAllOffset);
+		$("#offsetEnd").val(maxAllOffset);
+		return;
+	}
+	resetMaxOffsetByBrokerName(value);
+	$.get('${request.contextPath}/consumer/broker/queue',
+			{
+				topic: $("#topicDiv").val(),
+				brokerName: value,
+				clusterId : $("#cid").val()
+			},
+	        function(data){
+	            if(data.status == 200){
+	            	queueOffsetMap = data.result;
+	            	var content = "<option value='-1'>全部</option>";
+	            	for (var  key in queueOffsetMap){
+	            		content += "<option value='"+key+"'>"+key+"</option>";
+	            	}
+	            	$("#queueSearchSelect").html(content);
+	            	$("#queueSearchSelect").selectpicker('refresh');
+			    }
+	    }, 'json');
+}
+function queueSelectChange(obj){
+	var value = obj.options[obj.selectedIndex].value;
+	var queue = parseInt(value);
+	if (queue == -1){
+		resetMaxOffsetByBrokerName($("#brokerNameSearchSelect").val());
+		return;
+	}
+	resetMaxOffset(queue, 'queue');
+}
+//重置偏移量
+function resetMaxOffsetByBrokerName(key){
+	if (brokerNameMap != null){
+		resetMaxOffset(key,'broker');
+	}
+}
+function resetMaxOffset(key,type){
+	var max = null;
+	if (type == 'broker'){
+		max = brokerNameMap[key];
+	}else{
+		max = queueOffsetMap[key];
+	}
+	
+	var min = max - 100;
+	if (min < 0){
+		min = 0;
+	}
+	$("#offsetStart").val(min);
+	$("#offsetEnd").val(max);
+}
+
+function traceHasTime(msgId){
+	trace(msgId, true);
+}
+
+function traceNoTime(msgId){
+	trace(msgId, false);
+}
+
+function trace(msgId, hasTime, time){
+	var searchType = $('#searchCondition option:selected').val();
+	var start;
+	var end;
+	if(!time){
+		if(hasTime){
+			start = $("#" + searchType + "StartTimePickerInput").val();
+			end = $("#" + searchType + "EndTimePickerInput").val();
+		} else {
+			start = $("#" + msgId).attr("date-data") - 60 * 60 * 1000;
+			end = Number($("#" + msgId).attr("date-data")) + 60 * 60 * 1000;
+			var now = new Date().getTime();
+			if(end > now){
+				end = now;
+			}
+			start = formatDateYMDHM(start);
+			end = formatDateYMDHM(end);
+		}
+	} else {
+		start = time - 60 * 60 * 1000;
+		end = time + 60 * 60 * 1000;
+		var now = new Date().getTime();
+		if(end > now){
+			end = now;
+		}
+		start = formatDateYMDHM(start);
+		end = formatDateYMDHM(end);
+	}
+	// 将时间范围修改成key查询的范围
+	$("#traceStartTimePickerInput").val(start);
+	$("#traceEndTimePickerInput").val(end);
+	timeChange('traceStartTime');
+	timeChange('traceEndTime');
+	// 更改查询方式为trace
+	$("#searchCondition").selectpicker('val', "trace");
+	changeSearchType('trace');
+	// 将trace查询的key设置为msgId
+	$("#traceKey").val(msgId);
+	// 查询trace
+	searchTraceMessage();
+}
+
+//时间段消费 提示
+function consumeTimespanMessageTip(){
+	$("#consumeTimespanMessageBtn").attr("disabled", "disabled");
+	// 获取消费者
+	$.get('${request.contextPath}/userConsumer/list/filter',
+		{
+			tid: ${RequestParameters.tid}
+		},
+        function(data){
+            if(data.status == 200){
+            	if(data.result.length == 0) {
+	        		$("#timespanConsumeConsumerSelect").html("<option value='-1'>无关联的消费者</option>");
+	        		$("#timespanConsumeConsumerSelect").selectpicker('val', "-1");
+        		} else {
+	            	var content = "";
+	            	for(var i in data.result){
+	            		var consumer = data.result[i];
+	            		content += "<option value='"+consumer.id+"'>"+consumer.name+"</option>";
+	            	}
+	        		$("#timespanConsumeConsumerSelect").html(content);
+	        		$("#timespanConsumeConsumerSelect").selectpicker('refresh');
+        		}
+            	$("#consumeTimespanMessageModal").modal('show');
+		    }else{
+		    	toastr.error("错误！"+data.message);  
+		    }
+    }, 'json');
+    $("#consumeTimespanMessageBtn").removeAttr("disabled");
+	$("#timespanConsumeTopic").val($("#topicDiv").val());
+	$("#timespanConsumeStart").val($("#timeStartTime").val());
+	$("#timespanConsumeEnd").val($("#timeEndTime").val());
+	$("#timespanConsumeStartShow").val($("#timeStartTimePickerInput").val());
+	$("#timespanConsumeEndShow").val($("#timeEndTimePickerInput").val());
+}
+
+function consumerChange(){
+	$("#submitTimespanMessageBtn").attr("disabled", "disabled");
+	$.get('${request.contextPath}/consumer/connection',{
+		group: $("#timespanConsumeConsumerSelect option:selected").text(),
+		cid: $("#cid").val(),
+	},function(data){
+         if(data.status == 200){
+          	var content = "";
+          	for(var i in data.result){
+          		var ip = data.result[i];
+         		content += "<option value='"+ip+"'>"+ip+"</option>";
+          	}
+      		$("#timespanConsumeClientIdSelect").html(content);
+	    } else {
+	    	$("#timespanConsumeClientIdSelect").empty();
+	    	toastr.error("数据获取失败！"+data.message);
+	    }
+     	$("#timespanConsumeClientIdSelect").selectpicker('refresh');
+    }, 'json');
+}
+function consumerIdChange(){
+	$("#submitTimespanMessageBtn").removeAttr("disabled");
+}
+//时间段消费
+function consumeTimespanMessage(){
+	disable("submitTimespanMessageBtn");
+	post('${request.contextPath}/consumer/timespanMessageConsume', 
+		$("#consumeTimespanMessageForm").serialize(), 
+		function(data){
+	        if(data.status == 200){
+				toastr.success("申请成功！请耐心等待！");  
+				modalHide(3000, function(){
+					enable("submitTimespanMessageBtn"); 
+				});
+		    }else{
+		    	toastr.error("操作失败！"+data.message);  
+		    	enable("submitTimespanMessageBtn");
+		    }
+    	}, 'json');
+}
+
+//时间段消息导出 提示
+function exportTimespanMessageTip(){
+	$("#timespanExportTopic").val($("#topicDiv").val());
+	$("#timespanExportStartShow").val($("#timeStartTimePickerInput").val());
+	$("#timespanExportEndShow").val($("#timeEndTimePickerInput").val());
+	$("#timespanExportStart").val($("#timeStartTime").val());
+	$("#timespanExportEnd").val($("#timeEndTime").val());
+	$("#exportTimespanMessageModel").modal('show');
+}
+
+//时间段消息导出
+function exportTimespanMessage(){
+	disable("submitExportMessageBtn");
+	post('${request.contextPath}/topic/message/export', $("#exportTimespanMessageForm").serialize(), function(data){
+		if(data.status == 200){
+			toastr.success("申请成功，请稍后查看！即将跳转到我的工单");
+			toMyAuditPage();
+		}else{
+			toastr.error("操作失败！"+data.message);
+			enable("submitExportMessageBtn");
+		}
+	}, 'json');
+}
+
+// 解析请求URL
+function getQueryString(name){
+	var reg = new RegExp("(^|&)"+ name +"=([^&]*)(&|$)");
+	var r = window.location.search.substr(1).match(reg);
+	if(r!=null)return  unescape(r[2]); return null;
+}
+
+// 跳转id搜索
+function loadKeySearch (msgId) {
+	window.open("${request.contextPath}/user/topic/${RequestParameters.tid}/detail?tab=msg&queryType=msgId&unqId="+msgId,'_blank')
+}
+
+// 跳转rollTrace搜索
+function loadRollTraceSearch (msgId, broker) {
+	window.open("${request.contextPath}/user/topic/${RequestParameters.tid}/detail?tab=msg&queryType=timerWheelTrace&unqId="+msgId + "&broker=" + broker, '_blank')
+}
+
+function toggleMsgCheck(box) {
+	$('#dataTable tbody:visible input[type=checkbox]').each(function () {
+		if (box.checked) {
+			$(this).prop('checked', true);
+		} else {
+			$(this).prop('checked', false);
+		}
+	});
+}
+
+function showTraceDetail(comp){
+	if (!comp.hasAttribute("pdata") && !comp.hasAttribute("cdata")) {
+		alert("暂无数据");
+		return;
+	}
+	if (!comp.hasAttribute("pdata")) {
+		$("#jsonviewProducer").html("暂无数据");
+	} else {
+		var pdata = $(comp).attr("pdata");
+		$("#jsonviewProducer").jsonViewer(JSON.parse(pdata));
+	}
+	if (!comp.hasAttribute("cdata")) {
+		$("#jsonviewConsumer").html("暂无数据");
+	} else {
+		var cdata = $(comp).attr("cdata");
+		$("#jsonviewConsumer").jsonViewer(JSON.parse(cdata));
+	}
+	$("#traceDetailModel").modal('show');
+}
+</script>

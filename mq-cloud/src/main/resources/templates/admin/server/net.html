@@ -1,18 +1,37 @@
 <#if !net??>
 	no data
 </#if>
-<#list net as item>
-	<div class="col-md-6" style="padding-right:0px;<#if item_index%2==1>padding-left:0px;</#if>">
-		<div id="container${item.name}"
-			style="min-width: 310px; height: 400px; margin: 0 auto"></div>
-	</div>
+
+<div class="row">
+	<div class="col-md-6">
+		<#list net as item>
+		<#if item_index%2==0>
+		<div class="card  mt-2">
+			<div class="card-body">
+				<div id="container${item.name}"
+					 style="min-width: 310px; height: 400px;margin: 0 auto;">
+				</div>
+			</div>
+		</div>
+	</#if>
 </#list>
-	
+</div>
+<div class="col-md-6">
+	<#list net as item>
+	<#if item_index%2==1>
+	<div class="card  mt-2">
+		<div class="card-body">
+			<div id="container${item.name}"
+				 style="min-width: 310px; height: 400px;margin: 0 auto;">
+			</div>
+		</div>
+	</div>
+</#if>
+</#list>
+</div>
+</div>
+
 <script type="text/javascript">
-	$(document).ready(function() {
-		initSubNetChart();
-	});
-	
 	function initSubNetChart(){
 		<#list net as item>
 			var options = getOptions("container${item.name}", "${item.name}", "max in:${item.maxIn?string('#.##')}M/s out:${item.maxOut?string('#.##')}M/s avg in:${item.avgIn}M/s out:${item.avgOut}M/s");
@@ -21,4 +40,8 @@
 		    new Highcharts.Chart(options); 
 		</#list>
 	}
+
+	setTimeout(function (){
+		initSubNetChart();
+	},200)
 </script>

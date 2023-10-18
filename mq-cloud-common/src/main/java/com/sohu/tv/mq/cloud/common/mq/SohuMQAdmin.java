@@ -1,9 +1,12 @@
 package com.sohu.tv.mq.cloud.common.mq;
 
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONException;
+import com.alibaba.fastjson.JSONObject;
 import com.sohu.tv.mq.cloud.common.model.BrokerMomentStatsData;
 import com.sohu.tv.mq.cloud.common.model.BrokerRateLimitData;
-import com.sohu.tv.mq.cloud.common.model.*;
 import com.sohu.tv.mq.cloud.common.model.UpdateSendMsgRateLimitRequestHeader;
+import com.sohu.tv.mq.cloud.common.model.*;
 import com.sohu.tv.mq.util.Constant;
 import org.apache.rocketmq.client.ClientConfig;
 import org.apache.rocketmq.client.QueryResult;
@@ -16,8 +19,8 @@ import org.apache.rocketmq.common.message.*;
 import org.apache.rocketmq.remoting.InvokeCallback;
 import org.apache.rocketmq.remoting.RPCHook;
 import org.apache.rocketmq.remoting.exception.*;
-import org.apache.rocketmq.remoting.protocol.*;
 import org.apache.rocketmq.remoting.protocol.RequestCode;
+import org.apache.rocketmq.remoting.protocol.*;
 import org.apache.rocketmq.remoting.protocol.body.*;
 import org.apache.rocketmq.remoting.protocol.header.*;
 import org.apache.rocketmq.remoting.protocol.header.namesrv.UnRegisterBrokerRequestHeader;
@@ -30,10 +33,7 @@ import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -548,8 +548,9 @@ public abstract class SohuMQAdmin extends DefaultMQAdminExt {
     @Override
     public ConsumerRunningInfo getConsumerRunningInfo(String consumerGroup, String clientId, boolean jstack) throws RemotingException, MQClientException, InterruptedException {
         if (!proxyEnabled) {
-            return super.getConsumerRunningInfo(consumerGroup, clientId, jstack);
+            return _getConsumerRunningInfo(consumerGroup, clientId, jstack);
         }
+        // 兼容proxy模式
         for (String addr : getNameServerAddressList()) {
             try {
                 ConsumerRunningInfo consumerRunningInfo = getMQClientInstance().getMQClientAPIImpl()
@@ -565,6 +566,81 @@ public abstract class SohuMQAdmin extends DefaultMQAdminExt {
             }
         }
         return null;
+    }
+
+    /**
+     * 兼容c++数据
+     *
+     * @param consumerGroup
+     * @param clientId
+     * @param jstack
+     * @return
+     * @throws RemotingException
+     * @throws MQClientException
+     * @throws InterruptedException
+     */
+    private ConsumerRunningInfo _getConsumerRunningInfo(String consumerGroup, String clientId, boolean jstack) throws RemotingException, MQClientException, InterruptedException {
+        String topic = MixAll.RETRY_GROUP_TOPIC_PREFIX + consumerGroup;
+        TopicRouteData topicRouteData = examineTopicRouteInfo(topic);
+        List<BrokerData> brokerDatas = topicRouteData.getBrokerDatas();
+        if (brokerDatas == null || brokerDatas.size() == 0) {
+            throw new MQClientException(0, "route is empty");
+        }
+        // 随机选择一个broker
+        Collections.shuffle(brokerDatas);
+        String addr = null;
+        for (BrokerData brokerData : brokerDatas) {
+            addr = brokerData.selectBrokerAddr();
+            if (addr != null) {
+                break;
+            }
+        }
+        if (addr == null) {
+            throw new MQClientException(1, "broker addr is null");
+        }
+        MQClientInstance mqClientInstance = null;
+        long timeoutMillis = 0;
+        try {
+            mqClientInstance = getMQClientInstance();
+            timeoutMillis = getTimeoutMillis();
+        } catch (Exception e) {
+            throw new MQClientException("getMQClientInstance exception", e);
+        }
+        GetConsumerRunningInfoRequestHeader requestHeader = new GetConsumerRunningInfoRequestHeader();
+        requestHeader.setConsumerGroup(consumerGroup);
+        requestHeader.setClientId(clientId);
+        requestHeader.setJstackEnable(jstack);
+        RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.GET_CONSUMER_RUNNING_INFO, requestHeader);
+        RemotingCommand response = mqClientInstance.getMQClientAPIImpl().getRemotingClient().invokeSync(
+                MixAll.brokerVIPChannel(mqClientInstance.getClientConfig().isVipChannelEnabled(), addr), request, timeoutMillis);
+        assert response != null;
+        switch (response.getCode()) {
+            case ResponseCode.SUCCESS: {
+                byte[] body = response.getBody();
+                if (body != null) {
+                    Object obj = JSON.parse(body);
+                    if (obj instanceof JSONObject) {
+                        JSONObject jsonObject = (JSONObject) obj;
+                        JSONObject mqs = jsonObject.getJSONObject("mqTable");
+                        if (mqs != null) {
+                            for (Map.Entry<String, Object> entry : mqs.entrySet()) {
+                                JSONObject processQueueInfo = (JSONObject) entry.getValue();
+                                try {
+                                    processQueueInfo.getLong("commitOffset");
+                                } catch (JSONException e) {
+                                    // commitOffset超出long,删除
+                                    processQueueInfo.remove("commitOffset");
+                                }
+                            }
+                        }
+                        return jsonObject.toJavaObject(ConsumerRunningInfo.class);
+                    }
+                }
+            }
+            default:
+                break;
+        }
+        throw new MQClientException(response.getCode(), response.getRemark());
     }
 
     /**

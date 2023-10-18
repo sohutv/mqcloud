@@ -1,16 +1,11 @@
-<table class="table table-striped table-hover" style="margin-top: 0px;word-break:break-all; word-wrap:break-all;">
-	<colgroup>
-	  <col width='50px'>
-	  <col width='400px'>
-	  <col width='45px'>
-	  <col>
-	</colgroup>
+<div class="table-responsive p-0">
+<table class="table table-hover text-nowrap">
 	<thead>
 		<tr>
-			<td>序号</td>
-			<td>topic</td>
-			<td>状态</td>
-			<td>原因</td>
+			<th>序号</th>
+			<th>topic</th>
+			<th>状态</th>
+			<th>原因</th>
 		</tr>
 	</thead>
 	<tbody>
@@ -24,10 +19,10 @@
 					<td>${result_index + 1}</td>
 					<td>${result.result}</td>
 					<#if result.OK>
-						<td><span class="glyphicon glyphicon-ok"></span></td>
+						<td><i class="fa-solid fa-check"></i></td>
 						<td>成功</td>
 					<#else>
-						<td><span class="glyphicon glyphicon-remove"></span></td>
+						<td><i class="fa-solid fa-xmark"></i>></td>
 						<td><#if result.exception??><b>异常:</b> ${result.exception.class.name},</#if><b>提醒:</b> ${result.message!}</td>
 					</#if>
 				</tr>
@@ -35,3 +30,4 @@
 		</#if>
 	</tbody>
 </table>
+</div>

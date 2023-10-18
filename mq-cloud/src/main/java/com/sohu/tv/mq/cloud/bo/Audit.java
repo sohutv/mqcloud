@@ -107,6 +107,7 @@ public class Audit {
         AGREE(1, "同意"), 
         REJECT(2, "驳回"),
         CANCEL(3, "撤销"),
+        AUDITING(4, "审核中"),
         ;
 
         private Integer status;
@@ -172,6 +173,7 @@ public class Audit {
         TIMESPAN_MESSAGE_CONSUME(20, "重新消费消息", "timespanMessageConsume"),
         NEW_PRODUCER(21, "新建生产者", "associateProducer"),
         CANCEL_WHEEL_MSG(22, "取消定时消息", "cancelWheelMsg"),
+        TIMESPAN_MESSAGE_EXPORT(23, "导出消息", "timespanMessageExport"),
         ;
 
         private Integer type;

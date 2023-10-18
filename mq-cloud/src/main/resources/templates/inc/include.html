@@ -1,62 +1,79 @@
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
 <!-- icon -->
 <link rel="icon" type="image/x-icon" href="${request.contextPath}/favicon.ico">
 
 <!-- jquery -->
-<script type="text/javascript" src="${request.contextPath}/resources/jquery/jquery-1.11.0.min.js"></script>
+<script type="text/javascript" src="${request.contextPath}/plugins/jquery/jquery.min.js"></script>
 
 <!-- bootstrap -->
-<link href="${request.contextPath}/resources/bootstrap/3.4.1/css/bootstrap.min.css" rel="stylesheet">
-<link href="${request.contextPath}/resources/bootstrap/3.4.1/css/bootstrap-theme.min.css" rel="stylesheet"/>
-<script type="text/javascript" src="${request.contextPath}/resources/bootstrap/3.4.1/js/bootstrap.min.js"></script>
-
-<!-- highcharts -->
-<script type="text/javascript" src="${request.contextPath}/resources/highcharts/highcharts.js"></script>
-
-<!-- date picker -->
-<script type="text/javascript" src="${request.contextPath}/resources/date-picker/WdatePicker.js"></script>
-
-<!-- 提示工具 -->
-<script type="text/javascript" src="${request.contextPath}/resources/toastr/toastr.min.js"></script>
-<link href="${request.contextPath}/resources/toastr/toastr.min.css" rel="stylesheet">
-
-<!-- 表单校验 -->
-<script src="${request.contextPath}/resources/bootstrapValidator/js/bootstrapValidator.min.js"></script>
+<script type="text/javascript" src="${request.contextPath}/plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
+<!-- bootstrap-switch -->
+<script type="text/javascript" src="${request.contextPath}/plugins/bootstrap-switch/js/bootstrap-switch.min.js"></script>
+<!-- 选择搜索工具 -->
+<script src="${request.contextPath}/plugins/bootstrap-select/js/bootstrap-select.min.js"></script>
+<script src="${request.contextPath}/plugins/bootstrap-select/js/i18n/defaults-zh_CN.min.js"></script>
+<link href="${request.contextPath}/plugins/bootstrap-select/css/bootstrap-select.min.css" rel="stylesheet">
 
 <!-- 分页工具 -->
-<script src="${request.contextPath}/resources/bootstrap-paginator/bootstrap-paginator.min.js"></script>
+<script src="${request.contextPath}/plugins/bootstrap-paginator/bootstrap-paginator.min.js"></script>
 
-<!-- 选择搜索工具 -->
-<script src="${request.contextPath}/resources/bootstrap-select/js/bootstrap-select.min.js"></script>
-<script src="${request.contextPath}/resources/bootstrap-select/js/i18n/defaults-zh_CN.min.js"></script>
-<link href="${request.contextPath}/resources/bootstrap-select/css/bootstrap-select.min.css" rel="stylesheet">
+<!-- jquery validate -->
+<script src="${request.contextPath}/plugins/jquery-validation/jquery.validate.min.js"></script>
+<script src="${request.contextPath}/plugins/jquery-validation/additional-methods.min.js"></script>
+<script src="${request.contextPath}/plugins/jquery-validation/localization/messages_zh.min.js"></script>
+
+<!-- adminlte -->
+<script type="text/javascript" src="${request.contextPath}/plugins/adminLTE/js/adminlte.min.js"></script>
+<link rel="stylesheet" href="${request.contextPath}/plugins/adminLTE/css/adminlte.min.css">
+
+<!-- fontawesome -->
+<link rel="stylesheet" href="${request.contextPath}/plugins/fontawesome-free/css/all.min.css">
+<!-- Google Font: Source Sans Pro -->
+<link rel="stylesheet" href="${request.contextPath}/plugins/google-font/source-sans-pro/font.css">
+
+<!-- highcharts -->
+<script type="text/javascript" src="${request.contextPath}/plugins/highcharts/highcharts.js"></script>
+
+<!-- vis -->
+<script type="text/javascript" src="${request.contextPath}/plugins/vis/vis.min.js"></script>
+<link href="${request.contextPath}/plugins/vis/vis-network.min.css" rel="stylesheet">
+<script type="text/javascript" src="${request.contextPath}/plugins/vis/vis-network-animate-traffic.js"></script>
+
+<!-- clipboard -->
+<script type="text/javascript" src="${request.contextPath}/plugins/clipboard/clipboard.js"></script>
+
+<!-- datetime -->
+<script type="text/javascript" src="${request.contextPath}/plugins/moment/moment.min.js"></script>
+<script type="text/javascript" src="${request.contextPath}/plugins/moment/local/zh-cn.js"></script>
+<script type="text/javascript" src="${request.contextPath}/plugins/tempusdominus-bootstrap-4/js/tempusdominus-bootstrap-4.min.js"></script>
+<link href="${request.contextPath}/plugins/tempusdominus-bootstrap-4/css/tempusdominus-bootstrap-4.min.css" rel="stylesheet">
+
+<!-- 提示工具 -->
+<script type="text/javascript" src="${request.contextPath}/plugins/toastr/toastr.min.js"></script>
+<link href="${request.contextPath}/plugins/toastr/toastr.min.css" rel="stylesheet">
+
+<!-- highlighter -->
+<script type="text/javascript" src="${request.contextPath}/plugins/highlighter/js/highlight.min.js"></script>
+<link rel="stylesheet" href="${request.contextPath}/plugins/highlighter/css/monokai.min.css">
+
+<!-- docs -->
+<link rel="stylesheet" href="${request.contextPath}/plugins/docs/docs.css">
 
 <!-- loading插件 -->
-<script src="${request.contextPath}/resources/spin/spin.min.js"></script>
-<link href="${request.contextPath}/resources/spin/spin.css" rel="stylesheet">
-
-<!-- common css -->
-<link href="${request.contextPath}/css/common.css?_t=${.now}" rel="stylesheet">
-
-<!-- table multiselect插件 -->
-<script src="${request.contextPath}/resources/multiselect/multiselect.js"></script>
+<script src="${request.contextPath}/plugins/spin/spin.min.js"></script>
+<link href="${request.contextPath}/plugins/spin/spin.css" rel="stylesheet">
 
 <!-- jsonview插件 -->
-<script src="${request.contextPath}/resources/json-viewer/jquery.json-viewer.js"></script>
-<link href="${request.contextPath}/resources/json-viewer/jquery.json-viewer.css" rel="stylesheet">
+<script src="${request.contextPath}/plugins/json-viewer/jquery.json-viewer.js"></script>
+<link href="${request.contextPath}/plugins/json-viewer/jquery.json-viewer.css" rel="stylesheet">
 
-<!-- echarts插件 -->
-<script type="text/javascript" src="${request.contextPath}/resources/echarts/echarts.min.js"></script>
-
-<!-- clipboard插件 -->
-<script type="text/javascript" src="${request.contextPath}/resources/clipboard/clipboard.js"></script>
-<!-- js -->
+<!-- 自定义资源引入 -->
+<script type="text/javascript" src="${request.contextPath}/assets/js/common.js?_t=${.now}"></script>
+<script type="text/javascript" src="${request.contextPath}/assets/js/lineChart.js?_t=${.now}"></script>
+<link href="${request.contextPath}/assets/css/common.css" rel="stylesheet">
+<!--定义全局变量-->
 <script>
-	var contextPath = "${request.contextPath}";
+    var contextPath = "${request.contextPath}";
 </script>
-<script type="text/javascript" src="${request.contextPath}/js/common.js?_t=${.now}"></script>
-<script type="text/javascript" src="${request.contextPath}/js/lineChart.js?_t=${.now}"></script>

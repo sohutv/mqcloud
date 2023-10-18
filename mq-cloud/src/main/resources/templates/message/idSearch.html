@@ -1,0 +1,35 @@
+<#if response.OK>
+	<tbody>
+		<tr id="${response.result.msgId}" date-data="${response.result.storeTimestamp?c}">
+			<td rowspan="2" class="text-center" style="padding-left:0px;">1</td>
+			<td>${response.result.bornHostString}</td>
+			<td data-placement="bottom" data-tooltip="true" title="存储时间:${response.result.storeTimestamp?number_to_datetime?string("yyyy-MM-dd HH:mm:ss.SSS")}">${response.result.bornTimestamp?number_to_datetime?string("yyyy-MM-dd HH:mm:ss.SSS")}</td>
+			<td data-tooltip="true" title="偏移量:${response.result.queueOffset}">${response.result.broker!}:${response.result.queueId}</td>
+			<td>${response.result.keys!}</td>
+			<td>${response.result.tags!}</td>
+			<td>&nbsp;<button type="button" class="btn btn-xs btn-outline-secondary" data-tooltip="true" title="查看消息轨迹" onclick=track(${response.result.toJson()}) data-target="#trackModal" data-toggle="modal"><i class="fas fa-eye"></i></button>
+			<#if traceEnabled>
+				<button type="button" class="btn btn-xs btn-outline-secondary" data-tooltip="true" title="查看追踪信息" onclick="traceNoTime('${response.result.msgId}')"><i class="fas fa-shoe-prints"></i></button>
+			</#if>
+			</td>
+			<td><input title="选择消息：1" data-tooltip="true" type="checkbox" data="${response.result.offsetMsgId}" dataIdx="1"></td>
+		</tr>
+		<tr>
+			<td style="border-top-width: 0px;" colspan="7" data-tooltip="true" title="序列化方式:<#if response.result.messageBodySerializer??>${response.result.messageBodySerializer.getName()}(${response.result.messageBodyTypeString!})<#else>${response.result.messageBodyTypeString!}</#if>,大小:${response.result.formatMsgLength}"><#if response.result.decodedBody?length gt 1000><pre>${response.result.decodedBody}</pre><#else>${response.result.decodedBody}</#if></td>
+		</tr>
+	</tbody>
+	<script>
+		$(function() {
+	        $('[data-tooltip="true"]').tooltip({
+				boundary: 'window'
+	        });
+		});
+	</script>
+<#else>
+	<tbody>
+		<tr class="no_more_data"><td colspan=8 class="text-center">查询异常！${response.message}</td></tr>
+	</tbody>
+</#if>
+<script>
+	$("#pager").hide();
+</script>

@@ -250,24 +250,19 @@ public class ProduceTrafficLineChartData implements LineChartData {
         yAxisGroupList.add(sizeYAxisGroup);
         lineChart.setyAxisGroupList(yAxisGroupList);
 
-        lineChart.setSubTitle("日期: "+curDate+", 消息量峰值: " + formatCount(maxCount) + "/分, 消息大小峰值: " + formatSize(maxSize) + "/分, "
-                + "消息总量:" + formatCount(totalCount) + ", 消息总大小: " + formatSize(totalSize) + "<br>"
-                + "日期: "+curDateBefore+", 消息量峰值: " + formatCount(maxCountDayBefore) + "/分, 消息大小峰值: " + formatSize(maxSizeDayBefore) + "/分, "
-                + "消息总量:" + formatCount(totalCountDayBefore) + ", 消息总大小: " + formatSize(totalSizeDayBefore) + "<br>");
-        
         lineChart.setHeight(450);
-        lineChart.setSubTitle("<table cellspacing='0' cellpadding='0' style='background-color: #f5f5f5'><thead><tr>"
-                + "<td>日期</td><td>消息量峰值</td><td>消息总量</td><td>消息大小峰值</td><td>消息总大小</td></tr></thead>"
+        lineChart.setOverview("<table class='table table-sm'><thead><tr>"
+                + "<th>日期</th><th>消息量峰值</th><th>消息总量</th><th>消息大小峰值</th><th>消息总大小</th></tr></thead>"
                 + "<tbody><tr><td>"+curDate+"</td>"
-                + "<td>"+formatCount(maxCount)+"/分</td>"
-                + "<td>"+formatCount(totalCount)+"</td>"
-                + "<td>"+formatSize(maxSize)+"/分</td>"
-                + "<td>"+formatSize(totalSize)+"</td>"
+                + "<td title='"+maxCount+"'>"+formatCount(maxCount)+"/分</td>"
+                + "<td title='"+totalCount+"'>"+formatCount(totalCount)+"</td>"
+                + "<td title='"+maxSize+"'>"+formatSize(maxSize)+"/分</td>"
+                + "<td title='"+totalSize+"'>"+formatSize(totalSize)+"</td>"
                 + "</tr><tr><td>"+curDateBefore+"</td>"
-                + "<td>"+formatCount(maxCountDayBefore)+"/分</td>"
-                + "<td>"+formatCount(totalCountDayBefore)+"</td>"
-                + "<td>"+formatSize(maxSizeDayBefore)+"/分</td>"
-                + "<td>"+formatSize(totalSizeDayBefore)+"</td>"
+                + "<td title='"+maxCountDayBefore+"'>"+formatCount(maxCountDayBefore)+"/分</td>"
+                + "<td title='"+totalCountDayBefore+"'>"+formatCount(totalCountDayBefore)+"</td>"
+                + "<td title='"+maxSizeDayBefore+"'>"+formatSize(maxSizeDayBefore)+"/分</td>"
+                + "<td title='"+totalSizeDayBefore+"'>"+formatSize(totalSizeDayBefore)+"</td>"
                 + "</tr></tbody></table>");
 
         lineChart.setDataMap(dataMap);
@@ -285,9 +280,9 @@ public class ProduceTrafficLineChartData implements LineChartData {
     private String formatCount(long maxCount) {
         String maxCountShow = "";
         if(maxCount > 100000000) {
-            maxCountShow = String.format("%.2f", maxCount / 100000000F) + "亿("+maxCount+")";
+            maxCountShow = String.format("%.2f", maxCount / 100000000F) + "亿";
         } else if(maxCount > 10000) {
-            maxCountShow = String.format("%.2f", maxCount / 10000F) + "万("+maxCount+")";
+            maxCountShow = String.format("%.2f", maxCount / 10000F) + "万";
         } else {
             maxCountShow = String.valueOf(maxCount);
         }

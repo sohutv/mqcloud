@@ -26,6 +26,11 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import javax.validation.Valid;
 import java.text.ParseException;
 import java.util.*;
+import java.util.concurrent.RejectedExecutionException;
+
+import static com.sohu.tv.mq.cloud.bo.Audit.StatusEnum.AUDITING;
+import static com.sohu.tv.mq.cloud.bo.Audit.StatusEnum.INIT;
+import static com.sohu.tv.mq.cloud.util.Status.WEB_ERROR;
 
 /**
  * 审核
@@ -121,6 +126,12 @@ public class AuditController extends AdminViewController {
 
     @Autowired
     private MQCloudConfigHelper mqCloudConfigHelper;
+
+    @Autowired
+    private AuditTimespanMessageExportService auditTimespanMessageExportService;
+
+    @Autowired
+    private MessageExportService messageExportService;
 
     /**
      * 审核主列表
@@ -221,7 +232,7 @@ public class AuditController extends AdminViewController {
         }
         // 校验状态是否合法
         Audit audit = auditResult.getResult();
-        if (StatusEnum.INIT.getStatus() != audit.getStatus()) {
+        if (INIT.getStatus() != audit.getStatus()) {
             return getAuditStatusError(audit.getStatus());
         }
 
@@ -231,7 +242,7 @@ public class AuditController extends AdminViewController {
         updateAudit.setAuditor(userInfo.getUser().getEmail());
         updateAudit.setStatus(StatusEnum.REJECT.getStatus());
         updateAudit.setRefuseReason(refuseReason);
-        Result<Integer> updateResult = auditService.updateAudit(updateAudit);
+        Result<Integer> updateResult = auditService.updateAudit(updateAudit, INIT.getStatus());
         if (updateResult.isOK()) {
             // 拼装提示消息
             TypeEnum typeEnum = TypeEnum.getEnumByType(audit.getType());
@@ -535,7 +546,7 @@ public class AuditController extends AdminViewController {
         }
         // 校验是否合法
         Audit audit = auditResult.getResult();
-        if (StatusEnum.INIT.getStatus() != audit.getStatus()) {
+        if (INIT.getStatus() != audit.getStatus()) {
             return getAuditStatusError(audit.getStatus());
         }
 
@@ -581,7 +592,7 @@ public class AuditController extends AdminViewController {
         if (TypeEnum.NEW_TOPIC.getType() != audit.getType()) {
             return Result.getResult(Status.PARAM_ERROR);
         }
-        if (StatusEnum.INIT.getStatus() != audit.getStatus()) {
+        if (INIT.getStatus() != audit.getStatus()) {
             return getAuditStatusError(audit.getStatus());
         }
 
@@ -635,7 +646,7 @@ public class AuditController extends AdminViewController {
         }
         // 校验是否合法
         Audit audit = auditResult.getResult();
-        if (StatusEnum.INIT.getStatus() != audit.getStatus()) {
+        if (INIT.getStatus() != audit.getStatus()) {
             return getAuditStatusError(audit.getStatus());
         }
 
@@ -715,7 +726,7 @@ public class AuditController extends AdminViewController {
         }
         // 校验状态是否合法
         Audit audit = auditResult.getResult();
-        if (StatusEnum.INIT.getStatus() != audit.getStatus()) {
+        if (INIT.getStatus() != audit.getStatus()) {
             return getAuditStatusError(audit.getStatus());
         }
 
@@ -804,7 +815,7 @@ public class AuditController extends AdminViewController {
         }
         // 校验状态是否合法
         Audit audit = auditResult.getResult();
-        if (StatusEnum.INIT.getStatus() != audit.getStatus()) {
+        if (INIT.getStatus() != audit.getStatus()) {
             return getAuditStatusError(audit.getStatus());
         }
 
@@ -854,7 +865,7 @@ public class AuditController extends AdminViewController {
         }
         // 校验状态是否合法
         Audit audit = auditResult.getResult();
-        if (StatusEnum.INIT.getStatus() != audit.getStatus()) {
+        if (INIT.getStatus() != audit.getStatus()) {
             return getAuditStatusError(audit.getStatus());
         }
 
@@ -902,7 +913,7 @@ public class AuditController extends AdminViewController {
         }
         // 校验状态是否合法
         Audit audit = auditResult.getResult();
-        if (StatusEnum.INIT.getStatus() != audit.getStatus()) {
+        if (INIT.getStatus() != audit.getStatus()) {
             return getAuditStatusError(audit.getStatus());
         }
 
@@ -952,7 +963,7 @@ public class AuditController extends AdminViewController {
         }
         // 校验状态是否合法
         Audit audit = auditResult.getResult();
-        if (StatusEnum.INIT.getStatus() != audit.getStatus()) {
+        if (INIT.getStatus() != audit.getStatus()) {
             return getAuditStatusError(audit.getStatus());
         }
 
@@ -1006,7 +1017,7 @@ public class AuditController extends AdminViewController {
         }
         // 校验状态是否合法
         Audit audit = auditResult.getResult();
-        if (StatusEnum.INIT.getStatus() != audit.getStatus()) {
+        if (INIT.getStatus() != audit.getStatus()) {
             return getAuditStatusError(audit.getStatus());
         }
 
@@ -1060,7 +1071,7 @@ public class AuditController extends AdminViewController {
         }
         // 校验状态是否合法
         Audit audit = auditResult.getResult();
-        if (StatusEnum.INIT.getStatus() != audit.getStatus()) {
+        if (INIT.getStatus() != audit.getStatus()) {
             return getAuditStatusError(audit.getStatus());
         }
 
@@ -1107,7 +1118,7 @@ public class AuditController extends AdminViewController {
         }
         // 校验状态是否合法
         Audit audit = auditResult.getResult();
-        if (StatusEnum.INIT.getStatus() != audit.getStatus()) {
+        if (INIT.getStatus() != audit.getStatus()) {
             return getAuditStatusError(audit.getStatus());
         }
 
@@ -1194,15 +1205,15 @@ public class AuditController extends AdminViewController {
      * @return
      */
     private boolean agreeAndTip(Audit audit, String auditMail, String tip) {
-        return agreeAndTip(audit, auditMail, tip, false);
+        return agreeAndTip(audit, auditMail, tip, false, INIT.getStatus());
     }
 
-    private boolean agreeAndTip(Audit audit, String auditMail, String tip, boolean skipSendEmail) {
+    private boolean agreeAndTip(Audit audit, String auditMail, String tip, boolean skipSendEmail, int oldStatus) {
         Audit updateAudit = new Audit();
         updateAudit.setId(audit.getId());
         updateAudit.setAuditor(auditMail);
         updateAudit.setStatus(StatusEnum.AGREE.getStatus());
-        Result<Integer> updateResult = auditService.updateAudit(updateAudit);
+        Result<Integer> updateResult = auditService.updateAudit(updateAudit, oldStatus);
         if (updateResult.isOK()) {
             if (skipSendEmail) {
                 return true;
@@ -1248,7 +1259,7 @@ public class AuditController extends AdminViewController {
         }
         // 校验状态是否合法
         Audit audit = auditResult.getResult();
-        if (StatusEnum.INIT.getStatus() != audit.getStatus()) {
+        if (INIT.getStatus() != audit.getStatus()) {
             return getAuditStatusError(audit.getStatus());
         }
 
@@ -1289,7 +1300,7 @@ public class AuditController extends AdminViewController {
         }
         // 校验状态是否合法
         Audit audit = auditResult.getResult();
-        if (StatusEnum.INIT.getStatus() != audit.getStatus()) {
+        if (INIT.getStatus() != audit.getStatus()) {
             return getAuditStatusError(audit.getStatus());
         }
         // 查询审核记录中未成功发送的消息
@@ -1308,7 +1319,7 @@ public class AuditController extends AdminViewController {
                 // 如果是http接入的默认用户，则不需要发送邮件
                 && mqCloudConfigHelper.checkApiAuditUserEmail(userResult.getResult().getEmail());
         // 更新申请状态
-        boolean updateOK = agreeAndTip(audit, userInfo.getUser().getEmail(), null, skipSendEmail);
+        boolean updateOK = agreeAndTip(audit, userInfo.getUser().getEmail(), null, skipSendEmail, INIT.getStatus());
         if (updateOK) {
             return Result.getOKResult();
         }
@@ -1378,7 +1389,7 @@ public class AuditController extends AdminViewController {
         }
         // 校验状态是否合法
         Audit audit = auditResult.getResult();
-        if (StatusEnum.INIT.getStatus() != audit.getStatus()) {
+        if (INIT.getStatus() != audit.getStatus()) {
             return getAuditStatusError(audit.getStatus());
         }
 
@@ -1431,7 +1442,7 @@ public class AuditController extends AdminViewController {
         }
         // 校验状态是否合法
         Audit audit = auditResult.getResult();
-        if (StatusEnum.INIT.getStatus() != audit.getStatus()) {
+        if (INIT.getStatus() != audit.getStatus()) {
             return getAuditStatusError(audit.getStatus());
         }
         // 查询 topic更新审核记录
@@ -1484,7 +1495,7 @@ public class AuditController extends AdminViewController {
         }
         // 校验状态是否合法
         Audit audit = auditResult.getResult();
-        if (StatusEnum.INIT.getStatus() != audit.getStatus()) {
+        if (INIT.getStatus() != audit.getStatus()) {
             return getAuditStatusError(audit.getStatus());
         }
 
@@ -1597,7 +1608,7 @@ public class AuditController extends AdminViewController {
         }
         // 校验状态是否合法
         Audit audit = auditResult.getResult();
-        if (StatusEnum.INIT.getStatus() != audit.getStatus()) {
+        if (INIT.getStatus() != audit.getStatus()) {
             return getAuditStatusError(audit.getStatus());
         }
 
@@ -1633,7 +1644,7 @@ public class AuditController extends AdminViewController {
     }
 
     private Result<?> getAuditStatusError(int status) {
-        return Result.getResult(Status.WEB_ERROR).setMessage("已" + StatusEnum.getNameByStatus(status));
+        return Result.getResult(WEB_ERROR).setMessage("已" + StatusEnum.getNameByStatus(status));
     }
 
     /**
@@ -1654,7 +1665,7 @@ public class AuditController extends AdminViewController {
         }
         // 校验状态是否合法
         Audit audit = auditResult.getResult();
-        if (StatusEnum.INIT.getStatus() != audit.getStatus()) {
+        if (INIT.getStatus() != audit.getStatus()) {
             return getAuditStatusError(audit.getStatus());
         }
         // 查询审核记录
@@ -1689,6 +1700,99 @@ public class AuditController extends AdminViewController {
             return Result.getOKResult();
         }
         return Result.getResult(Status.DB_UPDATE_ERR_CONSUME_TIMESPAN_MESSAGE_OK);
+    }
+
+    /**
+     * 消费时间段导出
+     *
+     * @param userInfo
+     * @param aid
+     * @return
+     * @throws ParseException
+     */
+    @ResponseBody
+    @RequestMapping(value = "/timespanMessageExport", method = RequestMethod.POST)
+    public Result<?> timespanMessageExport(UserInfo userInfo, @RequestParam("aid") long aid) throws ParseException {
+        // 获取audit
+        Result<Audit> auditResult = auditService.queryAudit(aid);
+        if (auditResult.isNotOK()) {
+            return auditResult;
+        }
+        // 校验状态是否合法
+        Audit audit = auditResult.getResult();
+        if (INIT.getStatus() != audit.getStatus()) {
+            return getAuditStatusError(audit.getStatus());
+        }
+        // 查询审核记录
+        Result<AuditTimespanMessageExport> result = auditTimespanMessageExportService.query(aid);
+        if (result.isNotOK()) {
+            return result;
+        }
+        AuditTimespanMessageExport messageExport = result.getResult();
+        try {
+            messageExportService.exportAsync(audit.getId(), messageExport.getTopic(), messageExport.getStart(), messageExport.getEnd(), exportResult -> {
+                if (exportResult.isNotOK()) {
+                    logger.error("export message error, aid:{}, messageExport:{}", audit.getId(), messageExport);
+                    return;
+                }
+                String tip = null;
+                String downloadUrl = (String) exportResult.getResult();
+                if (downloadUrl != null && downloadUrl.startsWith("http")) {
+                    tip = "<a target='_blank' href='" + downloadUrl + "'>" + messageExport.getTopic() + "</a>";
+                } else {
+                    tip = messageExport.getTopic();
+                }
+                tip += "(" + messageExport.getStartFormat() + "," + messageExport.getEndFormat() + ")";
+                agreeAndTip(audit, userInfo.getUser().getEmail(), tip, false, AUDITING.getStatus());
+            });
+        } catch (RejectedExecutionException e) {
+            logger.warn("exportMessage reject, aid:{}, messageExport:{}, error:{}", audit.getId(),
+                    messageExport, e.toString());
+            return Result.getResult(WEB_ERROR).setMessage("为了保证服务稳定，只允许执行一个导出任务，请稍后再试");
+        }
+        return Result.getOKResult();
+    }
+
+    /**
+     * 消息导出详情
+     *
+     * @param aid
+     * @param map
+     * @return
+     */
+    @RequestMapping("/messageExportDetail")
+    public String messageExportDetail(@RequestParam(value = "aid") long aid, Map<String, Object> map) {
+        Result<MessageExport> messageExportResult = messageExportService.getMessageExport(aid);
+        setResult(map, messageExportResult);
+        return adminViewModule() + "/messageExportDetail";
+    }
+
+    /**
+     * 消息重新导出
+     *
+     * @param aid
+     * @param map
+     * @return
+     */
+    @ResponseBody
+    @RequestMapping(value = "/messageReExport", method = RequestMethod.POST)
+    public Result<?> messageReExport(UserInfo userInfo, @RequestParam(value = "aid") long aid) {
+        logger.info("user:{} reExport aid:{}", userInfo, aid);
+        Result<Integer> result = messageExportService.deleteMessageExport(aid);
+        if (result.isNotOK()) {
+            return result;
+        }
+        if (!Objects.equals(result.getResult(), 1)) {
+            return Result.getResult(WEB_ERROR).setMessage("删除失败");
+        }
+        Result<Integer> auditResult = auditService.updateAuditStatus(aid, INIT.getStatus(), AUDITING.getStatus());
+        if (auditResult.isNotOK()) {
+            return auditResult;
+        }
+        if (!Objects.equals(auditResult.getResult(), 1)) {
+            return Result.getResult(WEB_ERROR).setMessage("状态更改失败");
+        }
+        return Result.getOKResult();
     }
 
     /**

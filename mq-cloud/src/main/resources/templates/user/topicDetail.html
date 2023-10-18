@@ -1,40 +1,57 @@
-<div class="tabbable-custom">
-    <ul class="nav nav-tabs" id="tabs">
-        <li id="topology" class="active" data-url="${request.contextPath}/user/topic/${response.result}/topology?<#if RequestParameters.from??>from=${RequestParameters.from}</#if><#if RequestParameters.currentPage??>&currentPage=${RequestParameters.currentPage}</#if>"><a href="?tab=topology">详情</a></li>
-        <li id="produce" data-url="${request.contextPath}/topic/${response.result}/produce/progress"><a href="?tab=produce">生产详情</a></li>
-        <li id="consume" data-url="${request.contextPath}/consumer/progress?tid=${response.result}<#if RequestParameters.consumer??>&consumer=${RequestParameters.consumer}</#if><#if RequestParameters.time??>&time=${RequestParameters.time}</#if><#if RequestParameters.consumerId??>&consumerId=${RequestParameters.consumerId}</#if><#if RequestParameters.currentPage??>&currentPage=${RequestParameters.currentPage}</#if>"><a href="?tab=consume">消费详情</a></li>
-        <li id="msg" data-url="${request.contextPath}/topic/message/index?tid=${response.result}<#if RequestParameters.msgId??>&msgId=${RequestParameters.msgId}</#if><#if RequestParameters.time??>&time=${RequestParameters.time}</#if>"><a href="?tab=msg">消息</a></li>
-    </ul>
-    <input type="hidden" id="curTopicId" value="${response.result}">
-    <div class="tab-content" id="tabContent">
-        <div class="tab-pane active" id="topologyTab">
-        </div>
-        <div class="tab-pane" id="produceTab">
-        </div>
-        <div class="tab-pane" id="consumeTab">
-        </div>
-        <div class="tab-pane" id="msgTab">
+<div class="row">
+    <div class="col-12">
+        <div class="card card-secondary card-outline card-outline-tabs">
+            <div class="card-header p-0 border-bottom-0">
+                <ul class="nav nav-tabs">
+                    <li class="nav-item">
+                        <a class="nav-link" data-toggle="tab" href="#myTab" role="tab" id="topology" data-url="${request.contextPath}/user/topic/${tid}/topology?<#if RequestParameters.from??>from=${RequestParameters.from}</#if><#if RequestParameters.currentPage??>&currentPage=${RequestParameters.currentPage}</#if>">详情</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-toggle="tab" href="#myTab" role="tab" id="produce" data-url="${request.contextPath}/topic/${tid}/produce/progress">生产详情</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-toggle="tab" href="#myTab" role="tab" id="consume" data-url="${request.contextPath}/consumer/progress?tid=${tid}<#if RequestParameters.consumer??>&consumer=${RequestParameters.consumer}</#if><#if RequestParameters.time??>&time=${RequestParameters.time}</#if><#if RequestParameters.consumerId??>&consumerId=${RequestParameters.consumerId}</#if><#if RequestParameters.currentPage??>&currentPage=${RequestParameters.currentPage}</#if>">消费详情</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-toggle="tab" href="#myTab" role="tab" id="msg" data-url="${request.contextPath}/topic/message/index?tid=${tid}<#if RequestParameters.msgId??>&msgId=${RequestParameters.msgId}</#if><#if RequestParameters.time??>&time=${RequestParameters.time}</#if>">消息</a>
+                    </li>
+                </ul>
+            </div>
+            <div class="card-body">
+                <div class="tab-content">
+                    <div class="tab-pane show fade active">
+                        <div id="tabContent"></div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
 <script type="text/javascript">
+    var clipboard = null;
     function showTab(tab){
-    	$.get($("#"+tab).attr("data-url"), function (result) {
-        	$("#"+tab+"Tab").html(result);
+        $("#"+tab).tab('show');
+        post($("#"+tab).attr("data-url"), {}, function (result) {
+            $("#tabContent").html(result);
+            $("[data-toggle='tooltip']").tooltip({boundary: 'window'});
+            $("[data-toggle='modal']").tooltip({boundary: 'window'});
+            if (clipboard) {
+                clipboard.destroy();
+            }
+            clipboard = new ClipboardJS('.copied');
+            clipboard.on('success', function (e) {
+                toastr.success(e.text + "复制成功");
+            });
         });
     }
-    function refreshActiveTab(){
-    	var tab = getQueryString("tab");
-    	if(tab){
-    		$("#"+tab).addClass("active").siblings().removeClass("active");
-    		$("#"+tab+"Tab").addClass("active").siblings().removeClass("active");
-    	} else {
-    		tab = "topology";
-    	}
-    	showTab(tab);
-    	$("#tabs li a").tooltip({placement:"bottom"});
-    }
     $(function(){
-    	refreshActiveTab();
+        var tab = getQueryString("tab");
+        if(!tab){
+            tab = "topology";
+        }
+        showTab(tab);
+        $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
+            showTab(e.target.id);
+        })
     });
 </script>

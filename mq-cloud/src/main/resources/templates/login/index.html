@@ -1,80 +1,83 @@
-<div id="loginModal" class="modal fade" tabindex="-1" data-width="400" data-backdrop="static" data-keyboard="false">
-	<div class="modal-dialog">
-		<div class="modal-content">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<#include "../inc/include.html">
+	<title>MQCloud</title>
+</head>
+	<body class="hold-transition login-page">
+		<div class="login-box">
+			<div class="card card-outline card-secondary">
+				<div class="card-header text-center">
+					<a href="javascript:void(0)" class="h1"><b>MQ</b>Cloud</a>
+				</div>
+				<div class="card-body">
+					<p class="login-box-msg">您好，欢迎使用，请登录！</p>
 
-			<div class="modal-header">
-				<h4 class="modal-title">您好，欢迎使用MQCloud</h4>
-			</div>
-
-			<!-- 用户信息补全 -->
-			<form class="form-horizontal form-bordered form-row-stripped" id="loginForm">
-				<div class="modal-body">
-					<div class="row">
-						<div class="col-md-12">
-							<div class="form-body">
-								<div class="form-group">
-									<label class="control-label col-md-4"> 邮箱: </label>
-									<div class="col-md-5">
-										<input type="text" id="email" name="email" placeholder="邮箱" class="form-control" />
-									</div>
-								</div>
-								<div class="form-group">
-									<label class="control-label col-md-4"> 密码: </label>
-									<div class="col-md-5">
-										<input type="password" name="password" id="password"
-											value="" placeholder="密码"
-											class="form-control" />
-									</div>
+					<form id="loginForm">
+						<div class="input-group mb-3">
+							<input type="email" class="form-control" placeholder="邮箱" name="email" id="email">
+							<div class="input-group-append">
+								<div class="input-group-text">
+									<span class="fas fa-envelope"></span>
 								</div>
 							</div>
 						</div>
-					</div>
+						<div class="input-group mb-3">
+							<input type="password" class="form-control" placeholder="密码" name="password" id="password">
+							<div class="input-group-append">
+								<div class="input-group-text">
+									<span class="fas fa-lock"></span>
+								</div>
+							</div>
+						</div>
+						<div class="row">
+							<div class="col-12">
+								<button type="button" class="btn btn-primary btn-block" id="loginBtn" onclick="login()">登录</button>
+							</div>
+						</div>
+					</form>
+					<#if !response.result?? || (response.result?? && response.result == 1)>
+						<p class="mb-0 small text-center mt-1">
+							<a href="javascript:void(0)" onclick="register()">没有账户？去注册！</a>
+						</p>
+					</#if>
 				</div>
-				<div class="modal-footer">
-				<#if !response.result?? || (response.result?? && response.result == 1)>
-					<button type="button" class="btn btn-info" onclick="register()">注册</button>
-				</#if>
-					<button type="button" class="btn btn-primary" id="loginBtn" onclick="login()">登录</button>
-				</div>
-			</form>
+			</div>
 		</div>
-	</div>
-</div>
-<script>
-$(function(){
-	$("#loginModal").modal("show");
-})
-function login(){
-	if(!$("#email").val()) {
-		alert("邮箱不能为空");
-		return;
-	}
-	if(!$("#password").val()) {
-		alert("密码不能为空");
-		return;
-	}
-	disable("loginBtn");
-	$.post('${request.contextPath}/login/check',
-		$("#loginForm").serialize(),
-        function(data){
-            if(data.status == 200){
-				toastr.success("登录成功，系统将自动刷新");  
-				setTimeout("toTopicList()", 2000);
-		    }else{
-		    	toastr.error("登录失败！"+data.message);  
-		    	enable("loginBtn");
-		    }
-        }, 'json');
-}
-function toTopicList(){
-	var redirect = getQueryString("redirect");
-	if(redirect){
-		window.location.href = redirect;
-	} else {
-		window.location.href = "${request.contextPath}/user/topic";
-	}
-}
-function register(){
-	window.location.href= "${request.contextPath}/register";
-}
-</script>
+		<script>
+			function login(){
+				if(!$("#email").val()) {
+					alert("邮箱不能为空");
+					return;
+				}
+				if(!$("#password").val()) {
+					alert("密码不能为空");
+					return;
+				}
+				disable("loginBtn");
+				$.post('${request.contextPath}/login/check',
+						$("#loginForm").serialize(),
+						function(data){
+							if(data.status == 200){
+								toastr.success("登录成功，系统将自动刷新");
+								setTimeout("toTopicList()", 2000);
+							}else{
+								toastr.error("登录失败！"+data.message);
+								enable("loginBtn");
+							}
+						}, 'json');
+			}
+			function toTopicList(){
+				var redirect = getQueryString("redirect");
+				if(redirect){
+					window.location.href = redirect;
+				} else {
+					window.location.href = "${request.contextPath}/user/topic";
+				}
+			}
+			function register(){
+				window.location.href= "${request.contextPath}/register";
+			}
+		</script>
+	</body>
+</html>

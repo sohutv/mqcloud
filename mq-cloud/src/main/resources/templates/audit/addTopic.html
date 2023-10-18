@@ -1,97 +1,88 @@
 <#if response.notOK>
-<div class="modal-body">
-	<div class="form-body">
-		<div class="form-group">
-			<div>异常数据</div>
+	<div class="text-center">异常数据</div>
+<#else>
+	<div class="form-group row">
+		<label class="col-form-label col-md-3"> Topic: </label>
+		<div class="col-md-7">
+			<input type="text" value="${response.result.name}" readonly="readonly" class="form-control" />
 		</div>
 	</div>
-</div>
-<#else>
-<div class="modal-body">
-	<div class="row">
-		<div class="col-md-12">
-			<div class="form-body">
-				<div class="form-group">
-					<label class="control-label col-md-3"> Topic: </label>
-			        <div class="col-md-7">
-						<input type="text" value="${response.result.name}" readonly="readonly" class="form-control" />
-					</div>
-				</div>
-				<div class="form-group">
-					<label class="control-label col-md-3"> 生产者: </label>
-					<div class="col-md-7">
-						<input type="text" value="${response.result.producer}" readonly="readonly" class="form-control" />
-					</div>
-				</div>
-				<div class="form-group">
-					<label class="control-label col-md-3"> 队列数量: </label>
-					<div class="col-md-6">
-						<input type="text" value="${response.result.queueNum}" readonly="readonly" class="form-control" />
-					</div>
-				</div>
-				<div class="form-group">
-					<label class="control-label col-md-3"> 序列化方式: </label>
-					<div class="col-md-6 checkbox">
-					    <input type="radio" name="serializer" value="0" disabled="disabled" <#if response.result.serializer == 0>checked</#if>>Protobuf
-					    <input type="radio" name="serializer" value="1" disabled="disabled" <#if response.result.serializer == 1>checked</#if>>String
-					</div>
-				</div>
-				<div class="form-group">
-					<label class="control-label col-md-3"> 消息顺序: </label>
-					<div class="col-md-6 checkbox">
-					    <input type="radio" name="ordered" value="0" disabled="disabled" <#if response.result.ordered == 0>checked</#if>>局部有序
-					    <input type="radio" name="ordered" value="1" disabled="disabled" <#if response.result.ordered == 1>checked</#if>>全局有序
-					</div>
-				</div>
-				<div class="form-group">
-					<label class="control-label col-md-3"> 开启trace: </label>
-					<div class="col-md-6 checkbox">
-					    <input type="radio" name="traceEnabled" value="0" disabled="disabled" <#if !response.result.traceEnabled()>checked</#if>>否
-					    <input type="radio" name="traceEnabled" value="1" disabled="disabled" <#if response.result.traceEnabled()>checked</#if>>是
-					</div>
-				</div>
-				<div class="form-group">
-					<label class="control-label col-md-3"> 开启事务: </label>
-					<div class="col-md-6 checkbox">
-					    <input type="radio" name="transactionEnabled" value="0" disabled="disabled" <#if !response.result.transactionEnabled()>checked</#if>>否
-					    <input type="radio" name="transactionEnabled" value="1" disabled="disabled" <#if response.result.transactionEnabled()>checked</#if>>是
-					</div>
-				</div>
-				<div class="form-group">
-					<label class="control-label col-md-3"> 使用环境: </label>
-					<div class="col-md-6 checkbox">
-					    <input type="radio" name="testEnabled" value="0" disabled="disabled" <#if !response.result.testEnabled()>checked</#if>>线上
-					    <input type="radio" name="testEnabled" value="1" disabled="disabled" <#if response.result.testEnabled()>checked</#if>>测试
-					</div>
-				</div>
-				<div class="form-group">
-					<label class="control-label col-md-3"> 消息量: </label>
-					<div class="col-md-6">
-						<div class="input-group">
-							<input type="text" value="${response.result.qpd}" readonly="readonly" class="form-control" />
-							<span class="input-group-addon">条/天</span>
-						</div>
-					</div>
-				</div>
-				<div class="form-group">
-					<label class="control-label col-md-3"> 高峰消息量: </label>
-					<div class="col-md-6">
-						<div class="input-group">
-							<input type="text" value="${response.result.qps}" readonly="readonly" class="form-control" />
-							<span class="input-group-addon">条/秒</span>
-						</div>
-					</div>
-				</div>
-				<div class="form-group">
-					<label class="control-label col-md-3"> 通信协议: </label>
-					<div class="col-md-6 checkbox">
-						<input type="radio" value="0" disabled="disabled" <#if response.result.protocol == 0>checked</#if>>RocketMQ
-						<input type="radio" value="1" disabled="disabled" <#if response.result.protocol == 1>checked</#if>>HTTP
-						<input type="radio" value="2" disabled="disabled" <#if response.result.protocol == 2>checked</#if>>Proxy Remoting
-					</div>
+	<div class="form-group row">
+		<label class="col-form-label col-md-3"> 生产者: </label>
+		<div class="col-md-7">
+			<input type="text" value="${response.result.producer}" readonly="readonly" class="form-control" />
+		</div>
+	</div>
+	<div class="form-group row">
+		<label class="col-form-label col-md-3"> 队列数量: </label>
+		<div class="col-md-7">
+			<input type="text" value="${response.result.queueNum}" readonly="readonly" class="form-control" />
+		</div>
+	</div>
+	<div class="form-group row">
+		<label class=" col-md-3"> 序列化方式: </label>
+		<div class="col-md-7 checkbox">
+			<input type="radio" name="serializer" value="0" disabled="disabled" <#if response.result.serializer == 0>checked</#if>>Protobuf
+			<input type="radio" name="serializer" value="1" disabled="disabled" <#if response.result.serializer == 1>checked</#if>>String
+		</div>
+	</div>
+	<div class="form-group row">
+		<label class=" col-md-3"> 消息顺序: </label>
+		<div class="col-md-7 checkbox">
+			<input type="radio" name="ordered" value="0" disabled="disabled" <#if response.result.ordered == 0>checked</#if>>局部有序
+			<input type="radio" name="ordered" value="1" disabled="disabled" <#if response.result.ordered == 1>checked</#if>>全局有序
+		</div>
+	</div>
+	<div class="form-group row">
+		<label class=" col-md-3"> 开启trace: </label>
+		<div class="col-md-7 checkbox">
+			<input type="radio" name="traceEnabled" value="0" disabled="disabled" <#if !response.result.traceEnabled()>checked</#if>>否
+			<input type="radio" name="traceEnabled" value="1" disabled="disabled" <#if response.result.traceEnabled()>checked</#if>>是
+		</div>
+	</div>
+	<div class="form-group row">
+		<label class=" col-md-3"> 开启事务: </label>
+		<div class="col-md-7 checkbox">
+			<input type="radio" name="transactionEnabled" value="0" disabled="disabled" <#if !response.result.transactionEnabled()>checked</#if>>否
+			<input type="radio" name="transactionEnabled" value="1" disabled="disabled" <#if response.result.transactionEnabled()>checked</#if>>是
+		</div>
+	</div>
+	<div class="form-group row">
+		<label class=" col-md-3"> 使用环境: </label>
+		<div class="col-md-7 checkbox">
+			<input type="radio" name="testEnabled" value="0" disabled="disabled" <#if !response.result.testEnabled()>checked</#if>>线上
+			<input type="radio" name="testEnabled" value="1" disabled="disabled" <#if response.result.testEnabled()>checked</#if>>测试
+		</div>
+	</div>
+	<div class="form-group row">
+		<label class="col-form-label col-md-3"> 消息量: </label>
+		<div class="col-md-7">
+			<div class="input-group">
+				<input type="text" value="${response.result.qpd}" readonly="readonly" class="form-control" />
+				<div class="input-group-append">
+					<span class="input-group-text">条/天</span>
 				</div>
 			</div>
 		</div>
 	</div>
-</div>
+	<div class="form-group row">
+		<label class="col-form-label col-md-3"> 高峰消息量: </label>
+		<div class="col-md-7">
+			<div class="input-group">
+				<input type="text" value="${response.result.qps}" readonly="readonly" class="form-control" />
+				<div class="input-group-append">
+					<span class="input-group-text">条/秒</span>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="form-group row">
+		<label class=" col-md-3"> 通信协议: </label>
+		<div class="col-md-8 checkbox">
+			<input type="radio" value="0" disabled="disabled" <#if response.result.protocol == 0>checked</#if>>RocketMQ
+			<input type="radio" value="1" disabled="disabled" <#if response.result.protocol == 1>checked</#if>>HTTP
+			<input type="radio" value="2" disabled="disabled" <#if response.result.protocol == 2>checked</#if>>Proxy Remoting
+		</div>
+	</div>
+
 </#if>

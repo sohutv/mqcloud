@@ -48,7 +48,7 @@ public class MonitorServiceTask {
                 }
                 for (Cluster mqCluster : clusterService.getAllMQCluster()) {
                     // 测试环境，监控所有的集群；online环境，只监控online集群
-                    if (!mqCloudConfigHelper.isOnline() || mqCluster.online()) {
+                    if (mqCloudConfigHelper.needMonitor(mqCluster.online())) {
                         MonitorService monitorService = monitorServiceFactory.getMonitorService(mqCluster);
                         if (monitorService == null) {
                             logger.warn("monitorService is null, mqCluster:{}", mqCluster);

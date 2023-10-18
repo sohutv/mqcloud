@@ -220,7 +220,7 @@ public class RocketMQConsumer extends AbstractConfig {
                 return new Thread(r, "updateConsumerConfigThread-" + getGroup());
             }
         });
-        clientConfigScheduledExecutorService.scheduleAtFixedRate(new Runnable() {
+        clientConfigScheduledExecutorService.scheduleWithFixedDelay(new Runnable() {
             @Override
             public void run() {
                 try {
@@ -338,6 +338,8 @@ public class RocketMQConsumer extends AbstractConfig {
                 logger.warn("{} resetOffsetByTimeStamp err", getGroup(), e);
             }
         }
+        // 设置clientId
+        messageConsumer.setClientId(getMQClientInstance().getClientId());
     }
 
     /**

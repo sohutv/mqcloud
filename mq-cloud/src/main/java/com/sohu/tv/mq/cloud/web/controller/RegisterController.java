@@ -1,9 +1,14 @@
 package com.sohu.tv.mq.cloud.web.controller;
 
-import java.util.Map;
-
+import com.sohu.tv.mq.cloud.bo.User;
+import com.sohu.tv.mq.cloud.service.UserService;
+import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper;
+import com.sohu.tv.mq.cloud.util.Result;
+import com.sohu.tv.mq.cloud.util.Status;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -11,11 +16,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
-import com.sohu.tv.mq.cloud.bo.User;
-import com.sohu.tv.mq.cloud.service.UserService;
-import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper;
-import com.sohu.tv.mq.cloud.util.Result;
-import com.sohu.tv.mq.cloud.util.Status;
+import java.util.Map;
 
 /**
  * 注册
@@ -25,7 +26,8 @@ import com.sohu.tv.mq.cloud.util.Status;
  */
 @Controller
 @RequestMapping("/register")
-public class RegisterController extends ViewController {
+public class RegisterController {
+    private Logger logger = LoggerFactory.getLogger(this.getClass());
 
     @Autowired
     private UserService userService;
@@ -35,9 +37,8 @@ public class RegisterController extends ViewController {
     
     @RequestMapping
     public String index(Map<String, Object> map) {
-        setView(map, "index");
-        setResult(map,mqCloudConfigHelper.getIsOpenRegister());
-        return view();
+        Result.setResult(map, mqCloudConfigHelper.getIsOpenRegister());
+        return "register/index";
     }
 
     /**
@@ -79,10 +80,4 @@ public class RegisterController extends ViewController {
         Result<User> result = userService.save(user);
         return Result.getWebResult(result);
     }
-
-    @Override
-    public String viewModule() {
-        return "register";
-    }
-
 }

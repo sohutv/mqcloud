@@ -179,7 +179,8 @@ public class ClusterMonitorTask {
                         brokerService.update(mqCluster.getId(), broker.getAddr(), CheckStatusEnum.OK);
                     } catch (Exception e) {
                         brokerService.update(mqCluster.getId(), broker.getAddr(), CheckStatusEnum.FAIL);
-                        statList.add("bk:" + broker.getAddr() + ";Exception: " + e.getMessage());
+                        statList.add(broker.getBrokerName() + ":" + (broker.isMaster() ? "master" : "slave") + ":"
+                                + broker.getAddr() + ";Exception: " + e.getMessage());
                     }
                 }
                 return null;

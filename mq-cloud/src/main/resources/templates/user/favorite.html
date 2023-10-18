@@ -1,50 +1,44 @@
-<div id="favoriteModal" class="modal fade" tabindex="-1" data-width="400">
-	<div class="modal-dialog">
-		<div class="modal-content">
-			<div class="modal-header">
-				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-				<h4 class="modal-title">我的收藏</h4>
-			</div>
-			<table class="table table-striped table-hover" style="margin-top: 0px">
-				<colgroup>
-					<col width="50px">
-					<col>
-					<col width="160px">
-					<col width="30px">
-				</colgroup>
-				<thead>
+<div class="row">
+	<div class="col-12">
+		<div class="card">
+			<div class="card-body table-responsive p-0">
+				<table class="table table-striped table-hover text-nowrap">
+					<thead>
 					<tr>
-						<td>序号</td>
-						<td>topic</td>
-						<td>收藏时间</td>
-						<td></td>
+						<th>序号</th>
+						<th>topic</th>
+						<th>收藏时间</th>
+						<th></th>
 					</tr>
-				</thead>
-				<tbody id="favoriteTbody">
-					<tr>
-						<td colspan=4 class='text-center'>暂无数据</td>
-					</tr>
-				</tbody>
-			</table>
-			<div class="modal-footer">
-				<ul id="favoritePagination" style="float: right"></ul>
-			</div>
+					</thead>
+					<tbody>
+					<#if response.empty>
+						<tr>
+							<td colspan="4" class="text-center">暂无数据</td>
+						<tr>
+							<#else>
+							<#list response.result as favorite>
+						<tr>
+							<td>${(pagination.result.currentPage - 1)*pagination.result.numOfPage + favorite_index + 1}</td>
+							<td><a title="查看详情" href="${request.contextPath}/user/topic/${favorite.tid}/detail">${favorite.topic}</a></td>
+							<td>${favorite.createTime?string("yyyy-MM-dd HH:mm:ss")}</td>
+							<td><i class="fas fa-heart text-secondary pointer" onclick="deleteFavorite(${favorite.tid})" data-toggle="tooltip" title="取消收藏"></i></td>
+						</tr>
+						</#list>
+					</#if>
+					</tbody>
+				</table>
+			</div> <!-- /.card-body -->
+			<#if pagination.OK && pagination.result.totalPages gt 1>
+				<div class="card-footer clearfix">
+					<ul id="pagination" data-url="${request.contextPath}/user/favorite?" style="float:right"></ul>
+				</div>
+			</#if>
 		</div>
 	</div>
 </div>
 
 <script>
-	function showFavoriteList(currentPage){
-		if(!currentPage){
-			currentPage = 1;
-		}
-		$.get('${request.contextPath}/user/favorite/list?currentPage=' + currentPage,
-	        function(data){
-				$("#favoriteTbody").html(data);
-				$("#favoriteModal").modal('show');
-	       	}
-		);
-	}
 	/**
 	 * 取消收藏
 	 * @param tid
@@ -64,3 +58,4 @@
 				}, 'json');
 	}
 </script>
+<#include "../inc/pagination.html">

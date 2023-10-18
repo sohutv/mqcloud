@@ -1,29 +1,23 @@
 package com.sohu.tv.mq.rocketmq.consumer;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import com.sohu.tv.mq.util.JSONUtil;
-import org.apache.rocketmq.client.consumer.listener.ConsumeConcurrentlyContext;
-import org.apache.rocketmq.client.consumer.listener.ConsumeConcurrentlyStatus;
-import org.apache.rocketmq.client.consumer.listener.ConsumeOrderlyContext;
-import org.apache.rocketmq.client.consumer.listener.ConsumeOrderlyStatus;
-import org.apache.rocketmq.common.message.MessageClientExt;
-import org.apache.rocketmq.common.message.MessageConst;
-import org.apache.rocketmq.common.message.MessageExt;
-import org.slf4j.Logger;
-
 import com.sohu.index.tv.mq.common.MQMessage;
-import com.sohu.tv.mq.metric.ConsumeStatManager;
-import com.sohu.tv.mq.metric.ConsumeThreadStat;
-import com.sohu.tv.mq.metric.MQMetricsExporter;
-import com.sohu.tv.mq.metric.MessageExceptionMetric;
-import com.sohu.tv.mq.metric.MessageMetric;
+import com.sohu.tv.mq.metric.*;
 import com.sohu.tv.mq.rocketmq.RocketMQConsumer;
 import com.sohu.tv.mq.serializable.MessageSerializer;
 import com.sohu.tv.mq.serializable.MessageSerializerEnum;
 import com.sohu.tv.mq.stats.ConsumeStats;
 import com.sohu.tv.mq.util.CommonUtil;
+import com.sohu.tv.mq.util.JSONUtil;
+import org.apache.rocketmq.client.consumer.listener.ConsumeConcurrentlyContext;
+import org.apache.rocketmq.client.consumer.listener.ConsumeConcurrentlyStatus;
+import org.apache.rocketmq.client.consumer.listener.ConsumeOrderlyContext;
+import org.apache.rocketmq.client.consumer.listener.ConsumeOrderlyStatus;
+import org.apache.rocketmq.common.message.MessageConst;
+import org.apache.rocketmq.common.message.MessageExt;
+import org.slf4j.Logger;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * 公共逻辑
@@ -48,6 +42,7 @@ public abstract class AbstractMessageConsumer<T, C> implements IMessageConsumer<
         this.logger = rocketMQConsumer.getLogger();
         if (rocketMQConsumer.isEnableStats()) {
             consumeStats = new ConsumeStats(rocketMQConsumer.getGroup());
+            consumeStats.setMqcloudDomain(rocketMQConsumer.getMqCloudDomain());
             MQMetricsExporter.getInstance().add(consumeStats);
         }
     }
@@ -65,9 +60,9 @@ public abstract class AbstractMessageConsumer<T, C> implements IMessageConsumer<
         }
         long start = System.currentTimeMillis();
         ConsumeStatus consumeStatus = consume(new MessageContext(msgs, context));
-        if (ConsumeStatus.FAIL == consumeStatus && rocketMQConsumer.isReconsume()) {
+        if (consumeStatus.isFail() && rocketMQConsumer.isReconsume()) {
             if (consumeStats != null) {
-                consumeStats.incrementException();
+                consumeStats.incrementException(consumeStatus.getException());
             }
             return ConsumeConcurrentlyStatus.RECONSUME_LATER;
         }
@@ -90,9 +85,9 @@ public abstract class AbstractMessageConsumer<T, C> implements IMessageConsumer<
         }
         long start = System.currentTimeMillis();
         ConsumeStatus consumeStatus = consume(new MessageContext(msgs, context));
-        if (ConsumeStatus.FAIL == consumeStatus && rocketMQConsumer.isReconsume()) {
+        if (consumeStatus.isFail() && rocketMQConsumer.isReconsume()) {
             if (consumeStats != null) {
-                consumeStats.incrementException();
+                consumeStats.incrementException(consumeStatus.getException());
             }
             return ConsumeOrderlyStatus.SUSPEND_CURRENT_QUEUE_A_MOMENT;
         }
@@ -128,7 +123,7 @@ public abstract class AbstractMessageConsumer<T, C> implements IMessageConsumer<
                             mqMessage.getMessageExt().getBornTimestamp(), e);
                     ConsumeStatManager.getInstance().getConsumeFailedMetrics(group)
                             .set(buildMessageExceptionMetric(mqMessage, e));
-                    return ConsumeStatus.FAIL;
+                    return ConsumeStatus.fail(e);
                 }
             }
         } finally {
@@ -156,7 +151,7 @@ public abstract class AbstractMessageConsumer<T, C> implements IMessageConsumer<
                     continue;
                 }
                 // 校验是否需要跳过重试消息
-                if (CommonUtil.isRetryTopic(me.getProperty(MessageConst.PROPERTY_REAL_TOPIC)) &&
+                if (!CommonUtil.isDeadTopic(me.getTopic()) && CommonUtil.isRetryTopic(me.getProperty(MessageConst.PROPERTY_REAL_TOPIC)) &&
                         me.getBornTimestamp() < rocketMQConsumer.getRetryMessageResetTo()) {
                     if (rocketMQConsumer.getRetryMessageSkipKey() != null) {
                         if (rocketMQConsumer.getRetryMessageSkipKey().equals(me.getKeys())) {
@@ -347,6 +342,13 @@ public abstract class AbstractMessageConsumer<T, C> implements IMessageConsumer<
             rocketMQConsumer.getRateLimiter().limit(permits);
         } catch (InterruptedException e) {
             logger.warn("acquirePermit error", e.getMessage());
+        }
+    }
+
+    @Override
+    public void setClientId(String clientId) {
+        if (consumeStats != null) {
+            consumeStats.setClientId(clientId);
         }
     }
 }

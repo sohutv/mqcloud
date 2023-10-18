@@ -1,0 +1,274 @@
+<!-- Control Sidebar -->
+<aside class="control-sidebar control-sidebar-dark">
+    <!-- Control sidebar content goes here -->
+    <div class="p-3">
+        <h5>个性化定制 <a href="javascript:void(0)" data-widget="control-sidebar" class="text-primary"><i class="fa-solid fa-angles-right"></i></a></h5>
+        <hr class="mb-2 border-white">
+        <h6>整体</h6>
+        <div class="mb-1">
+            <div class="custom-control custom-switch">
+                <input type="checkbox" onclick="toggleDarkTheme()" class="custom-control-input" id="darkThemeSwitch">
+                <label class="custom-control-label" for="darkThemeSwitch">深色模式</label>
+            </div>
+        </div>
+        <div class="mb-4">
+            <div class="custom-control custom-switch">
+                <input type="checkbox" onclick="toggleBodySmallFont()" class="custom-control-input" id="bodySmallFontSwitch">
+                <label class="custom-control-label" for="bodySmallFontSwitch">小号字体</label>
+            </div>
+        </div>
+
+        <h6>导航栏</h6>
+        <div class="mb-1">
+            <div class="custom-control custom-switch">
+                <input type="checkbox" onclick="toggleNavFix()" class="custom-control-input" id="navFixSwitch">
+                <label class="custom-control-label" for="navFixSwitch">固定</label>
+            </div>
+        </div>
+
+        <h6>导航栏颜色</h6>
+        <div class="mb-4">
+            <div class="d-flex">
+                <select id="navColor" class="custom-select mb-3 text-light border-0 bg-white" onchange="navColorChange()">
+                    <option value="bg-primary" class="bg-primary">Primary</option>
+                    <option value="bg-secondary" class="bg-secondary">Secondary</option>
+                    <option value="bg-info" class="bg-info">Info</option>
+                    <option value="bg-success" class="bg-success">Success</option>
+                    <option value="bg-danger" class="bg-danger">Danger</option>
+                    <option value="bg-indigo" class="bg-indigo">Indigo</option>
+                    <option value="bg-purple" class="bg-purple">Purple</option>
+                    <option value="bg-pink" class="bg-pink">Pink</option>
+                    <option value="bg-navy" class="bg-navy">Navy</option>
+                    <option value="bg-lightblue" class="bg-lightblue">Lightblue</option>
+                    <option value="bg-teal" class="bg-teal">Teal</option>
+                    <option value="bg-cyan" class="bg-cyan">Cyan</option>
+                    <option value="bg-dark" class="bg-dark">Dark</option>
+                    <option value="bg-gray-dark" class="bg-gray-dark">Gray dark</option>
+                    <option value="bg-gray" class="bg-gray">Gray</option>
+                    <option value="bg-light" class="bg-light">Light</option>
+                    <option value="bg-warning" class="bg-warning">Warning</option>
+                    <option value="bg-white" class="bg-white" selected>White</option>
+                    <option value="bg-orange" class="bg-orange">Orange</option>
+                </select>
+            </div>
+        </div>
+
+        <h6>侧边栏</h6>
+        <div class="mb-1">
+            <div class="custom-control custom-switch">
+                <input type="checkbox" onclick="toggleSidebarSmallFont()" class="custom-control-input" id="sidebarSmallFontSwitch">
+                <label class="custom-control-label" for="sidebarSmallFontSwitch">小号字体</label>
+            </div>
+        </div>
+        <div class="mb-1">
+            <div class="custom-control custom-switch">
+                <input type="checkbox" onclick="toggleSidebarModal()" class="custom-control-input" id="sidebarModalSwitch">
+                <label class="custom-control-label" for="sidebarModalSwitch">经典模式</label>
+            </div>
+        </div>
+        <div class="mb-1">
+            <div class="custom-control custom-switch">
+                <input type="checkbox" onclick="toggleSidebarCompact()" class="custom-control-input" id="sidebarCompactSwitch">
+                <label class="custom-control-label" for="sidebarCompactSwitch">紧凑效果</label>
+            </div>
+        </div>
+        <div class="mb-1">
+            <div class="custom-control custom-switch">
+                <input type="checkbox" onclick="toggleSidebarIndent()" class="custom-control-input" id="sidebarIndentSwitch">
+                <label class="custom-control-label" for="sidebarIndentSwitch">缩进效果</label>
+            </div>
+        </div>
+        <div class="mb-4">
+            <div class="custom-control custom-switch">
+                <input type="checkbox" onclick="toggleSidebarTheme()" class="custom-control-input" id="sidebarThemeSwitch">
+                <label class="custom-control-label" for="sidebarThemeSwitch">亮色效果</label>
+            </div>
+        </div>
+
+        <h6>页脚</h6>
+        <div class="mb-1">
+            <div class="custom-control custom-switch">
+                <input type="checkbox" onclick="toggleFootFix()" class="custom-control-input" id="footFixSwitch">
+                <label class="custom-control-label" for="footFixSwitch">固定</label>
+            </div>
+        </div>
+    </div>
+</aside>
+<script>
+    function toggleDarkTheme() {
+        if ($("#darkThemeSwitch").is(':checked')) {
+            $('body').addClass('dark-mode');
+            $('.container-fluid').addClass('dark-mode').removeClass("bg-white");
+            localStorage.setItem("darkThemeSwitch", "true");
+        } else {
+            $('body').removeClass('dark-mode');
+            localStorage.removeItem("darkThemeSwitch");
+            $('.container-fluid').removeClass('dark-mode').addClass("bg-white");
+        }
+    }
+
+    function toggleNavFix() {
+        if ($("#navFixSwitch").is(':checked')) {
+            $('body').addClass('layout-navbar-fixed');
+            localStorage.setItem("navFixSwitch", "true");
+        } else {
+            $('body').removeClass('layout-navbar-fixed');
+            localStorage.removeItem("navFixSwitch");
+        }
+    }
+
+    function toggleFootFix() {
+        if ($("#footFixSwitch").is(':checked')) {
+            $('body').addClass('layout-footer-fixed');
+            localStorage.setItem("footFixSwitch", "true");
+        } else {
+            $('body').removeClass('layout-footer-fixed');
+            localStorage.removeItem("footFixSwitch");
+        }
+    }
+
+    function toggleBodySmallFont() {
+        if ($("#bodySmallFontSwitch").is(':checked')) {
+            $('body').addClass('text-sm');
+            localStorage.setItem("bodySmallFontSwitch", "true");
+        } else {
+            $('body').removeClass('text-sm');
+            localStorage.removeItem("bodySmallFontSwitch");
+        }
+    }
+
+    function toggleSidebarSmallFont() {
+        if ($("#sidebarSmallFontSwitch").is(':checked')) {
+            $('.nav-sidebar').addClass('text-sm');
+            localStorage.setItem("sidebarSmallFontSwitch", "true");
+        } else {
+            $('.nav-sidebar').removeClass('text-sm');
+            localStorage.removeItem("sidebarSmallFontSwitch");
+        }
+    }
+
+    function toggleSidebarCompact() {
+        if ($("#sidebarCompactSwitch").is(':checked')) {
+            $('.nav-sidebar').addClass('nav-compact');
+            localStorage.setItem("sidebarCompactSwitch", "true");
+        } else {
+            localStorage.removeItem("sidebarCompactSwitch");
+            $('.nav-sidebar').removeClass('nav-compact');
+        }
+    }
+
+    function toggleSidebarIndent() {
+        if ($("#sidebarIndentSwitch").is(':checked')) {
+            $('.nav-sidebar').addClass('nav-child-indent');
+            localStorage.setItem("sidebarIndentSwitch", "true");
+        } else {
+            localStorage.removeItem("sidebarIndentSwitch");
+            $('.nav-sidebar').removeClass('nav-child-indent');
+        }
+    }
+
+    function toggleSidebarModal() {
+        if ($("#sidebarModalSwitch").is(':checked')) {
+            $('.nav-sidebar').addClass('nav-legacy');
+            localStorage.setItem("sidebarModalSwitch", "true");
+        } else {
+            $('.nav-sidebar').removeClass('nav-legacy');
+            localStorage.removeItem("sidebarModalSwitch");
+        }
+    }
+
+    function toggleSidebarTheme() {
+        if ($("#sidebarThemeSwitch").is(':checked')) {
+            $('.main-sidebar').removeClass("sidebar-dark-primary").addClass('sidebar-light-primary');
+            localStorage.setItem("sidebarThemeSwitch", "true");
+        } else {
+            $('.main-sidebar').removeClass('sidebar-light-primary').addClass('sidebar-dark-primary');
+            localStorage.removeItem("sidebarThemeSwitch");
+        }
+    }
+
+    function navColorChange(){
+        var color = $("#navColor option:selected").attr("class");
+        if(!color){
+            return;
+        }
+        var prevColor = localStorage.getItem("navColor");
+        if(prevColor){
+            $('.main-header').removeClass(prevColor);
+        }
+        $('.main-header').addClass(color);
+        localStorage.setItem("navColor", color);
+    }
+
+    $(function () {
+        // 处理深色模式
+        var darkThemeSwitch = localStorage.getItem("darkThemeSwitch");
+        if (darkThemeSwitch && darkThemeSwitch == "true") {
+            $("#darkThemeSwitch").prop("checked", true);
+            toggleDarkTheme();
+        }
+
+        // 处理固定页眉
+        var navFixSwitch = localStorage.getItem("navFixSwitch");
+        if (navFixSwitch && navFixSwitch == "true") {
+            $("#navFixSwitch").prop("checked", true);
+            toggleNavFix();
+        }
+
+        // 处理固定页脚
+        var footFixSwitch = localStorage.getItem("footFixSwitch");
+        if (footFixSwitch && footFixSwitch == "true") {
+            $("#footFixSwitch").prop("checked", true);
+            toggleFootFix();
+        }
+
+        // 处理小号字体
+        var bodySmallFontSwitch = localStorage.getItem("bodySmallFontSwitch");
+        if (bodySmallFontSwitch && bodySmallFontSwitch == "true") {
+            $("#bodySmallFontSwitch").prop("checked", true);
+            toggleBodySmallFont();
+        }
+
+        // 处理小号字体
+        var sidebarSmallFontSwitch = localStorage.getItem("sidebarSmallFontSwitch");
+        if (sidebarSmallFontSwitch && sidebarSmallFontSwitch == "true") {
+            $("#sidebarSmallFontSwitch").prop("checked", true);
+            toggleSidebarSmallFont();
+        }
+
+        // 处理紧凑侧边栏
+        var sidebarCompactSwitch = localStorage.getItem("sidebarCompactSwitch");
+        if (sidebarCompactSwitch && sidebarCompactSwitch == "true") {
+            $("#sidebarCompactSwitch").prop("checked", true);
+            toggleSidebarCompact();
+        }
+
+        // 处理缩进侧边栏
+        var sidebarIndentSwitch = localStorage.getItem("sidebarIndentSwitch");
+        if (sidebarIndentSwitch && sidebarIndentSwitch == "true") {
+            $("#sidebarIndentSwitch").prop("checked", true);
+            toggleSidebarIndent();
+        }
+
+        // 处理模态侧边栏
+        var sidebarModalSwitch = localStorage.getItem("sidebarModalSwitch");
+        if (sidebarModalSwitch && sidebarModalSwitch == "true") {
+            $("#sidebarModalSwitch").prop("checked", true);
+            toggleSidebarModal();
+        }
+
+        // 处理侧边栏主题
+        var sidebarThemeSwitch = localStorage.getItem("sidebarThemeSwitch");
+        if (sidebarThemeSwitch && sidebarThemeSwitch == "true") {
+            $("#sidebarThemeSwitch").prop("checked", true);
+            toggleSidebarTheme();
+        }
+
+        // 处理导航栏颜色
+        var navColor = localStorage.getItem("navColor");
+        if (navColor) {
+            $("#navColor").val(navColor);
+            navColorChange();
+        }
+    });
+</script>

@@ -274,7 +274,6 @@ public class ConsumeTrafficLineChartData implements LineChartData {
         // 构造曲线图对象
         LineChart lineChart = new LineChart();
         lineChart.setChartId("consumer");
-        lineChart.setTitle(topicTopology.getTopic().getName() + "消费情况");
         lineChart.setOneline(true);
         lineChart.setTickInterval(6);
         

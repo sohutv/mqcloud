@@ -1,399 +1,406 @@
 <!-- 无集群 -->
-<div class="main" style="padding-top:10px;">
 <#if response.empty>
-	<form class="form-inline" role="form">
-		<div class="form-group">
-			<label for="mqClusterSelect"> 集群: 暂无数据 </label>
-		</div>
-	</form>
-<#else>
-    <center>
-	<table style="display:inline-block;margin-bottom:4px;">
-		<tr>
-			<td colspan=${machineRoomColorMap?size} data-placement="bottom" data-toggle="tooltip" title="机房采用不同的颜色来标识">机房颜色:</td>
-			<#assign a=0>
-			<#list machineRoomColorMap?keys as key>
-				<td bgcolor="${machineRoomColorMap['${key}']}" align="center" data-toggle="tooltip" title="${key}机房色值为${machineRoomColorMap['${key}']}" data-placement="bottom">${key}</td>
-			</#list>
-		</tr>
-	</table>
-	<table style="display:inline-block">
-		<tr>
-			<td colspan=4 data-placement="bottom" data-toggle="tooltip" title="机器类型采用不同的形状来标识">机器类型:</td>
-			<td><div class="rect" data-toggle="tooltip" title="矩形代表物理机" data-placement="bottom">物理机</div></td>
-			<td><div class="vitual" data-toggle="tooltip" title="圆角矩形代表虚拟机" data-placement="bottom">虚拟机</div></td>
-			<td><div class="oval" data-toggle="tooltip" title="椭圆形代表docker" data-placement="bottom">docker</div></td>
-			<td><div class="diamond" data-toggle="tooltip" title="菱形表示未知" data-placement="bottom"><span>未知</span></b></div></td>
-			<td><span data-placement="bottom" title="点击查看介绍" class="glyphicon glyphicon-question-sign pointer" data-target="#introModal" data-toggle="modal"></span></td>
-		</tr>
-	</table>
-	</center>
-	<div class="border-bottom"></div>
-	<!-- 有集群 -->
-	<#list response.result as clusterTopology>
-		<#if clusterTopology_index%2 == 0>
-		<div class="row">
-		</#if>
-			<div class="col-md-6" style="padding:0px;">
-				<center><div id="cluster${clusterTopology.cluster.id}" style="height:550px;width:100%;border:1px solid #ccc;"></div></center>
-				<script>
-				$(function(){
-					var option = {
-					    tooltip: {
-					    	confine: true,
-					    	enterable: true,
-					    	trigger : 'item',
-					    	backgroundColor : '#e1e4e8',
-					    	padding : 0,
-					    	textStyle: {
-					    		color: 'no',
-					    	},
-					    	borderWidth: 1,
-					    	formatter: function (params, ticket, callback) {
-					    		if(params.dataType == 'node'){
-					    			if(params.data._ip){
-					    				if(params.data._type){
-					    					// broker或cluster节点
-					    					if(brokerCache[params.data._ip]){
-							    				return brokerCache[params.data._ip];
-							    			} else {
-							    				brokerCache[params.data._ip] = "loading...";
-							    				$.get('${request.contextPath}/admin/topology/traffic', {
-									    	    	ips: params.data._ip
-									    	    },function (content) {
-									    	    	brokerCache[params.data._ip] = content;
-									    	    	return content;
-									    	    });
-							    			}
-					    				} else {
-					    					// 机器节点
-							    			if(machineCache[params.data._ip]){
-							    				return machineCache[params.data._ip];
-							    			} else {
-							    				machineCache[params.data._ip] = "loading...";
-							    				$.get('${request.contextPath}/admin/server/preview', {
-									    	    	ip: params.data._ip
-									    	    },function (content) {
-									    	    	machineCache[params.data._ip] = content;
-									    	    	return content;
-									    	    });
-							    			}
-					    				}
-					    			} else {
-					    				return "集群最近5分钟流量"
-					    			}
-					    		} else if(params.dataType == 'edge') {
-					    			if(params.data.target.indexOf("ns:") == 0){
-					    				return "NameServer";
-					    			} else if(params.data.source.indexOf("m:") == 0){
-					    				return "Master";
-					    			} else if(params.data.source.indexOf("s:") == 0){
-					    				return "Slave";
-					    			} else {
-						    			return "最近5分钟流量";
-					    			}
-					    		}
-					    	    return '加载中...';
-					    	}
-					    },
-					    animationDurationUpdate: 1500,
-					    animationEasingUpdate: 'quinticInOut',
-					    series: [
-					        {
-					            type: 'graph',
-					            layout: 'none',
-					            symbolSize: [60, 25],
-					            symbol: 'rect',
-					            roam: true,
-					            label: {
-					                normal: {
-					                    show: true,
-					                    color: '#000'
-					                }
-					            },
-					            edgeSymbol: ['circle', 'arrow'],
-					            edgeSymbolSize: [4, 10],
-					            edgeLabel: {
-					                normal: {
-					                    textStyle: {
-					                        fontSize: 12
-					                    }
-					                }
-					            },itemStyle : {
-				                	normal: {
-				                        color: '#e1e4e8',
-				                        shadowColor: '#666',
-				                        shadowOffsetX: 1,
-				                        shadowOffsetY: 1
-				                    },
-				                    emphasis: {
-				                    	color: '#e1e4e8',
-				                        barBorderWidth: 1,
-				                        shadowBlur: 20,
-				                        shadowOffsetX: 0,
-				                        shadowOffsetY: 0,
-				                        shadowColor: 'rgba(0,0,0,0.5)'
-				                    }
-				                },
-					            data: [{
-					                name: '${clusterTopology.cluster.name}',
-					                x: 500,
-					                y: 250,
-					                <#if clusterTopology.brokerGroupList??>
-					                _ip: '<#list clusterTopology.brokerGroupList as brokerGroup>${brokerGroup.master.addr},</#list>',
-					                </#if>
-					                _type: 'cluster',
-					                _cid: '${clusterTopology.cluster.id}',
-					                symbol: 'circle',
-					                symbolSize: [120, 80],
-					                label: {
-					                    formatter: function (){
-					                    	return "${clusterTopology.cluster.name}";
-					                    }
-					                }
-					            }
-					            <#if clusterTopology.clusterTraffic??>
-					            ,{
-					                name: '${clusterTopology.cluster.name}_traffic',
-					                x: 850,
-					                y: 300,
-					                symbolSize: [130, 40],
-					                symbolOffset: [20, 10],
-					                label: {
-					                    formatter: function (){
-					                    	return "       \t\t消息量\t\t大小\n生产\t\t${clusterTopology.clusterTraffic.putCountFormat}\t\t${clusterTopology.clusterTraffic.putSizeFormat}\n消费\t\t${clusterTopology.clusterTraffic.getCountFormat}\t\t${clusterTopology.clusterTraffic.getSizeFormat}";
-					                    },
-					                    position: 'insideLeft',
-					                    color: '#333'
-					                },itemStyle : {
-					                	normal: {
-					                        color: '#ecf0f1'
-					                    }
-					                }
-					            }
-					            </#if>
-					            // nameserver 列表
-					            <#if clusterTopology.nameServerList?size == 1>
-					            	<#assign nameServerX = 1000>
-					            <#elseif clusterTopology.nameServerList?size == 2>
-				            		<#assign nameServerX = 500>
-					            <#else>
-					            	<#assign nameServerX = 1000/clusterTopology.nameServerList?size>
-					            </#if>
-					            <#list clusterTopology.nameServerList as nameServer>
-					            , {
-					                name: 'ns:${nameServer.addr}',
-					                x: ${nameServer_index * nameServerX + nameServerX / 2},
-					                y: 0,
-					                _ip: '${nameServer.serverInfo.ip}',
-					                label: {
-					                    formatter: function (){
-					                    	return "${nameServer.serverInfo.ipSub}";
-					                    }
-					                },itemStyle : {
-					                	normal: {
-					                        color: '${nameServer.serverInfo.roomColor}'
-					                    },
-					                    emphasis: {
-					                    	color: '${nameServer.serverInfo.roomColor}'
-					                    }
-					                },
-					                <#if nameServer.serverInfo.physical>
-					                	symbol: 'rect'
-					                <#elseif nameServer.serverInfo.virtual>
-					               		symbol: 'roundRect'
-					                <#elseif nameServer.serverInfo.docker>
-					                	symbol: 'circle'
-					                <#else>
-					                	symbol: 'diamond',
-					                	symbolSize: [60, 60]
-					                </#if>
-					            }
-					            </#list>
-					            <#if clusterTopology.brokerGroupList??>
-					         	// broker 列表
-					            <#if clusterTopology.brokerGroupList?size == 1>
-					            	<#assign brokerX = 1000>
-					            <#elseif clusterTopology.brokerGroupList?size == 2>
-				            		<#assign brokerX = 500>
-					            <#else>
-					            	<#assign brokerX = 1000/clusterTopology.brokerGroupList?size>
-					            </#if>
-					            <#list clusterTopology.brokerGroupList as brokerGroup>
-					            , {
-					                name: '${brokerGroup.brokerName}',
-					                x: ${brokerGroup_index * brokerX + brokerX / 2},
-					                y: 530,
-					                _ip: '${brokerGroup.master.addr}',
-					                _type: 'broker',
-					                _cid: '${clusterTopology.cluster.id}',
-					                symbolSize: [60, 25]
-					            }
-					            , {
-					                name: 'm:${brokerGroup.master.addr}',
-					                x: ${brokerGroup_index * brokerX + brokerX / 2},
-					                y: 665,
-					                _ip: '${brokerGroup.master.serverInfo.ip}',
-					                label: {
-					                    formatter: function (){
-					                    	return "${brokerGroup.master.serverInfo.ipSub}";
-					                    }
-					                },itemStyle : {
-					                	normal: {
-					                        color: '${brokerGroup.master.serverInfo.roomColor}'
-					                    },
-					                    emphasis: {
-					                    	color: '${brokerGroup.master.serverInfo.roomColor}'
-					                    }
-					                },
-					                <#if brokerGroup.master.serverInfo.physical>
-				                		symbol: 'rect'
-					                <#elseif brokerGroup.master.serverInfo.virtual>
-					               		symbol: 'roundRect'
-					                <#elseif brokerGroup.master.serverInfo.docker>
-					                	symbol: 'circle'
-					                <#else>
-					                	symbol: 'diamond',
-					                	symbolSize: [60, 60]
-					                </#if>
-					            }
-					            <#if brokerGroup.slave??>
-					            ,{
-					                name: 's:${brokerGroup.slave.addr}',
-					                x: ${brokerGroup_index * brokerX + brokerX / 2},
-					                y: 800,
-					                _ip: '${brokerGroup.slave.serverInfo.ip}',
-					                label: {
-					                    formatter: function (){
-					                    	return "${brokerGroup.slave.serverInfo.ipSub}";
-					                    }
-					                },itemStyle : {
-					                	normal: {
-					                        color: '${brokerGroup.slave.serverInfo.roomColor}'
-					                    },
-					                    emphasis: {
-					                    	color: '${brokerGroup.slave.serverInfo.roomColor}'
-					                    }
-					                },
-					                <#if brokerGroup.slave.serverInfo.physical>
-			                			symbol: 'rect'
-					                <#elseif brokerGroup.slave.serverInfo.virtual>
-					               		symbol: 'roundRect'
-					                <#elseif brokerGroup.slave.serverInfo.docker>
-					                	symbol: 'circle'
-					                <#else>
-					                	symbol: 'diamond',
-					                	symbolSize: [50, 50]
-					                </#if>
-					            }
-					            </#if>
-					            </#list>
-					            </#if>
-					            ],links: [ 
-					            <#if clusterTopology.clusterTraffic??>
-					            {
-					            	source: '${clusterTopology.cluster.name}',
-					                target: '${clusterTopology.cluster.name}_traffic',
-					                lineStyle : {
-			                        	type : 'dotted'
-					                },
-				                	label: {
-					                    show: true,
-					                    fontSize: 10,
-					                    formatter: function (){
-					                    	return "集群流量"
-					                    }
-					                }
-					            },
-					            </#if>
-				            	<#list clusterTopology.nameServerList as nameServer>
-					            {
-					            	source: '${clusterTopology.cluster.name}',
-					                target: 'ns:${nameServer.addr}',
-					            },
-					            </#list>
-					            <#if clusterTopology.brokerGroupList??>
-					            <#list clusterTopology.brokerGroupList as brokerGroup>
-					            {
-					            	source: '${clusterTopology.cluster.name}',
-					                target: '${brokerGroup.brokerName}',
-				                	label: {
-				                		show: true,
-				                		fontSize: 10,
-					                    formatter: function (){
-					                    	<#if brokerGroup.master.brokerTraffic??>
-						                    	return "生产 ${brokerGroup.master.brokerTraffic.putCountFormat} ${brokerGroup.master.brokerTraffic.putSizeFormat}\n消费 ${brokerGroup.master.brokerTraffic.getCountFormat} ${brokerGroup.master.brokerTraffic.getSizeFormat}";
-						                    <#else>
-					                    		return "";
-					                    	</#if>
-					                    }
-					                }
-					            },
-					            <#if brokerGroup.slave??>
-					            {
-					            	source: 'm:${brokerGroup.master.addr}',
-					                target: '${brokerGroup.brokerName}',
-					            },
-					            {
-					            	source: 's:${brokerGroup.slave.addr}',
-					               	target: 'm:${brokerGroup.master.addr}',
-					            },
-					            <#else>
-					            {
-					            	source: 'm:${brokerGroup.master.addr}',
-					               	target: '${brokerGroup.brokerName}',
-					            },
-					            </#if>
-					            </#list>
-					            </#if>
-					           	],
-					            lineStyle: {
-					                opacity: 0.9,
-					                width: 2,
-					                curveness: 0
-					            }
-					        }
-					    ]
-					};
-					var myChart = echarts.init(document.getElementById("cluster${clusterTopology.cluster.id}"));
-					myChart.setOption(option, true);
-					myChart.on('click', function (params) {
-				    	if(params.data._ip){
-				    		if(params.data._type){
-				    			if(params.data._type == 'cluster'){
-				    				var tempwindow=window.open('_blank');
-					    			tempwindow.location.href = "${request.contextPath}/admin/cluster/list?cid="+params.data._cid;
-				    			} else {
-				    				var tempwindow=window.open('_blank');
-					    			tempwindow.location.href = "${request.contextPath}/admin/cluster/list?cid="+params.data._cid+"&ip="+params.data._ip;
-				    			}
-				    		} else {
-					    		var tempwindow=window.open('_blank');
-					    		tempwindow.location.href = "${request.contextPath}/admin/server/list?ip="+params.data._ip;
-				    		}
-				    	}
-					});
-			    });
-				</script>
+<div class="card mt-2">
+	<div class="card-body">
+		<form class="form-inline" role="form">
+			<div class="form-group">
+				<label> 集群: 暂无数据 </label>
 			</div>
-		<#if clusterTopology_index%2 == 1 || clusterTopology_index == response.result?size - 1>
+		</form>
+	</div>
+</div>
+<#else>
+<div class="card mt-2">
+	<div class="card-body">
+		<table style="display:inline-block;margin-bottom:4px;">
+			<tr>
+				<td colspan=${machineRoomColorMap?size} data-placement="bottom" data-toggle="tooltip" title="机房采用不同的颜色来标识">机房颜色:</td>
+				<#assign a=0>
+				<#list machineRoomColorMap?keys as key>
+					<td bgcolor="${machineRoomColorMap['${key}']}" align="center" data-toggle="tooltip" title="${key}机房色值为${machineRoomColorMap['${key}']}" data-placement="bottom">${key}</td>
+				</#list>
+			</tr>
+		</table>
+		<table style="display:inline-block" class="text-sm">
+			<tr>
+				<td colspan=4 data-placement="bottom" data-toggle="tooltip" title="机器类型采用不同的形状来标识">机器类型:</td>
+				<td><div class="rect" data-toggle="tooltip" title="矩形代表物理机" data-placement="bottom">物理机</div></td>
+				<td><div class="vitual" data-toggle="tooltip" title="圆角矩形代表虚拟机" data-placement="bottom">虚拟机</div></td>
+				<td><div class="oval" data-toggle="tooltip" title="椭圆形代表docker" data-placement="bottom">docker</div></td>
+				<td><div class="diamond ml-2" data-toggle="tooltip" title="菱形表示未知" data-placement="bottom"><span>未知</span></b></div></td>
+				<td><span data-placement="bottom" title="点击查看介绍" class="fas fa-question-circle pointer ml-2" data-target="#introModal" data-toggle="modal"></span></td>
+			</tr>
+		</table>
+	</div>
+</div>
+<!-- 有集群 -->
+<#list response.result as clusterTopology>
+	<#if clusterTopology_index%2 == 0>
+	<div class="row">
+	</#if>
+		<div class="col-md-6">
+			<div class="card <#if clusterTopology_index%2 == 0>mr-1</#if>">
+				<div class="card-body">
+					<div id="cluster${clusterTopology.cluster.id}" style="height:550px;width:100%;"></div>
+				</div>
+			</div>
+			<script>
+			$(function(){
+				var option = {
+					tooltip: {
+						confine: true,
+						enterable: true,
+						trigger : 'item',
+						backgroundColor : '#e1e4e8',
+						padding : 0,
+						textStyle: {
+							color: 'no',
+						},
+						borderWidth: 1,
+						formatter: function (params, ticket, callback) {
+							if(params.dataType == 'node'){
+								if(params.data._ip){
+									if(params.data._type){
+										// broker或cluster节点
+										if(brokerCache[params.data._ip]){
+											return brokerCache[params.data._ip];
+										} else {
+											brokerCache[params.data._ip] = "loading...";
+											$.get('${request.contextPath}/admin/topology/traffic', {
+												ips: params.data._ip
+											},function (content) {
+												brokerCache[params.data._ip] = content;
+												return content;
+											});
+										}
+									} else {
+										// 机器节点
+										if(machineCache[params.data._ip]){
+											return machineCache[params.data._ip];
+										} else {
+											machineCache[params.data._ip] = "loading...";
+											$.get('${request.contextPath}/admin/server/preview', {
+												ip: params.data._ip
+											},function (content) {
+												machineCache[params.data._ip] = content;
+												return content;
+											});
+										}
+									}
+								} else {
+									return "集群最近5分钟流量"
+								}
+							} else if(params.dataType == 'edge') {
+								if(params.data.target.indexOf("ns:") == 0){
+									return "NameServer";
+								} else if(params.data.source.indexOf("m:") == 0){
+									return "Master";
+								} else if(params.data.source.indexOf("s:") == 0){
+									return "Slave";
+								} else {
+									return "最近5分钟流量";
+								}
+							}
+							return '加载中...';
+						}
+					},
+					animationDurationUpdate: 1500,
+					animationEasingUpdate: 'quinticInOut',
+					series: [
+						{
+							type: 'graph',
+							layout: 'none',
+							symbolSize: [60, 25],
+							symbol: 'rect',
+							roam: true,
+							label: {
+								normal: {
+									show: true,
+									color: '#000'
+								}
+							},
+							edgeSymbol: ['circle', 'arrow'],
+							edgeSymbolSize: [4, 10],
+							edgeLabel: {
+								normal: {
+									textStyle: {
+										fontSize: 12
+									}
+								}
+							},itemStyle : {
+								normal: {
+									color: '#e1e4e8',
+									shadowColor: '#666',
+									shadowOffsetX: 1,
+									shadowOffsetY: 1
+								},
+								emphasis: {
+									color: '#e1e4e8',
+									barBorderWidth: 1,
+									shadowBlur: 20,
+									shadowOffsetX: 0,
+									shadowOffsetY: 0,
+									shadowColor: 'rgba(0,0,0,0.5)'
+								}
+							},
+							data: [{
+								name: '${clusterTopology.cluster.name}',
+								x: 500,
+								y: 250,
+								<#if clusterTopology.brokerGroupList??>
+								_ip: '<#list clusterTopology.brokerGroupList as brokerGroup>${brokerGroup.master.addr},</#list>',
+								</#if>
+								_type: 'cluster',
+								_cid: '${clusterTopology.cluster.id}',
+								symbol: 'circle',
+								symbolSize: [120, 80],
+								label: {
+									formatter: function (){
+										return "${clusterTopology.cluster.name}";
+									}
+								}
+							}
+							<#if clusterTopology.clusterTraffic??>
+							,{
+								name: '${clusterTopology.cluster.name}_traffic',
+								x: 850,
+								y: 300,
+								symbolSize: [130, 40],
+								symbolOffset: [20, 10],
+								label: {
+									formatter: function (){
+										return "       \t\t消息量\t\t大小\n生产\t\t${clusterTopology.clusterTraffic.putCountFormat}\t\t${clusterTopology.clusterTraffic.putSizeFormat}\n消费\t\t${clusterTopology.clusterTraffic.getCountFormat}\t\t${clusterTopology.clusterTraffic.getSizeFormat}";
+									},
+									position: 'insideLeft',
+									color: '#333'
+								},itemStyle : {
+									normal: {
+										color: '#ecf0f1'
+									}
+								}
+							}
+							</#if>
+							// nameserver 列表
+							<#if clusterTopology.nameServerList?size == 1>
+								<#assign nameServerX = 1000>
+							<#elseif clusterTopology.nameServerList?size == 2>
+								<#assign nameServerX = 500>
+							<#else>
+								<#assign nameServerX = 1000/clusterTopology.nameServerList?size>
+							</#if>
+							<#list clusterTopology.nameServerList as nameServer>
+							, {
+								name: 'ns:${nameServer.addr}',
+								x: ${nameServer_index * nameServerX + nameServerX / 2},
+								y: 0,
+								_ip: '${nameServer.serverInfo.ip}',
+								label: {
+									formatter: function (){
+										return "${nameServer.serverInfo.ipSub}";
+									}
+								},itemStyle : {
+									normal: {
+										color: '${nameServer.serverInfo.roomColor}'
+									},
+									emphasis: {
+										color: '${nameServer.serverInfo.roomColor}'
+									}
+								},
+								<#if nameServer.serverInfo.physical>
+									symbol: 'rect'
+								<#elseif nameServer.serverInfo.virtual>
+									symbol: 'roundRect'
+								<#elseif nameServer.serverInfo.docker>
+									symbol: 'circle'
+								<#else>
+									symbol: 'diamond',
+									symbolSize: [60, 60]
+								</#if>
+							}
+							</#list>
+							<#if clusterTopology.brokerGroupList??>
+							// broker 列表
+							<#if clusterTopology.brokerGroupList?size == 1>
+								<#assign brokerX = 1000>
+							<#elseif clusterTopology.brokerGroupList?size == 2>
+								<#assign brokerX = 500>
+							<#else>
+								<#assign brokerX = 1000/clusterTopology.brokerGroupList?size>
+							</#if>
+							<#list clusterTopology.brokerGroupList as brokerGroup>
+							, {
+								name: '${brokerGroup.brokerName}',
+								x: ${brokerGroup_index * brokerX + brokerX / 2},
+								y: 530,
+								_ip: '${brokerGroup.master.addr}',
+								_type: 'broker',
+								_cid: '${clusterTopology.cluster.id}',
+								symbolSize: [60, 25]
+							}
+							, {
+								name: 'm:${brokerGroup.master.addr}',
+								x: ${brokerGroup_index * brokerX + brokerX / 2},
+								y: 665,
+								_ip: '${brokerGroup.master.serverInfo.ip}',
+								label: {
+									formatter: function (){
+										return "${brokerGroup.master.serverInfo.ipSub}";
+									}
+								},itemStyle : {
+									normal: {
+										color: '${brokerGroup.master.serverInfo.roomColor}'
+									},
+									emphasis: {
+										color: '${brokerGroup.master.serverInfo.roomColor}'
+									}
+								},
+								<#if brokerGroup.master.serverInfo.physical>
+									symbol: 'rect'
+								<#elseif brokerGroup.master.serverInfo.virtual>
+									symbol: 'roundRect'
+								<#elseif brokerGroup.master.serverInfo.docker>
+									symbol: 'circle'
+								<#else>
+									symbol: 'diamond',
+									symbolSize: [60, 60]
+								</#if>
+							}
+							<#if brokerGroup.slave??>
+							,{
+								name: 's:${brokerGroup.slave.addr}',
+								x: ${brokerGroup_index * brokerX + brokerX / 2},
+								y: 800,
+								_ip: '${brokerGroup.slave.serverInfo.ip}',
+								label: {
+									formatter: function (){
+										return "${brokerGroup.slave.serverInfo.ipSub}";
+									}
+								},itemStyle : {
+									normal: {
+										color: '${brokerGroup.slave.serverInfo.roomColor}'
+									},
+									emphasis: {
+										color: '${brokerGroup.slave.serverInfo.roomColor}'
+									}
+								},
+								<#if brokerGroup.slave.serverInfo.physical>
+									symbol: 'rect'
+								<#elseif brokerGroup.slave.serverInfo.virtual>
+									symbol: 'roundRect'
+								<#elseif brokerGroup.slave.serverInfo.docker>
+									symbol: 'circle'
+								<#else>
+									symbol: 'diamond',
+									symbolSize: [50, 50]
+								</#if>
+							}
+							</#if>
+							</#list>
+							</#if>
+							],links: [
+							<#if clusterTopology.clusterTraffic??>
+							{
+								source: '${clusterTopology.cluster.name}',
+								target: '${clusterTopology.cluster.name}_traffic',
+								lineStyle : {
+									type : 'dotted'
+								},
+								label: {
+									show: true,
+									fontSize: 10,
+									formatter: function (){
+										return "集群流量"
+									}
+								}
+							},
+							</#if>
+							<#list clusterTopology.nameServerList as nameServer>
+							{
+								source: '${clusterTopology.cluster.name}',
+								target: 'ns:${nameServer.addr}',
+							},
+							</#list>
+							<#if clusterTopology.brokerGroupList??>
+							<#list clusterTopology.brokerGroupList as brokerGroup>
+							{
+								source: '${clusterTopology.cluster.name}',
+								target: '${brokerGroup.brokerName}',
+								label: {
+									show: true,
+									fontSize: 10,
+									formatter: function (){
+										<#if brokerGroup.master.brokerTraffic??>
+											return "生产 ${brokerGroup.master.brokerTraffic.putCountFormat} ${brokerGroup.master.brokerTraffic.putSizeFormat}\n消费 ${brokerGroup.master.brokerTraffic.getCountFormat} ${brokerGroup.master.brokerTraffic.getSizeFormat}";
+										<#else>
+											return "";
+										</#if>
+									}
+								}
+							},
+							<#if brokerGroup.slave??>
+							{
+								source: 'm:${brokerGroup.master.addr}',
+								target: '${brokerGroup.brokerName}',
+							},
+							{
+								source: 's:${brokerGroup.slave.addr}',
+								target: 'm:${brokerGroup.master.addr}',
+							},
+							<#else>
+							{
+								source: 'm:${brokerGroup.master.addr}',
+								target: '${brokerGroup.brokerName}',
+							},
+							</#if>
+							</#list>
+							</#if>
+							],
+							lineStyle: {
+								opacity: 0.9,
+								width: 2,
+								curveness: 0
+							}
+						}
+					]
+				};
+				var myChart = echarts.init(document.getElementById("cluster${clusterTopology.cluster.id}"));
+				myChart.setOption(option, true);
+				myChart.on('click', function (params) {
+					if(params.data._ip){
+						if(params.data._type){
+							if(params.data._type == 'cluster'){
+								var tempwindow=window.open('_blank');
+								tempwindow.location.href = "${request.contextPath}/admin/cluster/list?cid="+params.data._cid;
+							} else {
+								var tempwindow=window.open('_blank');
+								tempwindow.location.href = "${request.contextPath}/admin/cluster/list?cid="+params.data._cid+"&ip="+params.data._ip;
+							}
+						} else {
+							var tempwindow=window.open('_blank');
+							tempwindow.location.href = "${request.contextPath}/admin/server/list?ip="+params.data._ip;
+						}
+					}
+				});
+			});
+			</script>
 		</div>
-		</#if>
-	</#list>
+	<#if clusterTopology_index%2 == 1 || clusterTopology_index == response.result?size - 1>
+	</div>
+	</#if>
+</#list>
 <script>
 var machineCache = new Array();
 var brokerCache = new Array();
 </script>
 <div id="introModal" class="modal fade" tabindex="-1" aria-hidden="true">
-	<div class="modal-dialog" style="width:800px">
+	<div class="modal-dialog modal-lg">
 		<div class="modal-content">
 			<div class="modal-header">
-				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
 				<h4 class="modal-title">集群拓扑介绍</h4>
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
 			</div>
-			<div><img src="${request.contextPath}/img/admin/intro/clusterTopology.gif" class="img-rounded"></div>
+			<div><img src="${request.contextPath}/wiki/adminGuide/img/clusterTopology.gif" class="product-image img-rounded"></div>
 		</div>
 	</div>
 </div>
 </#if>
-</div>

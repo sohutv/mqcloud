@@ -4,7 +4,6 @@ import com.sohu.tv.mq.cloud.Application;
 import com.sohu.tv.mq.cloud.bo.DecodedMessage;
 import com.sohu.tv.mq.cloud.bo.MessageData;
 import com.sohu.tv.mq.cloud.bo.MessageQueryCondition;
-import com.sohu.tv.mq.cloud.bo.ResentMessageResult;
 import com.sohu.tv.mq.cloud.util.DateUtil;
 import com.sohu.tv.mq.cloud.util.Result;
 import org.junit.Assert;

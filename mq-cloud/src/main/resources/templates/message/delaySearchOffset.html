@@ -1,0 +1,33 @@
+<#if response.OK>
+	<tbody id="page_${response.result.mqc.times}">
+		<#if response.result.msgList?? && response.result.msgList?size gt 0>
+			<#list response.result.msgList as msg>
+				<tr data="${msg.offsetMsgId}" id="${msg.msgId}" date-data="${msg.storeTimestamp?c}" dataIdx="${msg_index + 1 + response.result.mqc.prevSize}">
+					<td>${msg_index + 1 + response.result.mqc.prevSize}</td>
+					<td><a target=_blank href="${request.contextPath}/topic/detail?topic=${msg.realTopic}<#if msg.consumer??>&consumer=${msg.realConsumer}</#if>"><#if msg.consumer??>${msg.consumer}<#else>${msg.realTopic}</#if></a></td>
+					<td>${msg.bornHostString}</td>
+					<td data-tooltip="true" title="起始时间:${msg.bornTimestamp?number_to_datetime?string("yyyy-MM-dd HH:mm:ss.SSS")}">${msg.storeTimestamp?number_to_datetime?string("yyyy-MM-dd HH:mm:ss.SSS")}</td>
+					<td data-tooltip="true" title="偏移量:${msg.queueOffset}">${msg.broker!}:${msg.queueId}</td>
+					<td data-tooltip="true" title="序列化方式:<#if msg.messageBodySerializer??>${msg.messageBodySerializer.getName()}(${msg.messageBodyTypeString!})<#else>${msg.messageBodyTypeString!}</#if>,大小:${msg.formatMsgLength}"><#if msg.decodedBody?length gt 1000><pre>${msg.decodedBody}</pre><#else>${msg.decodedBody}</#if></td>
+					<td>${msg.keys!}</td>
+				</tr>
+			</#list>
+		<#else>
+			<tr class="no_more_data"><td colspan=8 class="text-center">本次查无数据</td></tr>
+		</#if>
+		<input type="hidden" id="data_${response.result.mqc.times}" data_size="${response.result.msgList?size}"  data_search="${response.result.mqc.searchedSize?c}" data_left="${response.result.mqc.leftSize?c}">
+	</tbody>
+	<script>
+		showPage(${response.result.mqc.times});
+		$("#messageParam").val('${response.result.mqc.serialize()}');
+		$(function() {
+	        $('[data-tooltip="true"]').tooltip({
+				boundary: 'window'
+	        });
+		});
+	</script>
+<#else>
+	<tbody>
+		<tr class="no_more_data"><td colspan=8 class="text-center">查询异常！${response.message}</td></tr>
+	</tbody>
+</#if>

@@ -1,58 +1,50 @@
 <#if response.notOK>
 <div class="modal-body">
-	<div class="form-body">
-		<div class="form-group">
-			<div>异常数据</div>
-		</div>
+	<div class="form-group">
+		<div class="text-center">异常数据</div>
 	</div>
 </div>
 <#else>
 <div class="modal-body">
-	<div class="row">
-		<div class="col-md-12">
-			<div class="form-body">
-				<div class="form-group">
-					<label class="control-label col-md-3"> Topic: </label>
-			        <div class="col-md-6">
-						<input type="text" value="${response.result.topic.name}" readonly="readonly" class="form-control" />
-					</div>
-				</div>
-				<div class="form-group">
-					<label class="control-label col-md-3"> 当前状态: </label>
-			        <div class="col-md-6">
-						<div class="form-control-static"><span><#if response.result.topic.traceEnabled()>开启<#else>关闭</#if></span></div>
-					</div>
-				</div>
-				<div class="form-group">
-					<label class="control-label col-md-3"> 修改为: </label>
-			        <div class="col-md-6">
-						<div class="form-control-static"><span><#if response.result.traceEnabled == 1>开启<#else>关闭</#if></span></div>
-					</div>
-				</div>
-				<div class="form-group">
-					<label class="control-label col-md-3"> 创建trace topic: </label>
-					<div class="col-md-6">
-						<select id="traceClusterSelect" name="traceClusterId" class="form-control select2_category">
-							<#list clusters as cluster>
-								<#if cluster.isEnableTrace()>
-									<option value="${cluster.getId()}">${cluster.getName()}</option>
-								</#if>
-							</#list>
-						</select>
-					</div>
-				</div>
-				<div class="form-group custom">
-					<label class="control-label col-md-3"> 拒绝理由: </label>
-					<div class="col-md-6">
-						<textarea type="text" id="refuseReason" rows="3" class="form-control" placeholder="请填写"></textarea>
-					</div>
-				</div>
-			</div>
+	<div class="form-group row">
+		<label class="col-md-3 col-form-label"> Topic: </label>
+		<div class="col-md-9">
+			<input type="text" value="${response.result.topic.name}" readonly="readonly" class="form-control" />
+		</div>
+	</div>
+	<div class="form-group row">
+		<label class="col-md-3"> 当前状态: </label>
+		<div class="col-md-9">
+			<div class="form-control-static"><span><#if response.result.topic.traceEnabled()>开启<#else>关闭</#if></span></div>
+		</div>
+	</div>
+	<div class="form-group row">
+		<label class="col-md-3"> 修改为: </label>
+		<div class="col-md-9">
+			<div class="form-control-static"><span><#if response.result.traceEnabled == 1>开启<#else>关闭</#if></span></div>
+		</div>
+	</div>
+	<div class="form-group row">
+		<label class="col-md-3 col-form-label"> 创建trace topic: </label>
+		<div class="col-md-9">
+			<select id="traceClusterSelect" name="traceClusterId" class="form-control selectpicker">
+				<#list clusters as cluster>
+					<#if cluster.isEnableTrace()>
+						<option value="${cluster.getId()}">${cluster.getName()}</option>
+					</#if>
+				</#list>
+			</select>
+		</div>
+	</div>
+	<div class="form-group row custom">
+		<label class="col-md-3 col-form-label"> 拒绝理由: </label>
+		<div class="col-md-9">
+			<textarea type="text" id="refuseReason" rows="3" class="form-control" placeholder="请填写"></textarea>
 		</div>
 	</div>
 </div>
 <div class="modal-footer custom">
-	<button type="button" data-dismiss="modal" class="btn" >取消</button>
+	<button type="button" data-dismiss="modal" class="btn btn-light" >取消</button>
 	<button type="button" id="cancelBtn" class="btn btn-warning" onclick="cancelAudit()">撤销</button>
 	<button type="button" class="btn btn-warning" id="refuseBtn" onclick="refuse()">拒绝</button>
 	<button type="button" class="btn btn-primary" id="agreeBtn" onclick="agree()">同意</button>

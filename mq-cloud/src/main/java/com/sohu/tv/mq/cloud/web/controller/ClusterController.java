@@ -9,6 +9,7 @@ import com.sohu.tv.mq.cloud.util.WebUtil;
 import com.sohu.tv.mq.cloud.web.controller.param.TopicUserParam;
 import com.sohu.tv.mq.dto.ClusterInfoDTO;
 import com.sohu.tv.mq.stats.dto.ClientStats;
+import com.sohu.tv.mq.stats.dto.ConsumerClientStats;
 import com.sohu.tv.mq.util.JSONUtil;
 import org.apache.rocketmq.common.Pair;
 import org.slf4j.Logger;
@@ -47,6 +48,9 @@ public class ClusterController {
     
     @Autowired
     private MemoryMQ<ClientStats> clientStatsMemoryMQ;
+
+    @Autowired
+    private MemoryMQ<ConsumerClientStats> consumerClientStatsMemoryMQ;
     
     @Autowired
     private ClusterService clusterService;
@@ -138,10 +142,34 @@ public class ClusterController {
         } catch (Exception e) {
             logger.error("json err:{}", stats, e);
         }
-        if(clientStats != null) {
+        if (clientStats != null && clientStats.getClient() != null) {
             boolean rst = clientStatsMemoryMQ.produce(clientStats);
-            if(!rst) {
+            if (!rst) {
                 logger.info("save failed:{}", stats);
+            }
+        } else {
+            logger.warn("clientStats is invalid:{}", stats);
+        }
+        return Result.getOKResult();
+    }
+
+    /**
+     * 客户端消费者上报统计
+     *
+     * @throws Exception
+     */
+    @RequestMapping(value = "/consumer/report", method = RequestMethod.POST)
+    public Result<?> consumerReport(@RequestParam("stats") String stats) throws Exception {
+        ConsumerClientStats consumerClientStats = null;
+        try {
+            consumerClientStats = JSONUtil.parse(stats, ConsumerClientStats.class);
+        } catch (Exception e) {
+            logger.error("json err:{}", stats, e);
+        }
+        if (consumerClientStats != null && consumerClientStats.getStats() != null) {
+            boolean rst = consumerClientStatsMemoryMQ.produce(consumerClientStats);
+            if (!rst) {
+                logger.info("save consumer stats failed:{}", stats);
             }
         }
         return Result.getOKResult();

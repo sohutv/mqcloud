@@ -1,124 +1,139 @@
-<div class="main">
-	<form class="form-inline" role="form">
-		<div class="form-group">
-			<label for="userGroupSelect"> 用户组: </label>
-			<select name="type" id="userGroupSelect" class="form-control select2_category">
-				<option value="-1" <#if RequestParameters.gid == "-1">selected="selected"</#if>>全部</option>
-				<option value="0" <#if RequestParameters.gid == "0">selected="selected"</#if>>未分组</option>
-				<#if userGroupList??>
-					<#list userGroupList as userGroup>
-						<option value="${userGroup.id}" <#if userGroup.id == RequestParameters.gid?number>selected="selected"</#if>>${userGroup.name}</option>
+<div class="card mt-2">
+	<div class="card-body">
+		<div class="input-group">
+			<label for="userGroupSelect" class="col-form-label"> 用户组: </label>
+			<div class="ml-1 mr-1" style="min-width: 9em;">
+				<select name="type" id="userGroupSelect" class="form-control selectpicker border">
+					<option value="-1" <#if RequestParameters.gid == "-1">selected="selected"</#if>>全部</option>
+					<option value="0" <#if RequestParameters.gid == "0">selected="selected"</#if>>未分组</option>
+					<#if userGroupList??>
+						<#list userGroupList as userGroup>
+							<option value="${userGroup.id}" <#if userGroup.id == RequestParameters.gid?number>selected="selected"</#if>>${userGroup.name}</option>
+						</#list>
+					</#if>
+				</select>
+			</div>
+			<div class="btn-group">
+				<button type="button" class="btn btn-default" title="添加用户" data-target="#addUserModal" data-toggle="modal"><span class="fas fa-user-plus"></span><span class="d-none d-lg-inline">添加用户</span></button>
+				<button type="button" class="btn btn-default" title="用户组管理" data-target="#modifyUserGroupModal" data-toggle="modal"><span class="fas fa-users-cog"></span><span class="d-none d-lg-inline">用户组管理</span></button>
+			</div>
+		</div>
+	</div>
+</div>
+<div class="card">
+	<div class="card-body table-responsive p-0">
+		<table class="table table-head-fixed table-striped" style="word-break:break-all; word-wrap:break-all;table-layout: fixed">
+			<colgroup>
+				<col width="80px">
+				<col width="100px">
+				<col width="150px">
+				<col width="100px">
+				<col width="100px">
+				<col width="80px">
+				<col width="80px">
+				<col width="100px">
+				<col width="120px">
+				<col width="120px">
+			</colgroup>
+			<thead>
+				<tr>
+					<th>序号</th>
+					<th>姓名</th>
+					<th>邮箱</th>
+					<th>手机</th>
+					<th>手机预警</th>
+					<th>角色</th>
+					<th>用户组</th>
+					<th>创建时间</th>
+					<th>更新时间</th>
+					<th>操作</th>
+				</tr>
+			</thead>
+			<tbody>
+				<#if response.empty>
+					 <tr>
+						<td colspan="10" class="text-center">
+							暂无数据
+						</td>
+					<tr>
+				<#else>
+					<#list response.result as user>
+						<tr>
+							<td>${user_index+1}</td>
+							<td>${user.name!}</td>
+							<td>${user.email}</td>
+							<td>${user.mobile!}</td>
+							<td><#if user.receivePhoneNotice()>开启<#else>关闭</#if></td>
+							<td><#if user.type == 0>普通用户<#else>管理员</#if></td>
+							<td>${user.groupName!}</td>
+							<td>${user.createDate?string("yyyy-MM-dd")}</td>
+							<td>${user.updateTime?string("yyyy-MM-dd HH:mm:ss")}</td>
+							<td>
+								<button data-toggle='tooltip' title="重置用户密码" type="button"
+									onclick="updateUserPassword('${user.name!user.email}', ${user.id})" class="btn-xs btn-info">
+									<span class="fas fa-user-edit" aria-hidden="true"></span>
+								</button>
+								&nbsp;
+								<#if user.type == 1>
+									<span data-toggle='tooltip' title="是否接收MQCloud发送的各种报警，审批等通知">
+										<input onclick="monitor(this,${user.id})" <#if user.receiveNotice == 1>checked="checked"</#if> type="checkbox" style="vertical-align: -2px">
+									</span>
+								</#if>
+							</td>
+						</tr>
 					</#list>
 				</#if>
-			</select>
-		</div>
-		<div class="form-group">
-			<button type="button" class="btn btn-success" data-target="#modifyUserGroupModal" data-toggle="modal"><span class="glyphicon glyphicon-cog" aria-hidden="true"></span>&nbsp;用户组管理</button>
-		</div>
-		<div class="form-group">
-			<button type="button" class="btn btn-success" data-target="#addUserModal" data-toggle="modal"><span class="glyphicon glyphicon-plus" aria-hidden="true"></span>&nbsp;用户</button>
-		</div>
-	</form>
-	<hr/>
-	<table class="table table-striped table-hover" style="margin-top: 0px;word-break:break-all; word-wrap:break-all;">
-		<thead>
-			<tr>
-				<td>序号</td>
-				<td>姓名</td>
-				<td>邮箱</td>
-				<td>手机</td>
-				<td>手机预警</td>
-				<td>角色</td>
-				<td>用户组</td>
-				<td>创建时间</td>
-				<td>更新时间</td>
-				<td>操作</td>
-			</tr>
-		</thead>
-		<tbody>
-            <#if response.empty>
-			     <tr>
-                    <td colspan="10" class="text-center">
-                    	暂无数据
-                    </td>
-                <tr>
-			<#else>
-				<#list response.result as user>
-					<tr>
-						<td>${user_index+1}</td>
-						<td>${user.name!}</td>
-						<td>${user.email}</td>
-						<td>${user.mobile!}</td>
-						<td><#if user.receivePhoneNotice()>开启<#else>关闭</#if></td>
-						<td><#if user.type == 0>普通用户<#else>管理员</#if></td>
-						<td>${user.groupName!}</td>
-						<td>${user.createDate?string("yyyy-MM-dd")}</td>
-						<td>${user.updateTime?string("yyyy-MM-dd HH:mm:ss")}</td>
-						<td>
-							<button data-toggle='tooltip' title="重置用户密码" type="button" 
-								onclick="updateUserPassword('${user.name!user.email}', ${user.id})" class="btn-xs btn-success">
-								<span class="glyphicon glyphicon-cog" aria-hidden="true"></span>
-							</button>
-							&nbsp;
-							<#if user.type == 1>
-								<span data-toggle='tooltip' title="是否接收MQCloud发送的各种报警，审批等通知">
-									<input onclick="monitor(this,${user.id})" <#if user.receiveNotice == 1>checked="checked"</#if> type="checkbox" style="vertical-align: -2px">接收通知
-								</span>
-							</#if>
-						</td>
-					</tr>
-				</#list>
-			</#if>
-		</tbody>
-	</table>
+			</tbody>
+		</table>
+	</div>
 </div>
 <!-- 添加用户 -->
 <div id="addUserModal" class="modal fade" tabindex="-1" data-width="400">
-	<div class="modal-dialog">
+	<div class="modal-dialog modal-lg">
 		<div class="modal-content">
 			<div class="modal-header">
-				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
 				<h4 class="modal-title">添加用户</h4>
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
 			</div>
 			<form class="form-horizontal form-bordered form-row-stripped" id="addUserForm">
 				<div class="modal-body">
 					<div class="row">
 						<div class="col-md-12">
 							<div class="form-body">
-								<div class="form-group">
-									<label class="control-label col-md-4"> 姓 名: </label>
+								<div class="form-group row justify-content-center">
+									<label class="col-form-label col-md-2"> 姓 名: </label>
 									<div class="col-md-5">
 										<input type="text" id="nameInput" name="name" value="" placeholder="姓名" class="form-control" />
 									</div>
 								</div>
-								<div class="form-group">
-									<label class="control-label col-md-4"> 邮 箱: </label>
+								<div class="form-group row justify-content-center">
+									<label class="col-form-label col-md-2"> 邮 箱: </label>
 									<div class="col-md-5">
 										<input type="text" id="emailInput" name="email" value="" placeholder="邮箱" class="form-control" />
 									</div>
 								</div>
-								<div class="form-group">
-									<label class="control-label col-md-4"> 手 机: </label>
+								<div class="form-group row justify-content-center">
+									<label class="col-form-label col-md-2"> 手 机: </label>
 									<div class="col-md-5">
 										<input type="text" id="mobileInput" name="mobile" value="" placeholder="手机" class="form-control" />
 									</div>
 								</div>
-								<div class="form-group">
-									<label class="control-label col-md-4"> 密 码: </label>
+								<div class="form-group row justify-content-center">
+									<label class="col-form-label col-md-2"> 密 码: </label>
 									<div class="col-md-5">
 										<input type="password" id="password" name="password" value="" placeholder="密码" class="form-control" />
 									</div>
 								</div>
-								<div class="form-group">
-									<label class="control-label col-md-4"> 确认密码: </label>
+								<div class="form-group row justify-content-center">
+									<label class="col-form-label col-md-2"> 确认密码: </label>
 									<div class="col-md-5">
 										<input type="password" id="password2" value="" placeholder="密码" class="form-control" />
 									</div>
 								</div>
-								<div class="form-group">
-									<label class="control-label col-md-4"> 角 色: </label>
+								<div class="form-group row justify-content-center">
+									<label class="col-form-label col-md-2"> 角 色: </label>
 									<div class="col-md-5">
-										<select class="selectpicker" name="type" >
+										<select class="selectpicker border form-control" name="type" >
 											<option value="0" selected>普通用户</option>
 											<option value="1">管理员</option>
 										</select>
@@ -129,7 +144,7 @@
 					</div>
 				</div>
 				<div class="modal-footer">
-					<button type="button" data-dismiss="modal" class="btn" >取消</button>
+					<button type="button" data-dismiss="modal" class="btn btn-light" >取消</button>
 					<button type="button" class="btn btn-primary" id="addUserBtn" onclick="addUser()">确定</button>
 				</div>
 			</form>
@@ -141,8 +156,8 @@
 	<div class="modal-dialog">
 		<div class="modal-content">
 			<div class="modal-header">
-				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
 				<h4 class="modal-title"><b id="userNameUpdateInput"></b>&nbsp;密码重置</h4>
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
 			</div>
 			<form class="form-horizontal form-bordered form-row-stripped">
 				<div class="modal-body">
@@ -150,15 +165,15 @@
 						<div class="col-md-12">
 							<div class="form-body">
 								<input type="hidden" id="updateUserIdInput"/>
-								<div class="form-group">
-									<label class="control-label col-md-4"> 新密码: </label>
-									<div class="col-md-5">
+								<div class="form-group row justify-content-center">
+									<label class="col-form-label col-md-3"> 新密码: </label>
+									<div class="col-md-8">
 										<input type="password" id="passwordNew" value="" placeholder="密码" class="form-control" />
 									</div>
 								</div>
-								<div class="form-group">
-									<label class="control-label col-md-4"> 确认密码: </label>
-									<div class="col-md-5">
+								<div class="form-group row justify-content-center">
+									<label class="col-form-label col-md-3"> 确认密码: </label>
+									<div class="col-md-8">
 										<input type="password" id="passwordNew2" value="" placeholder="密码" class="form-control" />
 									</div>
 								</div>
@@ -167,7 +182,7 @@
 					</div>
 				</div>
 				<div class="modal-footer">
-					<button type="button" data-dismiss="modal" class="btn" >取消</button>
+					<button type="button" data-dismiss="modal" class="btn btn-light" >取消</button>
 					<button type="button" class="btn btn-primary" id="updateUserPasswordBtn" onclick="updateUserPasswordCommit()">确定</button>
 				</div>
 			</form>
@@ -177,33 +192,33 @@
 
 <!-- 用户组管理 -->
 <div id="modifyUserGroupModal" class="modal fade" tabindex="-1">
-	<div class="modal-dialog" style="width:800px;">
+	<div class="modal-dialog modal-lg">
 		<div class="modal-content">
 			<div class="modal-header">
-				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
 				<h4 class="modal-title">用户组管理</h4>
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
 			</div>
 			<div class="modal-content" style="height:500px;overflow-y:scroll;overflow-x:hidden;">
 				<div class="row" style="padding-left:16px;">
-					<div class="col-sm-4" style="padding-left:0px;">
+					<div class="col-sm-4 mt-2" style="padding-left:0px;">
 						<ul class="list-group" style="margin-bottom:0px;">
-							<li class="list-group-item btn-success"><h5 class="list-group-item-heading">用户组<span data-toggle='tooltip' title="新增用户组" onclick="updateUserGroupShow(0)" style="float:right;cursor:pointer;" class="glyphicon glyphicon-plus" aria-hidden="true"></span></h5></li> 
+							<li class="list-group-item list-group-item-info btn-info"><h5 class="li">用户组<span data-toggle='tooltip' title="新增用户组" onclick="updateUserGroupShow(0)" style="float:right;cursor:pointer;" class="fas fa-plus" aria-hidden="true"></span></h5></li>
 						</ul>
 						<ul class="list-group" id="userGroup">
 							<li class="list-group-item"><p class="list-group-item-text">暂无数据</p></li> 
 						</ul>
 					</div>
-					<div class="col-sm-4" style="padding-left:0px;">
+					<div class="col-sm-4 mt-2" style="padding-left:0px;">
 						<ul class="list-group" style="margin-bottom:0px;">
-							<li class="list-group-item btn-success"><h5 class="list-group-item-heading">组员</h5></li> 
+							<li class="list-group-item list-group-item-info btn-info btn-info"><h5 class="list-group-item-heading">组员</h5></li>
 						</ul>
 						<ul class="list-group" id="groupMembers">
 							<li class="list-group-item"><p class="list-group-item-text">暂无数据</p></li> 
 						</ul>
 					</div>
-					<div class="col-sm-4" style="padding-left:0px;">
+					<div class="col-sm-4 mt-2" style="padding-left:0px;">
 						<ul class="list-group" style="margin-bottom:0px;">
-							<li class="list-group-item btn-success"><h5 class="list-group-item-heading">用户</h5></li> 
+							<li class="list-group-item list-group-item-info btn-info"><h5 class="list-group-item-heading">用户</h5></li>
 							<li class="list-group-item"><input class="form-control" id="userSearch" type="text" placeholder="搜索"></li> 
 						</ul>
 						<ul class="list-group" id="users">
@@ -221,8 +236,8 @@
 	<div class="modal-dialog">
 		<div class="modal-content">
 			<div class="modal-header">
-				<button type="button" class="close" onclick="hideMsgSearchModal()" aria-hidden="true">&times;</button>
 				<h4 class="modal-title"><span id="userGroupAction"></span>用户组</h4>
+				<button type="button" class="close" onclick="hideMsgSearchModal()" aria-hidden="true">&times;</button>
 			</div>
             <form class="form-horizontal form-bordered form-row-stripped" id="updateUserGroupForm" onsubmit="return false">
             	<input type="hidden" id="userGroupId" name="id" value="0">
@@ -230,8 +245,8 @@
 					<div class="row">
 						<div class="col-md-12">
 							<div class="form-body">
-								<div class="form-group">
-									<label class="control-label col-md-4"> 用户组: </label>
+								<div class="form-group row justify-content-center">
+									<label class="col-form-label col-md-2"> 用户组: </label>
 									<div class="col-md-5">
 										<input type="text" id="userGroupInput" name="name" value="" placeholder="组名" class="form-control" />
 									</div>
@@ -241,7 +256,7 @@
 					</div>
 				</div>
 				<div class="modal-footer">
-					<button type="button" data-dismiss="modal" class="btn" >取消</button>
+					<button type="button" data-dismiss="modal" class="btn btn-light" >取消</button>
 					<button type="button" class="btn btn-primary" id="updateUserGroupBtn" onclick="updateUserGroup()">确定</button>
 				</div>
 			</form>

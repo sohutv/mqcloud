@@ -1,42 +1,28 @@
 <#if response.notOK>
-<div class="modal-body">
-	<div class="form-body">
-		<div class="form-group">
-			<div>异常数据</div>
-		</div>
-	</div>
-</div>
+    <div class="text-center">异常数据</div>
 <#else>
-<div class="modal-body">
-	<div class="row">
-		<div class="col-md-12">
-			<div class="form-body">
-				<div class="form-group">
-					<label class="control-label col-md-3"> Topic: </label>
-			        <div class="col-md-6">
-						<input type="text" value="${response.result.topic}" readonly="readonly" class="form-control" />
-					</div>
-				</div>
-				<div class="form-group">
-					<label class="control-label col-md-3"> 消费者: </label>
-			        <div class="col-md-6">
-			        	<input type="text" value="${response.result.consumer}" readonly="readonly" class="form-control" />
-					</div>
-				</div>
-				<div class="form-group">
-					<label class="control-label col-md-3"> 客户端: </label>
-			        <div class="col-md-6">
-			        	<input type="text" value="${response.result.pauseClientId!}" readonly="readonly" class="form-control" />
-					</div>
-				</div>
-				<div class="form-group">
-					<label class="control-label col-md-3"> 下线: </label>
-					<div class="col-md-6">
-						<input type="text" value="<#if response.result.unregister?? && response.result.unregister>是<#else>否</#if>" readonly="readonly" class="form-control" />
-					</div>
-				</div>
-			</div>
+	<div class="form-group row">
+		<label class="col-form-label col-md-3"> Topic: </label>
+		<div class="col-md-7">
+			<input type="text" value="${response.result.topic}" readonly="readonly" class="form-control" />
 		</div>
 	</div>
-</div>
+	<div class="form-group row">
+		<label class="col-form-label col-md-3"> 消费者: </label>
+		<div class="col-md-7">
+			<input type="text" value="${response.result.consumer}" readonly="readonly" class="form-control" />
+		</div>
+	</div>
+	<div class="form-group row">
+		<label class="col-form-label col-md-3"> 客户端: </label>
+		<div class="col-md-7">
+			<input type="text" value="${response.result.pauseClientId!}" readonly="readonly" class="form-control" />
+		</div>
+	</div>
+	<div class="form-group row">
+		<label class="col-form-label col-md-3"> 下线: </label>
+		<div class="col-md-7">
+			<input type="text" value="<#if response.result.unregister?? && response.result.unregister>是<#else>否</#if>" readonly="readonly" class="form-control" />
+		</div>
+	</div>
 </#if>

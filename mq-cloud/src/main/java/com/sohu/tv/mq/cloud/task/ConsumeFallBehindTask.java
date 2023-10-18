@@ -94,6 +94,10 @@ public class ConsumeFallBehindTask {
                 logger.warn("cid:{} is no cluster", broker.getCid());
                 continue;
             }
+            // 测试环境，监控所有的集群；online环境，只监控online集群
+            if (!mqCloudConfigHelper.needMonitor(cluster.online())) {
+                continue;
+            }
             detectBrokerSize++;
             // 获取落后的数据
             Result<BrokerMomentStatsData> result = consumeFallBehindService.getConsumeFallBehindSize(broker.getAddr(),

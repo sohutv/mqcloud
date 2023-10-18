@@ -1,69 +1,129 @@
-<#if response.empty>
-	<tr><td colspan=7 class='text-center'>暂无数据</td></tr>
-<#else>
-	<#list response.result as audit>
-		<tr>
-			<td>${(pagination.result.currentPage - 1)*pagination.result.numOfPage + audit_index + 1}</td>
-			<td>${audit.typeEnum.getName()}</td>
-			<td>${audit.createTime?string("yyyy-MM-dd HH:mm:ss")}</td>
-			<#if audit.info?? && audit.info?length gt 12>
-				<td data-toggle="tooltip" title="${audit.info}">${audit.info?substring(0,12)}...</td>
-			<#else>
-				<td>${audit.info!}</td>
-			</#if>
-			<td>
-				${audit.statusEnum.getName()}
-				<#if audit.statusEnum.getStatus() == 2>
-					<br>${audit.refuseReason!}
-				</#if>
-			</td>
-			<#if audit.statusEnum.getStatus() == 0>
-				<td></td>
-			<#else>
-				<td>${audit.updateTime?string("yyyy-MM-dd HH:mm:ss")}</td>
-			</#if>
-			<td>
-				<#if audit.typeEnum.getType() != 9>
-					<#if audit.statusEnum.getStatus() == 0>
-						<button type="button" class="btn btn-primary" 
-							onclick="auditDetail(${audit.id}, ${audit.typeEnum.getType()}, '${audit.typeEnum.getName()}', true)">撤销</button>
+<div class="row">
+	<div class="col-12">
+		<div class="card">
+			<div class="card-body table-responsive p-0">
+				<table class="table table-hover table-striped text-nowrap">
+					<thead>
+					<tr>
+						<th class="d-none d-sm-table-cell">序号</th>
+						<th>类型</th>
+						<th>申请时间</th>
+						<th class="d-none d-sm-table-cell">用途</th>
+						<th>审核状态</th>
+						<th class="d-none d-sm-table-cell">审核时间</th>
+						<th>详情</th>
+					</tr>
+					</thead>
+					<tbody>
+					<#if response.empty>
+						<tr><td colspan=7 class='text-center'>暂无数据</td></tr>
 					<#else>
-						<button type="button" class="btn btn-success" 
-							onclick="auditDetail(${audit.id}, ${audit.typeEnum.getType()}, '${audit.typeEnum.getName()}', false)">查看</button>
+						<#list response.result as audit>
+							<tr>
+								<td class="d-none d-sm-table-cell">${(pagination.result.currentPage - 1)*pagination.result.numOfPage + audit_index + 1}</td>
+								<td>${audit.typeEnum.getName()}</td>
+								<td>${audit.createTime?string("yyyy-MM-dd HH:mm:ss")}</td>
+								<#if audit.info?? && audit.info?length gt 12>
+									<td class="d-none d-sm-table-cell" data-toggle="tooltip" title="${audit.info}">${audit.info?substring(0,12)}...</td>
+								<#else>
+									<td class="d-none d-sm-table-cell">${audit.info!}</td>
+								</#if>
+								<td>
+									${audit.statusEnum.getName()}
+									<#if audit.statusEnum.getStatus() == 2>
+										<br>${audit.refuseReason!}
+									</#if>
+								</td>
+								<#if audit.statusEnum.getStatus() == 0>
+									<td class="d-none d-sm-table-cell"></td>
+								<#else>
+									<td class="d-none d-sm-table-cell">${audit.updateTime?string("yyyy-MM-dd HH:mm:ss")}</td>
+								</#if>
+								<td>
+									<#if audit.typeEnum.getType() != 9>
+										<#if audit.statusEnum.getStatus() == 0>
+											<button type="button" class="btn btn-primary btn-sm"
+												onclick="auditDetail(${audit.id}, ${audit.typeEnum.getType()}, '${audit.typeEnum.getName()}', true, ${audit.statusEnum.getStatus()})">查看</button>
+										<#else>
+											<button type="button" class="btn btn-success btn-sm"
+												onclick="auditDetail(${audit.id}, ${audit.typeEnum.getType()}, '${audit.typeEnum.getName()}', false, ${audit.statusEnum.getStatus()})">查看</button>
+										</#if>
+									</#if>
+								</td>
+							</tr>
+						</#list>
 					</#if>
-				</#if>
-			</td>
-		</tr>
-	</#list>
-	<script type='text/javascript'>
-		<#if pagination.OK && pagination.result.totalPages gt 1>
-	       var options = {
-	           currentPage: ${pagination.result.currentPage},
-	           totalPages: ${pagination.result.totalPages},
-	    	   bootstrapMajorVersion: 3,
-	    	   size: "small",
-	           tooltipTitles: function (type, page, current) {
-	               switch (type) {
-	               case "first":
-	                   return "跳到首页";
-	               case "prev":
-	                   return "上一页";
-	               case "next":
-	                   return "下一页";
-	               case "last":
-	                   return "跳到尾页";
-	               case "page":
-	                   return "第" + page + "页";
-	               }
-	           },
-	           onPageClicked: function (event, originalEvent, type, page) {
-	        	   showAuditList(page);
-	           },
-	           itemContainerClass: function (type, page, current) {
-	       	   		return (page === current) ? "active" : "pointer-cursor";
-	       	   }
-	       }
-	       $('#auditPagination').bootstrapPaginator(options);
-		</#if>
-	</script>
-</#if>
+					</tbody>
+				</table>
+			</div> <!-- /.card-body -->
+			<#if pagination.OK && pagination.result.totalPages gt 1>
+				<div class="card-footer clearfix">
+					<ul id="pagination" data-url="${request.contextPath}/audit/list?" style="float:right"></ul>
+				</div>
+			</#if>
+		</div> <!-- /.card -->
+	</div> <!-- /.col -->
+</div> <!-- /.row -->
+
+<div id="auditDetailModal" class="modal fade">
+	<div class="modal-dialog modal-lg">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h4 class="modal-title"><span id="auditDetailAction"></span></h4>
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+					<span aria-hidden="true">&times;</span>
+				</button>
+			</div>
+			<div class="modal-body">
+				<input type="hidden" id="auditId">
+				<input type="hidden" id="auditStatus">
+				<div class="card card-outline card-secondary">
+					<div class="card-body" id="auditDetailForm">
+					</div>
+				</div>
+			</div>
+			<div class="modal-footer justify-content-between" id="cancelDiv" style="display:none">
+				<button type="button btn-default" data-dismiss="modal" class="btn" >取消</button>
+				<button type="button btn-primary" id="cancelBtn" class="btn btn-primary" onclick="cancelAudit()">撤销</button>
+			</div>
+		</div>
+	</div>
+</div>
+<script>
+	function auditDetail(aid, type, action, cancel, status){
+		$("#auditId").val(aid);
+		$("#auditStatus").val(status);
+		$("#auditDetailAction").html(action);
+		$("#auditDetailForm").html("");
+		post('${request.contextPath}/audit/detail', {
+			aid: aid,
+			type: type
+		}, function (data) {
+			$("#auditDetailForm").html(data);
+			$("#auditDetailModal").modal('show');
+			if (cancel) {
+				$("#cancelDiv").show();
+				$("#cancelBtn").attr("data", aid);
+			} else {
+				$("#cancelDiv").hide();
+			}
+		});
+	}
+	function cancelAudit(){
+		disable("cancelBtn");
+		$.get('${request.contextPath}/audit/cancel',
+				{
+					aid: $("#cancelBtn").attr("data")
+				},function(data){
+					if(data.status == 200){
+						toastr.success("撤消成功，即将自动刷新");
+						reload(2000);
+					}else{
+						toastr.error("撤消失败！"+data.message);
+						enable("cancelBtn");
+					}
+				}
+		);
+	}
+</script>
+<#include "../inc/pagination.html">

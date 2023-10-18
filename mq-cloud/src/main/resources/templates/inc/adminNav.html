@@ -1,37 +1,158 @@
-<nav class="navbar navbar-inverse navbar-fixed-top">
-    <div class="header-inner header-inner2">
-          <a class="navbar-brand glyphicon glyphicon-home" href="${request.contextPath}/user/topic"> MQCloud</a>
-          <ul class="nav navbar-nav navbar-right">
-              <li class="dropdown">
-              	<a href="#" class="dropdown-toggle" data-toggle="dropdown"><font id="userNameComponent" color='white'>
-                  <#if userInfo.user.name??>
-                  	${userInfo.user.name}
-                  <#else>
-                  	${userInfo.user.email}
-                  </#if>
-                  </font><b class="caret"></b>
-			      <i class="fa fa-angle-down"></i>
-				</a>
-				<ul class="dropdown-menu">
-					<li><a href="#" data-target="#updateUserModal" data-toggle="modal"><i class="fa fa-user glyphicon glyphicon-edit"></i> 修改资料</a></li>
-					<li><a href="#" onclick="logout()"><i class="fa fa-user  glyphicon glyphicon-off"></i> 注销</a></li>
-				</ul>
-              </li>
-          </ul>
-    </div>
+<nav class="main-header navbar navbar-expand navbar-white navbar-light">
+	<ul class="navbar-nav">
+		<li class="nav-item">
+			<a class="nav-link" data-widget="pushmenu" href="#" role="button"><i class="fas fa-bars"></i></a>
+		</li>
+	</ul>
+	<!-- Right navbar links -->
+	<ul class="navbar-nav ml-auto">
+		<li class="nav-item dropdown">
+			<a class="nav-link" data-toggle="dropdown" href="#">
+				<div class="circle" title="${userInfo.user.notBlankName()}" data-toggle="tooltip">${userInfo.user.capitalizeName()}</div>
+			</a>
+		</li>
+	</ul>
 </nav>
-<div id="cover"></div>
-<#include "../user/update.html">
-
+<aside class="main-sidebar sidebar-dark-primary elevation-4" style="overflow-x:hidden">
+	<a href="${request.contextPath}/user/topic" class="brand-link">
+		<img src="${request.contextPath}/assets/img/logo.png" alt="MQCloud Logo" class="brand-image img-circle elevation-3" style="opacity: .8">
+		<span class="brand-text font-weight-light">MQCloud</span>
+	</a>
+	<!-- Sidebar -->
+	<div class="sidebar">
+		<!-- Sidebar Menu -->
+		<nav class="mt-2">
+			<ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
+				<!-- Add icons to the links using the .nav-icon class
+                     with font-awesome or any other icon font library -->
+				<li class="nav-item">
+					<a href="${request.contextPath}/admin/audit/list" class="nav-link">
+						<i class="nav-icon fas fa-user-check text-info"></i>
+						<p>流程审核</p>
+					</a>
+				</li>
+				<li class="nav-item">
+					<a href="${request.contextPath}/admin/nameserver/list" class="nav-link">
+						<i class="nav-icon fas fa-search text-info"></i>
+						<p>集群发现</p>
+					</a>
+				</li>
+				<li class="nav-item">
+					<a href="${request.contextPath}/admin/controller/list" class="nav-link">
+						<i class="nav-icon fas fa-adjust text-info"></i>
+						<p>集群控制</p>
+					</a>
+				</li>
+				<li class="nav-item">
+					<a href="${request.contextPath}/admin/proxy/list" class="nav-link">
+						<i class="nav-icon fas fa-share-alt text-info"></i>
+						<p>集群代理</p>
+					</a>
+				</li>
+				<li class="nav-item">
+					<a href="${request.contextPath}/admin/cluster/list" class="nav-link">
+						<i class="nav-icon fas fa-project-diagram text-info"></i>
+						<p>集群管理</p>
+					</a>
+				</li>
+				<li class="nav-item">
+					<a href="${request.contextPath}/admin/topology/cluster" class="nav-link">
+						<i class="nav-icon fas fa-sitemap text-info"></i>
+						<p>集群拓扑</p>
+					</a>
+				</li>
+				<li class="nav-item">
+					<a href="${request.contextPath}/admin/topicManager/list" class="nav-link">
+						<i class="nav-icon fas fa-stream text-info"></i>
+						<p>主题管理</p>
+					</a>
+				</li>
+				<li class="nav-item">
+					<a href="${request.contextPath}/admin/consumer/list" class="nav-link">
+						<i class="nav-icon far fa-circle text-info"></i>
+						<p>消费管理</p>
+					</a>
+				</li>
+				<li class="nav-item">
+					<a href="${request.contextPath}/admin/monitor/consumer?numOfPage=200" class="nav-link">
+						<i class="nav-icon fas fa-tools text-info"></i>
+						<p>监控管理</p>
+					</a>
+				</li>
+				<li class="nav-item">
+					<a href="${request.contextPath}/admin/trafficMonitor/topic" class="nav-link">
+						<i class="nav-icon fas fa-tachometer-alt text-info"></i>
+						<p>流量监控</p>
+					</a>
+				</li>
+				<li class="nav-item">
+					<a href="${request.contextPath}/admin/user/list?gid=-1" class="nav-link">
+						<i class="nav-icon fas fa-users text-info"></i>
+						<p>用户管理</p>
+					</a>
+				</li>
+				<li class="nav-item">
+					<a href="${request.contextPath}/admin/server/list" class="nav-link">
+						<i class="nav-icon fas fa-laptop text-info"></i>
+						<p>机器管理</p>
+					</a>
+				</li>
+				<li class="nav-item">
+					<a href="${request.contextPath}/admin/task/list" class="nav-link">
+						<i class="nav-icon text-info fa-solid fa-list-check"></i>
+						<p>任务管理</p>
+					</a>
+				</li>
+				<li class="nav-item">
+					<a href="${request.contextPath}/admin/notice/list" class="nav-link">
+						<i class="nav-icon fas fa-bell text-info"></i>
+						<p>通知管理</p>
+					</a>
+				</li>
+				<li class="nav-item">
+					<a href="${request.contextPath}/admin/client/list" class="nav-link">
+						<i class="nav-icon fas fa-sort-amount-up-alt text-info"></i>
+						<p>客户端版本</p>
+					</a>
+				</li>
+				<li class="nav-item">
+					<a href="${request.contextPath}/admin/clientConnect/list" class="nav-link">
+						<i class="nav-icon fas fa-layer-group text-info"></i>
+						<p>客户端语言</p>
+					</a>
+				</li>
+				<li class="nav-item">
+					<a href="${request.contextPath}/admin/feedback/list" class="nav-link">
+						<i class="nav-icon fas fa-comment-alt text-info"></i>
+						<p>用户反馈</p>
+					</a>
+				</li>
+				<li class="nav-item">
+					<a href="${request.contextPath}/admin/broker/config" class="nav-link">
+						<i class="nav-icon fas fa-file-alt text-info"></i>
+						<p>配置模板</p>
+					</a>
+				</li>
+				<li class="nav-item">
+					<a href="${request.contextPath}/admin/config/list" class="nav-link">
+						<i class="nav-icon fas fa-cogs text-info"></i>
+						<p>通用配置</p>
+					</a>
+				</li>
+			</ul>
+		</nav>
+		<!-- /.sidebar-menu -->
+	</div>
+	<!-- /.sidebar -->
+</aside>
 <script>
-	function logout(){
-		$.get('${request.contextPath}/user/logout',function(data){
-			if(data.status == 200){
-				toastr.success("注销成功，欢迎再次使用MQCloud！");
-				$("#userNameComponent").html("");
-			} else {
-				toastr.error("注销失败，" + data.message);
+	$(function() {
+		// 解析当前URL，定位子标签
+		$('.nav-link').each(function(i,n){
+			if ($(this).attr("href").indexOf(window.location.pathname) == 0) {
+				$(this).addClass("active")
+						.children("i").removeClass('text-info').addClass('text-light');
 			}
-	    },'json');
-	}
+		});
+	})
 </script>

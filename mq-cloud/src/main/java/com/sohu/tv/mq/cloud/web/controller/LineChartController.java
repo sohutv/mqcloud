@@ -192,9 +192,11 @@ public class LineChartController {
         private String url;
         private boolean oneline;
         private String urlTitle;
+        private String overview;
 
         @SuppressWarnings({"rawtypes", "unchecked"})
         public HighChartLine(LineChart lineChart) {
+            overview = lineChart.getOverview();
             oneline = lineChart.isOneline();
             chart.put("renderTo", lineChart.getChartId());
             chart.put("zoomType", "xy");
@@ -205,7 +207,6 @@ public class LineChartController {
 
             if (lineChart.getSubTitle() != null) {
                 subtitle.put("text", lineChart.getSubTitle());
-                subtitle.put("useHTML", true);
             }
             
             if(lineChart.getDataMap() != null) {
@@ -318,6 +319,10 @@ public class LineChartController {
 
         public String getUrl() {
             return url;
+        }
+
+        public String getOverview() {
+            return overview;
         }
     }
 }

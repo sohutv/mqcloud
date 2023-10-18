@@ -1,0 +1,324 @@
+<aside class="main-sidebar main-sidebar-custom sidebar-dark-primary elevation-4">
+    <!-- Brand Logo -->
+    <a href="${request.contextPath}/user/topic" class="brand-link">
+        <img src="${request.contextPath}/assets/img/logo.png" alt="MQCloud Logo" class="brand-image img-circle elevation-3" style="opacity: .8">
+        <span class="brand-text font-weight-light">MQCloud</span>
+    </a>
+    <!-- 控制侧边栏内容在这里 -->
+    <div class="sidebar">
+        <nav class="mt-2">
+            <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
+                <!-- Add icons to the links using the .nav-icon class
+                     with font-awesome or any other icon font library -->
+                <li class="nav-item">
+                    <a href="#" class="nav-link" id="versionGuide">
+                        <i class="nav-icon fas fa-book-open"></i>
+                        <p>
+                            简介
+                            <i class="right fas fa-angle-left"></i>
+                        </p>
+                    </a>
+                    <ul class="nav nav-treeview">
+                        <li class="nav-item">
+                            <a href="${request.contextPath}/wiki/intro/index" class="nav-link" name="versionGuide">
+                                <i class="far fa-circle nav-icon"></i>
+                                <p>项目介绍</p>
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+                <li class="nav-item menu-is-opening menu-open">
+                    <a href="#" class="nav-link" id="userGuide">
+                        <i class="nav-icon fas fa-user"></i>
+                        <p>
+                            用户指南
+                            <i class="right fas fa-angle-left"></i>
+                        </p>
+                    </a>
+                    <ul class="nav nav-treeview">
+                        <li class="nav-item">
+                            <a href="${request.contextPath}/wiki/userGuide/produceAndConsume" class="nav-link" name="userGuide">
+                                <i class="far fa-circle nav-icon"></i>
+                                <p>工单</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="${request.contextPath}/wiki/userGuide/clientProducer" class="nav-link" name="userGuide">
+                                <i class="far fa-circle nav-icon"></i>
+                                <p>生产者接入</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="${request.contextPath}/wiki/userGuide/clientConsumer" class="nav-link" name="userGuide">
+                                <i class="far fa-circle nav-icon"></i>
+                                <p>消费者接入</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="${request.contextPath}/wiki/userGuide/topic" class="nav-link" name="userGuide">
+                                <i class="far fa-circle nav-icon"></i>
+                                <p>Topic</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="${request.contextPath}/wiki/userGuide/messageQuery" class="nav-link" name="userGuide">
+                                <i class="far fa-circle nav-icon"></i>
+                                <p>消息查询</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="${request.contextPath}/wiki/userGuide/monitorAndWarn" class="nav-link" name="userGuide">
+                                <i class="far fa-circle nav-icon"></i>
+                                <p>监控预警</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="${request.contextPath}/wiki/userGuide/faq" class="nav-link" name="userGuide">
+                                <i class="far fa-circle nav-icon"></i>
+                                <p>常见问题</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="${request.contextPath}/wiki/userGuide/http" class="nav-link" name="userGuide">
+                                <i class="far fa-circle nav-icon"></i>
+                                <p>http接入</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="${request.contextPath}/wiki/userGuide/go" class="nav-link" name="userGuide">
+                                <i class="far fa-circle nav-icon"></i>
+                                <p>go接入</p>
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+                <#if userInfo.user.admin>
+                <li class="nav-item">
+                    <a href="#" class="nav-link" id="managerGuide">
+                        <i class="nav-icon fas fa-cog"></i>
+                        <p>
+                            管理指南
+                            <i class="right fas fa-angle-left"></i>
+                        </p>
+                    </a>
+                    <ul class="nav nav-treeview">
+                        <li class="nav-item">
+                            <a href="${request.contextPath}/wiki/adminGuide/audit" class="nav-link" name="managerGuide">
+                                <i class="far fa-circle nav-icon"></i>
+                                <p>流程审核</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="${request.contextPath}/wiki/adminGuide/ns" class="nav-link" name="managerGuide">
+                                <i class="far fa-circle nav-icon"></i>
+                                <p>集群发现</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="${request.contextPath}/wiki/adminGuide/broker" class="nav-link" name="managerGuide">
+                                <i class="far fa-circle nav-icon"></i>
+                                <p>集群管理</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="${request.contextPath}/wiki/adminGuide/topology" class="nav-link" name="managerGuide">
+                                <i class="far fa-circle nav-icon"></i>
+                                <p>集群拓扑</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="${request.contextPath}/wiki/adminGuide/topicManager" class="nav-link" name="managerGuide">
+                                <i class="far fa-circle nav-icon"></i>
+                                <p>主题管理</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="${request.contextPath}/wiki/adminGuide/consumerManager" class="nav-link" name="managerGuide">
+                                <i class="far fa-circle nav-icon"></i>
+                                <p>消费管理</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="${request.contextPath}/wiki/adminGuide/clientLanguage" class="nav-link" name="managerGuide">
+                                <i class="far fa-circle nav-icon"></i>
+                                <p>客户端语言</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="${request.contextPath}/wiki/adminGuide/monitor" class="nav-link" name="managerGuide">
+                                <i class="far fa-circle nav-icon"></i>
+                                <p>监控管理</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="${request.contextPath}/wiki/adminGuide/trafficMonitor" class="nav-link" name="managerGuide">
+                                <i class="far fa-circle nav-icon"></i>
+                                <p>流量监控</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="${request.contextPath}/wiki/adminGuide/user" class="nav-link" name="managerGuide">
+                                <i class="far fa-circle nav-icon"></i>
+                                <p>用户管理</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="${request.contextPath}/wiki/adminGuide/machine" class="nav-link" name="managerGuide">
+                                <i class="far fa-circle nav-icon"></i>
+                                <p>机器管理</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="${request.contextPath}/wiki/adminGuide/notify" class="nav-link" name="managerGuide">
+                                <i class="far fa-circle nav-icon"></i>
+                                <p>通知管理</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="${request.contextPath}/wiki/adminGuide/clientVersion" class="nav-link" name="managerGuide">
+                                <i class="far fa-circle nav-icon"></i>
+                                <p>客户端版本</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="${request.contextPath}/wiki/adminGuide/feedback" class="nav-link" name="managerGuide">
+                                <i class="far fa-circle nav-icon"></i>
+                                <p>用户反馈</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="${request.contextPath}/wiki/adminGuide/brokerConfig" class="nav-link" name="managerGuide">
+                                <i class="far fa-circle nav-icon"></i>
+                                <p>配置模板</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="${request.contextPath}/wiki/adminGuide/commonConfig" class="nav-link" name="managerGuide">
+                                <i class="far fa-circle nav-icon"></i>
+                                <p>通用配置</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="${request.contextPath}/wiki/adminGuide/faq" class="nav-link" name="managerGuide">
+                                <i class="far fa-circle nav-icon"></i>
+                                <p>常见问题</p>
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+                </#if>
+                <li class="nav-item">
+                    <a href="#" class="nav-link" id="devGuide">
+                        <i class="nav-icon fas fa-file-code"></i>
+                        <p>
+                            开发指南
+                            <i class="right fas fa-angle-left"></i>
+                        </p>
+                    </a>
+                    <ul class="nav nav-treeview">
+                        <li class="nav-item">
+                            <a href="${request.contextPath}/wiki/developerGuide/intro" class="nav-link" name="devGuide">
+                                <i class="far fa-circle nav-icon"></i>
+                                <p>介绍</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="${request.contextPath}/wiki/developerGuide/nameServer" class="nav-link" name="devGuide">
+                                <i class="far fa-circle nav-icon" name="devGuide"></i>
+                                <p>NameServer寻址</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="${request.contextPath}/wiki/developerGuide/client" class="nav-link" name="devGuide">
+                                <i class="far fa-circle nav-icon" name="devGuide"></i>
+                                <p>客户端</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="${request.contextPath}/wiki/developerGuide/idempotent" class="nav-link" name="devGuide">
+                                <i class="far fa-circle nav-icon" name="devGuide"></i>
+                                <p>幂等消费</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="${request.contextPath}/wiki/developerGuide/statMonitorWarning" class="nav-link" name="devGuide">
+                                <i class="far fa-circle nav-icon" name="devGuide"></i>
+                                <p>统计监控预警</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="${request.contextPath}/wiki/developerGuide/messageTrace" class="nav-link" name="devGuide">
+                                <i class="far fa-circle nav-icon" name="devGuide"></i>
+                                <p>消息追踪</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="${request.contextPath}/wiki/developerGuide/api" class="nav-link" name="devGuide">
+                                <i class="far fa-circle nav-icon" name="devGuide"></i>
+                                <p>api汇总</p>
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link" id="questionList">
+                        <i class="nav-icon far fa-question-circle"></i>
+                        <p>
+                            疑难杂症
+                            <i class="right fas fa-angle-left"></i>
+                        </p>
+                    </a>
+                    <ul class="nav nav-treeview">
+                        <li class="nav-item">
+                            <a href="${request.contextPath}/wiki/troubleshooting/sendMessageRetry" class="nav-link" name="questionList">
+                                <i class="far fa-circle nav-icon"></i>
+                                <p>broker僵死时客户端发送消息支持重试</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="${request.contextPath}/wiki/troubleshooting/brokerOverload" class="nav-link" name="questionList">
+                                <i class="far fa-circle nav-icon"></i>
+                                <p>broker负载过高</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="${request.contextPath}/wiki/troubleshooting/nameServerUpdateBug" class="nav-link" name="questionList">
+                                <i class="far fa-circle nav-icon"></i>
+                                <p>NameServer更新导致路由寻址失败</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="${request.contextPath}/wiki/troubleshooting/broadcastingOffsetMovedEvent" class="nav-link" name="questionList">
+                                <i class="far fa-circle nav-icon"></i>
+                                <p>广播消费模式的消费者OFFSET_MOVED_EVENT预警问题调查</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="${request.contextPath}/wiki/troubleshooting/slaveFallBehindMaster" class="nav-link" name="questionList">
+                                <i class="far fa-circle nav-icon"></i>
+                                <p>slave落后master数据量为负</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="${request.contextPath}/wiki/troubleshooting/subscriptionNotLatest" class="nav-link" name="questionList">
+                                <i class="far fa-circle nav-icon"></i>
+                                <p>subscriptionNotLatest</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="${request.contextPath}/wiki/troubleshooting/broadcastingResetOffset" class="nav-link" name="questionList">
+                                <i class="far fa-circle nav-icon"></i>
+                                <p>广播消费模式实现offset重置</p>
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+            </ul>
+        </nav>
+    </div>
+
+    <div class="sidebar-custom">
+        <a href="${request.contextPath}/contact" class="btn btn-link"><i class="fas fa-address-card fa-lg"></i></a>
+        <a href="${request.contextPath}/contact" class="btn btn-secondary hide-on-collapse float-right text-sm">联系我们</a>
+    </div>
+</aside>

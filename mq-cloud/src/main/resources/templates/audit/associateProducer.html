@@ -1,47 +1,33 @@
 <#if response.notOK>
-<div class="modal-body">
-	<div class="form-body">
-		<div class="form-group">
-			<div>异常数据</div>
+    <div class="text-center">异常数据</div>
+<#else>
+	<div class="form-group row">
+		<label class="col-form-label col-md-3"> Topic: </label>
+		<div class="col-md-7">
+			<input type="text" value="${response.result.topic}" readonly="readonly" class="form-control" />
 		</div>
 	</div>
-</div>
-<#else>
-<div class="modal-body">
-	<div class="row">
-		<div class="col-md-12">
-			<div class="form-body">
-				<div class="form-group">
-					<label class="control-label col-md-3"> Topic: </label>
-			        <div class="col-md-7">
-						<input type="text" value="${response.result.topic}" readonly="readonly" class="form-control" />
-					</div>
-				</div>
-				<div class="form-group">
-					<label class="control-label col-md-3"> 生产者: </label>
-					<div class="col-md-7">
-						<input type="text" value="${response.result.producer}" readonly="readonly" class="form-control" >
-					</div>
-				</div>
-				<#if response.result.type != 21>
-					<div class="form-group">
-						<label class="control-label col-md-3"> 关联用户: </label>
-						<div class="col-md-6">
-							<input type="text" value="${response.result.user}" readonly="readonly" class="form-control" >
-						</div>
-					</div>
-				<#else>
-					<div class="form-group">
-						<label class="control-label col-md-3"> 通信协议: </label>
-						<div class="col-md-6 checkbox">
-							<input type="radio" value="0" disabled="disabled" <#if response.result.protocol == 0>checked</#if>>RocketMQ
-							<input type="radio" value="1" disabled="disabled" <#if response.result.protocol == 1>checked</#if>>HTTP
-							<input type="radio" value="2" disabled="disabled" <#if response.result.protocol == 2>checked</#if>>Proxy Remoting
-						</div>
-					</div>
-				</#if>
+	<div class="form-group row">
+		<label class="col-form-label col-md-3"> 生产者: </label>
+		<div class="col-md-7">
+			<input type="text" value="${response.result.producer}" readonly="readonly" class="form-control" >
+		</div>
+	</div>
+	<#if response.result.type != 21>
+		<div class="form-group row">
+			<label class="col-form-label col-md-3"> 关联用户: </label>
+			<div class="col-md-7">
+				<input type="text" value="${response.result.user}" readonly="readonly" class="form-control" >
 			</div>
 		</div>
-	</div>
-</div>
+	<#else>
+		<div class="form-group row">
+			<label class="col-md-3"> 通信协议: </label>
+			<div class="col-md-7 checkbox">
+				<input type="radio" value="0" disabled="disabled" <#if response.result.protocol == 0>checked</#if>>RocketMQ
+				<input type="radio" value="1" disabled="disabled" <#if response.result.protocol == 1>checked</#if>>HTTP
+				<input type="radio" value="2" disabled="disabled" <#if response.result.protocol == 2>checked</#if>>Proxy Remoting
+			</div>
+		</div>
+	</#if>
 </#if>

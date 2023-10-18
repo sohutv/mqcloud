@@ -1,73 +1,69 @@
-<div class="main">
-	<form class="form-inline" role="form" action="${request.contextPath}/admin/audit/list">
-		<div class="form-group">
-			<label for="type"> 申请类型: </label>
-			<select name="type" id="type" class="form-control select2_category">
-				<option value="-1" 
-					<#if RequestParameters.type??>
-						<#if RequestParameters.type == "-1">
+<div class="card mt-2">
+	<div class="card-body">
+		<form action="${request.contextPath}/admin/audit/list">
+			<div class="input-group">
+				<label for="type" class="col-form-label"> 申请类型: </label>
+				<div class="col-md-2">
+					<select name="type" id="type" class="form-control selectpicker">
+						<option value="-1"
+						<#if RequestParameters.type??>
+							<#if RequestParameters.type == "-1">
+								selected="selected"
+							</#if>
+						<#else>
 							selected="selected"
-						</#if> 
-					<#else>
-						selected="selected"
-					</#if> 
-				>全部</option>
-				<#list type as tp>
-					<option value="${tp.getType()}" <#if RequestParameters.type?? && RequestParameters.type == tp.getType()?c>selected="selected"</#if>>${tp.getName()}</option>
-				</#list>
-			</select>
-		</div>
-		<div class="form-group">
-			<label for="status"> 申请状态: </label>
-			<select name="status" id="status" class="form-control select2_category">
-				<option value="-1" <#if RequestParameters.status?? && RequestParameters.status == "-1">selected="selected"</#if> >全部</option>
-				<option value="0"
+						</#if>
+						>全部</option>
+						<#list type as tp>
+							<option value="${tp.getType()}" <#if RequestParameters.type?? && RequestParameters.type == tp.getType()?c>selected="selected"</#if>>${tp.getName()}</option>
+						</#list>
+					</select>
+				</div>
+				<label for="status" class="col-form-label"> 申请状态: </label>
+				<div class="input-group-append col-md-2">
+					<select name="status" id="status" class="form-control selectpicker">
+						<option value="-1" <#if RequestParameters.status?? && RequestParameters.status == "-1">selected="selected"</#if> >全部</option>
+					<option value="0"
 					<#if RequestParameters.status??>
 						<#if RequestParameters.status == "0">
 							selected="selected"
-						</#if> 
+						</#if>
 					<#else>
 						selected="selected"
-					</#if> 
-				>待审</option>
-				<#list status as stat>
-					<#if stat.getStatus() != 0>
-						<option value="${stat.getStatus()}" <#if RequestParameters.status?? && RequestParameters.status == stat.getStatus()?c>selected="selected"</#if>>${stat.getName()}</option>
 					</#if>
-				</#list>
-			</select>
-		</div>
-		<button type="submit" class="btn btn-search"><span class="glyphicon glyphicon-search" aria-hidden="true"></span></button>
-	</form>
-	<hr/>
-	<table class="table table-striped table-hover" style="margin-top: 0px;word-break:break-all; word-wrap:break-all;">
-		<thead>
-			<colgroup>
-				<col width="50px">
-				<col>
-				<col width="120px">
-				<col width="155px">
-				<col width="155px">
-				<col width="45px">
-				<col width="15%">
-				<col width="7%">
-				<col>
-				<col>
-			</colgroup>
-			<tr>
-				<td>id</td>
-				<td>申请人</td>
-				<td>类型</td>
-				<td>申请时间</td>
-				<td>更新时间</td>
-				<td>状态</td>
-				<td>申请原因</td>
-				<td>拒绝理由</td>
-				<td>审核者</td>
-				<td>操作</td>
-			</tr>
-		</thead>
-		<tbody>
+					>待审</option>
+					<#list status as stat>
+						<#if stat.getStatus() != 0>
+							<option value="${stat.getStatus()}" <#if RequestParameters.status?? && RequestParameters.status == stat.getStatus()?c>selected="selected"</#if>>${stat.getName()}</option>
+						</#if>
+					</#list>
+					</select>
+					<div class="input-group-append">
+						<button type="submit" class="btn btn-light ml-1"><span class="fas fa-search"></span></button>
+					</div>
+				</div>
+			</div>
+		</form>
+	</div>
+</div>
+<div class="card">
+	<div class="card-body table-responsive p-0 text-nowrap">
+		<table class="table table-hover">
+			<thead>
+				<tr>
+					<th>id</th>
+					<th>申请人</th>
+					<th>类型</th>
+					<th>申请时间</th>
+					<th>更新时间</th>
+					<th>状态</th>
+					<th>申请原因</th>
+					<th>拒绝理由</th>
+					<th>审核者</th>
+					<th>操作</th>
+				</tr>
+			</thead>
+			<tbody>
 			<#if response.empty>
 				<tr>
 					<td colspan=10 style="text-align:center">
@@ -76,47 +72,67 @@
 				</tr>
 			<#else>
 				<#list response.result as audit>
-					<tr>
-						<td>${audit.id}</td>
-						<td><#if audit.user??>${audit.user.name!audit.user.emailName}<#else>${audit.uid}</#if></td>
-						<td>${audit.typeEnum.getName()}</td>
-						<td>${audit.createTime?string("yyyy-MM-dd HH:mm:ss")}</td>
-						<td>${audit.updateTime?string("yyyy-MM-dd HH:mm:ss")}</td>
-						<td>${audit.statusEnum.getName()}</td>
-						<td>${audit.info!}</td>
-						<td>${audit.refuseReason!}</td>
-						<td>${audit.auditor!}</td>
-						<td>
-							<#if audit.statusEnum.getStatus() == 0>
-							<button type="button" class="btn btn-success" onclick="auditDetail('<#if audit.user??>${audit.user.name!audit.user.emailName}<#else>${audit.uid}</#if>', '${audit.typeEnum.getName()}', '${audit.typeEnum.getType()}', '${audit.typeEnum.getView()}', '${audit.id?c}', '${audit.statusEnum.getStatus()}')" 
-							data-target="#auditDetailModal" data-toggle="modal"><span class="glyphicon glyphicon-pencil" aria-hidden="true">审核</span></button>
-							<#else>
-							<button type="button" class="btn btn-success" onclick="auditDetail('<#if audit.user??>${audit.user.name!audit.user.emailName}<#else>${audit.uid}</#if>', '${audit.typeEnum.getName()}', '${audit.typeEnum.getType()}', '${audit.typeEnum.getView()}', '${audit.id?c}', '${audit.statusEnum.getStatus()}')" 
+				<tr>
+					<td>${audit.id}</td>
+					<td><#if audit.user??>${audit.user.name!audit.user.emailName}<#else>${audit.uid}</#if></td>
+					<td>${audit.typeEnum.getName()}</td>
+					<td class="text-wrap">${audit.createTime?string("yyyy-MM-dd HH:mm:ss")}</td>
+					<td class="text-wrap">${audit.updateTime?string("yyyy-MM-dd HH:mm:ss")}</td>
+					<td>${audit.statusEnum.getName()}</td>
+					<td class="text-wrap">${audit.info!}</td>
+					<td class="text-wrap">${audit.refuseReason!}</td>
+					<td class="text-wrap">${audit.auditor!}</td>
+					<td>
+					<#if audit.statusEnum.getStatus() == 0>
+						<button type="button" class="btn btn-primary btn-sm" onclick="auditDetail('<#if audit.user??>${audit.user.name!audit.user.emailName}<#else>${audit.uid}</#if>', '${audit.typeEnum.getName()}', '${audit.typeEnum.getType()}', '${audit.typeEnum.getView()}', '${audit.id?c}', '${audit.statusEnum.getStatus()}')"
+							data-target="#auditDetailModal" data-toggle="modal">审核</button>
+					<#else>
+						<button type="button" class="btn btn-success btn-sm" onclick="auditDetail('<#if audit.user??>${audit.user.name!audit.user.emailName}<#else>${audit.uid}</#if>', '${audit.typeEnum.getName()}', '${audit.typeEnum.getType()}', '${audit.typeEnum.getView()}', '${audit.id?c}', '${audit.statusEnum.getStatus()}')"
 							data-target="#auditDetailModal" data-toggle="modal">查看</button>
-							</#if>
-						</td>
-					</tr>
+						<#if audit.typeEnum.getType() == 23>
+							<button id="messageExportBtn" type="button" class="btn btn-success btn-sm" onclick="messageExport('${audit.id?c}', ${audit.statusEnum.getStatus()})"
+									data-target="#messageExportDetailModal" data-toggle="modal">进度</button>
+						</#if>
+					</#if>
+					</td>
+				</tr>
 				</#list>
 			</#if>
-		</tbody>
-	</table>
-	<ul id="pagination" data-url="${request.contextPath}/admin/audit/list?<#if RequestParameters.type??>&type=${RequestParameters.type}</#if><#if RequestParameters.status??>&status=${RequestParameters.status}</#if>" style="float:right"></ul>
-	<#include "../../inc/pagination.html">
+			</tbody>
+		</table>
+	</div>
+	<#if pagination.OK && pagination.result.totalPages gt 1>
+		<div class="card-footer clearfix">
+			<ul id="pagination" data-url="${request.contextPath}/admin/audit/list?<#if RequestParameters.type??>&type=${RequestParameters.type}</#if><#if RequestParameters.status??>&status=${RequestParameters.status}</#if>" style="float:right"></ul>
+		</div>
+	</#if>
 </div>
-
-<div id="auditDetailModal" class="modal fade" tabindex="-1" data-width="400">
-	<div class="modal-dialog">
+<div id="auditDetailModal" class="modal fade">
+	<div class="modal-dialog" style="max-width: 600px">
 		<div class="modal-content">
 			<div class="modal-header">
+				<h5 class="modal-title"><b id="auditDetailUser"></b>申请<b id="auditDetailAction"></b></h5>
 				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-				<h4 class="modal-title"><b id="auditDetailUser"></b>申请<b id="auditDetailAction"></b></h4>
 			</div>
-			<form class="form-horizontal form-bordered form-row-stripped" id="auditForm">
+			<form id="auditForm">
 				<input type="hidden" id="auditView">
 				<input type="hidden" id="auditId" name="aid">
 				<div id="auditDetailDiv">
 				</div>
 			</form>
+		</div>
+	</div>
+</div>
+
+<div id="messageExportDetailModal" class="modal fade">
+	<div class="modal-dialog modal-lg">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title">导出进度</h5>
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+			</div>
+			<div class="modal-body" id="messageExportDiv">
+			</div>
 		</div>
 	</div>
 </div>
@@ -135,6 +151,7 @@ function auditDetail(username, action, type, view, aid, status){
 		},
         function(data){
 			$("#auditDetailDiv").html(data);
+			$('.selectpicker').selectpicker();
 			if(status != 0){
 				$(".custom").hide();
 				if(typeof hideAudit == "function"){
@@ -197,5 +214,44 @@ function agree(){
 		    }
        }, 'json');
 }
+var gaid = 0;
+var gstatus = 0;
+
+function messageExport(aid, status) {
+	gaid = aid;
+	gstatus = status;
+	messageExportDetail();
+}
+
+function messageExportDetail(flag){
+	if (flag && !$("#messageExportDetailModal").is(":visible")) {
+		return;
+	}
+	$.get('${request.contextPath}/admin/audit/messageExportDetail', {
+		aid: gaid
+	}, function (data) {
+		$("#messageExportDiv").html(data);
+		if (gstatus != 1) {
+			setTimeout("messageExportDetail(true)", 3000);
+		}
+	});
+}
+
+function messageReExport(aid) {
+	disable("reExportBtn");
+	$.post('${request.contextPath}/admin/audit/messageReExport', {
+		aid: aid
+	},
+	function (data) {
+		if (data.status == 200) {
+			toastr.success("状态重置成功, 请重新审核");
+			reload(3000);
+		} else {
+			toastr.error("审核失败！" + data.message);
+			enable("reExportBtn");
+		}
+	}, 'json');
+}
 </script>
+<#include "../../inc/pagination.html">
 

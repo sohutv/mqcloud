@@ -15,171 +15,169 @@
 	}
 </style>
 <div class="row">
-	<br/>
-	<div class="col-md-12">
-        <table class="table table-striped table-hover" style="margin-top: 0px;word-break:break-all; word-wrap:break-all;">
-		        <colgroup>
-					<col width="45px">
-					<col>
-					<col width="150px">
-					<col width="180px">
-					<col width="50px">
-					<col width="80px">
-					<col width="60px">
-					<col width="53px">
-					<col width="160px">
-					<col width="122px">
-				</colgroup>
-                <thead>
-	                <tr>
-	                	<td>序号</td>
-	                    <td>消费者(consumer group)</td>
-	                    <td data-toggle="tooltip" title="谁持有这个消费者">归属于</td>
-	                    <td>用途</td>
-	                    <td data-toggle="tooltip" title="集群：所有的消费实例均分消息进行消费； 广播：每个消费实例会消费所有消息">模式</td>
-	                    <td data-toggle="tooltip" title="消费者未消费的消息数量">堆积量</td>
-	                    <td data-toggle="tooltip" title="每秒消费的消息数">TPS</td>
-	                    <td data-toggle="tooltip" title="追踪状态">trace</td>
-	                    <td data-toggle="tooltip" title="所有队列中的最小更新时间">更新时间</td>
-	                    <td>操作</td>
-	                </tr>
-                </thead>
-                <tbody>
-	                <#if response.empty && resultExt.empty>
-					     <tr>
-		                    <td colspan=10 align="center">
-		                    	暂无数据
-		                    </td>
-		                <tr>
-					<#else>
-						<#list response.result as consumerProgressVO>
-							<tr>
-								<#assign row = (pagination.result.currentPage - 1)*pagination.result.numOfPage + consumerProgressVO_index + 1> 
-								<td title="${consumerProgressVO.version!}" data-toggle="tooltip">${row}</td>
-		                    	<td><a style="cursor:pointer" data="${RequestParameters.consumer!}" title="查看消费详情" data-target="#consumeDetailModel${row}" data-toggle="modal" <#if consumerProgressVO.minLastTimestamp gt 0 && consumerProgressVO.minLastTimestamp lt long.MAX_VALUE>onclick="getQueueOwner('${consumerProgressVO.consumer.name}', '${consumerProgressVO.consumer.id}')"</#if>>${consumerProgressVO.consumer.name}</a></td>
-		                    	<#if consumerProgressVO.ownerList??>
-		                    		<td>
-			                    		<#if consumerProgressVO.ownerList?seq_contains(userInfo.user) || userInfo.user.type == 1>
-				                    		<#list consumerProgressVO.ownerList as user>
-				                    			<#if user_index != 0>
-									    		,
-									    		</#if>
-									    		<span onclick="prepareDeleteUserConsumer(${user.id},'${user.name!user.getEmailName()}',${consumerProgressVO.consumer.id})" data-toggle="tooltip" title="移除${user.name!user.getEmailName()}?" class="producer_delete pointer">${user.name!user.getEmailName()}</span>
-				                    		</#list>
-		                    				<a href="#"><span class="glyphicon glyphicon-plus-sign pointer" data-toggle="tooltip" title="授权其他用户查看${consumerProgressVO.consumer.name}?" onclick="associateUserConsumer(${consumerProgressVO.consumer.id},'${consumerProgressVO.consumer.name}')"></span></a>
-			                    		<#else>
-		                    				<#list consumerProgressVO.ownerList as user>
-			                    				<#if user_index != 0>
-									    		,
-									    		</#if>
-									    		<span>${user.name!user.getEmailName()}</span>
-				                    		</#list>
-			                    		</#if>  		
-		                    		</td>
-		                    	<#else>
-		                    		<td>暂无</td>
-		                    	</#if>
-		                    	<td class="edit-text" <#if consumerProgressVO.consumer.info?? && consumerProgressVO.consumer.info?length gt 12>data-toggle="tooltip" title="${consumerProgressVO.consumer.info}"</#if>>
-									<#if consumerProgressVO.consumer.info?? && consumerProgressVO.consumer.info?length gt 12>
-										<#if consumerProgressVO.ownerList?? && (consumerProgressVO.ownerList?seq_contains(userInfo.user) || userInfo.user.type == 1)><span style="cursor:pointer" onclick="showUpdateInfo(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', '${consumerProgressVO.consumer.info!}')"></#if>${consumerProgressVO.consumer.info?substring(0,12)}...<#if consumerProgressVO.ownerList?? && (consumerProgressVO.ownerList?seq_contains(userInfo.user) || userInfo.user.type == 1)></span></#if>
+<div class="col-md-12">
+	<div class="card">
+		<div class="card-body p-0">
+			<div class="list-group list-striped">
+				<#if response.empty && resultExt.empty>
+					<div class="list-group-item">
+						<p class="text-center">暂无数据</p>
+					</div>
+				<#else>
+					<#list response.result as consumerProgressVO>
+						<#assign row = (pagination.result.currentPage - 1)*pagination.result.numOfPage + consumerProgressVO_index + 1>
+						<div class="list-group-item">
+							<ul class="row nav mb-2">
+								<li class="col-md-6">
+									<p class="m-1">
+										<a href="javascript:void(0)" data="${RequestParameters.consumer!}" title="查看消费详情" data-target="#consumeDetailModel${row}" data-toggle="modal" <#if consumerProgressVO.minLastTimestamp gt 0 && consumerProgressVO.minLastTimestamp lt long.MAX_VALUE>onclick="getQueueOwner('${consumerProgressVO.consumer.name}', '${consumerProgressVO.consumer.id}')"</#if>>${consumerProgressVO.consumer.name}</a>
+										<#if consumerProgressVO.version??>
+											<span class="ml-2" data-toggle="tooltip" onclick="showConsumerStats('${consumerProgressVO.consumer.name}')" title="查看${consumerProgressVO.consumer.name}的客户端统计"><i class="fa-solid fa-chart-line fa-xs text-secondary pointer"></i></span>
+										<#else>
+											<span class="ml-2" data-toggle="tooltip" title="非MQCloud客户端暂不支持查看客户端统计"><i class="fa-solid fa-chart-line fa-xs disabled"></i></span>
+										</#if>
+										<span class="ml-1" data-toggle="tooltip" title="点击复制${consumerProgressVO.consumer.name}"><i class="fas fa-copy fa-xs copied text-secondary pointer" data-clipboard-text="${consumerProgressVO.consumer.name}"></i></span>
+									</p>
+								</li>
+								<li class="col-md-3 small">
+									<p class="m-1"><span class="text-muted">创建于:</span>&nbsp;&nbsp;${consumerProgressVO.createDateFormat}</p>
+								</li>
+								<li class="col-md-3 small">
+									<p class="m-1">
+										<span class="text-muted">消费模式:</span>&nbsp;&nbsp;
+										<#if consumerProgressVO.consumer.httpProtocol>
+											<font color="blue" data-toggle="tooltip" title="http方式消费">${consumerProgressVO.messageModel}</font>
+											<#elseif consumerProgressVO.consumer.proxyRemoting>
+											<font color="blue" data-toggle="tooltip" title="Proxy Remoting方式消费">${consumerProgressVO.messageModel}</font>
+											<#else>
+											${consumerProgressVO.messageModel}
+										</#if>
+									</p>
+								</li>
+							</ul>
+							<ul class="row nav small mb-2">
+								<li class="col-md-6">
+									<p class="m-1"><span class="text-muted">用途:</span>&nbsp;&nbsp;
+									<#if consumerProgressVO.consumer.info?? && consumerProgressVO.consumer.info?length gt 30>
+										<span data-toggle="tooltip" title="${consumerProgressVO.consumer.info}">${consumerProgressVO.consumer.info?substring(0,30)}...</span> <#if consumerProgressVO.ownerList?? && (consumerProgressVO.ownerList?seq_contains(userInfo.user) || userInfo.user.type == 1)> <i data-toggle="tooltip" title="修改用途" onclick="showUpdateInfo(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', '${consumerProgressVO.consumer.info!}')" class="fas fa-edit fa-xs text-secondary pointer"></i></#if>
 									<#else>
 										<#if consumerProgressVO.consumer.info?? && consumerProgressVO.consumer.info !=''>
-											<#if consumerProgressVO.ownerList?? && (consumerProgressVO.ownerList?seq_contains(userInfo.user) || userInfo.user.type == 1)><span style="cursor:pointer" data-toggle="tooltip" title="修改用途" onclick="showUpdateInfo(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', '${consumerProgressVO.consumer.info!}')"></#if>${consumerProgressVO.consumer.info}<#if consumerProgressVO.ownerList?? && (consumerProgressVO.ownerList?seq_contains(userInfo.user) || userInfo.user.type == 1)></span></#if>
+											${consumerProgressVO.consumer.info} <#if consumerProgressVO.ownerList?? && (consumerProgressVO.ownerList?seq_contains(userInfo.user) || userInfo.user.type == 1)> <span data-toggle="tooltip" title="修改用途"><i onclick="showUpdateInfo(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', '${consumerProgressVO.consumer.info!}')" class="fas fa-edit fa-xs text-secondary pointer"></i></span></#if>
 										<#else>
 											<#if consumerProgressVO.ownerList?? && (consumerProgressVO.ownerList?seq_contains(userInfo.user) || userInfo.user.type == 1)>
-												<a href="#"><span class="glyphicon glyphicon-pencil pointer" onclick="showUpdateInfo(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', '${consumerProgressVO.consumer.info!}')" data-toggle="tooltip" title="添加用途" aria-hidden="true"></span></a>
+												<span data-toggle="tooltip" title="添加用途"><i onclick="showUpdateInfo(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', '${consumerProgressVO.consumer.info!}')" class="far fa-edit fa-xs text-secondary pointer"></i></span>
 				                    		</#if>
 										</#if>
 									</#if>
-								</td>
-								<td>
-								<#if consumerProgressVO.consumer.httpProtocol>
-									<font color="blue" data-toggle="tooltip" title="http方式消费">${consumerProgressVO.messageModel}</font>
-								<#elseif consumerProgressVO.consumer.proxyRemoting>
-									<font color="blue" data-toggle="tooltip" title="Proxy Remoting方式消费">${consumerProgressVO.messageModel}</font>
-								<#else>
-									${consumerProgressVO.messageModel}
-								</#if>
-								</td>
-	                    		<td title="${consumerProgressVO.diff}" data-toggle="tooltip">${consumerProgressVO.diffFormat}</td>
-	                    		<td title="${consumerProgressVO.consumeTpsRound}" data-toggle="tooltip">${consumerProgressVO.consumeTpsFormat}</td>
-	                    		<td>
-									<#if consumerProgressVO.version??>
-										<#if topic.traceEnabled()>
-											<#if (consumerProgressVO.ownerList?? && consumerProgressVO.ownerList?seq_contains(userInfo.user)) || userInfo.user.type == 1>
-												<#if consumerProgressVO.consumer.traceEnabled()>
-													<a href="#"><span style="cursor:pointer" class="glyphicon glyphicon-eye-open" data-toggle="tooltip" title="关闭trace?" onclick="updateConsumerTraceShow(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', 1)"></span></a>
-												<#else>
-													<a href="#"><span style="cursor:pointer" class="glyphicon glyphicon-eye-close" data-toggle="tooltip" title="开启trace?" onclick="updateConsumerTraceShow(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', 0)"></span></a>
-												</#if>
-											<#else>
-												<#if consumerProgressVO.consumer.traceEnabled()><span class="glyphicon glyphicon-eye-open"></span><#else><span class="glyphicon glyphicon-eye-close"></span></#if>
-											</#if>
+									</p>
+								</li>
+								<li class="col-md-2">
+									<p class="m-1" data-toggle="tooltip" title="${consumerProgressVO.consumeTpsRound}"><span class="text-muted">TPS:</span>&nbsp;&nbsp;${consumerProgressVO.consumeTpsFormat}</p>
+								</li>
+								<li class="col-md-3 offset-md-1">
+									<p class="m-1" data-toggle="tooltip" title="所有队列中的最小消费时间"><span class="text-muted">消费到:</span>&nbsp;&nbsp;
+									<#if consumerProgressVO.minLastTimestamp == 0>暂无<#else>
+										<#if consumerProgressVO.minLastTimestamp == long.MAX_VALUE>
+											消费进度不存在
 										<#else>
-											<span class="glyphicon glyphicon-eye-close" data-toggle="tooltip" title="topic未开启trace"></span>
+											${consumerProgressVO.minLastTimestamp?number_to_datetime?string("yyyy-MM-dd HH:mm:ss")}
+										</#if>
+									</#if>
+									</p>
+								</li>
+							</ul>
+							<ul class="row nav small">
+								<li class="col-md-6">
+									<p class="m-1"><span class="text-muted">归属于:</span>&nbsp;&nbsp;
+									<#if consumerProgressVO.ownerList??>
+										<#if consumerProgressVO.ownerList?seq_contains(userInfo.user) || userInfo.user.type == 1>
+											<#list consumerProgressVO.ownerList as user>
+												<#if user_index != 0>
+												,
+												</#if>
+												<span onclick="prepareDeleteUserConsumer(${user.id},'${user.name!user.getEmailName()}',${consumerProgressVO.consumer.id})" data-toggle="tooltip" title="移除${user.name!user.getEmailName()}?" class="producer_delete pointer">${user.name!user.getEmailName()}</span>
+											</#list>
+											<span data-toggle="tooltip" title="授权其他用户查看${consumerProgressVO.consumer.name}?"><i onclick="associateUserConsumer(${consumerProgressVO.consumer.id},'${consumerProgressVO.consumer.name}')" class="fas fa-user-plus fa-xs text-secondary pointer"></i></span>
+										<#else>
+											<#list consumerProgressVO.ownerList as user>
+												<#if user_index != 0>
+												,
+												</#if>
+												<span>${user.name!user.getEmailName()}</span>
+											</#list>
 										</#if>
 									<#else>
-										<span class="glyphicon glyphicon-eye-close" data-toggle="tooltip" title="非MQCloud客户端暂不支持trace"></span>
+										暂无
 									</#if>
-	                    		</td>
-	                    		<#if consumerProgressVO.minLastTimestamp == 0>
-	                    			<td>暂无</td>
-	                    		<#else>
-	                    			<#if consumerProgressVO.minLastTimestamp == long.MAX_VALUE>
-	                    				<td>消费进度不存在</td>
-	                    			<#else>
-			                    		<td>${consumerProgressVO.minLastTimestamp?number_to_datetime?string("yyyy-MM-dd HH:mm:ss")}</td>
-	                    			</#if>
-	                    		</#if>
-		                    	<td>
-		                    		<#if (consumerProgressVO.ownerList?? && consumerProgressVO.ownerList?seq_contains(userInfo.user)) || userInfo.user.type == 1>
+									</p>
+								</li>
+								<li class="col-md-2">
+									<p class="m-1" data-toggle="tooltip" data-placement="bottom" title="<#if consumerProgressVO.needShowLeftTime()>${consumerProgressVO.leftTimeFormat}<#else>${consumerProgressVO.diff}</#if>"><span class="text-muted">堆积量:</span>&nbsp;&nbsp;${consumerProgressVO.diffFormat}</p>
+								</li>
+								<li class="col-md-3 offset-md-1">
+									<p class="m-1"><span class="text-muted">操作:</span>&nbsp;&nbsp;
+									<#if (consumerProgressVO.ownerList?? && consumerProgressVO.ownerList?seq_contains(userInfo.user)) || userInfo.user.type == 1>
 			                    		<#if consumerProgressVO.offsetMap??>
-				                    		<a href="#"><span title="跳过堆积的消息，直接消费至最新的消息" class="glyphicon glyphicon-fast-forward" data-target="#skipAccumulationModel${row}" data-toggle="modal"></span></a>
-				                    		<a href="#"><span title="消费过去一段时间至现在的消息" class="glyphicon glyphicon-backward" data-target="#resetOffSetModel${row}" data-toggle="modal"></span></a>
+											<button type="button" class="btn btn-xs btn-outline-secondary" data-toggle="tooltip" title="跳过堆积的消息，直接消费至最新的消息" onclick="skipAccumulationShow('${consumerProgressVO.consumer.name}', ${consumerProgressVO.consumer.id})"><i class="fas fa-fw fa-fast-forward"></i></button>
+											<button type="button" class="btn btn-xs btn-outline-secondary" data-toggle="tooltip" title="消费过去一段时间至现在的消息" onclick="resetOffsetShow('${consumerProgressVO.consumer.name}', ${consumerProgressVO.consumer.id})"><i class="fas fa-fw fa-backward"></i></button>
 											<#if consumerProgressVO.version??>
 												<#if consumerProgressVO.consumerConfig?? && consumerProgressVO.consumerConfig.pause?? && consumerProgressVO.consumerConfig.pause>
-													<a href="#"><span title="恢复消费" class="glyphicon glyphicon-play" onclick="showPauseConsumeConfigModel(${consumerProgressVO.consumer.httpProtocol?c}, ${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', false<#if consumerProgressVO.consumerConfig?? && consumerProgressVO.consumerConfig.pauseClientId??>,'${consumerProgressVO.consumerConfig.pauseClientId}'</#if>)" data-toggle="modal"></span></a>
+													<button type="button" class="btn btn-xs btn-outline-secondary" title="恢复消费" onclick="showPauseConsumeConfigModel(${consumerProgressVO.consumer.httpProtocol?c}, ${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', false<#if consumerProgressVO.consumerConfig?? && consumerProgressVO.consumerConfig.pauseClientId??>,'${consumerProgressVO.consumerConfig.pauseClientId}'</#if>)" data-toggle="modal"><i class="fas fa-fw fa-play"></i></button>
 												<#else>
-													<a href="#"><span title="暂停消费" class="glyphicon glyphicon-pause" onclick="showPauseConsumeConfigModel(${consumerProgressVO.consumer.httpProtocol?c}, ${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', true<#if consumerProgressVO.consumerConfig?? && consumerProgressVO.consumerConfig.pauseClientId??>,'${consumerProgressVO.consumerConfig.pauseClientId}'</#if>)" data-toggle="modal"></span></a>
+													<button type="button" class="btn btn-xs btn-outline-secondary" title="暂停消费" onclick="showPauseConsumeConfigModel(${consumerProgressVO.consumer.httpProtocol?c}, ${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', true<#if consumerProgressVO.consumerConfig?? && consumerProgressVO.consumerConfig.pauseClientId??>,'${consumerProgressVO.consumerConfig.pauseClientId}'</#if>)" data-toggle="modal"><i class="fas fa-fw fa-pause"></i></button>
 												</#if>
 												<#if consumerProgressVO.consumerConfig?? && consumerProgressVO.consumerConfig.enableRateLimit?? && consumerProgressVO.consumerConfig.enableRateLimit>
-													<img title="修改消费限速" width="22" height="24" style="display:inline-block;" src="${request.contextPath}/img/rateLimiter2.png" class="pointer" onclick="showLimitConsumeConfigModel(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', true, <#if consumerProgressVO.consumerConfig.permitsPerSecond??>${consumerProgressVO.consumerConfig.permitsPerSecond}<#else>${limitConsumeTps}</#if>)" data-toggle="modal"></img>
+													<button type="button" class="btn btn-xs btn-outline-secondary" title="修改消费限速" onclick="showLimitConsumeConfigModel(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', true, <#if consumerProgressVO.consumerConfig.permitsPerSecond??>${consumerProgressVO.consumerConfig.permitsPerSecond}<#else>${limitConsumeTps}</#if>)" data-toggle="tooltip"><i class="fa-solid fa-fw fa-gauge"></i></button>
 												<#else>
-													<img title="限制消费速率" width="22" height="24" style="display:inline-block;" src="${request.contextPath}/img/rateLimiter.png" class="pointer" onclick="showLimitConsumeConfigModel(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', false, <#if consumerProgressVO.consumerConfig?? && consumerProgressVO.consumerConfig.permitsPerSecond??>${consumerProgressVO.consumerConfig.permitsPerSecond}<#else>${limitConsumeTps}</#if>)" data-toggle="modal"></img>
+					                                <button type="button" class="btn btn-xs btn-outline-secondary" title="限制消费速率" onclick="showLimitConsumeConfigModel(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', false, <#if consumerProgressVO.consumerConfig?? && consumerProgressVO.consumerConfig.permitsPerSecond??>${consumerProgressVO.consumerConfig.permitsPerSecond}<#else>${limitConsumeTps}</#if>)" data-toggle="tooltip"><i class="fa-solid fa-fw fa-gauge-high"></i></button>
+												</#if>
+												<#if topic.traceEnabled()>
+													<#if (consumerProgressVO.ownerList?? && consumerProgressVO.ownerList?seq_contains(userInfo.user)) || userInfo.user.type == 1>
+														<#if consumerProgressVO.consumer.traceEnabled()>
+															<button type="button" class="btn btn-xs btn-outline-secondary" data-toggle="tooltip" title="关闭trace?" onclick="updateConsumerTraceShow(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', 1)"><i class="fas fa-fw fa-eye"></i></button>
+														<#else>
+															<button type="button" class="btn btn-xs btn-outline-secondary" data-toggle="tooltip" title="开启trace?" onclick="updateConsumerTraceShow(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', 0)"><i class="fas fa-fw fa-eye-slash"></i></button>
+														</#if>
+													</#if>
 												</#if>
 											<#else>
-												<span title="非MQCloud客户端暂不支持暂停消费" class="glyphicon glyphicon-pause" data-toggle="modal"></span>
-												<img title="非MQCloud客户端暂不支持限制消费速率" width="22" height="24" style="display:inline-block;" src="${request.contextPath}/img/rateLimiter.png" data-toggle="modal"></img>
+												<button type="button" class="btn btn-xs btn-outline-secondary disabled" title="非MQCloud客户端暂不支持暂停消费" data-toggle="tooltip"><i class="fas fa-fw fa-pause"></i></button>
+												<button type="button" class="btn btn-xs btn-outline-secondary disabled" title="非MQCloud客户端暂不支持限制消费速率" data-toggle="tooltip"><i class="fa-solid fa-fw fa-gauge-high"></i></button>
+												<button type="button" class="btn btn-xs btn-outline-secondary disabled" data-toggle="tooltip" title="非MQCloud客户端暂不支持trace"><i class="fas fa-fw fa-eye-slash"></i></button>
 											</#if>
 			                    		</#if>
-			                    		<button type="button" class="btn btn-xs btn-warning" data-target="#deleteConsumerModel${row}" title="删除${consumerProgressVO.consumer.name}" data-toggle="modal"><span class="glyphicon glyphicon-trash" aria-hidden="true"></span></button>
+			                    		<button type="button" class="btn btn-xs btn-outline-secondary" title="删除${consumerProgressVO.consumer.name}" data-toggle="tooltip" onclick="deleteConsumerShow('${consumerProgressVO.consumer.name}', ${consumerProgressVO.consumer.id})"><i class="fas fa-fw fa-trash-alt"></i></button>
 		                    		</#if>
-		                    		<#if consumerProgressVO.offsetMap??>
-		                    		<!-- 详情 -->
-		                    		<div id="consumeDetailModel${row}" class="modal fade" tabindex="-1" aria-hidden="true" style="overflow-y: auto;">
-										<div class="modal-dialog" style="width:800px">
-											<div class="modal-content">
-												<div class="modal-header">
-													<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-													<h4 class="modal-title"><b>${consumerProgressVO.consumer.name}</b> 消费详情</h4>
+									</p>
+								</li>
+							</ul>
+							<#if consumerProgressVO.offsetMap??>
+							<!-- 详情 -->
+							<div id="consumeDetailModel${row}" class="modal fade" tabindex="-1" aria-hidden="true" style="overflow-y: auto;">
+								<div class="modal-dialog modal-lg">
+									<div class="modal-content">
+										<div class="modal-header">
+											<h5 class="modal-title"><b class="text-wrap">${consumerProgressVO.consumer.name}</b> 消费详情</h5>
+											<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+										</div>
+										<div class="modal-body">
+										<#if consumerProgressVO.dlqTopic?? && consumerProgressVO.dlqOffsetMap??>
+											<div class="card">
+												<div class="card-header">
+													<span class="text-wrap">死消息Topic：<b class="text-red" data-toggle="tooltip" title="消费失败达到最大重试次数(16)后，将会进入此topic，不再重试">${consumerProgressVO.dlqTopic}</b>
+														&nbsp;&nbsp;&nbsp;<button type="button" class="btn btn-xs btn-outline-secondary" title="搜索死消息" onclick="initOffsetMsgModal('dlq', ${row}, '${consumerProgressVO.dlqTopic}', '${consumerProgressVO.consumer.id}', '${consumerProgressVO.consumer.name}','${consumerProgressVO.dlqMaxOffset?c}', false)" data-target="#msgSearchModal" data-toggle="modal"><i class="fas fa-fw fa-search"></i></button>
+													</span>
 												</div>
-												<#if consumerProgressVO.dlqTopic?? && consumerProgressVO.dlqOffsetMap??>
-													<table class="table table-striped table-hover" style="margin-top: 0px">
+												<div class="card-body p-0 table-responsive">
+													<table class="table table-striped table-sm table-hover text-nowrap">
 														<thead>
 															<tr>
-																<td class="warning" colspan=7>死消息Topic：<b style="color:red" data-toggle="tooltip" 
-																title="消费失败达到最大重试次数(16)后，将会进入此topic，不再重试">${consumerProgressVO.dlqTopic}</b>
-																	&nbsp;&nbsp;&nbsp;<a href="#"><span title="搜索死消息" class="glyphicon glyphicon-search" style="cursor:pointer;" 
-																	onclick="initOffsetMsgModal('dlq', ${row}, '${consumerProgressVO.dlqTopic}', '${consumerProgressVO.consumer.id}', '${consumerProgressVO.consumer.name}','${consumerProgressVO.dlqMaxOffset?c}', false)" data-target="#msgSearchModal" data-toggle="modal"></span></a>
-																</td>
-															</tr>
-															<tr>
-																<td>broker</td>
-																<td>队列</td>
-																<td>最小偏移量</td>
-																<td>最大偏移量</td>
-																<td>消息量</td>
-																<td>更新时间</td>
+																<th>broker</th>
+																<th>队列</th>
+																<th class="d-none d-sm-table-cell">最小偏移量</th>
+																<th class="d-none d-sm-table-cell">最大偏移量</th>
+																<th>消息量</th>
+																<th>消费时间</th>
 															</tr>
 														</thead>
 														<tbody>
@@ -187,18 +185,18 @@
 																<tr>
 																	<td>${k.brokerName}</td>
 																	<td>${k.queueId}</td>
-																	<td>
+																	<td class="d-none d-sm-table-cell">
 																		${v.minOffset?string(",###")}
 																	</td>
-																	<td>
+																	<td class="d-none d-sm-table-cell">
 																		${v.maxOffset?string(",###")}
 																	</td>
 																	<td>
 																		${v.maxOffset - v.minOffset}
 																	</td>
 																	<#if v.lastUpdateTimestamp <= 0>
-										                    			<td data-toggle='tooltip' title="可能消息被删了">暂无</td>
-										                    		<#else>
+																		<td data-toggle='tooltip' title="可能消息被删了">暂无</td>
+																	<#else>
 																		<td>
 																			${v.lastUpdateTimestamp?number_to_datetime?string("yyyy-MM-dd HH:mm:ss")}
 																		</td>
@@ -207,31 +205,32 @@
 															</#list>
 														</tbody>
 													</table>
-												</#if>
-												<#if consumerProgressVO.retryTopic?? && consumerProgressVO.retryOffsetMap??>
-													<table class="table table-striped table-hover" style="margin-top: 0px">
+												</div>
+											</div>
+										</#if>
+										<#if consumerProgressVO.retryTopic?? && consumerProgressVO.retryOffsetMap??>
+											<div class="card">
+												<div class="card-header">
+													<span class="text-wrap">重试Topic：<b class="text-red" data-toggle="tooltip" title="消费失败的消息，会重新发回到此topic，以便重试消费">${consumerProgressVO.retryTopic}</b>
+													&nbsp;&nbsp;&nbsp;	<button type="button" class="btn btn-xs btn-outline-secondary" id="${consumerProgressVO.consumer.name}" title="搜索重试消息" onclick="initOffsetMsgModal('retry', ${row}, '${consumerProgressVO.retryTopic}', '${consumerProgressVO.consumer.id}', '${consumerProgressVO.consumer.name}','${consumerProgressVO.retryMaxOffset?c}', ${consumerProgressVO.consumer.traceEnabled()?c})" data-target="#msgSearchModal" data-toggle="modal"><i class="fas fa-search fa-fw"></i></button>
+														<#if consumerProgressVO.version??>
+															<button type="button" class="btn btn-xs btn-outline-secondary" title="跳过重试消息" onclick="showResetRetryMessageOffsetModel(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}')" data-toggle="tooltip"><i class="fas fa-fw fa-fast-forward"></i></button>
+														<#else>
+															<button type="button" class="btn btn-xs btn-outline-secondary disabled" title="非MQCloud客户端暂不支持跳过重试消息" data-toggle="tooltip"><i class="fas fa-fw fa-fast-forward"></i></button>
+														</#if>
+													</span>
+												</div>
+												<div class="card-body p-0 table-responsive">
+													<table class="table table-striped table-sm table-hover text-nowrap">
 														<thead>
 															<tr>
-																<td class="warning" colspan=7>重试Topic：<b style="color:red" data-toggle="tooltip" 
-																title="消费失败的消息，会重新发回到此topic，以便重试消费">${consumerProgressVO.retryTopic}</b>
-																&nbsp;&nbsp;&nbsp;<a href="#"><span id="${consumerProgressVO.consumer.name}" title="搜索重试消息" class="glyphicon glyphicon-search"
-																onclick="initOffsetMsgModal('retry', ${row}, '${consumerProgressVO.retryTopic}', '${consumerProgressVO.consumer.id}', '${consumerProgressVO.consumer.name}','${consumerProgressVO.retryMaxOffset?c}', ${consumerProgressVO.consumer.traceEnabled()?c})" data-target="#msgSearchModal" data-toggle="modal"></span></a>
-																&nbsp;&nbsp;&nbsp;
-																<#if consumerProgressVO.version??>
-																	<a href="#"><span title="跳过重试消息" class="glyphicon glyphicon-fast-forward" onclick="showResetRetryMessageOffsetModel(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}')" data-toggle="modal"></span></a>
-																<#else>
-																	<span title="非MQCloud客户端暂不支持跳过重试消息" class="glyphicon glyphicon-fast-forward" data-toggle="tooltip"></span>
-																</#if>
-																</td>
-															</tr>
-															<tr>
-																<td>客户端</td>
-																<td>broker</td>
-																<td>队列</td>
-																<td>broker偏移量</td>
-																<td>消费者偏移量</td>
-																<td>堆积量</td>
-																<td>消费到</td>
+																<th>客户端</th>
+																<th>broker</th>
+																<th>队列</th>
+																<th class="d-none d-sm-table-cell">broker偏移量</th>
+																<th class="d-none d-sm-table-cell">消费者偏移量</th>
+																<th>堆积量</th>
+																<th>消费时间</th>
 															</tr>
 														</thead>
 														<tbody>
@@ -240,18 +239,18 @@
 																	<td id="1_${consumerProgressVO.consumer.id}_${k.brokerName}_${k.queueId}"></td>
 																	<td>${k.brokerName}</td>
 																	<td>${k.queueId}</td>
-																	<td>
+																	<td class="d-none d-sm-table-cell">
 																		${v.brokerOffset?string(",###")}
 																	</td>
-																	<td>
+																	<td class="d-none d-sm-table-cell">
 																		${v.consumerOffset?string(",###")}
 																	</td>
 																	<td>
 																		${v.brokerOffset - v.consumerOffset}
 																	</td>
 																	<#if v.lastTimestamp <= 0>
-										                    			<td data-toggle='tooltip' title="可能消息被删了">暂无</td>
-										                    		<#else>
+																		<td data-toggle='tooltip' title="可能消息被删了">暂无</td>
+																	<#else>
 																		<td>
 																			${v.lastTimestamp?number_to_datetime?string("yyyy-MM-dd HH:mm:ss")}
 																		</td>
@@ -260,527 +259,322 @@
 															</#list>
 														</tbody>
 													</table>
-												</#if>
-												<table class="table table-striped table-hover" style="margin-top: 0px">
-													<thead>
-														<tr>
-															<td class="warning" colspan=8>Topic：<b>${consumerProgressVO.topic}</td>
-														</tr>
-														<tr>
-															<td>客户端</td>
-															<td>broker</td>
-															<td>队列</td>
-															<td>broker偏移量</td>
-															<td>消费者偏移量</td>
-															<td>堆积量</td>
-															<td>消费到</td>
-															<td>操作</td>
-														</tr>
-													</thead>
-													<tbody>
-														<#list consumerProgressVO.offsetMap as k, v>
+												</div>
+											</div>
+										</#if>
+											<div class="card">
+												<div class="card-header">
+													<span class="text-wrap">Topic：<b>${consumerProgressVO.topic}</b></span>
+												</div>
+												<div class="card-body p-0 table-responsive">
+													<table class="table table-striped table-sm table-hover text-nowrap">
+														<thead>
 															<tr>
-																<td id="0_${consumerProgressVO.consumer.id}_${k.brokerName}_${k.queueId}"></td>
-																<td>${k.brokerName}</td>
-																<td>${k.queueId}</td>
-																<td>
-																	${v.brokerOffset?string(",###")}
-																</td>
-																<td>
-																	${v.consumerOffset?string(",###")}
-																</td>
-																<td>
-																	${v.brokerOffset - v.consumerOffset}
-																</td>
-																<#if v.lastTimestamp <= 0>
-									                    			<td data-toggle='tooltip' title="可能消息被删了">暂无</td>
-									                    		<#else>
-																	<td>
-																		${v.lastTimestamp?number_to_datetime?string("yyyy-MM-dd HH:mm:ss")}
-																	</td>
-																</#if>
-																<td>
-																	<#if consumerProgressVO.version??>
-																		<a href="#" data-toggle="tooltip" title="消费线程诊断" onclick="showThreadMetricsForClustering('0_${consumerProgressVO.consumer.id}_${k.brokerName}_${k.queueId}', '${consumerProgressVO.consumer.name}')"><span class="glyphicon glyphicon-wrench"></span></a>
-																		<a href="#" data-toggle="tooltip" title="消费异常诊断" onclick="showFailedMetricsForClustering('0_${consumerProgressVO.consumer.id}_${k.brokerName}_${k.queueId}', '${consumerProgressVO.consumer.name}')"><span class="glyphicon glyphicon-exclamation-sign"></span></a>
-																	<#else>
-																		<span data-toggle="tooltip" title="非MQCloud客户端暂不支持消费线程诊断" class="glyphicon glyphicon-wrench"></span>
-																		<span data-toggle="tooltip" title="非MQCloud客户端暂不支持消费异常诊断" class="glyphicon glyphicon-exclamation-sign"></span>
-																	</#if>
-																</td>
+																<th>客户端</th>
+																<th>broker</th>
+																<th>队列</th>
+																<th class="d-none d-sm-table-cell">broker偏移量</th>
+																<th class="d-none d-sm-table-cell">消费者偏移量</th>
+																<th>堆积量</th>
+																<th>消费时间</th>
+																<th>操作</th>
 															</tr>
-														</#list>
-													</tbody>
-												</table>
-											</div>
-										</div>
-									</div> <!-- 详情结束 -->
-									<!-- 跳过堆积 -->
-									<div id="skipAccumulationModel${row}" class="modal fade" tabindex="-1" aria-hidden="true">
-										<div class="modal-dialog">
-											<div class="modal-content">
-												<div class="modal-header">
-													<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-													<h4 class="modal-title"><b>确定跳过堆积的消息吗?</b></h4>
+														</thead>
+														<tbody>
+															<#list consumerProgressVO.offsetMap as k, v>
+																<tr>
+																	<td id="0_${consumerProgressVO.consumer.id}_${k.brokerName}_${k.queueId}" onclick="consumerRunningInfoModelShow(this)"></td>
+																	<td>${k.brokerName}</td>
+																	<td>${k.queueId}</td>
+																	<td class="d-none d-sm-table-cell">
+																		${v.brokerOffset?string(",###")}
+																	</td>
+																	<td class="d-none d-sm-table-cell">
+																		${v.consumerOffset?string(",###")}
+																	</td>
+																	<td>
+																		${v.brokerOffset - v.consumerOffset}
+																	</td>
+																	<#if v.lastTimestamp <= 0>
+																		<td data-toggle='tooltip' title="可能消息被删了">暂无</td>
+																	<#else>
+																		<td>
+																			${v.lastTimestamp?number_to_datetime?string("yyyy-MM-dd HH:mm:ss")}
+																		</td>
+																	</#if>
+																	<td>
+																		<#if consumerProgressVO.version??>
+																			<button type="button" class="btn btn-xs btn-outline-secondary" data-toggle="tooltip" title="消费线程诊断" onclick="showThreadMetricsForClustering('0_${consumerProgressVO.consumer.id}_${k.brokerName}_${k.queueId}', '${consumerProgressVO.consumer.name}')"><i class="fas fa-stethoscope"></i></button>
+																			<button type="button" class="btn btn-xs btn-outline-secondary" data-toggle="tooltip" title="消费异常诊断" onclick="showFailedMetricsForClustering('0_${consumerProgressVO.consumer.id}_${k.brokerName}_${k.queueId}', '${consumerProgressVO.consumer.name}')"><i class="fas fa-exclamation-circle"></i></button>
+																		<#else>
+																			<button type="button" class="btn btn-xs btn-outline-secondary disabled" data-toggle="tooltip" title="非MQCloud客户端暂不支持消费线程诊断"><i class="fas fa-stethoscope"></i></button>
+																			<button type="button" class="btn btn-xs btn-outline-secondary disabled" data-toggle="tooltip" title="非MQCloud客户端暂不支持消费异常诊断"><i class="fas fa-exclamation-circle"></i></button>
+																		</#if>
+																	</td>
+																</tr>
+															</#list>
+														</tbody>
+													</table>
 												</div>
-												<form class="form-horizontal form-bordered form-row-stripped">
-													<div class="modal-body">
-														<div class="row">
-															<div class="col-md-12">
-																<div class="form-body">
-																	<div class="form-group">
-																		<label class="control-label col-md-3"> Topic: </label>
-																		<div class="col-md-5">
-																			<input type="text" readonly="readonly" value="${consumerProgressVO.topic}" class="form-control" />
-																		</div>
-																	</div>
-																	<div class="form-group">
-																		<label class="control-label col-md-3"> 消费者: </label>
-																		<div class="col-md-5">
-																			<input type="text" readonly="readonly" value="${consumerProgressVO.consumer.name}" class="form-control" />
-																		</div>
-																	</div>
-																</div>
-															</div>
-														</div>
-													</div>
-													<div  class="modal-footer">
-														<button type="button" data-dismiss="modal" class="btn" >取消</button>
-														<button type="button" id="skipAccumulationBtn${row}" class="btn btn-primary" onclick="skipAccumulation(${consumerProgressVO.consumer.tid},${consumerProgressVO.consumer.id},'skipAccumulationBtn${row}')">确定</button>
-													</div>
-												</form>
-											</div>
-										</div>
-									</div><!-- 跳过堆积结束 -->
-									<!-- 消息回溯-->
-									<div id="resetOffSetModel${row}" class="modal fade" tabindex="-1" aria-hidden="true">
-										<div class="modal-dialog">
-											<div class="modal-content">
-												<div class="modal-header">
-													<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-													<h4 class="modal-title"><b>消息回溯</b></h4>
-												</div>
-												<form class="form-horizontal form-bordered form-row-stripped">
-													<div class="modal-body">
-														<div class="row">
-															<div class="col-md-12">
-																<div class="form-body">
-																	<div class="form-group">
-																		<label class="control-label col-md-3"> Topic: </label>
-																		<div class="col-md-5">
-																			<input type="text" readonly="readonly" value="${consumerProgressVO.topic}" class="form-control" />
-																		</div>
-																	</div>
-																	<div class="form-group">
-																		<label class="control-label col-md-3"> 消费者: </label>
-																		<div class="col-md-5">
-																			<input type="text" readonly="readonly" value="${consumerProgressVO.consumer.name}" class="form-control" />
-																		</div>
-																	</div>
-																	<div class="form-group">
-																		<label class="control-label col-md-3"> 回溯到: </label>
-																		<div class="col-md-5">
-																			<input type="text" id="resetOffsetDate${row}" name="resetOffsetDate" class="Wdate form-control" onclick="WdatePicker({ dateFmt: 'yyyy-MM-dd HH:mm:ss',maxDate:'%y-%M-%d',minDate:'%y-%M-{%d-5}'})" style="width:100%;height:34px;cursor:pointer;" readonly="readonly">
-																		</div>
-																	</div>
-																</div>
-															</div>
-														</div>
-													</div>
-													<div  class="modal-footer">
-														<button type="button" data-dismiss="modal" class="btn" >取消</button>
-														<button type="button" id="resetOffsetBtn${row}" class="btn btn-primary" onclick="resetOffset(${row},${consumerProgressVO.consumer.tid},${consumerProgressVO.consumer.id},'resetOffsetBtn${row}')">确定</button>
-													</div>
-												</form>
-											</div>
-										</div>
-									</div><!-- 消息回溯-->
-									</#if>
-									<!-- 删除consumer -->
-									<div id="deleteConsumerModel${row}" class="modal fade" tabindex="-1" aria-hidden="true">
-										<div class="modal-dialog">
-											<div class="modal-content">
-												<div class="modal-header">
-													<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-													<h4 class="modal-title"><b>确定删除消费者吗?</b></h4>
-												</div>
-												<form class="form-horizontal form-bordered form-row-stripped">
-													<div class="modal-body">
-														<div class="row">
-															<div class="col-md-12">
-																<div class="form-body">
-																	<div class="form-group">
-																		<label class="control-label col-md-3"> Topic: </label>
-																		<div class="col-md-5">
-																			<input type="text" readonly="readonly" value="${consumerProgressVO.topic}" class="form-control" />
-																		</div>
-																	</div>
-																	<div class="form-group">
-																		<label class="control-label col-md-3"> 消费者: </label>
-																		<div class="col-md-5">
-																			<input type="text" readonly="readonly" value="${consumerProgressVO.consumer.name}" class="form-control" />
-																		</div>
-																	</div>
-																</div>
-															</div>
-														</div>
-													</div>
-													<div  class="modal-footer">
-														<button type="button" data-dismiss="modal" class="btn" >取消</button>
-														<button type="button" id="deleteConsumerBtn${row}" class="btn btn-primary" onclick="deleteConsumer(${consumerProgressVO.consumer.tid},${consumerProgressVO.consumer.id},'deleteConsumerBtn${row}')">确定</button>
-													</div>
-												</form>
-											</div>
-										</div>
-									</div>
-									<!-- 删除consumer-->
-		                    	</td>
-		                   	</tr>
-						</#list>
-						<!-- 广播模式 -->
-						<#list resultExt.result as consumerProgressVO>
-							<tr>
-								<#assign row = (pagination.result.currentPage - 1)*pagination.result.numOfPage + consumerProgressVO_index + 1 + response.result?size> 
-								<td title="${consumerProgressVO.version!}" data-toggle="tooltip">${row}</td>
-		                    	<td><a style="cursor:pointer" data="${RequestParameters.consumer!}" title="查看消费详情" data-target="#consumeDetailModel${row}b" data-toggle="modal">${consumerProgressVO.consumer.name}</a></td>
-		                    	<#if consumerProgressVO.ownerList??>
-			                    	<td>
-			                    		<#if consumerProgressVO.ownerList?seq_contains(userInfo.user) || userInfo.user.type == 1>
-				                    		<#list consumerProgressVO.ownerList as user>
-				                    			<#if user_index != 0>
-									    		,
-									    		</#if>
-									    		<span onclick="prepareDeleteUserConsumer(${user.id},'${user.name!user.getEmailName()}',${consumerProgressVO.consumer.id})" data-toggle="tooltip" title="移除${user.name!user.getEmailName()}?" class="producer_delete pointer">${user.name!user.getEmailName()}</span>
-				                    		</#list>
-		                    				<a href="#"><span class="glyphicon glyphicon-plus-sign" data-toggle="tooltip" title="授权其他用户查看${consumerProgressVO.consumer.name}?" onclick="associateUserConsumer(${consumerProgressVO.consumer.id},'${consumerProgressVO.consumer.name}')"></span></a>
-		                    			<#else>
-		                    				<#list consumerProgressVO.ownerList as user>
-		                    					<#if user_index != 0>
-									    		,
-									    		</#if>
-									    		<span>${user.name!user.getEmailName()}</span>
-				                    		</#list>
-		                    			</#if>    		
-			                    	</td>
-		                    	<#else>
-		                    		<td>暂无</td>
-		                    	</#if>
-								<td class="edit-text" <#if consumerProgressVO.consumer.info?? && consumerProgressVO.consumer.info?length gt 12>data-toggle="tooltip" title="${consumerProgressVO.consumer.info}"</#if>>
-									<#if consumerProgressVO.consumer.info?? && consumerProgressVO.consumer.info?length gt 12>
-										<#if consumerProgressVO.ownerList?? && (consumerProgressVO.ownerList?seq_contains(userInfo.user) || userInfo.user.type == 1)><span style="cursor:pointer" onclick="showUpdateInfo(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', '${consumerProgressVO.consumer.info!}')"></#if>${consumerProgressVO.consumer.info?substring(0,12)}...<#if consumerProgressVO.ownerList?? && (consumerProgressVO.ownerList?seq_contains(userInfo.user) || userInfo.user.type == 1)></span></#if>
+											</div> <!-- 消费详情结束 -->
+										</div> <!-- modal-body结束 -->
+									</div> <!-- modal-content结束 -->
+								</div> <!-- modal-dialog结束 -->
+							</div> <!-- 详情结束 -->
+							</#if>
+						</div>
+					</#list>
+					<!-- 广播模式 -->
+					<#list resultExt.result as consumerProgressVO>
+						<#assign row = (pagination.result.currentPage - 1)*pagination.result.numOfPage + consumerProgressVO_index + 1 + response.result?size>
+						<div class="list-group-item">
+							<ul class="row nav mb-2">
+								<li class="col-md-6">
+									<p class="m-1">
+										<a href="javascript:void(0)" data="${RequestParameters.consumer!}" title="查看消费详情" data-target="#consumeDetailModel${row}b" data-toggle="modal">${consumerProgressVO.consumer.name}</a>
+										<#if consumerProgressVO.version??>
+											<span class="ml-2" data-toggle="tooltip" onclick="showConsumerStats('${consumerProgressVO.consumer.name}')" title="查看${consumerProgressVO.consumer.name}的客户端统计"><i class="fa-solid fa-chart-line fa-xs text-secondary pointer"></i></span>
+										<#else>
+											<span class="ml-2" data-toggle="tooltip" title="非MQCloud客户端暂不支持查看客户端统计"><i class="fa-solid fa-chart-line fa-xs disabled"></i></span>
+										</#if>
+										<span class="ml-1" data-toggle="tooltip" title="点击复制${consumerProgressVO.consumer.name}"><i class="fas fa-copy fa-xs copied text-secondary pointer" data-clipboard-text="${consumerProgressVO.consumer.name}"></i></span>
+									</p>
+								</li>
+								<li class="col-md-3 small">
+									<p class="m-1"><span class="text-muted">创建于:</span>&nbsp;&nbsp;${consumerProgressVO.createDateFormat}</p>
+								</li>
+								<li class="col-md-3 small">
+									<p class="m-1">
+										<span class="text-muted">消费模式:</span>&nbsp;&nbsp;
+										<#if consumerProgressVO.consumer.httpProtocol>
+											<font color="blue" data-toggle="tooltip" title="http方式消费">${consumerProgressVO.messageModel}</font>
+											<#elseif consumerProgressVO.consumer.proxyRemoting>
+											<font color="blue" data-toggle="tooltip" title="Proxy Remoting方式消费">${consumerProgressVO.messageModel}</font>
+											<#else>
+											${consumerProgressVO.messageModel}
+										</#if>
+									</p>
+								</li>
+							</ul>
+							<ul class="row nav small mb-2">
+								<li class="col-md-6">
+									<p class="m-1"><span class="text-muted">用途:</span>&nbsp;&nbsp;
+									<#if consumerProgressVO.consumer.info?? && consumerProgressVO.consumer.info?length gt 30>
+										<span data-toggle="tooltip" title="${consumerProgressVO.consumer.info}">${consumerProgressVO.consumer.info?substring(0,30)}...</span> <#if consumerProgressVO.ownerList?? && (consumerProgressVO.ownerList?seq_contains(userInfo.user) || userInfo.user.type == 1)><span data-toggle="tooltip" title="修改用途"><i onclick="showUpdateInfo(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', '${consumerProgressVO.consumer.info!}')" class="fas fa-edit fa-xs text-secondary pointer"></i></span></#if>
 									<#else>
 										<#if consumerProgressVO.consumer.info?? && consumerProgressVO.consumer.info !=''>
-											<#if consumerProgressVO.ownerList?? && (consumerProgressVO.ownerList?seq_contains(userInfo.user) || userInfo.user.type == 1)><span style="cursor:pointer" data-toggle="tooltip" title="修改用途" onclick="showUpdateInfo(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', '${consumerProgressVO.consumer.info!}')"></#if>${consumerProgressVO.consumer.info}<#if consumerProgressVO.ownerList?? && (consumerProgressVO.ownerList?seq_contains(userInfo.user) || userInfo.user.type == 1)></span></#if>
+											${consumerProgressVO.consumer.info} <#if consumerProgressVO.ownerList?? && (consumerProgressVO.ownerList?seq_contains(userInfo.user) || userInfo.user.type == 1)><span data-toggle="tooltip" title="修改用途"><i class="fas fa-edit fa-xs text-secondary pointer" onclick="showUpdateInfo(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', '${consumerProgressVO.consumer.info!}')"></i></span></#if>
 										<#else>
 											<#if consumerProgressVO.ownerList?? && (consumerProgressVO.ownerList?seq_contains(userInfo.user) || userInfo.user.type == 1)>
-				                    			<a href="#"><span class="glyphicon glyphicon-pencil" onclick="showUpdateInfo(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', '${consumerProgressVO.consumer.info!}')" data-toggle="tooltip" title="添加用途" aria-hidden="true"></span></a>
+												<span data-toggle="tooltip" title="添加用途"><i onclick="showUpdateInfo(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', '${consumerProgressVO.consumer.info!}')" class="far fa-edit fa-xs pointer"></i></span>
 				                    		</#if>
 										</#if>
 									</#if>
-								</td>
-	                    		<td>
-									<#if consumerProgressVO.consumer.httpProtocol>
-										<font color="blue" data-toggle="tooltip" title="http方式消费">${consumerProgressVO.messageModel}</font>
-									<#elseif consumerProgressVO.consumer.proxyRemoting>
-										<font color="blue" data-toggle="tooltip" title="Proxy Remoting方式消费">${consumerProgressVO.messageModel}</font>
-									<#else>
-										${consumerProgressVO.messageModel}
+									</p>
+								</li>
+								<li class="col-md-2">
+									<p class="m-1" data-toggle="tooltip" title="${consumerProgressVO.consumeTpsRound}"><span class="text-muted">TPS:</span>&nbsp;&nbsp;${consumerProgressVO.consumeTpsFormat}</p>
+								</li>
+								<li class="col-md-3 offset-md-1">
+									<p class="m-1" data-toggle="tooltip" title="所有队列中的最小消费时间"><span class="text-muted">消费到:</span>&nbsp;&nbsp;
+									<#if consumerProgressVO.minLastTimestamp == 0>暂无<#else>
+										<#if consumerProgressVO.minLastTimestamp == long.MAX_VALUE>
+											消费进度不存在
+										<#else>
+											${consumerProgressVO.minLastTimestamp?number_to_datetime?string("yyyy-MM-dd HH:mm:ss")}
+										</#if>
 									</#if>
-								</td>
-								<td title="${consumerProgressVO.diff}" data-toggle="tooltip">${consumerProgressVO.diffFormat}</td>
-	                    		<td>${consumerProgressVO.consumeTpsFormat}</td>
-	                    		<td><span class="glyphicon glyphicon-eye-close" data-toggle="tooltip" title="广播模式不支持trace"></span></td>
-	                    		<#if consumerProgressVO.minLastTimestamp == 0>
-	                    			<td>暂无</td>
-	                    		<#else>
-	                    			<#if consumerProgressVO.minLastTimestamp == long.MAX_VALUE>
-	                    				<td>消费进度不存在</td>
-	                    			<#else>
-			                    		<td>${consumerProgressVO.minLastTimestamp?number_to_datetime?string("yyyy-MM-dd HH:mm:ss")}</td>
-	                    			</#if>
-	                    		</#if>
-		                    	<td>
-		                    		<#if (consumerProgressVO.ownerList?? && consumerProgressVO.ownerList?seq_contains(userInfo.user)) || userInfo.user.type == 1>
+									</p>
+								</li>
+							</ul>
+							<ul class="row nav small">
+								<li class="col-md-6">
+									<p class="m-1"><span class="text-muted">归属于:</span>&nbsp;&nbsp;
+									<#if consumerProgressVO.ownerList??>
+										<#if consumerProgressVO.ownerList?seq_contains(userInfo.user) || userInfo.user.type == 1>
+											<#list consumerProgressVO.ownerList as user>
+												<#if user_index != 0>
+												,
+												</#if>
+												<span onclick="prepareDeleteUserConsumer(${user.id},'${user.name!user.getEmailName()}',${consumerProgressVO.consumer.id})" data-toggle="tooltip" title="移除${user.name!user.getEmailName()}?" class="producer_delete pointer">${user.name!user.getEmailName()}</span>
+											</#list>
+											<span data-toggle="tooltip" title="授权其他用户查看${consumerProgressVO.consumer.name}?"><i onclick="associateUserConsumer(${consumerProgressVO.consumer.id},'${consumerProgressVO.consumer.name}')" class="fas fa-user-plus fa-xs text-secondary pointer"></i></span>
+										<#else>
+											<#list consumerProgressVO.ownerList as user>
+												<#if user_index != 0>
+												,
+												</#if>
+												<span>${user.name!user.getEmailName()}</span>
+											</#list>
+										</#if>
+									<#else>
+										暂无
+									</#if>
+									</p>
+								</li>
+								<li class="col-md-2">
+									<p class="m-1" data-toggle="tooltip" title="${consumerProgressVO.diff}"><span class="text-muted">堆积量:</span>&nbsp;&nbsp;${consumerProgressVO.diffFormat}</p>
+								</li>
+								<li class="col-md-3 offset-md-1">
+									<p class="m-1"><span class="text-muted">操作:</span>&nbsp;&nbsp;
+									<#if (consumerProgressVO.ownerList?? && consumerProgressVO.ownerList?seq_contains(userInfo.user)) || userInfo.user.type == 1>
 			                    		<#if consumerProgressVO.offsetMap??>
-				                    		<a href="#"><span title="跳过堆积的消息，直接消费至最新的消息" class="glyphicon glyphicon-fast-forward pointer" data-target="#skipAccumulationModel${row}b" data-toggle="modal"></span></a>
-				                    		<a href="#"><span title="消费过去一段时间至现在的消息" class="glyphicon glyphicon-backward pointer" data-target="#resetOffSetModel${row}b" data-toggle="modal"></span></a>
+											<button type="button" class="btn btn-xs btn-outline-secondary" data-toggle="tooltip" title="跳过堆积的消息，直接消费至最新的消息" onclick="skipAccumulationShow('${consumerProgressVO.consumer.name}', ${consumerProgressVO.consumer.id})"><i class="fas fa-fw fa-fast-forward"></i></button>
+				                    		<button type="button" class="btn btn-xs btn-outline-secondary" data-toggle="tooltip" title="消费过去一段时间至现在的消息" onclick="resetOffsetShow('${consumerProgressVO.consumer.name}', ${consumerProgressVO.consumer.id})"><i class="fas fa-fw fa-backward"></i></button>
 											<#if consumerProgressVO.version??>
 												<#if consumerProgressVO.consumerConfig?? && consumerProgressVO.consumerConfig.pause?? && consumerProgressVO.consumerConfig.pause>
-													<a href="#"><span title="恢复消费" class="glyphicon glyphicon-play pointer" onclick="showPauseConsumeConfigModel(${consumerProgressVO.consumer.httpProtocol?c}, ${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', false<#if consumerProgressVO.consumerConfig?? && consumerProgressVO.consumerConfig.pauseClientId??>,'${consumerProgressVO.consumerConfig.pauseClientId}'</#if>)" data-toggle="modal"></span></a>
+													<button type="button" class="btn btn-xs btn-outline-secondary" title="恢复消费" onclick="showPauseConsumeConfigModel(${consumerProgressVO.consumer.httpProtocol?c}, ${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', false<#if consumerProgressVO.consumerConfig?? && consumerProgressVO.consumerConfig.pauseClientId??>,'${consumerProgressVO.consumerConfig.pauseClientId}'</#if>)" data-toggle="tooltip"><i class="fas fa-fw fa-play"></i></button>
 												<#else>
-													<a href="#"><span title="暂停消费" class="glyphicon glyphicon-pause pointer" onclick="showPauseConsumeConfigModel(${consumerProgressVO.consumer.httpProtocol?c}, ${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', true<#if consumerProgressVO.consumerConfig?? && consumerProgressVO.consumerConfig.pauseClientId??>,'${consumerProgressVO.consumerConfig.pauseClientId}'</#if>)" data-toggle="modal"></span></a>
+													<button type="button" class="btn btn-xs btn-outline-secondary" title="暂停消费" onclick="showPauseConsumeConfigModel(${consumerProgressVO.consumer.httpProtocol?c}, ${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', true<#if consumerProgressVO.consumerConfig?? && consumerProgressVO.consumerConfig.pauseClientId??>,'${consumerProgressVO.consumerConfig.pauseClientId}'</#if>)" data-toggle="tooltip"><i class="fas fa-fw fa-pause"></i></button>
 												</#if>
 												<#if consumerProgressVO.consumerConfig?? && consumerProgressVO.consumerConfig.enableRateLimit?? && consumerProgressVO.consumerConfig.enableRateLimit>
-													<img title="修改消费限速" width="22" height="24" style="display:inline-block;" src="${request.contextPath}/img/rateLimiter2.png" class="pointer" onclick="showLimitConsumeConfigModel(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', true, <#if consumerProgressVO.consumerConfig.permitsPerSecond??>${consumerProgressVO.consumerConfig.permitsPerSecond}<#else>${limitConsumeTps}</#if>)" data-toggle="modal"></img>
+													<button type="button" class="btn btn-xs btn-outline-secondary" title="修改消费限速" onclick="showLimitConsumeConfigModel(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', true, <#if consumerProgressVO.consumerConfig.permitsPerSecond??>${consumerProgressVO.consumerConfig.permitsPerSecond}<#else>${limitConsumeTps}</#if>)" data-toggle="tooltip"><i class="fa-solid fa-fw fa-gauge"></i></button>
 												<#else>
-													<img title="限制消费速率" width="22" height="24" style="display:inline-block;" src="${request.contextPath}/img/rateLimiter.png" class="pointer" onclick="showLimitConsumeConfigModel(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', false, <#if consumerProgressVO.consumerConfig?? && consumerProgressVO.consumerConfig.permitsPerSecond??>${consumerProgressVO.consumerConfig.permitsPerSecond}<#else>${limitConsumeTps}</#if>)" data-toggle="modal"></img>
+													<button type="button" class="btn btn-xs btn-outline-secondary" title="限制消费速率" onclick="showLimitConsumeConfigModel(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', false, <#if consumerProgressVO.consumerConfig?? && consumerProgressVO.consumerConfig.permitsPerSecond??>${consumerProgressVO.consumerConfig.permitsPerSecond}<#else>${limitConsumeTps}</#if>)" data-toggle="tooltip"><i class="fa-solid fa-fw fa-gauge-high"></i></button>
 												</#if>
 											<#else>
-												<span title="非MQCloud客户端暂不支持暂停消费" class="glyphicon glyphicon-pause" data-toggle="modal"></span>
-												<img title="非MQCloud客户端暂不支持限制消费速率" width="22" height="24" style="display:inline-block;" src="${request.contextPath}/img/rateLimiter.png" data-toggle="modal"></img>
+												<button type="button" class="btn btn-xs btn-outline-secondary disabled" title="非MQCloud客户端暂不支持暂停消费" data-toggle="tooltip"><i class="fas fa-fw fa-pause"></i></button>
+												<button type="button" class="btn btn-xs btn-outline-secondary disabled" title="非MQCloud客户端暂不支持限制消费速率" data-toggle="tooltip"><i class="fa-solid fa-fw fa-gauge-high"></i></button>
 											</#if>
 			                    		</#if>
-			                    		<button type="button" class="btn btn-xs btn-warning" data-target="#deleteConsumerModel${row}b" title="删除${consumerProgressVO.consumer.name}" data-toggle="modal"><span class="glyphicon glyphicon-trash" aria-hidden="true"></span></button>
+			                    		<button type="button" class="btn btn-xs btn-outline-secondary" title="删除${consumerProgressVO.consumer.name}" data-toggle="tooltip"  onclick="deleteConsumerShow('${consumerProgressVO.consumer.name}', ${consumerProgressVO.consumer.id})"><i class="fas fa-fw fa-trash-alt"></i></button>
 		                    		</#if>
-		                    		<#if consumerProgressVO.offsetMap??>
-		                    		<!-- 详情 -->
-		                    		<div id="consumeDetailModel${row}b" class="modal fade" tabindex="-1" aria-hidden="true" style="overflow-y: auto;">
-										<div class="modal-dialog" style="width:800px">
-											<div class="modal-content">
-												<div class="modal-header">
-													<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-													<h4 class="modal-title"><b>${consumerProgressVO.consumer.name}</b> 消费详情</h4>
-												</div>
-												<table class="table table-striped table-hover" style="margin-top: 0px">
+									</p>
+								</li>
+							</ul>
+							<#if consumerProgressVO.offsetMap??>
+							<!-- 详情 -->
+							<div id="consumeDetailModel${row}b" class="modal fade" tabindex="-1" aria-hidden="true" style="overflow-y: auto;">
+								<div class="modal-dialog modal-xl">
+									<div class="modal-content">
+										<div class="modal-header">
+											<h5 class="modal-title"><b class="text-wrap">${consumerProgressVO.consumer.name}</b> 消费详情</h5>
+											<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+										</div>
+										<div class="modal-body">
+										<div class="card">
+										<div class="card-body p-0 table-responsive">
+										<table class="table table-striped table-sm table-hover text-nowrap">
+											<#if consumerProgressVO.consumer.httpProtocol>
+											<colgroup class="colgroup">
+												<col width="150px">
+												<col>
+												<col>
+												<col>
+												<col>
+												<col>
+												<col>
+												<col>
+											</colgroup>
+											</#if>
+											<thead>
+												<tr>
+													<th>clientId</th>
+													<th>broker</th>
+													<th>队列</th>
+													<th class="d-none d-sm-table-cell">broker偏移量</th>
+													<th class="d-none d-sm-table-cell">消费者偏移量</th>
+													<th>堆积量</th>
 													<#if consumerProgressVO.consumer.httpProtocol>
-													<colgroup>
-														<col width="150px">
-														<col>
-														<col>
-														<col>
-														<col>
-														<col>
-														<col>
-														<col>
-													</colgroup>
+													<th>消费时间</th>
+													<th data-toggle="tooltip" title="单位: 秒.毫秒">锁定时间</th>
 													</#if>
-													<thead>
-														<tr>
-															<td>clientId</td>
-															<td>broker</td>
-															<td>队列</td>
-															<td>broker偏移量</td>
-															<td>消费者偏移量</td>
-															<td>堆积量</td>
-															<#if consumerProgressVO.consumer.httpProtocol>
-															<td>消费时间</td>
-															<td data-toggle="tooltip" title="单位: 秒.毫秒">锁定时间</td>
-															</#if>
-														</tr>
-													</thead>
-													<tbody>
-														<#list consumerProgressVO.consumeStatsList as consumeStats>
-															<tr>
-																<td rowspan=${consumeStats.offsetTable?size+1} align="center">
-																	<#if !consumerProgressVO.consumer.httpProtocol>
-																	${consumeStats.clientId}
-																	<br>
-																		<#if consumerProgressVO.version??>
-																			<a href="#" onclick="showThreadMetrics('${consumeStats.clientId}','${consumerProgressVO.consumer.name}')"><span data-toggle="tooltip" title="消费线程诊断" class="glyphicon glyphicon-wrench"></span></a>
-																			<a href="#" onclick="showFailedMetrics('${consumeStats.clientId}','${consumerProgressVO.consumer.name}')"><span  data-toggle="tooltip" title="消费异常诊断" class="glyphicon glyphicon-exclamation-sign"></span></a>
-																		<#else>
-																			<span data-toggle="tooltip" title="非MQCloud客户端暂不支持消费线程诊断" class="glyphicon glyphicon-wrench"></span>
-																			<span data-toggle="tooltip" title="非MQCloud客户端暂不支持消费异常诊断" class="glyphicon glyphicon-exclamation-sign"></span>
-																		</#if>
-																	<#else>
-																		${consumeStats.clientIdHtml}
-																	</#if>
-																</td>
-															</tr>
-															<#list consumeStats.offsetTable as mq,offset>
-															<tr>
-																<td>${mq.brokerName}</td>
-																<td>${mq.queueId}</td>
-																<td>
-																	${offset.brokerOffset?string(",###")}
-																</td>
-																<td>
-																	${offset.consumerOffset?string(",###")}
-																</td>
-																<td>
-																	<#if offset.brokerOffset gt offset.consumerOffset>
-																		${offset.brokerOffset - offset.consumerOffset}
-																	<#else>
-																		0
-																	</#if>
-																</td>
-																<#if consumerProgressVO.consumer.httpProtocol>
-																<td>
-																	<#if offset.lastTimestamp <= 0>
-																		暂无
-																	<#else>
-																		${offset.lastTimestamp?number_to_datetime?string("yyyy-MM-dd HH:mm:ss")}
-																	</#if>
-																</td>
-																<td>
-																	${offset.lockTime}
-																</td>
+												</tr>
+											</thead>
+											<tbody>
+												<#list consumerProgressVO.consumeStatsList as consumeStats>
+													<tr>
+														<td rowspan=${consumeStats.offsetTable?size+1} align="center">
+															<#if !consumerProgressVO.consumer.httpProtocol>
+																${consumeStats.clientId}
+																<br>
+																<#if consumerProgressVO.version??>
+																	<button type="button" class="btn btn-xs btn-outline-secondary" onclick="showThreadMetrics('${consumeStats.clientId}','${consumerProgressVO.consumer.name}')"><span data-toggle="tooltip" title="消费线程诊断" class="fas fa-stethoscope"></span></button>
+																	<button type="button" class="btn btn-xs btn-outline-secondary" onclick="showFailedMetrics('${consumeStats.clientId}','${consumerProgressVO.consumer.name}')"><span  data-toggle="tooltip" title="消费异常诊断" class="fas fa-exclamation-circle"></span></button>
+																<#else>
+																	<button type="button" class="btn btn-xs btn-outline-secondary disabled" data-toggle="tooltip" title="非MQCloud客户端暂不支持消费线程诊断"><i class="fas fa-stethoscope"></i></button>
+																	<button type="button" class="btn btn-xs btn-outline-secondary disabled" data-toggle="tooltip" title="非MQCloud客户端暂不支持消费异常诊断"><i class="fas fa-exclamation-circle"></i></button>
 																</#if>
-															</tr>
-															</#list>
-														</#list>
-													</tbody>
-												</table>
-											</div>
+															<#else>
+																${consumeStats.clientIdHtml}
+															</#if>
+														</td>
+													</tr>
+													<#list consumeStats.offsetTable as mq,offset>
+													<tr>
+														<td>${mq.brokerName}</td>
+														<td>${mq.queueId}</td>
+														<td class="d-none d-sm-table-cell">
+															${offset.brokerOffset?string(",###")}
+														</td>
+														<td class="d-none d-sm-table-cell">
+															${offset.consumerOffset?string(",###")}
+														</td>
+														<td>
+															<#if offset.brokerOffset gt offset.consumerOffset>
+																${offset.brokerOffset - offset.consumerOffset}
+															<#else>
+																0
+															</#if>
+														</td>
+														<#if consumerProgressVO.consumer.httpProtocol>
+														<td>
+															<#if offset.lastTimestamp <= 0>
+																暂无
+															<#else>
+																${offset.lastTimestamp?number_to_datetime?string("yyyy-MM-dd HH:mm:ss")}
+															</#if>
+														</td>
+														<td>
+															${offset.lockTime}
+														</td>
+														</#if>
+													</tr>
+													</#list>
+												</#list>
+											</tbody>
+										</table>
 										</div>
-									</div> <!-- 详情结束 -->
-									<!-- 跳过堆积 -->
-									<div id="skipAccumulationModel${row}b" class="modal fade" tabindex="-1" aria-hidden="true">
-										<div class="modal-dialog">
-											<div class="modal-content">
-												<div class="modal-header">
-													<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-													<h4 class="modal-title"><b>确定跳过堆积的消息吗?</b></h4>
-												</div>
-												<form class="form-horizontal form-bordered form-row-stripped">
-													<div class="modal-body">
-														<div class="row">
-															<div class="col-md-12">
-																<div class="form-body">
-																	<div class="form-group">
-																		<label class="control-label col-md-3"> Topic: </label>
-																		<div class="col-md-5">
-																			<input type="text" readonly="readonly" value="${consumerProgressVO.topic}" class="form-control" />
-																		</div>
-																	</div>
-																	<div class="form-group">
-																		<label class="control-label col-md-3"> 消费者: </label>
-																		<div class="col-md-5">
-																			<input type="text" readonly="readonly" value="${consumerProgressVO.consumer.name}" class="form-control" />
-																		</div>
-																	</div>
-																</div>
-															</div>
-														</div>
-													</div>
-													<div  class="modal-footer">
-														<button type="button" data-dismiss="modal" class="btn" >取消</button>
-														<button type="button" id="skipAccumulationBtn${row}b" class="btn btn-primary" onclick="skipAccumulation(${consumerProgressVO.consumer.tid},${consumerProgressVO.consumer.id},'skipAccumulationBtn${row}b')">确定</button>
-													</div>
-												</form>
-											</div>
 										</div>
-									</div><!-- 跳过堆积结束 -->
-									<!-- 消息回溯-->
-									<div id="resetOffSetModel${row}b" class="modal fade" tabindex="-1" aria-hidden="true">
-										<div class="modal-dialog">
-											<div class="modal-content">
-												<div class="modal-header">
-													<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-													<h4 class="modal-title"><b>消息回溯</b></h4>
-												</div>
-												<form class="form-horizontal form-bordered form-row-stripped">
-													<div class="modal-body">
-														<div class="row">
-															<div class="col-md-12">
-																<div class="form-body">
-																	<div class="form-group">
-																		<label class="control-label col-md-3"> Topic: </label>
-																		<div class="col-md-5">
-																			<input type="text" readonly="readonly" value="${consumerProgressVO.topic}" class="form-control" />
-																		</div>
-																	</div>
-																	<div class="form-group">
-																		<label class="control-label col-md-3"> 消费者: </label>
-																		<div class="col-md-5">
-																			<input type="text" readonly="readonly" value="${consumerProgressVO.consumer.name}" class="form-control" />
-																		</div>
-																	</div>
-																	<div class="form-group">
-																		<label class="control-label col-md-3"> 回溯到: </label>
-																		<div class="col-md-5">
-																			<input type="text" id="resetOffsetDate${row}b" name="resetOffsetDate" class="Wdate form-control" onclick="WdatePicker({ dateFmt: 'yyyy-MM-dd HH:mm:ss',maxDate:'%y-%M-%d',minDate:'%y-%M-{%d-5}'})" style="width:100%;height:34px;cursor:pointer;" readonly="readonly">
-																		</div>
-																	</div>
-																</div>
-															</div>
-														</div>
-													</div>
-													<div  class="modal-footer">
-														<button type="button" data-dismiss="modal" class="btn" >取消</button>
-														<button type="button" id="resetOffsetBtn${row}b" class="btn btn-primary" onclick="resetOffset('${row}b',${consumerProgressVO.consumer.tid},${consumerProgressVO.consumer.id},'resetOffsetBtn${row}b')">确定</button>
-													</div>
-												</form>
-											</div>
-										</div>
-									</div><!-- 消息回溯-->
-									</#if>
-									<!-- 删除consumer -->
-									<div id="deleteConsumerModel${row}b" class="modal fade" tabindex="-1" aria-hidden="true">
-										<div class="modal-dialog">
-											<div class="modal-content">
-												<div class="modal-header">
-													<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-													<h4 class="modal-title"><b>确定删除消费者吗?</b></h4>
-												</div>
-												<form class="form-horizontal form-bordered form-row-stripped">
-													<div class="modal-body">
-														<div class="row">
-															<div class="col-md-12">
-																<div class="form-body">
-																	<div class="form-group">
-																		<label class="control-label col-md-3"> Topic: </label>
-																		<div class="col-md-5">
-																			<input type="text" readonly="readonly" value="${consumerProgressVO.topic}" class="form-control" />
-																		</div>
-																	</div>
-																	<div class="form-group">
-																		<label class="control-label col-md-3"> 消费者: </label>
-																		<div class="col-md-5">
-																			<input type="text" readonly="readonly" value="${consumerProgressVO.consumer.name}" class="form-control" />
-																		</div>
-																	</div>
-																</div>
-															</div>
-														</div>
-													</div>
-													<div  class="modal-footer">
-														<button type="button" data-dismiss="modal" class="btn" >取消</button>
-														<button type="button" id="deleteConsumerBtn${row}b" class="btn btn-primary" onclick="deleteConsumer(${consumerProgressVO.consumer.tid},${consumerProgressVO.consumer.id},'deleteConsumerBtn${row}b')">确定</button>
-													</div>
-												</form>
-											</div>
 										</div>
 									</div>
-									<!-- 删除consumer-->
-		                    	</td>
-		                   	</tr>
-						</#list>
-						<#if pagination.OK && pagination.result.totalPages gt 1>
-		                	<tr><td colspan=10 align="center"><ul id="pagination" style="margin:0px;" data-url="${request.contextPath}/user/topic/${RequestParameters.tid}/detail?tab=consume"></ul></td></tr>
-						</#if>
-					</#if>
-                </tbody>
-           </table>
+								</div>
+							</div> <!-- 详情结束 -->
+							</#if>
+						</div>
+					</#list>
+				</#if>
+			</div>
+		</div>
+		<#if pagination.OK && pagination.result.totalPages gt 1>
+			<div class="card-footer clearfix">
+				<ul id="pagination" data-url="${request.contextPath}/user/topic/${RequestParameters.tid}/detail?tab=consume" style="float:right"></ul>
+			</div>
+		</#if>
     </div>
 </div>
 <!-- 提示弹窗 -->
-<div class="modal fade" id="deleteUserConsumerModal" aria-hidden="true">  
-  <div class="modal-dialog">  
-    <div class="modal-content message_align">  
-      <div class="modal-header">  
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">×</span></button>  
-        <h4 class="modal-title">确定要移除用户吗？</h4>  
-      </div>  
-		<form class="form-horizontal form-bordered form-row-stripped">
-			<div class="modal-body">
-				<div class="row">
-					<!-- 控件开始 -->
-					<div class="col-md-12">
-						<!-- form-body开始 -->
-						<div class="form-body">
-							<div class="form-group">
-								<label class="control-label col-md-3"> 用户: </label>
-								<div class="col-md-5">
-									<input type="text" id="user_name" class="form-control" readonly="readonly"/>
-									<input type="hidden" id="currentUid"/>
-									<input type="hidden" id="currentCid"/>
-								</div>
-							</div>						
-						</div>
-						<!-- form-body 结束 -->
-					</div>
-					<div id="info"></div>
-					<!-- 控件结束 -->
+<div class="modal fade" id="deleteUserConsumerModal">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+		  <h5 class="modal-title">确定要移除用户吗？</h5>
+		  <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">×</span></button>
+      </div>
+		<div class="modal-body">
+			<div class="input-group mb-3">
+				<label class="col-form-label col-md-3"> 用户: </label>
+				<div class="col-md-9">
+					<input type="text" id="user_name" class="form-control" readonly="readonly"/>
+					<input type="hidden" id="currentUid"/>
+					<input type="hidden" id="currentCid"/>
 				</div>
 			</div>
-			
-			<div class="modal-footer">
-				<button type="button" data-dismiss="modal" class="btn" >取消</button>
-				<button type="button" id="deleteUserConsumerBtn" onclick="deleteUserConsumer()" class="btn btn-primary">确定</button>
-			</div>
-		
-		</form>
+		</div>
+		<div  class="modal-footer justify-content-between">
+			<button type="button" data-dismiss="modal" class="btn btn-default" >取消</button>
+			<button type="button" id="deleteUserConsumerBtn" onclick="deleteUserConsumer()" class="btn btn-primary">确定</button>
+		</div>
     </div>
   </div>
 </div>
@@ -788,181 +582,248 @@
 	<div class="modal-dialog">
 		<div class="modal-content">
 			<div class="modal-header">
+				<h5 class="modal-title">授权其他用户</h5>
 				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-				<h4 class="modal-title">授权其他用户</h4>
 			</div>
-			<form class="form-horizontal form-bordered form-row-stripped" id="addUserProducerModalForm">
-				<div class="modal-body">
-					<div class="row">
-						<div class="col-md-12">
-							<div class="form-body">
-								<div class="form-group">
-									<label class="control-label col-md-3"> Topic: </label>
-									<div class="col-md-5">
-										<input type="text" id="topicName" readonly="readonly" class="form-control"/>
-									</div>
-								</div>
-								<div id="consumerGroup" class="form-group">
-									<label class="control-label col-md-3"> 消费者: </label>
-									<div class="col-md-5">
-										<input type="text" id="consumerGroupName" readonly="readonly" class="form-control" />
-										<input type="hidden" id="consumerGroupID"/>
-									</div>
-								</div>
-								<div class="form-group">
-									<label class="control-label col-md-3"> 选择用户: </label>
-							        <div class="col-md-5">
-			    						<select id="user_search_select" class="selectpicker" title="请选择" data-live-search-placeholder="搜索" data-live-search="true"></select> 	  			
-									</div>
-								</div>
-							</div>
-						</div>
+			<div class="modal-body">
+				<div class="input-group mb-3">
+					<label class="col-form-label col-md-3"> Topic: </label>
+					<div class="col-md-9">
+						<input type="text" id="topicName" readonly="readonly" class="form-control"/>
 					</div>
 				</div>
-				<div class="modal-footer">
-					<button type="button" data-dismiss="modal" class="btn" >取消</button>
-					<button type="button" class="btn btn-primary" id="associateUserConsumerBtn" onclick="addUserCounsumerRelationship()">确定</button>
+				<div id="consumerGroup" class="input-group mb-3">
+					<label class="col-form-label col-md-3"> 消费者: </label>
+					<div class="col-md-9">
+						<input type="text" id="consumerGroupName" readonly="readonly" class="form-control" />
+						<input type="hidden" id="consumerGroupID"/>
+					</div>
 				</div>
-			</form>
+				<div class="input-group mb-3">
+					<label class="col-form-label col-md-3"> 选择用户: </label>
+					<div class="col-md-9">
+						<select id="user_search_select" class="selectpicker  form-control" title="请选择" data-live-search-placeholder="搜索" data-live-search="true"></select>
+					</div>
+				</div>
+			</div>
+			<div  class="modal-footer justify-content-between">
+				<button type="button" data-dismiss="modal" class="btn btn-default" >取消</button>
+				<button type="button" class="btn btn-primary" id="associateUserConsumerBtn" onclick="addUserCounsumerRelationship()">确定</button>
+			</div>
 		</div>
 	</div>
 </div>
+</div>
 <!-- 准备搜索部分 -->
 <div class="row">
-<div class="col-md-12">
-	<div class="border-top"></div>
-	<div style="float:left;margin:10px 5px;"><h5><b>${topic.name}</b> 消费流量图</h5></div>
-	<div id="consume_search" style="float:right;margin:10px 0px;"></div>
-</div>
+	<div class="col-md-12">
+		<div style="float:left;margin:10px 5px;"><h5><b>${topic.name}</b> 消费流量图</h5></div>
+		<div id="consume_search" style="float:right;margin:10px 0px;"></div>
+	</div>
 </div>
 <!-- 准备曲线图 -->
 <div id="consume_lineChart"><center>暂无数据</center></div>
 
 <!-- 偏移量消息搜索 -->
-<div id="msgSearchModal" class="modal fade" tabindex="-1">
-	<div class="modal-dialog" style="width:1050px">
+<div id="msgSearchModal" class="modal fade" style="overflow-y: auto;">
+	<div class="modal-dialog modal-xl">
 		<div class="modal-content">
 			<div class="modal-header">
-				<button type="button" class="close" onclick="hideMsgSearchModal()" aria-hidden="true">&times;</button>
-				<h4 class="modal-title">消息查询</h4>
+				<h5 class="modal-title"><span id="msgTypeSpan"></span>消息查询</h5>
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
 			</div>
 			<div class="modal-body">
-				<div style="float:left;margin:0px 5px;">
-					<form class="form-inline">
-						<div class="form-group" id="searchConditionForm">
-							<label for="type">查询方式: </label>
-						    <select id="searchCondition" class="selectpicker form-control">
-								<option data-title="按照key查询消息，最多可查时间段内的brokerSize*64条" value="key">key</option>
-								<option data-title="按照偏移量查询消息,最多检索5000条" value="offset">偏移量</option>
-								<option data-title="按照时间段查询消息,最多检索5000条" value="time">时间段</option>
-							</select>
-						</div>
-					</form>
-				</div>
-				<div style="float:right;margin:0px 0px 10px 0px;">
-					<form class="form-inline" id="msgSearchForm">
-						<div>
-							<!-- 偏移量查询 -->
-							<div class="form-group offset" style="display:none;">
-								<label for="offsetStart"> 起始偏移量: </label>
-								<input id="offsetStart" name="offsetStart" type="text" class="form-control" style="width:120px;" placeholder="broker最小偏移量">
+				<div class="card">
+					<div class="card-body text-sm">
+						<form id="msgSearchForm">
+							<div class="row">
+								<div class="col-md-2">
+									<div class="form-group">
+										<label>查询方式: </label>
+										<select id="searchCondition" class="form-control selectpicker border">
+											<option value="key">key</option>
+											<option value="offset">偏移量</option>
+											<option value="time">时间段</option>
+										</select>
+									</div>
+								</div>
+								<div class="col-md-3">
+									<!-- 时间段查询 -->
+									<div class="form-group time" style="display:none;">
+										<label> 开始时间: </label>
+										<div class="input-group mb-3" id="timeStartTimePicker" data-target-input="nearest">
+											<input type="text" id="timeStartTimePickerInput" class="form-control datetimepicker-input" data-target="#timeStartTimePicker"/>
+											<div class="input-group-append" data-target="#timeStartTimePicker" data-toggle="datetimepicker">
+												<div class="input-group-text"><i class="far fa-clock"></i></div>
+											</div>
+										</div>
+									</div>
+
+									<!-- key查询 -->
+									<div class="form-group key">
+										<label> 开始时间: </label>
+										<div class="input-group mb-3" id="keyStartTimePicker" data-target-input="nearest">
+											<input type="text" id="keyStartTimePickerInput" class="form-control datetimepicker-input" data-target="#keyStartTimePicker"/>
+											<div class="input-group-append" data-target="#keyStartTimePicker" data-toggle="datetimepicker">
+												<div class="input-group-text"><i class="far fa-clock"></i></div>
+											</div>
+										</div>
+									</div>
+
+									<!-- 偏移量查询 -->
+									<div class="form-group offset" style="display:none;">
+										<label> 起始偏移量: </label>
+										<input id="offsetStart" name="offsetStart" type="text" class="form-control" placeholder="broker最小偏移量">
+									</div>
+								</div>
+								<div class="col-md-3">
+									<!-- 时间段查询 -->
+									<div class="form-group time" style="display:none;">
+										<label>结束时间: </label>
+										<div class="input-group" id="timeEndTimePicker" data-target-input="nearest">
+											<input type="text" id="timeEndTimePickerInput" class="form-control datetimepicker-input" data-target="#timeEndTimePicker"/>
+											<div class="input-group-append" data-target="#timeEndTimePicker" data-toggle="datetimepicker">
+												<div class="input-group-text"><i class="far fa-clock"></i></div>
+											</div>
+										</div>
+									</div>
+
+									<!-- key查询 -->
+									<div class="form-group key">
+										<label>结束时间: </label>
+										<div class="input-group mb-3" id="keyEndTimePicker" data-target-input="nearest">
+											<input type="text" id="keyEndTimePickerInput" class="form-control datetimepicker-input" data-target="#keyEndTimePicker"/>
+											<div class="input-group-append" data-target="#keyEndTimePicker" data-toggle="datetimepicker">
+												<div class="input-group-text"><i class="far fa-clock"></i></div>
+											</div>
+										</div>
+									</div>
+
+									<!-- 偏移量查询 -->
+									<div class="form-group offset" style="display:none;">
+										<label> 结束偏移量: </label>
+										<input id="offsetEnd" name="offsetEnd" type="text" class="form-control" placeholder="broker最大偏移量">
+									</div>
+								</div>
+								<div class="col-md-4">
+									<!-- 时间段查询 -->
+									<div class="form-group time" style="display:none;">
+										<label> 查询: </label>
+										<div class="input-group">
+											<input type="text" class="form-control" id="key" name="key" placeholder="关键字，支持模糊匹配">
+											<div class="input-group-append">
+												<button type="button" class="btn btn-default" onclick="searchMessage(false)">
+													<i class="fa fa-search"></i>
+												</button>
+											</div>
+											<!-- 时间段消费 -->
+											<button type="button" id="exportTimespanMessageBtn" data-toggle='tooltip' title="导出该时间段内的消息" onclick="exportTimespanMessageTip()" class="ml-1 btn btn-sm btn-default time" style="display:none;"><i class="fa-solid fa-file-export"></i></button>
+											<button type="button" id="consumeTimespanMessageBtn" data-toggle='tooltip' title="重新消费该时间段内的消息" onclick="consumeTimespanMessageTip()" class="ml-1 btn btn-sm btn-default time" style="display:none;"><i class="fas fa-reply"></i></button>
+											<button type="button" data-toggle='tooltip' title="重发消息" onclick="resendMessageTip()" class="ml-1 btn btn-default resendMessageBtn"><i class="far fa-paper-plane"></i></button>
+										</div>
+									</div>
+
+									<!-- key查询 -->
+									<div class="form-group key">
+										<label> 查询: </label>
+										<div class="input-group">
+											<input type="text" class="form-control" id="msgKey" name="msgKey" placeholder="消息key">
+											<div class="input-group-append">
+												<button type="button" class="btn btn-default" onclick="searchKeyMessage()">
+													<i class="fa fa-search"></i>
+												</button>
+											</div>
+											<button type="button" data-toggle='tooltip' title="重发消息" onclick="resendMessageTip()" class="ml-1 btn btn-default resendMessageBtn"><i class="far fa-paper-plane"></i></button>
+										</div>
+									</div>
+
+									<!-- 偏移量查询 -->
+									<div class="form-group offset" style="display:none;">
+										<div class="row">
+											<div class="col-md-6 mb-2">
+												<label> 选择broker: </label>
+												<div class="input-group">
+													<select id="brokerNameSearchSelect" class="selectpicker border form-control" name="toBrokerName" onchange="brokerNameSelectChange(this)"></select>
+												</div>
+											</div>
+											<div class="col-md-6 mb-2">
+												<label> 选择队列: </label>
+												<div class="input-group">
+													<select id="queueSearchSelect" class="selectpicker border form-control" name="toQueue" onchange="queueSelectChange(this)">
+														<option value="-1">全部队列</option>
+													</select>
+												</div>
+											</div>
+										</div>
+									</div>
+								</div>
+							</div> <!-- row -->
+							<div class="row offset" style="display:none;">
+								<div class="col-md-12">
+									<!-- 偏移量查询 -->
+									<div class="form-group offset" style="display:none;">
+										<div class="input-group">
+											<input type="text" class="form-control" id="toKey" name="toKey" placeholder="关键字">
+											<div class="input-group-append">
+												<button type="button" class="btn btn-default" onclick="searchOffsetMessage(false)">
+													<i class="fa fa-search"></i>
+												</button>
+											</div>
+											<!-- 消息重发 -->
+											<button type="button" data-toggle='tooltip' title="重发消息" onclick="resendMessageTip()" class="ml-1 btn btn-default resendMessageBtn"><i class="far fa-paper-plane"></i></button>
+										</div>
+									</div>
+								</div>
 							</div>
-							<div class="form-group offset" style="display:none;">
-					  			<label for="offsetEnd"> 结束偏移量: </label>
-								<input id="offsetEnd" name="offsetEnd" type="text" class="form-control" style="width:120px;" placeholder="broker最大偏移量">
-							</div>
-							<div class="form-group offset" style="display:none;">
-					    	    <input type="text" class="form-control" id="toKey" name="toKey" style="width:150px;" placeholder="关键字">
-					  	    </div>
-					  	    
-		  	    			<!-- 时间段查询 -->
-							<div class="form-group time" style="display:none;">
-								<label for="timeStartTimePicker"> 开始时间: </label>
-								<input id="timeStartTimePicker" type="text" class="Wdate form-control" onclick="WdatePicker({ dateFmt: 'yyyy-MM-dd HH:mm:ss',maxDate:'%y-%M-%d',minDate:'%y-%M-{%d-${cluster.fileReservedDays}}',onpicked:function(){timeChange('timeStartTime')}})" style="width:180px;height:34px;cursor:pointer;" readonly="readonly"
-					  								value="${(.now?long-300000)?number_to_datetime?string("yyyy-MM-dd HH:mm:ss")}">
-					  			<input type="hidden" name="startTime" id="timeStartTime" value="${.now?long-300000}">
-					  			<label for="timeEndTimePicker"> 结束时间: </label>
-								<input id="timeEndTimePicker" type="text" class="Wdate form-control" onclick="WdatePicker({ dateFmt: 'yyyy-MM-dd HH:mm:ss',maxDate:'%y-%M-%d',minDate:'%y-%M-{%d-${cluster.fileReservedDays}}',onpicked:function(){timeChange('timeEndTime')}})" style="width:180px;height:34px;cursor:pointer;" readonly="readonly"
-					  								value="${.now}">
-					  			<input type="hidden" name="endTime" id="timeEndTime" value="${.now?long}">
-							</div>
-							<div class="form-group time" style="display:none;">
-					    	    <input type="text" class="form-control" id="key" name="key" placeholder="关键字，支持模糊匹配">
-					  	    </div>
-					  	    <!-- key查询 -->
-					  	    <div class="form-group key">
-								<label for="keyStartTimePicker"> 开始时间: </label>
-								<input id="keyStartTimePicker" type="text" class="Wdate form-control" onclick="WdatePicker({ dateFmt: 'yyyy-MM-dd HH:mm:ss',maxDate:'%y-%M-%d',minDate:'%y-%M-{%d-${cluster.fileReservedDays}}',onpicked:function(){timeChange('keyStartTime')}})" style="width:180px;height:34px;cursor:pointer;" readonly="readonly"
-					  								value="${.now?string("yyyy-MM-dd 00:00:00")}">
-					  			<input type="hidden" id="keyStartTime" name="keyStartTime">
-					  			<label for="keyEndTimePicker"> 结束时间: </label>
-								<input id="keyEndTimePicker" type="text" class="Wdate form-control" onclick="WdatePicker({ dateFmt: 'yyyy-MM-dd HH:mm:ss',maxDate:'%y-%M-%d',minDate:'%y-%M-{%d-${cluster.fileReservedDays}}',onpicked:function(){timeChange('keyEndTime')}})" style="width:180px;height:34px;cursor:pointer;" readonly="readonly"
-					  								value="${.now}">
-					  			<input type="hidden" name="keyEndTime" id="keyEndTime" value="${.now?long}">
-							</div>
-					  	    <div class="form-group key">
-					    	    <input type="text" class="form-control" id="msgKey" name="msgKey" placeholder="消息key">
-							</div>
-			
 							<input type="hidden" id="toCid" name="toCid" value="${topic.clusterId}">
-		  	    			<input type="hidden" id="toTopic" name="toTopic" value="">
-		  	    			<input type="hidden" id="messageConsumerId">
-		  	    			<input type="hidden" id="messageConsumer">
-		  	    			<input type="hidden" id="toMessageParam" name="toMessageParam">
-		  	    			<input type="hidden" id="toAppend" name="toAppend" value="false">
-		  	    			<input type="hidden" id="traceEnabled" name="traceEnabled" value="false">
-		  	    			<input type="hidden" id="topicId" name="topicId" value="${topic.id}">
-		  	    			
-		  	    			<!-- 时间段消费 -->
-							<button type="button" id="consumeTimespanMessageBtn" data-toggle='tooltip' title="重新消费该时间段内的消息" onclick="consumeTimespanMessageTip()" class="btn time" style="display:none;"><span class="glyphicon glyphicon-repeat"></span></button>
-		  	    			<!-- 时间段查询 -->
-							<button type="button" data-toggle='tooltip' title="按时间段查询" onclick="searchMessage(false)" class="btn btn-search time" style="display:none;"><span class="glyphicon glyphicon-search" aria-hidden="true"></span></button>
-							<!-- key查询 -->
-							<button type="button" data-toggle='tooltip' title="按key查询" onclick="searchKeyMessage()" class="btn btn-search key"><span class="glyphicon glyphicon-search" aria-hidden="true"></span></button>
-							<!-- 偏移量查询 -->
-							<button type="button" onclick="showMoreSearchCondition()" class="btn offset" data-toggle="tooltip" title="单击展开更多搜索项" style="display:none;"><span class="glyphicon glyphicon-filter" aria-hidden="true"></span></button>
-							<button type="button" data-toggle='tooltip' title="按偏移量查询" onclick="searchOffsetMessage(false)" class="btn btn-search offset" style="display:none;"><span class="glyphicon glyphicon-search" aria-hidden="true"></span></button>
-							<!-- 消息重发 -->
-							<button type="button" id="resendMessageBtn" data-toggle='tooltip' title="重发消息" onclick="resendMessageTip()" class="btn"><span class="glyphicon glyphicon-send"></span></button>
-						</div>
-						<div class="form-group hide" id ="moreSearchCondition" style="margin-top:10px">
-							<label style="margin-left:23px"> broker: </label>
-							<select id="brokerNameSearchSelect" class="selectpicker" name="toBrokerName" onchange="brokerNameSelectChange(this)"></select>
-							<label style="margin-left:27px"> queue: </label>
-							<select id="queueSearchSelect" class="selectpicker" name="toQueue" onchange="queueSelectChange(this)">
-							<option value="-1">全部</option>
-							</select>
-						</div>	
-					</form>
+							<input type="hidden" id="toTopic" name="toTopic" value="">
+							<input type="hidden" id="messageConsumerId">
+							<input type="hidden" id="messageConsumer">
+							<input type="hidden" id="toMessageParam" name="toMessageParam">
+							<input type="hidden" id="toAppend" name="toAppend" value="false">
+							<input type="hidden" id="traceEnabled" name="traceEnabled" value="false">
+							<input type="hidden" id="topicId" name="topicId" value="${topic.id}">
+							<input type="hidden" name="startTime" id="timeStartTime" value="${.now?long-300000}">
+							<input type="hidden" name="endTime" id="timeEndTime" value="${.now?long}">
+							<input type="hidden" id="keyStartTime" name="keyStartTime" value="${.now?long-86400000}">
+							<input type="hidden" name="keyEndTime" id="keyEndTime" value="${.now?long}">
+						</form>
+					</div>
 				</div>
-				<table id="dataTable" class="table table-striped table-hover" style="margin-top: 0px;word-break:break-all; word-wrap:break-all;table-layout:fixed;">
-					<colgroup>
-						<col width="50px">
-						<col width="110px">
-						<col width="190px">
-						<col width="100px">
-						<col>
-						<col width="200px">
-					</colgroup>
-					<thead>
-						<tr>
-							<td>序号</td>
-							<td>客户端</td>
-							<td>重试时间</td>
-							<td id="cosumeTimes">消费次数</td>
-							<td>消息</td>
-							<td>key</td>
-						</tr>
-					</thead>
-					<tbody>
-						<tr class="no_more_data"><td colspan=6 class="text-center">暂无数据</td></tr>
-					</tbody>
-				</table>
-				<ul class="pager" id="pager" style="display:none;">
-					<li id="previous" class="previous" onclick="previous()"><a href="javascript:void(0)">&larr; 上一页</a></li>
-					<li><a href="#">第<b id="pageNum"></b>页，命中数：<b id="sizeNum"></b>，检索数：<b id="searchNum"></b>，预估剩余数：<b id="leftNum"></b></a></li>
-					<li id="next" class="next" onclick="next()"><a href="javascript:void(0)">下一页 &rarr;</a></li>
-				</ul>
+				<div class="card">
+					<div class="card-body table-responsive p-0">
+						<table id="dataTable" class="table table-striped table-sm table-hover" style="word-break:break-all; word-wrap:break-all;table-layout:fixed;">
+							<colgroup class="colgroup">
+								<col width="35px">
+								<col width="110px">
+								<col width="190px">
+								<col width="100px">
+								<col width="200px">
+								<col width="20px">
+							</colgroup>
+							<thead>
+								<tr class="text-sm">
+									<th class="text-center" style="padding-left:0px;">序号</th>
+									<th>客户端</th>
+									<th>重试时间</th>
+									<th>消费次数</th>
+									<th>key</th>
+									<th><input id="checkInput" title="全选或取消全选" data-toggle="tooltip" onclick="toggleMsgCheck(this)" type="checkbox"></th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr><td colspan=6 class="text-center">暂无数据</td></tr>
+							</tbody>
+						</table>
+					</div>
+					<div class="card-footer clearfix" id="pager" style="display:none;">
+						<div class="d-flex justify-content-between">
+							<button id="previous" class="btn btn-outline-primary btn-xs" title="上一页" data-toggle="tooltip" onclick="previous()"><i class="fas fa-backward"></i></button>
+							<div class="text-primary text-sm">第<b id="pageNum"></b>页，命中数：<b id="sizeNum"></b>，检索数：<b id="searchNum"></b><span class="d-none d-lg-inline">，预估剩余数：<b id="leftNum"></b></span></div>
+							<button id="next" class="btn btn-outline-primary btn-xs" title="下一页" data-toggle="tooltip" onclick="next()"><i class="fas fa-forward"></i></button>
+						</div>
+					</div>
+				</div>
 			</div>
 		</div>
 	</div>
@@ -973,30 +834,22 @@
 	<div class="modal-dialog">
 		<div class="modal-content">
 			<div class="modal-header">
+				<h5 class="modal-title"><b id="consumerTitle"></b>用途更新</h5>
 				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-				<h4 class="modal-title"><b id="consumerTitle"></b>用途更新</h4>
 			</div>
-			<form class="form-horizontal form-bordered form-row-stripped" id="addUserProducerModalForm">
-				<div class="modal-body">
-					<div class="row">
-						<div class="col-md-12">
-							<div class="form-body">
-								<div class="form-group">
-									<label class="control-label col-md-2"> 用途: </label>
-									<div class="col-md-9">
-										<textarea id="consumerInfo" rows="5" class="form-control"></textarea>
-									</div>
-									<input type="hidden" id="currentConsumerID">
-								</div>
-							</div>
-						</div>
+			<div class="modal-body">
+				<div class="input-group mb-3">
+					<label class="col-form-label col-md-2"> 用途: </label>
+					<div class="col-md-9">
+						<textarea id="consumerInfo" rows="5" class="form-control"></textarea>
 					</div>
+					<input type="hidden" id="currentConsumerID">
 				</div>
-				<div class="modal-footer">
-					<button type="button" data-dismiss="modal" class="btn" >取消</button>
-					<button type="button" class="btn btn-primary" id="updateConsumerInfoBtn" onclick="updateConsumerInfo()">确定</button>
-				</div>
-			</form>
+			</div>
+			<div  class="modal-footer justify-content-between">
+				<button type="button" data-dismiss="modal" class="btn btn-default" >取消</button>
+				<button type="button" class="btn btn-primary" id="updateConsumerInfoBtn" onclick="updateConsumerInfo()">确定</button>
+			</div>
 		</div>
 	</div>
 </div> 
@@ -1006,42 +859,34 @@
 	<div class="modal-dialog">
 		<div class="modal-content">
 			<div class="modal-header">
+				<h5 class="modal-title">跳过重试消息</h5>
 				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-				<h4 class="modal-title"><b>跳过重试消息</b></h4>
 			</div>
-			<form class="form-horizontal form-bordered form-row-stripped">
 				<div class="modal-body">
-					<div class="row">
-						<div class="col-md-12">
-							<div class="form-body">
-								<div class="form-group">
-									<label class="control-label col-md-3"> 消费者: </label>
-									<div class="col-md-7">
-										<input type="text" id="resetRetryMessageOffsetConsumer" name="consumer" readonly="readonly" class="form-control" />
-										<input type="hidden" id="resetRetryMessageOffsetConsumerId">
-									</div>
-								</div>
-								<div class="form-group">
-									<label class="control-label col-md-3"> 跳至: </label>
-									<div class="col-md-7">
-										<input type="text" id="resetRetryMessageOffsetDate" class="Wdate form-control" onclick="WdatePicker({ dateFmt: 'yyyy-MM-dd HH:mm:ss',maxDate:'%y-%M-%d',minDate:'%y-%M-%d'})" style="width:100%;height:34px;cursor:pointer;" readonly="readonly">
-									</div>
-								</div>
-								<div class="form-group">
-									<label class="control-label col-md-3"> 消息key: </label>
-									<div class="col-md-7">
-										<input type="text" id="resetRetryMessageKey" class="form-control" placeholder="完整的key，可不填">
-									</div>
-								</div>
-							</div>
+					<div class="input-group mb-3">
+						<label class="col-form-label col-md-3"> 消费者: </label>
+						<div class="col-md-9">
+							<input type="text" id="resetRetryMessageOffsetConsumer" name="consumer" readonly="readonly" class="form-control" />
+							<input type="hidden" id="resetRetryMessageOffsetConsumerId">
+						</div>
+					</div>
+					<div class="input-group mb-3">
+						<label class="col-form-label col-md-3"> 跳至: </label>
+						<div class="col-md-9">
+							<input type="text" id="resetRetryMessageOffsetDate" class="form-control" value="${(.now?long)?number_to_datetime?string("yyyy-MM-dd HH:mm:ss")}" readonly="readonly">
+						</div>
+					</div>
+					<div class="input-group mb-3">
+						<label class="col-form-label col-md-3"> 消息key: </label>
+						<div class="col-md-9">
+							<input type="text" id="resetRetryMessageKey" class="form-control" placeholder="完整的key，可不填">
 						</div>
 					</div>
 				</div>
-				<div  class="modal-footer">
-					<button type="button" data-dismiss="modal" class="btn" >取消</button>
+				<div  class="modal-footer justify-content-between">
+					<button type="button" data-dismiss="modal" class="btn btn-default" >取消</button>
 					<button type="button" id="resetRetryMessageOffsetBtn" class="btn btn-primary" onclick="resetRetryOffset('resetRetryMessageOffsetBtn')">确定</button>
 				</div>
-			</form>
 		</div>
 	</div>
 </div><!-- 消息回溯-->
@@ -1051,19 +896,19 @@
 	<div class="modal-dialog">
 		<div class="modal-content">
 			<div class="modal-header">
+				<h5 class="modal-title">消息重发</h5>
 				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-				<h4 class="modal-title">消息重发</h4>
 			</div>
-			<form class="form-horizontal form-bordered form-row-stripped">
-				<div class="form-group">
-					<label class="control-label col-md-3"> 消息序号: </label>
-					<div class="col-md-7">
+			<div class="modal-body">
+				<div class="input-group mb-3">
+					<label class="col-md-3"> 消息序号: </label>
+					<div class="col-md-9">
 		        		<div class="form-control-static"><b id="dataIdx" style="word-break:break-all"></b></div>
 					</div>
 				</div>
-			</form>
-			<div class="modal-footer">
-				<button type="button" data-dismiss="modal" class="btn" >取消</button>
+			</div>
+			<div  class="modal-footer justify-content-between">
+				<button type="button" data-dismiss="modal" class="btn btn-default">取消</button>
 				<button type="button" class="btn btn-primary" id="resendBtn" onclick="resendMessage()">确定</button>
 			</div>
 		</div>
@@ -1075,31 +920,23 @@
 	<div class="modal-dialog" style="width:400px;">
 		<div class="modal-content">
 			<div class="modal-header">
+				<h5 class="modal-title" id="consumerH4"></h5>
 				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-				<h4 class="modal-title" id="consumerH4"></h4>
 			</div>
-			<form class="form-horizontal form-bordered form-row-stripped">
-				<div class="modal-body">
-					<div class="row">
-						<div class="col-md-12">
-							<div class="form-body">
-								<div class="form-group">
-									<div class="col-md-4"></div>
-									<div class="col-md-8">
-										<div class="form-control-static">
-											<span id='traceSapn'></span> trace ?
-	    								</div>
-									</div>
-								</div>
-							</div>
+			<div class="modal-body">
+				<div class="input-group mb-3">
+					<div class="col-md-4"></div>
+					<div class="col-md-8">
+						<div class="form-control-static">
+							<span id='traceSapn'></span> trace ?
 						</div>
 					</div>
 				</div>
-				<div class="modal-footer">
-					<button type="button" data-dismiss="modal" class="btn" >取消</button>
-					<button type="button" class="btn btn-primary" id="updateConsumerTraceBtn" onclick="updateConsumerTrace()">确定</button>
-				</div>
-			</form>
+			</div>
+			<div  class="modal-footer justify-content-between">
+				<button type="button" data-dismiss="modal" class="btn btn-default" >取消</button>
+				<button type="button" class="btn btn-primary" id="updateConsumerTraceBtn" onclick="updateConsumerTrace()">确定</button>
+			</div>
 		</div>
 	</div>
 </div> 
@@ -1109,37 +946,36 @@
 	<div class="modal-dialog">
 		<div class="modal-content">
 			<div class="modal-header">
+				<span class="h5"><b id="pauseConsumeTip"></b>消费</span> <a target=_blank href="${request.contextPath}/wiki/userGuide/clientConsumer#pauseConsumer" data-toggle="tooltip" data-placement="bottom" title="详细释义"><i class="fas fa-question-circle fa-sm"></i></a>
 				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-				<span class="h4"><b id="pauseConsumeTip"></b>消费</span><span class="nostyleA" data-toggle="tooltip" data-placement="bottom" title="详细释义"><a href="/wiki/userGuide/clientConsumer#pauseConsumer" target=_blank class="glyphicon glyphicon-question-sign"></a></span>
 			</div>
 			<div class="modal-body">
-				<form class="form-horizontal form-bordered form-row-stripped" id="pauseConsumeConfigForm">
+				<form id="pauseConsumeConfigForm">
 					<input type="hidden" id="pauseConsumeIdInput" name="consumerId">
 					<input type="hidden" id="pauseConsumeBoolean" name="pause">
-					<div class="form-body">
-						<div class="form-group">
-							<label class="control-label col-md-3"> 消费者: </label>
-							<div class="col-md-5">
-								<input type="text" readonly="readonly" id="pauseConsumeName" value="" class="form-control" />
-							</div>
+					<div class="input-group mb-3">
+						<label class="col-form-label col-md-3"> 消费者: </label>
+						<div class="col-md-9">
+							<input type="text" readonly="readonly" id="pauseConsumeName" value="" class="form-control" />
 						</div>
 					</div>
-					<div class="form-group" id="clientIdDiv">
-						<label class="control-label col-md-3"> 客户端: </label>
-						<div class="col-md-5">
-							<select id="pauseClientIdSelect" class="selectpicker" title="不选默认应用于所有的消费者" name="pauseClientId" data-live-search="true" multiple data-max-options="1">
+					<div class="input-group mb-3" id="clientIdDiv">
+						<label class="col-form-label col-md-3"> 客户端: </label>
+						<div class="col-md-9">
+							<select id="pauseClientIdSelect" class="selectpicker border form-control" title="不选默认应用于所有的消费者" name="pauseClientId" multiple data-max-options="1">
 							</select>
 						</div>
-						<div class="col-md-2" id="unregisterDiv">
-							<div class="checkbox">
-								<input id="unregister" name="unregister" value="1" type="checkbox" disabled="disabled" data-toggle="tooltip" title="勾选后消息队列将重新分配，并且不分配该客户端，后续可以恢复消费。">下线
-							</div>
+					</div>
+					<div class="input-group mb-3" id="unregisterDiv">
+						<label class="col-md-3"> 下线: </label>
+						<div class="col-md-9">
+							<input id="unregister" name="unregister" value="1" type="checkbox" disabled="disabled" data-toggle="tooltip" title="勾选后消息队列将重新分配，并且不分配该客户端，后续可以恢复消费。">
 						</div>
 					</div>
 				</form>
 			</div>
-			<div  class="modal-footer">
-				<button type="button" data-dismiss="modal" class="btn" >取消</button>
+			<div  class="modal-footer justify-content-between">
+				<button type="button" data-dismiss="modal" class="btn btn-default" >取消</button>
 				<button type="button" id="pauseConsumeConfigBtn" class="btn btn-primary" onclick="pauseConsumeConfig()">确定</button>
 			</div>
 		</div>
@@ -1151,104 +987,99 @@
 	<div class="modal-dialog">
 		<div class="modal-content">
 			<div class="modal-header">
+				<span class="h5">消费限速</span> <a target=_blank href="${request.contextPath}/wiki/userGuide/clientConsumer#limitConsumer" data-toggle="tooltip" data-placement="bottom" title="详细释义"><i class="fas fa-question-circle fa-sm"></i></a>
 				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-				<span class="h4">消费限速</span><span class="nostyleA" data-toggle="tooltip" data-placement="bottom" title="详细释义"><a href="/wiki/userGuide/clientConsumer#limitConsumer" target=_blank class="glyphicon glyphicon-question-sign"></a></span>
 			</div>
 			<div class="modal-body">
-				<form class="form-horizontal form-bordered form-row-stripped" id="limitConsumeConfigForm">
+				<form id="limitConsumeConfigForm">
 					<input type="hidden" id="limitConsumeIdInput" name="consumerId">
-					<div class="form-body">
-						<div class="form-group">
-							<label class="control-label col-md-3"> 消费者: </label>
-							<div class="col-md-6">
-								<input type="text" readonly="readonly" id="limitConsumeName" value="" class="form-control" />
-							</div>
+					<div class="form-group row">
+						<label class="col-form-label col-md-4"> 消费者: </label>
+						<div class="col-md-8">
+							<input type="text" readonly="readonly" id="limitConsumeName" value="" class="form-control" />
 						</div>
 					</div>
-					<div class="form-body">
-						<div class="form-group">
-							<label class="control-label col-md-3"> 限制消费速率: </label>
-							<div class="col-md-6 checkbox">
-								<label data-toggle="tooltip" title="每个实例将会参照TPS进行限速">
-								    <input type="radio" id="enableRateLimitRadio" name="enableRateLimit" value="true">是
-								</label>
-								<label data-toggle="tooltip" title="每个实例将会关闭限速">
-								    <input type="radio" id="disableRateLimitRadio" name="enableRateLimit" value="false" checked>否
-								</label>
-							</div>
+					<div class="form-group row">
+						<label class="col-md-4"> 限制消费速率: </label>
+						<div class="col-md-8 checkbox">
+							<label data-toggle="tooltip" title="每个实例将会参照TPS进行限速">
+								<input type="radio" id="enableRateLimitRadio" name="enableRateLimit" value="true">是
+							</label>
+							<label data-toggle="tooltip" title="每个实例将会关闭限速">
+								<input type="radio" id="disableRateLimitRadio" name="enableRateLimit" value="false" checked>否
+							</label>
 						</div>
 					</div>
-					<div class="form-body">
-						<div class="form-group">
-							<label class="control-label col-md-3" data-toggle="tooltip" title="消息流控，最小值为1"> TPS: </label>
-							<div class="col-md-6">
-								<input type="text" id="permitsPerSecondInput" data-toggle="tooltip" name="permitsPerSecond" value="${limitConsumeTps}" title="例如：${limitConsumeTps}代表每个实例每秒最多消费${limitConsumeTps}条消息" class="form-control" />
-							</div>
+					<div class="form-group row">
+						<label class="col-form-label col-md-4" data-toggle="tooltip" title="消息流控，最小值为1"> TPS: </label>
+						<div class="col-md-8">
+							<input type="text" id="permitsPerSecondInput" data-toggle="tooltip" name="permitsPerSecond" value="${limitConsumeTps}" title="例如：${limitConsumeTps}代表每个实例每秒最多消费${limitConsumeTps}条消息" class="form-control" />
 						</div>
 					</div>
 				</form>
 			</div>
-			<div  class="modal-footer">
-				<button type="button" data-dismiss="modal" class="btn" >取消</button>
+			<div  class="modal-footer justify-content-between">
+				<button type="button" data-dismiss="modal" class="btn btn-default" >取消</button>
 				<button type="button" id="limitConsumeBtn" class="btn btn-primary" onclick="limitConsume()">确定</button>
 			</div>
 		</div>
 	</div>
 </div>
 <!-- 线程指标 -->
-<div id="threadMetricsModal" class="modal fade" tabindex="-1" data-width="400" style="overflow-y: auto;">
-	<div class="modal-dialog" style="width:1100px;">
+<div id="threadMetricsModal" class="modal fade" style="overflow-y: auto;">
+	<div class="modal-dialog modal-xl">
 		<div class="modal-content">
 			<div class="modal-header">
-				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-				<span class="h4"><span id="clientIdSpan"></span>线程状况</span>
+				<span><span id="clientIdSpan"></span>线程状况 <a href="javascript:void(0)" data-toggle="tooltip" title="刷新" onclick="threadMetrics()"><i id="redoIcon" class="fas fa-sm fa-redo-alt"></i></a></span>
 				<span id="consumerGroup" style="display:none"></span>
-				<a href="#"><span id="refreshA" class="glyphicon glyphicon-refresh" data-toggle="tooltip" title="刷新" onclick="threadMetrics()"></span></a>
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
 			</div>
-			<table class="table table-striped table-hover" style="margin-top: 0px;word-break:break-all; word-wrap:break-all;">
-				<colgroup>
-					<col width="45px">
-					<col>
-					<col width="260px">
-				</colgroup>
-				<thead>
-					<tr>
-						<td>序号</td>
-						<td>线程堆栈</td>
-						<td>消息ID列表</td>
-					</tr>
-				</thead>
-				<tbody id="threadMetricsBody">
-				</tbody>
-			</table>
+			<div class="modal-body">
+				<div class="card">
+					<div class="card-body p-0 table-responsive">
+						<table class="table table-striped table-sm">
+							<thead>
+								<tr>
+									<th class="text-center" style="padding-left:0px;">序号</th>
+									<th>线程堆栈</th>
+									<th>消息ID列表</th>
+								</tr>
+							</thead>
+							<tbody id="threadMetricsBody">
+							</tbody>
+						</table>
+					</div>
+				</div>
+			</div>
 		</div>
 	</div>
 </div>
 <!-- 消费失败指标 -->
-<div id="failedMetricsModal" class="modal fade" tabindex="-1" data-width="400" style="overflow-y: auto;">
-	<div class="modal-dialog" style="width:1100px;">
+<div id="failedMetricsModal" class="modal fade" style="overflow-y: auto;">
+	<div class="modal-dialog modal-xl">
 		<div class="modal-content">
 			<div class="modal-header">
-				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-				<span class="h4"><span id="failedClientIdSpan"></span>异常堆栈</span>
+				<span class="h5"><span id="failedClientIdSpan"></span>异常堆栈</span>
 				<span id="failedConsumerGroup" style="display:none"></span>
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
 			</div>
-			<table class="table table-striped table-hover" style="margin-top: 0px;word-break:break-all; word-wrap:break-all;">
-				<colgroup>
-					<col width="45px">
-					<col>
-					<col width="260px">
-				</colgroup>
-				<thead>
-					<tr>
-						<td>序号</td>
-						<td>异常堆栈</td>
-						<td>消息ID列表</td>
-					</tr>
-				</thead>
-				<tbody id="failedMetricsBody">
-				</tbody>
-			</table>
+			<div class="modal-body">
+				<div class="card">
+					<div class="card-body p-0 table-responsive">
+						<table class="table table-striped table-sm">
+							<thead>
+								<tr class="text-sm">
+									<th class="text-center" style="padding-left:0px;">序号</th>
+									<th>异常堆栈</th>
+									<th>消息ID列表</th>
+								</tr>
+							</thead>
+							<tbody id="failedMetricsBody">
+							</tbody>
+						</table>
+					</div>
+				</div>
+			</div>
 		</div>
 	</div>
 </div>
@@ -1258,75 +1089,279 @@
 	<div class="modal-dialog">
 		<div class="modal-content">
 			<div class="modal-header">
+				<span class="h5">重新消费</span> <a target=_blank href="${request.contextPath}/wiki/userGuide/clientConsumer#retryTimespan" data-toggle="tooltip" data-placement="bottom" title="详细释义"><i class="fas fa-question-circle fa-sm"></i></a>
 				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-				<span class="h4">重新消费</span><span class="nostyleA" data-toggle="tooltip" data-placement="bottom" title="详细释义"><a href="/wiki/userGuide/clientConsumer#retryTimespan" target=_blank class="glyphicon glyphicon-question-sign"></a></span>
 			</div>
 			<div class="modal-body">
-				<form class="form-horizontal form-bordered form-row-stripped" id="consumeTimespanMessageForm">
+				<form id="consumeTimespanMessageForm">
 					<input type="hidden" id="timespanConsumeTopic" name="topic">
 					<input type="hidden" id="timespanConsumerId" name="consumerId">
 					<input type="hidden" id="timespanConsumeStart" name="start">
 					<input type="hidden" id="timespanConsumeEnd" name="end">
 					<div class="form-body">
-						<div class="form-group">
-							<label class="control-label col-md-3"> 开始时间: </label>
-							<div class="col-md-5">
+						<div class="input-group mb-3">
+							<label class="col-form-label col-md-3"> 开始时间: </label>
+							<div class="col-md-9">
 								<input type="text" readonly="readonly" id="timespanConsumeStartShow" class="form-control" />
 							</div>
 						</div>
 					</div>
 					<div class="form-body">
-						<div class="form-group">
-							<label class="control-label col-md-3"> 结束时间: </label>
-							<div class="col-md-5">
+						<div class="input-group mb-3">
+							<label class="col-form-label col-md-3"> 结束时间: </label>
+							<div class="col-md-9">
 								<input type="text" readonly="readonly" id="timespanConsumeEndShow" class="form-control" />
 							</div>
 						</div>
 					</div>
-					<div class="form-group">
-						<label class="control-label col-md-3"> 客户端: </label>
-						<div class="col-md-5">
-							<select id="timespanConsumeClientIdSelect" class="selectpicker" title="选择消费消息的实例" name="clientId" data-live-search="true">
+					<div class="input-group mb-3">
+						<label class="col-form-label col-md-3"> 客户端: </label>
+						<div class="col-md-9">
+							<select id="timespanConsumeClientIdSelect" class="selectpicker border  form-control" title="选择消费消息的实例" name="clientId">
 							</select>
 						</div>
 					</div>
 				</form>
 			</div>
-			<div  class="modal-footer">
-				<button type="button" data-dismiss="modal" class="btn" >取消</button>
+			<div  class="modal-footer justify-content-between">
+				<button type="button" data-dismiss="modal" class="btn btn-default" >取消</button>
 				<button type="button" id="submitTimespanMessageBtn" class="btn btn-primary" onclick="consumeTimespanMessage()">确定</button>
 			</div>
 		</div>
 	</div>
 </div><!-- 消费时间段消息 -->
 
-<!-- 消息 -->
-<div id="threadMessageModal" class="modal fade" tabindex="-1" data-width="400">
-	<div class="modal-dialog" style="width:1050px;">
+<!-- 导出时间段消息 -->
+<div id="exportTimespanMessageModel" class="modal fade">
+	<div class="modal-dialog">
 		<div class="modal-content">
-			<table id="threadMessageTable" class="table" style="margin-top: 0px;word-break:break-all; word-wrap:break-all;table-layout:fixed;">
-				<colgroup>
-					<col width="130px">
-					<col width="190px">
-					<col width="100px">
-					<col>
-				</colgroup>
-				<thead>
-					<tr>
-						<td>客户端</td>
-						<td>发送时间</td>
-						<td>broker:队列</td>
-						<td>消息</td>
-					</tr>
-				</thead>
-				<tbody>
-					<tr class="no_more_data"><td colspan=4 class="text-center">暂无数据</td></tr>
-				</tbody>
-			</table>
+			<div class="modal-header">
+				<span class="h5">消息导出</span>
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+			</div>
+			<div class="modal-body">
+				<form id="exportTimespanMessageForm">
+					<input type="hidden" id="timespanExportStart" name="start">
+					<input type="hidden" id="timespanExportEnd" name="end">
+					<div class="form-body">
+						<div class="input-group mb-3">
+							<label class="col-form-label col-md-3"> Topic: </label>
+							<div class="col-md-9">
+								<input type="text" readonly="readonly" name="topic" id="timespanExportTopic" class="form-control" />
+							</div>
+						</div>
+					</div>
+					<div class="form-body">
+						<div class="input-group mb-3">
+							<label class="col-form-label col-md-3"> 开始时间: </label>
+							<div class="col-md-9">
+								<input type="text" readonly="readonly" id="timespanExportStartShow" class="form-control" />
+							</div>
+						</div>
+					</div>
+					<div class="form-body">
+						<div class="input-group mb-3">
+							<label class="col-form-label col-md-3"> 结束时间: </label>
+							<div class="col-md-9">
+								<input type="text" readonly="readonly" id="timespanExportEndShow" class="form-control" />
+							</div>
+						</div>
+					</div>
+				</form>
+			</div>
+			<div  class="modal-footer justify-content-between">
+				<button type="button" data-dismiss="modal" class="btn btn-default" >取消</button>
+				<button type="button" id="submitExportMessageBtn" class="btn btn-primary" onclick="exportTimespanMessage()">确定</button>
+			</div>
+		</div>
+	</div>
+</div><!-- 导出时间段消息 -->
+
+<!-- 消息 -->
+<div id="threadMessageModal" class="modal fade">
+	<div class="modal-dialog modal-xl">
+		<div class="modal-content">
+			<div class="modal-header">
+				<span>消息查看</span>
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+			</div>
+			<div class="modal-body">
+				<div class="card">
+					<div class="card-body p-0 table-responsive">
+						<table id="threadMessageTable" class="table table-striped table-sm" style="margin-top: 0px;word-break:break-all; word-wrap:break-all;table-layout:fixed;">
+							<colgroup class="colgroup">
+								<col width="35px">
+								<col width="130px">
+								<col width="190px">
+								<col width="120px">
+							</colgroup>
+							<thead>
+								<tr class="text-sm">
+									<th class="text-center" style="padding-left:0px;">序号</th>
+									<th>客户端</th>
+									<th>发送时间</th>
+									<th>broker:队列</th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr class="no_more_data"><td colspan=4 class="text-center">暂无数据</td></tr>
+							</tbody>
+						</table>
+					</div>
+				</div>
+			</div>
 		</div>
 	</div>
 </div>
-<#include "../inc/paginationNoNav.html">
+<!-- 跳过堆积 -->
+<div id="skipAccumulationModel" class="modal fade">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title">确定跳过堆积的消息吗?</h5>
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+			</div>
+			<div class="modal-body">
+				<form id="skipAccumulationForm">
+					<div class="input-group mb-3">
+						<label class="col-form-label col-md-3"> Topic: </label>
+						<div class="col-md-9">
+							<input type="text" readonly="readonly" value="${topic.name}" class="form-control" />
+						</div>
+					</div>
+					<div class="input-group mb-3">
+						<label class="col-form-label col-md-3"> 消费者: </label>
+						<div class="col-md-9">
+							<input type="text" readonly="readonly" id="skipAccumulationConsumer" class="form-control" />
+						</div>
+					</div>
+					<input type="hidden" name="tid" value="${topic.id}">
+					<input type="hidden" name="consumerId" id="skipAccumulationConsumerId">
+					<input type="hidden" name="cid" value="${topic.clusterId}">
+				</form>
+			</div>
+			<div  class="modal-footer justify-content-between">
+				<button type="button" data-dismiss="modal" class="btn btn-default" >取消</button>
+				<button type="button" id="skipAccumulationBtn" class="btn btn-primary" onclick="skipAccumulation()">确定</button>
+			</div>
+		</div>
+	</div>
+</div><!-- 跳过堆积结束 -->
+
+<!-- 消息回溯-->
+<div id="resetOffsetModel" class="modal fade">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title">消息回溯</h5>
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+			</div>
+			<div class="modal-body">
+				<form id="resetOffsetForm">
+					<div class="input-group mb-3">
+						<label class="col-form-label col-md-3"> Topic: </label>
+						<div class="col-md-9">
+							<input type="text" readonly="readonly" value="${topic.name}" class="form-control" />
+						</div>
+					</div>
+					<div class="input-group mb-3">
+						<label class="col-form-label col-md-3"> 消费者: </label>
+						<div class="col-md-9">
+							<input type="text" readonly="readonly" id="resetOffsetConsumer" class="form-control" />
+						</div>
+					</div>
+					<div class="input-group mb-3">
+						<label class="col-form-label col-md-3"> 回溯到: </label>
+						<div class="col-md-9">
+							<div class="input-group date" id="resetOffsetDate" data-target-input="nearest">
+								<input type="text" id="resetOffsetDateInput" name="offset" class="form-control datetimepicker-input" data-target="#resetOffsetDate"/>
+								<div class="input-group-append" data-target="#resetOffsetDate" data-toggle="datetimepicker">
+									<div class="input-group-text"><i class="far fa-clock"></i></div>
+								</div>
+							</div>
+						</div>
+					</div>
+					<input type="hidden" name="tid" value="${topic.id}">
+					<input type="hidden" name="consumerId" id="resetOffsetConsumerId">
+					<input type="hidden" name="cid" value="${topic.clusterId}">
+				</form>
+			</div>
+			<div  class="modal-footer justify-content-between">
+				<button type="button" data-dismiss="modal" class="btn btn-default" >取消</button>
+				<button type="button" id="resetOffsetBtn" class="btn btn-primary" onclick="resetOffset()">确定</button>
+			</div>
+		</div>
+	</div>
+</div><!-- 消息回溯-->
+
+<!-- 删除consumer -->
+<div id="deleteConsumerModel" class="modal fade">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title">确定删除消费者吗?</h5>
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+			</div>
+			<div class="modal-body">
+				<form id="deleteConsumerForm">
+					<div class="input-group mb-3">
+						<label class="col-form-label col-md-3"> Topic: </label>
+						<div class="col-md-9">
+							<input type="text" readonly="readonly" value="${topic.name}" class="form-control" />
+						</div>
+					</div>
+					<div class="input-group mb-3">
+						<label class="col-form-label col-md-3"> 消费者: </label>
+						<div class="col-md-9">
+							<input type="text" readonly="readonly" id="deleteConsumerName" class="form-control" />
+						</div>
+					</div>
+					<input type="hidden" name="tid" value="${topic.id}">
+					<input type="hidden" name="consumerId" id="deleteConsumerId">
+				</form>
+			</div>
+			<div  class="modal-footer justify-content-between">
+				<button type="button" data-dismiss="modal" class="btn btn-default" >取消</button>
+				<button type="button" id="deleteConsumerBtn" class="btn btn-primary" onclick="deleteConsumer()">确定</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- 客户端指标 -->
+<div id="consumerRunningInfoModel" class="modal fade">
+	<div class="modal-dialog modal-xl">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title">客户端指标</h5>
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+			</div>
+			<div class="modal-body">
+				<div id="consumerRunningInfoJsonView">
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- 客户端状况统计 -->
+<div id="consumerStatsModal" class="modal fade"  style="overflow-y: auto;">
+	<div class="modal-dialog  modal-xl">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title" id="consumerStatsTitle"></h5>
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+					<span aria-hidden="true">&times;</span>
+				</button>
+			</div>
+			<div class="modal-body">
+				<div id="consumerStatsChart"></div>
+			</div>
+		</div>
+	</div>
+</div>
+<!-- 删除consumer-->
+<#include "../inc/pagination.html">
 <script>
 /**
  * 限制消费速率
@@ -1404,8 +1439,8 @@ function pauseConsumeConfig(){
 	$("#pauseConsumeConfigForm").serialize()
 	,function(data){
         if(data.status == 200){
-			toastr.success(data.message);  
-			modalHide(3000);
+			toastr.success("申请成功，请稍后查看！即将跳转到我的工单");
+			toMyAuditPage();
 	    }else{
 	    	toastr.error("操作失败！"+data.message);  
 	    	enable("pauseConsumeConfigBtn");
@@ -1431,8 +1466,8 @@ function limitConsume(){
 	$("#limitConsumeConfigForm").serialize()
 	,function(data){
         if(data.status == 200){
-			toastr.success(data.message);  
-			modalHide(3000);
+			toastr.success("申请成功，请稍后查看！即将跳转到我的工单");
+			toMyAuditPage();
 	    }else{
 	    	toastr.error("操作失败！"+data.message);  
 	    	enable("limitConsumeBtn");
@@ -1456,85 +1491,17 @@ function showResetRetryMessageOffsetModel(consumerId, consumer){
  * 重置重试偏移量
  */
 function resetRetryOffset(btn){
-	var resetOffsetTo = $("#resetRetryMessageOffsetDate").val();
-	if(!resetOffsetTo){
-		alert("请选择跳到的时间!");
-		return;
-	}
 	disable(btn);
 	$.get('${request.contextPath}/consumer/skip/retryOffset',{
 		tid: ${RequestParameters.tid},
 		consumerId: $("#resetRetryMessageOffsetConsumerId").val(),
-		offset: resetOffsetTo,
+		offset: $("#resetRetryMessageOffsetDate").val(),
 		cid: $("#toCid").val(),
 		messageKey: $("#resetRetryMessageKey").val()
 	},function(data){
         if(data.status == 200){
-			toastr.success(data.message);  
-			modalHide(3000);
-	    }else{
-	    	toastr.error("操作失败！"+data.message);  
-	    	enable(btn);
-	    }
-    }, 'json');
-}
-/**
- * 跳过堆积
- */
-function skipAccumulation(tid, cid, btn){
-	disable(btn);
-	$.get('${request.contextPath}/consumer/resetOffset',{
-		tid: tid,
-		consumerId: cid,
-		cid: $("#toCid").val()
-	},function(data){
-        if(data.status == 200){
-			toastr.success(data.message);  
-			modalHide(3000);
-	    }else{
-	    	toastr.error("操作失败！"+data.message);  
-	    	enable(btn);
-	    }
-    }, 'json');
-}
-/**
- * 重置偏移量
- */
-function resetOffset(idx, tid, cid, btn){
-	var resetOffsetTo = $("#resetOffsetDate"+idx).val();
-	if(!resetOffsetTo){
-		alert("请选择回溯到的时间!");
-		return;
-	}
-	disable(btn);
-	$.get('${request.contextPath}/consumer/resetOffset',{
-		tid: tid,
-		consumerId: cid,
-		offset: resetOffsetTo,
-		cid: $("#toCid").val()
-	},function(data){
-        if(data.status == 200){
-			toastr.success(data.message);  
-			modalHide(3000);
-	    }else{
-	    	toastr.error("操作失败！"+data.message);  
-	    	enable(btn);
-	    }
-    }, 'json');
-}
-/**
- * 删除消费者
- */
-function deleteConsumer(tid, cid, btn){
-	disable(btn);
-	$.post('${request.contextPath}/consumer/delete',{
-		tid: tid,
-		consumerId: cid
-	},
-    function(data){
-        if(data.status == 200){
-			toastr.success("申请成功！请耐心等待！");  
-			modalHide(3000);
+			toastr.success("申请成功，请稍后查看！即将跳转到我的工单");
+			toMyAuditPage();
 	    }else{
 	    	toastr.error("操作失败！"+data.message);  
 	    	enable(btn);
@@ -1542,24 +1509,87 @@ function deleteConsumer(tid, cid, btn){
     }, 'json');
 }
 
+function skipAccumulationShow(consumer, consumerId){
+	$("#skipAccumulationConsumer").val(consumer);
+	$("#skipAccumulationConsumerId").val(consumerId);
+	$("#skipAccumulationModel").modal('show');
+}
+/**
+ * 跳过堆积
+ */
+function skipAccumulation(){
+	disable("skipAccumulationBtn");
+	$.get('${request.contextPath}/consumer/resetOffset', $("#skipAccumulationForm").serialize() ,function(data){
+        if(data.status == 200){
+			toastr.success("申请成功，请稍后查看！即将跳转到我的工单");
+			toMyAuditPage();
+	    }else{
+	    	toastr.error("操作失败！"+data.message);  
+	    	enable("skipAccumulationBtn");
+	    }
+    }, 'json');
+}
+
+function resetOffsetShow(consumer, consumerId) {
+	$("#resetOffsetConsumer").val(consumer);
+	$("#resetOffsetConsumerId").val(consumerId);
+	$("#resetOffsetModel").modal('show');
+}
+
+/**
+ * 重置偏移量
+ */
+function resetOffset(){
+	var resetOffsetTo = $("#resetOffsetDateInput").val();
+	if(!resetOffsetTo){
+		alert("请选择回溯到的时间!");
+		return;
+	}
+	disable("resetOffsetBtn");
+	$.get('${request.contextPath}/consumer/resetOffset', $("#resetOffsetForm").serialize(),function(data){
+        if(data.status == 200){
+			toastr.success("申请成功，请稍后查看！即将跳转到我的工单");
+			toMyAuditPage();
+	    }else{
+	    	toastr.error("操作失败！"+data.message);  
+	    	enable("resetOffsetBtn");
+	    }
+    }, 'json');
+}
+
+function deleteConsumerShow(consumer, consumerId){
+	$("#deleteConsumerName").val(consumer);
+	$("#deleteConsumerId").val(consumerId);
+	$("#deleteConsumerModel").modal('show');
+}
+
+/**
+ * 删除消费者
+ */
+function deleteConsumer(){
+	disable("deleteConsumerBtn");
+	$.post('${request.contextPath}/consumer/delete', $("#deleteConsumerForm").serialize(), function(data){
+        if(data.status == 200){
+			toastr.success("申请成功，请稍后查看！即将跳转到我的工单");
+			toMyAuditPage();
+	    }else{
+	    	toastr.error("操作失败！"+data.message);  
+	    	enable("deleteConsumerBtn");
+	    }
+    }, 'json');
+}
+
 $(function(){
-	$("[data-toggle='tooltip']").tooltip({container: 'body'});
-	$("[data-toggle='modal']").tooltip({container: 'body'});
 	 //添加删除特效
     $(".producer_delete").hover(function(){
-    	$(this).addClass("delete");
+    	$(this).addClass("text-delete");
     },function(){
-    	$(this).removeClass("delete");
+    	$(this).removeClass("text-delete");
     });
  	// 初始化user列表
 	initUserList('user_search_select');
-	$(".user_search_select").selectpicker({
-		width : 500
- 	});
  	// search type tooltip
- 	$("#searchCondition").selectpicker({
-		width : 120
- 	}).on('changed.bs.select', function(){
+	$("#searchCondition").selectpicker().on('changed.bs.select', function(){
  	  	changeSearchType($('#searchCondition option:selected').val());
  	});
  	$("#timespanConsumeClientIdSelect").selectpicker().on('changed.bs.select', function(){
@@ -1568,14 +1598,98 @@ $(function(){
 
 	// 暂停下拉框change事件
 	$('#pauseClientIdSelect').on('changed.bs.select',function(e, clickedIndex, newValue, oldValue){
-		if($(this).val()){
+		if($(this).val().length > 0){
 			$("#unregister").removeAttr("disabled");
 		} else {
 			$("#unregister").prop("checked", false);
 			$("#unregister").attr("disabled", "disabled");
 		}
 	});
+	$('#resetOffsetDate').datetimepicker({
+		format: 'YYYY-MM-DD HH:mm:ss',
+		minDate: moment({h:0, m:0, s:0, ms:0}).subtract(${cluster.fileReservedDays}, 'days'),
+		maxDate: '${.now?string("yyyy-MM-dd HH:mm:ss")}',
+		defaultDate: moment().subtract(3, 'seconds'),
+		icons: { time: 'far fa-clock' },
+		focusOnShow: false
+	});
+	$("#timeStartTimePicker").datetimepicker({
+		format: 'YYYY-MM-DD HH:mm:ss',
+		minDate: moment({h:0, m:0, s:0, ms:0}).subtract(${cluster.fileReservedDays}, 'days'),
+		maxDate: '${.now?string("yyyy-MM-dd HH:mm:ss")}',
+		icons: { time: 'far fa-clock' },
+		focusOnShow: false
+	});
+	$("#timeStartTimePickerInput").val('${(.now?long-300000)?number_to_datetime?string("yyyy-MM-dd HH:mm:ss")}');
+	$("#timeStartTimePicker").on("change.datetimepicker", function (e) {
+		timeChange("timeStartTime");
+	});
+	$("#keyStartTimePicker").datetimepicker({
+		format: 'YYYY-MM-DD HH:mm:ss',
+		minDate: moment({h:0, m:0, s:0, ms:0}).subtract(${cluster.fileReservedDays}, 'days'),
+		maxDate: '${.now?string("yyyy-MM-dd HH:mm:ss")}',
+		icons: { time: 'far fa-clock' },
+		focusOnShow: false
+	});
+	$("#keyStartTimePickerInput").val('${.now?string("yyyy-MM-dd 00:00:00")}');
+	$("#keyStartTimePicker").on("change.datetimepicker", function (e) {
+		timeChange("keyStartTime");
+	});
+	var endTimeOption = {
+		format: 'YYYY-MM-DD HH:mm:ss',
+		minDate: moment({h:0, m:0, s:0, ms:0}).subtract(${cluster.fileReservedDays}, 'days'),
+		maxDate: '${.now?string("yyyy-MM-dd HH:mm:ss")}',
+		defaultDate: '${.now?string("yyyy-MM-dd HH:mm:ss")}',
+		icons: { time: 'far fa-clock' },
+		focusOnShow: false
+	};
+	$("#timeEndTimePicker").datetimepicker(endTimeOption);
+	$("#timeEndTimePicker").on("change.datetimepicker", function (e) {
+		timeChange("timeEndTime");
+	});
+	$("#keyEndTimePicker").datetimepicker(endTimeOption);
+	$("#keyEndTimePicker").on("change.datetimepicker", function (e) {
+		timeChange("keyEndTime");
+	});
+
+	//初始化key查询方式的时间
+	timeChange('keyStartTime');
+
+	// fix bootstrap model & highcharts resize
+	$('#consumerStatsModal').on('shown.bs.modal', function() {
+		consumerStats();
+	});
+
+	<#if response.OK>
+		lineChart("consume", function (){
+			$("#tid").val("${RequestParameters.tid}");
+			<#if RequestParameters.consumer??>
+				$("#_consumer").val("${RequestParameters.consumer}");
+			</#if>
+			<#if RequestParameters.currentPage??>
+				$("#currentPage").val(${RequestParameters.currentPage});
+			</#if>
+		});
+		<#if RequestParameters.consumer?? && RequestParameters.consumer != "">
+			$('a[data="${RequestParameters.consumer}"]').click();
+			<#if RequestParameters.consumerId??>
+				showResetRetryMessageOffsetModel(${RequestParameters.consumerId}, "${RequestParameters.consumer}");
+			<#elseif RequestParameters.time??>
+				$("#msgSearchModal").on('show.bs.modal', function () {
+					$("#dataTable tbody").html("<tr class='no_more_data'><td colspan=6 class='text-center'><i class='fa-solid fa-spinner fa-spin fa-lg'></i></td></tr>");
+					searchByTime(${RequestParameters.time});
+				})
+				$("#${RequestParameters.consumer}").click();
+			</#if>
+		</#if>
+	</#if>
 });
+
+function timeChange(id){
+	var dt = $("#" + id + "PickerInput").val();
+	var tm = parseDate(dt);
+	$("#" + id).val(tm);
+}
 //准备删除
 function prepareDeleteUserConsumer(uid,userName,consumerID){
 	$("#user_name").val(userName);
@@ -1593,8 +1707,8 @@ function deleteUserConsumer(){
 		},
         function(data){
             if(data.status == 200){
-            	toastr.success("申请成功！请耐心等待！");  	            	
-            	reload(1000);            	
+				toastr.success("申请成功，请稍后查看！即将跳转到我的工单");
+				toMyAuditPage();
 		    }else{
 		    	toastr.error("删除失败！"+data.message);  
 		    	enable("deleteUserConsumerBtn");
@@ -1648,8 +1762,8 @@ function addUserCounsumerRelationship(){
 			},
 	        function(data){
 	            if(data.status == 200){
-	            	toastr.success("申请成功！请耐心等待！");  	            	
-	            	reload(1000);            	
+					toastr.success("申请成功，请稍后查看！即将跳转到我的工单");
+					toMyAuditPage();
 			    }else{
 			    	toastr.error("申请失败！"+data.message);  
 			    	enable("associateUserConsumerBtn");
@@ -1657,16 +1771,13 @@ function addUserCounsumerRelationship(){
 	    }, 'json');
 }
 
-function hideMsgSearchModal(){
-	$('#msgSearchModal').modal('hide');
-}
 //当前消息搜索时的topic
 var currentSelectTopic = '';
 var queueOffsetMap = null;
 function brokerNameSelectChange(obj){
 	var value = obj.options[obj.selectedIndex].value;
 	if (value == "all"){
-		$("#queueSearchSelect").html("<option value='-1'>全部</option>");
+		$("#queueSearchSelect").html("<option value='-1'>全部队列</option>");
 		$("#queueSearchSelect").selectpicker('refresh');
 		$("#offsetStart").val(minAllOffset);
 		$("#offsetEnd").val(maxAllOffset);
@@ -1682,7 +1793,7 @@ function brokerNameSelectChange(obj){
 	        function(data){
 	            if(data.status == 200){
 	            	queueOffsetMap = data.result;
-	            	var content = "<option value='-1'>全部</option>";
+	            	var content = "<option value='-1'>全部队列</option>";
 	            	for (var  key in queueOffsetMap){
 	            		content += "<option value='"+key+"'>"+key+"</option>";
 	            	}
@@ -1696,7 +1807,6 @@ var minAllOffset = '';
 function initOffsetMsgModal(type, index, topic, consumerId, consumer, maxOffset, traceEnabled){
 	// 清空数据
 	$("#dataTable tbody").html("<tr class='no_more_data'><td colspan=6 class='text-center'>暂无数据</td></tr>");
-	$("#dataTable input").remove();
 	$("#toTopic").val(topic);
 	$("#messageConsumerId").val(consumerId);
 	$("#messageConsumer").val(consumer);
@@ -1716,33 +1826,27 @@ function initOffsetMsgModal(type, index, topic, consumerId, consumer, maxOffset,
 	$("#traceEnabled").val(traceEnabled);
 	
 	if(type == "dlq") {
-		$("#dataTable").addClass("tr-pointer");
-		$("#resendMessageBtn").show();
+		$(".resendMessageBtn").show();
 		$("#consumeTimespanMessageBtn").addClass("time");
+		$("#exportTimespanMessageBtn").addClass("time");
 		$("#cosumeTimes").html("消费次数");
 		if(prevSearchType == "time"){
 			$("#consumeTimespanMessageBtn").show();
+			$("#exportTimespanMessageBtn").show();
 		}
+		$("#checkInput").show();
+		$("#msgTypeSpan").html("死信");
 	} else {
-		$("#dataTable").removeClass("tr-pointer");
-		$("#resendMessageBtn").hide();
+		$(".resendMessageBtn").hide();
 		$("#consumeTimespanMessageBtn").hide().removeClass("time");
 		$("#cosumeTimes").html("重试次数");
+		$("#checkInput").hide();
+		$("#exportTimespanMessageBtn").hide().removeClass("time");
+		$("#msgTypeSpan").html("重试");
 	}
 	//初始化broker列表
  	initBrokerList('brokerNameSearchSelect');
  	$("#queueSearchSelect").selectpicker('refresh');
-}
-//显示搜索条件broker和队列
-function showMoreSearchCondition(){
-	if ($("#moreSearchCondition").hasClass('hide')){
-		$("#moreSearchCondition").removeClass('hide');
-	} else {
-		$("#moreSearchCondition").addClass('hide');
-		//重置broker下拉框状态
-		document.getElementById("brokerNameSearchSelect").options.selectedIndex = 0; //回到初始状态
-	    $("#brokerNameSearchSelect").selectpicker('refresh');
-	}
 }
 //偏移量消息搜索
 function searchOffsetMessage(append){
@@ -1750,7 +1854,6 @@ function searchOffsetMessage(append){
 	post('${request.contextPath}/topic/message/retry/search/offset', $("#msgSearchForm").serialize(), function(data){
 		if(!append){
 			$("#dataTable tbody").remove();
-			$("#dataTable input").remove();
 		}
        	$("#dataTable").append(data);
     });
@@ -1815,7 +1918,7 @@ function initBrokerList(componentId){
 	        function(data){
 	            if(data.status == 200){
 	            	brokerNameMap = data.result;
-	            	var content = "<option value='all'>全部</option>";
+	            	var content = "<option value='all'>全部broker</option>";
 	            	for (var key in brokerNameMap){
 	            		content += "<option value='"+key+"'>"+key+"</option>";
 	            	}
@@ -1870,21 +1973,27 @@ function getQueueOwner(consumer, consumerId){
         if(data.status == 200){
         	for(var i in data.result){
         		var id = "#" + data.result[i].topicType + "_" + consumerId + "_" + data.result[i].brokerName + "_" + data.result[i].queueId;
+				var prevTitle = $(id).attr("title");
+				if (prevTitle) {
+					prevTitle += ","
+				} else {
+					prevTitle = "";
+				}
+				if(data.result[i].hasOwnProperty('consumerRunningInfoJson')){
+					$(id).attr("data", data.result[i].consumerRunningInfoJson);
+					$(id).addClass("text-primary pointer");
+					$(id).attr("title", prevTitle + "查看"+data.result[i].clientId+"详情");
+				} else {
+					$(id).attr("title", prevTitle + data.result[i].clientId);
+				}
         		var prevContent = $(id).html();
         		if(prevContent){
         			prevContent += ","
         		}
         		$(id).attr("clientId", data.result[i].clientId);
 	        	$(id).html(prevContent + data.result[i].ip);
-	        	var prevTitle = $(id).attr("title");
-	        	if(prevTitle){
-	        		prevTitle += ","
-        		} else {
-        			prevTitle = "";
-        		}
-	        	$(id).attr("title", prevTitle + data.result[i].clientId);
 				$(id).attr("data-placement", "right");
-				$(id).tooltip({container: 'body'});
+				$(id).tooltip({boundary: 'window'});
         	}
 	    }else{
 	    	toastr.error("获取客户端失败！"+data.message);  
@@ -1919,11 +2028,14 @@ function updateConsumerInfo(){
 //重发消息 提示
 function resendMessageTip(){
 	var dataIdxArray = new Array();
-	$('#dataTable tbody tr.selected').each(function(){
-		dataIdxArray.push($(this).attr("dataIdx"));
+	$('#dataTable tbody input[type=checkbox]:checked').each(function(){
+		var dataIdx = $(this).attr("dataIdx");
+		if(dataIdx){
+			dataIdxArray.push(dataIdx);
+		}
 	});
 	if(dataIdxArray.length == 0) {
-		alert("请先选择消息(支持shift和ctrl)");
+		alert("请先选择消息");
 		return;
 	}
 	$("#dataIdx").html(dataIdxArray.toString());
@@ -1933,11 +2045,11 @@ function resendMessageTip(){
 //重发消息 
 function resendMessage(){
 	var dataArray = new Array();
-	$('#dataTable tbody tr.selected').each(function(){
+	$('#dataTable tbody input[type=checkbox]:checked').each(function(){
 		dataArray.push($(this).attr("data"));
 	});
 	if(dataArray.length == 0) {
-		alert("请先选择消息(支持shift和ctrl)");
+		alert("请先选择消息");
 		return;
 	}
 	disable("resendBtn");
@@ -1948,12 +2060,12 @@ function resendMessage(){
 			cid: $("#messageConsumerId").val()
 		},
         function(data){
-			enable("resendBtn");
             if(data.status == 200){
-            	toastr.success("申请成功！请耐心等待！");  	            	
-            	$('#resendMsgModal').modal('hide');       	
+				toastr.success("申请成功，请稍后查看！即将跳转到我的工单");
+				toMyAuditPage();
 		    }else{
-		    	toastr.error("申请失败！"+data.message);  
+		    	toastr.error("申请失败！"+data.message);
+				enable("resendBtn");
 		    }
     }, 'json');
 }
@@ -1980,10 +2092,10 @@ function consumeTimespanMessageTip(){
     $("#consumeTimespanMessageBtn").removeAttr("disabled");
 	$("#timespanConsumeTopic").val($("#toTopic").val());
 	$("#timespanConsumerId").val($("#messageConsumerId").val());
+	$("#timespanConsumeStartShow").val($("#timeStartTimePickerInput").val());
+	$("#timespanConsumeEndShow").val($("#timeEndTimePickerInput").val());
 	$("#timespanConsumeStart").val($("#timeStartTime").val());
 	$("#timespanConsumeEnd").val($("#timeEndTime").val());
-	$("#timespanConsumeStartShow").val($("#timeStartTimePicker").val());
-	$("#timespanConsumeEndShow").val($("#timeEndTimePicker").val());
 	$('#submitTimespanMessageBtn').attr("disabled", "disabled");
 	$("#consumeTimespanMessageModel").modal('show');
 }
@@ -1995,15 +2107,37 @@ function consumeTimespanMessage(){
 		$("#consumeTimespanMessageForm").serialize(), 
 		function(data){
 	        if(data.status == 200){
-				toastr.success("申请成功！请耐心等待！");  
-				modalHide(3000, function(){
-					enable("submitTimespanMessageBtn");
-				});
+				toastr.success("申请成功，请稍后查看！即将跳转到我的工单");
+				toMyAuditPage();
 		    }else{
 		    	toastr.error("操作失败！"+data.message);  
 		    	enable("submitTimespanMessageBtn");
 		    }
     	}, 'json');
+}
+
+//时间段消息导出 提示
+function exportTimespanMessageTip(){
+	$("#timespanExportTopic").val($("#toTopic").val());
+	$("#timespanExportStartShow").val($("#timeStartTimePickerInput").val());
+	$("#timespanExportEndShow").val($("#timeEndTimePickerInput").val());
+	$("#timespanExportStart").val($("#timeStartTime").val());
+	$("#timespanExportEnd").val($("#timeEndTime").val());
+	$("#exportTimespanMessageModel").modal('show');
+}
+
+//时间段消息导出
+function exportTimespanMessage(){
+	disable("submitExportMessageBtn");
+	post('${request.contextPath}/topic/message/export', $("#exportTimespanMessageForm").serialize(), function(data){
+		if(data.status == 200){
+			toastr.success("申请成功，请稍后查看！即将跳转到我的工单");
+			toMyAuditPage();
+		}else{
+			toastr.error("操作失败！"+data.message);
+			enable("submitExportMessageBtn");
+		}
+	}, 'json');
 }
 
 function updateConsumerTraceShow(cid, consumer, traceable){
@@ -2038,10 +2172,13 @@ function updateConsumerTrace(){
 
 //更改搜素选项
 var prevSearchType = "key";
-function changeSearchType(type){
+function changeSearchType(type, removeTBody){
 	// 无改变
 	if(prevSearchType == type){
 		return;
+	}
+	if (removeTBody == undefined) {
+		removeTBody = true;
 	}
 	$("."+type).show();
 	if(prevSearchType) {
@@ -2052,40 +2189,13 @@ function changeSearchType(type){
 	$("#pager").hide();
 	hideAndResetBrokerSelect();
 	// 清空数据
-	$("#dataTable tbody").remove();
-	$("#dataTable").append("<tbody><tr class='no_more_data'><td colspan=6 class='text-center'>暂无数据</td></tr></tbody>");
-	$("#dataTable input").remove();
-	$("#dataTable").removeClass("hide");
-	$("#resendMessageBtn").removeClass("disabled");
+	if (removeTBody) {
+		$("#dataTable tbody").remove();
+		$("#dataTable").append("<tbody><tr class='no_more_data'><td colspan=6 class='text-center'>暂无数据</td></tr></tbody>");
+	}
 }
 
-<#if response.OK>
-	$(function() {
-		lineChart("consume", function (){
-			$("#tid").val("${RequestParameters.tid}");
-			<#if RequestParameters.consumer??>
-				$("#_consumer").val("${RequestParameters.consumer}");
-			</#if>
-			<#if RequestParameters.currentPage??>
-				$("#currentPage").val(${RequestParameters.currentPage});
-			</#if>
-		});
-		<#if RequestParameters.consumer?? && RequestParameters.consumer != "">
-			$('a[data="${RequestParameters.consumer}"]').click();
-			<#if RequestParameters.consumerId??>
-				showResetRetryMessageOffsetModel(${RequestParameters.consumerId}, "${RequestParameters.consumer}");
-			<#elseif RequestParameters.time??>
-				$("#msgSearchModal").on('show.bs.modal', function () {
-					searchByTime(${RequestParameters.time});
-				})
-				$("#${RequestParameters.consumer}").click();
-			</#if>
-		</#if>
-	});
-</#if>
-
 function hideAndResetBrokerSelect(){
-	$("#moreSearchCondition").addClass('hide');
 	//重置broker下拉框状态
     $("#brokerNameSearchSelect").selectpicker('val', "all");
     $("#queueSearchSelect").selectpicker('val', "-1");
@@ -2097,7 +2207,6 @@ function searchMessage(append){
 	post('${request.contextPath}/topic/message/retry/search/time', $("#msgSearchForm").serialize(), function(data){
 		if(!append){
 			$("#dataTable tbody").remove();
-			$("#dataTable input").remove();
 		}
        	$("#dataTable").append(data);
     });
@@ -2110,19 +2219,9 @@ function searchKeyMessage() {
 	}
 	post('${request.contextPath}/topic/message/retry/search/key', $("#msgSearchForm").serialize(), function(data){
 		$("#dataTable tbody").remove();
-		$("#dataTable input").remove();
        	$("#dataTable").append(data);
     });
 }
-
-function timeChange(id){
-	var dt = $("#" + id + "Picker").val();
-	var tm = parseDate(dt);
-	$("#" + id).val(tm);
-}
-//初始化key查询方式的时间
-timeChange('keyStartTime');
-
 
 function showThreadMetricsForClustering(ipId, consumer){
 	var clientId = $("#"+ipId).attr("clientId");
@@ -2142,24 +2241,23 @@ function showThreadMetrics(clientId, consumer){
 }
 
 function threadMetrics(){
-	$("#refreshA").removeClass("glyphicon-refresh").addClass("glyphicon-repeat");
-	$.post('${request.contextPath}/consumer/threadMetrics',
+	$("#redoIcon").addClass("fa-spin");
+	post('${request.contextPath}/consumer/threadMetrics',
 		{
 			clientId: $("#clientIdSpan").html(),
 			consumer: $("#consumerGroup").html()
-		},
-		function(data){
-			$("#refreshA").removeClass("glyphicon-repeat").addClass("glyphicon-refresh");
+		}, function(data){
+			$("#redoIcon").removeClass("fa-spin");
 			$("#threadMetricsBody").html(data);
 	});
 }
 
 function toggleThreadStack(comp){
 	$(comp).nextAll().toggle(250);
-	if($(comp).children("span").hasClass("mqcloudcollapse")){
-		$(comp).children("span").removeClass("mqcloudcollapse").addClass("mqclouexpand");
+	if($(comp).children("span").hasClass("fa-caret-right")){
+		$(comp).children("span").removeClass("fa-caret-right").addClass("fa-caret-down");
 	} else {
-		$(comp).children("span").removeClass("mqclouexpand").addClass("mqcloudcollapse");
+		$(comp).children("span").removeClass("fa-caret-down").addClass("fa-caret-right");
 	}
 }
 
@@ -2188,14 +2286,13 @@ function searchByTime(time){
 	start = formatDateYMDHM(start);
 	end = formatDateYMDHM(end);
 	// 修改时间
-	$("#timeStartTimePicker").val(start);
-	$("#timeEndTimePicker").val(end);
+	$("#timeStartTimePickerInput").val(start);
+	$("#timeEndTimePickerInput").val(end);
 	timeChange('timeStartTime');
 	timeChange('timeEndTime');
 	// 更改查询方式为时间
 	$("#searchCondition").selectpicker('val', "time");
-	$("#searchCondition").selectpicker('refresh');
-	changeSearchType('time');
+	changeSearchType('time', false);
 	// 查询时间
 	searchMessage(false);
 }
@@ -2222,9 +2319,47 @@ function failedMetrics(){
 		{
 			clientId: $("#failedClientIdSpan").html(),
 			consumer: $("#failedConsumerGroup").html()
-		},
-		function(data){
-			$("#failedMetricsBody").html(data);
+		}, function(data){
+		$("#failedMetricsBody").html(data);
+	});
+}
+
+function toggleMsgCheck(box) {
+	$('#dataTable tbody:visible input[type=checkbox]').each(function () {
+		if (box.checked) {
+			$(this).prop('checked', true);
+		} else {
+			$(this).prop('checked', false);
+		}
+	});
+}
+
+function consumerRunningInfoModelShow(comp) {
+	if(comp.hasAttribute("data")){
+		$("#consumerRunningInfoJsonView").jsonViewer(JSON.parse($(comp).attr("data")));
+		$("#consumerRunningInfoModel").modal('show');
+	}
+}
+
+var curConsumer;
+function showConsumerStats(consumer){
+	curConsumer = consumer;
+	$("#consumerStatsChart").empty();
+	$("#consumerStatsTitle").html(consumer+"客户端状况统计");
+	$('#consumerStatsModal').modal('show');
+	$("[data-toggle='tooltip']").tooltip('hide');
+}
+
+/**
+ * 获取统计图
+ */
+function consumerStats(){
+	$.get('${request.contextPath}/consumer/stats',
+	{
+		consumer: curConsumer
+	},
+	function(data){
+		$("#consumerStatsChart").html(data);
 	});
 }
 </script>

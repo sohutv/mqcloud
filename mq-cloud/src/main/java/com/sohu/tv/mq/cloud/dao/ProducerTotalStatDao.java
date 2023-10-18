@@ -34,6 +34,12 @@ public interface ProducerTotalStatDao {
      */
     @Select("select * from producer_total_stat where create_date = #{createDate} and producer = #{producer}")
     public List<ProducerTotalStat> selectByDate(@Param("producer")String producer, @Param("createDate")int createDate);
+
+    /**
+     * 根据上报时间查询producer记录
+     */
+    @Select("select * from producer_total_stat where producer = #{producer} and stat_time = #{statTime}")
+    public List<ProducerTotalStat> selectByStatTime(@Param("producer")String producer, @Param("statTime")int statTime);
     
     /**
      * 查看producer是否存在

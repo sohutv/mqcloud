@@ -12,6 +12,7 @@ import com.sohu.tv.mq.stats.StatsHelper;
 import com.sohu.tv.mq.util.CommonUtil;
 import org.apache.rocketmq.client.exception.MQClientException;
 import org.apache.rocketmq.client.impl.consumer.DefaultMQPushConsumerImpl;
+import org.apache.rocketmq.client.impl.factory.MQClientInstance;
 import org.apache.rocketmq.client.impl.producer.DefaultMQProducerImpl;
 import org.apache.rocketmq.client.producer.*;
 import org.apache.rocketmq.client.trace.AsyncTraceDispatcher;
@@ -133,9 +134,17 @@ public class RocketMQProducer extends AbstractConfig {
                             }
                         });
             }
+            // init after start
+            initAfterStart();
             logger.info("topic:{} group:{} start", topic, group);
         } catch (MQClientException e) {
             logger.error(e.getMessage(), e);
+        }
+    }
+
+    private void initAfterStart() {
+        if (statsHelper != null) {
+            statsHelper.setClientId(getMQClientInstance().getClientId());
         }
     }
 
@@ -995,5 +1004,9 @@ public class RocketMQProducer extends AbstractConfig {
     @Override
     protected Object getMQClient() {
         return producer;
+    }
+
+    public MQClientInstance getMQClientInstance() {
+        return producer.getDefaultMQProducerImpl().getMqClientFactory();
     }
 }

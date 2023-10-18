@@ -1,5 +1,6 @@
 package com.sohu.tv.mq.cloud.service;
 
+import com.google.common.collect.Lists;
 import com.sohu.tv.mq.cloud.bo.BrokerTraffic;
 import com.sohu.tv.mq.cloud.bo.Cluster;
 import com.sohu.tv.mq.cloud.bo.Topic;
@@ -163,6 +164,20 @@ public class TopicTrafficService extends TrafficService<TopicTraffic> {
             return Result.getDBErrorResult(e);
         }
         return Result.getResult(list);
+    }
+
+    public Result<TopicTraffic> query(long tid, Date date, String time) {
+        try {
+            List<TopicTraffic> list = topicTrafficDao.selectByIdListDateTime(Lists.newArrayList(tid), date, time);
+            if (list != null && list.size() > 0) {
+                return Result.getResult(list.get(0));
+            } else {
+                return Result.getResult(Status.NO_RESULT);
+            }
+        } catch (Exception e) {
+            logger.error("query traffic err, tid:{},date:{},time:{}", tid, date, time, e);
+            return Result.getDBErrorResult(e);
+        }
     }
     
     /**

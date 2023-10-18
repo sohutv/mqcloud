@@ -3,6 +3,7 @@ package com.sohu.tv.mq.cloud.web.interceptor;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,6 +33,9 @@ public class AuthInterceptor extends HandlerInterceptorAdapter {
     
     @Autowired
     private LoginService loginService;
+
+    @Autowired
+    private MQCloudConfigHelper mqCloudConfigHelper;
     
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler)
@@ -62,6 +66,12 @@ public class AuthInterceptor extends HandlerInterceptorAdapter {
             return false;
         }
         WebUtil.setAttribute(request, UserInfo.USER_INFO, userInfo);
+        if (mqCloudConfigHelper.isSohu()) {
+            WebUtil.setAttribute(request, "sohu", "true");
+            if (mqCloudConfigHelper.isTestSohu()) {
+                WebUtil.setAttribute(request, "testSohu", "true");
+            }
+        }
         return true;
     }
 

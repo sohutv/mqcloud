@@ -1,0 +1,20 @@
+<table border=1>
+    <thead>
+    <tr>
+        <td>审核ID</td>
+        <td>更新时间</td>
+        <td>多久未更新</td>
+        <td>信息</td>
+    </tr>
+    </thead>
+    <tbody>
+        <#list list as me>
+        <tr>
+            <td><a href='${linkPrefix}admin/audit/list?type=23&status=4'>${me.aid}</a></td>
+            <td>${me.updateTimeFormat}</td>
+            <td>${me.updateTimeDelayMinutes}分钟</td>
+            <td>${me.info}</td>
+        </tr>
+        </#list>
+    </tbody>
+</table>

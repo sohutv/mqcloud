@@ -1,5 +1,12 @@
-<footer class="page-footer font-small teal pt-4 navbar-fixed-bottom footer">
-    <div class="footer-copyright text-center py-3 footer_text">Copyright © ${.now?string("yyyy")}
-      <a href="https://tv.sohu.com/">搜狐视频</a>
+<footer class="main-footer">
+    <!-- To the right -->
+    <div class="float-right d-none d-sm-inline">
+        <a href="https://github.com/sohutv/sohu-tv-mq" title="查看开源代码" data-toggle="tooltip">${version!}</a>
     </div>
+    <!-- Default to the left -->
+    <strong>Copyright &copy; ${.now?string("yyyy")} Sohu.com</strong>
 </footer>
+<div id="overlay"></div>
+<a href="javascript:void(0)" class="btn btn-secondary btn-sm back-to-top d-lg-none" style="z-index: 100000">
+    <i class="fas fa-chevron-up"></i>
+</a>
