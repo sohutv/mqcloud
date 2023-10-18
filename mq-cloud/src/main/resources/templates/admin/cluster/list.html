@@ -334,7 +334,7 @@
 								</div>
 							</div>
 							<div class="modal-footer">
-								<button type="button" data-dismiss="modal" class="btn" >取消</button>
+								<button type="button" data-dismiss="modal" class="btn btn-light" >取消</button>
 								<#if brokerGroup[key][bkey].writable>
 								<button type="button" class="btn btn-primary" onclick="nowrite('nowrite${i}')" id="nowrite${i}Btn">确定</button>
 								<#else>
@@ -376,7 +376,7 @@
 								</div>
 							</div>
 							<div class="modal-footer">
-								<button type="button" data-dismiss="modal" class="btn" >取消</button>
+								<button type="button" data-dismiss="modal" class="btn btn-light" >取消</button>
 								<button type="button" class="btn btn-primary" onclick="brokerOffline('brokerOffline${i}')" id="brokerOffline${i}Btn">确定</button>
 							</div>
 						</form>
@@ -973,7 +973,7 @@
 				</table>
 			</div>
 			<div class="modal-footer">
-				<button type="button" data-dismiss="modal" class="btn" >取消</button>
+				<button type="button" data-dismiss="modal" class="btn btn-light" >取消</button>
 				<button type="submit" class="btn btn-primary" onclick="modifyBrokerConfig()" data-toggle="tooltip" title="注意：此更新仅对当前broker有效！" id="modifyBrokerConfigBtn">更新</button>
 			</div>
 		</div>
@@ -1020,7 +1020,7 @@
 				</form>
 			</div>
 			<div class="modal-footer">
-				<button type="button" data-dismiss="modal" class="btn" >取消</button>
+				<button type="button" data-dismiss="modal" class="btn btn-light" >取消</button>
 				<button type="button" class="btn btn-primary" onclick="updateTopicLimitRate()"
 						id="updateTopicLimitRateBtn">确定</button>
 			</div>
