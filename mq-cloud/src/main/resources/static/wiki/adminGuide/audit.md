@@ -2,7 +2,7 @@
 
 MQCloud将涉及到对rocketmq的操作均转换为申请单，进入到了审核列表：
 
-![](img/auditList.png)
+<img src="img/auditList.png" class="img-wiki">
 
 此列表可以根据两个维度过滤：
 
@@ -23,19 +23,19 @@ mqcloud.autoAuditType: 5,6 #自动审核类型，值来自：com.sohu.tv.mq.clou
 
 以申请新建topic为例，介绍一下审核详情：
 
-![](img/auditTopic.png)
+<img src="img/auditTopic.png" class="img-wiki">
 
 这里不再介绍每一项的具体含义，在[生产和消费](../userGuide/produceAndConsume#createTopic)部分已经描述过了。这里说明一下，每个申请单都会有**是否同意**的选项，可以审批通过，也可以拒绝，拒绝时需要填写拒绝理由。
 
 另外，不同的申请单有不同的操作，比如关联生产者：
 
-![](img/associate_producer.png)
+<img src="img/associate_producer.png" class="img-wiki">
 
 会有**校验一下**的按钮，因为rocketmq无法查询某个topic的生产者，所以生产者是用户自己填写的，有可能填错，用此按钮可以校验用户填写的生产者是否有链接，如果校验没有链接，需要咨询申请人，是否填错等。
 
 还比如重发消息：
 
-![](img/auditResend.png)
+<img src="img/auditResend.png" class="img-wiki">
 
 需要先发送消息，并保证成功后，再进行审批。类似的不再一一列举。
 

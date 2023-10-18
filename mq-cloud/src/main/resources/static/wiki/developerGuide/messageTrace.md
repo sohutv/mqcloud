@@ -8,7 +8,7 @@ RocketMQ从4.4.0起提供了消息的trace功能（不支持事务消息），�
 
 管理员可以通过`集群发现`菜单，创建一个新的Name Server集群，指定开启trace：
 
-![](./img/4.2.png)
+<img src="./img/4.2.png" class="img-wiki">
 
 之后通过`集群管理`菜单正常部署broker即可。
 
@@ -16,13 +16,13 @@ RocketMQ从4.4.0起提供了消息的trace功能（不支持事务消息），�
 
 针对用户申请新建topic时，通过`我要生产消息`菜单，其中的如下选项：
 
-![](img/4.1.png)
+<img src="img/4.1.png" class="img-wiki">
 
 用户开启后，将会把用户的业务topic对应的trace topic创建在trace集群上，具体步骤参见：[有关Trace消息](https://github.com/sohutv/mqcloud/wiki/%E6%9C%89%E5%85%B3Trace%E6%B6%88%E6%81%AF)
 
 同样，消费者消费消息时，也会提供相应是否开启trace的选项：
 
-![](img/4.3.png)
+<img src="img/4.3.png" class="img-wiki">
 
 用户开启后，将会在客户端进行自动trace。
 
@@ -30,13 +30,13 @@ RocketMQ从4.4.0起提供了消息的trace功能（不支持事务消息），�
 
 生产者或消费者启动时，将会从MQCloud拉取配置信息，其中就包括了是否开启了trace支持。针对开启了trace要求的客户端，MQCloud会根据用户指定的topic构建一个对应的trace topic生产者，因为规则是固定的：
 
-![](img/4.4.png)
+<img src="img/4.4.png" class="img-wiki">
 
 然后再根据trace topic到MQCloud查询其配置信息，进行初始化，之后用来替换官方提供的`org.apache.rocketmq.client.trace.AsyncTraceDispatcher`中的`DefaultMQProducer`，从而实现完美适配。
 
 另外，MQCloud针对生产者和消费者的trace客户端单独设置了instanceName，在构建clientId（参见[2.客户端]里的Client ID部分）时将其构建了进去，这样，同一个jvm里针对同一个topic的trace客户端可以很容易区分出来：
 
-![](img/4.5.png)
+<img src="img/4.5.png" class="img-wiki">
 
 释义：各项含义是 ip@pid@role@clusterId
 
@@ -54,10 +54,10 @@ RocketMQ的原生console支持trace消息查询，而MQCloud做了进一步的�
 
 使用者可以通过`消息`tab，查询方式选择`trace`，选择好查询的时间段，输入key进行查询即可：
 
-![](img/4.6.png)
+<img src="img/4.6.png" class="img-wiki">
 
 这里展示了trace的详细信息，点击后面的`详情`的小眼睛，可以看到trace的格式化后的数据：
 
-![](img/4.7.png)
+<img src="img/4.7.png" class="img-wiki">
 
 另外，也可以通过其他查询方式查到结果后，点击`序号`字段，快速跳到trace页面。

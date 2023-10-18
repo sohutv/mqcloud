@@ -3,7 +3,7 @@
 流量管理是指对于开启了流量预警功能的topic，通过某些统计分析方法，对topic流量进行统计分析、阈值设定和邮件预警。
 如下：
 
-![](img/trafficMonitor.png)
+<img src="img/trafficMonitor.png" class="img-wiki">
 
 #### 图例说明：
 

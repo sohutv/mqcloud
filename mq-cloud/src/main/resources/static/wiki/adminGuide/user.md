@@ -2,11 +2,11 @@
 
 此模块主要用于用户的维护，详见如下：
 
-![](img/user.png)
+<img src="img/user.png" class="img-wiki">
 
 默认支持用户自主注册，管理员也可以在后台添加用户：
 
-![](img/addUser.png)
+<img src="img/addUser.png" class="img-wiki">
 
 点击用户列表操作栏的齿轮按钮可修改用户的密码。
 

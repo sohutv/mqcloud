@@ -2,7 +2,7 @@
 
 该模块主要用于NameServer集群的创建和运维，参见：
 
-![](img/ns_list.png)
+<img src="img/ns_list.png" class="img-wiki">
 
 下面介绍下每块的功能：
 
@@ -32,7 +32,7 @@
 
 ## 二、<span id="newCluster">新增集群记录</span>
 
-![](img/newCluster.png)
+<img src="img/newCluster.png" class="img-wiki">
 
 1. 集群id需要为数字，并且不能重复，其用于发现NameServer列表。
 2. 集群名即brokerClusterName。
@@ -43,7 +43,7 @@
 
 ## 三、<span id="newns">创建NameServer实例</span>
 
-![](img/add_namesrv.png)
+<img src="img/add_namesrv.png" class="img-wiki">
 
 用于部署name server，并且会建立cluster表和name_server表的关联：
 

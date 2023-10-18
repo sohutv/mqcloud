@@ -2,11 +2,11 @@
 
 通知管理用于在mqcloud主页展示一些重要通知，如下：
 
-![](img/notify.png)
+<img src="img/notify.png" class="img-wiki">
 
 这里的通知就是通知管理模块设置的：
 
-![](img/notifyList.png)
+<img src="img/notifyList.png" class="img-wiki">
 
 通知可以删除或无效。
 

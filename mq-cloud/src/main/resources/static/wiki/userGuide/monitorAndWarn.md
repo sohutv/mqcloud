@@ -1,42 +1,42 @@
 ## 一、<span id="consume">消费堆积预警</span>
 
-![](img/5.0.png)
+<img src="img/5.0.png" class="img-wiki">
 
 *默认每5分钟消息堆积量达到10000条，预警一次，一小时最多预警一次。*
 
 ## 二、<span id="clientBlock">客户端阻塞</span>
 
-![](img/5.1.png)
+<img src="img/5.1.png" class="img-wiki">
 
 *只针对push方式局部有序的消费者，默认每5分钟阻塞达到10秒，预警一次，一小时最多预警一次。*
 
 ## 三、<span id="clientException">客户端异常</span>
 
-![](img/5.2.png)
+<img src="img/5.2.png" class="img-wiki">
 
 *使用MQCloud提供的客户端，生产失败的消息会每5分钟预警一次。*
 
 ## 四、<span id="consumeError">消费失败</span>
 
-![](img/5.3.png)
+<img src="img/5.3.png" class="img-wiki">
 
 *针对集群消费方式的消费者，每小时消费失败量达到10次，预警一次。*
 
 ## 五、<span id="offset">偏移量错误</span>
 
-![](img/5.4.png)
+<img src="img/5.4.png" class="img-wiki">
 
 *消费者消费的消息在broker上不存在时，一般是偏移量错误，此时会进行预警，预警频率：实时。*
 
 ## 六、<span id="subError">订阅错误</span>
 
-![](img/5.5.png)
+<img src="img/5.5.png" class="img-wiki">
 
 *一个消费者订阅了多个topic时，进行预警。*
 
 ## 七、<span id="trafficMonitor">流量异常预警</span>
 
-![](img/trafficMonitor.png)
+<img src="img/trafficMonitor.png" class="img-wiki">
 
 *当检测到topic流量值超过设定的阈值时，进行预警。*
 

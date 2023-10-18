@@ -13,55 +13,54 @@
 
 * 下图简单描述了MQCloud大概的功能：
 
-  ![mqcloud](img/mqcloud.png)
-
+  <img src="img/mqcloud.png" class="img-wiki">
 
 ----------
 
 ## <span id="future">特性概览</span>
 * 用户topic列表-不同用户看到不同的topic，管理员可以管理所有topic
 
-  ![用户topic列表](img/index.png)
+  <img src="img/index.png" class="img-wiki">
 
 * topic详情-分三块 基本信息，今日流程，拓扑
 
-  ![topic详情](img/topicDetail.png)
+  <img src="img/topicDetail.png" class="img-wiki">
 
 * 生产详情
 
-  ![生产详情](img/produceDetail2.png)
+  <img src="img/produceDetail2.png" class="img-wiki">
 
 * 消费详情
 
-  ![消费详情](img/consumeDetail2.png)
+  <img src="img/consumeDetail2.png" class="img-wiki">
 
 * 某个消费者具体的消费详情-可以查询重试消息和死消息
 
-  ![消费详情](img/consumeRetry.png)
+  <img src="img/consumeRetry.png" class="img-wiki">
 
 * 消息
 
-  ![消息](img/msgSearch.png)
+  <img src="img/msgSearch.png" class="img-wiki">
 
 * 消息消费情况
 
-  ![msgconsume](img/msgTrack.png)
+  <img src="img/msgTrack.png" class="img-wiki">
 
 * 集群发现
 
-  ![admin](img/nameServer.png)
+  <img src="img/nameServer.png" class="img-wiki">
 
 * 集群管理
 
-  ![admin](img/cluster.png)
+  <img src="img/cluster.png" class="img-wiki">
 
 * 集群流量
 
-  ![admin](img/clusterTraffic.png)
+  <img src="img/clusterTraffic.png" class="img-wiki">
 
 * 创建broker
 
-  ![addBroker](img/addBroker.png)
+  <img src="img/addBroker.png" class="img-wiki">
 
 ----------
 

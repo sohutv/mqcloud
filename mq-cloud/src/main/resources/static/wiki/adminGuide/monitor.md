@@ -2,7 +2,7 @@
 
 这里的监控管理是指监控消费者的情况及指标，如下：
 
-![](img/consumerMonitor.png)
+<img src="img/consumerMonitor.png" class="img-wiki">
 
 这里分别来说一下，一共三块：
 

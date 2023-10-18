@@ -1,7 +1,7 @@
 ## <span id="state">一、现象</span>
 mqcloud持续发送topic为digg-topic的消费者digg-group发生偏移量错误的预警邮件，详细预警如下：
 
-![](img/1_offset_warn.png)
+<img src="img/1_offset_warn.png" class="img-wiki">
 
 即：digg-group请求从偏移量**156798**开始消费，但是broker上最小的消息偏移量是**172289**，也就是说，**消费者想请求消费的消息，在broker上已经不存在了。**
 
@@ -11,11 +11,11 @@ mqcloud持续发送topic为digg-topic的消费者digg-group发生偏移量错误
 
 顺着预警邮件的链接，到mqcloud里看下消费者的具体情况，发现digg-group消费有堆积，详细如下：
 
-![](img/1_consume_detail.png)
+<img src="img/1_consume_detail.png" class="img-wiki">
 
 点开查看每个客户端的消费情况，定位到某个机器消费有堆积：
 
-![](img/1_consume_detail_ip.png)
+<img src="img/1_consume_detail_ip.png" class="img-wiki">
 
 ## <span id="broker">三、broker表现</span>
 
@@ -65,7 +65,7 @@ subscription changed, group: digg-group OLD: SubscriptionData [topic=digg-topic,
 
 在20秒过后，又重复打印类似第三条日志内容，该日志对应broker的`org.apache.rocketmq.broker.client.ConsumerGroupInfo` 的如下代码：
 
-![](img/1_update_subscription.png)
+<img src="img/1_update_subscription.png" class="img-wiki">
 
 证明消费者的subVersion发生了更新。
 
@@ -82,17 +82,17 @@ subscription changed, group: digg-group OLD: SubscriptionData [topic=digg-topic,
 
 首先看第2个问题：`2. broker告诉消费者正确的offset后，消费者为什么没有采用，还是发送之前错误的offset？` ，针对consumer请求偏移量过小的情况，broker会响应ResponseCode.PULL_OFFSET_MOVED的状态码，消费者会转换为PullStatus.OFFSET_ILLEGAL，`DefaultMQPushConsumer`对应的行为是更新`OffsetStore`为broker返回的正确值，接着标记该`ProcessQueue`下线，再从处理队列中移除掉，即不再消费这个队列，对应代码如下：
 
-![](img/1_offset_illegal.png)
+<img src="img/1_offset_illegal.png" class="img-wiki">
 
 那么，不消费这个队列的话，肯定会导致堆积，那怎么才能重新消费这个队列呢？
 
 奥秘就在于再平衡过程，查看`org.apache.rocketmq.client.impl.consumer.RebalanceService` ，它会将topic的队列分配给对应的`ProcessQueue` 对象，然后封装成PullRequest进行消息拉取，具体如下图：
 
-1. rebalance过程![](https://img-blog.csdn.net/20160919143010798)
+1. rebalance过程<img src="https://img-blog.csdn.net/20160919143010798" class="img-wiki">
 
 2. 相关对象结构
 
-   ![](https://img-blog.csdn.net/20160919143024654)
+   <img src="https://img-blog.csdn.net/20160919143024654" class="img-wiki">
 
 对这块有疑问的同学请参考我之前的文章：[8.consumer](https://blog.csdn.net/a417930422/article/details/52585548)。
 
@@ -102,7 +102,7 @@ subscription changed, group: digg-group OLD: SubscriptionData [topic=digg-topic,
 
 难道是重新分配消费时没有取到正确的offset吗？看下rebalance对应的代码：`org.apache.rocketmq.client.impl.consumer.RebalanceImpl.updateProcessQueueTableInRebalance`
 
-![](img/1_rebalance_pullRequest.png)
+<img src="img/1_rebalance_pullRequest.png" class="img-wiki">
 
 关键的代码是`long nextOffset = this.computePullFromWhere(mq)`,它会从`OffsetStore`读取offset并作为起始偏移量进行消息消费，对于broadcasting模式的消费者来说，offset存储在本地文件，即`LocalFileOffsetStore`，存储位置默认为启动程序的用户主目录下的`~/.rocketmq_offsets`下。来跟踪一下`computePullFromWhere(mq)`，简化代码如下：
 
@@ -175,7 +175,7 @@ private OffsetSerializeWrapper readLocalOffset() throws MQClientException {
 
 当`四、消费者代码跟踪`中发生再平衡后，会导致订阅关系发生更新，参考`org.apache.rocketmq.client.impl.consumer.RebalancePushImpl`如下代码：
 
-![](img/1_message_queue_changed.png)
+<img src="img/1_message_queue_changed.png" class="img-wiki">
 
 ## <span id="conclusion">六、总结</span>
 

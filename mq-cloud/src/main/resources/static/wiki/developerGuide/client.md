@@ -1,6 +1,6 @@
 ## <span id="intro">一、简介</span>
 
-MQCloud对RocketMQ原生API进行了封装，提供了一个[增强版的SDK](../userGuide/client)： [mq-client-open](https://github.com/sohutv/mqcloud/tree/master/mq-client-open)。它提供了类似特性：耗时、异常等统计、上报，序列化，自动配置，降级隔离，trace发送单独集群等等，与MQCloud配合使用，将极大提升开发效率，并能实时监控客户端的情况，下面将会一一进行介绍（当然MQCloud并不强制使用提供的SDK，只使用MQCloud做监控也同样支持）。
+MQCloud对RocketMQ原生API进行了封装，提供了一个增强版的SDK： [mq-client-open](https://github.com/sohutv/mqcloud/tree/master/mq-client-open)。它提供了类似特性：耗时、异常等统计、上报，序列化，自动配置，降级隔离，trace发送单独集群等等，与MQCloud配合使用，将极大提升开发效率，并能实时监控客户端的情况，下面将会一一进行介绍（当然MQCloud并不强制使用提供的SDK，只使用MQCloud做监控也同样支持）。
 
 ## <span id="start">二、启动</span>
 
@@ -69,7 +69,7 @@ protostuff其内部是protobuf，而protobuf源自于google，其压缩能力和
 
 1. 发送方式
 
-   MQCloud对同步发送，异步发送，oneway发送，顺序发送，事务发送均作了相应封装，详细的可以运行起MQCloud后参见<a href="../userGuide/client#producer">生产者接入</a>，里面有详细的使用介绍。
+   MQCloud对同步发送，异步发送，oneway发送，顺序发送，事务发送均作了相应封装，详细的可以运行起MQCloud后参见<a href="../userGuide/clientProducer">生产者接入</a>，里面有详细的使用介绍。
 
    *这里说明一点，关于顺序发送，MQCloud提供了如下封装的API：*
 
@@ -153,6 +153,6 @@ protostuff其内部是protobuf，而protobuf源自于google，其压缩能力和
 
 所以，我们在MQCloud里看到一些客户端链接的时候，都是类似下面的三段：
 
-![](img/2.9.png)
+<img src="img/2.9.png" class="img-wiki">
 
 如果使用MQCloud提供的客户端，MQCloud会设置unitName为集群id，所以可以自动区分不同的集群。

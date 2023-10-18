@@ -2,11 +2,11 @@
 
 该模块用于添加机器，配置预警等，参考下图：
 
-![](img/machine.png)
+<img src="img/machine.png" class="img-wiki">
 
 ## 二、<span id="addMachine">添加机器</span>
 
-![](img/addMachine.png)
+<img src="img/addMachine.png" class="img-wiki">
 
 1. 添加机器前首先要进行初始化设置，以便mqcloud可以与机器互通，大概分为如下几步：
    1. 创建mqcloud用户及密码。
@@ -20,7 +20,7 @@
 
 如果需要监控某台机器，可以点击机器记录后面的铃铛按钮进行阈值设置，或者批量勾选进行批量设置：
 
-![](img/warnConfig.png)
+<img src="img/warnConfig.png" class="img-wiki">
 
 这里说明一下，如果某个监控项不填，就不会针对该项进行报警。
 

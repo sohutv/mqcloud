@@ -2,11 +2,11 @@
 
 此模块主要用于对MQCloud管理的消费者多维度检索、属性修改以及删除校验等。
 
-![](img/consumerManager.png)
+<img src="img/consumerManager.png" class="img-wiki">
 
 ## 二、<span id="addbroker">多维度检索</span>
 
-![](img/conusumer-search.png)
+<img src="img/conusumer-search.png" class="img-wiki">
 
 Consumer的检索主要基于以下维度进行的
 
@@ -21,7 +21,7 @@ Consumer的检索主要基于以下维度进行的
 
 ## 三、<span id="upgradebroker">属性修改</span>
 
-![](img/consumer-style.png)
+<img src="img/consumer-style.png" class="img-wiki">
 
 修改选中Consumer的消费模式
 
@@ -29,7 +29,7 @@ Consumer的检索主要基于以下维度进行的
 
 ## 四、<span id="ext">检查Conusmer</span>
 
-![](img/consumer-check.png)
+<img src="img/consumer-check.png" class="img-wiki">
 
 检查Topic是对该Topic的生产消费情况进行搜集展示，防止误删，该页面罗列出当前Consumer关联信息，以及最近30天内的生产消费情况。
 

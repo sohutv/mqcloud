@@ -16,13 +16,13 @@ MQCloud作为其运维平台，需要考虑如下事情：
 
 1. broker配置模板组，为了便于区分和管理broker参数，MQCloud对参数进行了分组(这些分组信息可以根据实际情况进行修改)：
 
-   ![](img/brokerConfigTemplateGroup.png)
+   <img src="img/brokerConfigTemplateGroup.png" class="img-wiki">
 
    **序号**越小的排序靠前显示。
 
 2. <span id="brokerConfigTemplate">broker配置模板</span>，可以将broker的默认配置参数加入到这里：
 
-   ![](img/brokerConfigTemplate.png)
+   <img src="img/brokerConfigTemplate.png" class="img-wiki">
 
    它有如下两个作用：
 
@@ -44,7 +44,7 @@ MQCloud作为其运维平台，需要考虑如下事情：
 
 3. <span id="clusterConfigTemplate">集群配置模板</span>，部署新的broker时，采用这些配置。`加入集群`按钮用于将[broker的配置模板](#brokerConfigTemplate)中选中的项加入到该集群配置模板中：
 
-   ![](img/clusterConfigTemplate.png)
+   <img src="img/clusterConfigTemplate.png" class="img-wiki">
 
    其中`线上值`是指该集群中的broker采用的特有配置，如果不修改将采用[broker的配置模板](#brokerConfigTemplate)中的默认值，其余属性与[broker的配置模板](#brokerConfigTemplate)中的一致。
 
@@ -62,7 +62,7 @@ MQCloud作为其运维平台，需要考虑如下事情：
 
 在[集群管理](/admin/cluster/list)模块，点击broker的地址，将会弹出broker线上配置：
 
-![](img/brokerOnlineConfig.png)
+<img src="img/brokerOnlineConfig.png" class="img-wiki">
 
 每一列的含义解释如下：
 
@@ -78,12 +78,12 @@ MQCloud作为其运维平台，需要考虑如下事情：
 
 - 更新：如果修改了线上值，可以使用`更新`按钮来更新到线上(**注意:** 修改不支持动态修改的项需要重启broker， 另外，此操作仅会对当前broker生效；如果部署新的broker时也使用该参数，需要到[集群配置模板](#clusterConfigTemplate)中进行配置)，更新提示如下：
 
-  ![](img/updateOnlineValue.png)
+  <img src="img/updateOnlineValue.png" class="img-wiki">
 
 ## 四、<span id="deployBroker">部署broker</span>
 
 部署broker的选项均来自于[集群配置模板](#clusterConfigTemplate)：
 
-![](img/add_master.png)
+<img src="img/add_master.png" class="img-wiki">
 
 其中`brokerIP1`和`brokerIP2`以及`storePathRootDir`与`storePathCommitLog`具有自动填充功能，无需设置默认值。

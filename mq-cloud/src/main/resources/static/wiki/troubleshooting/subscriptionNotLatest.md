@@ -38,7 +38,7 @@ if (subscriptionData.getSubVersion() < requestHeader.getSubVersion()) {
 
 已经有人反馈过，官方并不认为此问题是bug，参见：
 
-![](img/3_1.png)
+<img src="img/3_1.png" class="img-wiki">
 
 所以，最新版本4.6.0此问题依旧存在。虽然不影响正常消费，可是此异常堆栈确实会带来一些疑惑。
 
@@ -106,15 +106,15 @@ public void messageQueueChanged(String topic, Set<MessageQueue> mqAll, Set<Messa
 
    实例A先启动，它得到全部的队列进行消费。此时其subVersion=1，broker端存储的subVersion也是1：
 
-   ![](img/4_1.png)
+   <img src="img/4_1.png" class="img-wiki">
 
 2. 此时实例B也启动了，其上报心跳到broker，broker更新最新的subVersion为2：
 
-   ![](img/4_2.png)
+   <img src="img/4_2.png" class="img-wiki">
 
 3. 由于A，B为集群消费，B进行rebalance分配了队列3，4进行消费，此时B的subVersion更新为3（此时尚未发送心跳到broker，所以broker的subVersion并未更新）：
 
-   ![](img/4_3.png)
+   <img src="img/4_3.png" class="img-wiki">
 
 4. B经过rebalance后，会拉取队列3和4的消息，这些拉取消息的请求会携带subVersion=3;
 
@@ -122,7 +122,7 @@ public void messageQueueChanged(String topic, Set<MessageQueue> mqAll, Set<Messa
 
 5. A进过rebalance后，A和B心跳最终会使broker上的subVersion更新为A，B中最大的subVersion:
 
-   ![](img/4_4.png)
+   <img src="img/4_4.png" class="img-wiki">
 
 **由于心跳任务，rebalance任务，消息拉取任务是不同的线程，无法确定其执行的顺序，故可能导致此问题的发生。** 
 

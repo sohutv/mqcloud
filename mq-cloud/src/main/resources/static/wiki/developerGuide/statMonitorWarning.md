@@ -92,17 +92,17 @@
 
    那如何进行数据采样呢？StatsItemSet内置了定时任务，比如其每10秒调用一次StatsItem.samplingInSeconds()。这样StatsItem就会持有60秒的数据，类似如下结构：
 
-   ![](img/3.1.png)
+   <img src="img/3.1.png" class="img-wiki">
 
    那么，最后一个10秒的快照 - 第一个10秒的快照 = 当前60秒的数据，当然根据时间戳差值可以得到耗时了。
 
    类似，小时数据每10分钟进行一次快照，类似如下结构：
 
-   ![](img/3.2.png)
+   <img src="img/3.2.png" class="img-wiki">
 
    天数据每1小时进行一次快照，类似如下结构：
 
-   ![](img/3.3.png)
+   <img src="img/3.3.png" class="img-wiki">
 
    MQCloud每分钟遍历查询集群下所有broker，通过api：[MQAdminExt.viewBrokerStatsData(String brokerAddr, String statsName, String statsKey)](api#viewBrokerStatsData)来查询RocketMQ统计好的分钟数据，然后进行存储。
 
@@ -139,15 +139,15 @@
 
       1. 第一段：耗时范围0ms~10ms，时间跨度为1ms。
 
-         ![](img/2.1.png)
+         <img src="img/2.1.png" class="img-wiki">
 
       2. 第二组：耗时范围11ms~100ms，时间跨度5ms。
 
-         ![](img/2.2.png)
+         <img src="img/2.2.png" class="img-wiki">
 
       3. 第三组：耗时范围101ms~3500ms，时间跨度50ms。
 
-         ![](img/2.3.png)
+         <img src="img/2.3.png" class="img-wiki">
 
       *优点：此种分段方法占用内存是固定的，比如最大耗时如果为3500ms，那么只需要空间大小为96的数组即可*
 
@@ -155,11 +155,11 @@
 
    2. 针对上面的分段数组，创建一个大小对应的AtomicLong的**计数数组**，支持并发统计：
 
-      ![](img/2.4.png)
+      <img src="img/2.4.png" class="img-wiki">
 
    3. 耗时统计时，计算耗时对应的**耗时分段数组**下标，然后调用**计数数组**进行统计即可，参考下图：
 
-      ![](img/2.5.png)
+      <img src="img/2.5.png" class="img-wiki">
 
       1. 例如某次耗时为18ms，首先找到它所属的区间，即归属于[16~20]ms之间，对应的数组下标为12。
       2. 根据第一步找到的数组下标12，获取对应的计数数组下标12。
@@ -167,11 +167,11 @@
 
       这样，从**计数数组**就可以得到实时耗时统计，类似如下：
 
-      ![](./img/2.6.png)
+      <img src="./img/2.6.png" class="img-wiki">
 
    4. 然后定时采样任务会每分钟对**计数数组**进行快照，产生如下**耗时数据**：
 
-      ![](img/2.7.png)
+      <img src="img/2.7.png" class="img-wiki">
 
    5. 由于上面的**耗时数据**天然就是排好序的，可以很容易计算99%耗时，90%耗时，平均耗时等数据了。
 

@@ -24,7 +24,7 @@
 
    **释义**：从name server获取topic的路由信息，返回如下数据结构：
 
-   ![](img/5.1.png)
+   <img src="img/5.1.png" class="img-wiki">
 
    **用途**：用于获取topic路由信息的所有地方。
 
@@ -191,7 +191,7 @@
 
    例子如下：
 
-   ![](img/5.0.png)
+   <img src="img/5.0.png" class="img-wiki">
 
    **用途**：需要集群数据的地方。
 

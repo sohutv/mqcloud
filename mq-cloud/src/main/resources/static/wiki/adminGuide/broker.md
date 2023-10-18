@@ -2,11 +2,11 @@
 
 此模块用于broker集群运维，状态展示，流量监控等。
 
-![](img/cluster.png)
+<img src="img/cluster.png" class="img-wiki">
 
 ## 二、<span id="addbroker">添加broker</span>
 
-![](img/add_master.png)
+<img src="img/add_master.png" class="img-wiki">
 
 由于broker支持的配置项繁多，mqcloud开发配置模板来支持这些配置项，甚至支持自定义配置项，可以参考[配置模板](./brokerConfig)使用，以下几项重点说明一下：
 
@@ -22,7 +22,7 @@ broker发生变更时（新增或下线），需要手动执行**刷新broker**�
 
 ## 三、<span id="upgradebroker">升级broker</span>
 
-![](img/upgradeBroker.png)
+<img src="img/upgradeBroker.png" class="img-wiki">
 
 在broker下线后，可以进行升级操作。升级的基本过程为：首先备份原安装目录文件，然后根据最新的安装包进行安装操作，最后将备份的数据及配置文件移动到最新的安装目录里。
 
@@ -38,19 +38,19 @@ mqcloud支持的是一个master对应一个slave模式。管理员在列表页�
 
 1. 点击broker的名字查看broker存储性能的百分位情况：
 
-   ![](img/brokerPerf.png)
+   <img src="img/brokerPerf.png" class="img-wiki">
 
 2. 点击master的id可以查看master的流量：
 
-   ![](img/brokerTraffic.png)
+   <img src="img/brokerTraffic.png" class="img-wiki">
 
 3. 点击broker的地址可以查看broker的线上配置（修改过的配置将会加粗显示）：
 
-   ![](img/brokerOnlineConfig.png)
+   <img src="img/brokerOnlineConfig.png" class="img-wiki">
 
 4. 点击broker的漏斗图标可以查看broker的限流配置及历史限速记录：
    
-   ![](img/brokerOnlineLimit.png)
+   <img src="img/brokerOnlineLimit.png" class="img-wiki">
 
    broker的限速设置基于Topic维度，分为全局限速设置及单个Topic限速设置，全局设置是在未配置单个Topic限速的情况下生效。
 
@@ -93,7 +93,7 @@ data
 
 迁移模块如下：
 
-![](img/migrate.png)
+<img src="img/migrate.png" class="img-wiki">
 
 说一下几个参数含义：
 

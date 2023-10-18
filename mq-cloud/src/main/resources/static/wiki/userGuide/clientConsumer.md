@@ -1,3 +1,44 @@
+# 前置配置
+
+1. <span id="pom">pom依赖</span>
+
+   ```
+   <dependency>
+       <groupId>com.sohu.tv</groupId>
+       <artifactId>${clientArtifactId}</artifactId>
+       <version>${version}</version>
+   </dependency>
+   <repository>
+       <id>sohu.nexus</id>
+       <url>${repositoryUrl}</url>
+   </repository>
+   ```
+
+2. <span id="logback">日志配置</span>
+
+   在类路径添加日志配置文件[rmq.logback.xml](/software/rmq.logback.xml)，名称不可更改，文件内容参考如下：
+
+   ```
+   <?xml version="1.0" encoding="UTF-8"?>
+   <configuration>
+       <appender name="rmqAppender" class="ch.qos.logback.core.rolling.RollingFileAppender">
+           <file>${LOGS_DIR}/rocketmq.log</file>
+           <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+               <fileNamePattern>${LOGS_DIR}/otherdays/rocketmq.log.%d{yyyy-MM-dd}</fileNamePattern>
+               <maxHistory>40</maxHistory>
+           </rollingPolicy>
+           <encoder>
+               <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} {%thread} %-5level %logger{50}-%L - %msg%n</pattern>
+               <charset class="java.nio.charset.Charset">UTF-8</charset>
+           </encoder>
+       </appender>
+       <root level="INFO">
+           <appender-ref ref="rmqAppender" />
+       </root>
+   </configuration>
+   ```
+
+   无论项目中使用的是log4j还是lo4j2，都可用此方式配置RocketMQ的日志，因为RocketMQ内部已经集成了logback。
 ## 一、<span id="spring-boot">初始化之spring-boot方式</span>
 
 ```
@@ -134,7 +175,7 @@ consumer.shutdown();
 
    例如，如下topic总队列数量为：48，那么默认缓存消息数量为48 * 1000 = 4.8万条
 
-   ![](img/cc1.png)
+   <img src="img/cc1.png" class="img-wiki">
 
    2.`pullThresholdForTopic`：针对整个topic限制消息数量，默认无限制。
 
@@ -210,13 +251,13 @@ consumer.shutdown();
 
    另外，客户端版本在4.6.5及以上，支持不重启服务的情况下，在MQCloud里进行动态开启(MQCloud设置的配置优先级高于本地)：
 
-   ![](img/limitConsume.png)
+   <img src="img/limitConsume.png" class="img-wiki">
 
 5. <span id="pauseConsumer">暂停消费？</span>
 
    如果业务端遇到某些问题，需要暂停消息消费，在不重启服务时(客户端版本在4.6.5及以上)，可以在MQCloud里进行动态设置：
 
-   ![](img/pauseConsume.png)
+   <img src="img/pauseConsume.png" class="img-wiki">
 
 6. <span id="idempotent">幂等消费</span>
 
@@ -279,7 +320,7 @@ consumer.shutdown();
 
    消费消息时，如果抛出异常，则消息会进入重试队列，在消费详情可以看到重试队列：
 
-   ![](img/retry.png)
+   <img src="img/retry.png" class="img-wiki">
 
    重试队列的名称以%RETRY%开头，点击搜索按钮可以查找重试的消息，并支持跳过重试的消息。
 
@@ -306,7 +347,7 @@ consumer.shutdown();
 
    即进入重试队列的消息在总共4小时46分内进行16次重试后（任何一次成功将结束重试机制），仍然失败，将会进入死信队列，死信队列的名称以%DLQ%开头，类似如下：
 
-   ![](img/dead.png)
+   <img src="img/dead.png" class="img-wiki">
 
    点击搜索按钮可以查找哪些消息变成了死消息，并可以重新发送消费。
 
@@ -320,17 +361,17 @@ consumer.shutdown();
 
       从消费详情，死消息模块，点击搜索按钮：
 
-      ![](img/dlq.png)
+      <img src="img/dlq.png" class="img-wiki">
 
       选择时间段查询，点击重新消费按钮申请重新消费：
 
-      ![](img/reconsume_dead.png)
+      <img src="img/reconsume_dead.png" class="img-wiki">
 
    2. 重新消费正常队列：
 
       在消息查询模块，按照时间段搜索死消息后，点击重新消费按钮申请重新消费：
 
-      ![](img/msg_reconsume.png)
+      <img src="img/msg_reconsume.png" class="img-wiki">
 
    此功能只支持选择一个实例进行消费，后台审核通过后，将从集群的slave节点拉取消息消费。
 

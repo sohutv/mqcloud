@@ -10,7 +10,7 @@
 
 3. 偶尔能登录上时，进行截图如下：
 
-   ![](img/2_1.png)
+   <img src="img/2_1.png" class="img-wiki">
 
    上面截图显示，mon.sh和sshd等进程消耗了cpu。但是这应该只是表象，sy高达69.5%，这是系统内核cpu使用率。
 
@@ -29,13 +29,13 @@
 
 1. gc日志：
 
-   ![](img/2_2.png)
+   <img src="img/2_2.png" class="img-wiki">
 
    可以看到broker问题时间段出现大量非gc的暂停。
 
 2. broker.log
 
-   ![](img/2_3.png)
+   <img src="img/2_3.png" class="img-wiki">
 
    消息存储出现大量刷新数据耗时过长，此日志putMessage not in lock eclipse对应的代码如下：
 
@@ -228,7 +228,7 @@
 
 6. 可以尝试先把`min_free_kbytes设置为524288=512M，参考如下：`
 
-   ![](img/2_4.png)
+   <img src="img/2_4.png" class="img-wiki">
 
    对于线上是64g内存，512M/64*1024=0.78%，未达到5%。
 

@@ -1,8 +1,8 @@
 ## 一、<span id="createTopic">创建topic</span>
 
-点击[生产消息](/)，选项如下图：
+点击[生产消息](/topic/add)，选项如下图：
 
-![](img/1.0.png)
+<img src="img/1.0.png" class="img-wiki">
 
 各个选项释义如下：
 
@@ -72,9 +72,9 @@
 
 ## 二、<span id="consumeTopic">消费消息</span>
 
-点击[消费消息](/)，选项如下图：
+点击[消费消息](/consumer/add)，选项如下图：
 
-![](img/1.1.png)
+<img src="img/1.1.png" class="img-wiki">
 
 各个选项释义如下：
 
@@ -101,7 +101,7 @@ MQCloud可以管理已有的集群，但MQCloud并不知道以前的集群中已
 
 #### 1 关联生产者
 
-![](img/1.2.png)
+<img src="img/1.2.png" class="img-wiki">
 
 各个选项释义如下：
 
@@ -113,7 +113,7 @@ MQCloud可以管理已有的集群，但MQCloud并不知道以前的集群中已
 
 #### 2 关联消费者
 
-![](img/1.3.png)
+<img src="img/1.3.png" class="img-wiki">
 
 各个选项释义如下：
 
@@ -127,11 +127,11 @@ MQCloud可以管理已有的集群，但MQCloud并不知道以前的集群中已
 
 在[topic详情页](topic#detail)可以授权生产者权限给单个用户，在[消费详情](topic#consume)页可以授权消费者权限给单个用户，但是，某些情况下，有希望将自己拥有的生产者和消费者批量授权的需求，故有了此功能，如下：
 
-![](img/5.8.png)
+<img src="img/5.8.png" class="img-wiki">
 
 ## 五、<span id="searchIp">搜索ip</span>
 
 可以使用此功能搜索某日内的ip连接的生产者或消费者：
 
-![](img/5.9.png)
+<img src="img/5.9.png" class="img-wiki">
 

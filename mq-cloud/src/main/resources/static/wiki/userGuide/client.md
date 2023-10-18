@@ -14,7 +14,7 @@
 
 ## 二、<span id="logback">日志配置</span>
 
-在类路径添加日志配置文件**rmq.logback.xml**，名称不可更改，文件内容参考如下：
+在类路径添加日志配置文件[rmq.logback.xml](/software/rmq.logback.xml)，名称不可更改，文件内容参考如下：
 
 ```
 <?xml version="1.0" encoding="UTF-8"?>

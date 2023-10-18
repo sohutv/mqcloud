@@ -2,7 +2,7 @@
 
 先看一张RocketMQ的部署图：
 
-![](./img/1.0.png)
+<img src="./img/1.0.png" class="img-wiki">
 
 Name Server的重要性：
 
@@ -102,7 +102,7 @@ if (!UtilAll.isBlank(this.unitName)) {
 
    那么，MQCloud只要配置好对应路径的controller映射，即可根据集群id从数据库查询Name Server列表了，代码类似如下：
 
-   ![](img/1.2.png)
+   <img src="img/1.2.png" class="img-wiki">
 
 ## <span id="client">四、针对客户端的配置</span>
 
@@ -146,11 +146,11 @@ fetchNamesrvAddrByAddressServer=true
 
 如果使用MQCloud部署，这些设置都会是自动的。由此可以看到http方式发现Name Server方式域名的重要性，所以[MQCloud使用](https://github.com/sohutv/mqcloud/wiki/%E5%88%9B%E5%BB%BA%E9%9B%86%E7%BE%A4)里，一开始就强调了这项配置：
 
-![](img/1.3.png)
+<img src="img/1.3.png" class="img-wiki">
 
 而集群id，我们使用MQCloud一开始就需要创建集群记录：
 
-![](img/1.4.png)
+<img src="img/1.4.png" class="img-wiki">
 
 这样就会在数据库的cluster表增加一条记录，然后使用`+NameServer`或者`关联NameServer`功能，就可以将NameServer列表和cluster建立关系，从而可以实现根据clusterId查找NameServer列表的功能。
 
@@ -160,4 +160,4 @@ fetchNamesrvAddrByAddressServer=true
 
 如果使用MQCloud部署了RocketMQ，那么MQCloud肩负了Name Server http方式寻址的重要责任，我们需要保证MQCloud的高可用，由于MQCloud其实仅仅是一个web应用，所以按照普通web应用高可用的方式部署即可，部署参照如下：
 
-![](img/1.5.png)
+<img src="img/1.5.png" class="img-wiki">

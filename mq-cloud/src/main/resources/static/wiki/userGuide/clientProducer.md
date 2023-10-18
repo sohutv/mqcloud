@@ -1,3 +1,45 @@
+# 前置配置
+
+1. <span id="pom">pom依赖</span>
+
+   ```
+   <dependency>
+       <groupId>com.sohu.tv</groupId>
+       <artifactId>${clientArtifactId}</artifactId>
+       <version>${version}</version>
+   </dependency>
+   <repository>
+       <id>sohu.nexus</id>
+       <url>${repositoryUrl}</url>
+   </repository>
+   ```
+
+2. <span id="logback">日志配置</span>
+
+   在类路径添加日志配置文件[rmq.logback.xml](/software/rmq.logback.xml)，名称不可更改，文件内容参考如下：
+
+   ```
+   <?xml version="1.0" encoding="UTF-8"?>
+   <configuration>
+       <appender name="rmqAppender" class="ch.qos.logback.core.rolling.RollingFileAppender">
+           <file>${LOGS_DIR}/rocketmq.log</file>
+           <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+               <fileNamePattern>${LOGS_DIR}/otherdays/rocketmq.log.%d{yyyy-MM-dd}</fileNamePattern>
+               <maxHistory>40</maxHistory>
+           </rollingPolicy>
+           <encoder>
+               <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} {%thread} %-5level %logger{50}-%L - %msg%n</pattern>
+               <charset class="java.nio.charset.Charset">UTF-8</charset>
+           </encoder>
+       </appender>
+       <root level="INFO">
+           <appender-ref ref="rmqAppender" />
+       </root>
+   </configuration>
+   ```
+
+   无论项目中使用的是log4j还是lo4j2，都可用此方式配置RocketMQ的日志，因为RocketMQ内部已经集成了logback。
+
 ## 一、<span id="spring-boot">初始化之spring-boot方式</span>
 
 ```
@@ -429,10 +471,8 @@ if (!sendResult.isSuccess) { // 发送失败
 当前支持两种方式取消定时消息：
 
 1. 页面取消
-   
-   [消息查询-定时消息](messageQuery#queryWheelMessage)页面支持手动取消定时消息，如下图所示。
 
-   ![](img/cancelMsg_web.png)
+   [消息查询-定时消息](messageQuery#queryWheelMessage)页面支持点击<i class="fas fa-stopwatch"></i>取消定时消息。
 
 2. 接口取消
 
@@ -444,7 +484,7 @@ if (!sendResult.isSuccess) { // 发送失败
       * topic：消息主题
       * uniqIds：消息唯一id(msgId)，多个id用逗号分隔，单次最多支持20个id
       * token：验证token，可咨询管理员获取
-   
+
    3. 响应说明：
       ```
       {
@@ -461,7 +501,7 @@ if (!sendResult.isSuccess) { // 发送失败
          * status：708 uniqid的取消申请已存在，不能重复申请
          * status：200 取消成功
       2. message：当响应状态码非200时的提示信息。
-   
+
    4. 生产示例：
      ```
       // 设置请求头
@@ -487,6 +527,6 @@ if (!sendResult.isSuccess) { // 发送失败
   - 集群机器不可用，取消消息写入失败，定时无法取消
   - MQCloud服务不可用，取消消息发送失败，定时无法取消
   - 网络故障，取消消息无法在定时消息触发前发送，定时无法取消
-  
+
   如需严格保证，请先咨询管理员。
 - 该功能仅支持rocketmq 5.x版本的时间轮定时消息。

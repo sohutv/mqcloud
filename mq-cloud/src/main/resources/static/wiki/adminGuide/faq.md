@@ -2,7 +2,7 @@
 
 若发送消息时，发送的对象（非jdk包含）采用了MQCloud提供的Protostuf方式进行序列化，那么在MQCloud中查询消息时将会出现乱码的情况，类似如下：
 
-![](img/msg.png)
+<img src="img/msg.png" class="img-wiki">
 
 原因是由于**反序列化时，找不到对应的类导致的**。
 

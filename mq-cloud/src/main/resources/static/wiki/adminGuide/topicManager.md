@@ -2,11 +2,11 @@
 
 此模块主要用于对MQCloud管理的主题多维度检索、主题状态确认以及增加关联生产者等。
 
-![](img/topicManager.png)
+<img src="img/topicManager.png" class="img-wiki">
 
 ## 二、<span id="addbroker">多维度检索</span>
 
-![](img/topicManager-search.png)
+<img src="img/topicManager-search.png" class="img-wiki">
 
 Topic的检索主要基于以下维度进行的
 
@@ -22,13 +22,13 @@ Topic的检索主要基于以下维度进行的
 
 ## 三、<span id="upgradebroker">关联生产者</span>
 
-![](img/topicManager-relation.png)
+<img src="img/topicManager-relation.png" class="img-wiki">
 
 关联生产者主要是对已有的Topic关联新的生产者
 
 ## 四、<span id="ext">检查Topic</span>
 
-![](img/topicManager-check.png)
+<img src="img/topicManager-check.png" class="img-wiki">
 
 检查Topic是对该Topic的生产消费情况进行搜集展示，防止误删，该页面罗列出当前Topic关联的消费者数量，以及最近30天内的生产消费情况。
 
