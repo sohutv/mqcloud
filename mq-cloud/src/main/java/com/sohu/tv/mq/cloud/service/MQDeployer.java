@@ -63,7 +63,7 @@ public class MQDeployer {
 
     public static final String JVM_OPT_EXT_CONFIG = "echo \"export JAVA_OPT_EXT='%s'\" >> %s/" + RUN_FILE;
 
-    public static final String RUN_CONFIG = "echo \"nohup sh %s/bin/%s >> %s/logs/startup.log 2>&1 &\" >> %s/" + RUN_FILE;
+    public static final String RUN_CONFIG = "echo \"nohup bash %s/bin/%s >> %s/logs/startup.log 2>&1 &\" >> %s/" + RUN_FILE;
 
     public static final String DATA_LOGS_DIR = "mkdir -p %s/data/config && mkdir -p %s/logs && ";
 
@@ -225,7 +225,7 @@ public class MQDeployer {
                     } else {
                         rocketmqFile = rocketMQFileService.getRocketmq5File();
                     }
-                    SSHResult sshResult = session.scpToDir(rocketmqFile, MQCloudConfigHelper.ROCKETMQ_FILE, TMP_DIR);
+                    SSHResult sshResult = session.scpToFile(rocketmqFile, TMP_DIR + MQCloudConfigHelper.ROCKETMQ_FILE);
                     rocketmqFile = null;
                     return sshResult;
                 }
@@ -617,7 +617,7 @@ public class MQDeployer {
      * @return
      */
     public Result<?> initConfig(String ip, String nsHome) {
-        String comm = "if [ ! -f \"" + MQ_CLOUD_CONFIG_INIT_FLAG + "\" ];then sudo sh "
+        String comm = "if [ ! -f \"" + MQ_CLOUD_CONFIG_INIT_FLAG + "\" ];then sudo bash "
                 + String.format(MQ_CLOUD_OS_SH, nsHome) + " && touch " + MQ_CLOUD_CONFIG_INIT_FLAG + ";fi";
         SSHResult sshResult = null;
         try {
@@ -834,7 +834,7 @@ public class MQDeployer {
         try {
             sshResult = sshTemplate.execute(ip, new SSHCallback() {
                 public SSHResult call(SSHSession session) {
-                    SSHResult sshResult = session.executeCommand("sudo sh " + absoluteDir + "/" + RUN_FILE);
+                    SSHResult sshResult = session.executeCommand("sudo bash " + absoluteDir + "/" + RUN_FILE);
                     return sshResult;
                 }
             });

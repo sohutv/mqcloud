@@ -150,7 +150,7 @@ public class NMONService {
 	 * @param nmonFile
 	 */
 	private void sendNMONToServer(String ip, SSHSession session, File nmonFile) {
-		SSHResult scpRst = session.scpToFile(nmonFile.getAbsolutePath(), NMON, NMON_DIR);
+		SSHResult scpRst = session.scpToFile(nmonFile.getAbsolutePath(), NMON_DIR + NMON);
 		if(scpRst.isSuccess()) {
 			logger.info("scp {} to {} success", nmonFile.getAbsolutePath(), ip);
 		} else {

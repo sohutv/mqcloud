@@ -151,7 +151,7 @@
 									<label class="col-form-label col-md-2" data-toggle="tooltip" title="需要root权限的用户在目标机器执行"> 初始化脚本: </label>
 									<div class="col-md-8">
 										<textarea type="text" rows="8" class="form-control" readonly>
-1. useradd ${username}
+1. useradd -m ${username}
 2. passwd ${username} （密码为：${password}）
 3. echo "${username}     ALL=(ALL)       NOPASSWD: ALL" >> /etc/sudoers
 4. sed -i "s/Defaults    requiretty/#Defaults    requiretty/g" /etc/sudoers

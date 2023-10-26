@@ -86,9 +86,20 @@ public class OSFactory {
 			return os;
 		}
 		String ver = matcher.group();
-		ver = ver.replaceAll("\\.", "");
+		DistributionVersion versionResult = null;
+		int dotIndex = ver.indexOf(".");
+		if (dotIndex > 0) {
+			String majorVer = ver.substring(0, dotIndex);
+			versionResult = findVersion(findType.getVersions(), majorVer);
+			if (versionResult != null) {
+				ver = majorVer;
+			}
+		}
+		if (versionResult == null) {
+			ver = ver.replaceAll("\\.", "");
+			versionResult = findVersion(findType.getVersions(), ver);
+		}
 		logger.info("version matched, {} - {}", ver, issue);
-		DistributionVersion versionResult = findVersion(findType.getVersions(), ver);
 		//没有具体的版本能匹配上
 		if(versionResult == null) {
 			logger.info("version {} not found, {}", ver);

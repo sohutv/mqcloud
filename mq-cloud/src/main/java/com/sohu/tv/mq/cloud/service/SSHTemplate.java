@@ -1,32 +1,24 @@
 package com.sohu.tv.mq.cloud.service;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.util.Arrays;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-
+import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper;
+import com.sohu.tv.mq.cloud.util.SSHException;
 import org.apache.commons.pool2.impl.GenericKeyedObjectPool;
+import org.apache.sshd.client.channel.ClientChannel;
+import org.apache.sshd.client.channel.ClientChannelEvent;
+import org.apache.sshd.client.session.ClientSession;
+import org.apache.sshd.scp.client.ScpClient;
+import org.apache.sshd.scp.client.ScpClientCreator;
+import org.apache.sshd.scp.common.helpers.ScpTimestampCommandDetails;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper;
-import com.sohu.tv.mq.cloud.util.SSHException;
-
-import ch.ethz.ssh2.Connection;
-import ch.ethz.ssh2.SCPClient;
-import ch.ethz.ssh2.Session;
-import ch.ethz.ssh2.StreamGobbler;
+import java.io.*;
+import java.nio.file.attribute.PosixFilePermission;
+import java.util.Arrays;
+import java.util.EnumSet;
+import java.util.List;
 
 /**
  * SSH操作模板类
@@ -39,19 +31,14 @@ import ch.ethz.ssh2.StreamGobbler;
 public class SSHTemplate {
     private static final Logger logger = LoggerFactory.getLogger(SSHTemplate.class);
 
+    public static final List<PosixFilePermission> PERMS = Arrays.asList(PosixFilePermission.OWNER_READ,
+            PosixFilePermission.OWNER_WRITE, PosixFilePermission.OWNER_EXECUTE);
+
     @Autowired
     private MQCloudConfigHelper mqCloudConfigHelper;
     
     @Autowired
-    private GenericKeyedObjectPool<String, Connection> sshPool;
-
-    private static ThreadPoolExecutor taskPool = new ThreadPoolExecutor(
-            200, 200, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>(1000),
-            new ThreadFactoryBuilder().setNameFormat("SSH-%d").setDaemon(true).build());
-
-    private static ThreadPoolExecutor openSessionTaskPool = new ThreadPoolExecutor(
-            100, 100, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>(100),
-            new ThreadFactoryBuilder().setNameFormat("OpenSSH-%d").setDaemon(true).build());
+    private GenericKeyedObjectPool<String, ClientSession> clientSessionPool;
 
     /**
      * 校验ip是否合法
@@ -79,14 +66,14 @@ public class SSHTemplate {
      * @throws SSHException
      */
     public SSHResult execute(String ip, SSHCallback callback) throws SSHException {
-        Connection conn = null;
+        ClientSession session = null;
         try {
-            conn = sshPool.borrowObject(ip);
-            return callback.call(new SSHSession(conn, ip));
+            session = clientSessionPool.borrowObject(ip);
+            return callback.call(new SSHSession(session, ip));
         } catch (Exception e) {
             throw new SSHException("SSH err: " + e.getMessage(), e);
         } finally {
-            close(ip, conn);
+            close(ip, session);
         }
     }
 
@@ -109,7 +96,7 @@ public class SSHTemplate {
     private void processStream(InputStream is, LineProcessor lineProcessor) {
         BufferedReader reader = null;
         try {
-            reader = new BufferedReader(new InputStreamReader(new StreamGobbler(is)));
+            reader = new BufferedReader(new InputStreamReader(is));
             String line = null;
             int lineNum = 1;
             while ((line = reader.readLine()) != null) {
@@ -140,20 +127,10 @@ public class SSHTemplate {
         }
     }
 
-    private void close(String ip, Connection conn) {
-        if (conn != null) {
-            try {
-                sshPool.returnObject(ip, conn);
-            } catch (Exception e) {
-                logger.error(e.getMessage(), e);
-            }
-        }
-    }
-
-    private static void close(Session session) {
+    private void close(String ip, ClientSession session) {
         if (session != null) {
             try {
-                session.close();
+                clientSessionPool.returnObject(ip, session);
             } catch (Exception e) {
                 logger.error(e.getMessage(), e);
             }
@@ -164,11 +141,12 @@ public class SSHTemplate {
      * 可以调用多次executeCommand， 并返回结果
      */
     public class SSHSession {
-        private String address;
-        private Connection conn;
 
-        private SSHSession(Connection conn, String address) {
-            this.conn = conn;
+        private String address;
+        private ClientSession clientSession;
+
+        private SSHSession(ClientSession clientSession, String address) {
+            this.clientSession = clientSession;
             this.address = address;
         }
 
@@ -193,80 +171,44 @@ public class SSHTemplate {
 
         /**
          * 执行命令并返回结果，可以执行多次
-         * 
+         *
          * @param cmd
          * @param lineProcessor 回调处理行
          * @return 如果lineProcessor不为null,那么永远返回Result.true
          */
         public SSHResult executeCommand(String cmd, LineProcessor lineProcessor, int timoutMillis) {
-            Session session = null;
-            try {
-                Future<Session> future = openSessionTaskPool.submit(new Callable<Session>() {
-                    public Session call() throws Exception {
-                        Session openedSession = conn.openSession();
-                        return openedSession;
+            try (ByteArrayOutputStream stdout = new ByteArrayOutputStream();
+                 ByteArrayOutputStream stderr = new ByteArrayOutputStream();
+                 ClientChannel channel = clientSession.createExecChannel(cmd)) {
+                channel.setOut(stdout);
+                channel.setErr(stderr);
+                channel.open().verify(timoutMillis);
+                // Wait (forever) for the channel to close - signalling command finished
+                channel.waitFor(EnumSet.of(ClientChannelEvent.CLOSED), 0L);
+                LineProcessor tmpLP = lineProcessor;
+                // 如果客户端需要进行行处理，则直接进行回调
+                if (tmpLP != null) {
+                    processStream(new ByteArrayInputStream(stdout.toByteArray()), tmpLP);
+                } else {
+                    StringBuilder buffer = new StringBuilder();
+                    tmpLP = generateDefaultLineProcessor(buffer);
+                    processStream(new ByteArrayInputStream(stdout.toByteArray()), tmpLP);
+                    if (buffer.length() > 0) {
+                        return new SSHResult(true, buffer.toString());
                     }
-                });
-                try {
-                    session = future.get(timoutMillis, TimeUnit.MILLISECONDS);
-                } catch (InterruptedException e) {
-                    future.cancel(true);
-                    logger.error("cancel openedSession task!", e);
-                } catch (ExecutionException e) {
-                    future.cancel(true);
-                    logger.error("cancel openedSession task!", e);
-                } catch (TimeoutException e) {
-                    future.cancel(true);
-                    logger.error("cancel openedSession task!", e);
                 }
-                if (session == null) {
-                    throw new SSHException("timeout:" + timoutMillis);
+                if(tmpLP.lineNum() == 0) {
+                    // 返回为null代表可能有异常，需要检测标准错误输出，以便记录日志
+                    SSHResult errResult = tryLogError(new ByteArrayInputStream(stderr.toByteArray()), cmd);
+                    if (errResult != null) {
+                        return errResult;
+                    }
                 }
-                return executeCommand(session, cmd, timoutMillis, lineProcessor);
+                return new SSHResult(true, null);
             } catch (Exception e) {
-                logger.error("execute ip:" + conn.getHostname() + " cmd:" + cmd, e);
+                logger.error("execute ip:{} cmd:{}", address, cmd, e);
                 return new SSHResult(e);
-            } finally {
-                close(session);
             }
-        }
-
-        public SSHResult executeCommand(final Session session, final String cmd,
-                final int timoutMillis, final LineProcessor lineProcessor) throws Exception {
-            Future<SSHResult> future = taskPool.submit(new Callable<SSHResult>() {
-                public SSHResult call() throws Exception {
-                    session.execCommand(cmd);
-                    LineProcessor tmpLP = lineProcessor;
-                    // 如果客户端需要进行行处理，则直接进行回调
-                    if (tmpLP != null) {
-                        processStream(session.getStdout(), tmpLP);
-                    } else {
-                        StringBuilder buffer = new StringBuilder();
-                        tmpLP = generateDefaultLineProcessor(buffer);
-                        processStream(session.getStdout(), tmpLP);
-                        if (buffer.length() > 0) {
-                            return new SSHResult(true, buffer.toString());
-                        }
-                    }
-                    if(tmpLP.lineNum() == 0) {
-                        // 返回为null代表可能有异常，需要检测标准错误输出，以便记录日志
-                        SSHResult errResult = tryLogError(session.getStderr(), cmd);
-                        if (errResult != null) {
-                            return errResult;
-                        }
-                    }
-                    return new SSHResult(true, null);
-                }
-            });
-            SSHResult rst = null;
-            try {
-                rst = future.get(timoutMillis, TimeUnit.MILLISECONDS);
-                future.cancel(true);
-            } catch (TimeoutException e) {
-                logger.error("execute timeout:{} ip:{} {}", timoutMillis, conn.getHostname(), cmd);
-                throw new SSHException(e);
-            }
-            return rst;
         }
 
         private SSHResult tryLogError(InputStream is, String cmd) {
@@ -281,59 +223,39 @@ public class SSHTemplate {
             return null;
         }
 
-        /**
-         * Copy a set of local files to a remote directory, uses the specified
-         * mode when creating the file on the remote side.
-         * 
-         * @param localFiles Path and name of local file.
-         * @param remoteFiles name of remote file.
-         * @param remoteTargetDirectory Remote target directory. Use an empty
-         *            string to specify the default directory.
-         * @param mode a four digit string (e.g., 0644, see "man chmod", "man
-         *            open")
-         * @throws IOException
-         */
-        public SSHResult scp(String[] localFiles, String[] remoteFiles, String remoteTargetDirectory, String mode) {
-            try {
-                SCPClient client = conn.createSCPClient();
-                client.put(localFiles, remoteFiles, remoteTargetDirectory, mode);
-                return new SSHResult(true);
-            } catch (Exception e) {
-                logger.error("scp local=" + Arrays.toString(localFiles) + " to " +
-                        remoteTargetDirectory + " remote=" + Arrays.toString(remoteFiles) + " err", e);
-                return new SSHResult(e);
-            }
-        }
-
         public SSHResult scpToDir(String localFile, String remoteTargetDirectory) {
-            return scpToDir(localFile, remoteTargetDirectory, "0744");
-        }
-
-        public SSHResult scpToDir(String localFile, String remoteTargetDirectory, String mode) {
-            return scp(new String[] {localFile}, null, remoteTargetDirectory, mode);
-        }
-        
-        public SSHResult scpToDir(byte[] data, String remoteFileName, String remoteTargetDirectory) {
+            ScpClient client = ScpClientCreator.instance().createScpClient(clientSession);
             try {
-                SCPClient client = conn.createSCPClient();
-                client.put(data, remoteFileName, remoteTargetDirectory);
+                client.upload(localFile, remoteTargetDirectory, ScpClient.Option.TargetIsDirectory);
                 return new SSHResult(true);
             } catch (Exception e) {
-                logger.error("scp byte to " + remoteTargetDirectory + " remote=" + remoteFileName + " err", e);
+                logger.error("scp scpToDir from:{} to:{}", localFile, remoteTargetDirectory, e);
                 return new SSHResult(e);
             }
         }
 
-        public SSHResult scpToDir(String[] localFile, String remoteTargetDirectory) {
-            return scp(localFile, null, remoteTargetDirectory, "0744");
+        public SSHResult scpToFile(String localFile, String remoteFile) {
+            ScpClient client = ScpClientCreator.instance().createScpClient(clientSession);
+            try {
+                client.upload(localFile, remoteFile);
+                client.getSession().executeRemoteCommand("chmod 0744 " + remoteFile);
+                return new SSHResult(true);
+            } catch (Exception e) {
+                logger.error("scpToFile from:{} to:{}", localFile, remoteFile, e);
+                return new SSHResult(e);
+            }
         }
 
-        public SSHResult scpToFile(String localFile, String remoteFile, String remoteTargetDirectory) {
-            return scpToFile(localFile, remoteFile, remoteTargetDirectory, "0744");
-        }
-
-        public SSHResult scpToFile(String localFile, String remoteFile, String remoteTargetDirectory, String mode) {
-            return scp(new String[] {localFile}, new String[] {remoteFile}, remoteTargetDirectory, "0744");
+        public SSHResult scpToFile(byte[] data, String remoteFile) {
+            ScpClient client = ScpClientCreator.instance().createScpClient(clientSession);
+            long now = System.currentTimeMillis();
+            try {
+                client.upload(data, remoteFile, PERMS, new ScpTimestampCommandDetails(now, now));
+                return new SSHResult(true);
+            } catch (Exception e) {
+                logger.error("scpByteToFile {}", remoteFile, e);
+                return new SSHResult(e);
+            }
         }
     }
 

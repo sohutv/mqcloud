@@ -97,6 +97,12 @@ public class OSInfo {
 				DistributionVersion.UBUNTU_15,
 				DistributionVersion.UBUNTU_1504,
 				DistributionVersion.UBUNTU_1510,
+				DistributionVersion.UBUNTU_16,
+				DistributionVersion.UBUNTU_18,
+				DistributionVersion.UBUNTU_19,
+				DistributionVersion.UBUNTU_20,
+				DistributionVersion.UBUNTU_21,
+				DistributionVersion.UBUNTU_22,
 		}),
 		
 		//debian系列
@@ -233,6 +239,12 @@ public class OSInfo {
 		UBUNTU_15("15"),
 		UBUNTU_1504("1504"),
 		UBUNTU_1510("1510"),
+		UBUNTU_16("16"),
+		UBUNTU_18("18"),
+		UBUNTU_19("19"),
+		UBUNTU_20("20", "19"),
+		UBUNTU_21("21", "19"),
+		UBUNTU_22("22", "19"),
 		
 		//debian系列
 		DEBIAN_5("5"),
@@ -280,12 +292,26 @@ public class OSInfo {
 		;
 		
 		private String value;
-		
+		private String nmonVersion;
+
 		private DistributionVersion(String value) {
 			this.value = value;
 		}
+
+		private DistributionVersion(String value, String nmonVersion) {
+			this.value = value;
+			this.nmonVersion = nmonVersion;
+		}
+
 		public String getValue() {
 			return value;
+		}
+
+		public String getNmonVersion() {
+			if (nmonVersion == null) {
+				return value;
+			}
+			return nmonVersion;
 		}
 	}
 	

@@ -91,4 +91,12 @@ public class MQDeployerTest {
         Result<?> rst = mqDeployer.startup(ip, "/opt/mqcloud/broker-log-13", 10911);
         Assert.assertEquals(true, rst.isOK());
     }
+
+    @Test
+    public void testDirExist() {
+        String ip = "test.mqcloud.com";
+        String dir = "/opt/mqcloud/broker-1";
+        Result<?> rst = mqDeployer.dirExist(ip, dir);
+        Assert.assertNotNull(rst);
+    }
 }

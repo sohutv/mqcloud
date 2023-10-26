@@ -1,11 +1,15 @@
 package com.sohu.tv.mq.cloud.task.server.nmon;
 
-import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
+import com.sohu.tv.mq.cloud.task.server.data.OS;
+import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.core.io.ResourceLoader;
+import org.springframework.stereotype.Component;
+
+import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
@@ -14,15 +18,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.CommandLineRunner;
-import org.springframework.stereotype.Component;
-
-import com.sohu.tv.mq.cloud.task.server.data.OS;
-import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper;
 
 /**
  * nmon文件查询器
@@ -41,7 +36,7 @@ public class NMONFileFinder implements CommandLineRunner {
     private static final Map<String, File> nmonFileMap = new HashMap<String, File>();
     
     @Autowired
-    private MQCloudConfigHelper mqCloudConfigHelper;
+    private ResourceLoader resourceLoader;
 
     @Override
     public void run(String... args) throws Exception {
@@ -120,37 +115,19 @@ public class NMONFileFinder implements CommandLineRunner {
 
     /**
      * 从远程下载nmon
-     * @param nmonUrl
      * @param nmonDir
      * @return
      */
     protected boolean downloadAndUnzip(File nmonDir) {
-        BufferedInputStream in = null;
-        OutputStream out = null;
         try {
-            String urlStr = mqCloudConfigHelper.getNMONURL();
-            URL url = new URL(urlStr);
-            URLConnection urlConnection = url.openConnection();
-            HttpURLConnection conn = (HttpURLConnection) urlConnection;
-            conn.setConnectTimeout(10000);
-            conn.setReadTimeout(10000);
-            conn.connect();
             String path = nmonDir.getAbsolutePath() + File.separatorChar + MQCloudConfigHelper.NMON_ZIP;
             File file = new File(path);
             if (!file.getParentFile().exists()) {
                 file.getParentFile().mkdirs();
             }
-            out = new FileOutputStream(file);
-            int size = 0;
-            byte[] buf = new byte[1024];
-            in = new BufferedInputStream(conn.getInputStream());
-            while ((size = in.read(buf)) != -1) {
-                out.write(buf, 0, size);
-            }
-            
-            // unzip
+            InputStream inputStream = resourceLoader.getResource("classpath:/static/software/nmon.zip").getInputStream();
             byte[] buffer = new byte[1024];
-            ZipInputStream zis = new ZipInputStream(new FileInputStream(path));
+            ZipInputStream zis = new ZipInputStream(inputStream);
             ZipEntry zipEntry = zis.getNextEntry();
             while(zipEntry != null){
                 String fileName = zipEntry.getName();
@@ -169,21 +146,10 @@ public class NMONFileFinder implements CommandLineRunner {
             }
             zis.closeEntry();
             zis.close();
-            logger.info("download nmon:{} OK!", urlStr);
+            logger.info("download nmon:{} OK!", nmonDir);
         } catch (Exception e) {
             logger.error("download err", e);
             return false;
-        } finally {
-            if(in != null) {
-                try {
-                    in.close();
-                } catch (IOException e) {}
-            }
-            if(out != null) {
-                try {
-                    out.close();
-                } catch (IOException e) {}
-            }
         }
         return true;
     }
@@ -198,7 +164,7 @@ public class NMONFileFinder implements CommandLineRunner {
         String key = os.getOsType().getValue()
                 + "_" + os.getProcessorArchitecture().getValue()
                 + "_" + os.getDistributionType().getNmonName()
-                + os.getDistributionVersion().getValue();
+                + os.getDistributionVersion().getNmonVersion();
         return nmonFileMap.get(key);
     }
 

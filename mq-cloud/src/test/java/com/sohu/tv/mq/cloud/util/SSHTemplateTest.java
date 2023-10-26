@@ -1,14 +1,5 @@
 package com.sohu.tv.mq.cloud.util;
 
-import java.io.IOException;
-
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.junit4.SpringRunner;
-
 import com.sohu.tv.mq.cloud.Application;
 import com.sohu.tv.mq.cloud.service.SSHTemplate;
 import com.sohu.tv.mq.cloud.service.SSHTemplate.DefaultLineProcessor;
@@ -16,30 +7,29 @@ import com.sohu.tv.mq.cloud.service.SSHTemplate.SSHCallback;
 import com.sohu.tv.mq.cloud.service.SSHTemplate.SSHResult;
 import com.sohu.tv.mq.cloud.service.SSHTemplate.SSHSession;
 import com.sohu.tv.mq.cloud.task.ServerStatusTask;
+import com.sohu.tv.mq.cloud.task.server.data.OSInfo;
 import com.sohu.tv.mq.cloud.task.server.data.Server;
+import com.sohu.tv.mq.cloud.task.server.nmon.NMONFileFinder;
+import org.junit.Assert;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.junit4.SpringRunner;
 
-import ch.ethz.ssh2.Connection;
+import java.io.File;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = Application.class)
 public class SSHTemplateTest {
 
-    public static final String IP = "127.0.0.1";
-    
-    @Autowired
-    private MQCloudConfigHelper mqCloudConfigHelper;
+    public static final String IP = "test.mqcloud.com";
     
     @Autowired
     private SSHTemplate sshTemplate;
-    
-    @Test
-    public void testPublicKey() throws IOException {
-        System.out.println(mqCloudConfigHelper.getPrivateKey());
-        Connection conn = new Connection(IP, 22);
-        conn.connect(null, 5000, 5000);
-        boolean isAuthenticated = conn.authenticateWithPublicKey(mqCloudConfigHelper.getServerUser(), mqCloudConfigHelper.getPrivateKey().toCharArray(), mqCloudConfigHelper.getServerPassword());
-        Assert.assertTrue(isAuthenticated);
-    }
+
+    @Autowired
+    private NMONFileFinder nmonFileFinder;
     
     @Test
     public void testExecuteStringSSHCallback() throws SSHException {
@@ -68,5 +58,19 @@ public class SSHTemplateTest {
             }
         });
         System.out.println(rst);
+    }
+
+    @Test
+    public void testScpToFile() throws SSHException {
+        OSInfo osInfo = new OSInfo();
+        osInfo.setUname("x86_64 GNU/Linux");
+        File nmonFile = nmonFileFinder.getNMONFile(OSFactory.getDefaultOS(osInfo));
+        SSHResult result = sshTemplate.execute(IP, new SSHCallback() {
+            public SSHResult call(SSHSession session) {
+                SSHResult result = session.scpToFile(nmonFile.getAbsolutePath(), "/tmp/nmon2");
+                return result;
+            }
+        });
+        Assert.assertNotNull(result);
     }
 }
