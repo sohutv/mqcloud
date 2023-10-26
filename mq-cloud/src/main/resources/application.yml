@@ -1,7 +1,8 @@
-server: 
+server:
   port: 8080
-  contextPath: /
-  tomcat: 
+  servlet:
+    context-path: /
+  tomcat:
     maxThreads: 500
     uriEncoding: utf-8
     basedir: '${PROJECT_DIR:/tmp}' 
@@ -9,25 +10,15 @@ server:
       enabled: true
       buffered: false
       pattern: '%{yyyy-MM-dd HH:mm:ss.sss}t %I %r %h %s %b %D %F %{X-Forwarded-For}i'
-      
+
 eureka: 
   client: 
     registerWithEureka: false
     fetchRegistry: false
 
 management:
-  context-path: /actuator
-  port: 8088
-  security:
-    enabled: true
-endpoints:
-  heapdump: 
-    enabled: false 
-  pause: 
-    enabled: false
-  env:
-    post:
-      enabled: false
+  server:
+    port: 8088
 
 spring: 
   profiles: 
@@ -43,7 +34,9 @@ spring:
       number_format: computer
   jackson: 
     default-property-inclusion: NON_NULL
-  datasource: 
+  datasource:
+    driver-class-name: com.mysql.jdbc.Driver
+    type: org.apache.tomcat.jdbc.pool.DataSource
     tomcat: 
       max-wait: 60000
       test-while-idle: true
@@ -56,8 +49,8 @@ spring:
       remove-abandoned: true
       remove-abandoned-timeout: 180
       log-abandoned: true
-      
-mqcloud: 
+
+mqcloud:
   repositoryUrl: https://私有仓库/nexus/content/groups/public
   clientArtifactId: mq-client-open
   producerClass:  RocketMQProducer

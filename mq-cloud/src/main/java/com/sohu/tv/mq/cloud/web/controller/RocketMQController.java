@@ -1,26 +1,19 @@
 package com.sohu.tv.mq.cloud.web.controller;
 
-import com.sohu.tv.mq.cloud.bo.*;
-import com.sohu.tv.mq.cloud.common.mq.SohuMQAdmin;
-import com.sohu.tv.mq.cloud.mq.DefaultSohuMQAdmin;
-import com.sohu.tv.mq.cloud.service.ConsumerService;
+import com.sohu.tv.mq.cloud.bo.NameServer;
+import com.sohu.tv.mq.cloud.bo.Proxy;
 import com.sohu.tv.mq.cloud.service.NameServerService;
 import com.sohu.tv.mq.cloud.service.ProxyService;
-import com.sohu.tv.mq.cloud.service.UserProducerService;
 import com.sohu.tv.mq.cloud.util.Jointer;
 import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper;
 import com.sohu.tv.mq.cloud.util.Result;
 import com.sohu.tv.mq.util.MQProtocol;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
-import org.apache.rocketmq.acl.common.AclClientRPCHook;
-import org.apache.rocketmq.acl.common.SessionCredentials;
-import org.apache.rocketmq.common.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * rocketmq
@@ -39,12 +32,6 @@ public class RocketMQController {
     private MQCloudConfigHelper mqCloudConfigHelper;
 
     @Autowired
-    private UserProducerService userProducerService;
-
-    @Autowired
-    private ConsumerService consumerService;
-
-    @Autowired
     private ProxyService proxyService;
 
     /**
@@ -57,6 +44,10 @@ public class RocketMQController {
     public String nsaddr(@PathVariable int clusterId,
                          @RequestParam(value = "clientGroup", required = false) String clientGroup,
                          @RequestParam(value = "protocol", required = false) Integer protocol) throws Exception {
+        // 测试环境禁止访问线上sohu
+        if (mqCloudConfigHelper.isTestOnlineSohu()) {
+            throw new IllegalAccessException("test online sohu route is forbidden");
+        }
         // 优先使用mqcloud配置的nsaddr
         if (StringUtils.isNotEmpty(clientGroup)) {
             if (mqCloudConfigHelper.getClientGroupNSConfig() != null) {

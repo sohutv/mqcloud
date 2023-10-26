@@ -1,11 +1,9 @@
 package com.sohu.tv.mq.cloud.conf;
 
-import ch.ethz.ssh2.Connection;
 import com.sohu.tv.mq.cloud.bo.BrokerTraffic;
 import com.sohu.tv.mq.cloud.bo.Cluster;
 import com.sohu.tv.mq.cloud.bo.User;
 import com.sohu.tv.mq.cloud.cache.LocalCache;
-import com.sohu.tv.mq.cloud.cache.LocalCacheStats;
 import com.sohu.tv.mq.cloud.common.Destroyable;
 import com.sohu.tv.mq.cloud.common.MemoryMQ;
 import com.sohu.tv.mq.cloud.common.service.LoginService;
@@ -18,8 +16,8 @@ import com.sohu.tv.mq.cloud.mq.SohuMQProxyAdminFactory;
 import com.sohu.tv.mq.cloud.service.ClientStatsConsumer;
 import com.sohu.tv.mq.cloud.service.ConsumerClientStatsConsumer;
 import com.sohu.tv.mq.cloud.service.ProxyService;
+import com.sohu.tv.mq.cloud.ssh.SSHSessionPooledObjectFactory;
 import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper;
-import com.sohu.tv.mq.cloud.util.SSHPooledObjectFactory;
 import com.sohu.tv.mq.stats.dto.ClientStats;
 import com.sohu.tv.mq.stats.dto.ConsumerClientStats;
 import com.sohu.tv.mq.util.Constant;
@@ -28,6 +26,7 @@ import okhttp3.OkHttpClient;
 import org.apache.commons.pool2.impl.GenericKeyedObjectPool;
 import org.apache.commons.pool2.impl.GenericKeyedObjectPoolConfig;
 import org.apache.rocketmq.tools.admin.MQAdminExt;
+import org.apache.sshd.client.session.ClientSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,13 +36,13 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.client.OkHttp3ClientHttpRequestFactory;
-import org.springframework.jmx.export.MBeanExporter;
 import org.springframework.web.client.RestTemplate;
 
 import javax.annotation.PreDestroy;
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.security.GeneralSecurityException;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -133,24 +132,6 @@ public class CommonConfiguration {
         return localCache;
     }
 
-    /**
-     * 暴露mbean供外部监控
-     * 
-     * @param userLocalCache
-     * @return
-     */
-    @Bean
-    @SuppressWarnings("rawtypes")
-    public MBeanExporter localCacheMBeanExporter(List<LocalCache<?>> localCacheList) {
-        MBeanExporter mbeanExporter = new MBeanExporter();
-        Map<String, Object> beans = new HashMap<String, Object>();
-        for (LocalCache localCache : localCacheList) {
-            beans.put("com.sohu.tv.mq.localcache:name=" + localCache.getName(), new LocalCacheStats(localCache));
-        }
-        mbeanExporter.setBeans(beans);
-        return mbeanExporter;
-    }
-    
     @Bean
     public GenericKeyedObjectPool<Cluster, MQAdminExt> mqPool() {
         System.setProperty(Constant.ROCKETMQ_NAMESRV_DOMAIN, mqCloudConfigHelper.getDomain());
@@ -161,6 +142,7 @@ public class CommonConfiguration {
         genericKeyedObjectPoolConfig.setMinIdlePerKey(1);
         genericKeyedObjectPoolConfig.setMaxWaitMillis(10000);
         genericKeyedObjectPoolConfig.setTimeBetweenEvictionRunsMillis(20000);
+        genericKeyedObjectPoolConfig.setJmxEnabled(false);
         MQAdminPooledObjectFactory mqAdminPooledObjectFactory = new MQAdminPooledObjectFactory();
         SohuMQAdminFactory sohuMQAdminFactory = new SohuMQAdminFactory(mqCloudConfigHelper);
         mqAdminPooledObjectFactory.setSohuMQAdminFactory(sohuMQAdminFactory);
@@ -179,6 +161,7 @@ public class CommonConfiguration {
         genericKeyedObjectPoolConfig.setMinIdlePerKey(1);
         genericKeyedObjectPoolConfig.setMaxWaitMillis(10000);
         genericKeyedObjectPoolConfig.setTimeBetweenEvictionRunsMillis(20000);
+        genericKeyedObjectPoolConfig.setJmxEnabled(false);
         MQAdminPooledObjectFactory mqAdminPooledObjectFactory = new MQAdminPooledObjectFactory();
         SohuMQProxyAdminFactory sohuMQAdminFactory = new SohuMQProxyAdminFactory(mqCloudConfigHelper, proxyService);
         mqAdminPooledObjectFactory.setSohuMQAdminFactory(sohuMQAdminFactory);
@@ -193,18 +176,19 @@ public class CommonConfiguration {
      * @return
      */
     @Bean
-    public GenericKeyedObjectPool<String, Connection> sshPool() {
+    public GenericKeyedObjectPool<String, ClientSession> clientSessionPool() throws GeneralSecurityException, IOException {
         GenericKeyedObjectPoolConfig genericKeyedObjectPoolConfig = new GenericKeyedObjectPoolConfig();
         genericKeyedObjectPoolConfig.setTestWhileIdle(true);
+        genericKeyedObjectPoolConfig.setTestOnReturn(true);
         genericKeyedObjectPoolConfig.setMaxTotalPerKey(5);
         genericKeyedObjectPoolConfig.setMaxIdlePerKey(1);
         genericKeyedObjectPoolConfig.setMinIdlePerKey(1);
         genericKeyedObjectPoolConfig.setMaxWaitMillis(30000);
         genericKeyedObjectPoolConfig.setTimeBetweenEvictionRunsMillis(20000);
-        SSHPooledObjectFactory sshPooledObjectFactory = new SSHPooledObjectFactory();
-        sshPooledObjectFactory.setMqCloudConfigHelper(mqCloudConfigHelper);
-        GenericKeyedObjectPool<String, Connection> genericKeyedObjectPool = new GenericKeyedObjectPool<>(
-                sshPooledObjectFactory,
+        genericKeyedObjectPoolConfig.setJmxEnabled(false);
+        SSHSessionPooledObjectFactory factory = new SSHSessionPooledObjectFactory(mqCloudConfigHelper);
+        GenericKeyedObjectPool<String, ClientSession> genericKeyedObjectPool = new GenericKeyedObjectPool<>(
+                factory,
                 genericKeyedObjectPoolConfig);
         return genericKeyedObjectPool;
     }
@@ -296,11 +280,11 @@ public class CommonConfiguration {
     @Bean
     public RestTemplate restTemplate(RestTemplateBuilder restTemplateBuilder) {
         RestTemplate restTemplate =
-                restTemplateBuilder.requestFactory(new OkHttp3ClientHttpRequestFactory(new OkHttpClient.Builder()
-                .connectionPool(new ConnectionPool())
-                .connectTimeout(2000, TimeUnit.MILLISECONDS)
-                .readTimeout(1000, TimeUnit.MILLISECONDS)
-                .writeTimeout(1000, TimeUnit.MILLISECONDS).build())).build();
+                restTemplateBuilder.requestFactory(() -> new OkHttp3ClientHttpRequestFactory(new OkHttpClient.Builder()
+                        .connectionPool(new ConnectionPool())
+                        .connectTimeout(2000, TimeUnit.MILLISECONDS)
+                        .readTimeout(1000, TimeUnit.MILLISECONDS)
+                        .writeTimeout(1000, TimeUnit.MILLISECONDS).build())).build();
         return restTemplate;
     }
 }

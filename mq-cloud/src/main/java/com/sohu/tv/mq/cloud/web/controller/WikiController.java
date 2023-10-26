@@ -1,16 +1,5 @@
 package com.sohu.tv.mq.cloud.web.controller;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Arrays;
-import java.util.Map;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-
 import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper;
 import com.sohu.tv.mq.cloud.util.Result;
 import com.sohu.tv.mq.cloud.util.Status;
@@ -23,6 +12,20 @@ import com.vladsch.flexmark.parser.ParserEmulationProfile;
 import com.vladsch.flexmark.util.ast.Document;
 import com.vladsch.flexmark.util.builder.Extension;
 import com.vladsch.flexmark.util.options.MutableDataSet;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Arrays;
+import java.util.Map;
 
 /**
  * wiki
@@ -62,6 +65,17 @@ public class WikiController {
             map.put("toc", toc);
         }
         return "wikiTemplate";
+    }
+
+    /**
+     * 支持rmq.logback.xml下载
+     *
+     * @return
+     */
+    @GetMapping(path = "/**/rmq.logback.xml", produces = MediaType.APPLICATION_XML_VALUE)
+    public ResponseEntity<ClassPathResource> getXmlContent() {
+        ClassPathResource resource = new ClassPathResource("static/wiki/userGuide/rmq.logback.xml");
+        return ResponseEntity.ok().contentType(MediaType.APPLICATION_XML).body(resource);
     }
 
     private String markdown2html(String filename, String suffix) throws Exception {

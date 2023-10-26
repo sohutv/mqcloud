@@ -23,7 +23,7 @@ import org.apache.rocketmq.common.message.MessageQueue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.ApplicationHome;
+import org.springframework.boot.system.ApplicationHome;
 import org.springframework.stereotype.Service;
 
 import java.io.*;
@@ -451,17 +451,21 @@ public class MessageExportService {
         } catch (IOException e) {
             logger.error("compress {} error", file.getName(), e);
         }
-        String exportedMessageDownloadUri = mqCloudConfigHelper.getExportedMessageRemotePath();
-        if (exportedMessageDownloadUri == null) {
+        String exportedMessageRemotePath = mqCloudConfigHelper.getExportedMessageRemotePath();
+        if (exportedMessageRemotePath == null) {
             return Result.getOKResult();
         }
         long start = System.currentTimeMillis();
-        String[] arrays = exportedMessageDownloadUri.split(":");
+        String[] arrays = exportedMessageRemotePath.split(":");
         final File finalFile = file;
         try {
             SSHTemplate.SSHResult scpRst = sshTemplate.execute(arrays[0], new SSHTemplate.SSHCallback() {
                 public SSHTemplate.SSHResult call(SSHTemplate.SSHSession session) {
-                    return session.scpToFile(finalFile.getAbsolutePath(), finalFile.getName(), arrays[1]);
+                    String remotePath = arrays[1];
+                    if (!remotePath.startsWith("/")) {
+                        remotePath += "/";
+                    }
+                    return session.scpToFile(finalFile.getAbsolutePath(), remotePath + finalFile.getName());
                 }
             });
             if (!scpRst.isSuccess()) {
@@ -470,8 +474,8 @@ public class MessageExportService {
                 return Result.getRequestErrorResult(scpRst.getExcetion()).setMessage("scp err");
             }
             long cost = System.currentTimeMillis() - start;
-            logger.info("scp {} to {} use:{}ms", file.getName(), exportedMessageDownloadUri, cost);
-            updateScpCostTime(aid, cost, "已传输到" + exportedMessageDownloadUri);
+            logger.info("scp {} to {} use:{}ms", file.getName(), exportedMessageRemotePath, cost);
+            updateScpCostTime(aid, cost, "已传输到" + exportedMessageRemotePath);
             if (mqCloudConfigHelper.getExportedMessageDownloadUrlPrefix() != null) {
                 String fileName = file.getName();
                 try {

@@ -1,10 +1,10 @@
 package com.sohu.tv.mq.cloud.conf;
 
 import com.sohu.tv.mq.cloud.processor.EmptyStringModelAttributeMethodProcessor;
+import com.sohu.tv.mq.cloud.processor.UserInfoMethodArgumentResolver;
 import com.sohu.tv.mq.cloud.web.interceptor.AdminInterceptor;
 import com.sohu.tv.mq.cloud.web.interceptor.AuthInterceptor;
 import com.sohu.tv.mq.cloud.web.interceptor.UserGuideInterceptor;
-import com.sohu.tv.mq.cloud.processor.UserInfoMethodArgumentResolver;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
@@ -13,7 +13,7 @@ import org.springframework.web.accept.ContentNegotiationManager;
 import org.springframework.web.method.support.HandlerMethodArgumentResolver;
 import org.springframework.web.servlet.ViewResolver;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
-import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import org.springframework.web.servlet.view.ContentNegotiatingViewResolver;
 import org.springframework.web.servlet.view.json.MappingJackson2JsonView;
 
@@ -22,13 +22,13 @@ import java.util.List;
 
 /**
  * 拦截器配置
- * 
+ *
  * @Description:
  * @author yongfeigao
  * @date 2018年6月12日
  */
 @Configuration
-public class AuthWebMvcConfigurerAdapter extends WebMvcConfigurerAdapter {
+public class AuthWebMvcConfigurerAdapter implements WebMvcConfigurer {
 
     @Autowired
     @Qualifier("authInterceptor")
@@ -47,7 +47,7 @@ public class AuthWebMvcConfigurerAdapter extends WebMvcConfigurerAdapter {
         // 用户登录拦截器
         registry.addInterceptor(authInterceptor).excludePathPatterns("/error", "/admin/**", "/user/guide/**",
                 "/cluster/**", "/register/**", "/login/**", "/rocketmq/**", "/consumer/reset/*", "/consumer/config/*"
-                , "/topic/httpConsumer", "/topic/httpProducer");
+                , "/topic/httpConsumer", "/topic/httpProducer", "/assets/**", "/plugins/**", "/software/**", "/favicon.ico");
         // 用户引导拦截器
         registry.addInterceptor(userGuideInterceptor).addPathPatterns("/user/guide/**");
         // admin模块拦截器
@@ -58,7 +58,6 @@ public class AuthWebMvcConfigurerAdapter extends WebMvcConfigurerAdapter {
     public void addArgumentResolvers(List<HandlerMethodArgumentResolver> argumentResolvers) {
         argumentResolvers.add(uerInfoMethodArgumentResolver());
         argumentResolvers.add(emptyStringModelAttributeMethodProcessor());
-        super.addArgumentResolvers(argumentResolvers);
     }
 
     @Bean

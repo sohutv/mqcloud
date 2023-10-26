@@ -3,14 +3,11 @@ package com.sohu.tv.mq.cloud.conf;
 import com.sohu.tv.mq.cloud.task.*;
 import net.javacrumbs.shedlock.core.LockProvider;
 import net.javacrumbs.shedlock.provider.jdbc.MQCloudJdbcLockProvider;
-import net.javacrumbs.shedlock.spring.ScheduledLockConfiguration;
-import net.javacrumbs.shedlock.spring.ScheduledLockConfigurationBuilder;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import javax.sql.DataSource;
-import java.time.Duration;
 
 /**
  * 任务配置
@@ -129,19 +126,5 @@ public class TaskConfiguration {
     @Bean
     public LockProvider lockProvider(DataSource dataSource) {
         return new MQCloudJdbcLockProvider(dataSource);
-    }
-    
-    /**
-     * 任务调度配置
-     * @param lockProvider
-     * @return
-     */
-    @Bean
-    public ScheduledLockConfiguration taskScheduler(LockProvider lockProvider) {
-        return ScheduledLockConfigurationBuilder
-            .withLockProvider(lockProvider)
-            .withPoolSize(10)
-            .withDefaultLockAtMostFor(Duration.ofMinutes(1))
-            .build();
     }
 }

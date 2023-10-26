@@ -14,13 +14,13 @@ import com.sohu.tv.mq.cloud.common.Destroyable;
  * @author yongfeigao
  * @date 2018年9月29日
  */
-@Component
+@Component("mqTaskExecutor")
 public class TaskExecutor implements Destroyable {
     
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
     
     private AtomicInteger counter = new AtomicInteger();
-    
+
     /**
      * 执行任务
      * @param runable

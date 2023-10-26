@@ -34,7 +34,7 @@ import freemarker.template.Template;
  * @date 2018年5月28日
  */
 @Service("mqcloudAlertService")
-@ConfigurationProperties("eureka.instance.metadataMap")
+@ConfigurationProperties("eureka.instance.metadata-map")
 public class AlertService {
 
     private final Logger logger = LoggerFactory.getLogger(this.getClass());

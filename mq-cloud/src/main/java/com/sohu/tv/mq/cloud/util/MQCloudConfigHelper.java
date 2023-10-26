@@ -42,7 +42,7 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware, Comm
     public static final String ROCKETMQ_FILE = "rocketmq.zip";
 
     // 应用路径
-    @Value("${server.contextPath}")
+    @Value("${server.servlet.context-path}")
     private String contextPath;
 
     // 环境
@@ -260,6 +260,10 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware, Comm
         return profile.contains("test-sohu");
     }
 
+    public boolean isTestOnlineSohu() {
+        return profile.contains("test-online-sohu");
+    }
+
     /**
      * 是否需要监控
      * 测试环境，需要监控；online环境，只监控online集群
@@ -276,10 +280,6 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware, Comm
 
     public String getDomain() {
         return domain;
-    }
-
-    public String getNMONURL() {
-        return HTTP_SCHEMA + getDomain() + "/software/" + NMON_ZIP;
     }
 
     public String getCiperKey() {
