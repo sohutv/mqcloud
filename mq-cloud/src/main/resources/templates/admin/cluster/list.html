@@ -2255,22 +2255,22 @@ function scpStroreFile(tr){
 	    	tr.find("span.loading").removeClass("fa-tag").removeClass("mqloading");
             if(data.status == 200){
             	tr.attr('status', '2');
-            	transferComponent.removeClass("fa-xmark").addClass("fa-check").attr("title", "传输成功");
+            	transferComponent.removeClass("fa-xmark").addClass("fa-check").attr("data-original-title", "传输成功");
             	var md5Compo = tr.find(".md5Comp");
             	if(data.result.md5OK){
             		md5Compo.addClass("fa-check");
             	} else {
             		md5Compo.addClass("fa-xmark");
             		if(data.result.sourceMD5){
-            			md5Compo.attr("title", data.result.sourceMD5 + "!=" + data.result.destMD5);
+            			md5Compo.attr("data-original-title", data.result.sourceMD5 + "!=" + data.result.destMD5);
             		}
             		var sizeCompo = tr.find(".sizeComp");
             		if(data.result.sizeOK){
-            			sizeCompo.addClass("fa-check").attr("title", "大小相同");
+            			sizeCompo.addClass("fa-check").attr("data-original-title", "大小相同");
             		} else {
             			sizeCompo.addClass("fa-xmark");
             			if(data.result.sourceSize){
-            				sizeCompo.attr("title", data.result.sourceSize + "!=" + data.result.destSize);
+            				sizeCompo.attr("data-original-title", data.result.sourceSize + "!=" + data.result.destSize);
             			}
             		}
             	}
@@ -2284,12 +2284,12 @@ function scpStroreFile(tr){
             				if(rst.md5OK){
             					md5Compo2.addClass("fa-check");
                         	} else {
-                        		md5Compo2.addClass("fa-xmark").attr("title", rst.sourceMD5 + "!=" + rst.destMD5);
+                        		md5Compo2.addClass("fa-xmark").attr("data-original-title", rst.sourceMD5 + "!=" + rst.destMD5);
                         		var sizeCompo2 = $(this).find(".sizeComp");
                         		if(rst.sizeOK){
-                        			sizeCompo2.addClass("fa-check").attr("title", "大小相同");
+                        			sizeCompo2.addClass("fa-check").attr("data-original-title", "大小相同");
                         		} else {
-                        			sizeCompo2.addClass("fa-xmark").attr("title", rst.sourceSize + "!=" + rst.destSize);
+                        			sizeCompo2.addClass("fa-xmark").attr("data-original-title", rst.sourceSize + "!=" + rst.destSize);
                         		}
                         	}
             			} else {
@@ -2312,14 +2312,26 @@ function scpStroreFile(tr){
 		    	migrateGoOn("migrateStroreFile");
 		    	warn_smartwizard("migrateToBroker", 5);
 		    	$("#migrateProgressDiv").removeClass("active");
-		    	transferComponent.addClass("fa-xmark").attr("title", data.message);
-		    	tr.find("span.loading").addClass("fa-tag pointer").attr("title", "标记为已处理?");
+		    	transferComponent.addClass("fa-xmark").attr("data-original-title", data.message);
+		    	tr.find("span.loading").addClass("fa-tag pointer").attr("data-original-title", "标记为已处理?");
 		    	// 展开folder
 		    	if(tr.hasClass("branch")){
 		    		$("#migrateTable").treetable("expandNode", tr.attr("data-tt-id"));
 		    	}
 		    }
-	    },
+	    },error : function(XMLHttpRequest, err, e){
+			console.log("网络异常("+XMLHttpRequest.status+"):"+err);
+			toastr.error("网络异常("+XMLHttpRequest.status+"):"+err);
+			var transferComponent = tr.find(".transComp");
+			migrateGoOn("migrateStroreFile");
+			warn_smartwizard("migrateToBroker", 5);
+			$("#migrateProgressDiv").removeClass("active");
+			transferComponent.addClass("fa-xmark").attr("data-original-title", data.message);
+			tr.find("span.loading").addClass("fa-tag pointer").attr("data-original-title", "标记为已处理?");
+			if(tr.hasClass("branch")){
+				$("#migrateTable").treetable("expandNode", tr.attr("data-tt-id"));
+			}
+		},
 	    contentType: "application/json",
 	    dataType: 'json'
 	});
