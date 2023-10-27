@@ -732,6 +732,8 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware, Comm
      * @return 0:相等 1:v1>v2 -1:v1<v2
      */
     public int compareTo(String v1, String v2) {
+        v1 = stripSuffix(v1);
+        v2 = stripSuffix(v2);
         String[] v1Array = v1.split("\\.");
         String[] v2Array = v2.split("\\.");
         int length = Math.min(v1Array.length, v2Array.length);
@@ -750,6 +752,20 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware, Comm
             return -1;
         }
         return 0;
+    }
+
+    /**
+     * 去掉版本号的后缀
+     *
+     * @param version
+     * @return
+     */
+    private String stripSuffix(String version) {
+        int index = version.indexOf("-");
+        if (index > 0) {
+            return version.substring(0, index);
+        }
+        return version;
     }
     
     public String getMachineRoomColor(String room) {
