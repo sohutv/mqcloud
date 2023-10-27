@@ -59,6 +59,12 @@ function drawLineChart(lineName, loadingEffect){
 					location.href=url+"?x="+this.x+"&y="+this.y+"&name="+this.series.name;
 				};
 			}
+			// fix shown default title bug
+			if (chart.hasOwnProperty('title')) {
+				if (!chart.title.hasOwnProperty('text')) {
+					chart.title.text = null;
+				}
+			}
 			for(var yAxisIdx in chart.yAxis){
 				var yAxis = chart.yAxis[yAxisIdx];
 				yAxis.min = 0;
