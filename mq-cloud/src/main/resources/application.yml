@@ -24,6 +24,10 @@ spring:
   profiles: 
     active: local
   mvc:
+    contentnegotiation:
+      favor-path-extension: true
+    pathmatch:
+      use-suffix-pattern: true
     favicon:
       enabled: false
   freemarker:
