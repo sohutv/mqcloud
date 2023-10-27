@@ -13,7 +13,7 @@
 					<td data-tooltip="true" title="偏移量:${msg.queueOffset}">${msg.broker!}:${msg.queueId}</td>
 					<td>${msg.keys!}</td>
 					<td>${msg.tags!}</td>
-					<td>&nbsp;&nbsp;<i data-tooltip="true" data-html="true" title="${msg.timerDeliverTimeDesc}"
+					<td>&nbsp;&nbsp;<span data-tooltip="true" data-html="true" title="${msg.timerDeliverTimeDesc}"><i onclick=track(${msg.toJson()}) data-target="#trackModal" data-toggle="modal"
 					<#if msg.timerStatus == 3 >
 						class="fas fa-clock pointer"
 					<#elseif msg.timerStatus == 4 >
@@ -21,12 +21,7 @@
 					<#elseif msg.timerStatus == 1 || msg.timerStatus == 2>
 						class="fas fa-stopwatch pointer"
 					</#if>
-					<#if traceEnabled>
-						onclick="traceHasTime('${msg.msgId}')"
-					<#else>
-						onclick=track(${msg.toJson()}) data-target="#trackModal" data-toggle="modal"
-					</#if>
-					></i></td>
+					></i></span></td>
 					<td><input title="选择消息：${msg_index + 1 + response.result.mqc.prevSize}" data-tooltip="true" type="checkbox" data="${msg.offsetMsgId}" dataIdx="${msg_index + 1 + response.result.mqc.prevSize}" id="${msg.msgId}" rollTimes="${msg.timerRollTimes}" deliverTime="${msg.timerDeliverTime}"></td>
 				</tr>
 				<tr>
