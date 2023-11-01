@@ -29,7 +29,6 @@
 		<mybatis-spring-boot-starter.version>2.1.2</mybatis-spring-boot-starter.version>
 		<shedlock.version>2.3.0</shedlock.version>
 		<commons-validator.version>1.6</commons-validator.version>
-		<ganymed-ssh.version>build210</ganymed-ssh.version>
 		<ssh-version>2.9.2</ssh-version>
 		<slf4j-version>1.7.30</slf4j-version>
 		<java.version>1.8</java.version>
