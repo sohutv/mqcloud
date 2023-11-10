@@ -72,7 +72,7 @@ public class WikiController {
      *
      * @return
      */
-    @GetMapping(path = "/**/rmq.logback.xml", produces = MediaType.APPLICATION_XML_VALUE)
+    @GetMapping(path = "/userGuide/rmq.logback.xml", produces = MediaType.APPLICATION_XML_VALUE)
     public ResponseEntity<ClassPathResource> getXmlContent() {
         ClassPathResource resource = new ClassPathResource("static/wiki/userGuide/rmq.logback.xml");
         return ResponseEntity.ok().contentType(MediaType.APPLICATION_XML).body(resource);
