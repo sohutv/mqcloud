@@ -43,7 +43,7 @@ public class ConsumerClientStatsConsumer implements MemoryMQConsumer<ConsumerCli
                 throw result.getException();
             } else {
                 // 数据重复，重试一次(兼容老版本)
-                if (consumerClientStats.getClientId().indexOf("@") == -1) {
+                if (consumerClientStats.getClientId() != null && consumerClientStats.getClientId().indexOf("@") == -1) {
                     consumerClientStats.setClientId(consumerClientStats.getClientId() + "@1");
                     consume(consumerClientStats);
                     return;
