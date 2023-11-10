@@ -118,6 +118,9 @@ public class RocketMQConsumer extends AbstractConfig {
     // 启动时从某个时间点消费
     public long consumeFromTimestampWhenBoot;
 
+    // 是否启动过了
+    private boolean started;
+
     public RocketMQConsumer() {
     }
 
@@ -166,7 +169,12 @@ public class RocketMQConsumer extends AbstractConfig {
         return this;
     }
 
-    public void start() {
+    public synchronized void start() {
+        if (started) {
+            logger.info("topic:{} group:{} has started, do not start again!", topic, group);
+            return;
+        }
+        started = true;
         try {
             if (consumeFromTimestampWhenBoot != 0) {
                 consumer.suspend();
