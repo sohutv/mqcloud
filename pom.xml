@@ -21,7 +21,7 @@
 		<rocketmq.version>5.1.1-sohu-1</rocketmq.version>
 		<java.version>1.8</java.version>
 		<protostuff.version>1.5.0</protostuff.version>
-		<logback.version>1.2.9</logback.version>
+		<logback.version>1.2.11</logback.version>
 		<hystrix.version>1.5.18</hystrix.version>
 		<commons-codec.version>1.10</commons-codec.version>
 		<commons-lang3.version>3.4</commons-lang3.version>
@@ -30,7 +30,7 @@
 		<github.global.server>github</github.global.server>
 		<jedis.version>3.3.0</jedis.version>
 		<okhttp.version>3.8.1</okhttp.version>
-		<jackson.version>2.10.5</jackson.version>
+		<jackson.version>2.14.2</jackson.version>
 	</properties>
 
 	<dependencyManagement>
@@ -122,6 +122,21 @@
 				<groupId>com.squareup.okhttp3</groupId>
 				<artifactId>okhttp</artifactId>
 				<version>${okhttp.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>com.fasterxml.jackson.core</groupId>
+				<artifactId>jackson-databind</artifactId>
+				<version>${jackson.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>com.fasterxml.jackson.core</groupId>
+				<artifactId>jackson-annotations</artifactId>
+				<version>${jackson.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>com.fasterxml.jackson.core</groupId>
+				<artifactId>jackson-core</artifactId>
+				<version>${jackson.version}</version>
 			</dependency>
 		</dependencies>
 	</dependencyManagement>
