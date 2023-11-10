@@ -15,6 +15,7 @@ import com.sohu.tv.mq.common.FallbackException;
  * @author yongfeigao
  * @date 2018年1月24日
  */
+@Deprecated
 public class PublishCommand extends AbstractCommand<Result<SendResult>> {
 
     public static final String GROUP_KEY = "producer";
