@@ -740,7 +740,7 @@ public class MessageService {
         // 获取消费者
         Result<List<Consumer>> consumerListResult = consumerService.queryByTid(mp.getTid());
         if (consumerListResult.isEmpty()) {
-            return consumerListResult;
+            return Result.getResult(Status.NO_RESULT);
         }
         List<Consumer> consumerList = consumerListResult.getResult();
         paginationParam.caculatePagination(consumerList.size());
