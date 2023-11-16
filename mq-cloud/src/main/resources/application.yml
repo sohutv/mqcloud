@@ -20,7 +20,7 @@ management:
   server:
     port: 8088
 
-spring: 
+spring:
   profiles: 
     active: local
   mvc:
@@ -28,6 +28,7 @@ spring:
       favor-path-extension: true
     pathmatch:
       use-suffix-pattern: true
+      matching-strategy: ant_path_matcher
     favicon:
       enabled: false
   freemarker:
@@ -53,6 +54,8 @@ spring:
       remove-abandoned: true
       remove-abandoned-timeout: 180
       log-abandoned: true
+  main:
+    allow-circular-references: true
 
 mqcloud:
   repositoryUrl: https://私有仓库/nexus/content/groups/public

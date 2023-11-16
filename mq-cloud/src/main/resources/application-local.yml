@@ -1,11 +1,9 @@
-spring: 
+spring:
   application:
     name: sohu.mq-cloud.local
-  datasource: 
-    url: jdbc:h2:file:~/mqcloud.db;MODE=MySQL;database_to_upper=false;
+  datasource:
+    url: jdbc:h2:file:./mqcloud.db;MODE=MySQL;database_to_upper=false;INIT=RUNSCRIPT FROM 'classpath:h2db/schema.sql'\;RUNSCRIPT FROM 'classpath:h2db/data.sql';
     driver-class-name: org.h2.Driver
-    schema: classpath:h2db/schema.sql
-    data: classpath:h2db/data.sql
   h2:
     console:
       enabled: true

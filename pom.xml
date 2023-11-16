@@ -6,7 +6,7 @@
 	<artifactId>mq</artifactId>
 	<packaging>pom</packaging>
 	<name>mq</name>
-	<version>5.1.0</version>
+	<version>5.1.1</version>
 
 	<modules>
 		<module>mq-client-common-open</module>
@@ -26,7 +26,7 @@
 		<commons-codec.version>1.10</commons-codec.version>
 		<commons-lang3.version>3.4</commons-lang3.version>
 		<javax.servlet-api.version>3.1.0</javax.servlet-api.version>
-		<guava.version>18.0</guava.version>
+		<guava.version>32.0.1-jre</guava.version>
 		<github.global.server>github</github.global.server>
 		<jedis.version>3.3.0</jedis.version>
 		<okhttp.version>3.8.1</okhttp.version>

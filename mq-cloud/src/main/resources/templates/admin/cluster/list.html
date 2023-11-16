@@ -187,7 +187,7 @@
 								</#if>
 								<#else>
 									<button title="启动broker" data-toggle="tooltip" type="button" id="${key}<#if bkey != "0">-s</#if>Btn" class="btn btn-xs btn-info" onclick="startupBroker('${brokerGroup[key][bkey].brokerAddr}', '${key}<#if bkey != "0">-s</#if>', '${brokerGroup[key][bkey].baseDir!}')">启动</button>
-									<button title="在当前机器更新broker并保留数据" type="button" class="btn btn-xs btn-info"  onclick="upgradeBroker('${brokerGroup[key][bkey].brokerAddr}', '${key}<#if bkey != "0">-s</#if>', '${brokerGroup[key][bkey].baseDir!}')" data-target="#upgradeBrokerModal" data-toggle="modal">升级</button>
+									<button title="在当前机器更新broker并保留数据" type="button" class="btn btn-xs btn-info"  onclick="upgradeBroker('${brokerGroup[key][bkey].brokerAddr}', '${key}<#if bkey != "0">-s${bkey}</#if>', '${brokerGroup[key][bkey].baseDir!}')" data-target="#upgradeBrokerModal" data-toggle="modal">升级</button>
 									<button title="将当前机器broker数据迁移至远程机器" type="button" class="btn btn-xs btn-info"  onclick="migrateBrokerData('${brokerGroup[key][bkey].brokerAddr}', '${brokerGroup[key][bkey].baseDir!}')" data-target="#migrateBrokerDataModal" data-toggle="modal">数据迁移</button>
 								</#if>
 							</td>
@@ -1702,7 +1702,7 @@ function program(addr, programId){
  */
 function brokerOffline(formId){
 	disable(formId+"Btn");
-	$.post('${request.contextPath}/admin/deploy/shutdown',
+	$.post('${request.contextPath}/admin/deploy/_shutdown',
 			$("#"+formId).serialize(),
 	        function(data){
 	            if(data.status == 200){

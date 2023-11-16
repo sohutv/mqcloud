@@ -249,7 +249,12 @@ public class AdminDeployController extends AdminViewController {
         // 启动
         return mqDeployer.startup(ip, dir, port);
     }
-    
+
+    @RequestMapping(value = "/_shutdown", method = RequestMethod.POST)
+    public Result<?> _shutdown(UserInfo ui, @RequestParam(name = "cid") int cid, @RequestParam(name = "addr") String addr) {
+        return shutdown(ui, cid, addr);
+    }
+
     /**
      * 下线
      * @param cid

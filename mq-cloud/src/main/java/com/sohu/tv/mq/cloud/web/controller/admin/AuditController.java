@@ -581,7 +581,7 @@ public class AuditController extends AdminViewController {
     @RequestMapping(value = "/topic/create", method = RequestMethod.POST)
     public Result<?> createTopic(UserInfo userInfo,
             @RequestParam("aid") long aid, @RequestParam("cid") int cid,
-            @RequestParam("traceClusterId") Integer traceClusterId) {
+            @RequestParam(value = "traceClusterId", defaultValue = "0") Integer traceClusterId) {
         // 获取audit
         Result<Audit> auditResult = auditService.queryAudit(aid);
         if (auditResult.isNotOK()) {

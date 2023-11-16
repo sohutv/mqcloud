@@ -5,7 +5,7 @@
 	<parent>
 		<groupId>com.sohu.tv</groupId>
 		<artifactId>mq</artifactId>
-		<version>5.1.0</version>
+		<version>5.1.1</version>
 	</parent>
 
 	<artifactId>mq-cloud</artifactId>
@@ -17,7 +17,7 @@
 			<dependency>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-dependencies</artifactId>
-                <version>2.2.9.RELEASE</version>
+                <version>2.6.15</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -26,13 +26,15 @@
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<mybatis-spring-boot-starter.version>2.1.2</mybatis-spring-boot-starter.version>
+		<mybatis-spring-boot-starter.version>2.2.2</mybatis-spring-boot-starter.version>
 		<shedlock.version>2.3.0</shedlock.version>
-		<commons-validator.version>1.6</commons-validator.version>
+		<commons-validator.version>1.7</commons-validator.version>
 		<ssh-version>2.9.2</ssh-version>
 		<slf4j-version>1.7.30</slf4j-version>
 		<java.version>1.8</java.version>
 		<flexmark.version>0.42.12</flexmark.version>
+		<snakeyaml.version>2.0</snakeyaml.version>
+		<netty.version>4.1.65.Final</netty.version>
 	</properties>
 
 	<dependencies>
@@ -212,6 +214,11 @@
 			<artifactId>jackson-databind</artifactId>
 		</dependency>
 
+		<dependency>
+			<groupId>org.yaml</groupId>
+			<artifactId>snakeyaml</artifactId>
+			<version>${snakeyaml.version}</version>
+		</dependency>
 	</dependencies>
 
 	<build>

@@ -45,9 +45,4 @@ public class MQErrorController implements ErrorController {
         }
         return Result.getWebErrorResult(e);
     }
-
-    @Override
-    public String getErrorPath() {
-        return ERROR_PATH;
-    }
 }

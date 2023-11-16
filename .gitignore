@@ -3,6 +3,7 @@
 # Package Files #
 *.war
 *.ear
+LOGS_DIR_IS_UNDEFINED
  
 # ignore Maven generated target folders
 target
@@ -25,3 +26,5 @@ dependency-reduced-pom.xml
 # ignore idea files
 .idea
 *.iml
+
+mqcloud.db.*
