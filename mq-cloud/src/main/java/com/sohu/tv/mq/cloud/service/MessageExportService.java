@@ -462,7 +462,7 @@ public class MessageExportService {
             SSHTemplate.SSHResult scpRst = sshTemplate.execute(arrays[0], new SSHTemplate.SSHCallback() {
                 public SSHTemplate.SSHResult call(SSHTemplate.SSHSession session) {
                     String remotePath = arrays[1];
-                    if (!remotePath.startsWith("/")) {
+                    if (!remotePath.endsWith("/")) {
                         remotePath += "/";
                     }
                     return session.scpToFile(finalFile.getAbsolutePath(), remotePath + finalFile.getName());

@@ -39,6 +39,11 @@
 
 	<dependencies>
 		<dependency>
+			<groupId>io.netty</groupId>
+			<artifactId>netty-all</artifactId>
+			<version>${netty.version}</version>
+		</dependency>
+		<dependency>
 			<groupId>com.sohu.tv</groupId>
 			<artifactId>mq-client-open</artifactId>
 		</dependency>
