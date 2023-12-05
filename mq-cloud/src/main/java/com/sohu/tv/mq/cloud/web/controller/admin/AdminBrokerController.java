@@ -65,6 +65,12 @@ public class AdminBrokerController extends AdminViewController {
     @Autowired
     private MQCloudConfigHelper mqCloudConfigHelper;
 
+    @ResponseBody
+    @RequestMapping(value = "/_refresh", method = RequestMethod.POST)
+    public Result<?> _refresh(UserInfo ui, @RequestParam(name = "cid") int cid) {
+        return refresh(ui, cid);
+    }
+
     /**
      * 刷新
      * 
@@ -469,6 +475,12 @@ public class AdminBrokerController extends AdminViewController {
         BeanUtils.copyProperties(updateSendMsgRateLimitParam, updateSendMsgRateLimitRequestHeader);
         Result<?> result = brokerService.updateSendMessageRateLimit(cid, addr, updateSendMsgRateLimitRequestHeader);
         return Result.getWebResult(result);
+    }
+
+    @RequestMapping(value = "/timerWheel/_metrics")
+    public String _timerWheelMetrics(UserInfo ui, @RequestParam(name = "cid") int cid,
+                                    @RequestParam(name = "addr") String addr, Map<String, Object> map) {
+        return timerWheelMetrics(ui, cid, addr, map);
     }
 
     /**

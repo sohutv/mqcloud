@@ -401,7 +401,7 @@ public class AdminClusterController extends AdminViewController {
         for (MessageDelayLevel messageDelayLevel : MessageDelayLevel.values()) {
             String offsetString = removeFromMap(stats,
                     RunningStats.scheduleMessageOffset.name() + "_" + messageDelayLevel.getLevel());
-            if (offsetString == null || broker.getBrokerID() != 0) {
+            if (offsetString == null) {
                 continue;
             }
             String[] offsets = offsetString.split(",");

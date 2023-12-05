@@ -2154,7 +2154,7 @@ function updateConsumerTraceShow(cid, consumer, traceable){
 }
 function updateConsumerTrace(){
 	disable("updateConsumerTraceBtn");
-	$.post('${request.contextPath}/consumer/update/trace',
+	$.post('${request.contextPath}/consumer/update/_trace',
 			{
 				cid: $("#consumerH4").val(),
 				traceEnabled: $("#traceSapn").val()

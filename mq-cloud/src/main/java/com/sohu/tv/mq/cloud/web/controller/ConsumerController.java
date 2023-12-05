@@ -809,6 +809,13 @@ public class ConsumerController extends ViewController {
         return Result.getWebResult(result);
     }
 
+    @ResponseBody
+    @RequestMapping(value = "/update/_trace", method = RequestMethod.POST)
+    public Result<?> _updateConsumerTrace(UserInfo userInfo, @RequestParam("cid") int cid,
+                                          @RequestParam("traceEnabled") int traceEnabled) throws Exception {
+        return updateConsumerTrace(userInfo, cid, traceEnabled);
+    }
+
     /**
      * 更新trace
      * 

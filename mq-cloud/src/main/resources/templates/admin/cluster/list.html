@@ -129,21 +129,18 @@
 							<td <#if bkey != "0">class="border-top-0 pt-0"</#if>>
 								<a href="#" data-target="#timerWheelMetricsModal" data-toggle="modal" onclick="timerWheelMetrics('${brokerGroup[key][bkey].brokerAddr}')"><span data-toggle="tooltip" data-html="true" title="时间轮写入吞吐(timerEnqueueTps):${brokerGroup[key][bkey].timerEnqueueTpsFormat!}<br>commitlog写入吞吐(timerDequeueTps):${brokerGroup[key][bkey].timerDequeueTpsFormat!}<br>消费时间轮topic落后量(timerOffsetBehind):${brokerGroup[key][bkey].timerOffsetBehind!}<br>时间轮转动落后时间(timerReadBehind):${brokerGroup[key][bkey].timerReadBehind!}ms">${brokerGroup[key][bkey].timerCongestNum!}</span></a>
 							</td>
-							<#if bkey == "0">
-								<td>
+							<td <#if bkey != "0">class="border-top-0 pt-0"</#if>>
 								<#if brokerGroup[key][bkey].delayQueue??>
 									<a href="#" data-target="#delayMessageOffsetModal${i}" data-toggle="modal" title="查看延迟队列数据">
 									${brokerGroup[key][bkey].delayQueue.delayMessageOffset}
+									</a>
 								<#else>
 									0
 								</#if>
-								<#if brokerGroup[key][bkey].delayQueue??>
-									</a>
-								</#if>
-								</td>
+							</td>
+							<#if bkey == "0">
 								<td>0</td>
 							<#else>
-								<td class="border-top-0 pt-0" data-toggle="tooltip" title="由于slave不会处理延时队列的消息，故一直为0">0</td>
 								<#if brokerGroup[key]["0"]??>
 									<#assign fallbehindSize=brokerGroup[key]["0"].commitLogMaxOffset - brokerGroup[key][bkey].commitLogMaxOffset />
 									<td class="border-top-0 pt-0" data-toggle="tooltip" title="${fallbehindSize}">${brokerGroup[key]["0"].format(fallbehindSize)}</td>
@@ -253,7 +250,7 @@
 					</div>
 				</div>
 			</#if>
-			<#if bkey == "0" && brokerGroup[key][bkey].delayQueue??>
+			<#if brokerGroup[key][bkey].delayQueue??>
 				<div id="delayMessageOffsetModal${i}" class="modal fade" tabindex="-1" data-width="400" aria-hidden="true">
 					<div class="modal-dialog">
 						<div class="modal-content">
@@ -1701,18 +1698,14 @@ function program(addr, programId){
  * 下线
  */
 function brokerOffline(formId){
-	disable(formId+"Btn");
-	$.post('${request.contextPath}/admin/deploy/_shutdown',
-			$("#"+formId).serialize(),
-	        function(data){
-	            if(data.status == 200){
-	            	toastr.success("下线成功");  
-	            	reload(3000);
-			    }else{
-			    	toastr.error("操作失败！"+data.message);  
-			    	enable(formId+"Btn");
-			    }
-        }, 'json');
+	post('${request.contextPath}/admin/deploy/_shutdown', $("#"+formId).serialize(), function(data){
+		if (data.status == 200) {
+			toastr.success("下线成功");
+			reload(3000);
+		} else {
+			toastr.error("操作失败！" + data.message);
+		}
+	}, 'json');
 }
 $('#mqClusterSelect').on('change',function(){
 	window.location.href = "${request.contextPath}/admin/cluster/list?cid="+$(this).val();
@@ -1872,7 +1865,7 @@ function refresh(){
 	if (!confirm("你确定要从NameServer刷新broker吗?")) {
 		return;
 	}
-	post('${request.contextPath}/admin/broker/refresh',
+	post('${request.contextPath}/admin/broker/_refresh',
 		{
 			cid: ${response.result.selectedMQCluster.id}
 		},
@@ -2065,19 +2058,17 @@ function modifyBrokerConfig(){
  * 启动实例
  */
 function startupBroker(ipAddr, brokerName, dir){
-	disable(brokerName+"Btn");
-	$.post('${request.contextPath}/admin/deploy/startup/broker',{
+	post('${request.contextPath}/admin/deploy/startup/broker', {
 		ipAddr: ipAddr,
 		dir: dir
-		},function(data){
-            if(data.status == 200){
-            	toastr.success("启动成功！即将刷新页面！");  	            	
-            	reload(5000);   
-		    } else {
-		    	toastr.error("启动失败！"+data.message);  
-		    	enable(brokerName+"Btn");
-		    }
-       }, 'json');
+	}, function (data) {
+		if (data.status == 200) {
+			toastr.success("启动成功！即将刷新页面！");
+			reload(5000);
+		} else {
+			toastr.error("启动失败！" + data.message);
+		}
+	}, 'json');
 }
 
 /**
@@ -2418,7 +2409,7 @@ function is_broker_5Level(version) {
 }
 
 function timerWheelMetrics(addr) {
-	$.get('${request.contextPath}/admin/broker/timerWheel/metrics',
+	$.get('${request.contextPath}/admin/broker/timerWheel/_metrics',
 		{
 			cid: ${response.result.selectedMQCluster.id},
 			addr:  addr
