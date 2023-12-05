@@ -1017,13 +1017,13 @@ function resendMessage(){
 			cid: $("#consumerSelect").val()
 		},
         function(data){
-			enable("resendBtn");
-            if(data.status == 200){
-            	toastr.success("申请成功！请耐心等待！");  	            	
-            	$('#resendMsgModal').modal('hide');       	
-		    }else{
-		    	toastr.error("申请失败！"+data.message);  
-		    }
+			if (data.status == 200) {
+				toastr.success("申请成功，请稍后查看！即将跳转到我的工单");
+				toMyAuditPage();
+			} else {
+				toastr.error("申请失败！" + data.message);
+				enable("resendBtn");
+			}
     }, 'json');
 }
 
