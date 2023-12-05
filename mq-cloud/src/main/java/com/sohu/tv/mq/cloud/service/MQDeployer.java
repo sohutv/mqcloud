@@ -897,7 +897,7 @@ public class MQDeployer {
                     break;
                 }
                 try {
-                    logger.info("shutting down, ip:{}, port:{}, times:{}", ip, port, i);
+                    logger.info("shutting down, ip:{}, port:{}, name:{}, times:{}, result:{}", ip, port, name, i, programResult);
                     Thread.sleep(3000);
                 } catch (InterruptedException e) {
                     break;
