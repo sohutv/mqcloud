@@ -11,9 +11,9 @@ import com.sohu.tv.mq.route.AffinityMQStrategy;
 import com.sohu.tv.mq.stats.StatsHelper;
 import com.sohu.tv.mq.util.CommonUtil;
 import org.apache.rocketmq.client.exception.MQClientException;
-import org.apache.rocketmq.client.impl.consumer.DefaultMQPushConsumerImpl;
 import org.apache.rocketmq.client.impl.factory.MQClientInstance;
 import org.apache.rocketmq.client.impl.producer.DefaultMQProducerImpl;
+import org.apache.rocketmq.client.impl.producer.TopicPublishInfo;
 import org.apache.rocketmq.client.producer.*;
 import org.apache.rocketmq.client.trace.AsyncTraceDispatcher;
 import org.apache.rocketmq.client.trace.hook.SendMessageTraceHookImpl;
@@ -56,6 +56,9 @@ public class RocketMQProducer extends AbstractConfig {
 
     // 限流发生时，是否暂停一会发送线程
     private boolean suspendAWhileWhenRateLimited = false;
+
+    // 启动时是否获取topic路由信息（用于启动后发送消息前自动与ns和broker建联）
+    private boolean fetchTopicRouteInfoWhenStart;
 
     public RocketMQProducer() {
     }
@@ -114,6 +117,9 @@ public class RocketMQProducer extends AbstractConfig {
                 statsHelper.setMqCloudDomain(getMqCloudDomain());
                 MQMetricsExporter.getInstance().add(statsHelper);
                 producer.getDefaultMQProducerImpl().registerSendMessageHook(hook);
+            }
+            if (fetchTopicRouteInfoWhenStart) {
+                producer.getDefaultMQProducerImpl().updateTopicPublishInfo(getTopic(), new TopicPublishInfo());
             }
             producer.start();
             // 初始化重试线程池
@@ -972,6 +978,14 @@ public class RocketMQProducer extends AbstractConfig {
 
     public void setSuspendAWhileWhenRateLimited(boolean suspendAWhileWhenRateLimited) {
         this.suspendAWhileWhenRateLimited = suspendAWhileWhenRateLimited;
+    }
+
+    public boolean isFetchTopicRouteInfoWhenStart() {
+        return fetchTopicRouteInfoWhenStart;
+    }
+
+    public void setFetchTopicRouteInfoWhenStart(boolean fetchTopicRouteInfoWhenStart) {
+        this.fetchTopicRouteInfoWhenStart = fetchTopicRouteInfoWhenStart;
     }
 
     @Override

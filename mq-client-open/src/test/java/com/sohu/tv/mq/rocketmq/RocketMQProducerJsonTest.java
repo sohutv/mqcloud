@@ -21,6 +21,7 @@ public class RocketMQProducerJsonTest {
     @Before
     public void init() {
         producer = TestUtil.buildProducer("mqcloud-json-test-topic-producer", "mqcloud-json-test-topic");
+        producer.setFetchTopicRouteInfoWhenStart(true);
         producer.start();
     }
 
