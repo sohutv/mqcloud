@@ -4,6 +4,7 @@ import com.sohu.tv.mq.cloud.bo.QueueOffset;
 import com.sohu.tv.mq.cloud.common.util.CipherHelper;
 import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper;
 import com.sohu.tv.mq.cloud.util.Result;
+import com.sohu.tv.mq.cloud.util.Status;
 import com.sohu.tv.mq.cloud.web.vo.UserInfo;
 import com.sohu.tv.mq.util.JSONUtil;
 import org.slf4j.Logger;
@@ -50,7 +51,7 @@ public class MQProxyService {
     public Result<List<QueueOffset>> clusteringQueueOffset(String consumer) {
         String server = mqProxyServerChooser.choose();
         if (server == null) {
-            return null;
+            return Result.getResult(Status.NO_RESULT);
         }
         String uriTemplate = "http://" + server + ":8081/mq/clustering/queue/offset?consumer={consumer}";
         URI url = restTemplate.getUriTemplateHandler().expand(uriTemplate, consumer);
@@ -65,8 +66,8 @@ public class MQProxyService {
             return result;
         } catch (Exception e) {
             logger.error("queueOffset err, url:{}", url, e);
+            return Result.getErrorResult(Status.WEB_ERROR, e);
         }
-        return null;
     }
 
     /**
