@@ -9,9 +9,9 @@ import com.sohu.tv.mq.trace.SohuAsyncTraceDispatcher;
 import com.sohu.tv.mq.trace.TraceRocketMQProducer;
 import com.sohu.tv.mq.util.CommonUtil;
 import com.sohu.tv.mq.util.Constant;
-import com.sohu.tv.mq.util.MQProtocol;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.rocketmq.client.ClientConfig;
+import org.apache.rocketmq.client.exception.MQClientException;
 import org.apache.rocketmq.client.trace.AsyncTraceDispatcher;
 import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.UtilAll;
@@ -77,6 +77,9 @@ public abstract class AbstractConfig {
     // 亲和的broker，broker名与机房名采用下划线分割，比如broker-a_bx，表示bx机房的broker-a
     private String affinityBrokerSuffix;
 
+    // 拉取集群配置时最大重试次数
+    private int maxRetryTimesWhenFetchClusterInfo = 5;
+
     public AbstractConfig() {
         this(null, null);
     }
@@ -127,16 +130,20 @@ public abstract class AbstractConfig {
      * 初始化
      */
     protected void init() {
-        while (true) {
+        for (int i = 1; i <= maxRetryTimesWhenFetchClusterInfo; ++i) {
             clusterInfoDTO = CommonUtil.fetchClusterInfo(mqCloudDomain, getTopic(), group, role());
             if (clusterInfoDTO == null) {
+                if (i == maxRetryTimesWhenFetchClusterInfo) {
+                    throw new RuntimeException("cannot fetch config, topic:[" + getTopic() + "], group:[" + group
+                            + "], role:[" + role() + "], mqCloudDomain:[" + mqCloudDomain + "]");
+                }
                 try {
                     Thread.sleep(1000);
                 } catch (InterruptedException e) {
                     logger.warn("init interrupted");
                 }
             } else {
-                logger.info("topic:{}, group:{}, role:{}, init ok:{}", getTopic(), group, role(), clusterInfoDTO);
+                logger.info("topic:{}, group:{}, role:{}, init ok:{}, times:{}", getTopic(), group, role(), clusterInfoDTO, i);
                 break;
             }
         }
@@ -146,8 +153,6 @@ public abstract class AbstractConfig {
     /**
      * 设置系统属性
      * 
-     * @param properties
-     * @param key
      */
     protected void setProperty(String key, String value) {
         String prev = System.getProperty(key);
@@ -375,6 +380,14 @@ public abstract class AbstractConfig {
 
     public void setAffinityBrokerSuffix(String affinityBrokerSuffix) {
         this.affinityBrokerSuffix = affinityBrokerSuffix;
+    }
+
+    public int getMaxRetryTimesWhenFetchClusterInfo() {
+        return maxRetryTimesWhenFetchClusterInfo;
+    }
+
+    public void setMaxRetryTimesWhenFetchClusterInfo(int maxRetryTimesWhenFetchClusterInfo) {
+        this.maxRetryTimesWhenFetchClusterInfo = maxRetryTimesWhenFetchClusterInfo;
     }
 
     /**
