@@ -12,8 +12,6 @@ import com.sohu.tv.mq.cloud.Application;
 @SpringBootTest(classes = Application.class)
 public class ServerStatusTaskTest {
 
-    public static final String IP = "127.0.0.1";
-    
     @Autowired
     private ServerStatusTask serverStatusTask;
     
