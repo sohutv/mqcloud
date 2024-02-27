@@ -48,7 +48,7 @@ public enum Status {
     DB_UPDATE_ERR_DELETE_USERPRODUCER_OK(511, "userProducer删除成功,但是审核记录更新失败"),
     EMAIL_SEND_ERR(512, "数据操作成功，发送审核邮件失败"),
     DB_UPDATE_ERR_DELETE_USERCONSUMER_OK(513, "userConsumer删除成功,但是审核记录更新失败"),
-    AUDIT_RECORD_REPEAT(514, "已提交该审核记录，不可重复提交，请耐心等待"),
+    AUDIT_RECORD_REPEAT(514, "工单已存在，请等待管理员审核"),
     AUDIT_MESSAGE_CANNOT_AUTID_WHEN_NOT_SEND_OK(515, "消息还未全部发送成功，不可审批"),
     AUDIT_MESSAGE_NOT_SEND_OK(516, "消息未发送成功"),
     DELETE_BROKER_CONFIG_FIRST(517, "请先删除配置组下的配置"),

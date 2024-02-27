@@ -601,8 +601,8 @@ $(function() {
 			},
 	        function(data){
 	            if(data.status == 200){
-	            	toastr.success("申请成功！请耐心等待！");  	            	
-	            	reload(1000);            	
+					toastr.success("申请成功，请稍后查看！即将跳转到我的工单");
+					toMyAuditPage();
 			    }else{
 			    	toastr.error("删除失败！"+data.message);  
 			    	enable("deleteProducerBtn");
@@ -708,8 +708,8 @@ function updateTopicTrace(){
 			},
 	        function(data){
 	            if(data.status == 200){
-	            	toastr.success("申请成功！请耐心等待！");  	            	
-	            	reload(2000);            	
+					toastr.success("申请成功，请稍后查看！即将跳转到我的工单");
+					toMyAuditPage();
 			    }else{
 			    	toastr.error("操作失败！"+data.message);  
 			    	enable("updateTopicTraceBtn");
@@ -738,8 +738,8 @@ function updateTopicTrafficWarn(){
 			},
 			function(data){
 				if(data.status == 200){
-					toastr.success("申请成功！请耐心等待！");
-					reload(2000);
+					toastr.success("申请成功，请稍后查看！即将跳转到我的工单");
+					toMyAuditPage();
 				}else{
 					toastr.error("操作失败！"+data.message);
 					enable("updateTopicTrafficWarnBtn");
