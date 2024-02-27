@@ -138,7 +138,7 @@ public class CommonUtil {
                     }
                 }
             } else {
-                logger.error("http connetion err: code:{}, info:{}", result.code, result.content);
+                logger.error("http connection err: code:{}, info:{}", result.code, result.content);
             }
         } catch (Throwable e) {
             logger.error("http err, domain:{},topic:{},group:{},use:{}ms", mqCloudDomain, topic, group,
