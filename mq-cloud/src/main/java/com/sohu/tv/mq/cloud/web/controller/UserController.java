@@ -454,7 +454,11 @@ public class UserController extends ViewController {
                             for (User u : userListResult.getResult()) {
                                 if (up.getUid() == u.getId()) {
                                     up.setUsername(u.getName() == null ? u.getEmailName() : u.getName());
+                                    break;
                                 }
+                            }
+                            if (up.getUsername() == null) {
+                                up.setUsername("deleted:" + up.getUid());
                             }
                         }
                         // 查询是否有流量统计
