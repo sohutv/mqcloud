@@ -19,7 +19,7 @@ public class ProducerStatsTaskTest {
     public void test() {
         int dt = 20181202;
         String time = "0050";
-        producerStatsTask.producerExcetpion(dt, time);
+        producerStatsTask.producerException(dt, time);
     }
 
 }
