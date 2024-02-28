@@ -193,6 +193,8 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware, Comm
     // 导出消息的下载url前缀，格式：http://mqcloud.com/download/
     private String exportedMessageDownloadUrlPrefix;
 
+    private Set<String> ignoreErrorProducerSet;
+
     @Autowired
     private CommonConfigService commonConfigService;
 
@@ -716,6 +718,21 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware, Comm
 
     public void setExportedMessageDownloadUrlPrefix(String exportedMessageDownloadUrlPrefix) {
         this.exportedMessageDownloadUrlPrefix = exportedMessageDownloadUrlPrefix;
+    }
+
+    public Set<String> getIgnoreErrorProducerSet() {
+        return ignoreErrorProducerSet;
+    }
+
+    public boolean isIgnoreErrorProducer(String producer) {
+        if (ignoreErrorProducerSet == null) {
+            return false;
+        }
+        return ignoreErrorProducerSet.contains(producer);
+    }
+
+    public void setIgnoreErrorProducerSet(Set<String> ignoreErrorProducerSet) {
+        this.ignoreErrorProducerSet = ignoreErrorProducerSet;
     }
 
     public boolean checkApiAuditUserEmail(String email) {

@@ -58,7 +58,7 @@ public class ProducerStatsTask {
 
     @Autowired
     private UserService userService;
-    
+
     /**
      * 删除统计表数据
      */
@@ -104,12 +104,12 @@ public class ProducerStatsTask {
             public void run() {
                 Date date = new Date();
                 String time = DateUtil.getFormat(DateUtil.HHMM).format(new Date(date.getTime() - 5 * 60 * 1000));
-                producerExcetpion(DateUtil.format(date), time);
+                producerException(DateUtil.format(date), time);
             }
         });
     }
 
-    protected void producerExcetpion(int dt, String time) {
+    protected void producerException(int dt, String time) {
         long start = System.currentTimeMillis();
         int size = 0;
         Result<List<ProducerTotalStat>> listResult = producerTotalStatService.queryExceptionList(dt, time);
@@ -123,6 +123,11 @@ public class ProducerStatsTask {
                 // 获取发送者列表
                 List<UserProducer> userProducerList = getUserProducer(producer);
                 if (userProducerList != null) {
+                    // 验证是否忽略报警
+                    if (mqCloudConfigHelper.isIgnoreErrorProducer(producer)) {
+                        logger.info("ignore producer:{} error", producer);
+                        continue;
+                    }
                     List<User> users = getWarnUser(userProducerList);
                     Map<String, Object> paramMap = new HashMap<>();
                     paramMap.put("link", mqCloudConfigHelper.getTopicLink(userProducerList.get(0).getTid(), producer));
@@ -155,7 +160,6 @@ public class ProducerStatsTask {
     /**
      * 获取用户邮件地址
      * 
-     * @param userIdSet
      * @return
      */
     private List<User> getWarnUser(List<UserProducer> userProducerList) {
