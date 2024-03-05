@@ -58,7 +58,7 @@ public class RocketMQProducer extends AbstractConfig {
     private boolean suspendAWhileWhenRateLimited = false;
 
     // 启动时是否获取topic路由信息（用于启动后发送消息前自动与ns和broker建联）
-    private boolean fetchTopicRouteInfoWhenStart;
+    private boolean fetchTopicRouteInfoWhenStart = true;
 
     public RocketMQProducer() {
     }
