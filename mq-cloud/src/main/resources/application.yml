@@ -20,7 +20,7 @@ management:
   server:
     port: 8088
 
-spring:
+spring: 
   profiles: 
     active: local
   mvc:

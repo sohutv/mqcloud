@@ -25,6 +25,7 @@
 	</dependencyManagement>
 
 	<properties>
+		<maven.deploy.skip>true</maven.deploy.skip>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<mybatis-spring-boot-starter.version>2.2.2</mybatis-spring-boot-starter.version>
 		<shedlock.version>2.3.0</shedlock.version>
@@ -35,6 +36,7 @@
 		<flexmark.version>0.42.12</flexmark.version>
 		<snakeyaml.version>2.0</snakeyaml.version>
 		<netty.version>4.1.65.Final</netty.version>
+		<h2.version>2.2.220</h2.version>
 	</properties>
 
 	<dependencies>
@@ -206,7 +208,7 @@
         <dependency>
 			<groupId>com.h2database</groupId>
 			<artifactId>h2</artifactId>
-			<scope>runtime</scope>
+			<version>${h2.version}</version>
 		</dependency>
 
 		<dependency>
