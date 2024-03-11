@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.sohu.tv.mq.cloud.util.Result;
 import org.apache.rocketmq.common.stats.Stats;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -32,6 +33,9 @@ public class ConsumerRetryTrafficService extends HourTrafficService{
 
     @Autowired
     private AlarmConfigBridingService alarmConfigBridingService;
+
+    @Autowired
+    private ClientVersionService clientVersionService;
     
     protected void alert(TopicHourTraffic topicTraffic, TopicConsumer topicConsumer, List<User> userList) {
         long consumerFailCount = alarmConfigBridingService.getConsumerFailCount(topicConsumer.getConsumer());
@@ -39,6 +43,10 @@ public class ConsumerRetryTrafficService extends HourTrafficService{
             // 验证报警频率
             if (alarmConfigBridingService.needWarn("consumerFail", topicConsumer.getTopic(), topicConsumer.getConsumer())) {
                 Map<String, Object> paramMap = new HashMap<>();
+                Result result = clientVersionService.query(topicConsumer.getTopic(), topicConsumer.getConsumer());
+                if (result.getResult() != null) {
+                    paramMap.put("sohu", "1");
+                }
                 paramMap.put("topic", topicConsumer.getTopic());
                 paramMap.put("consumer",mqCloudConfigHelper.getTopicConsumeHrefLink(topicConsumer.getTid(),
                         topicConsumer.getConsumer(), System.currentTimeMillis()));
