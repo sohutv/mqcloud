@@ -694,7 +694,10 @@ public class AuditController extends AdminViewController {
         } else {
             // http消费需要单独设置限速
             try {
-                httpConsumerConfig(userInfo, consumer, consumerConfig);
+                AuditConsumerConfig auditConsumerConfig = new AuditConsumerConfig();
+                auditConsumerConfig.setPermitsPerSecond(consumerConfig.getPermitsPerSecond());
+                auditConsumerConfig.setEnableRateLimit(true);
+                httpConsumerConfig(userInfo, consumer, auditConsumerConfig);
             } catch (Exception e) {
                 logger.error("httpConsumerConfig error:{} config:{}", consumer, consumerConfig, e);
             }
@@ -1629,12 +1632,21 @@ public class AuditController extends AdminViewController {
         ConsumerConfig consumerConfig = new ConsumerConfig();
         BeanUtils.copyProperties(auditConsumerConfig, consumerConfig);
         consumerConfig.setConsumer(consumer.getName());
-        Result<?> saveResult = consumerConfigService.save(consumerConfig);
+        Result<?> saveResult = null;
+        if (Audit.TypeEnum.PAUSE_CONSUME.getType() == audit.getType()) {
+            consumerConfig.addPauseConfig(auditConsumerConfig.getPauseClientId(), auditConsumerConfig.getUnregister());
+            saveResult = consumerConfigService.savePause(consumerConfig);
+        } else if (TypeEnum.RESUME_CONSUME.getType() == audit.getType()) {
+            consumerConfig.addPauseConfig(auditConsumerConfig.getPauseClientId(), auditConsumerConfig.getUnregister());
+            saveResult = consumerConfigService.saveResume(consumerConfig);
+        } else {
+            saveResult = consumerConfigService.save(consumerConfig);
+        }
         if (saveResult.isNotOK()) {
             return Result.getWebResult(saveResult);
         }
         // http消费需要单独设置限速
-        httpConsumerConfig(userInfo, consumer, consumerConfig);
+        httpConsumerConfig(userInfo, consumer, auditConsumerConfig);
         // 更新申请状态
         boolean updateOK = agreeAndTip(audit, userInfo.getUser().getEmail(), consumer.getName());
         if (updateOK) {
@@ -1801,7 +1813,7 @@ public class AuditController extends AdminViewController {
      * @param consumer
      * @param consumerConfig
      */
-    public void httpConsumerConfig(UserInfo userInfo, Consumer consumer, ConsumerConfig consumerConfig) {
+    public void httpConsumerConfig(UserInfo userInfo, Consumer consumer, AuditConsumerConfig consumerConfig) {
         if (!consumer.isHttpProtocol()) {
             return;
         }

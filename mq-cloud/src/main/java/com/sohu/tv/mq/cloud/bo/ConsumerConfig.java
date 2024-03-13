@@ -1,5 +1,11 @@
 package com.sohu.tv.mq.cloud.bo;
 
+import org.apache.commons.lang3.StringUtils;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Map.Entry;
+
 /**
  * 消费者配置
  * 
@@ -16,13 +22,13 @@ public class ConsumerConfig {
 
     // 消费暂停
     private Boolean pause;
-    private String pauseClientId;
 
     // 消费限速
     private Boolean enableRateLimit;
     private Double permitsPerSecond;
-    // 是否解注册
-    private Boolean unregister;
+
+    // 暂停具体某个客户端 clientId->unregister
+    private Map<String, Boolean> pauseConfig;
 
     public String getConsumer() {
         return consumer;
@@ -64,14 +70,6 @@ public class ConsumerConfig {
         this.permitsPerSecond = permitsPerSecond;
     }
 
-    public String getPauseClientId() {
-        return pauseClientId;
-    }
-
-    public void setPauseClientId(String pauseClientId) {
-        this.pauseClientId = pauseClientId;
-    }
-
     public String getRetryMessageSkipKey() {
         return retryMessageSkipKey;
     }
@@ -80,80 +78,44 @@ public class ConsumerConfig {
         this.retryMessageSkipKey = retryMessageSkipKey;
     }
 
-    public Boolean getUnregister() {
-        return unregister;
+    public Map<String, Boolean> getPauseConfig() {
+        return pauseConfig;
     }
 
-    public void setUnregister(Boolean unregister) {
-        this.unregister = unregister;
+    public void addPauseConfig(String clientId, boolean unregister) {
+        if (StringUtils.isBlank(clientId)) {
+            return;
+        }
+        if (pauseConfig == null) {
+            pauseConfig = new HashMap<>();
+        }
+        pauseConfig.put(clientId, unregister);
     }
 
-    @Override
-    public int hashCode() {
-        final int prime = 31;
-        int result = 1;
-        result = prime * result + ((consumer == null) ? 0 : consumer.hashCode());
-        result = prime * result + ((enableRateLimit == null) ? 0 : enableRateLimit.hashCode());
-        result = prime * result + ((pause == null) ? 0 : pause.hashCode());
-        result = prime * result + ((pauseClientId == null) ? 0 : pauseClientId.hashCode());
-        result = prime * result + ((permitsPerSecond == null) ? 0 : permitsPerSecond.hashCode());
-        result = prime * result + ((retryMessageResetTo == null) ? 0 : retryMessageResetTo.hashCode());
-        result = prime * result + ((retryMessageSkipKey == null) ? 0 : retryMessageSkipKey.hashCode());
-        return result;
+    public boolean containsPauseConfig(String clientId) {
+        if (pauseConfig == null) {
+            return false;
+        }
+        return pauseConfig.containsKey(clientId);
     }
 
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj)
-            return true;
-        if (obj == null)
-            return false;
-        if (getClass() != obj.getClass())
-            return false;
-        ConsumerConfig other = (ConsumerConfig) obj;
-        if (consumer == null) {
-            if (other.consumer != null)
-                return false;
-        } else if (!consumer.equals(other.consumer))
-            return false;
-        if (enableRateLimit == null) {
-            if (other.enableRateLimit != null)
-                return false;
-        } else if (!enableRateLimit.equals(other.enableRateLimit))
-            return false;
-        if (pause == null) {
-            if (other.pause != null)
-                return false;
-        } else if (!pause.equals(other.pause))
-            return false;
-        if (pauseClientId == null) {
-            if (other.pauseClientId != null)
-                return false;
-        } else if (!pauseClientId.equals(other.pauseClientId))
-            return false;
-        if (permitsPerSecond == null) {
-            if (other.permitsPerSecond != null)
-                return false;
-        } else if (!permitsPerSecond.equals(other.permitsPerSecond))
-            return false;
-        if (retryMessageResetTo == null) {
-            if (other.retryMessageResetTo != null)
-                return false;
-        } else if (!retryMessageResetTo.equals(other.retryMessageResetTo))
-            return false;
-        if (retryMessageSkipKey == null) {
-            if (other.retryMessageSkipKey != null)
-                return false;
-        } else if (!retryMessageSkipKey.equals(other.retryMessageSkipKey))
-            return false;
-        return true;
+    public Entry<String, Boolean> findPauseConfigFirstEntry() {
+        if (pauseConfig == null) {
+            return null;
+        }
+        return pauseConfig.entrySet().iterator().next();
     }
 
     @Override
     public String toString() {
-        return "ConsumerConfig [consumer=" + consumer + ", retryMessageResetTo=" + retryMessageResetTo
-                + ", retryMessageSkipKey=" + retryMessageSkipKey + ", pause=" + pause + ", pauseClientId="
-                + pauseClientId + ", enableRateLimit=" + enableRateLimit + ", permitsPerSecond=" + permitsPerSecond
-                + "]";
+        return "ConsumerConfig{" +
+                "consumer='" + consumer + '\'' +
+                ", retryMessageResetTo=" + retryMessageResetTo +
+                ", retryMessageSkipKey='" + retryMessageSkipKey + '\'' +
+                ", pause=" + pause +
+                ", enableRateLimit=" + enableRateLimit +
+                ", permitsPerSecond=" + permitsPerSecond +
+                ", pauseConfig=" + pauseConfig +
+                '}';
     }
 }

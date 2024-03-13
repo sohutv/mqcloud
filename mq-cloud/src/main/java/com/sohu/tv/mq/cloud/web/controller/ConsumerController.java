@@ -26,6 +26,7 @@ import org.apache.rocketmq.remoting.protocol.body.ConsumerRunningInfo;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
+import org.springframework.util.CollectionUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.HtmlUtils;
 
@@ -85,6 +86,9 @@ public class ConsumerController extends ViewController {
     @Autowired
     private TopicTrafficService topicTrafficService;
 
+    @Autowired
+    private AuditConsumerConfigService auditConsumerConfigService;
+
     /**
      * 消费进度
      * 
@@ -140,6 +144,7 @@ public class ConsumerController extends ViewController {
         for (ConsumerProgressVO vo : list) {
             vo.setConsumerConfig(consumerConfigService.getConsumerConfig(vo.getConsumer().getName()));
             vo.setVersion(clientVersionMap.get(vo.getConsumer().getName()));
+            vo.resetClientPauseConfig();
         }
         // 组装广播模式消费者信息
         setResult(map, "resultExt", Result.getResult(list));
@@ -760,6 +765,7 @@ public class ConsumerController extends ViewController {
         if (map == null) {
             return Result.getResult(Status.NO_RESULT);
         }
+        ConsumerConfig consumerConfig = consumerConfigService.getConsumerConfig(consumerName);
         // 组装vo
         List<QueueOwnerVO> queueConsumerVOList = new ArrayList<QueueOwnerVO>();
         for (String clientId : map.keySet()) {
@@ -778,6 +784,16 @@ public class ConsumerController extends ViewController {
                 BeanUtils.copyProperties(messageQueue, queueOwnerVO);
                 queueOwnerVO.setClientId(clientId);
                 queueOwnerVO.setIp(ip);
+                if (consumerConfig != null) {
+                    if (CollectionUtils.isEmpty(consumerConfig.getPauseConfig())) {
+                        if (consumerConfig.getPause() != null && consumerConfig.getPause()) {
+                            queueOwnerVO.setPaused(true);
+                            queueOwnerVO.setDisablePause(true);
+                        }
+                    } else if (consumerConfig.containsPauseConfig(clientId)) {
+                        queueOwnerVO.setPaused(true);
+                    }
+                }
                 queueConsumerVOList.add(queueOwnerVO);
             }
         }
@@ -943,6 +959,14 @@ public class ConsumerController extends ViewController {
         if (type == null) {
             return Result.getResult(Status.PARAM_ERROR);
         }
+        // 校验是否有未审核的记录
+        Result<Integer> unAuditCount = auditConsumerConfigService.queryUnAuditCount(consumerConfigParam.getConsumerId());
+        if (unAuditCount.isNotOK()) {
+            return unAuditCount;
+        }
+        if (unAuditCount.getResult() > 0) {
+            return Result.getResult(Status.AUDIT_RECORD_REPEAT);
+        }
         // 构造审核记录
         Audit audit = new Audit();
         audit.setType(type.getType());
@@ -950,9 +974,7 @@ public class ConsumerController extends ViewController {
         String message = type.getName() + "申请成功！请耐心等待！";
         audit.setUid(userInfo.getUser().getId());
         // ip不存在则置空
-        if (consumerConfigParam.getPauseClientId() == null) {
-            consumerConfigParam.setPauseClientId("");
-        } else {
+        if (consumerConfigParam.getPauseClientId() != null) {
             if (consumerConfigParam.getPause() != null && !consumerConfigParam.getPause()) {
                 // 恢复时，解注册取消
                 consumerConfigParam.setUnregister(false);

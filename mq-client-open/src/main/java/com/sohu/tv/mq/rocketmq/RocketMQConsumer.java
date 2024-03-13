@@ -43,6 +43,8 @@ import org.apache.rocketmq.remoting.RemotingClient;
 
 import java.lang.reflect.*;
 import java.net.HttpURLConnection;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Executors;
@@ -251,27 +253,21 @@ public class RocketMQConsumer extends AbstractConfig {
                         setRetryMessageResetTo(consumerConfigDTO.getRetryMessageResetTo());
                     }
                     // 2.更新消费是否暂停
-                    boolean needCheckPause = false;
-                    if (consumerConfigDTO.getPause() != null) {
-                        String pauseClientId = consumerConfigDTO.getPauseClientId();
-                        // 停止所有实例
-                        if (pauseClientId == null || pauseClientId.length() == 0) {
-                            needCheckPause = true;
-                        } else if (consumerConfigDTO.getPauseClientId().equals(getMQClientInstance().getClientId())) {
-                            // 只停止当前实例
-                            needCheckPause = true;
-                        }
-                    }
-                    if (needCheckPause
-                            && consumer.getDefaultMQPushConsumerImpl().isPause() != consumerConfigDTO.getPause()) {
-                        setPause(consumerConfigDTO.getPause());
-                        String clientId = getMQClientInstance().getClientId();
-                        String pauseClientId = consumerConfigDTO.getPauseClientId();
-                        if (clientId.equals(pauseClientId)) {
-                            if (consumerConfigDTO.getUnregister() != null && consumerConfigDTO.getUnregister()) {
-                                unregister();
+                    if (consumerConfigDTO.getPause() == null) { // 2.1.如果总配置为空，恢复消费
+                        tryToResume("pause is null");
+                    } else if (!consumerConfigDTO.getPause()) { // 2.2.如果总配置为不赞停，恢复消费
+                        tryToResume("pause is false");
+                    } else { // 2.3.总配置为暂停, 需要具体检测暂停实例
+                        // 没有具体实例配置，暂停所有实例
+                        if (consumerConfigDTO.getPauseConfig() == null || consumerConfigDTO.getPauseConfig().isEmpty()) {
+                            tryToPause(false, "pause instance is empty");
+                        } else {
+                            // 有具体实例配置，只暂停当前实例
+                            if (consumerConfigDTO.getPauseConfig().containsKey(getMQClientInstance().getClientId())) {
+                                tryToPause(consumerConfigDTO.getPauseConfig().get(getMQClientInstance().getClientId()), "pause instance");
                             } else {
-                                register();
+                                // 没有包含当前实例，恢复消费
+                                tryToResume("not contains current instance");
                             }
                         }
                     }
@@ -650,6 +646,24 @@ public class RocketMQConsumer extends AbstractConfig {
 
     public int getRate() {
         return rateLimiter.getRate();
+    }
+
+    public void tryToResume(String flag) {
+        if (isPause()) {
+            logger.info("topic:{}'s consumer:{} pause:{} try to resume, flag:{}", getTopic(), getGroup(), isPause(), flag);
+            register();
+            setPause(false);
+        }
+    }
+
+    public void tryToPause(Boolean unregister, String flag) {
+        if (!isPause()) {
+            logger.info("topic:{}'s consumer:{} pause:{} try to pause, unregister:{}, flag:{}", getTopic(), getGroup(), isPause(), unregister, flag);
+            setPause(true);
+            if (unregister != null && unregister) {
+                unregister();
+            }
+        }
     }
 
     public void setPause(boolean pause) {

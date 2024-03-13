@@ -863,3 +863,11 @@ CREATE TABLE IF NOT EXISTS `consumer_client_metrics`
     UNIQUE KEY `s_s_c` (`consumer`,`stat_time`,`client`),
     KEY           `create_date` (`create_date`,`consumer`)
 );
+
+CREATE TABLE IF NOT EXISTS `consumer_pause_config` (
+    `consumer`        varchar(64) NOT NULL COMMENT 'consumer名',
+    `pause_client_id` varchar(255)         DEFAULT NULL COMMENT '暂停的客户端Id',
+    `unregister`      tinyint(4) DEFAULT NULL COMMENT '0:不解注册,1:解注册',
+    `update_time`     timestamp   NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    UNIQUE KEY `c_p_c` (`consumer`, `pause_client_id`)
+);

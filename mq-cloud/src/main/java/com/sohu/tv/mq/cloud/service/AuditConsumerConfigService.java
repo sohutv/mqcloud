@@ -50,4 +50,19 @@ public class AuditConsumerConfigService {
         }
         return Result.getResult(auditConsumerConfig);
     }
+
+    /**
+     * 查询未审核的数量
+     *
+     * @param consumerId
+     * @return
+     */
+    public Result<Integer> queryUnAuditCount(long consumerId) {
+        try {
+            return Result.getResult(auditConsumerConfigDao.selectUnAuditCount(consumerId));
+        } catch (Exception e) {
+            logger.error("query err, consumerId:{}", consumerId, e);
+            return Result.getDBErrorResult(e);
+        }
+    }
 }

@@ -8,3 +8,17 @@ insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynami
 insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) values(28, 'skipPreOnline', 'false', 'master重启是否跳过预上线流程', '预上线流程用于master启动后先不注册到ns，从代理备同步元数据后再注册', 7, 0, 'true:是;false:否;', 0);
 insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) values(28, 'compatibleWithOldNameSrv', 'true', '是否兼容旧的ns', null, 8, 0, 'true:是;false:否;', 0);
 insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) values(28, 'lockInStrictMode', 'false', 'lockInStrictMode', null, 9, 0, 'true:是;false:否;', 0);
+
+INSERT INTO `common_config`(`key`, `value`, `comment`) VALUES ('ignoreErrorProducerSet', '[]', '忽略生产错误预警的生产者');
+
+-- ----------------------------
+-- Table structure for `consumer_pause_config`
+-- ----------------------------
+DROP TABLE IF EXISTS `consumer_pause_config`;
+CREATE TABLE `consumer_pause_config`(
+    `consumer`        varchar(64) NOT NULL COMMENT 'consumer名',
+    `pause_client_id` varchar(255)         DEFAULT NULL COMMENT '暂停的客户端Id',
+    `unregister`      tinyint(4) DEFAULT NULL COMMENT '0:不解注册,1:解注册',
+    `update_time`     timestamp   NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    UNIQUE KEY `c_p_c` (`consumer`, `pause_client_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='客户端暂停配置表';

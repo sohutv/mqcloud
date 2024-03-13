@@ -9,6 +9,7 @@ import com.sohu.tv.mq.cloud.util.WebUtil;
 import org.apache.rocketmq.common.message.MessageQueue;
 import org.apache.rocketmq.remoting.protocol.admin.OffsetWrapper;
 import org.apache.rocketmq.remoting.protocol.admin.TopicOffset;
+import org.springframework.util.CollectionUtils;
 
 import java.util.Iterator;
 import java.util.List;
@@ -239,6 +240,24 @@ public class ConsumerProgressVO {
 
     public void setConsumerConfig(ConsumerConfig consumerConfig) {
         this.consumerConfig = consumerConfig;
+    }
+
+    public void resetClientPauseConfig() {
+        if (consumeStatsList == null || consumerConfig == null) {
+            return;
+        }
+        for (ConsumeStatsExt consumeStatsExt : consumeStatsList) {
+            if (CollectionUtils.isEmpty(consumerConfig.getPauseConfig())) {
+                if (consumerConfig.getPause() != null && consumerConfig.getPause()) {
+                    consumeStatsExt.setPaused(true);
+                    consumeStatsExt.setDisablePause(true);
+                }
+            } else {
+                if (consumerConfig.containsPauseConfig(consumeStatsExt.getClientId())) {
+                    consumeStatsExt.setPaused(true);
+                }
+            }
+        }
     }
 
     public String getMessageModel() {

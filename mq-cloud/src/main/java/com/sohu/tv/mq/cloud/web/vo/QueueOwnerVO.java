@@ -18,6 +18,10 @@ public class QueueOwnerVO {
 
     private String consumerRunningInfoJson;
 
+    private boolean paused;
+
+    private boolean disablePause;
+
     public String getBrokerName() {
         return brokerName;
     }
@@ -55,6 +59,22 @@ public class QueueOwnerVO {
 
     public void setConsumerRunningInfoJson(String consumerRunningInfoJson) {
         this.consumerRunningInfoJson = consumerRunningInfoJson;
+    }
+
+    public boolean isPaused() {
+        return paused;
+    }
+
+    public void setPaused(boolean paused) {
+        this.paused = paused;
+    }
+
+    public boolean isDisablePause() {
+        return disablePause;
+    }
+
+    public void setDisablePause(boolean disablePause) {
+        this.disablePause = disablePause;
     }
 
     public int getTopicType() {

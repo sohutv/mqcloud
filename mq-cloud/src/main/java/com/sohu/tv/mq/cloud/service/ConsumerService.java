@@ -904,9 +904,7 @@ public class ConsumerService {
                             conn = mqAdmin.examineConsumerConnectionInfo(group);
                         } catch (MQBrokerException e) {
                             if (206 == e.getResponseCode()) {
-                                addToMap(resultMap, topic.getName(),
-                                        Result.getResult(Status.NO_ONLINE).setResult(group));
-                                continue;
+                                logger.warn("consuemr:{} not online", group);
                             } else {
                                 addToMap(resultMap, topic.getName(), Result.getWebErrorResult(e).setResult(group));
                             }
@@ -914,12 +912,8 @@ public class ConsumerService {
                             addToMap(resultMap, topic.getName(), Result.getWebErrorResult(e).setResult(group));
                             logger.error("topic:{} consuemr:{} connect err", topic, group, e);
                         }
-                        if (conn == null) {
-                            addToMap(resultMap, topic.getName(), Result.getResult(Status.NO_ONLINE).setResult(group));
-                            continue;
-                        }
                         Consumer consumer = new Consumer();
-                        if (MessageModel.BROADCASTING == conn.getMessageModel()) {
+                        if (conn != null && MessageModel.BROADCASTING == conn.getMessageModel()) {
                             consumer.setConsumeWay(Consumer.BROADCAST);
                         }
                         consumer.setName(group);

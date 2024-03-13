@@ -702,6 +702,7 @@ INSERT INTO `common_config`(`key`, `value`, `comment`) VALUES ('proxyAcls', '', 
 INSERT INTO `common_config`(`key`, `value`, `comment`) VALUES ('exportedMessageLocalPath', '/tmp', '消息导出时的本地路径，例如/tmp');
 INSERT INTO `common_config`(`key`, `value`, `comment`) VALUES ('exportedMessageRemotePath', '消息导出时的远程地址，例如127.0.0.1:/tmp，请赋予mqcloud权限');
 INSERT INTO `common_config`(`key`, `value`, `comment`) VALUES ('exportedMessageDownloadUrlPrefix', '消息导出时的下载地址，例如http://127.0.0.1/tmp/，请用http开头');
+INSERT INTO `common_config`(`key`, `value`, `comment`) VALUES ('ignoreErrorProducerSet', '[]', '忽略生产错误预警的生产者');
 -- ----------------------------
 -- warn_config init
 -- ----------------------------
@@ -783,12 +784,23 @@ CREATE TABLE `consumer_config` (
   `permits_per_second` float DEFAULT NULL COMMENT 'qps',
   `enable_rate_limit` tinyint(4) DEFAULT NULL COMMENT '0:不限速,1:限速',
   `pause` tinyint(4) DEFAULT NULL COMMENT '0:不暂停,1:暂停',
-  `pause_client_id` varchar(255) DEFAULT NULL COMMENT '暂停的客户端Id',
-  `unregister` tinyint(4) DEFAULT NULL COMMENT '0:不解注册,1:解注册',
   `retry_message_skip_key` varchar(360) DEFAULT NULL COMMENT '消息key',
   `update_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   UNIQUE KEY `consumer` (`consumer`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='客户端配置表';
+
+
+-- ----------------------------
+-- Table structure for `consumer_pause_config`
+-- ----------------------------
+DROP TABLE IF EXISTS `consumer_pause_config`;
+CREATE TABLE `consumer_pause_config` (
+    `consumer`               varchar(64) NOT NULL COMMENT 'consumer名',
+    `pause_client_id`        varchar(255)         DEFAULT NULL COMMENT '暂停的客户端Id',
+    `unregister`             tinyint(4) DEFAULT NULL COMMENT '0:不解注册,1:解注册',
+    `update_time`            timestamp   NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    UNIQUE KEY `c_p_c` (`consumer`, `pause_client_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='客户端暂停配置表';
 
 -- ----------------------------
 -- Table structure for `topic_traffic_stat`

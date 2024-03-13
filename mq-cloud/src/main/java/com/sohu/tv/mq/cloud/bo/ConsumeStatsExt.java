@@ -22,6 +22,10 @@ public class ConsumeStatsExt {
     
     private String clientId;
 
+    private boolean paused;
+
+    private boolean disablePause;
+
     public long computeTotalDiff() {
         long diffTotal = 0L;
 
@@ -68,5 +72,21 @@ public class ConsumeStatsExt {
 
     public void setClientId(String clientId) {
         this.clientId = clientId;
+    }
+
+    public boolean isPaused() {
+        return paused;
+    }
+
+    public void setPaused(boolean paused) {
+        this.paused = paused;
+    }
+
+    public boolean isDisablePause() {
+        return disablePause;
+    }
+
+    public void setDisablePause(boolean disablePause) {
+        this.disablePause = disablePause;
     }
 }

@@ -21,7 +21,7 @@ public class ConsumerConfigParam {
     private Boolean enableRateLimit;
     private Double permitsPerSecond;
     // 是否解注册
-    private Boolean unregister;
+    private boolean unregister;
 
     public long getConsumerId() {
         return consumerId;
@@ -63,11 +63,11 @@ public class ConsumerConfigParam {
         this.pauseClientId = pauseClientId;
     }
 
-    public Boolean getUnregister() {
+    public boolean getUnregister() {
         return unregister;
     }
 
-    public void setUnregister(Boolean unregister) {
+    public void setUnregister(boolean unregister) {
         this.unregister = unregister;
     }
 

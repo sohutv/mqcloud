@@ -37,4 +37,10 @@ public interface AuditConsumerConfigDao {
      */
     @Select("select * from audit_consumer_config where aid = #{aid}")
     public AuditConsumerConfig select(@Param("aid") long aid);
+
+    /**
+     * 查询未审核的数量
+     */
+    @Select("select count(1) from audit_consumer_config ac, audit where ac.consumer_id = #{cid} and ac.aid = audit.id and audit.status = 0")
+    public Integer selectUnAuditCount(@Param("cid") long cid);
 }

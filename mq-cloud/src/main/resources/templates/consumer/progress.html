@@ -122,9 +122,9 @@
 											<button type="button" class="btn btn-xs btn-outline-secondary" data-toggle="tooltip" title="消费过去一段时间至现在的消息" onclick="resetOffsetShow('${consumerProgressVO.consumer.name}', ${consumerProgressVO.consumer.id})"><i class="fas fa-fw fa-backward"></i></button>
 											<#if consumerProgressVO.version??>
 												<#if consumerProgressVO.consumerConfig?? && consumerProgressVO.consumerConfig.pause?? && consumerProgressVO.consumerConfig.pause>
-													<button type="button" class="btn btn-xs btn-outline-secondary" title="恢复消费" onclick="showPauseConsumeConfigModel(${consumerProgressVO.consumer.httpProtocol?c}, ${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', false<#if consumerProgressVO.consumerConfig?? && consumerProgressVO.consumerConfig.pauseClientId??>,'${consumerProgressVO.consumerConfig.pauseClientId}'</#if>)" data-toggle="modal"><i class="fas fa-fw fa-play"></i></button>
+													<button type="button" class="btn btn-xs btn-outline-secondary" title="恢复消费" onclick="showPauseConsumeConfigModel(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', false)" data-toggle="modal"><i class="fas fa-fw fa-play"></i></button>
 												<#else>
-													<button type="button" class="btn btn-xs btn-outline-secondary" title="暂停消费" onclick="showPauseConsumeConfigModel(${consumerProgressVO.consumer.httpProtocol?c}, ${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', true<#if consumerProgressVO.consumerConfig?? && consumerProgressVO.consumerConfig.pauseClientId??>,'${consumerProgressVO.consumerConfig.pauseClientId}'</#if>)" data-toggle="modal"><i class="fas fa-fw fa-pause"></i></button>
+													<button type="button" class="btn btn-xs btn-outline-secondary" title="暂停消费" onclick="showPauseConsumeConfigModel(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', true)" data-toggle="modal"><i class="fas fa-fw fa-pause"></i></button>
 												</#if>
 												<#if consumerProgressVO.consumerConfig?? && consumerProgressVO.consumerConfig.enableRateLimit?? && consumerProgressVO.consumerConfig.enableRateLimit>
 													<button type="button" class="btn btn-xs btn-outline-secondary" title="修改消费限速" onclick="showLimitConsumeConfigModel(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', true, <#if consumerProgressVO.consumerConfig.permitsPerSecond??>${consumerProgressVO.consumerConfig.permitsPerSecond}<#else>${limitConsumeTps}</#if>)" data-toggle="tooltip"><i class="fa-solid fa-fw fa-gauge"></i></button>
@@ -306,9 +306,12 @@
 																		<#if consumerProgressVO.version??>
 																			<button type="button" class="btn btn-xs btn-outline-secondary" data-toggle="tooltip" title="消费线程诊断" onclick="showThreadMetricsForClustering('0_${consumerProgressVO.consumer.id}_${k.brokerName}_${k.queueId}', '${consumerProgressVO.consumer.name}')"><i class="fas fa-stethoscope"></i></button>
 																			<button type="button" class="btn btn-xs btn-outline-secondary" data-toggle="tooltip" title="消费异常诊断" onclick="showFailedMetricsForClustering('0_${consumerProgressVO.consumer.id}_${k.brokerName}_${k.queueId}', '${consumerProgressVO.consumer.name}')"><i class="fas fa-exclamation-circle"></i></button>
+																			<button id="0_${consumerProgressVO.consumer.id}_${k.brokerName}_${k.queueId}_pause" style="display: none" type="button" data-clientId="" class="btn btn-xs btn-outline-secondary" data-toggle="tooltip" title="暂停消费实例" onclick="showPauseConsumeConfigModel(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', true, this)"><i class="fas fa-pause-circle"></i></button>
+																			<button id="0_${consumerProgressVO.consumer.id}_${k.brokerName}_${k.queueId}_resume" style="display: none" type="button" data-clientId="" class="btn btn-xs btn-outline-secondary" data-toggle="tooltip" title="恢复消费实例" onclick="showPauseConsumeConfigModel(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', false, this)"><i class="fas fa-play-circle"></i></button>
 																		<#else>
 																			<button type="button" class="btn btn-xs btn-outline-secondary disabled" data-toggle="tooltip" title="非MQCloud客户端暂不支持消费线程诊断"><i class="fas fa-stethoscope"></i></button>
 																			<button type="button" class="btn btn-xs btn-outline-secondary disabled" data-toggle="tooltip" title="非MQCloud客户端暂不支持消费异常诊断"><i class="fas fa-exclamation-circle"></i></button>
+																			<button type="button" class="btn btn-xs btn-outline-secondary disabled" data-toggle="tooltip" title="非MQCloud客户端暂不支持暂停消费"><i class="fas fa-pause-circle"></i></button>
 																		</#if>
 																	</td>
 																</tr>
@@ -423,9 +426,9 @@
 				                    		<button type="button" class="btn btn-xs btn-outline-secondary" data-toggle="tooltip" title="消费过去一段时间至现在的消息" onclick="resetOffsetShow('${consumerProgressVO.consumer.name}', ${consumerProgressVO.consumer.id})"><i class="fas fa-fw fa-backward"></i></button>
 											<#if consumerProgressVO.version??>
 												<#if consumerProgressVO.consumerConfig?? && consumerProgressVO.consumerConfig.pause?? && consumerProgressVO.consumerConfig.pause>
-													<button type="button" class="btn btn-xs btn-outline-secondary" title="恢复消费" onclick="showPauseConsumeConfigModel(${consumerProgressVO.consumer.httpProtocol?c}, ${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', false<#if consumerProgressVO.consumerConfig?? && consumerProgressVO.consumerConfig.pauseClientId??>,'${consumerProgressVO.consumerConfig.pauseClientId}'</#if>)" data-toggle="tooltip"><i class="fas fa-fw fa-play"></i></button>
+													<button type="button" class="btn btn-xs btn-outline-secondary" title="恢复消费" onclick="showPauseConsumeConfigModel(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', false)" data-toggle="tooltip"><i class="fas fa-fw fa-play"></i></button>
 												<#else>
-													<button type="button" class="btn btn-xs btn-outline-secondary" title="暂停消费" onclick="showPauseConsumeConfigModel(${consumerProgressVO.consumer.httpProtocol?c}, ${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', true<#if consumerProgressVO.consumerConfig?? && consumerProgressVO.consumerConfig.pauseClientId??>,'${consumerProgressVO.consumerConfig.pauseClientId}'</#if>)" data-toggle="tooltip"><i class="fas fa-fw fa-pause"></i></button>
+													<button type="button" class="btn btn-xs btn-outline-secondary" title="暂停消费" onclick="showPauseConsumeConfigModel(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', true)" data-toggle="tooltip"><i class="fas fa-fw fa-pause"></i></button>
 												</#if>
 												<#if consumerProgressVO.consumerConfig?? && consumerProgressVO.consumerConfig.enableRateLimit?? && consumerProgressVO.consumerConfig.enableRateLimit>
 													<button type="button" class="btn btn-xs btn-outline-secondary" title="修改消费限速" onclick="showLimitConsumeConfigModel(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', true, <#if consumerProgressVO.consumerConfig.permitsPerSecond??>${consumerProgressVO.consumerConfig.permitsPerSecond}<#else>${limitConsumeTps}</#if>)" data-toggle="tooltip"><i class="fa-solid fa-fw fa-gauge"></i></button>
@@ -491,9 +494,15 @@
 																<#if consumerProgressVO.version??>
 																	<button type="button" class="btn btn-xs btn-outline-secondary" onclick="showThreadMetrics('${consumeStats.clientId}','${consumerProgressVO.consumer.name}')"><span data-toggle="tooltip" title="消费线程诊断" class="fas fa-stethoscope"></span></button>
 																	<button type="button" class="btn btn-xs btn-outline-secondary" onclick="showFailedMetrics('${consumeStats.clientId}','${consumerProgressVO.consumer.name}')"><span  data-toggle="tooltip" title="消费异常诊断" class="fas fa-exclamation-circle"></span></button>
+																	<#if consumeStats.paused>
+																		<button <#if consumeStats.disablePause>disabled="disabled"</#if> type="button" data-clientId="${consumeStats.clientId}" class="btn btn-xs btn-outline-secondary" data-toggle="tooltip" title="恢复消费实例" onclick="showPauseConsumeConfigModel(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', false, this)"><i class="fas fa-play-circle"></i></button>
+																	<#else>
+																		<button type="button" data-clientId="${consumeStats.clientId}" class="btn btn-xs btn-outline-secondary" data-toggle="tooltip" title="暂停消费实例" onclick="showPauseConsumeConfigModel(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', true, this)"><i class="fas fa-pause-circle"></i></button>
+																	</#if>
 																<#else>
 																	<button type="button" class="btn btn-xs btn-outline-secondary disabled" data-toggle="tooltip" title="非MQCloud客户端暂不支持消费线程诊断"><i class="fas fa-stethoscope"></i></button>
 																	<button type="button" class="btn btn-xs btn-outline-secondary disabled" data-toggle="tooltip" title="非MQCloud客户端暂不支持消费异常诊断"><i class="fas fa-exclamation-circle"></i></button>
+																	<button type="button" class="btn btn-xs btn-outline-secondary disabled" data-toggle="tooltip" title="非MQCloud客户端暂不支持暂停消费"><i class="fas fa-pause-circle"></i></button>
 																</#if>
 															<#else>
 																${consumeStats.clientIdHtml}
@@ -959,24 +968,24 @@
 							<input type="text" readonly="readonly" id="pauseConsumeName" value="" class="form-control" />
 						</div>
 					</div>
-					<div class="input-group mb-3" id="clientIdDiv">
+					<div class="input-group mb-3" id="clientIdDiv" style="display: none">
 						<label class="col-form-label col-md-3"> 客户端: </label>
 						<div class="col-md-9">
-							<select id="pauseClientIdSelect" class="selectpicker border form-control" title="不选默认应用于所有的消费者" name="pauseClientId" multiple data-max-options="1">
-							</select>
-						</div>
-					</div>
-					<div class="input-group mb-3" id="unregisterDiv">
-						<label class="col-md-3"> 下线: </label>
-						<div class="col-md-9">
-							<input id="unregister" name="unregister" value="1" type="checkbox" disabled="disabled" data-toggle="tooltip" title="勾选后消息队列将重新分配，并且不分配该客户端，后续可以恢复消费。">
+							<div class="input-group">
+								<input type="text" readonly="readonly" id="pauseClientId" name="pauseClientId" value="pauseClientId" class="form-control" />
+								<div class="input-group-append" id="unregisterDiv">
+									<span class="input-group-text">
+										<input id="unregister" name="unregister" value="1" type="checkbox" disabled="disabled" data-toggle="tooltip" title="是否下线？勾选后消息队列将重新分配，并且不分配该客户端，后续可以恢复消费。">
+									</span>
+								</div>
+							</div>
 						</div>
 					</div>
 				</form>
 			</div>
 			<div  class="modal-footer justify-content-between">
 				<button type="button" data-dismiss="modal" class="btn btn-default" >取消</button>
-				<button type="button" id="pauseConsumeConfigBtn" class="btn btn-primary" onclick="pauseConsumeConfig()">确定</button>
+				<button type="button" id="pauseConsumeConfigBtn" title="操作将应用到所有的消费实例" data-toggle="tooltip" class="btn btn-primary" onclick="pauseConsumeConfig()">确定</button>
 			</div>
 		</div>
 	</div>
@@ -1383,46 +1392,34 @@ function showLimitConsumeConfigModel(consumerId, consumer, enableRateLimit, perm
 /**
  * 暂停恢复消费者
  */
-function showPauseConsumeConfigModel(httpConsume, consumerId, consumer, pause, pauseClientId){
-	$("#pauseConsumeConfigBtn").attr("disabled", "disabled");
-	if (httpConsume) {
-		$("#clientIdDiv").hide();
-		$("#pauseConsumeConfigBtn").removeAttr("disabled");
-	} else {
-		$("#clientIdDiv").show();
-		if (pause) {
-			$.get('${request.contextPath}/consumer/connection', {
-				group: consumer,
-				cid: ${topic.clusterId},
-			}, function (data) {
-				if (data.status == 200) {
-					var content = "";
-					for (var i in data.result) {
-						var ip = data.result[i];
-						content += "<option value='" + ip + "'>" + ip + "</option>";
-					}
-					$("#pauseClientIdSelect").html(content);
-					$("#pauseClientIdSelect").selectpicker('refresh');
-					$("#pauseConsumeConfigBtn").removeAttr("disabled");
-				} else {
-					toastr.error("数据获取失败！" + data.message);
-				}
-			}, 'json');
-		} else {
-			if (pauseClientId) {
-				$("#pauseClientIdSelect").html("<option value='" + pauseClientId + "'>" + pauseClientId + "</option>");
-				$('#pauseClientIdSelect').selectpicker('val', pauseClientId);
-				$('#pauseClientIdSelect').prop('disabled', true);
-			}
-			$("#unregisterDiv").hide();
-			$("#pauseClientIdSelect").selectpicker('refresh');
-			$("#pauseConsumeConfigBtn").removeAttr("disabled");
-		}
-	}
-	if(pause){
+function showPauseConsumeConfigModel(consumerId, consumer, pause, comp){
+	if (pause) {
 		$("#pauseConsumeTip").html("暂停");
 	} else {
 		$("#pauseConsumeTip").html("恢复");
+	}
+	if (comp) {
+		var clientId = comp.getAttribute("data-clientId");
+		if (!clientId) {
+			alert("没有获取客户端链接无法进行操作");
+			return;
+		}
+		$("#clientIdDiv").show();
+		$("#pauseClientId").val(clientId);
+		if (pause) {
+			$("#unregister").removeAttr("disabled");
+		} else {
+			$("#unregister").prop("checked", false);
+			$("#unregister").attr("disabled", "disabled");
+		}
+		if (comp.hasAttribute("id")) {
+			$("#unregisterDiv").show();
+		} else {
+			$("#unregisterDiv").hide();
+		}
+	} else {
+		$("#clientIdDiv").hide();
+		$("#pauseClientId").val("");
 	}
 	$("#pauseConsumeBoolean").val(pause);
 	$("#pauseConsumeIdInput").val(consumerId);
@@ -1433,7 +1430,6 @@ function showPauseConsumeConfigModel(httpConsume, consumerId, consumer, pause, p
  * 暂停消费
  */
 function pauseConsumeConfig(){
-	$("#pauseClientIdSelect").removeAttr("disabled");
 	disable("pauseConsumeConfigBtn");
 	$.get('${request.contextPath}/consumer/update/config',
 	$("#pauseConsumeConfigForm").serialize()
@@ -1596,15 +1592,6 @@ $(function(){
  	  	$('#submitTimespanMessageBtn').removeAttr("disabled");
  	});
 
-	// 暂停下拉框change事件
-	$('#pauseClientIdSelect').on('changed.bs.select',function(e, clickedIndex, newValue, oldValue){
-		if($(this).val().length > 0){
-			$("#unregister").removeAttr("disabled");
-		} else {
-			$("#unregister").prop("checked", false);
-			$("#unregister").attr("disabled", "disabled");
-		}
-	});
 	$('#resetOffsetDate').datetimepicker({
 		format: 'YYYY-MM-DD HH:mm:ss',
 		minDate: moment({h:0, m:0, s:0, ms:0}).subtract(${cluster.fileReservedDays}, 'days'),
@@ -1994,6 +1981,16 @@ function getQueueOwner(consumer, consumerId){
 	        	$(id).html(prevContent + data.result[i].ip);
 				$(id).attr("data-placement", "right");
 				$(id).tooltip({boundary: 'window'});
+				// 设置是否暂停
+				if (data.result[i].paused) {
+					if(data.result[i].disablePause){
+						$(id + "_resume").attr("disabled", "disabled").show();
+					} else {
+						$(id + "_resume").attr("data-clientId", data.result[i].clientId).show();
+					}
+				} else {
+					$(id + "_pause").attr("data-clientId", data.result[i].clientId).show();
+				}
         	}
 	    }else{
 	    	toastr.error("获取客户端失败！"+data.message);  

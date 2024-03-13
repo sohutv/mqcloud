@@ -1,5 +1,7 @@
 package com.sohu.tv.mq.dto;
 
+import java.util.Map;
+
 /**
  * 消费者动态配置
  * 
@@ -12,7 +14,6 @@ public class ConsumerConfigDTO {
 
     // 消费暂停
     private Boolean pause;
-    private String pauseClientId;
 
     // 消费限速
     private Boolean enableRateLimit;
@@ -21,8 +22,8 @@ public class ConsumerConfigDTO {
     // 重试消息跳过的key
     private String retryMessageSkipKey;
 
-    // 是否解注册
-    private Boolean unregister;
+    // 暂停具体某个客户端 clientId->unregister
+    private Map<String, Boolean> pauseConfig;
 
     public Long getRetryMessageResetTo() {
         return retryMessageResetTo;
@@ -56,14 +57,6 @@ public class ConsumerConfigDTO {
         this.permitsPerSecond = permitsPerSecond;
     }
 
-    public String getPauseClientId() {
-        return pauseClientId;
-    }
-
-    public void setPauseClientId(String pauseClientId) {
-        this.pauseClientId = pauseClientId;
-    }
-
     public String getRetryMessageSkipKey() {
         return retryMessageSkipKey;
     }
@@ -72,18 +65,23 @@ public class ConsumerConfigDTO {
         this.retryMessageSkipKey = retryMessageSkipKey;
     }
 
-    public Boolean getUnregister() {
-        return unregister;
+    public Map<String, Boolean> getPauseConfig() {
+        return pauseConfig;
     }
 
-    public void setUnregister(Boolean unregister) {
-        this.unregister = unregister;
+    public void setPauseConfig(Map<String, Boolean> pauseConfig) {
+        this.pauseConfig = pauseConfig;
     }
 
     @Override
     public String toString() {
-        return "ConsumerConfigDTO [retryMessageResetTo=" + retryMessageResetTo + ", pause=" + pause + ", pauseClientId="
-                + pauseClientId + ", enableRateLimit=" + enableRateLimit + ", permitsPerSecond=" + permitsPerSecond
-                + ", retryMessageSkipKey=" + retryMessageSkipKey + "]";
+        return "ConsumerConfigDTO{" +
+                "retryMessageResetTo=" + retryMessageResetTo +
+                ", pause=" + pause +
+                ", enableRateLimit=" + enableRateLimit +
+                ", permitsPerSecond=" + permitsPerSecond +
+                ", retryMessageSkipKey='" + retryMessageSkipKey + '\'' +
+                ", pauseConfig=" + pauseConfig +
+                '}';
     }
 }
