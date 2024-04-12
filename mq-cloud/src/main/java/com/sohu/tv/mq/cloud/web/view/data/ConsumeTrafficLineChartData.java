@@ -143,6 +143,9 @@ public class ConsumeTrafficLineChartData implements LineChartData {
         // 解析参数
         Date date = getDate(searchMap, DATE_FIELD);
         Long tid = getLongValue(searchMap, TID_FIELD);
+        if (tid == null) {
+            return lineChartList;
+        }
         
         // 获取request
         HttpServletRequest request = (HttpServletRequest) searchMap.get(REQUEST);
