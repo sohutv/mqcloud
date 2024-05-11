@@ -21,7 +21,7 @@
 	<div class="form-group row">
 		<label class="col-md-3 col-form-label"> 启用限速: </label>
 		<div class="col-md-9">
-			<input type="text" value="<#if response.result.enableRateLimit>是<#else>否</#if>" readonly="readonly" class="form-control" />
+			<input type="text" value="<#if response.result.enableRateLimit?? && response.result.enableRateLimit>是<#else>否</#if>" readonly="readonly" class="form-control" />
 		</div>
 	</div>
 	<div class="form-group row">

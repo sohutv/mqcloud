@@ -1012,10 +1012,10 @@
 						<label class="col-md-4"> 限制消费速率: </label>
 						<div class="col-md-8 checkbox">
 							<label data-toggle="tooltip" title="每个实例将会参照TPS进行限速">
-								<input type="radio" id="enableRateLimitRadio" name="enableRateLimit" value="true">是
+								<input type="radio" id="enableRateLimitRadio" name="enableRateLimit" value="true" checked>是
 							</label>
-							<label data-toggle="tooltip" title="每个实例将会关闭限速">
-								<input type="radio" id="disableRateLimitRadio" name="enableRateLimit" value="false" checked>否
+							<label data-toggle="tooltip" title="暂不支持关闭限速">
+								<input type="radio" id="disableRateLimitRadio" name="enableRateLimit" value="false" disabled>否
 							</label>
 						</div>
 					</div>
@@ -1377,11 +1377,11 @@
  */
 function showLimitConsumeConfigModel(consumerId, consumer, enableRateLimit, permitsPerSecond){
 	$("#limitConsumeConfigForm")[0].reset();
-	if(enableRateLimit){
-		$("#enableRateLimitRadio").prop("checked",true);
-	} else {
-		$("#disableRateLimitRadio").prop("checked",true);
-	}
+	// if(enableRateLimit){
+	// 	$("#enableRateLimitRadio").prop("checked",true);
+	// } else {
+	// 	$("#disableRateLimitRadio").prop("checked",true);
+	// }
 	if(permitsPerSecond){
 		$("#permitsPerSecondInput").val(permitsPerSecond);
 	}
