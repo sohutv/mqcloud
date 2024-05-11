@@ -93,6 +93,10 @@ public class VerifyDataService {
             if (up.getTid() != tid) {
                 return Result.getResult(Status.PRODUCER_REPEAT);
             }
+            // 新建生产者时，不可重复
+            if (TypeEnum.NEW_PRODUCER == type && producer.equals(up.getProducer())) {
+                return Result.getResult(Status.PRODUCER_REPEAT);
+            }
         }
         // 正在审核的数据
         Result<List<AuditAssociateProducer>> associateProducerListResult = associateProducerService
