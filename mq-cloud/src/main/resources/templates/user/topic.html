@@ -140,6 +140,10 @@
 	}
 	
 	$(function(){
+		var redirect = getQueryString("redirect");
+		if (redirect) {
+			window.location.href = redirect;
+		}
 		// 初始化topic列表
   		<#if userInfo.user.type == 1>
 	  		initTopicList();
