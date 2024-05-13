@@ -33,10 +33,10 @@ public interface BrokerDao {
      * @param notice
      */
     @Insert("<script>insert into broker(cid,addr,broker_name,broker_id"
-            + "<if test=\"bk.baseDir != null\">,base_dir</if>"
+            + "<if test=\"bk.baseDir != null\">,base_dir</if>,writable"
             + ") values(#{bk.cid},#{bk.addr},#{bk.brokerName},#{bk.brokerID}"
             + "<if test=\"bk.baseDir != null\">,#{bk.baseDir}</if>"
-            + ")</script>")
+            + ",#{bk.writable})</script>")
     public Integer insert(@Param("bk") Broker broker);
     
     /**

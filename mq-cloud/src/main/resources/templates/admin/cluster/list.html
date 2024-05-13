@@ -70,8 +70,7 @@
 					<a class="dropdown-item" href="#" title="将broker数据迁移至远程机器" onclick="migrateBrokerData()" data-target="#migrateBrokerDataModal" data-toggle="modal"><i class="fa-solid fa-copy fa-fw"></i></span>&nbsp;迁移数据</a>
 					<#if response.result.brokerGroup??>
 					<div class="dropdown-divider"></div>
-					<a class="dropdown-item" href="#" data-placement="bottom" title="该功能用于将已有RocketMQ集群的topic写入topic表中（可以执行多次，因为数据库有唯一索引）。" onclick="initTopic()" data-toggle="modal"><i class="fa-solid fa-download fa-fw"></i>&nbsp;初始化Topic</a>
-					<a class="dropdown-item" href="#" data-placement="bottom" title="该功能用于将已有RocketMQ集群的topic的在线消费者写入consumer表中（可以执行多次，因为数据库有唯一索引）。" onclick="initConsumer()" data-toggle="modal"><i class="fa-solid fa-download fa-fw"></i>&nbsp;初始化Consumer</a>
+					<a class="dropdown-item" href="#" data-placement="bottom" title="该功能用于将集群的topic或consumer写入MQCloud中" onclick="brokerChooseShow()" data-toggle="modal"><i class="fa-solid fa-download fa-fw"></i>&nbsp;初始化数据</a>
 					</#if>
 				</div>
 			</div>
@@ -971,7 +970,8 @@
 			</div>
 			<div class="modal-footer">
 				<button type="button" data-dismiss="modal" class="btn btn-light" >取消</button>
-				<button type="submit" class="btn btn-primary" onclick="modifyBrokerConfig()" data-toggle="tooltip" title="注意：此更新仅对当前broker有效！" id="modifyBrokerConfigBtn">更新</button>
+				<button type="submit" class="btn btn-primary" onclick="modifyBrokerConfig(false)" data-toggle="tooltip" title="更新当前broker" id="modifyBrokerConfigBtn">更新</button>
+				<button type="submit" class="btn btn-primary" onclick="modifyBrokerConfig(true)" data-toggle="tooltip" title="更新整个集群" id="modifyClusterConfigBtn">更新集群</button>
 			</div>
 		</div>
 	</div>
@@ -1048,6 +1048,45 @@
 						<tr class="no_more_data"><td class="text-center" colspan="4">数据加载中...</td></tr>
 					</tbody>
 				</table>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- 选择Broker -->
+<div id="brokerChooseModal" class="modal fade" tabindex="-1" data-width="400" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h4 class="modal-title">初始化数据</h4>
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+			</div>
+			<div class="modal-body">
+				<form id="brokerChooseForm">
+					<input type="hidden" name="cid" value="${response.result.selectedMQCluster.id}">
+					<div class="input-group mb-3">
+						<label for="brokerChooseSelect" class="col-form-label col-md-3"> Broker: </label>
+						<div class="col-md-8">
+							<select id="brokerChooseSelect" name="broker" class="selectpicker form-control border" title="默认会随机选择一个Broker" data-live-search-placeholder="搜索" name="tid" data-live-search="true">
+							</select>
+						</div>
+					</div>
+					<div class="input-group mb-3">
+						<label class="col-md-3"> 初始化: </label>
+						<div class="col-md-9 checkbox">
+							<label data-toggle="tooltip" title="将topic写入MQCloud表中（可以执行多次，因为数据库有唯一索引）。">
+								<input type="radio" name="initTarget" id="initTargetTopic" value="0" checked>Topic
+							</label>
+							<label data-toggle="tooltip" title="将消费者写入MQCloud表中（可以执行多次，因为数据库有唯一索引）。">
+								<input type="radio" name="initTarget" id="initTargetConsumer" value="1">Consumer
+							</label>
+						</div>
+					</div>
+				</form>
+			</div>
+			<div class="modal-footer">
+				<button type="button" data-dismiss="modal" class="btn btn-light" >取消</button>
+				<button type="button" class="btn btn-primary" onclick="brokerChoose()" id="brokerChooseBtn">确定</button>
 			</div>
 		</div>
 	</div>
@@ -1827,38 +1866,28 @@ function brokerTraffic(){
  * 初始化topic
  */
 function initTopic(){
-	if (!confirm("你确定要将该集群的topic存储到表中?")) {
-		return;
-	}
 	$("#initBody").empty();
 	$("#initDiv").html("topic");
 	post('${request.contextPath}/admin/cluster/init/topic',
-		{
-		cid: ${response.result.selectedMQCluster.id}
-		},
-        function(data){
-			$("#initBody").html(data);
-			$('#initModal').modal('show');
-    });	
+			$("#brokerChooseForm").serialize(),
+			function (data) {
+				$("#initBody").html(data);
+				$('#initModal').modal('show');
+			});
 }
 
 /**
  * 初始化consumer
  */
 function initConsumer(){
-	if (!confirm("你确定要将该集群的消费者存储到表中?")) {
-		return;
-	}
 	$("#initBody").empty();
 	$("#initDiv").html("consumer");
 	post('${request.contextPath}/admin/cluster/init/consumer',
-		{
-		cid: ${response.result.selectedMQCluster.id}
-		},
-        function(data){
-			$("#initBody").html(data);
-			$('#initModal').modal('show');
-    });	
+			$("#brokerChooseForm").serialize(),
+			function (data) {
+				$("#initBody").html(data);
+				$('#initModal').modal('show');
+			});
 }
 // 与nameserver同步 broker
 function refresh(){
@@ -1972,7 +2001,7 @@ function showBrokerConfigModal(addr){
 const fileReservedTime = [];
 const timerRollWindowSlot = [];
 
-function modifyBrokerConfig(){
+function modifyBrokerConfig(isCluster){
 	var tip = "";
 	var needReboot = false;
 	var configParam = "";
@@ -2033,12 +2062,17 @@ function modifyBrokerConfig(){
 			tip += "由于修改了不支持动态修改的项，请更新后重启broker";
 		}
 		if(confirm(tip)){
-			disable("modifyBrokerConfigBtn");
+			var btn = "modifyBrokerConfigBtn";
+			if (isCluster) {
+				btn = "modifyClusterConfigBtn";
+			}
+			disable(btn);
 			$.get('${request.contextPath}/admin/broker/update/online/config',
 					{
-					cid: ${response.result.selectedMQCluster.id},
-				    addr:  $("#brokerAddr").html(),
-				    config: configParam
+						cid: ${response.result.selectedMQCluster.id},
+						addr:  $("#brokerAddr").html(),
+						config: configParam,
+						cluster: isCluster
 					},
 			        function(data){
 						if(data.status == 200){
@@ -2046,7 +2080,7 @@ function modifyBrokerConfig(){
 			            	reload(2000);            	
 					    }else{
 					    	toastr.error("操作失败！"+data.message);  
-					    	enable("modifyBrokerConfigBtn");
+					    	enable(btn);
 					    }
 			    });	
 		}
@@ -2417,6 +2451,35 @@ function timerWheelMetrics(addr) {
 		function(data){
 			$("#timerWheelMetricsDetail").html(data);
 		});
+}
+
+function brokerChooseShow() {
+	$("#brokerChooseModal").modal('show');
+	$.get('${request.contextPath}/admin/cluster/broker/list?cid=${response.result.selectedMQCluster.id}',
+			function (data) {
+				if (data.status == 200) {
+					var content = "";
+					for (var i in data.result) {
+						var broker = data.result[i];
+						if (broker.brokerID == 0) {
+							content += "<option value='" + broker.addr + "'>" + broker.addr + "</option>";
+						}
+					}
+					$("#brokerChooseSelect").html(content);
+					$("#brokerChooseSelect").selectpicker('refresh');
+				} else {
+					toastr.error("数据获取失败！" + data.message);
+				}
+			}, 'json');
+}
+
+function brokerChoose() {
+	if($("#initTargetTopic").is(':checked')){
+		initTopic();
+	} else {
+		initConsumer();
+	}
+	$("#brokerChooseModal").modal('hide');
 }
 </script>
 </#if>

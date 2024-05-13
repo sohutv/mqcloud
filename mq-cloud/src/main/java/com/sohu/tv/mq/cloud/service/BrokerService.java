@@ -13,6 +13,7 @@ import com.sohu.tv.mq.cloud.mq.DefaultCallback;
 import com.sohu.tv.mq.cloud.mq.MQAdminTemplate;
 import com.sohu.tv.mq.cloud.util.Result;
 import com.sohu.tv.mq.cloud.util.Status;
+import com.sohu.tv.mq.cloud.web.controller.param.BrokerConfigUpdateParam;
 import org.apache.rocketmq.client.exception.MQBrokerException;
 import org.apache.rocketmq.client.exception.MQClientException;
 import org.apache.rocketmq.remoting.protocol.RemotingSysResponseCode;
@@ -174,19 +175,31 @@ public class BrokerService {
      * @param brokerAddr
      * @return
      */
-    public Result<Properties> updateBrokerConfig(int cid, String brokerAddr, Properties properties) {
-        return mqAdminTemplate.execute(new DefaultCallback<Result<Properties>>() {
+    public Result<?> updateBrokerConfig(BrokerConfigUpdateParam brokerConfigUpdateParam) {
+        return mqAdminTemplate.execute(new DefaultCallback<Result<?>>() {
             public Cluster mqCluster() {
-                return clusterService.getMQClusterById(cid);
+                return clusterService.getMQClusterById(brokerConfigUpdateParam.getCid());
             }
 
-            public Result<Properties> callback(MQAdminExt mqAdmin) throws Exception {
-                mqAdmin.updateBrokerConfig(brokerAddr, properties);
+            public Result<?> callback(MQAdminExt mqAdmin) throws Exception {
+                Properties properties = brokerConfigUpdateParam.getConfigProperties();
+                if (brokerConfigUpdateParam.isCluster()) {
+                    Result<List<Broker>> result = query(brokerConfigUpdateParam.getCid());
+                    if (result.isNotOK()) {
+                        return result;
+                    }
+                    List<Broker> brokers = result.getResult();
+                    for (Broker broker : brokers) {
+                        mqAdmin.updateBrokerConfig(broker.getAddr(), properties);
+                    }
+                } else {
+                    mqAdmin.updateBrokerConfig(brokerConfigUpdateParam.getAddr(), properties);
+                }
                 return Result.getOKResult();
             }
 
-            public Result<Properties> exception(Exception e) {
-                logger.error("cid:{}, brokerAddr:{}, properties:{} updateBrokerConfig err", cid, brokerAddr, properties, e);
+            public Result<?> exception(Exception e) {
+                logger.error("brokerConfigUpdateParam:{} updateBrokerConfig err", brokerConfigUpdateParam, e);
                 return Result.getDBErrorResult(e);
             }
         });

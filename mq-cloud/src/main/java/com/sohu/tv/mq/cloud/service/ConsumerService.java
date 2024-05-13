@@ -881,18 +881,25 @@ public class ConsumerService {
      * @return
      */
     @SuppressWarnings("rawtypes")
-    public Map<String, List<Result>> initConsumer(Cluster mqCluster, List<Topic> topicList) {
+    public Map<String, List<Result>> initConsumer(Cluster mqCluster, List<Topic> topicList, String brokerAddr) {
         Map<String, List<Result>> resultMap = new HashMap<String, List<Result>>();
         mqAdminTemplate.execute(new DefaultInvoke() {
+            @Override
+            public Void exception(Exception e) {
+                throw new RuntimeException(e);
+            }
+
             public Cluster mqCluster() {
                 return mqCluster;
             }
 
             public void invoke(MQAdminExt mqAdmin) throws Exception {
+                SohuMQAdmin sohuMQAdmin = (SohuMQAdmin) mqAdmin;
                 for (Topic topic : topicList) {
                     GroupList groupList = null;
                     try {
-                        groupList = mqAdmin.queryTopicConsumeByWho(topic.getName());
+                        groupList = sohuMQAdmin.getMQClientInstance().getMQClientAPIImpl().queryTopicConsumeByWho(
+                                brokerAddr, topic.getName(), sohuMQAdmin.getTimeoutMillis());
                     } catch (Exception e) {
                         logger.error("queryTopicConsumeByWho, topic:{}", topic.getName(), e);
                         addToMap(resultMap, topic.getName(), Result.getWebErrorResult(e).setResult(topic.getName()));
@@ -901,7 +908,8 @@ public class ConsumerService {
                     for (String group : groupList.getGroupList()) {
                         ConsumerConnection conn = null;
                         try {
-                            conn = mqAdmin.examineConsumerConnectionInfo(group);
+                            conn = sohuMQAdmin.getMQClientInstance().getMQClientAPIImpl().getConsumerConnectionList(
+                                    brokerAddr, group, sohuMQAdmin.getTimeoutMillis());
                         } catch (MQBrokerException e) {
                             if (206 == e.getResponseCode()) {
                                 logger.warn("consuemr:{} not online", group);
