@@ -615,14 +615,9 @@ public class TopicService {
      * @return  topic状态
      */
     @SuppressWarnings("rawtypes")
-    public Result<?> initTopic(Cluster cluster){
+    public Result<?> initTopic(Cluster cluster, String brokerAddr){
         Result<?> result = mqAdminTemplate.execute(new MQAdminCallback<Result<?>>() {
             public Result<?> callback(MQAdminExt mqAdmin) throws Exception {
-                // 获取broker集群信息
-                ClusterInfo clusterInfo = mqAdmin.examineBrokerClusterInfo();
-                // 获取一个master地址
-                String brokerAddr = clusterInfo.getBrokerAddrTable().entrySet().iterator().next().getValue()
-                        .getBrokerAddrs().get(0L);
                 // 获取所有topic配置
                 TopicConfigSerializeWrapper allTopicConfig = mqAdmin.getAllTopicConfig(brokerAddr, 5000);
                 // 获取所有topic
