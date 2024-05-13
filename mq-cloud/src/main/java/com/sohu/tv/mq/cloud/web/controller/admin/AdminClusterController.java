@@ -12,10 +12,7 @@ import com.sohu.tv.mq.cloud.service.BrokerService;
 import com.sohu.tv.mq.cloud.service.ClusterService;
 import com.sohu.tv.mq.cloud.service.ConsumerService;
 import com.sohu.tv.mq.cloud.service.TopicService;
-import com.sohu.tv.mq.cloud.util.DateUtil;
-import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper;
-import com.sohu.tv.mq.cloud.util.MessageDelayLevel;
-import com.sohu.tv.mq.cloud.util.Result;
+import com.sohu.tv.mq.cloud.util.*;
 import com.sohu.tv.mq.cloud.web.controller.param.ClusterParam;
 import com.sohu.tv.mq.cloud.web.vo.BrokerStatVO;
 import com.sohu.tv.mq.cloud.web.vo.ClusterInfoVO;
@@ -213,10 +210,16 @@ public class AdminClusterController extends AdminViewController {
      * @throws Exception
      */
     @RequestMapping(value = "/init/topic", method = RequestMethod.POST)
-    public String initTopic(UserInfo userInfo, @RequestParam("cid") Integer cid, Map<String, Object> map)
+    public String initTopic(UserInfo userInfo, @RequestParam("cid") Integer cid,
+                            @RequestParam(name = "broker", required = false) String broker, Map<String, Object> map)
             throws Exception {
         Cluster cluster = clusterService.getMQClusterById(cid);
-        Result<?> result = topicService.initTopic(cluster);
+        Result<Broker> brokerAddressResult = (Result<Broker>) chooseBroker(cid, broker);
+        if (brokerAddressResult.isNotOK()) {
+            setResult(map, brokerAddressResult);
+            return adminViewModule() + "/initTopic";
+        }
+        Result<?> result = topicService.initTopic(cluster, brokerAddressResult.getResult().getAddr());
         setResult(map, result);
         return adminViewModule() + "/initTopic";
     }
@@ -229,7 +232,8 @@ public class AdminClusterController extends AdminViewController {
      */
     @SuppressWarnings("rawtypes")
     @RequestMapping(value = "/init/consumer", method = RequestMethod.POST)
-    public String initConsumer(UserInfo userInfo, @RequestParam("cid") Integer cid, Map<String, Object> map)
+    public String initConsumer(UserInfo userInfo, @RequestParam("cid") Integer cid,
+                               @RequestParam(name = "broker", required = false) String broker, Map<String, Object> map)
             throws Exception {
         Cluster cluster = clusterService.getMQClusterById(cid);
         Result<List<Topic>> topicListResult = topicService.queryTopicList(cluster);
@@ -237,9 +241,40 @@ public class AdminClusterController extends AdminViewController {
             setResult(map, Result.getWebResult(topicListResult));
             return adminViewModule() + "/initConsumer";
         }
-        Map<String, List<Result>> resultMap = consumerService.initConsumer(cluster, topicListResult.getResult());
+        Result<Broker> brokerAddressResult = (Result<Broker>) chooseBroker(cid, broker);
+        if (brokerAddressResult.isNotOK()) {
+            setResult(map, brokerAddressResult);
+            return adminViewModule() + "/initConsumer";
+        }
+        Result<?> result = topicService.initTopic(cluster, brokerAddressResult.getResult().getAddr());
+
+        Map<String, List<Result>> resultMap = consumerService.initConsumer(cluster, topicListResult.getResult(),
+                brokerAddressResult.getResult().getAddr());
         setResult(map, Result.getResult(resultMap));
         return adminViewModule() + "/initConsumer";
+    }
+
+    private Result<?> chooseBroker(int cid, String brokerAddr) {
+        // 先处理空白字符
+        if (brokerAddr != null) {
+            brokerAddr = brokerAddr.trim();
+            if (brokerAddr.length() == 0) {
+                brokerAddr = null;
+            }
+        }
+        if (brokerAddr == null) {
+            Result<List<Broker>> result = brokerService.query(cid);
+            if (result.isEmpty()) {
+                return result;
+            }
+            return result.getResult().stream()
+                    .filter(b->b.isMaster())
+                    .findFirst()
+                    .map(b->Result.getResult(b))
+                    .orElse(Result.getResult(Status.NO_RESULT));
+        } else {
+            return brokerService.queryBroker(cid, brokerAddr);
+        }
     }
 
     /**
@@ -256,6 +291,18 @@ public class AdminClusterController extends AdminViewController {
         BeanUtils.copyProperties(clusterParam, cluster);
         Result<?> result = clusterService.save(cluster);
         return result;
+    }
+
+    /**
+     * broker列表
+     *
+     * @return
+     * @throws Exception
+     */
+    @ResponseBody
+    @RequestMapping(value = "/broker/list", method = RequestMethod.GET)
+    public Result<?> brokerList(int cid, Map<String, Object> map) throws Exception {
+        return brokerService.query(cid);
     }
 
     private String removeFromMap(HashMap<String, String> map, String key) {
