@@ -10,19 +10,24 @@ import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper;
 import com.sohu.tv.mq.cloud.util.Result;
 import com.sohu.tv.mq.cloud.util.Status;
 import com.sohu.tv.mq.cloud.web.controller.param.BrokerConfigParam;
+import com.sohu.tv.mq.cloud.web.controller.param.BrokerConfigUpdateParam;
 import com.sohu.tv.mq.cloud.web.controller.param.UpdateSendMsgRateLimitParam;
 import com.sohu.tv.mq.cloud.web.vo.BrokerConfigGroupVO;
 import com.sohu.tv.mq.cloud.web.vo.BrokerConfigVO;
 import com.sohu.tv.mq.cloud.web.vo.UserInfo;
 import org.apache.commons.lang3.math.NumberUtils;
+import org.apache.rocketmq.common.constant.PermName;
 import org.apache.rocketmq.remoting.protocol.body.ClusterInfo;
 import org.apache.rocketmq.remoting.protocol.route.BrokerData;
+import org.apache.rocketmq.remoting.protocol.route.QueueData;
+import org.apache.rocketmq.remoting.protocol.route.TopicRouteData;
 import org.apache.rocketmq.tools.admin.MQAdminExt;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
+import org.springframework.util.CollectionUtils;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -95,12 +100,22 @@ public class AdminBrokerController extends AdminViewController {
                 // 遍历集群中所有的broker
                 for (String brokerName : brokerAddrTable.keySet()) {
                     HashMap<Long, String> brokerAddrs = brokerAddrTable.get(brokerName).getBrokerAddrs();
+                    TopicRouteData topicRouteData = mqAdmin.examineTopicRouteInfo(brokerName);
+                    boolean writable = true;
+                    if (topicRouteData != null && !CollectionUtils.isEmpty(topicRouteData.getQueueDatas())) {
+                        writable = topicRouteData.getQueueDatas().stream()
+                                .filter(q -> brokerName.equals(q.getBrokerName()))
+                                .findFirst()
+                                .map(q -> PermName.isWriteable(q.getPerm()))
+                                .orElse(true);
+                    }
                     for (Long brokerId : brokerAddrs.keySet()) {
                         Broker broker = new Broker();
                         broker.setBrokerName(brokerName);
                         broker.setAddr(brokerAddrs.get(brokerId));
                         broker.setBrokerID(brokerId.intValue());
                         broker.setCid(cid);
+                        broker.setWritable(writable);
                         list.add(broker);
                         Properties properties = mqAdmin.getBrokerConfig(broker.getAddr());
                         String rocketmqHome = properties.getProperty("rocketmqHome");
@@ -359,17 +374,9 @@ public class AdminBrokerController extends AdminViewController {
      */
     @ResponseBody
     @RequestMapping(value = "/update/online/config")
-    public Result<?> updateOnlineConfig(UserInfo ui, @RequestParam(name = "cid") int cid,
-            @RequestParam(name = "addr") String addr, @RequestParam(name = "config") String config,
-            Map<String, Object> map) {
-        logger.info("user:{} modify cid:{} addr:{} config:{}", ui, cid, addr, config);
-        Properties properties = new Properties();
-        String[] configs = config.split(";");
-        for (String cfg : configs) {
-            String[] cfgs = cfg.split(":");
-            properties.put(cfgs[0], cfgs[1]);
-        }
-        return Result.getWebResult(brokerService.updateBrokerConfig(cid, addr, properties));
+    public Result<?> updateOnlineConfig(UserInfo ui, BrokerConfigUpdateParam brokerConfigUpdateParam) {
+        logger.info("user:{} modify brokerConfigUpdateParam:{}", ui, brokerConfigUpdateParam);
+        return Result.getWebResult(brokerService.updateBrokerConfig(brokerConfigUpdateParam));
     }
 
     /**
