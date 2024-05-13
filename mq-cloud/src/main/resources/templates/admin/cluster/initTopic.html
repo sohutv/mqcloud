@@ -22,7 +22,7 @@
 						<td><i class="fa-solid fa-check"></i></td>
 						<td>成功</td>
 					<#else>
-						<td><i class="fa-solid fa-xmark"></i>></td>
+						<td><i class="fa-solid fa-xmark"></i></td>
 						<td><#if result.exception??><b>异常:</b> ${result.exception.class.name},</#if><b>提醒:</b> ${result.message!}</td>
 					</#if>
 				</tr>
