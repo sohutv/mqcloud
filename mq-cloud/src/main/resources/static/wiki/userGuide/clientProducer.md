@@ -259,7 +259,7 @@ if(!sendResult.isSuccess){
 }
 ```
 
-##  七、 <span id="hystrix">隔离发送消息示例</span>【hystrix版：MQ集群如果出现故障，将会拖慢发送方，故提供了hystrix版，以保证即使MQ集群整体不可用，也不会拖死发送方】
+##  七、 <span id="hystrix">隔离发送消息示例</span>【hystrix版：不推荐使用】
 
 ```
 Map<String, String> map = new HashMap<String, String>();
