@@ -357,6 +357,10 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware, Comm
         return getPrefix() + "admin/audit/list";
     }
 
+    public String getClusterCapacityLink() {
+        return getPrefix() + "admin/clusterCapacity";
+    }
+
     public String getServerLink(String ip) {
         return getHrefLink(getPrefix() + "admin/server/list?ip=" + ip, ip);
     }

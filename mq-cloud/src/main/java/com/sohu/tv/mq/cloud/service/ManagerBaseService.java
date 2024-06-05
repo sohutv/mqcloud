@@ -8,7 +8,6 @@ import com.sohu.tv.mq.cloud.dao.TopicDao;
 import com.sohu.tv.mq.cloud.dao.TopicTrafficDao;
 import com.sohu.tv.mq.cloud.dao.UserConsumerDao;
 import com.sohu.tv.mq.cloud.dao.UserProducerDao;
-import com.sohu.tv.mq.cloud.util.DateUtil;
 import com.sohu.tv.mq.cloud.util.Result;
 import com.sohu.tv.mq.cloud.web.controller.param.ManagerParam;
 import com.sohu.tv.mq.cloud.web.controller.param.ManagerParam.QueryOrderType;
@@ -23,7 +22,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static com.sohu.tv.mq.cloud.web.controller.param.ManagerParam.QueryOrderType.TRAFFIC_DESC;
+import static com.sohu.tv.mq.cloud.web.controller.param.ManagerParam.QueryOrderType.SIZE1D_DESC;
 
 /**
  * @author fengwang219475
@@ -48,14 +47,11 @@ public class ManagerBaseService {
     @Autowired
     private TopicService topicService;
 
-    // 流量统计时间范围
-    private final static int SUMMARY_TOPIC_FLOW_TIME = 5;
-
     /**
      * 通用过滤逻辑
      */
-    protected List<Topic> comonFilterTopic(ManagerParam param, PaginationParam paginationParam,
-                                           List<Long> resultTids, boolean returnAll) {
+    protected List<Topic> queryAndFilterTopic(ManagerParam param, PaginationParam paginationParam,
+                                              List<Long> resultTids, boolean returnAll) {
 
         List<Long> topicIds = queryTopicList(param);
 
@@ -81,7 +77,7 @@ public class ManagerBaseService {
             List<Topic> topicList = topicDao.queryTopicDataByLimit(ids);
             allTopic.addAll(topicList);
         }
-        QueryOrderType orderType = QueryOrderType.getQueryOrderTypeByDefault(param.getOrderType(), TRAFFIC_DESC);
+        QueryOrderType orderType = QueryOrderType.getQueryOrderTypeByDefault(param.getOrderType(), SIZE1D_DESC);
         switch (orderType){
             case TRAFFIC_DESC:
                 allTopic.sort(Comparator.comparing(Topic::getCount).reversed());
@@ -96,6 +92,24 @@ public class ManagerBaseService {
                 break;
             case CREATE_ASC:
                 allTopic.sort(Comparator.comparing(Topic::getCreateDate));
+                break;
+            case SIZE1D_DESC:
+                allTopic.sort(Comparator.comparing(Topic::getSize1d).reversed());
+                break;
+            case SIZE2D_DESC:
+                allTopic.sort(Comparator.comparing(Topic::getSize2d).reversed());
+                break;
+            case SIZE3D_DESC:
+                allTopic.sort(Comparator.comparing(Topic::getSize3d).reversed());
+                break;
+            case SIZE5D_DESC:
+                allTopic.sort(Comparator.comparing(Topic::getSize5d).reversed());
+                break;
+            case SIZE7D_DESC:
+                allTopic.sort(Comparator.comparing(Topic::getSize7d).reversed());
+                break;
+            case SIZE_DESC:
+                allTopic.sort(Comparator.comparing(Topic::getSize).reversed());
                 break;
         }
         if (returnAll) {
@@ -244,23 +258,7 @@ public class ManagerBaseService {
         return Sets.newHashSet(remove);
     }
 
-    /**
-     * 此计算主要是为了防止5分钟跨天的情况
-     */
-    protected Map<Date, List<String>> calculationDateRange() {
-        Map<Date, List<String>> dateRange = new HashMap<>(5);
-        long nowTime = System.currentTimeMillis();
-        for (int i = 1; i <= SUMMARY_TOPIC_FLOW_TIME; i++) {
-            Date oneMinuteAgo = new Date(nowTime - i * 60000);
-            String time = DateUtil.getFormat(DateUtil.HHMM).format(oneMinuteAgo);
-            List<String> list = dateRange.computeIfAbsent(oneMinuteAgo, k -> new ArrayList<>(5));
-            list.add(time);
-        }
-        return dateRange;
-    }
-
     // 前端参数处理 公用提取到service中
-
     public void handleUserName(Result<List<User>> userResult) {
         if (userResult.isNotEmpty()) {
             userResult.getResult().forEach(node -> {

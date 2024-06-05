@@ -3,7 +3,7 @@
 		<tbody id="page">
 			<#list response.result as msg>
 				<tr>
-					<td rowspan="2" class="text-center" style="padding-left:0px;" class="d-none d-sm-table-cell" data-tooltip="true" title="msgId:${msg.msgId}">${msg_index + 1}</td>
+					<td rowspan="2" class="text-center" style="padding-left:0px;" class="d-none d-sm-table-cell" data-tooltip="true" title="offsetMsgId:${msg.offsetMsgId}" msgId="${msg.msgId}">${msg_index + 1}</td>
 					<td class="d-none d-sm-table-cell">${msg.bornHostString}</td>
 					<td data-tooltip="true" title="起始时间:${msg.bornTimestamp?number_to_datetime?string("yyyy-MM-dd HH:mm:ss.SSS")}">${msg.storeTimestamp?number_to_datetime?string("yyyy-MM-dd HH:mm:ss.SSS")}</td>
 					<#if RequestParameters.traceEnabled?? && RequestParameters.traceEnabled == "true">

@@ -1,19 +1,20 @@
 package com.sohu.tv.mq.cloud.service;
 
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
+import com.google.common.collect.Lists;
+import com.sohu.tv.mq.cloud.bo.BrokerTraffic;
+import com.sohu.tv.mq.cloud.cache.LocalCache;
+import com.sohu.tv.mq.cloud.dao.BrokerTrafficDao;
+import com.sohu.tv.mq.cloud.util.DateUtil;
+import com.sohu.tv.mq.cloud.util.Result;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import com.sohu.tv.mq.cloud.bo.BrokerTraffic;
-import com.sohu.tv.mq.cloud.cache.LocalCache;
-import com.sohu.tv.mq.cloud.dao.BrokerTrafficDao;
-import com.sohu.tv.mq.cloud.util.Result;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * broker流量服务
@@ -35,6 +36,9 @@ public class BrokerTrafficService {
 
     @Autowired
     private LocalCache<Map<String, BrokerTraffic>> trafficLocalCache;
+
+    @Autowired
+    private BrokerService brokerService;
 
     /**
      * 聚合生产流量
@@ -226,5 +230,79 @@ public class BrokerTrafficService {
             return Result.getDBErrorResult(e);
         }
         return Result.getResult(brokerTraffic);
+    }
+
+    /**
+     * 更新broker日流量
+     *
+     * @return
+     */
+    public Result<?> updateBrokerDayTraffic() {
+        // 先重置
+        brokerService.resetDayCount();
+        long now = System.currentTimeMillis();
+        Date day7Ago = new Date(now - 7L * 24 * 60 * 60 * 1000);
+        Date day1Ago = new Date(now - 1L * 24 * 60 * 60 * 1000);
+        List<BrokerTraffic> brokerTrafficList = brokerTrafficDao.selectSummarySize(day7Ago, day1Ago);
+        if (brokerTrafficList == null || brokerTrafficList.size() == 0) {
+            logger.warn("selectSummarySize no data, day7Ago:{}, day1Agao:{}", day7Ago, day1Ago);
+            return Result.getResult(0);
+        }
+        long start = System.currentTimeMillis();
+        List<BrokerTraffic> result = aggregateBrokerTraffic(brokerTrafficList);
+        Result<Integer> updateResult = brokerService.updateDayCount(result);
+        return updateResult;
+    }
+
+    /**
+     * 聚合broker流量
+     *
+     * @param brokerTrafficList
+     * @return
+     */
+    private List<BrokerTraffic> aggregateBrokerTraffic(List<BrokerTraffic> brokerTrafficList) {
+        Date today = new Date();
+        List<BrokerTraffic> result = Lists.newArrayList();
+        for (BrokerTraffic brokerTraffic : brokerTrafficList) {
+            // 查找是否已经存在
+            BrokerTraffic destBrokerTraffic = null;
+            for (BrokerTraffic traffic : result) {
+                if (traffic.getIp() == brokerTraffic.getIp()) {
+                    destBrokerTraffic = traffic;
+                    break;
+                }
+            }
+            if (destBrokerTraffic == null) {
+                setDaySize(brokerTraffic, DateUtil.daysBetween(today, brokerTraffic.getCreateDate()), brokerTraffic.getPutSize());
+                result.add(brokerTraffic);
+            } else {
+                setDaySize(destBrokerTraffic, DateUtil.daysBetween(today, brokerTraffic.getCreateDate()), brokerTraffic.getPutSize());
+            }
+        }
+        return result;
+    }
+
+    /**
+     * 设置天数流量，size1d表示1天前的流量
+     *
+     * @param brokerTraffic
+     * @param day
+     * @param size
+     */
+    private void setDaySize(BrokerTraffic brokerTraffic, int day, long size){
+        switch (day) {
+            case 1:
+                brokerTraffic.addSize1d(size);
+            case 2:
+                brokerTraffic.addSize2d(size);
+            case 3:
+                brokerTraffic.addSize3d(size);
+            case 4:
+            case 5:
+                brokerTraffic.addSize5d(size);
+            case 6:
+            case 7:
+                brokerTraffic.addSize7d(size);
+        }
     }
 }

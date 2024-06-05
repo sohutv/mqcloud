@@ -60,6 +60,7 @@ public class UserWarn {
         CONTROLLER_ERROR(13, "Controller异常", "mqError.html"),
         PROXY_ERROR(14, "Proxy异常", "mqError.html"),
         MESSAGE_EXPORT_ERROR(15, "消息导出过慢", "messageExportFailed.html"),
+        CAPACITY_REPORT(16, "容量日报", "capacityReport.html", false),
 
         UNKNOWN(100, "未知", "unknown.html"),
         ;
@@ -67,11 +68,17 @@ public class UserWarn {
         private int type;
         private String name;
         private String warnTemplate;
+        private boolean needSave;
         
         private WarnType(int type, String name, String warnTemplate) {
+            this(type, name, warnTemplate, true);
+        }
+
+        private WarnType(int type, String name, String warnTemplate, boolean needSave) {
             this.type = type;
             this.name = name;
             this.warnTemplate = warnTemplate;
+            this.needSave = needSave;
         }
 
         public int getType() {
@@ -84,6 +91,10 @@ public class UserWarn {
         
         public String getWarnTemplate() {
             return warnTemplate;
+        }
+
+        public boolean isNeedSave() {
+            return needSave;
         }
 
         public static WarnType getWarnType(int type) {
@@ -146,5 +157,17 @@ public class UserWarn {
 
     public void setContent(String content) {
         this.content = content;
+    }
+
+    @Override
+    public String toString() {
+        return "UserWarn{" +
+                "uid=" + uid +
+                ", type=" + type +
+                ", resource='" + resource + '\'' +
+                ", createTime=" + createTime +
+                ", wid=" + wid +
+                ", content='" + content + '\'' +
+                '}';
     }
 }

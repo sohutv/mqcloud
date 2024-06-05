@@ -187,7 +187,14 @@ public class ManagerParam {
     public static enum QueryOrderType{
         TRAFFIC_DESC(1, "traffic"),
         TOPICNAME_ASC(2, "topicName"),
-        CREATE_ASC(3, "createTime");
+        CREATE_ASC(3, "createTime"),
+        SIZE1D_DESC(4, "size1d"),
+        SIZE2D_DESC(5, "size2d"),
+        SIZE3D_DESC(6, "size3d"),
+        SIZE5D_DESC(7, "size5d"),
+        SIZE7D_DESC(8, "size7d"),
+        SIZE_DESC(9, "size"),
+        ;
 
         private final int type;
         private final String name;

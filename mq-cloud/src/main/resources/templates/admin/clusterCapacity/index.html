@@ -1,0 +1,91 @@
+<#if response.notOK>
+<div class="card mt-2">
+    <div class="card-header">
+        <b>暂无数据</b>
+    </div>
+</div>
+<#else>
+<div class="card mt-2">
+    <div class="card-header">
+        <b>集群昨日共写入数据：${response.result.size1dFormat}</b>
+    </div>
+</div>
+<#list response.result.clusterCapacityList as clusterCapacity>
+<div class="card mt-2">
+    <div class="card-header">
+       <b>集群：${clusterCapacity.cluster.name}，昨日写入：${clusterCapacity.size1dFormat}</b>
+    </div>
+    <div class="card-body table-responsive p-0">
+        <table class="table table-striped text-nowrap">
+            <thead>
+            <tr>
+                <th rowspan="2">Broker</th>
+                <th rowspan="2">角色</th>
+                <th rowspan="2">地址</th>
+                <th colspan="4" style="text-align: center;border-bottom-width: 1px;border-bottom-style: dashed;">磁盘</th>
+                <th colspan="5" style="text-align: center;border-bottom-width: 1px;border-bottom-style: dashed;">写入量</th>
+                <th rowspan="2" data-toggle="tooltip" title="基于前3天写入平均量预估多久后会写满硬盘">预估</th>
+            </tr>
+            <tr>
+                <th>挂载点</th>
+                <th>容量</th>
+                <th>使用量</th>
+                <th>使用率</th>
+                <th>前1天</th>
+                <th>前2天</th>
+                <th>前3天</th>
+                <th>前5天</th>
+                <th>前7天</th>
+            </tr>
+            </thead>
+            <tbody>
+            <#list clusterCapacity.brokerCapacityList as brokerCapacity>
+            <tr>
+                <td>${brokerCapacity.broker.brokerName}</td>
+                <td><#if brokerCapacity.broker.master>master<#else>slave</#if></td>
+                <td>${brokerCapacity.broker.addr}</td>
+                <td><#if brokerCapacity.diskUsage??>${brokerCapacity.diskUsage.mount}</#if></td>
+                <td><#if brokerCapacity.diskUsage??>${brokerCapacity.diskUsage.sizeFormat}</#if></td>
+                <td><#if brokerCapacity.diskUsage??>${brokerCapacity.diskUsage.usedFormat}</#if></td>
+                <td <#if brokerCapacity.diskUsage?? && brokerCapacity.diskUsage.value gte 75>style="background-color:#ffc107!important;"</#if>><#if brokerCapacity.diskUsage??>${brokerCapacity.diskUsage.value}%</#if></td>
+                <td>${brokerCapacity.broker.size1dFormat}</td>
+                <td>${brokerCapacity.broker.size2dFormat}</td>
+                <td>${brokerCapacity.broker.size3dFormat}</td>
+                <td>${brokerCapacity.broker.size5dFormat}</td>
+                <td>${brokerCapacity.broker.size7dFormat}</td>
+                <td <#if brokerCapacity.diskUsage?? && brokerCapacity.estimateLeftDays lte 2>style="background-color:#ffc107!important;"</#if>><#if brokerCapacity.diskUsage??>${brokerCapacity.estimateLeftDays}天</#if></td>
+            </tr>
+            </#list>
+            </tbody>
+        </table>
+        <table class="table table-striped text-nowrap">
+            <thead>
+            <tr>
+                <th rowspan="2">Topic-Top10</th>
+                <th colspan="5" style="text-align: center;border-bottom-width: 1px;border-bottom-style: dashed;">写入量</th>
+            </tr>
+            <tr>
+                <th>前1天</th>
+                <th>前2天</th>
+                <th>前3天</th>
+                <th>前5天</th>
+                <th>前7天</th>
+            </tr>
+            </thead>
+            <tbody>
+            <#list clusterCapacity.topicList as topic>
+            <tr>
+                <td><a href="${topic.info}">${topic.name}</a></td>
+                <td>${topic.size1dFormat}</td>
+                <td>${topic.size2dFormat}</td>
+                <td>${topic.size3dFormat}</td>
+                <td>${topic.size5dFormat}</td>
+                <td>${topic.size7dFormat}</td>
+            </tr>
+            </#list>
+            </tbody>
+        </table>
+    </div>
+</div>
+</#list>
+</#if>

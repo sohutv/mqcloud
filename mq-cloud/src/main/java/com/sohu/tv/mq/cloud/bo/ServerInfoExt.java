@@ -89,6 +89,7 @@ public class ServerInfoExt extends ServerStatus {
 
     public void setServerRoleVO(ServerRoleVO serverRoleVO) {
         this.serverRoleVO = serverRoleVO;
+        serverRoleVO.initDiskUsage(this);
     }
 
     /***

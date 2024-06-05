@@ -6,6 +6,7 @@ import com.sohu.tv.mq.cloud.service.SSHTemplate.DefaultLineProcessor;
 import com.sohu.tv.mq.cloud.service.SSHTemplate.SSHCallback;
 import com.sohu.tv.mq.cloud.service.SSHTemplate.SSHResult;
 import com.sohu.tv.mq.cloud.service.SSHTemplate.SSHSession;
+import com.sohu.tv.mq.cloud.service.ServerDataService;
 import com.sohu.tv.mq.cloud.task.ServerStatusTask;
 import com.sohu.tv.mq.cloud.task.server.data.OSInfo;
 import com.sohu.tv.mq.cloud.task.server.data.Server;
@@ -48,7 +49,7 @@ public class SSHTemplateTest {
             public SSHResult call(SSHSession session) {
                 final Server server = new Server();
                 server.setIp(IP);
-                SSHResult result = session.executeCommand(ServerStatusTask.COLLECT_SERVER_STATUS, new DefaultLineProcessor() {
+                SSHResult result = session.executeCommand(ServerDataService.COLLECT_SERVER_STATUS, new DefaultLineProcessor() {
                     public void process(String line, int lineNum) throws Exception {
                         server.parse(line, null);
                     }

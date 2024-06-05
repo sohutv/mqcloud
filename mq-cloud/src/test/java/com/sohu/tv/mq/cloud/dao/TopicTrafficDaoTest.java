@@ -50,9 +50,7 @@ public class TopicTrafficDaoTest {
         timeList.add("1717");
         timeList.add("1718");
         timeList.add("1719");
-        List<Integer> list = new ArrayList<>();
-        list.add(1);
-        List<TopicTraffic> result = topicTrafficDao.selectByDateTime(DateUtil.parse(DateUtil.YMD, "20180731"), timeList, list);
+        List<TopicTraffic> result = topicTrafficDao.selectByDateTime(DateUtil.parse(DateUtil.YMD, "20180731"), timeList);
         Assert.assertNotNull(result);
     }
 

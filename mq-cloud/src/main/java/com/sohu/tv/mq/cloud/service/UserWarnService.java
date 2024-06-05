@@ -44,7 +44,7 @@ public class UserWarnService {
      * @return
      */
     public Result<?> save(Collection<User> users, WarnType warnType, String resource, String content) {
-        if(content == null) {
+        if (content == null || !warnType.isNeedSave()) {
             return null;
         }
         if (CollectionUtils.isEmpty(users)) {

@@ -32,7 +32,7 @@
 		</div>
 	</div>
 	<div class="form-group row">
-		<label class="col-md-3"> 消息顺序: </label>
+		<label class="col-md-3" <#if response.result.ordered == 1>notice</#if>"> 消息顺序: </label>
 		<div class="col-md-9 checkbox">
 			<input type="radio" name="ordered" value="0" disabled="disabled" <#if response.result.ordered == 0>checked</#if>>局部有序
 			<input type="radio" name="ordered" value="1" disabled="disabled" <#if response.result.ordered == 1>checked</#if>>全局有序

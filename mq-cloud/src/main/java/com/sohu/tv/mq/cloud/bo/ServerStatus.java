@@ -1,4 +1,11 @@
 package com.sohu.tv.mq.cloud.bo;
+
+import com.sohu.tv.mq.cloud.task.server.data.Disk.DiskUsage;
+import org.apache.commons.lang3.math.NumberUtils;
+
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * 服务器状态
  */
@@ -199,4 +206,53 @@ public class ServerStatus {
 	public void setdExt(String dExt) {
 		this.dExt = dExt;
 	}
+
+	public DiskUsage getDiskUsage(String dir) {
+		if (dspace == null) {
+			return null;
+		}
+		String[] mountItems = dspace.split(",");
+		String[] destMountItem = null;
+		int mountDirLength = 0;
+		for (String mountItem : mountItems) {
+			String[] items = mountItem.split(":");
+			if (items.length == 5) {
+				// 选择最长的目录
+				if (dir.startsWith(items[2]) && items[2].length() > mountDirLength) {
+					mountDirLength = items[2].length();
+					destMountItem = items;
+				}
+			}
+		}
+		if (destMountItem == null) {
+			return null;
+		}
+		return buildDiskUsage(destMountItem);
+	}
+
+	public List<DiskUsage> getDiskUsage() {
+		if (dspace == null) {
+			return null;
+		}
+		List<DiskUsage> diskUsageList = new ArrayList<>();
+		String[] mountItems = dspace.split(",");
+		for (String mountItem : mountItems) {
+			String[] items = mountItem.split(":");
+			diskUsageList.add(buildDiskUsage(items));
+		}
+		return diskUsageList;
+	}
+
+	private DiskUsage buildDiskUsage(String[] items) {
+		DiskUsage diskUsage = new DiskUsage();
+		diskUsage.setName(items[0]);
+		diskUsage.setValue(NumberUtils.toFloat(items[1].split("%")[0]));
+		if (items.length == 5) {
+			diskUsage.setMount(items[2]);
+			diskUsage.setSize(NumberUtils.toInt(items[3]));
+			diskUsage.setUsed(NumberUtils.toInt(items[4]));
+		}
+		return diskUsage;
+	}
+
 }

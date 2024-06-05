@@ -190,10 +190,10 @@ public class WebUtil {
      */
     public static String countFormat(long value) {
         if (value >= 100000000) {
-            return format(value / 100000000F) + "亿";
+            return format(value / 100000000d) + "亿";
         }
         if (value >= 10000) {
-            return format(value / 10000F) + "万";
+            return format(value / 10000d) + "万";
         }
         return format(value);
     }
@@ -204,20 +204,24 @@ public class WebUtil {
      * @return
      */
     public static String sizeFormat(long value) {
+        if (value >= 1099511627776L) {
+            return format(value / 1099511627776d) + "T";
+        }
         if (value >= 1073741824) {
-            return format(value / 1073741824F) + "g";
+            return format(value / 1073741824d) + "G";
         }
         if (value >= 1048576) {
-            return format(value / 1048576F) + "m";
+            return format(value / 1048576d) + "M";
         }
         if (value >= 1024) {
-            return format(value / 1024F) + "k";
+            return format(value / 1024d) + "K";
         }
-        return format(value) + "b";
+        return format(value) + "B";
     }
 
-    public static String format(float value) {
-        long v = (long) (value * 10);
+    public static String format(double value) {
+        // 小数点后1位四舍五入
+        long v = Math.round(value * 10);
         if (v % 10 == 0) {
             return String.valueOf(v / 10);
         }

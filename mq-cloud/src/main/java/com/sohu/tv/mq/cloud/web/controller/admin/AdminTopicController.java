@@ -7,7 +7,6 @@ import com.sohu.tv.mq.cloud.util.Result;
 import com.sohu.tv.mq.cloud.util.Status;
 import com.sohu.tv.mq.cloud.web.controller.param.ManagerParam;
 import com.sohu.tv.mq.cloud.web.controller.param.PaginationParam;
-import com.sohu.tv.mq.cloud.web.vo.TopicManagerInfoVo;
 import com.sohu.tv.mq.cloud.web.vo.UserInfo;
 import com.sohu.tv.mq.util.JSONUtil;
 import org.apache.rocketmq.common.TopicConfig;
@@ -77,7 +76,7 @@ public class AdminTopicController extends AdminViewController {
         param.buildQueryStr();
         // 设置分页参数
         setPagination(map, paginationParam);
-        Result<List<TopicManagerInfoVo>> listResult = topicManagerService.queryAndBuilderTopic(param, paginationParam);
+        Result<List<Topic>> listResult = topicManagerService.queryAndBuilderTopic(param, paginationParam);
         setResult(map, "listResult", listResult);
         setResult(map, "queryParams", param);
         return view();

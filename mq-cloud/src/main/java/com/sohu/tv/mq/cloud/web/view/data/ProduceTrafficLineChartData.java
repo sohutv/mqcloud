@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
+import com.sohu.tv.mq.cloud.util.WebUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -253,16 +254,16 @@ public class ProduceTrafficLineChartData implements LineChartData {
         lineChart.setHeight(450);
         lineChart.setOverview("<table class='table table-sm'><thead><tr>"
                 + "<th>日期</th><th>消息量峰值</th><th>消息总量</th><th>消息大小峰值</th><th>消息总大小</th></tr></thead>"
-                + "<tbody><tr><td>"+curDate+"</td>"
-                + "<td title='"+maxCount+"'>"+formatCount(maxCount)+"/分</td>"
-                + "<td title='"+totalCount+"'>"+formatCount(totalCount)+"</td>"
-                + "<td title='"+maxSize+"'>"+formatSize(maxSize)+"/分</td>"
-                + "<td title='"+totalSize+"'>"+formatSize(totalSize)+"</td>"
-                + "</tr><tr><td>"+curDateBefore+"</td>"
-                + "<td title='"+maxCountDayBefore+"'>"+formatCount(maxCountDayBefore)+"/分</td>"
-                + "<td title='"+totalCountDayBefore+"'>"+formatCount(totalCountDayBefore)+"</td>"
-                + "<td title='"+maxSizeDayBefore+"'>"+formatSize(maxSizeDayBefore)+"/分</td>"
-                + "<td title='"+totalSizeDayBefore+"'>"+formatSize(totalSizeDayBefore)+"</td>"
+                + "<tbody><tr><td>" + curDate + "</td>"
+                + "<td title='" + maxCount + "'>" + WebUtil.countFormat(maxCount) + "/分</td>"
+                + "<td title='" + totalCount + "'>" + WebUtil.countFormat(totalCount) + "</td>"
+                + "<td title='" + maxSize + "'>" + WebUtil.sizeFormat(maxSize) + "/分</td>"
+                + "<td title='" + totalSize + "'>" + WebUtil.sizeFormat(totalSize) + "</td>"
+                + "</tr><tr><td>" + curDateBefore + "</td>"
+                + "<td title='" + maxCountDayBefore + "'>" + WebUtil.countFormat(maxCountDayBefore) + "/分</td>"
+                + "<td title='" + totalCountDayBefore + "'>" + WebUtil.countFormat(totalCountDayBefore) + "</td>"
+                + "<td title='" + maxSizeDayBefore + "'>" + WebUtil.sizeFormat(maxSizeDayBefore) + "/分</td>"
+                + "<td title='" + totalSizeDayBefore + "'>" + WebUtil.sizeFormat(totalSizeDayBefore) + "</td>"
                 + "</tr></tbody></table>");
 
         lineChart.setDataMap(dataMap);
@@ -272,42 +273,6 @@ public class ProduceTrafficLineChartData implements LineChartData {
         return lineChartList;
     }
     
-    /**
-     * 格式化消息数量
-     * @param maxCount
-     * @return
-     */
-    private String formatCount(long maxCount) {
-        String maxCountShow = "";
-        if(maxCount > 100000000) {
-            maxCountShow = String.format("%.2f", maxCount / 100000000F) + "亿";
-        } else if(maxCount > 10000) {
-            maxCountShow = String.format("%.2f", maxCount / 10000F) + "万";
-        } else {
-            maxCountShow = String.valueOf(maxCount);
-        }
-        return maxCountShow;
-    }
-    
-    /**
-     * 格式化消息大小
-     * @param maxSize
-     * @return
-     */
-    private String formatSize(long maxSize) {
-        String maxSizeShow = "";
-        if(maxSize > 1073741824) {
-            maxSizeShow = String.format("%.2f", maxSize / 1073741824F) + "G";
-        } else if(maxSize > 1048576) {
-            maxSizeShow = String.format("%.2f", maxSize / 1048576F) + "M";
-        } else if (maxSize > 1024) {
-            maxSizeShow = String.format("%.2f", maxSize / 1024F) + "K";
-        } else {
-            maxSizeShow = maxSize + "B";
-        }
-        return maxSizeShow;
-    }
-
     private long setSizeData(Traffic traffic, List<Number> sizeList) {
         if (traffic == null) {
             sizeList.add(0);

@@ -1,6 +1,7 @@
 package com.sohu.tv.mq.cloud.web.vo;
 
 import com.sohu.tv.mq.cloud.bo.*;
+import com.sohu.tv.mq.cloud.task.server.data.Disk.DiskUsage;
 import org.apache.commons.lang3.math.NumberUtils;
 
 import java.util.ArrayList;
@@ -14,6 +15,8 @@ import java.util.List;
  */
 public class ServerRoleVO {
     private List<RoleVO> roleVOList = new ArrayList<>();
+
+    private List<DiskUsage> diskUsageList = new ArrayList<>();
 
     public void addBroker(Broker broker, Cluster cluster) {
         RoleVO roleVO = new RoleVO();
@@ -56,8 +59,43 @@ public class ServerRoleVO {
         roleVOList.add(roleVO);
     }
 
+    public void initDiskUsage(ServerInfoExt serverInfoExt) {
+        for (RoleVO roleVO : roleVOList) {
+            DiskUsage diskUsage = serverInfoExt.getDiskUsage(roleVO.getBaseDir());
+            addToDiskUsageList(diskUsage);
+        }
+        if (diskUsageList.isEmpty()) {
+            List<DiskUsage> diskUsages = serverInfoExt.getDiskUsage();
+            if (diskUsages != null) {
+                for (DiskUsage diskUsage : diskUsages) {
+                    addToDiskUsageList(diskUsage);
+                }
+            }
+        }
+    }
+
+    private void addToDiskUsageList(DiskUsage diskUsage) {
+        if (diskUsage == null) {
+            return;
+        }
+        for (DiskUsage du : diskUsageList) {
+            if (diskUsage.getName().equals(du.getName())) {
+                return;
+            }
+        }
+        diskUsageList.add(diskUsage);
+    }
+
     public RoleVO getFirstRoleVO() {
         return roleVOList.get(0);
+    }
+
+    public List<DiskUsage> getDiskUsageList() {
+        return diskUsageList;
+    }
+
+    public void setDiskUsageList(List<DiskUsage> diskUsageList) {
+        this.diskUsageList = diskUsageList;
     }
 
     /**

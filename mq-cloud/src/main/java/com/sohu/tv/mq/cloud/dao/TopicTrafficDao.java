@@ -1,14 +1,13 @@
 package com.sohu.tv.mq.cloud.dao;
 
-import java.util.Date;
-import java.util.List;
-
+import com.sohu.tv.mq.cloud.bo.TopicTraffic;
 import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 
-import com.sohu.tv.mq.cloud.bo.TopicTraffic;
+import java.util.Date;
+import java.util.List;
 
 /**
  * topic流量
@@ -23,7 +22,7 @@ public interface TopicTrafficDao {
      * @param topic
      */
     @Insert("insert into topic_traffic(tid, create_date, create_time, count, size) values("
-            + "#{topicTraffic.tid},now(),#{topicTraffic.createTime},#{topicTraffic.count},#{topicTraffic.size})")
+            + "#{topicTraffic.tid},#{topicTraffic.createDate},#{topicTraffic.createTime},#{topicTraffic.count},#{topicTraffic.size})")
     public void insert(@Param("topicTraffic") TopicTraffic topicTraffic);
     
     /**
@@ -71,14 +70,11 @@ public interface TopicTrafficDao {
      * @param createTimeList
      * @return
      */
-    @Select("<script>select tid, sum(count) count from `topic_traffic` where create_date = #{createDate,jdbcType=DATE} "
-            + "and tid in (select id from topic where cluster_id in " 
-            + "<foreach collection=\"clusterIdList\" item=\"cid\" separator=\",\" open=\"(\" close=\")\">#{cid}</foreach>"
-            + ") and create_time in "
+    @Select("<script>select tid, sum(count) count, sum(size) size from `topic_traffic` where create_date = #{createDate,jdbcType=DATE} "
+            + "and create_time in "
             + "<foreach collection=\"createTimeList\" item=\"time\" separator=\",\" open=\"(\" close=\")\">#{time}</foreach>"
             + " group by tid</script>")
-    public List<TopicTraffic> selectByDateTime(@Param("createDate") Date createDate,
-            @Param("createTimeList") List<String> createTimeList, @Param("clusterIdList") List<Integer> clusterIdList);
+    public List<TopicTraffic> selectByDateTime(@Param("createDate") Date createDate, @Param("createTimeList") List<String> createTimeList);
 
     /**
      * 获取topic指定日期内的流量信息
@@ -95,17 +91,6 @@ public interface TopicTrafficDao {
     public List<TopicTraffic> selectByCreateDateAndTime(@Param("tid") long tid,
            @Param("createDate") Date createDate, @Param("createTimeList") List<String> createTimeList);
 
-    /**
-     * 依据createTime时间范围和tid进行流量求和
-     */
-    @Select("<script>select tid ,sum(IFNULL(count,0)) count from topic_traffic where tid in "
-            + "<foreach collection=\"tidList\" item=\"tid\" separator=\",\" open=\"(\" close=\")\">#{tid}</foreach>"
-            + "and create_time in "
-            + "<foreach collection=\"minutesTimes\" item=\"minus\" separator=\",\" open=\"(\" close=\")\">#{minus}</foreach>"
-            + " and create_date = #{dateTime,jdbcType=DATE}"
-            + " group by tid</script>")
-    List<TopicTraffic> selectByDateTimeRange(@Param("dateTime") Date dateTime, @Param("minutesTimes") List<String> minutesTimes,
-                                             @Param("tidList") List<Long> tidList);
     /**
      * 依据createTime时间范围和tid进行流量求和
      */
@@ -127,4 +112,19 @@ public interface TopicTrafficDao {
             "HAVING sum(IFNULL(traffic.count,0)) = 0 "
             + "</script>")
     List<Long> selectCurrentMsgNum(@Param("creatDay")Date creatDay);
+
+    /**
+     * 获取某段时间流量字节大小
+     */
+    @Select("select tid,create_date,sum(size) size from topic_traffic where "
+            + "create_date BETWEEN #{startDate,jdbcType=DATE} and #{endDate,jdbcType=DATE} "
+            + "group by tid,create_date limit #{offset},#{size}")
+    List<TopicTraffic> selectSummarySize(@Param("startDate") Date startDate, @Param("endDate") Date endDate, @Param("offset") int offset, @Param("size") int size);
+
+    /**
+     * 获取某段时间流量字节大小
+     */
+    @Select("select sum(size) size from topic_traffic where tid = #{tid} and "
+            + "create_date BETWEEN #{startDate,jdbcType=DATE} and #{endDate,jdbcType=DATE}")
+    Long selectTopicSummarySize(@Param("tid")long tid, @Param("startDate") Date startDate, @Param("endDate") Date endDate);
 }

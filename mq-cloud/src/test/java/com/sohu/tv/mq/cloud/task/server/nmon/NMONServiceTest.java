@@ -1,13 +1,10 @@
 package com.sohu.tv.mq.cloud.task.server.nmon;
 
-import org.junit.Test;
-
-import com.sohu.tv.mq.cloud.service.SSHTemplate;
-import com.sohu.tv.mq.cloud.service.SSHTemplate.SSHCallback;
-import com.sohu.tv.mq.cloud.service.SSHTemplate.SSHResult;
-import com.sohu.tv.mq.cloud.service.SSHTemplate.SSHSession;
+import com.sohu.tv.mq.cloud.bo.ServerInfo;
 import com.sohu.tv.mq.cloud.task.server.data.OSInfo;
 import com.sohu.tv.mq.cloud.util.SSHException;
+import org.junit.Assert;
+import org.junit.Test;
 
 public class NMONServiceTest {
 
@@ -16,14 +13,10 @@ public class NMONServiceTest {
     @Test
     public void testStart() throws SSHException {
         NMONService nmonService = new NMONService();
-        SSHTemplate sshTemplate = new SSHTemplate();
-        sshTemplate.execute(IP, new SSHCallback() {
-            public SSHResult call(SSHSession session) {
-                OSInfo info = nmonService.start(IP, session);
-                System.out.println(info);
-                return null;
-            }
-        });
+        ServerInfo serverInfo = new ServerInfo();
+        serverInfo.setIp(IP);
+        OSInfo info = nmonService.start(serverInfo);
+        Assert.assertNotNull(info);
     }
 
 }

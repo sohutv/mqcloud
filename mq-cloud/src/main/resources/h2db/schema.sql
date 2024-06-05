@@ -420,6 +420,7 @@ CREATE TABLE IF NOT EXISTS `topic` (
   `queue_num` int(11) NOT NULL COMMENT '队列长度',
   `ordered` int(4) NOT NULL DEFAULT '0' COMMENT '0:无序,1:有序',
   `count` int(11) DEFAULT NULL COMMENT 'topic put times',
+  `size` bigint(20) DEFAULT '0' COMMENT 'topic put size',
   `info` varchar(360) DEFAULT NULL COMMENT 'topic描述',
   `trace_enabled` int(4) NOT NULL DEFAULT '0' COMMENT '0:不开启trace,1:开启trace',
   `delay_enabled` int(4) NOT NULL DEFAULT '0' COMMENT '0:不发送延迟消息,1:发送延迟消息。注：此字段不强制该topic的消息类型',
@@ -428,6 +429,11 @@ CREATE TABLE IF NOT EXISTS `topic` (
   `serializer` int(4) NOT NULL DEFAULT '0' COMMENT '序列化器 0:Protobuf,1:String',
   `traffic_warn_enabled` int(4) NOT NULL DEFAULT '0' COMMENT '0:不开启流量预警,1:开启流量预警',
   `effective` int(4) NOT NULL DEFAULT '0' COMMENT '状态确认 0 未确认 1 确认',
+  `size_1d` bigint(20) DEFAULT '0' COMMENT 'topic put size in one day',
+  `size_2d` bigint(20) DEFAULT '0' COMMENT 'topic put size in two days',
+  `size_3d` bigint(20) DEFAULT '0' COMMENT 'topic put size in three days',
+  `size_5d` bigint(20) DEFAULT '0' COMMENT 'topic put size in five days',
+  `size_7d` bigint(20) DEFAULT '0' COMMENT 'topic put size in seven days',
   PRIMARY KEY (`id`),
   UNIQUE KEY `name` (`name`)
 );
@@ -556,6 +562,12 @@ CREATE TABLE IF NOT EXISTS `broker` (
   `check_status` tinyint(4) DEFAULT 0 COMMENT '检测结果:0:未知,1:正常,2:异常',
   `check_time` datetime COMMENT '检测时间',
   `base_dir` varchar(360) DEFAULT NULL COMMENT '安装路径',
+    `writable` int(4) NOT NULL DEFAULT '1' COMMENT '0:不可写入,1:可写入',
+    `size_1d` bigint(20) DEFAULT '0' COMMENT 'put size in one day',
+    `size_2d` bigint(20) DEFAULT '0' COMMENT 'put size in two days',
+    `size_3d` bigint(20) DEFAULT '0' COMMENT 'put size in three days',
+    `size_5d` bigint(20) DEFAULT '0' COMMENT 'put size in five days',
+    `size_7d` bigint(20) DEFAULT '0' COMMENT 'put size in seven days',
   UNIQUE KEY `cid` (`cid`,`addr`)
 );
 

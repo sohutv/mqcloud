@@ -1,7 +1,8 @@
 package com.sohu.tv.mq.cloud.service;
 
 import com.google.common.collect.Lists;
-import com.sohu.tv.mq.cloud.bo.*;
+import com.sohu.tv.mq.cloud.bo.Consumer;
+import com.sohu.tv.mq.cloud.bo.Topic;
 import com.sohu.tv.mq.cloud.dao.ClusterDao;
 import com.sohu.tv.mq.cloud.dao.ConsumerDao;
 import com.sohu.tv.mq.cloud.dao.ConsumerTrafficDao;
@@ -10,11 +11,11 @@ import com.sohu.tv.mq.cloud.util.Result;
 import com.sohu.tv.mq.cloud.util.WebUtil;
 import com.sohu.tv.mq.cloud.web.controller.param.ManagerParam;
 import com.sohu.tv.mq.cloud.web.controller.param.PaginationParam;
-import com.sohu.tv.mq.cloud.web.vo.TopicManagerInfoVo;
 import com.sohu.tv.mq.cloud.web.vo.TopicStateVo;
 import com.sohu.tv.mq.cloud.web.vo.UserInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
@@ -22,7 +23,10 @@ import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
@@ -43,6 +47,9 @@ public class TopicManagerService extends ManagerBaseService{
     @Resource
     private ConsumerDao consumerDao;
 
+    @Autowired
+    private ClusterService clusterService;
+
     // 循环查询每次获取的条数
     private final static int LOOP_QUERY_LIMIT = 1000;
 
@@ -54,49 +61,19 @@ public class TopicManagerService extends ManagerBaseService{
     /**
      * 筛选入口
      */
-    public Result<List<TopicManagerInfoVo>> queryAndBuilderTopic(ManagerParam param, PaginationParam paginationParam) {
-
+    public Result<List<Topic>> queryAndBuilderTopic(ManagerParam param, PaginationParam paginationParam) {
         try {
             List<Long> tidList = new ArrayList<>();
-            List<Topic> topicList = comonFilterTopic(param, paginationParam, tidList,false);
+            List<Topic> topicList = queryAndFilterTopic(param, paginationParam, tidList,false);
             if (topicList == null){
                 logger.warn("query topic result is empty,the param is {}",param);
                 return Result.getOKResult();
             }
-
-            //进行时间段查询
-            Map<Date, List<String>> dateRange = calculationDateRange();
-            Map<Long, Long> producerFlowSum = new HashMap<>(10);
-            Map<Long, Long> consumerFlowSum = new HashMap<>(10);
-
-            dateRange.forEach((key, value) -> {
-                //查询并合并生产流量
-                List<TopicTraffic> producerListTraffic = topicTrafficDao.selectByDateTimeRange(key, value, tidList);
-                if (!CollectionUtils.isEmpty(producerListTraffic)) {
-                    producerListTraffic.forEach(node -> {
-                        Long sum = producerFlowSum.getOrDefault(node.getTid(), 0L);
-                        producerFlowSum.put(node.getTid(), sum + node.getCount());
-                    });
-                }
-                //查询并合并消费流量
-                List<ConsumerTraffic> consumerListTraffic = consumerTrafficDao.selectFlowByDateTimeRange(key, value, tidList);
-                if (!CollectionUtils.isEmpty(consumerListTraffic)) {
-                    consumerListTraffic.forEach(node -> {
-                        Long sum = consumerFlowSum.getOrDefault(node.getConsumerId(), 0L);
-                        // 获取consumerID也就Tid,做了映射
-                        consumerFlowSum.put(node.getConsumerId(), sum + node.getCount());
-                    });
-                }
-            });
-
-            //封装topic集群信息
-            List<Long> cids = topicList.stream().map(Topic::getClusterId).distinct().collect(Collectors.toList());
-            List<Cluster> clusters = clusterDao.selectClusterByCids(cids);
-
-            //组装返回信息
-            return builderNormalManagerInfo(topicList, producerFlowSum, consumerFlowSum, clusters, paginationParam);
+            for (Topic topic : topicList) {
+                topic.setCluster(clusterService.getMQClusterById(topic.getClusterId()));
+            }
+            return Result.getResult(topicList);
         } catch (Exception e) {
-            e.printStackTrace();
             logger.error("query topic result is err,the err message is {}",e.getCause().getMessage());
             return Result.getDBErrorResult(e);
         }
@@ -157,30 +134,4 @@ public class TopicManagerService extends ManagerBaseService{
             return Result.getDBErrorResult(e);
         }
     }
-
-
-
-    /**
-     * 构建topic封装对象
-     */
-    private Result<List<TopicManagerInfoVo>> builderNormalManagerInfo(List<Topic> topicList, Map<Long, Long> producerFlowSum, Map<Long, Long> consumerFlowSum, List<Cluster> clusters, PaginationParam paginationParam) {
-        Map<Long, List<Cluster>> clusterGroup = clusters.stream().collect(Collectors.groupingBy(key -> Long.valueOf(key.getId())));
-        List<TopicManagerInfoVo> resultList = new ArrayList<>();
-        int index = paginationParam.getBegin();
-        for (Topic topic : topicList) {
-            topic.setCluster(clusterGroup.get(topic.getClusterId()).get(0));
-            TopicManagerInfoVo vo = null;
-            if (producerFlowSum == null || consumerFlowSum == null) {
-                vo = new TopicManagerInfoVo(++index, topic, 0L, 0L);
-            } else {
-                vo = new TopicManagerInfoVo(++index, topic, producerFlowSum.getOrDefault(topic.getId(), 0L), consumerFlowSum.getOrDefault(topic.getId(), 0L));
-            }
-            resultList.add(vo);
-        }
-        return Result.getResult(resultList);
-    }
-
-
-
-
 }

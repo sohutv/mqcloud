@@ -68,11 +68,11 @@ public class TopicDaoTest {
         timeList.add("1717");
         timeList.add("1718");
         timeList.add("1719");
-        List<Integer> list = new ArrayList<>();
-        list.add(1);
-        List<TopicTraffic> result = topicTrafficDao.selectByDateTime(new Date(), timeList, list);
-        Integer rst = topicDao.updateCount(result);
-        Assert.assertEquals(timeList.size(), rst.intValue());
+        List<TopicTraffic> result = topicTrafficDao.selectByDateTime(new Date(), timeList);
+        for(TopicTraffic topicTraffic : result) {
+            Integer rst = topicDao.updateCount(topicTraffic);
+            Assert.assertEquals(timeList.size(), rst.intValue());
+        }
     }
     
     @Test

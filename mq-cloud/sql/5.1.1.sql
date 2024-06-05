@@ -22,3 +22,16 @@ CREATE TABLE `consumer_pause_config`(
     `update_time`     timestamp   NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     UNIQUE KEY `c_p_c` (`consumer`, `pause_client_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='客户端暂停配置表';
+
+alter table `topic` add column `size` bigint(20) DEFAULT '0' COMMENT 'topic put size in one hour';
+alter table `topic` add column `size_1d` bigint(20) DEFAULT '0' COMMENT 'topic put size in one day';
+alter table `topic` add column `size_2d` bigint(20) DEFAULT '0' COMMENT 'topic put size in two days';
+alter table `topic` add column `size_3d` bigint(20) DEFAULT '0' COMMENT 'topic put size in three days';
+alter table `topic` add column `size_5d` bigint(20) DEFAULT '0' COMMENT 'topic put size in five days';
+alter table `topic` add column `size_7d` bigint(20) DEFAULT '0' COMMENT 'topic put size in seven days';
+
+alter table `broker` add column `size_1d` bigint(20) DEFAULT '0' COMMENT 'put size in one day';
+alter table `broker` add column `size_2d` bigint(20) DEFAULT '0' COMMENT 'put size in two days';
+alter table `broker` add column `size_3d` bigint(20) DEFAULT '0' COMMENT 'put size in three days';
+alter table `broker` add column `size_5d` bigint(20) DEFAULT '0' COMMENT 'put size in five days';
+alter table `broker` add column `size_7d` bigint(20) DEFAULT '0' COMMENT 'put size in seven days';

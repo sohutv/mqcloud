@@ -2,6 +2,9 @@ package com.sohu.tv.mq.cloud.bo;
 
 import com.sohu.tv.mq.cloud.util.MachineType;
 
+import java.util.Date;
+import java.util.List;
+
 /**
  * 服务器信息
  */
@@ -26,6 +29,11 @@ public class ServerInfo {
     private Integer machineType;
     // 机房颜色，额外添加字段
     private String roomColor;
+	// 部署目录
+	private List<String> deployDirs;
+
+	// 收集时间-测试用
+	private Date collectTime;
     
 	public String getUlimit() {
 		return ulimit;
@@ -125,4 +133,20 @@ public class ServerInfo {
         }
         return MachineType.UNKNOWN.getValue();
     }
+
+	public List<String> getDeployDirs() {
+		return deployDirs;
+	}
+
+	public void setDeployDirs(List<String> deployDirs) {
+		this.deployDirs = deployDirs;
+	}
+
+	public Date getCollectTime() {
+		return collectTime;
+	}
+
+	public void setCollectTime(Date collectTime) {
+		this.collectTime = collectTime;
+	}
 }

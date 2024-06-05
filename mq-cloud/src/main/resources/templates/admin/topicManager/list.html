@@ -42,9 +42,15 @@
 					<label for="orderType"> 排序方式: </label>
 					<div class="form-group">
 						<select id="orderType" class="selectpicker border form-control" title="搜索" data-live-search-placeholder="输入搜索内容" name="orderType" data-live-search="false">
-							<option value=1 selected="selected">按照流量倒序</option>
 							<option value=2>按照名称正序</option>
 							<option value=3>按照创建时间正序</option>
+							<option value=1>按照近1小时生产量倒序</option>
+							<option value=9>按照近1小时生产大小倒序</option>
+							<option value=4 selected="selected">按照前1天生产大小倒序</option>
+							<option value=5>按照前2天生产大小倒序</option>
+							<option value=6>按照前3天生产大小倒序</option>
+							<option value=7>按照前5天生产大小倒序</option>
+							<option value=8>按照前7天生产大小倒序</option>
 						</select>
 					</div>
 				</div>
@@ -74,45 +80,48 @@
 		<table class="table table-hover text-nowrap">
 			<thead>
 			<tr>
-				<th>序号</th>
-				<th>集群名称</th>
-				<th>主题</th>
-				<th>创建时间</th>
-				<th data-toggle="tooltip" title="当前时间前5分钟的生产量统计">生产量</th>
-				<th data-toggle="tooltip" title="当前时间前5分钟的消费量统计">消费量</th>
-				<th>主题描述</th>
-				<th>是否确认</th>
-				<th>操作</th>
+				<th rowspan="2" style="vertical-align: middle">序号</th>
+				<th rowspan="2" style="vertical-align: middle">集群名称</th>
+				<th rowspan="2" style="vertical-align: middle">主题</th>
+				<th colspan="6" style="text-align: center;border-bottom-width: 1px;border-bottom-style: dashed;">生产状况</th>
+				<th rowspan="2" style="vertical-align: middle">主题描述</th>
+				<th rowspan="2" style="vertical-align: middle">操作</th>
+			</tr>
+			<tr>
+				<th data-toggle="tooltip" title="近1小时生产统计">近1小时</th>
+				<th data-toggle="tooltip" title="昨日生产大小">前1天</th>
+				<th data-toggle="tooltip" title="前2日生产大小">前2天</th>
+				<th data-toggle="tooltip" title="前3日生产大小">前3天</th>
+				<th data-toggle="tooltip" title="前5日生产大小">前5天</th>
+				<th data-toggle="tooltip" title="前7日生产大小">前7天</th>
 			</tr>
 			</thead>
 			<tbody>
 			<#if listResult.empty>
 			<tr>
-				<td colspan=10 style="text-align:center">
+				<td colspan=16 style="text-align:center">
 					暂无数据
 				</td>
 			</tr>
 			<#else>
-			<#list listResult.result as manager>
+			<#list listResult.result as topic>
 			<tr>
-				<td>${manager.index}</td>
-				<td>${manager.topic.cluster.name!}</td>
-				<td class="text-wrap"><a target="_blank" href="${request.contextPath}/user/topic/${manager.topic.id}/detail">${manager.topic.name!}</a></td>
-				<td>${manager.topic.createDate?string("yyyy-MM-dd")}</td>
-				<td>${manager.lastFiveMinusProducerFlow}</td>
-				<td>${manager.lastFiveMinusConsumerFlow}</td>
-				<td class="text-wrap">${manager.topic.info!}</td>
+				<td>${(pagination.result.currentPage - 1)*pagination.result.numOfPage + topic_index + 1}</td>
+				<td>${topic.cluster.name!}</td>
+				<td class="text-wrap"><a target="_blank" href="${request.contextPath}/user/topic/${topic.id}/detail">${topic.name!}</a></td>
+				<td><span data-toggle="tooltip" title="生产量">${topic.countFormat}</span>:<span data-toggle="tooltip" title="生产大小">${topic.sizeFormat}</span></td>
+				<td>${topic.size1dFormat}</td>
+				<td>${topic.size2dFormat}</td>
+				<td>${topic.size3dFormat}</td>
+				<td>${topic.size5dFormat}</td>
+				<td>${topic.size7dFormat}</td>
+				<td class="text-wrap">${topic.info!}</td>
 				<td>
-					<#if manager.topic.effective == 1>
-					<span style="color: #d58512">已使用</span>
-					<#else>
-					<span style="color: #0f0f0f">未确认</span>
-				</#if>
-				</td>
-				<td>
-					<button type="button" class="btn btn-sm btn-info" title="检查Topic" data-target="#topicDeleteCheck" data-toggle="modal" onclick="loadDeleteCheck('${manager.topic.name}','${manager.topic.id}','${manager.topic.effective}');"><span class="fas fa-check-circle" aria-hidden="true"></span></button>
+					<#if topic.effective != 1>
+						<button type="button" class="btn btn-sm btn-info" title="检查Topic" data-target="#topicDeleteCheck" data-toggle="modal" onclick="loadDeleteCheck('${topic.name}','${topic.id}','${topic.effective}');"><span class="fas fa-check-circle" aria-hidden="true"></span></button>
+					</#if>
 					<div class="d-inline-flex">
-						<button type="button" class="btn btn-sm btn-warning" title="迁移Topic" data-target="#copyTopicModal" data-toggle="modal" onclick="copyTopicShow('${manager.topic.id}','${manager.topic.name}','${manager.topic.clusterId}','${manager.topic.cluster.name}');"><span class="fas fa-clone" aria-hidden="true"></span></button>
+						<button type="button" class="btn btn-sm btn-warning" title="迁移Topic" data-target="#copyTopicModal" data-toggle="modal" onclick="copyTopicShow('${topic.id}','${topic.name}','${topic.clusterId}','${topic.cluster.name}');"><span class="fas fa-clone" aria-hidden="true"></span></button>
 					</div>
 				</td>
 			</tr>

@@ -104,21 +104,25 @@ public class ConsumerManagerService extends ManagerBaseService{
     /**
      * 计算前五分钟消费流量
      */
-    private Map<Long, Long> summaryConsumerFlowBy5Min(List<Long> cids){
-        //计算前五分钟消费流量
-        final Map<Date, List<String>> dateRange = calculationDateRange();
-        Map<Long, Long> consumerFlowSum = new HashMap<>(30);
-        dateRange.forEach((key, value) -> {
-            //查询并合并消费流量
-            List<ConsumerTraffic> consumerTrafficList = consumerTrafficDao.selectFlowByDateTimeRangeAndCids(key, value, cids);
-            if (!CollectionUtils.isEmpty(consumerTrafficList)) {
-                consumerTrafficList.forEach(node->{
-                    Long sum = consumerFlowSum.getOrDefault(node.getConsumerId(), 0L);
-                    consumerFlowSum.put(node.getConsumerId(), sum + node.getCount());
-                });
-            }
-        });
-    return consumerFlowSum;
+    private Map<Long, Long> summaryConsumerFlowBy5Min(List<Long> cids) {
+        Date now = new Date();
+        List<String> minuteList = new ArrayList<>();
+        long nowTime = System.currentTimeMillis();
+        for (int i = 1; i <= 5; i++) {
+            Date oneMinuteAgo = new Date(nowTime - i * 60000);
+            String time = DateUtil.getFormat(DateUtil.HHMM).format(oneMinuteAgo);
+            minuteList.add(time);
+        }
+        Map<Long, Long> consumerFlowSum = new HashMap<>();
+        //查询并合并消费流量
+        List<ConsumerTraffic> consumerTrafficList = consumerTrafficDao.selectFlowByDateTimeRangeAndCids(now, minuteList, cids);
+        if (!CollectionUtils.isEmpty(consumerTrafficList)) {
+            consumerTrafficList.forEach(node -> {
+                Long sum = consumerFlowSum.getOrDefault(node.getConsumerId(), 0L);
+                consumerFlowSum.put(node.getConsumerId(), sum + node.getCount());
+            });
+        }
+        return consumerFlowSum;
     }
 
 

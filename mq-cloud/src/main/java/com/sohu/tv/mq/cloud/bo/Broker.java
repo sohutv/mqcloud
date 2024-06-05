@@ -1,8 +1,6 @@
 package com.sohu.tv.mq.cloud.bo;
 
-import java.util.Date;
-
-import com.sohu.tv.mq.cloud.util.DateUtil;
+import com.sohu.tv.mq.cloud.util.WebUtil;
 
 /**
  * broker
@@ -10,49 +8,29 @@ import com.sohu.tv.mq.cloud.util.DateUtil;
  * @author yongfeigao
  * @date 2018年11月14日
  */
-public class Broker {
-    
-    // cluster id
-    private int cid;
-    // ip:port
-    private String addr;
-
+public class Broker extends DeployableComponent {
     // broker id
     private int brokerID;
     // broker name
     private String brokerName;
     
-    private Date createTime;
-    // 检测状态
-    private int checkStatus;
-    // 检测时间
-    private Date checkTime;
-
     // 最大偏移量 冗余字段
     private long maxOffset;
-    
-    // 安装路径
-    private String baseDir;
 
     // 是否可以写入
     private boolean writable = true;
+
+    // 1天前的流量
+    private long size1d;
+    // 2天前的流量
+    private long size2d;
+    // 3天前的流量
+    private long size3d;
+    // 5天前的流量
+    private long size5d;
+    // 7天前的流量
+    private long size7d;
     
-    public int getCid() {
-        return cid;
-    }
-
-    public void setCid(int cid) {
-        this.cid = cid;
-    }
-
-    public String getAddr() {
-        return addr;
-    }
-
-    public void setAddr(String addr) {
-        this.addr = addr;
-    }
-
     public int getBrokerID() {
         return brokerID;
     }
@@ -69,48 +47,6 @@ public class Broker {
         this.brokerName = brokerName;
     }
 
-    public Date getCreateTime() {
-        return createTime;
-    }
-
-    public void setCreateTime(Date createTime) {
-        this.createTime = createTime;
-    }
-
-    public int getCheckStatus() {
-        return checkStatus;
-    }
-
-    public void setCheckStatus(int checkStatus) {
-        this.checkStatus = checkStatus;
-    }
-
-    public Date getCheckTime() {
-        return checkTime;
-    }
-
-    public void setCheckTime(Date checkTime) {
-        this.checkTime = checkTime;
-    }
-    
-    public String getIp() {
-        return addr.split(":")[0];
-    }
-
-    public String getCreateTimeFormat() {
-        if(getCreateTime() == null) {
-            return null;
-        }
-        return DateUtil.getFormat(DateUtil.YMD_DASH_BLANK_HMS_COLON).format(getCreateTime());
-    }
-    
-    public String getCheckTimeFormat() {
-        if(getCheckTime() == null) {
-            return "";
-        }
-        return DateUtil.getFormat(DateUtil.YMD_DASH_BLANK_HMS_COLON).format(getCheckTime());
-    }
-    
     public long getMaxOffset() {
         return maxOffset;
     }
@@ -123,14 +59,6 @@ public class Broker {
         return brokerID == 0;
     }
 
-    public String getBaseDir() {
-        return baseDir;
-    }
-
-    public void setBaseDir(String baseDir) {
-        this.baseDir = baseDir;
-    }
-
     public boolean isWritable() {
         return writable;
     }
@@ -139,10 +67,86 @@ public class Broker {
         this.writable = writable;
     }
 
+    public long getSize1d() {
+        return size1d;
+    }
+
+    public void setSize1d(long size1d) {
+        this.size1d = size1d;
+    }
+
+    public long getSize2d() {
+        return size2d;
+    }
+
+    public void setSize2d(long size2d) {
+        this.size2d = size2d;
+    }
+
+    public long getSize3d() {
+        return size3d;
+    }
+
+    public void setSize3d(long size3d) {
+        this.size3d = size3d;
+    }
+
+    public long getSize5d() {
+        return size5d;
+    }
+
+    public void setSize5d(long size5d) {
+        this.size5d = size5d;
+    }
+
+    public long getSize7d() {
+        return size7d;
+    }
+
+    public void setSize7d(long size7d) {
+        this.size7d = size7d;
+    }
+
+    public String getSize1dFormat() {
+        return WebUtil.sizeFormat(size1d);
+    }
+
+    public String getSize2dFormat() {
+        return WebUtil.sizeFormat(size2d);
+    }
+
+    public String getSize3dFormat() {
+        return WebUtil.sizeFormat(size3d);
+    }
+
+    public String getSize5dFormat() {
+        return WebUtil.sizeFormat(size5d);
+    }
+
+    public String getSize7dFormat() {
+        return WebUtil.sizeFormat(size7d);
+    }
+
+    public void setSize(Broker broker){
+        this.size1d = broker.size1d;
+        this.size2d = broker.size2d;
+        this.size3d = broker.size3d;
+        this.size5d = broker.size5d;
+        this.size7d = broker.size7d;
+    }
+
     @Override
     public String toString() {
-        return "Broker [cid=" + cid + ", addr=" + addr + ", brokerID=" + brokerID + ", brokerName=" + brokerName
-                + " createTime=" + createTime + ", checkStatus=" + checkStatus + ", checkTime=" + checkTime 
-                + ", baseDir=" + baseDir + "]";
+        return "Broker{" +
+                "brokerID=" + brokerID +
+                ", brokerName='" + brokerName + '\'' +
+                ", maxOffset=" + maxOffset +
+                ", writable=" + writable +
+                ", size1d=" + size1d +
+                ", size2d=" + size2d +
+                ", size3d=" + size3d +
+                ", size5d=" + size5d +
+                ", size7d=" + size7d +
+                "} " + super.toString();
     }
 }

@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import com.sohu.tv.mq.cloud.task.server.data.Disk.DiskUsage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -293,19 +294,23 @@ public class ServerWarningTask {
             alarmList.add(new ServerWarnItem("iobusy", serverInfoExt.getDbusy() + SUFFIX, iobusy + SUFFIX));
         }
         // 磁盘各分区使用率
-        String[] dspace = serverInfoExt.getDspace() == null ? new String[0] : serverInfoExt.getDspace().split(",");
+        if (ioUsageRate <= 0) {
+            return;
+        }
+        List<DiskUsage> diskUsages = serverInfoExt.getDiskUsage();
+        if (diskUsages == null || diskUsages.isEmpty()) {
+            return;
+        }
         Set<String> set = new HashSet<>();
-        for (int i = 0; i < dspace.length; i++) {
-            String[] ioUsage = dspace[i].split(":");
-            if (set.contains(ioUsage[0])) {
+        for (DiskUsage diskUsage : diskUsages) {
+            if (set.contains(diskUsage.getMount())) {
                 continue;
             }
-            set.add(ioUsage[0]);
-            if (ioUsageRate > 0 && Float.parseFloat(ioUsage[1]) > ioUsageRate) {
-                alarmList.add(new ServerWarnItem("磁盘使用率-分区：" + ioUsage[0], ioUsage[1] + SUFFIX, ioUsageRate + SUFFIX));
+            set.add(diskUsage.getMount());
+            if (diskUsage.getValue() > ioUsageRate) {
+                alarmList.add(new ServerWarnItem("磁盘使用率-分区：" + diskUsage.getMount(), diskUsage.getValue() + SUFFIX, ioUsageRate + SUFFIX));
             }
         }
-
     }
 
     /**

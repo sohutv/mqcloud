@@ -129,8 +129,8 @@
 								<label data-toggle="tooltip" title="点击查看释义">
 									<input type="radio" name="ordered" value="0" checked>局部有序
 								</label>
-								<label data-toggle="tooltip" title="在分布式系统中保持全局消息有序有性能损耗，请谨慎使用。点击查看释义。">
-									<input type="radio" name="ordered" value="1">全局有序
+								<label data-toggle="tooltip" title="在分布式系统中保持全局消息有序将无法保障高可用，请谨慎使用。">
+									<input type="radio" name="ordered" value="1" disabled>全局有序
 								</label>
 								<a href="${request.contextPath}/wiki/userGuide/clientConsumer#normalOrder" data-toggle="tooltip" data-placement="bottom" title="点击查看释义" target=_blank><i class="fas fa-question-circle fa-sm"></i></a>
 							</div>

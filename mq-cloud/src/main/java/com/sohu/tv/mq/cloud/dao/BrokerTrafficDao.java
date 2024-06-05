@@ -3,6 +3,7 @@ package com.sohu.tv.mq.cloud.dao;
 import java.util.Date;
 import java.util.List;
 
+import com.sohu.tv.mq.cloud.bo.TopicTraffic;
 import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Param;
@@ -119,4 +120,13 @@ public interface BrokerTrafficDao {
             + "from broker_traffic where create_date=#{createDate,jdbcType=DATE} and ip = #{ip} and create_time >= #{beginTime}")
     public BrokerTraffic selectTrafficStatisticByIp(@Param("createDate") Date createDate, 
             @Param("ip") String ip, @Param("beginTime") String beginTime);
+
+
+    /**
+     * 获取某段时间流量字节大小
+     */
+    @Select("select ip,create_date,sum(put_size) put_size from broker_traffic where "
+            + "create_date BETWEEN #{startDate,jdbcType=DATE} and #{endDate,jdbcType=DATE} "
+            + "group by ip,create_date")
+    List<BrokerTraffic> selectSummarySize(@Param("startDate") Date startDate, @Param("endDate") Date endDate);
 }

@@ -82,26 +82,6 @@ public interface ConsumerTrafficDao {
             @Param("createDate") Date createDate, @Param("createTime") String createTime);
 
     /**
-     * 获取时间段内流量之和
-     *
-     * @param dateTime
-     * @param minutesTimes
-     * @param tidList
-     * @return
-     */
-    @Select("<script>select consumer.tid consumerId,sum(IFNULL(traffic.count,0)) count from consumer "
-            + "left join consumer_traffic traffic on consumer.id = traffic.consumer_id "
-            + "where consumer.tid in"
-            + "<foreach collection=\"tidList\" item=\"tid\" separator=\",\" open=\"(\" close=\")\">#{tid}</foreach>"
-            + "and traffic.create_time in "
-            + "<foreach collection=\"minutesTimes\" item=\"minus\" separator=\",\" open=\"(\" close=\")\">#{minus}</foreach>"
-            + "and traffic.create_date = #{dateTime,jdbcType=DATE} "
-            + "group by consumer.tid"
-            + "</script>")
-    List<ConsumerTraffic> selectFlowByDateTimeRange(@Param("dateTime") Date dateTime, @Param("minutesTimes") List<String> minutesTimes,
-                                                 @Param("tidList") List<Long> tidList);
-
-    /**
      * 依据createTime时间范围和cid进行流量求和
      */
     @Select("<script>select consumer_id,sum(IFNULL(count,0)) count from consumer_traffic "

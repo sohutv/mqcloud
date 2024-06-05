@@ -1,6 +1,7 @@
 package com.sohu.tv.mq.cloud.service;
 
 import com.sohu.tv.mq.cloud.bo.Broker;
+import com.sohu.tv.mq.cloud.bo.BrokerTraffic;
 import com.sohu.tv.mq.cloud.bo.CheckStatusEnum;
 import com.sohu.tv.mq.cloud.bo.Cluster;
 import com.sohu.tv.mq.cloud.common.model.BrokerRateLimitData;
@@ -11,9 +12,11 @@ import com.sohu.tv.mq.cloud.common.mq.SohuMQAdmin;
 import com.sohu.tv.mq.cloud.dao.BrokerDao;
 import com.sohu.tv.mq.cloud.mq.DefaultCallback;
 import com.sohu.tv.mq.cloud.mq.MQAdminTemplate;
+import com.sohu.tv.mq.cloud.util.DBUtil;
 import com.sohu.tv.mq.cloud.util.Result;
 import com.sohu.tv.mq.cloud.util.Status;
 import com.sohu.tv.mq.cloud.web.controller.param.BrokerConfigUpdateParam;
+import org.apache.ibatis.session.SqlSessionFactory;
 import org.apache.rocketmq.client.exception.MQBrokerException;
 import org.apache.rocketmq.client.exception.MQClientException;
 import org.apache.rocketmq.remoting.protocol.RemotingSysResponseCode;
@@ -47,6 +50,9 @@ public class BrokerService {
     @Autowired
     private ClusterService clusterService;
 
+    @Autowired
+    private SqlSessionFactory mqSqlSessionFactory;
+
     /**
      * 查询集群的broker
      * 
@@ -68,18 +74,16 @@ public class BrokerService {
 
     /**
      * 查询所有的broker
-     * 
+     *
      * @return Result<List<Broker>>
      */
     public Result<List<Broker>> queryAll() {
-        List<Broker> result = null;
         try {
-            result = brokerDao.selectAll();
+            return Result.getResult(brokerDao.selectAll());
         } catch (Exception e) {
             logger.error("query all err", e);
             return Result.getDBErrorResult(e);
         }
-        return Result.getResult(result);
     }
 
     /**
@@ -334,6 +338,32 @@ public class BrokerService {
                     return Result.getResult(Status.BROKER_UNSUPPORTED_ERROR);
                 }
                 return Result.getDBErrorResult(e);
+            }
+        });
+    }
+
+    /**
+     * 重置topic流量
+     */
+    public Result<Integer> resetDayCount() {
+        try {
+            return Result.getResult(brokerDao.resetDayCount());
+        } catch (Exception e) {
+            logger.error("resetDayCount err", e);
+            return Result.getDBErrorResult(e);
+        }
+    }
+
+    /**
+     * 更新topic日流量
+     *
+     * @param brokerTrafficList
+     * @return
+     */
+    public Result<Integer> updateDayCount(List<BrokerTraffic> brokerTrafficList) {
+        return DBUtil.batchUpdate(mqSqlSessionFactory, BrokerDao.class, dao -> {
+            for (BrokerTraffic brokerTraffic : brokerTrafficList) {
+                dao.updateDayCount(brokerTraffic);
             }
         });
     }

@@ -1,6 +1,8 @@
 package com.sohu.tv.mq.cloud.dao;
 
 import com.sohu.tv.mq.cloud.bo.Broker;
+import com.sohu.tv.mq.cloud.bo.BrokerTraffic;
+import com.sohu.tv.mq.cloud.bo.TopicTraffic;
 import org.apache.ibatis.annotations.*;
 
 import java.util.List;
@@ -24,7 +26,7 @@ public interface BrokerDao {
      * 
      * @return
      */
-    @Select("select * from broker")
+    @Select("select * from broker order by broker_name, broker_id")
     public List<Broker> selectAll();
 
     /**
@@ -70,4 +72,17 @@ public interface BrokerDao {
      */
     @Update("update broker set writable = #{writable} where cid = #{cid} and addr = #{addr}")
     public Integer updateWritable(@Param("cid") int cid, @Param("addr") String addr, @Param("writable") int writable);
+
+    /**
+     * 重置日流量大小
+     */
+    @Update("update broker set size_1d = 0, size_2d = 0, size_3d = 0, size_5d = 0, size_7d = 0")
+    public Integer resetDayCount();
+
+    /**
+     * 更新日流量大小
+     */
+    @Update("update broker set size_1d = size_1d + #{traffic.size1d}, size_2d = size_2d + #{traffic.size2d}, " +
+            "size_3d = size_3d + #{traffic.size3d}, size_5d = size_5d + #{traffic.size5d}, size_7d = size_7d + #{traffic.size7d} where addr = #{traffic.ip}")
+    public Integer updateDayCount(@Param("traffic") BrokerTraffic brokerTraffic);
 }

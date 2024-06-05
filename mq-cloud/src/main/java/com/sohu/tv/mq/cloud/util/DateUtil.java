@@ -1,13 +1,13 @@
 package com.sohu.tv.mq.cloud.util;
 
+import org.apache.commons.lang3.math.NumberUtils;
+
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
-
-import org.apache.commons.lang3.math.NumberUtils;
 
 /**
  * 线程安全的日期工具类
@@ -111,5 +111,16 @@ public class DateUtil {
         } catch (ParseException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    /**
+     * 计算两个日期之间的天数
+     *
+     * @param date1
+     * @param date2
+     * @return
+     */
+    public static int daysBetween(Date date1, Date date2) {
+        return (int) ((date1.getTime() - date2.getTime()) / (1000 * 60 * 60 * 24L));
     }
 }

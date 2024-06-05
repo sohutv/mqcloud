@@ -18,33 +18,33 @@
 	<div class="card-body table-responsive p-0">
 		<table class="table table table-striped text-nowrap" style="table-layout: fixed;">
 			<colgroup>
-				<col width="40px">
+				<col width="20px">
 				<col width="120px">
-				<col width="50px">
+				<col width="30px">
 				<col width="95px">
 				<col width="60px">
+				<col width="70px">
 				<col width="60px">
 				<col width="60px">
+				<col width="120px">
+				<col width="120px">
+				<col width="120px">
 				<col width="100px">
-				<col width="100px">
 				<col width="60px">
-				<col width="60px">
-				<col width="100px">
-				<col width="90px">
 			</colgroup>
 			<thead>
 				<tr>
-					<th><input class="pointer" type="checkbox" name="monitor" id="checkAll" onclick="checkAll(this)" data-toggle="tooltip" title="单击全选或反选"/></th>
+					<th style="padding-left: 0.75rem"><input class="pointer" type="checkbox" name="monitor" id="checkAll" onclick="checkAll(this)" data-toggle="tooltip" title="单击全选或反选"/></th>
 					<th>ip</th>
 					<th data-toggle="tooltip" title="cpu核数">cpu</th>
 					<th data-toggle="tooltip" title="使用/总内存">内存</th>
-					<th data-toggle="tooltip" title="一分钟load">load</th>
+					<th data-toggle="tooltip" title="磁盘使用情况">磁盘</th>
+					<th data-toggle="tooltip" title="load:1分钟,5分钟">load</th>
 					<th data-toggle="tooltip" title="磁盘io速率 交互次数/s">iops</th>
 					<th data-toggle="tooltip" title="tcp estab连接数">连接</th>
 					<th data-toggle="tooltip" title="该服务器归属于哪个RocketMQ集群">集群</th>
 					<th data-toggle="tooltip" title="该服务器的部署">部署</th>
-					<th>类型</th>
-					<th>机房</th>
+					<th>机房:类型</th>
 					<th>收集时间</th>
 					<th>操作</th>
 				</tr>
@@ -59,7 +59,7 @@
 				<#else>
 					<#list response.result as server>
 						<tr>
-							<td><input class="pointer" type="checkbox" name="monitor" value="${server.ip}" onclick="checkThis(this)" /></td>
+							<td style="padding-left: 0.75rem"><input class="pointer" type="checkbox" name="monitor" value="${server.ip}" onclick="checkThis(this)" /></td>
 							<td><a href="#" title="${server_index + 1}" data="${server.ip}" onclick="setIp('${server.ip}')" data-target="#monitorModal" data-toggle="modal">${server.ip}</a></td>
 							<td>${server.cpus!}</td>
 							<td data-html="true" data-trigger="hover" data-container="body"
@@ -73,7 +73,20 @@
 									</div>
 								</#if>
 							</td>
-							<td>${server.cload1?string(",###.##")}</td>
+							<td>
+							<#if server.serverRoleVO??>
+								<#list server.serverRoleVO.diskUsageList as diskUsage>
+								<div class="row" data-html="true" data-trigger="hover" data-container="body"
+									 data-toggle="popover" data-placement="top"
+									 data-content="挂载点：${diskUsage.mount!diskUsage.name}<br>总大小：${diskUsage.sizeFormat}<br>已使用：${diskUsage.usedFormat}">
+									<div class="col-12">
+										${diskUsage.value}%
+									</div>
+								</div>
+								</#list>
+							</#if>
+							</td>
+							<td data-toggle="tooltip" title='15分钟load：${server.cload15?string(",###.##")}'>${server.cload1?string(",###.##")},${server.cload5?string(",###.##")}</td>
 							<td data-html="true" data-trigger="hover" data-container="body"
 								data-toggle="popover" data-placement="top"
 								data-content="磁盘读速率：${server.dread?string(",###.##")}K/s<br>磁盘写速率：${server.dwrite?string(",###.##")}K/s<br>磁盘io带宽使用百分比：${server.dbusy?string("##.##")}%">
@@ -109,14 +122,7 @@
 								<td></td>
 								<td></td>
 							</#if>
-							<td>
-								<#if server.machineType??>
-									${server.machineTypeName}
-								<#else>
-									<button type="button" data-toggle="tooltip" title="添加机器类型" onclick="updateServer('${server.ip}');" class="btn-xs btn-primary"><i class="fas fa-fw fa-plus"></i></button>
-								</#if>
-							</td>
-							<td>${server.room!}</td>
+							<td>${server.room!}:<#if server.machineType??>${server.machineTypeName}<#else><button type="button" data-toggle="tooltip" title="添加机器类型" onclick="updateServer('${server.ip}');" class="btn-xs btn-primary"><i class="fas fa-fw fa-plus"></i></button></#if></td>
 							<td class="text-wrap">
 							<#if server.cdate??>
 								${server.cdate!} ${server.ctime?substring(0,2)}:${server.ctime?substring(2)}

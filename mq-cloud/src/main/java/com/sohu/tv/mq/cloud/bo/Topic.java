@@ -2,6 +2,7 @@ package com.sohu.tv.mq.cloud.bo;
 
 import java.util.Date;
 
+import com.sohu.tv.mq.cloud.util.WebUtil;
 import com.sohu.tv.mq.serializable.MessageSerializerEnum;
 
 /**
@@ -41,8 +42,11 @@ public class Topic {
     // 冗余字段 消费者名称
     private String consumerName;
 
-    // 消息发送量
+    // 近1小时消息发送量
     private long count;
+
+    // 近1小时消息大小
+    private long size;
     
     // 是否开启trace
     private int traceEnabled;
@@ -61,6 +65,17 @@ public class Topic {
 
     // 状态确认 0 未确认 1 确认
     private int effective;
+
+    // 1天前的流量
+    private long size1d;
+    // 2天前的流量
+    private long size2d;
+    // 3天前的流量
+    private long size3d;
+    // 5天前的流量
+    private long size5d;
+    // 7天前的流量
+    private long size7d;
 
     public long getId() {
         return id;
@@ -214,6 +229,82 @@ public class Topic {
         this.consumerName = consumerName;
     }
 
+    public long getSize() {
+        return size;
+    }
+
+    public void setSize(long size) {
+        this.size = size;
+    }
+
+    public long getSize1d() {
+        return size1d;
+    }
+
+    public void setSize1d(long size1d) {
+        this.size1d = size1d;
+    }
+
+    public long getSize2d() {
+        return size2d;
+    }
+
+    public void setSize2d(long size2d) {
+        this.size2d = size2d;
+    }
+
+    public long getSize3d() {
+        return size3d;
+    }
+
+    public void setSize3d(long size3d) {
+        this.size3d = size3d;
+    }
+
+    public long getSize5d() {
+        return size5d;
+    }
+
+    public void setSize5d(long size5d) {
+        this.size5d = size5d;
+    }
+
+    public long getSize7d() {
+        return size7d;
+    }
+
+    public void setSize7d(long size7d) {
+        this.size7d = size7d;
+    }
+
+    public String getSize1dFormat() {
+        return WebUtil.sizeFormat(size1d);
+    }
+
+    public String getSize2dFormat() {
+        return WebUtil.sizeFormat(size2d);
+    }
+
+    public String getSize3dFormat() {
+        return WebUtil.sizeFormat(size3d);
+    }
+
+    public String getSize5dFormat() {
+        return WebUtil.sizeFormat(size5d);
+    }
+
+    public String getSize7dFormat() {
+        return WebUtil.sizeFormat(size7d);
+    }
+
+    public String getCountFormat() {
+        return WebUtil.countFormat(count);
+    }
+
+    public String getSizeFormat() {
+        return WebUtil.sizeFormat(size);
+    }
+
     @Override
     public String toString() {
         return "Topic{" +
@@ -225,15 +316,21 @@ public class Topic {
                 ", createDate=" + createDate +
                 ", updateTime=" + updateTime +
                 ", cluster=" + cluster +
+                ", producerName='" + producerName + '\'' +
+                ", consumerName='" + consumerName + '\'' +
                 ", count=" + count +
+                ", size=" + size +
                 ", traceEnabled=" + traceEnabled +
                 ", info='" + info + '\'' +
                 ", delayEnabled=" + delayEnabled +
                 ", serializer=" + serializer +
                 ", trafficWarnEnabled=" + trafficWarnEnabled +
                 ", effective=" + effective +
-                ", producerName=" + producerName +
-                ", consumerName=" + consumerName +
+                ", size1d=" + size1d +
+                ", size2d=" + size2d +
+                ", size3d=" + size3d +
+                ", size5d=" + size5d +
+                ", size7d=" + size7d +
                 '}';
     }
 }

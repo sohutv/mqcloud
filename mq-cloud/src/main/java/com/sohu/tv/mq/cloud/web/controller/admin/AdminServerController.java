@@ -2,6 +2,7 @@ package com.sohu.tv.mq.cloud.web.controller.admin;
 
 import com.sohu.tv.mq.cloud.bo.*;
 import com.sohu.tv.mq.cloud.service.*;
+import com.sohu.tv.mq.cloud.task.server.data.Disk.DiskUsage;
 import com.sohu.tv.mq.cloud.util.*;
 import com.sohu.tv.mq.cloud.web.controller.param.ServerAlarmConfigParam;
 import com.sohu.tv.mq.cloud.web.vo.MachineTypeVO;
@@ -713,8 +714,7 @@ public class AdminServerController extends AdminViewController {
                 }
             }
             // 解析space
-            String space = ss.getDspace();
-            addToChart(space, spaceChart);
+            addToChart(ss, spaceChart);
         }
         // x axis
         map.put("xAxis", JSONUtil.toJSONString(xAxis));
@@ -735,6 +735,20 @@ public class AdminServerController extends AdminViewController {
             String[] values = part.split(":");
             float d = NumberUtils.toFloat(values[1]);
             chart.addSeries(values[0], d);
+            chart.setMax(d);
+            chart.addTotal(d);
+        }
+    }
+
+    private void addToChart(ServerStatus ss, DiskChart chart) {
+        List<DiskUsage> diskUsages = ss.getDiskUsage();
+        if (diskUsages == null || diskUsages.isEmpty()) {
+            return;
+        }
+        for (DiskUsage diskUsage : diskUsages) {
+            float d = diskUsage.getValue();
+            String seriesName = diskUsage.getName() + ":" + diskUsage.getMount() + ":" + diskUsage.getSizeFormat();
+            chart.addSeries(seriesName, d);
             chart.setMax(d);
             chart.addTotal(d);
         }

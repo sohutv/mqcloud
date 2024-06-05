@@ -243,6 +243,10 @@ public class Server implements LineParser{
 		this.ulimit = ulimit;
 	}
 
+	public void setCollectTime(Date collectTime) {
+		this.collectTime = collectTime;
+	}
+
 	@Override
 	public String toString() {
 		return "Server [timeKey=" + timeKey + ", dateTime=" + dateTime

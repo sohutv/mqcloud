@@ -1,12 +1,12 @@
 package com.sohu.tv.mq.cloud.task.server.data;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.regex.Pattern;
 
+import com.sohu.tv.mq.cloud.util.WebUtil;
 import org.apache.commons.lang3.math.NumberUtils;
+
+import static com.sohu.tv.mq.cloud.task.server.nmon.NMONService.DISK_MQ_FLAG;
 
 /**
  * io读写情况
@@ -20,7 +20,7 @@ public class Disk implements LineParser {
     public static final Pattern PATTERN = Pattern.compile("^BBBP,[0-9]+,/bin/df-m,");
     public static final Pattern SUBPARTITION_PATTERN = Pattern.compile("[0-9]+$");
     // 包括总的状况及各个分区的状况
-    private Map<DiskUsageType, List<Usage>> diskMap = new HashMap<Disk.DiskUsageType, List<Usage>>();
+    private Map<DiskUsageType, List<Usage>> diskMap = new HashMap<>();
 
     /**
      * line format: DISKBUSY,Disk %Busy iZ256oe4w5bZ,xvda,xvda1,xvdb,xvdb1
@@ -40,11 +40,7 @@ public class Disk implements LineParser {
                 if (type == null) {
                     return;
                 }
-                List<Usage> list = diskMap.get(type);
-                if (list == null) {
-                    list = new ArrayList<Usage>();
-                    diskMap.put(type, list);
-                }
+                List<Usage> list = diskMap.computeIfAbsent(type, k -> new ArrayList<>());
                 for (int i = 2; i < items.length; ++i) {
                     Usage usage = new Usage();
                     usage.setDiskUsageTyp(type);
@@ -70,28 +66,41 @@ public class Disk implements LineParser {
         } else if (PATTERN.matcher(line).find()) {
             String[] tmp = line.split(",\"");
             if (tmp.length > 0) {
-                String[] item = tmp[tmp.length - 1].split("\\s+");
-                if (item.length != 6 || !item[4].contains("%")) {
-                    return;
-                }
-                List<Usage> list = diskMap.get(DiskUsageType.busy);
-                String[] tp = item[0].split("/");
-                String mount = tp[tp.length - 1];
-                for (Usage usage : list) {
-                    if (usage.getName().equals(mount)) {
-                        List<Usage> spaceList = diskMap.get(DiskUsageType.space);
-                        if (spaceList == null) {
-                            spaceList = new ArrayList<Usage>();
-                            diskMap.put(DiskUsageType.space, spaceList);
-                        }
-                        Usage spaceUsage = new Usage();
-                        spaceUsage.setDiskUsageTyp(DiskUsageType.space);
-                        spaceUsage.setName(usage.getName());
-                        spaceUsage.setValue(NumberUtils.toFloat(item[4].split("%")[0]));
-                        spaceList.add(spaceUsage);
-                    }
-                }
+                parseMount(tmp[tmp.length - 1]);
             }
+        } else if (line.startsWith(DISK_MQ_FLAG)) {
+            parseMount(line.substring(DISK_MQ_FLAG.length() + 1));
+        }
+    }
+
+    /**
+     * 解析df命令
+     * 格式：MQDISK /dev/vdb1         403042 243443    139104  64% /data
+     *
+     * @param dfLine
+     */
+    private void parseMount(String dfLine) {
+        String[] item = dfLine.split("\\s+");
+        if (item.length != 6 || !item[4].contains("%")) {
+            return;
+        }
+        List<Usage> list = diskMap.get(DiskUsageType.busy);
+        String[] tp = item[0].split("/");
+        String mount = tp[tp.length - 1];
+        for (Usage usage : list) {
+            if (!usage.getName().equals(mount)) {
+                continue;
+            }
+            DiskUsage spaceUsage = new DiskUsage();
+            spaceUsage.setDiskUsageTyp(DiskUsageType.space);
+            spaceUsage.setName(usage.getName());
+            spaceUsage.setValue(NumberUtils.toFloat(item[4].split("%")[0]));
+            spaceUsage.setMount(item[item.length - 1]);
+            spaceUsage.setSize(NumberUtils.toInt(item[1]));
+            spaceUsage.setUsed(NumberUtils.toInt(item[2]));
+            List<Usage> spaceList = diskMap.computeIfAbsent(DiskUsageType.space, k -> new ArrayList<>());
+            spaceList.removeIf(u -> u.getName().equals(mount));
+            spaceList.add(spaceUsage);
         }
     }
 
@@ -149,6 +158,12 @@ public class Disk implements LineParser {
             sb.append(use.getName());
             sb.append(":");
             sb.append(use.getValue());
+            sb.append(":");
+            sb.append(((DiskUsage) use).getMount());
+            sb.append(":");
+            sb.append(((DiskUsage) use).getSize());
+            sb.append(":");
+            sb.append(((DiskUsage) use).getUsed());
             sb.append(",");
         }
         return sb.toString();
@@ -174,7 +189,7 @@ public class Disk implements LineParser {
     /**
      * 使用率
      */
-    class Usage {
+    public static class Usage {
         // 分区名字
         private String name;
         // 使用率类型
@@ -210,6 +225,62 @@ public class Disk implements LineParser {
         public String toString() {
             return "Usage [name=" + name + ", diskUsageType=" + diskUsageType
                     + ", value=" + value + "]";
+        }
+    }
+
+    /**
+     * 磁盘使用情况
+     */
+    public static class DiskUsage extends Usage {
+        // 挂载点
+        private String mount;
+        // 总容量,单位M
+        private int size;
+        // 已使用,单位M
+        private int used;
+
+        public String getMount() {
+            return mount;
+        }
+
+        public void setMount(String mount) {
+            this.mount = mount;
+            if (mount.endsWith("\"")) {
+                this.mount = mount.substring(0, mount.length() - 1);
+            }
+        }
+
+        public int getSize() {
+            return size;
+        }
+
+        public void setSize(int size) {
+            this.size = size;
+        }
+
+        public int getUsed() {
+            return used;
+        }
+
+        public void setUsed(int used) {
+            this.used = used;
+        }
+
+        public String getSizeFormat(){
+            return WebUtil.sizeFormat(size *  1024L * 1024);
+        }
+
+        public String getUsedFormat(){
+            return WebUtil.sizeFormat(used *  1024L * 1024);
+        }
+
+        @Override
+        public String toString() {
+            return "DiskUsage{" +
+                    "mount='" + mount + '\'' +
+                    ", size=" + size +
+                    ", used=" + used +
+                    '}';
         }
     }
 

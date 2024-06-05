@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 10px;
+            border: 1px dashed #ccc;
+        }
+
+        th, td {
+            padding: 10px;
+            text-align: left;
+            border: 1px dashed #ddd;
+        }
+
+        .report-title {
+            font-size: 14px;
+            font-weight: bold;
+            background-color: #fff;
+        }
+
+        fieldset {
+            padding: .35em .625em .75em;
+            border: 1px solid silver;
+            border-radius: 8px;
+            margin: 0 2px 20px;
+            box-shadow: 0 0 1px rgba(0,0,0,.125), 0 1px 3px rgba(0,0,0,.2);
+        }
+
+        legend {
+            padding: .5em;
+            border: 0;
+            width: auto;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+<div style="margin: 0 auto;background-color:#fff;">
+    <h2 style="text-align: center;">MQCloud集群昨日共写入数据：${clusterCapacityVO.size1dFormat}，以下仅是部分数据，完整数据请<a href="${clusterCapacityVO.clusterCapacityLink}">点击查看</a></h2>
+    <#list clusterCapacityVO.clusterCapacityList as clusterCapacity>
+    <fieldset>
+    <legend><div class="report-title">集群：${clusterCapacity.cluster.name}，昨日写入：${clusterCapacity.size1dFormat}</div></legend>
+    <table>
+        <tr>
+            <th rowspan="2">Broker</th>
+            <th rowspan="2">角色</th>
+            <th colspan="4" style="text-align: center">磁盘</th>
+            <th colspan="5" style="text-align: center">写入量</th>
+            <th rowspan="2">预计多久写满</th>
+        </tr>
+        <tr>
+            <th>挂载点</th>
+            <th>容量</th>
+            <th>使用量</th>
+            <th>使用率</th>
+            <th>前1天</th>
+            <th>前2天</th>
+            <th>前3天</th>
+            <th>前5天</th>
+            <th>前7天</th>
+        </tr>
+        <#list clusterCapacity.brokerCapacityList as brokerCapacity>
+        <#if brokerCapacity_index lt 4>
+        <tr>
+            <td>${brokerCapacity.broker.brokerName}</td>
+            <td><#if brokerCapacity.broker.master>master<#else>slave</#if></td>
+            <td><#if brokerCapacity.diskUsage??>${brokerCapacity.diskUsage.mount}</#if></td>
+            <td><#if brokerCapacity.diskUsage??>${brokerCapacity.diskUsage.sizeFormat}</#if></td>
+            <td><#if brokerCapacity.diskUsage??>${brokerCapacity.diskUsage.usedFormat}</#if></td>
+            <td <#if brokerCapacity.diskUsage?? && brokerCapacity.diskUsage.value gte 75>style="background-color:#ffc107!important;"</#if>><#if brokerCapacity.diskUsage??>${brokerCapacity.diskUsage.value}%</#if></td>
+            <td>${brokerCapacity.broker.size1dFormat}</td>
+            <td>${brokerCapacity.broker.size2dFormat}</td>
+            <td>${brokerCapacity.broker.size3dFormat}</td>
+            <td>${brokerCapacity.broker.size5dFormat}</td>
+            <td>${brokerCapacity.broker.size7dFormat}</td>
+            <td <#if brokerCapacity.diskUsage?? && brokerCapacity.estimateLeftDays lte 2>style="background-color:#ffc107!important;"</#if>><#if brokerCapacity.diskUsage??>${brokerCapacity.estimateLeftDays}天</#if></td>
+        </tr>
+        </#if>
+        </#list>
+    </table>
+    <table>
+        <tr>
+            <th rowspan="2">Topic</th>
+            <th colspan="5" style="text-align: center">写入量</th>
+        </tr>
+        <tr>
+            <th>前1天</th>
+            <th>前2天</th>
+            <th>前3天</th>
+            <th>前5天</th>
+            <th>前7天</th>
+        </tr>
+        <#list clusterCapacity.topicList as topic>
+        <#if topic_index lt 3>
+        <tr>
+            <td><a href="${topic.info}">${topic.name}</a></td>
+            <td>${topic.size1dFormat}</td>
+            <td>${topic.size2dFormat}</td>
+            <td>${topic.size3dFormat}</td>
+            <td>${topic.size5dFormat}</td>
+            <td>${topic.size7dFormat}</td>
+        </tr>
+        </#if>
+        </#list>
+    </table>
+    </fieldset>
+    </#list>
+</div>
+</body>
+</html>

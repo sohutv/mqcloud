@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
+import com.sohu.tv.mq.cloud.util.WebUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -278,68 +279,32 @@ public class ClusterTrafficLineChartData implements LineChartData {
         lineChart.setHeight(500);
         lineChart.setOverview("<table class='table table-sm'><thead><tr>"
                 + "<th>日期</th><th>来源</th><th>消息量峰值</th><th>消息总量</th><th>消息大小峰值</th><th>消息总大小</th></tr></thead>"
-                + "<tbody><tr><td>"+curDate+"</td><td>生产</td>"
-                + "<td title='"+maxPutCount+"'>"+formatCount(maxPutCount)+"/分</td>"
-                + "<td title='"+totalPutCount+"'>"+formatCount(totalPutCount)+"</td>"
-                + "<td title='"+maxPutSize+"'>"+formatSize(maxPutSize)+"/分</td>"
-                + "<td title='"+totalPutSize+"'>"+formatSize(totalPutSize)+"</td>"
-                + "</tr><tr><td>"+curDate+"</td><td>消费</td>"
-                + "<td title='"+maxGetCount+"'>"+formatCount(maxGetCount)+"/分</td>"
-                + "<td title='"+totalGetCount+"'>"+formatCount(totalGetCount)+"</td>"
-                + "<td title='"+maxGetSize+"'>"+formatSize(maxGetSize)+"/分</td>"
-                + "<td title='"+totalGetSize+"'>"+formatSize(totalGetSize)+"</td>"
-                + "</tr><tr><td>"+curDateBefore+"</td><td>生产</td>"
-                + "<td title='"+maxPutCountDayBefore+"'>"+formatCount(maxPutCountDayBefore)+"/分</td>"
-                + "<td title='"+totalPutCountDayBefore+"'>"+formatCount(totalPutCountDayBefore)+"</td>"
-                + "<td title='"+maxPutSizeDayBefore+"'>"+formatSize(maxPutSizeDayBefore)+"/分</td>"
-                + "<td title='"+totalPutSizeDayBefore+"'>"+formatSize(totalPutSizeDayBefore)+"</td>"
-                + "</tr><tr><td>"+curDateBefore+"</td><td>消费</td>"
-                + "<td title='"+maxGetCountDayBefore+"'>"+formatCount(maxGetCountDayBefore)+"/分</td>"
-                + "<td title='"+totalGetCountDayBefore+"'>"+formatCount(totalGetCountDayBefore)+"</td>"
-                + "<td title='"+maxGetSizeDayBefore+"'>"+formatSize(maxGetSizeDayBefore)+"/分</td>"
-                + "<td title='"+totalGetSizeDayBefore+"'>"+formatSize(totalGetSizeDayBefore)+"</td>"
+                + "<tbody><tr><td>" + curDate + "</td><td>生产</td>"
+                + "<td title='" + maxPutCount + "'>" + WebUtil.countFormat(maxPutCount) + "/分</td>"
+                + "<td title='" + totalPutCount + "'>" + WebUtil.countFormat(totalPutCount) + "</td>"
+                + "<td title='" + maxPutSize + "'>" + WebUtil.sizeFormat(maxPutSize) + "/分</td>"
+                + "<td title='" + totalPutSize + "'>" + WebUtil.sizeFormat(totalPutSize) + "</td>"
+                + "</tr><tr><td>" + curDate + "</td><td>消费</td>"
+                + "<td title='" + maxGetCount + "'>" + WebUtil.countFormat(maxGetCount) + "/分</td>"
+                + "<td title='" + totalGetCount + "'>" + WebUtil.countFormat(totalGetCount) + "</td>"
+                + "<td title='" + maxGetSize + "'>" + WebUtil.sizeFormat(maxGetSize) + "/分</td>"
+                + "<td title='" + totalGetSize + "'>" + WebUtil.sizeFormat(totalGetSize) + "</td>"
+                + "</tr><tr><td>" + curDateBefore + "</td><td>生产</td>"
+                + "<td title='" + maxPutCountDayBefore + "'>" + WebUtil.countFormat(maxPutCountDayBefore) + "/分</td>"
+                + "<td title='" + totalPutCountDayBefore + "'>" + WebUtil.countFormat(totalPutCountDayBefore) + "</td>"
+                + "<td title='" + maxPutSizeDayBefore + "'>" + WebUtil.sizeFormat(maxPutSizeDayBefore) + "/分</td>"
+                + "<td title='" + totalPutSizeDayBefore + "'>" + WebUtil.sizeFormat(totalPutSizeDayBefore) + "</td>"
+                + "</tr><tr><td>" + curDateBefore + "</td><td>消费</td>"
+                + "<td title='" + maxGetCountDayBefore + "'>" + WebUtil.countFormat(maxGetCountDayBefore) + "/分</td>"
+                + "<td title='" + totalGetCountDayBefore + "'>" + WebUtil.countFormat(totalGetCountDayBefore) + "</td>"
+                + "<td title='" + maxGetSizeDayBefore + "'>" + WebUtil.sizeFormat(maxGetSizeDayBefore) + "/分</td>"
+                + "<td title='" + totalGetSizeDayBefore + "'>" + WebUtil.sizeFormat(totalGetSizeDayBefore) + "</td>"
                 + "</tr></tbody></table>");
         lineChartList.add(lineChart);
         
         return lineChartList;
     }
     
-    /**
-     * 格式化消息数量
-     * @param maxCount
-     * @return
-     */
-    private String formatCount(long maxCount) {
-        String maxCountShow = "";
-        if(maxCount > 100000000) {
-            maxCountShow = String.format("%.2f", maxCount / 100000000F) + "亿("+maxCount+")";
-        } else if(maxCount > 10000) {
-            maxCountShow = String.format("%.2f", maxCount / 10000F) + "万("+maxCount+")";
-        } else {
-            maxCountShow = String.valueOf(maxCount);
-        }
-        return maxCountShow;
-    }
-    
-    /**
-     * 格式化消息大小
-     * @param maxSize
-     * @return
-     */
-    private String formatSize(long maxSize) {
-        String maxSizeShow = "";
-        if(maxSize > 1073741824) {
-            maxSizeShow = String.format("%.2f", maxSize / 1073741824F) + "G";
-        } else if(maxSize > 1048576) {
-            maxSizeShow = String.format("%.2f", maxSize / 1048576F) + "M";
-        } else if (maxSize > 1024) {
-            maxSizeShow = String.format("%.2f", maxSize / 1024F) + "K";
-        } else {
-            maxSizeShow = maxSize + "B";
-        }
-        return maxSizeShow;
-    }
-
     private long setPutSizeData(BrokerTraffic traffic, List<Number> sizeList) {
         if (traffic == null) {
             sizeList.add(0);

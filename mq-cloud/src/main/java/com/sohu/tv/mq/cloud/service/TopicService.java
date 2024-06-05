@@ -2,24 +2,25 @@ package com.sohu.tv.mq.cloud.service;
 
 import com.sohu.tv.mq.cloud.bo.*;
 import com.sohu.tv.mq.cloud.common.mq.SohuMQAdmin;
+import com.sohu.tv.mq.cloud.dao.BrokerDao;
 import com.sohu.tv.mq.cloud.dao.TopicDao;
 import com.sohu.tv.mq.cloud.mq.DefaultCallback;
 import com.sohu.tv.mq.cloud.mq.MQAdminCallback;
 import com.sohu.tv.mq.cloud.mq.MQAdminTemplate;
-import com.sohu.tv.mq.cloud.util.DateUtil;
-import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper;
-import com.sohu.tv.mq.cloud.util.Result;
-import com.sohu.tv.mq.cloud.util.Status;
+import com.sohu.tv.mq.cloud.util.*;
 import com.sohu.tv.mq.util.CommonUtil;
+import org.apache.ibatis.executor.BatchResult;
+import org.apache.ibatis.session.ExecutorType;
+import org.apache.ibatis.session.SqlSession;
+import org.apache.ibatis.session.SqlSessionFactory;
 import org.apache.rocketmq.client.exception.MQClientException;
 import org.apache.rocketmq.common.TopicConfig;
+import org.apache.rocketmq.remoting.exception.RemotingException;
 import org.apache.rocketmq.remoting.protocol.admin.TopicStatsTable;
-import org.apache.rocketmq.remoting.protocol.body.ClusterInfo;
 import org.apache.rocketmq.remoting.protocol.body.TopicConfigSerializeWrapper;
 import org.apache.rocketmq.remoting.protocol.body.TopicList;
 import org.apache.rocketmq.remoting.protocol.route.BrokerData;
 import org.apache.rocketmq.remoting.protocol.route.TopicRouteData;
-import org.apache.rocketmq.remoting.exception.RemotingException;
 import org.apache.rocketmq.tools.admin.MQAdminExt;
 import org.apache.rocketmq.tools.command.CommandUtil;
 import org.slf4j.Logger;
@@ -32,6 +33,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.interceptor.TransactionAspectSupport;
 
 import java.util.*;
+import java.util.stream.IntStream;
 
 /**
  * topic服务
@@ -65,6 +67,9 @@ public class TopicService {
 
     @Autowired
     private UserFavoriteService userFavoriteService;
+
+    @Autowired
+    private SqlSessionFactory mqSqlSessionFactory;
 
     /**
      * 获取topic路由数据
@@ -668,21 +673,17 @@ public class TopicService {
         return result;
     }
     
-    
     /**
      * 更新topic流量
      * @param topicTrafficList
      * @return
      */
     public Result<Integer> updateCount(List<TopicTraffic> topicTrafficList) {
-        Integer result = null;
-        try {
-            result = topicDao.updateCount(topicTrafficList);
-        } catch (Exception e) {
-            logger.error("updateCount err, topicTrafficList:{}", topicTrafficList, e);
-            return Result.getDBErrorResult(e);
-        }
-        return Result.getResult(result);
+        return DBUtil.batchUpdate(mqSqlSessionFactory, TopicDao.class, dao -> {
+            for (TopicTraffic topicTraffic : topicTrafficList) {
+                dao.updateCount(topicTraffic);
+            }
+        });
     }
     
     /**
@@ -849,6 +850,47 @@ public class TopicService {
                 return null;
             }
         });
+    }
+
+    /**
+     * 重置topic流量
+     */
+    public Result<Integer> resetDayCount() {
+        try {
+            return Result.getResult(topicDao.resetDayCount());
+        } catch (Exception e) {
+            logger.error("resetDayCount err", e);
+            return Result.getDBErrorResult(e);
+        }
+    }
+
+    /**
+     * 更新topic日流量
+     *
+     * @param topicTrafficList
+     * @return
+     */
+    public Result<Integer> updateDayCount(List<TopicTraffic> topicTrafficList) {
+        return DBUtil.batchUpdate(mqSqlSessionFactory, TopicDao.class, dao -> {
+            for (TopicTraffic topicTraffic : topicTrafficList) {
+                dao.updateDayCount(topicTraffic);
+            }
+        });
+    }
+
+    /**
+     * 根据集群获取topic列表
+     *
+     * @param mqCluster
+     * @return TopicRouteData
+     */
+    public Result<List<Topic>> queryTopNSizeTopicList(Cluster mqCluster) {
+        try {
+            return Result.getResult(topicDao.selectTopNSizeTopic(mqCluster.getId(), 10));
+        } catch (Exception e) {
+            logger.error("queryTopNSizeTopicList err, mqCluster:{}", mqCluster, e);
+            return Result.getDBErrorResult(e);
+        }
     }
 }
 

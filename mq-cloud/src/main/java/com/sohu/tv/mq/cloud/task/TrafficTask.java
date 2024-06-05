@@ -1,25 +1,19 @@
 package com.sohu.tv.mq.cloud.task;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-
+import com.sohu.tv.mq.cloud.bo.Cluster;
+import com.sohu.tv.mq.cloud.bo.TopicTraffic;
+import com.sohu.tv.mq.cloud.service.*;
+import com.sohu.tv.mq.cloud.util.DateUtil;
+import com.sohu.tv.mq.cloud.util.Result;
+import net.javacrumbs.shedlock.core.SchedulerLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 
-import com.sohu.tv.mq.cloud.bo.Cluster;
-import com.sohu.tv.mq.cloud.bo.TopicTraffic;
-import com.sohu.tv.mq.cloud.service.ClusterService;
-import com.sohu.tv.mq.cloud.service.ConsumerTrafficService;
-import com.sohu.tv.mq.cloud.service.TopicService;
-import com.sohu.tv.mq.cloud.service.TopicTrafficService;
-import com.sohu.tv.mq.cloud.service.TrafficService;
-import com.sohu.tv.mq.cloud.util.DateUtil;
-import com.sohu.tv.mq.cloud.util.Result;
-
-import net.javacrumbs.shedlock.core.SchedulerLock;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
 
 /**
  * topic流量任务
@@ -48,6 +42,12 @@ public class TrafficTask {
 
     @Autowired
     private TopicService topicService;
+
+    @Autowired
+    private BrokerTrafficService brokerTrafficService;
+
+    @Autowired
+    private ClusterCapacityService clusterCapacityService;
 
     /**
      * topic流量收集
@@ -94,32 +94,18 @@ public class TrafficTask {
     }
 
     /**
-     * 聚合topic 10分钟流量
+     * 聚合topic一小时流量
      */
-    @Scheduled(cron = "38 */5 * * * *")
+    @Scheduled(cron = "38 0 * * * *")
     @SchedulerLock(name = "aggregateTopicTraffic", lockAtMostFor = ONE_MIN, lockAtLeastFor = 59000)
     public void collectTopicHourTraffic() {
         taskExecutor.execute(new Runnable() {
             public void run() {
-                Cluster[] clusters = clusterService.getAllMQCluster();
-                if(clusters == null) {
-                    return;
-                }
-                // 获取线上集群
-                List<Integer> onlineClusterList = new ArrayList<Integer>();
-                for(Cluster cluster : clusters) {
-                    if(cluster.online()) {
-                        onlineClusterList.add(cluster.getId());
-                    }
-                }
-                if(onlineClusterList.size() == 0) {
-                    return;
-                }
                 logger.info("aggregate topic traffic start");
                 Date now = new Date();
-                // 计算10分钟间隔
+                // 计算60分钟间隔
                 List<String> timeList = new ArrayList<String>();
-                Date begin = new Date(now.getTime() - 10 * ONE_MIN + 30);
+                Date begin = new Date(now.getTime() - 60 * ONE_MIN + 30);
                 while (begin.before(now)) {
                     String time = DateUtil.getFormat(DateUtil.HHMM).format(begin);
                     timeList.add(time);
@@ -128,7 +114,7 @@ public class TrafficTask {
 
                 int size = 0;
                 int update = 0;
-                Result<List<TopicTraffic>> result = topicTrafficService.query(now, timeList, onlineClusterList);
+                Result<List<TopicTraffic>> result = topicTrafficService.query(now, timeList);
                 if (result.isNotEmpty()) {
                     List<TopicTraffic> topicTrafficList = result.getResult();
                     size = topicTrafficList.size();
@@ -185,5 +171,25 @@ public class TrafficTask {
         long start = System.currentTimeMillis();
         Result<?> rst = topicService.resetCount(2);
         logger.info("resetTopicTraffic rst:{} use:{}", rst, System.currentTimeMillis() - start);
+    }
+
+
+    /**
+     * 日流量任务
+     */
+    @Scheduled(cron = "0 0 3 * * ?")
+    @SchedulerLock(name = "updateDayTraffic", lockAtMostFor = 10 * ONE_MIN, lockAtLeastFor = 59000)
+    public void updateDayTraffic() {
+        // 1.更新topic日流量
+        long start = System.currentTimeMillis();
+        Result<?> rst = topicTrafficService.updateTopicDayTraffic();
+        logger.info("updateTopicDayTraffic rst:{} use:{}", rst, System.currentTimeMillis() - start);
+        // 2.更新broker日流量
+        start = System.currentTimeMillis();
+        rst = brokerTrafficService.updateBrokerDayTraffic();
+        logger.info("updateBrokerDayTraffic rst:{} use:{}", rst, System.currentTimeMillis() - start);
+        // 3.发送容量日报
+        Result<?> rst2 = clusterCapacityService.sendCapacityDailyMail();
+        logger.info("sendCapacityDailyMail rst:{}", rst2);
     }
 }
