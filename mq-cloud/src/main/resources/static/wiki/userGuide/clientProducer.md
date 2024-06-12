@@ -214,7 +214,13 @@ producer.setMessageQueueSelector(new IDHashMessageQueueSelector());
 long id = 123L;
 Map<String, Object> map = new HashMap<String, Object>();
 map.put("id", id);
-Result<SendResult> sendResult = producer.publishOrder(map, String.valueOf(id), id);
+Result<SendResult> sendResult = null;
+do {
+    sendResult = producer.publishOrder(map, String.valueOf(id), id);
+    if (!sendResult.isSuccess()) {
+    	Thread.sleep(1000);
+    }
+} while (!sendResult.isSuccess()); // 发送失败可以进行重试或者自行降级处理
 ```
 
 **注意：此种发送方式不带[重试机制](#retry)。**

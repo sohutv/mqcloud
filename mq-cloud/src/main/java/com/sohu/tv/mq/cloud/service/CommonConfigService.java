@@ -36,41 +36,35 @@ public class CommonConfigService {
      * 
      */
     public Result<List<CommonConfig>> query() {
-        List<CommonConfig> list = null;
         try {
-            list = commonConfigDao.select();
+            return Result.getResult(commonConfigDao.select());
         } catch (Exception e) {
             logger.error("query err", e);
             return Result.getDBErrorResult(e);
         }
-        return Result.getResult(list);
     }
 
     /**
      * 查询配置
      */
     public Result<CommonConfig> queryByKey(String key) {
-        CommonConfig commonConfig = null;
         try {
-            commonConfig = commonConfigDao.selectByKey(key);
+            return Result.getResult(commonConfigDao.selectByKey(key));
         } catch (Exception e) {
             logger.error("query err:{}", key, e);
             return Result.getDBErrorResult(e);
         }
-        return Result.getResult(commonConfig);
     }
 
     /**
      * 保存配置
      */
     public Result<Integer> save(CommonConfig commonConfig) {
-        Integer result = null;
         try {
-            result = commonConfigDao.insert(commonConfig);
+            return Result.getResult(commonConfigDao.insert(commonConfig));
         } catch (Exception e) {
             logger.error("save err{}", commonConfig, e);
             return Result.getDBErrorResult(e);
         }
-        return Result.getResult(result);
     }
 }

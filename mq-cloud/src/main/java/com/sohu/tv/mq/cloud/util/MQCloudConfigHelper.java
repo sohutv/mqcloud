@@ -195,6 +195,9 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware, Comm
 
     private Set<String> ignoreErrorProducerSet;
 
+    // 全局顺序topic kv配置
+    private Map<String, String> orderTopicKVConfig;
+
     @Autowired
     private CommonConfigService commonConfigService;
 
@@ -830,6 +833,39 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware, Comm
                 .findAny()
                 .map(acls -> new Pair(acls.get("accessKey"), acls.get("secretKey")))
                 .orElse(null);
+    }
+
+    public String getOrderTopicKVConfig(String cid) {
+        if (orderTopicKVConfig == null) {
+            return null;
+        }
+        return orderTopicKVConfig.get(cid);
+    }
+
+    /**
+     * 更新全局顺序topic kv配置
+     *
+     * @param cid
+     * @param kvConfig
+     */
+    public void updateOrderTopicKVConfig(String cid, String kvConfig) {
+        Result<CommonConfig> result = commonConfigService.queryByKey("orderTopicKVConfig");
+        CommonConfig commonConfig = result.getResult();
+        if (commonConfig == null) {
+            return;
+        }
+        Map<String, String> orderTopicKVConfig = JSONUtil.parse(commonConfig.getValue(), Map.class);
+        if (orderTopicKVConfig.containsKey(cid)) {
+            return;
+        }
+        orderTopicKVConfig.put(cid, kvConfig);
+        commonConfig.setValue(JSONUtil.toJSONString(orderTopicKVConfig));
+        commonConfigService.save(commonConfig);
+        try {
+            init();
+        } catch (Exception e) {
+            logger.warn("init error:{}", e.toString());
+        }
     }
 
     @Override

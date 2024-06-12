@@ -157,3 +157,40 @@
        fmt.Printf("shutdown Consumer error: %s", err.Error())
    }
    ```
+
+## 六、<span id="trace">消息追踪</span>
+
+1. 追踪配置
+
+   ```
+   traceCfg := &primitive.TraceConfig{
+       TraceTopic:   收集trace数据的topic,
+       GroupName:    发送trace的groupName,
+       Resolver: primitive.NewHttpResolver("trace-cluster", "http://${mqcloudDomain}/rocketmq/nsaddr-集群id"),
+   }
+   producer or consumer.WithTrace(traceCfg)
+   ```
+
+   参数说明：
+
+   * TraceTopic
+
+     命名规则：正常topic名，去除`-topic`后缀，加上`-trace`，再添加`-topic`后缀
+
+     例如：
+
+     * 正常topic名为：mqcloud-video-topic
+     * 则对应的TraceTopic名为：mqcloud-video-**trace**-topic
+
+   * GroupName
+
+     命名规则：TraceTopic后加`-producer`
+
+     例如：
+
+     * TraceTopic名为：mqcloud-video-trace-topic
+     * 则对应的GroupName名为：mqcloud-video-trace-topic-**producer** 
+
+   * Resolver中的集群id请咨询管理员。
+
+2. 注意：需要生产者和消费者同时开启追踪，才能完整的看到消息追踪链。

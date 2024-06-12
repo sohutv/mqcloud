@@ -113,6 +113,10 @@ public class Topic {
         return ordered;
     }
 
+    public boolean isOrderedTopic() {
+        return ordered == HAS_ORDER;
+    }
+
     public void setOrdered(int ordered) {
         this.ordered = ordered;
     }

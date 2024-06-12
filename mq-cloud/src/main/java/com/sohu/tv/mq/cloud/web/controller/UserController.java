@@ -183,7 +183,6 @@ public class UserController extends ViewController {
     /**
      * 获取用户的topic
      * 
-     * @param topicParam
      * @return
      * @throws Exception
      */
@@ -304,7 +303,6 @@ public class UserController extends ViewController {
     /**
      * 获取用户所属的topic
      * 
-     * @param userProducerListResult
      * @return
      */
     private Set<Long> userTopicSet(User user) {
@@ -375,7 +373,6 @@ public class UserController extends ViewController {
     /**
      * 获取用户的topic topology
      * 
-     * @param topicParam
      * @return
      * @throws Exception
      */
@@ -520,6 +517,11 @@ public class UserController extends ViewController {
             Result<UserFavorite> userFavoriteResult = userFavoriteService.query(userInfo.getUser().getId(), tid);
             if (userFavoriteResult.isOK()) {
                 result.getResult().setFavoriteId(userFavoriteResult.getResult().getId());
+            }
+
+            // 设置全局顺序topic kv配置
+            if (topic.isOrderedTopic()) {
+                result.getResult().setOrderTopicKVConfig(mqCloudConfigHelper.getOrderTopicKVConfig(String.valueOf(topic.getClusterId())));
             }
         }
 

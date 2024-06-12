@@ -10,6 +10,7 @@ insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynami
 insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) values(28, 'lockInStrictMode', 'false', 'lockInStrictMode', null, 9, 0, 'true:是;false:否;', 0);
 
 INSERT INTO `common_config`(`key`, `value`, `comment`) VALUES ('ignoreErrorProducerSet', '[]', '忽略生产错误预警的生产者');
+INSERT INTO `common_config`(`key`, `value`, `comment`) VALUES ('orderTopicKVConfig', '{}', '全局有序topic路由配置');
 
 -- ----------------------------
 -- Table structure for `consumer_pause_config`

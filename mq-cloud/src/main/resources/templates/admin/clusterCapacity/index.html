@@ -47,13 +47,13 @@
                 <td><#if brokerCapacity.diskUsage??>${brokerCapacity.diskUsage.mount}</#if></td>
                 <td><#if brokerCapacity.diskUsage??>${brokerCapacity.diskUsage.sizeFormat}</#if></td>
                 <td><#if brokerCapacity.diskUsage??>${brokerCapacity.diskUsage.usedFormat}</#if></td>
-                <td <#if brokerCapacity.diskUsage?? && brokerCapacity.diskUsage.value gte 75>style="background-color:#ffc107!important;"</#if>><#if brokerCapacity.diskUsage??>${brokerCapacity.diskUsage.value}%</#if></td>
+                <td <#if brokerCapacity.diskUsage?? && brokerCapacity.diskUsage.value gte 75>class="bg-warning"</#if>><#if brokerCapacity.diskUsage??>${brokerCapacity.diskUsage.value}%</#if></td>
                 <td>${brokerCapacity.broker.size1dFormat}</td>
                 <td>${brokerCapacity.broker.size2dFormat}</td>
                 <td>${brokerCapacity.broker.size3dFormat}</td>
                 <td>${brokerCapacity.broker.size5dFormat}</td>
                 <td>${brokerCapacity.broker.size7dFormat}</td>
-                <td <#if brokerCapacity.diskUsage?? && brokerCapacity.estimateLeftDays lte 2>style="background-color:#ffc107!important;"</#if>><#if brokerCapacity.diskUsage??>${brokerCapacity.estimateLeftDays}天</#if></td>
+                <td <#if brokerCapacity.diskUsage?? && brokerCapacity.estimateLeftDays lte 2>class="bg-warning"</#if>><#if brokerCapacity.diskUsage??>${brokerCapacity.estimateLeftDays}天</#if></td>
             </tr>
             </#list>
             </tbody>

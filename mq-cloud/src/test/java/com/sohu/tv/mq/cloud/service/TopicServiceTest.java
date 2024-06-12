@@ -79,4 +79,15 @@ public class TopicServiceTest {
         at.setQueueNum(8);
         topicService.createAndUpdateTopicOnCluster(mqCluster, at);
     }
+
+    @Test
+    public void testCreateOrderTopic(){
+        Cluster mqCluster = clusterService.getMQClusterById(8);
+        String topic = "mqcloud-order-topic";
+        AuditTopic at = new AuditTopic();
+        at.setName(topic);
+        at.setQueueNum(8);
+        at.setOrdered(1);
+        topicService.createAndUpdateTopicOnCluster(mqCluster, at);
+    }
 }

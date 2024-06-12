@@ -79,7 +79,7 @@
 								<div class="row" data-html="true" data-trigger="hover" data-container="body"
 									 data-toggle="popover" data-placement="top"
 									 data-content="挂载点：${diskUsage.mount!diskUsage.name}<br>总大小：${diskUsage.sizeFormat}<br>已使用：${diskUsage.usedFormat}">
-									<div class="col-12">
+									<div class="col-12<#if diskUsage.value gte 75> bg-warning</#if>">
 										${diskUsage.value}%
 									</div>
 								</div>

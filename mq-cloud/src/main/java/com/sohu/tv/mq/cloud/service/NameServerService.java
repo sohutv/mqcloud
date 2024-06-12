@@ -1,16 +1,27 @@
 package com.sohu.tv.mq.cloud.service;
 
-import java.util.List;
-
+import com.sohu.tv.mq.cloud.bo.CheckStatusEnum;
+import com.sohu.tv.mq.cloud.bo.Cluster;
+import com.sohu.tv.mq.cloud.bo.NameServer;
+import com.sohu.tv.mq.cloud.common.mq.SohuMQAdmin;
+import com.sohu.tv.mq.cloud.dao.NameServerDao;
+import com.sohu.tv.mq.cloud.mq.MQAdminCallback;
+import com.sohu.tv.mq.cloud.mq.MQAdminTemplate;
+import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper;
+import com.sohu.tv.mq.cloud.util.Result;
+import org.apache.rocketmq.common.namesrv.NamesrvUtil;
+import org.apache.rocketmq.remoting.RemotingClient;
+import org.apache.rocketmq.remoting.protocol.RemotingCommand;
+import org.apache.rocketmq.remoting.protocol.RequestCode;
+import org.apache.rocketmq.remoting.protocol.header.namesrv.PutKVConfigRequestHeader;
+import org.apache.rocketmq.tools.admin.MQAdminExt;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import com.sohu.tv.mq.cloud.bo.CheckStatusEnum;
-import com.sohu.tv.mq.cloud.bo.NameServer;
-import com.sohu.tv.mq.cloud.dao.NameServerDao;
-import com.sohu.tv.mq.cloud.util.Result;
+import java.util.List;
+import java.util.Map;
 
 /**
  * name server
@@ -25,11 +36,22 @@ public class NameServerService {
     
     @Autowired
     private NameServerDao nameServerDao;
-    
+
+    @Autowired
+    private MQCloudConfigHelper mqCloudConfigHelper;
+
+    @Autowired
+    private MQAdminTemplate mqAdminTemplate;
+
+    @Autowired
+    private ClusterService clusterService;
+
+    @Autowired
+    private TopicService topicService;
+
     /**
      * 保存记录
      * 
-     * @param nameServer
      * @return 返回Result
      */
     public Result<?> save(int cid, String addr) {
@@ -39,18 +61,60 @@ public class NameServerService {
     /**
      * 保存记录
      * 
-     * @param nameServer
      * @return 返回Result
      */
     public Result<?> save(int cid, String addr, String baseDir) {
-        Integer result = null;
         try {
-            result = nameServerDao.insert(cid, addr, baseDir);
+            Result result = Result.getResult(nameServerDao.insert(cid, addr, baseDir));
+            if (result.isOK()) {
+                initOrderTopicConfig(cid, addr);
+            }
+            return result;
         } catch (Exception e) {
             logger.error("insert err, cid:{}, addr:{}, baseDir:{}", cid, addr, baseDir, e);
             return Result.getDBErrorResult(e);
         }
-        return Result.getResult(result);
+    }
+
+    /**
+     * 初始化order topic配置
+     *
+     * @param cid
+     * @param addr
+     */
+    private void initOrderTopicConfig(int cid, String addr) {
+        String kvConfig = mqCloudConfigHelper.getOrderTopicKVConfig(String.valueOf(cid));
+        if (kvConfig == null || kvConfig.isEmpty()) {
+            return;
+        }
+        Result<List<String>> listResult = topicService.queryOrderedTopicList(cid);
+        if (listResult.isEmpty()) {
+            return;
+        }
+        mqAdminTemplate.execute(new MQAdminCallback<Void>() {
+            public Void callback(MQAdminExt mqAdmin) throws Exception {
+                SohuMQAdmin sohuMQAdmin = (SohuMQAdmin) mqAdmin;
+                RemotingClient remotingClient = sohuMQAdmin.getMQClientInstance().getMQClientAPIImpl().getRemotingClient();
+                List<String> topics = listResult.getResult();
+                for (String topic : topics) {
+                    PutKVConfigRequestHeader requestHeader = new PutKVConfigRequestHeader();
+                    requestHeader.setNamespace(NamesrvUtil.NAMESPACE_ORDER_TOPIC_CONFIG);
+                    requestHeader.setKey(topic);
+                    requestHeader.setValue(kvConfig);
+                    RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.PUT_KV_CONFIG, requestHeader);
+                    remotingClient.invokeSync(addr, request, 5000);
+                }
+                return null;
+            }
+
+            public Void exception(Exception e) throws Exception {
+                throw e;
+            }
+
+            public Cluster mqCluster() {
+                return clusterService.getMQClusterById(cid);
+            }
+        });
     }
     
     /**
@@ -59,14 +123,26 @@ public class NameServerService {
      * @return Result<List<NameServer>>
      */
     public Result<List<NameServer>> query(int cid) {
-        List<NameServer> result = null;
         try {
-            result = nameServerDao.selectByClusterId(cid);
+            return Result.getResult(nameServerDao.selectByClusterId(cid));
         } catch (Exception e) {
             logger.error("query cid:{} err", cid, e);
             return Result.getDBErrorResult(e);
         }
-        return Result.getResult(result);
+    }
+
+    /**
+     * 查询name server
+     *
+     * @return Result<NameServer>
+     */
+    public Result<NameServer> query(String addr) {
+        try {
+            return Result.getResult(nameServerDao.selectByAddr(addr));
+        } catch (Exception e) {
+            logger.error("query addr:{} err", addr, e);
+            return Result.getDBErrorResult(e);
+        }
     }
     
     /**
@@ -75,14 +151,12 @@ public class NameServerService {
      * @return Result<List<NameServer>>
      */
     public Result<List<NameServer>> queryAll() {
-        List<NameServer> result = null;
         try {
-            result = nameServerDao.selectAll();
+            return Result.getResult(nameServerDao.selectAll());
         } catch (Exception e) {
             logger.error("query all err", e);
             return Result.getDBErrorResult(e);
         }
-        return Result.getResult(result);
     }
     
     /**
@@ -91,14 +165,12 @@ public class NameServerService {
      * @return 返回Result
      */
     public Result<?> delete(int cid, String addr) {
-        Integer result = null;
         try {
-            result = nameServerDao.delete(cid, addr);
+            return Result.getResult(nameServerDao.delete(cid, addr));
         } catch (Exception e) {
             logger.error("delete err, cid:{}, addr:{}", cid, addr, e);
             return Result.getDBErrorResult(e);
         }
-        return Result.getResult(result);
     }
     
     
@@ -109,13 +181,11 @@ public class NameServerService {
      * @return
      */
     public Result<?> update(int cid, String addr, CheckStatusEnum checkStatusEnum) {
-        Integer result = null;
         try {
-            result = nameServerDao.update(cid, addr, checkStatusEnum.getStatus());
+            return Result.getResult(nameServerDao.update(cid, addr, checkStatusEnum.getStatus()));
         } catch (Exception e) {
             logger.error("update err, cid:{}, addr:{}", cid, addr, e);
             return Result.getDBErrorResult(e);
         }
-        return Result.getResult(result);
     }
 }

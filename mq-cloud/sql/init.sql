@@ -714,6 +714,7 @@ INSERT INTO `common_config`(`key`, `value`, `comment`) VALUES ('exportedMessageL
 INSERT INTO `common_config`(`key`, `value`, `comment`) VALUES ('exportedMessageRemotePath', '消息导出时的远程地址，例如127.0.0.1:/tmp，请赋予mqcloud权限');
 INSERT INTO `common_config`(`key`, `value`, `comment`) VALUES ('exportedMessageDownloadUrlPrefix', '消息导出时的下载地址，例如http://127.0.0.1/tmp/，请用http开头');
 INSERT INTO `common_config`(`key`, `value`, `comment`) VALUES ('ignoreErrorProducerSet', '[]', '忽略生产错误预警的生产者');
+INSERT INTO `common_config`(`key`, `value`, `comment`) VALUES ('orderTopicKVConfig', '{}', '全局有序topic路由配置');
 -- ----------------------------
 -- warn_config init
 -- ----------------------------

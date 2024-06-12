@@ -84,6 +84,12 @@ public interface TopicDao {
     public List<Topic> selectByClusterId(@Param("clusterId") int clusterId);
 
     /**
+     * 根据cluster_id查询顺序topic
+     */
+    @Select("select name from topic where cluster_id = #{clusterId} and ordered = 1")
+    public List<String> selectOrderedTopic(@Param("clusterId") int clusterId);
+
+    /**
      * 根据cluster_id查询开启了流量预警功能的topic
      * @param clusterId
      * @return List<Topic>

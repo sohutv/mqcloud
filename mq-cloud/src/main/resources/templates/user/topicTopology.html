@@ -34,7 +34,7 @@
 								<#if response.result.topic.ordered == 0>
 									<a data-toggle="tooltip" title="查看释义" target=_blank href="${request.contextPath}/wiki/userGuide/clientConsumer#normalOrder">局部<span class="d-none d-lg-inline">有序</span></a>
 								<#else>
-									<a data-toggle="tooltip" title="查看释义" target=_blank href="${request.contextPath}/wiki/userGuide/clientConsumer#strictOrder">全局<span class="d-none d-lg-inline">有序</span></a>
+									<a data-toggle="tooltip" title="固定路由：${response.result.orderTopicKVConfig!}" target=_blank href="${request.contextPath}/wiki/userGuide/clientConsumer#strictOrder">全局<span class="d-none d-lg-inline">有序</span></a>
 								</#if>
 							</td>
 							<td class="text-muted">序列化<span class="d-none d-lg-inline">方式</span></td>

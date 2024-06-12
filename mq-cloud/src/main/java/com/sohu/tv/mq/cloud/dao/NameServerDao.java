@@ -23,7 +23,13 @@ public interface NameServerDao {
      */
     @Select("select * from name_server where cid = #{cid}")
     public List<NameServer> selectByClusterId(@Param("cid") int cid);
-    
+
+    /**
+     * 根据addr查询
+     */
+    @Select("select * from name_server where addr = #{addr}")
+    public NameServer selectByAddr(@Param("addr") String addr);
+
     /**
      * 查询全部
      * 

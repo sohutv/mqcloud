@@ -2,16 +2,12 @@ package com.sohu.tv.mq.cloud.service;
 
 import com.sohu.tv.mq.cloud.bo.*;
 import com.sohu.tv.mq.cloud.common.mq.SohuMQAdmin;
-import com.sohu.tv.mq.cloud.dao.BrokerDao;
 import com.sohu.tv.mq.cloud.dao.TopicDao;
 import com.sohu.tv.mq.cloud.mq.DefaultCallback;
 import com.sohu.tv.mq.cloud.mq.MQAdminCallback;
 import com.sohu.tv.mq.cloud.mq.MQAdminTemplate;
 import com.sohu.tv.mq.cloud.util.*;
 import com.sohu.tv.mq.util.CommonUtil;
-import org.apache.ibatis.executor.BatchResult;
-import org.apache.ibatis.session.ExecutorType;
-import org.apache.ibatis.session.SqlSession;
 import org.apache.ibatis.session.SqlSessionFactory;
 import org.apache.rocketmq.client.exception.MQClientException;
 import org.apache.rocketmq.common.TopicConfig;
@@ -33,7 +29,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.interceptor.TransactionAspectSupport;
 
 import java.util.*;
-import java.util.stream.IntStream;
 
 /**
  * topic服务
@@ -123,14 +118,21 @@ public class TopicService {
      * @return TopicRouteData
      */
     public Result<List<Topic>> queryTopicList(Cluster mqCluster) {
-        List<Topic> topicList = null;
         try {
-            topicList = topicDao.selectByClusterId(mqCluster.getId());
+            return Result.getResult(topicDao.selectByClusterId(mqCluster.getId()));
         } catch (Exception e) {
             logger.error("getTopicList err, mqCluster:{}", mqCluster, e);
             return Result.getDBErrorResult(e);
         }
-        return Result.getResult(topicList);
+    }
+
+    public Result<List<String>> queryOrderedTopicList(int cid) {
+        try {
+            return Result.getResult(topicDao.selectOrderedTopic(cid));
+        } catch (Exception e) {
+            logger.error("queryOrderedTopicList err, cid:{}", cid, e);
+            return Result.getDBErrorResult(e);
+        }
     }
 
     /**
@@ -454,6 +456,17 @@ public class TopicService {
                 }
                 for (String addr : masterSet) {
                     mqAdmin.createAndUpdateTopicConfig(addr, topicConfig);
+                }
+                // 全局有序topic需要保存路由
+                if (topicConfig.isOrder()) {
+                    Set<String> brokerNameSet = CommandUtil.fetchBrokerNameByClusterName(mqAdmin, mqCluster.getName());
+                    StringJoiner orderConf = new StringJoiner(";");
+                    for (String s : brokerNameSet) {
+                        orderConf.add(s + ":" + topicConfig.getWriteQueueNums());
+                    }
+                    String orderConfStr = orderConf.toString();
+                    mqAdmin.createOrUpdateOrderConf(topicConfig.getTopicName(), orderConfStr, true);
+                    mqCloudConfigHelper.updateOrderTopicKVConfig(String.valueOf(mqCluster.getId()), orderConfStr);
                 }
                 long end = System.currentTimeMillis();
                 logger.info("create or update topic use:{}ms,topic:{}", (end- start), topicConfig.getTopicName());

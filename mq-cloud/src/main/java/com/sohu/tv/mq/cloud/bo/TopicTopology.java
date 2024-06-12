@@ -40,6 +40,9 @@ public class TopicTopology {
     // 收藏id
     private long favoriteId;
 
+    // 全局顺序topic kv配置
+    private String orderTopicKVConfig;
+
     public long getUid() {
         return uid;
     }
@@ -163,5 +166,13 @@ public class TopicTopology {
 
     public void setFavoriteId(long favoriteId) {
         this.favoriteId = favoriteId;
+    }
+
+    public String getOrderTopicKVConfig() {
+        return orderTopicKVConfig;
+    }
+
+    public void setOrderTopicKVConfig(String orderTopicKVConfig) {
+        this.orderTopicKVConfig = orderTopicKVConfig;
     }
 }

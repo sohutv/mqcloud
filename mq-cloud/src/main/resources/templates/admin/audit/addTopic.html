@@ -13,7 +13,7 @@
 		</div>
 	</div>
 	<div class="form-group row">
-		<label class="col-md-3 col-form-label  <#if response.result.queueNum != 8>notice</#if>"> 队列数量: </label>
+		<label class="col-md-3 col-form-label<#if response.result.queueNum != 8> bg-warning</#if>"> 队列数量: </label>
 		<div class="col-md-9">
 			<input type="text" value="${response.result.queueNum}" readonly="readonly" class="form-control" />
 		</div>
@@ -32,7 +32,7 @@
 		</div>
 	</div>
 	<div class="form-group row">
-		<label class="col-md-3" <#if response.result.ordered == 1>notice</#if>"> 消息顺序: </label>
+		<label class="col-md-3<#if response.result.ordered == 1> bg-warning</#if>"> 消息顺序: </label>
 		<div class="col-md-9 checkbox">
 			<input type="radio" name="ordered" value="0" disabled="disabled" <#if response.result.ordered == 0>checked</#if>>局部有序
 			<input type="radio" name="ordered" value="1" disabled="disabled" <#if response.result.ordered == 1>checked</#if>>全局有序
@@ -46,14 +46,14 @@
 		</div>
 	</div>
 	<div class="form-group row">
-		<label class="col-md-3 <#if response.result.transactionEnabled()>notice</#if>"> 开启事务: </label>
+		<label class="col-md-3<#if response.result.transactionEnabled()> bg-warning</#if>"> 开启事务: </label>
 		<div class="col-md-9 checkbox">
 			<input type="radio" name="transactionEnabled" value="0" disabled="disabled" <#if !response.result.transactionEnabled()>checked</#if>>否
 			<input type="radio" name="transactionEnabled" value="1" disabled="disabled" <#if response.result.transactionEnabled()>checked</#if>>是
 		</div>
 	</div>
 	<div class="form-group row">
-		<label class="col-md-3  <#if response.result.needNotice()>notice</#if>"> 使用环境: </label>
+		<label class="col-md-3<#if response.result.needNotice()> bg-warning</#if>"> 使用环境: </label>
 		<div class="col-md-9 checkbox">
 			<input type="radio" name="testEnabled" value="0" disabled="disabled" <#if !response.result.testEnabled()>checked</#if>>线上
 			<input type="radio" name="testEnabled" value="1" disabled="disabled" <#if response.result.testEnabled()>checked</#if>>测试
