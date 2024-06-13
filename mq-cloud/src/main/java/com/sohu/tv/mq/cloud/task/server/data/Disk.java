@@ -85,6 +85,9 @@ public class Disk implements LineParser {
             return;
         }
         List<Usage> list = diskMap.get(DiskUsageType.busy);
+        if (list == null) {
+            return;
+        }
         String[] tp = item[0].split("/");
         String mount = tp[tp.length - 1];
         for (Usage usage : list) {
