@@ -41,14 +41,18 @@ sendMessage()
 # coding=utf-8
 import requests
 import time
+import signal
+
+# 是否运行变量
+running = True
 
 def httpConsume():
 	# 定义消费消息的参数
 	payload = {'topic': 'mqcloud-http-test-topic', 'consumer': 'clustering-mqcloud-http-consumer'}
-	while True:
+	while running:
 		try:
 			# 拉取消息
-			response = requests.post('http://${httpConsumerUriPrefix}/mq/message', data=payload)
+			response = requests.get('http://${httpConsumerUriPrefix}/mq/message', params=payload)
 			# 解析响应结果
 			if response.status_code == 200:
 				data = response.json()
@@ -74,9 +78,22 @@ def httpConsume():
 			print('reqeust error', e)
 
 		# 延时一会
-		time.sleep(2)
+		if running:
+			time.sleep(2)
+			
+	# 进程退出时，提交ACK
+	try:
+		requests.get('http://${httpConsumerUriPrefix}/mq/ack', params=payload)
+	except Exception as e:
+		print('ack error', e)
 
-# 消费消息
+def signal_handler(sig, frame):
+    global running
+    running = False
+
+signal.signal(signal.SIGINT, signal_handler)
+signal.signal(signal.SIGTERM, signal_handler)
+
 httpConsume()
 ```
 
