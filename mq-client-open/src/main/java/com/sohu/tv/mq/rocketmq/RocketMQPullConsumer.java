@@ -10,6 +10,8 @@ import org.apache.rocketmq.client.consumer.PullResult;
 import org.apache.rocketmq.client.exception.MQBrokerException;
 import org.apache.rocketmq.client.exception.MQClientException;
 import org.apache.rocketmq.client.impl.consumer.DefaultMQPullConsumerImpl;
+import org.apache.rocketmq.client.trace.AsyncTraceDispatcher;
+import org.apache.rocketmq.client.trace.hook.ConsumeMessageTraceHookImpl;
 import org.apache.rocketmq.common.ServiceState;
 import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.common.message.MessageQueue;
@@ -181,5 +183,11 @@ public class RocketMQPullConsumer extends AbstractConfig {
     @Override
     protected Object getMQClient() {
         return consumer;
+    }
+
+    @Override
+    protected void registerTraceDispatcher(AsyncTraceDispatcher traceDispatcher) {
+        consumer.getDefaultMQPullConsumerImpl().registerConsumeMessageHook(
+                new ConsumeMessageTraceHookImpl(traceDispatcher));
     }
 }
