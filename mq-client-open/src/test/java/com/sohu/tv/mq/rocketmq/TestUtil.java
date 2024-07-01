@@ -1,10 +1,9 @@
 package com.sohu.tv.mq.rocketmq;
 
-import org.apache.rocketmq.client.producer.TransactionListener;
-
 import com.sohu.tv.mq.common.AbstractConfig;
 import com.sohu.tv.mq.rocketmq.redis.RedisBuilder;
-import com.sohu.tv.mq.serializable.DefaultMessageSerializer;
+import com.sohu.tv.mq.serializable.StringSerializer;
+import org.apache.rocketmq.client.producer.TransactionListener;
 
 public class TestUtil {
 
@@ -38,6 +37,6 @@ public class TestUtil {
 
     private static void setDomain(AbstractConfig abstractConfig) {
         abstractConfig.setMqCloudDomain("127.0.0.1:8080");
-        abstractConfig.setMessageSerializer(new DefaultMessageSerializer<Object>());
+        abstractConfig.setMessageSerializer(new StringSerializer<>());
     }
 }
