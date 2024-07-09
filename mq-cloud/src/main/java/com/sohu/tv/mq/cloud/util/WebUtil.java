@@ -1,15 +1,14 @@
 package com.sohu.tv.mq.cloud.util;
 
-import java.io.IOException;
-import java.io.PrintWriter;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.web.util.WebUtils;
 
 import javax.servlet.ServletRequest;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
-import org.apache.commons.lang3.StringUtils;
-import org.springframework.web.util.WebUtils;
+import java.io.IOException;
+import java.io.PrintWriter;
 
 /**
  * web相关工具
@@ -20,6 +19,12 @@ import org.springframework.web.util.WebUtils;
 public class WebUtil {
 
     public static final String LOGIN_TOKEN = "TOKEN";
+
+    public static final Long ONE_DAY = 24 * 60 * 60 * 1000L;
+
+    public static final Long ONE_HOUR = 60 * 60 * 1000L;
+
+    public static final Long ONE_MINUTE = 60 * 1000L;
 
     /**
      * 从request中获取客户端ip
@@ -226,5 +231,33 @@ public class WebUtil {
             return String.valueOf(v / 10);
         }
         return String.valueOf(v / 10.0);
+    }
+
+    /**
+     * 时间格式化
+     *
+     * @param timeInMills
+     * @return
+     */
+    public static String timeFormat(long timeInMills) {
+        StringBuilder builder = new StringBuilder();
+        long day = timeInMills / ONE_DAY;
+        if (day > 0) {
+            builder.append(day).append("天");
+        }
+        long hour = (timeInMills % ONE_DAY) / ONE_HOUR;
+        if (hour > 0) {
+            builder.append(hour).append("时");
+        }
+        long minute = (timeInMills % ONE_HOUR) / ONE_MINUTE;
+        if (minute > 0) {
+            builder.append(minute).append("分");
+        }
+        // 一般情况不用精确到秒
+        if (builder.length() > 0) {
+            return builder.toString();
+        }
+        long second = (timeInMills % ONE_MINUTE) / 1000;
+        return builder.append(second).append("秒").toString();
     }
 }

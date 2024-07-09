@@ -1,5 +1,6 @@
 package com.sohu.tv.mq.cloud.web.controller.admin;
 
+import com.sohu.tv.mq.cloud.bo.CheckStatusEnum;
 import com.sohu.tv.mq.cloud.bo.Cluster;
 import com.sohu.tv.mq.cloud.bo.Proxy;
 import com.sohu.tv.mq.cloud.service.ClusterService;
@@ -49,6 +50,17 @@ public class AdminProxyController extends AdminViewController {
             return view();
         }
         Result<List<Proxy>> result = proxyService.query(mqCluster.getId());
+        if (result.isNotEmpty()) {
+            // 检查状态
+            result.getResult().forEach(nameServer -> {
+                Result<?> healthCheckResult = proxyService.healthCheck(nameServer.getAddr());
+                if (healthCheckResult.isOK()) {
+                    nameServer.setCheckStatus(CheckStatusEnum.OK.getStatus());
+                } else {
+                    nameServer.setCheckStatus(CheckStatusEnum.FAIL.getStatus());
+                }
+            });
+        }
         setResult(map, result);
         setResult(map, "clusters", clusterService.getAllMQCluster());
         setResult(map, "selectedCluster", mqCluster);
@@ -106,11 +118,7 @@ public class AdminProxyController extends AdminViewController {
         if (port == 0) {
             return Result.getResult(Status.PARAM_ERROR);
         }
-        Result<?> result = mqDeployer.shutdown(ip, port);
-        if (result.isOK()) {
-            proxyService.delete(cid, addr);
-        }
-        return result;
+        return mqDeployer.shutdown(ip, port);
     }
 
     /**
@@ -138,10 +146,10 @@ public class AdminProxyController extends AdminViewController {
                              @RequestParam(name = "listenPort") int port,
                              @RequestParam(name = "dir") String dir,
                              @RequestParam(name = "cid") int cid,
-                             @RequestParam(name = "config") String config) {
+                             @RequestParam(name = "config", required = false) String config) {
         logger.warn("startup, ip:{}, dir:{}, user:{}", ip, dir, ui);
         Result<?> result = mqDeployer.startup(ip, dir, port);
-        if (result.isOK()) {
+        if (result.isOK() && config != null) {
             Proxy proxy = new Proxy();
             proxy.setCid(cid);
             proxy.setBaseDir(dir);

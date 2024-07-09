@@ -69,9 +69,13 @@
 								</#if>
 							</td>
 							<td>
+								<#if proxy.checkStatusOK>
 								<span id="proxy_${proxy_index + 1}" style="display: none">${proxy.config!}</span>
 								<button type="button" class="btn btn-sm btn-info" title="查看配置" data-target="#proxyConfigModal" data-toggle="modal" onclick="viewProxyConfig('proxy_${proxy_index + 1}')"><i class="fas fa-eye"></i></button>
 								<button type="button" class="btn btn-sm btn-warning" title="kill Proxy进程" data-target="#proxyOfflineModal" data-toggle="modal" onclick="offlineProxy('${proxy.addr}');">下线</button>
+								<#else>
+								<button id="proxyBtn${proxy_index}" data-toggle="tooltip" type="button" class="btn btn-sm btn-success" onclick="startupProxy('${proxy.ip}', ${proxy.port}, '${proxy.baseDir}', 'proxyBtn${proxy_index}')">启动</button>
+								</#if>
 								<button type="button" class="btn btn-sm btn-danger" title="删除Proxy地址" data-target="#proxyDeleteModal" data-toggle="modal" onclick="deleteProxy('${proxy.addr}');"><span class="fas fa-trash-alt" aria-hidden="true"></span></button>
 							</td>
 						</tr>
@@ -519,6 +523,26 @@ function startup(){
 		    	goOn("startup");
 		    }
        }, 'json');
+}
+/**
+ * 启动实例
+ */
+function startupProxy(ip, port, dir, btnId){
+	disable(btnId);
+	post('${request.contextPath}/admin/proxy/startup', {
+		ip: ip,
+		listenPort: port,
+		dir: dir,
+		cid: ${selectedCluster.id}
+	}, function (data) {
+		if (data.status == 200) {
+			toastr.success("启动成功！即将刷新页面！");
+			reload(3000);
+		} else {
+			toastr.error("启动失败！" + data.message);
+			enable(btnId);
+		}
+	}, 'json');
 }
 /**
  * 检测启动的进程

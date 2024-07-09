@@ -1,19 +1,19 @@
 package com.sohu.tv.mq.cloud.service;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import com.sohu.tv.mq.cloud.util.Result;
-import org.apache.rocketmq.common.stats.Stats;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
 import com.sohu.tv.mq.cloud.bo.TopicConsumer;
 import com.sohu.tv.mq.cloud.bo.TopicHourTraffic;
 import com.sohu.tv.mq.cloud.bo.User;
 import com.sohu.tv.mq.cloud.bo.UserWarn.WarnType;
 import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper;
+import com.sohu.tv.mq.cloud.util.Result;
+import com.sohu.tv.mq.cloud.util.WebUtil;
+import org.apache.rocketmq.common.stats.Stats;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * 消费者重试消息监控
@@ -50,7 +50,7 @@ public class ConsumerRetryTrafficService extends HourTrafficService{
                 paramMap.put("topic", topicConsumer.getTopic());
                 paramMap.put("consumer",mqCloudConfigHelper.getTopicConsumeHrefLink(topicConsumer.getTid(),
                         topicConsumer.getConsumer(), System.currentTimeMillis()));
-                paramMap.put("count", topicTraffic.getCount());
+                paramMap.put("count", WebUtil.countFormat(topicTraffic.getCount()));
                 paramMap.put("link", mqCloudConfigHelper.getTopicConsumeHref(topicConsumer.getTid(),
                         topicConsumer.getConsumer(), topicConsumer.getCid(), 0));
                 paramMap.put("resource", topicConsumer.getConsumer());

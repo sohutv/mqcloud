@@ -1,9 +1,6 @@
 package com.sohu.tv.mq.cloud.web.controller.admin;
 
-import com.sohu.tv.mq.cloud.bo.Broker;
-import com.sohu.tv.mq.cloud.bo.Cluster;
-import com.sohu.tv.mq.cloud.bo.MessageQueryCondition;
-import com.sohu.tv.mq.cloud.bo.Topic;
+import com.sohu.tv.mq.cloud.bo.*;
 import com.sohu.tv.mq.cloud.common.mq.SohuMQAdmin;
 import com.sohu.tv.mq.cloud.mq.DefaultCallback;
 import com.sohu.tv.mq.cloud.mq.MQAdminCallback;
@@ -402,7 +399,9 @@ public class AdminClusterController extends AdminViewController {
                                 KVTable kvTable = mqAdmin.fetchBrokerRuntimeStats(broker.getAddr());
                                 // 处理broker stats 数据
                                 handleBrokerStat(broker, kvTable, brokerStatVO);
+                                brokerStatVO.setCheckStatus(CheckStatusEnum.OK.getStatus());
                             } catch (Exception e) {
+                                brokerStatVO.setCheckStatus(CheckStatusEnum.FAIL.getStatus());
                                 logger.error("cluster:{} broker:{} err", mqCluster(), broker.getAddr(), e);
                             }
                         }

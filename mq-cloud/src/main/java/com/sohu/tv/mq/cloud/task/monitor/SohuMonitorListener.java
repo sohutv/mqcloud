@@ -11,6 +11,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
 
+import com.sohu.tv.mq.cloud.util.WebUtil;
 import com.sohu.tv.mq.util.JSONUtil;
 import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.message.MessageQueue;
@@ -155,11 +156,11 @@ public class SohuMonitorListener implements MonitorListener {
         paramMap.put("topic", undoneMsgs.getTopic());
         paramMap.put("consumerLink",
                 mqCloudConfigHelper.getTopicConsumeHrefLink(undoneMsgs.getTopic(), undoneMsgs.getConsumerGroup()));
-        paramMap.put("undoneMsgsTotal", undoneMsgs.getUndoneMsgsTotal());
-        paramMap.put("undoneMsgsSingleMQ", undoneMsgs.getUndoneMsgsSingleMQ());
+        paramMap.put("undoneMsgsTotal", WebUtil.countFormat(undoneMsgs.getUndoneMsgsTotal()));
+        paramMap.put("undoneMsgsSingleMQ", WebUtil.countFormat(undoneMsgs.getUndoneMsgsSingleMQ()));
         paramMap.put("resource", undoneMsgs.getConsumerGroup());
         if (undoneMsgs.getUndoneMsgsDelayTimeMills() > 0) {
-            paramMap.put("undoneMsgsDelayTime", (int) (undoneMsgs.getUndoneMsgsDelayTimeMills() / 1000f));
+            paramMap.put("undoneMsgsDelayTime", WebUtil.timeFormat(undoneMsgs.getUndoneMsgsDelayTimeMills()));
         }
         alertService.sendWarn(users, WarnType.CONSUME_UNDONE, paramMap);
     }

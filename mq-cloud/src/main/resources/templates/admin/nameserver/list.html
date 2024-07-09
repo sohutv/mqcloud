@@ -80,7 +80,11 @@
 								</#if>
 							</td>
 							<td>
+								<#if ns.checkStatusOK>
 								<button type="button" class="btn btn-sm btn-warning" title="Kill Name Server进程" data-target="#nameServerOfflineModal" data-toggle="modal" onclick="offlineNameServer('${ns.addr}');">下线</button>
+								<#else>
+								<button id="nameserverBtn${ns_index}" data-toggle="tooltip" type="button" class="btn btn-sm btn-success" onclick="startupNameServer('${ns.ip}', ${ns.port}, '${ns.baseDir}', 'nameserverBtn${ns_index}')">启动</button>
+								</#if>
 								<button type="button" class="btn btn-sm btn-danger" title="删除Name Server地址" data-target="#nameServerDeleteModal" data-toggle="modal" onclick="deleteNameServer('${ns.addr}');"><span class="fas fa-trash-alt" aria-hidden="true"></span></button>
 							</td>
 						</tr>
@@ -512,6 +516,26 @@ function startup(){
 		    	goOn("startup");
 		    }
        }, 'json');
+}
+/**
+ * 启动实例
+ */
+function startupNameServer(ip, port, dir, btnId){
+	disable(btnId);
+	post('${request.contextPath}/admin/nameserver/startup', {
+		ip: ip,
+		listenPort: port,
+		dir: dir,
+		cid: ${selectedCluster.id}
+	}, function (data) {
+		if (data.status == 200) {
+			toastr.success("启动成功！即将刷新页面！");
+			reload(3000);
+		} else {
+			toastr.error("启动失败！" + data.message);
+			enable(btnId);
+		}
+	}, 'json');
 }
 /**
  * 检测启动的进程

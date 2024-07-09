@@ -18,9 +18,7 @@
 			<div class="ml-1 mr-1">
 				<select name="type" id="mqClusterSelect" class="form-control selectpicker border">
 					<#list clusters as cluster>
-						<option value="${cluster.id}"
-							<#if cluster.id == selectedCluster.id>selected="selected"</#if>
-						>${cluster.name}</option>
+						<option value="${cluster.id}" <#if cluster.id == selectedCluster.id>selected="selected"</#if>>${cluster.name}</option>
 					</#list>
 				</select>
 			</div>
@@ -71,7 +69,11 @@
 								</#if>
 							</td>
 							<td>
+								<#if controller.checkStatusOK>
 								<button type="button" class="btn btn-sm btn-warning" title="kill Controller进程" data-target="#controllerOfflineModal" data-toggle="modal" onclick="offlineController('${controller.addr}');"><span>下线</span></button>
+								<#else>
+								<button id="controllerBtn${controller_index}" data-toggle="tooltip" type="button" class="btn btn-sm btn-success" onclick="startupController('${controller.ip}', ${controller.port}, '${controller.baseDir}', 'controllerBtn${controller_index}')">启动</button>
+								</#if>
 								<button type="button" class="btn btn-sm btn-danger" title="删除Controller地址" data-target="#controllerDeleteModal" data-toggle="modal" onclick="deleteController('${controller.addr}');"><span class="fas fa-trash-alt" aria-hidden="true"></span></button>
 							</td>
 						</tr>
@@ -572,6 +574,26 @@ function startup(){
 		    	goOn("startup");
 		    }
        }, 'json');
+}
+/**
+ * 启动实例
+ */
+function startupController(ip, port, dir, btnId){
+	disable(btnId);
+	post('${request.contextPath}/admin/controller/startup', {
+		ip: ip,
+		listenPort: port,
+		dir: dir,
+		cid: ${selectedCluster.id}
+	}, function (data) {
+		if (data.status == 200) {
+			toastr.success("启动成功！即将刷新页面！");
+			reload(3000);
+		} else {
+			toastr.error("启动失败！" + data.message);
+			enable(btnId);
+		}
+	}, 'json');
 }
 /**
  * 检测启动的进程

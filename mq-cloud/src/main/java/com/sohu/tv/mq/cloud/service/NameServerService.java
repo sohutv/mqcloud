@@ -9,6 +9,7 @@ import com.sohu.tv.mq.cloud.mq.MQAdminCallback;
 import com.sohu.tv.mq.cloud.mq.MQAdminTemplate;
 import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper;
 import com.sohu.tv.mq.cloud.util.Result;
+import com.sohu.tv.mq.cloud.util.Status;
 import org.apache.rocketmq.common.namesrv.NamesrvUtil;
 import org.apache.rocketmq.remoting.RemotingClient;
 import org.apache.rocketmq.remoting.protocol.RemotingCommand;
@@ -20,6 +21,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -187,5 +189,34 @@ public class NameServerService {
             logger.error("update err, cid:{}, addr:{}", cid, addr, e);
             return Result.getDBErrorResult(e);
         }
+    }
+
+    /**
+     * 健康检查
+     *
+     * @param cluster
+     * @param addr
+     * @return
+     */
+    public Result<?> healthCheck(Cluster cluster, String addr) {
+        return mqAdminTemplate.execute(new MQAdminCallback<Result<?>>() {
+            public Result<?> callback(MQAdminExt mqAdmin) throws Exception {
+                try {
+                    mqAdmin.getNameServerConfig(Arrays.asList(addr));
+                    return Result.getOKResult();
+                } catch (Exception e) {
+                    return Result.getDBErrorResult(e).setMessage("addr:" + addr + ";Exception: " + e.getMessage());
+                }
+            }
+
+            public Cluster mqCluster() {
+                return cluster;
+            }
+
+            @Override
+            public Result<?> exception(Exception e) throws Exception {
+                return Result.getDBErrorResult(e).setMessage("Exception: " + e.getMessage());
+            }
+        });
     }
 }

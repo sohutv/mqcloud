@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.sohu.tv.mq.cloud.util.WebUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -37,7 +38,7 @@ public class ConsumerDeadTrafficService extends HourTrafficService {
             Map<String, Object> paramMap = new HashMap<>();
             paramMap.put("topic", topicConsumer.getTopic());
             paramMap.put("consumer", mqCloudConfigHelper.getTopicConsumeHrefLink(topicConsumer.getTid(), topicConsumer.getConsumer()));
-            paramMap.put("count", topicTraffic.getCount());
+            paramMap.put("count", WebUtil.countFormat(topicTraffic.getCount()));
             paramMap.put("resource", topicConsumer.getConsumer());
             alertService.sendWarn(userList, WarnType.DEAD_MESSAGE, paramMap);
         }

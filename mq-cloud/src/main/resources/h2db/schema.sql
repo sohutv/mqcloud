@@ -690,6 +690,7 @@ CREATE TABLE IF NOT EXISTS `topic_traffic_stat` (
 -- Table structure for `topic_traffic_warn_config`
 -- ----------------------------
 CREATE TABLE IF NOT EXISTS `topic_traffic_warn_config` (
+  `min_warn_count` bigint(20) DEFAULT NULL COMMENT '最小预警数量',
   `avg_multiplier` float DEFAULT '5' COMMENT '平均流量值的乘数阈值;流量统计时，大于该值乘以平均流量值认定为异常值而被剔除',
   `avg_max_percentage_increase` float DEFAULT '200' COMMENT '30天内每天流量最大值的平均值的百分比阈值；某时刻流量值大于最大值的平均值的增长阈值，则预警',
   `max_max_percentage_increase` float DEFAULT '30' COMMENT '30天内流量最大值的增幅百分比阈值；某时刻流量值若大于最大值的该增幅阈值，则预警',

@@ -7,7 +7,7 @@ import com.sohu.tv.mq.cloud.bo.User;
 import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper;
 import com.sohu.tv.mq.cloud.util.Result;
 import com.sohu.tv.mq.cloud.web.controller.admin.AdminMessageController;
-import com.sohu.tv.mq.cloud.web.controller.admin.AuditController;
+import com.sohu.tv.mq.cloud.web.controller.admin.AdminAuditController;
 import com.sohu.tv.mq.cloud.web.vo.UserInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,7 +28,7 @@ public class AutoAuditService {
     private Logger logger = LoggerFactory.getLogger(this.getClass());
 
     @Autowired
-    private AuditController auditController;
+    private AdminAuditController auditController;
 
     @Autowired
     private AuditService auditService;

@@ -18,11 +18,11 @@ public interface TopicTrafficWarnConfigDao {
      * 插入/更新记录
      */
     @Insert("insert into topic_traffic_warn_config(avg_multiplier, avg_max_percentage_increase, " +
-            "max_max_percentage_increase, alarm_receiver, topic) values(" +
+            "max_max_percentage_increase, alarm_receiver, topic, min_warn_count) values(" +
             "#{ttwc.avgMultiplier},#{ttwc.avgMaxPercentageIncrease},#{ttwc.maxMaxPercentageIncrease}," +
-            "#{ttwc.alarmReceiver},#{ttwc.topic}) " +
+            "#{ttwc.alarmReceiver},#{ttwc.topic},#{ttwc.minWarnCount}) " +
             "on duplicate key update avg_multiplier=values(avg_multiplier), avg_max_percentage_increase=values(avg_max_percentage_increase), max_max_percentage_increase=values(max_max_percentage_increase)," +
-            " alarm_receiver=values(alarm_receiver), topic=values(topic)")
+            " alarm_receiver=values(alarm_receiver), min_warn_count=values(min_warn_count)")
     public Integer insertAndUpdate(@Param("ttwc") TopicTrafficWarnConfig topicTrafficWarnConfig);
 
     /**

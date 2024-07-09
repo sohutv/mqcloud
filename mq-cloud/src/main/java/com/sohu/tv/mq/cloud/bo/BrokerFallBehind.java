@@ -1,5 +1,7 @@
 package com.sohu.tv.mq.cloud.bo;
 
+import com.sohu.tv.mq.cloud.util.WebUtil;
+
 import java.util.List;
 
 /**
@@ -37,15 +39,7 @@ public class BrokerFallBehind {
     }
 
     public String getMaxAccessMessageInMemoryFormat() {
-        return parseToGB(maxAccessMessageInMemory);
-    }
-
-    private String parseToGB(long value) {
-        return format((double) value / (1024L * 1024L * 1024L)) + "G";
-    }
-
-    private float format(double v) {
-        return (int) (v * 100) / 100.0f;
+        return WebUtil.sizeFormat(maxAccessMessageInMemory);
     }
 
     public void setMaxAccessMessageInMemory(long maxAccessMessageInMemory) {
@@ -88,7 +82,7 @@ public class BrokerFallBehind {
         }
 
         public String getAccumulatedFormat() {
-            return parse(accumulated);
+            return WebUtil.sizeFormat(accumulated);
         }
 
         public String getQueue() {
@@ -97,19 +91,6 @@ public class BrokerFallBehind {
 
         public void setQueue(String queue) {
             this.queue = queue;
-        }
-
-        private String parse(long bytes) {
-            if (bytes < 1024) {
-                return bytes + "B";
-            }
-            if (bytes < 1024L * 1024L) {
-                return format((double) bytes / 1024L) + "K";
-            }
-            if (bytes < 1024L * 1024L * 1024L) {
-                return format((double) bytes / (1024L * 1024L)) + "M";
-            }
-            return parseToGB(bytes);
         }
 
         public void setAccumulated(long accumulated) {

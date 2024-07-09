@@ -39,6 +39,10 @@ public abstract class DeployableComponent {
         return addr.split(":")[0];
     }
 
+    public int getPort() {
+        return Integer.parseInt(addr.split(":")[1]);
+    }
+
     public void setAddr(String addr) {
         this.addr = addr;
     }
@@ -61,6 +65,10 @@ public abstract class DeployableComponent {
 
     public int getCheckStatus() {
         return checkStatus;
+    }
+
+    public boolean isCheckStatusOK() {
+        return checkStatus == CheckStatusEnum.OK.getStatus();
     }
 
     public void setCheckStatus(int checkStatus) {

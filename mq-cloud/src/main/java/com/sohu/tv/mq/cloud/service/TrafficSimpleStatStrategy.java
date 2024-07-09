@@ -110,12 +110,13 @@ public class TrafficSimpleStatStrategy implements TrafficStatCheckStrategy {
         // 2. 获取配置
         float avgMaxPercent = topicTrafficWarnConfig.getAvgMaxPercentageIncrease() / 100;
         float maxMaxPercent = topicTrafficWarnConfig.getMaxMaxPercentageIncrease() / 100;
+        long minWarnCount = topicTrafficWarnConfig.getMinWarnCount();
         // 3. 计算流量阈值
         long avgMaxThreshold = (long) (avgMax * (1 + avgMaxPercent));
         long maxMaxThreshold = (long) (maxMax * (1 + maxMaxPercent));
         // 4. 检测
         long count = topicTraffic.getCount();
-        if (count > avgMaxThreshold || count > maxMaxThreshold) {
+        if (count >= minWarnCount && (count > avgMaxThreshold || count > maxMaxThreshold)) {
             // 时间格式: YYYY-MM-DD hh:mm
             String warnTime = buildTime(topicTraffic.getCreateDate(), topicTraffic.getCreateTime());
             StringBuilder warnInfo = new StringBuilder();

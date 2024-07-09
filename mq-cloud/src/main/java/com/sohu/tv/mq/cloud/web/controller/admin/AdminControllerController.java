@@ -1,5 +1,6 @@
 package com.sohu.tv.mq.cloud.web.controller.admin;
 
+import com.sohu.tv.mq.cloud.bo.CheckStatusEnum;
 import com.sohu.tv.mq.cloud.bo.Cluster;
 import com.sohu.tv.mq.cloud.bo.Controller;
 import com.sohu.tv.mq.cloud.service.ClusterService;
@@ -49,6 +50,17 @@ public class AdminControllerController extends AdminViewController {
             return view();
         }
         Result<List<Controller>> result = controllerService.query(mqCluster.getId());
+        if (result.isNotEmpty()) {
+            // 检查状态
+            result.getResult().forEach(controller -> {
+                Result<?> healthCheckResult = controllerService.healthCheck(mqCluster, controller.getAddr());
+                if (healthCheckResult.isOK()) {
+                    controller.setCheckStatus(CheckStatusEnum.OK.getStatus());
+                } else {
+                    controller.setCheckStatus(CheckStatusEnum.FAIL.getStatus());
+                }
+            });
+        }
         setResult(map, result);
         setResult(map, "clusters", clusterService.getAllMQCluster());
         setResult(map, "selectedCluster", mqCluster);
@@ -104,11 +116,7 @@ public class AdminControllerController extends AdminViewController {
         if (port == 0) {
             return Result.getResult(Status.PARAM_ERROR);
         }
-        Result<?> result = mqDeployer.shutdown(ip, port);
-        if (result.isOK()) {
-            controllerService.delete(cid, addr);
-        }
-        return result;
+        return mqDeployer.shutdown(ip, port);
     }
 
     /**

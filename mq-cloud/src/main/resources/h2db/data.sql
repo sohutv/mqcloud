@@ -354,7 +354,7 @@ insert IGNORE into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, 
 -- ----------------------------
 -- topic_traffic_warn_config init
 -- ----------------------------
-INSERT IGNORE INTO `topic_traffic_warn_config`(avg_multiplier,avg_max_percentage_increase,max_max_percentage_increase,alarm_receiver) VALUES (5, 200, 30, 0);
+INSERT IGNORE INTO `topic_traffic_warn_config`(avg_multiplier,avg_max_percentage_increase,max_max_percentage_increase,alarm_receiver,min_warn_count) VALUES (5, 200, 30, 0, 100);
 
 INSERT IGNORE INTO `broker_config`(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) VALUES (1, 'physicalMemorySize', '0', '物理内存(单位字节)，0代表使用全部物理内存', '部署到docker或多个broker部署到一台机器时使用', 18, 1, NULL, 0);
 insert IGNORE into `broker_config`(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) values(1, 'grpcServerPort', '8081', 'proxy grpc协议端口', null, 19, 0, null, 0);

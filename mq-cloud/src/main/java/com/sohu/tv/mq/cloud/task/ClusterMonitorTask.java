@@ -128,31 +128,15 @@ public class ClusterMonitorTask {
             nameServerAddressList.add(ns.getAddr());
         }
         List<String> statList = new ArrayList<>();
-        mqAdminTemplate.execute(new MQAdminCallback<Void>() {
-            public Void callback(MQAdminExt mqAdmin) throws Exception {
-                for (String addr : nameServerAddressList) {
-                    try {
-                        mqAdmin.getNameServerConfig(Arrays.asList(addr));
-                        nameServerService.update(mqCluster.getId(), addr, CheckStatusEnum.OK);
-                    } catch (Exception e) {
-                        nameServerService.update(mqCluster.getId(), addr, CheckStatusEnum.FAIL);
-                        statList.add("ns:" + addr + ";Exception: " + e.getMessage());
-                    }
-                }
-
-                return null;
+        for (String addr : nameServerAddressList) {
+            Result<?> result = nameServerService.healthCheck(mqCluster, addr);
+            if (result.isOK()) {
+                nameServerService.update(mqCluster.getId(), addr, CheckStatusEnum.OK);
+            } else {
+                nameServerService.update(mqCluster.getId(), addr, CheckStatusEnum.FAIL);
+                statList.add(result.getMessage());
             }
-
-            public Cluster mqCluster() {
-                return mqCluster;
-            }
-
-            @Override
-            public Void exception(Exception e) throws Exception {
-                statList.add("Exception: " + e.getMessage());
-                return null;
-            }
-        });
+        }
         if (statList.size() == 0) {
             return null;
         }
@@ -313,30 +297,14 @@ public class ClusterMonitorTask {
             return null;
         }
         List<String> statList = new ArrayList<>();
-        mqAdminTemplate.execute(new MQAdminCallback<Void>() {
-            public Void callback(MQAdminExt mqAdmin) throws Exception {
-                SohuMQAdmin sohuMQAdmin = (SohuMQAdmin) mqAdmin;
-                listResult.getResult().stream().forEach(controller -> {
-                    String addr = controller.getAddr();
-                    try {
-                        sohuMQAdmin.getControllerMetaData(addr);
-                        controllerService.update(mqCluster.getId(), addr, CheckStatusEnum.OK);
-                    } catch (Exception e) {
-                        controllerService.update(mqCluster.getId(), addr, CheckStatusEnum.FAIL);
-                        statList.add("addr:" + addr + ";Exception: " + e.getMessage());
-                    }
-                });
-                return null;
-            }
-
-            public Cluster mqCluster() {
-                return mqCluster;
-            }
-
-            @Override
-            public Void exception(Exception e) throws Exception {
-                statList.add("Exception: " + e.getMessage());
-                return null;
+        listResult.getResult().stream().forEach(controller -> {
+            String addr = controller.getAddr();
+            Result<?> result = controllerService.healthCheck(mqCluster, addr);
+            if (result.isOK()) {
+                controllerService.update(mqCluster.getId(), addr, CheckStatusEnum.OK);
+            } else {
+                controllerService.update(mqCluster.getId(), addr, CheckStatusEnum.FAIL);
+                statList.add(result.getMessage());
             }
         });
         if (statList.size() == 0) {
@@ -384,22 +352,12 @@ public class ClusterMonitorTask {
         }
         List<String> statList = new ArrayList<>();
         listResult.getResult().stream().forEach(proxy -> {
-            String addr = proxy.getAddr();
-            Socket socket = new Socket();
-            try {
-                String[] addrs = addr.split(":");
-                socket.connect(new InetSocketAddress(addrs[0], Integer.parseInt(addrs[1])), 5000);
-                if (socket.isConnected()) {
-                    proxyService.update(mqCluster.getId(), addr, CheckStatusEnum.OK);
-                }
-            } catch (Exception e) {
-                proxyService.update(mqCluster.getId(), addr, CheckStatusEnum.FAIL);
-                statList.add("addr:" + addr + ";Exception: " + e.getMessage());
-            } finally {
-                try {
-                    socket.close();
-                } catch (Exception e) {
-                }
+            Result<?> result = proxyService.healthCheck(proxy.getAddr());
+            if (result.isOK()) {
+                proxyService.update(mqCluster.getId(), proxy.getAddr(), CheckStatusEnum.OK);
+            } else {
+                proxyService.update(mqCluster.getId(), proxy.getAddr(), CheckStatusEnum.FAIL);
+                statList.add(result.getMessage());
             }
         });
         if (statList.size() == 0) {

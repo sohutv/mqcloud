@@ -182,7 +182,7 @@
 									<button title="slave可以直接进行关闭" type="button" class="btn btn-xs btn-danger" data-target="#brokerOfflineModal${i}" onclick="program('${brokerGroup[key][bkey].brokerAddr}', 'brokerOfflineProgram${i}')" data-toggle="modal">下线</button>
 								</#if>
 								<#else>
-									<button title="启动broker" data-toggle="tooltip" type="button" id="${key}<#if bkey != "0">-s</#if>Btn" class="btn btn-xs btn-info" onclick="startupBroker('${brokerGroup[key][bkey].brokerAddr}', '${key}<#if bkey != "0">-s</#if>', '${brokerGroup[key][bkey].baseDir!}')">启动</button>
+									<button id="brokerBtn${i}" title="启动" data-toggle="tooltip" type="button" id="${key}<#if bkey != "0">-s</#if>Btn" class="btn btn-xs btn-success" onclick="startupBroker('${brokerGroup[key][bkey].brokerAddr}', '${key}<#if bkey != "0">-s</#if>', '${brokerGroup[key][bkey].baseDir!}', 'brokerBtn${i}')">启动</button>
 									<button title="在当前机器更新broker并保留数据" type="button" class="btn btn-xs btn-info"  onclick="upgradeBroker('${brokerGroup[key][bkey].brokerAddr}', '${key}<#if bkey != "0">-s${bkey}</#if>', '${brokerGroup[key][bkey].baseDir!}')" data-target="#upgradeBrokerModal" data-toggle="modal">升级</button>
 									<button title="将当前机器broker数据迁移至远程机器" type="button" class="btn btn-xs btn-info"  onclick="migrateBrokerData('${brokerGroup[key][bkey].brokerAddr}', '${brokerGroup[key][bkey].baseDir!}')" data-target="#migrateBrokerDataModal" data-toggle="modal">数据迁移</button>
 								</#if>
@@ -373,7 +373,7 @@
 							</div>
 							<div class="modal-footer">
 								<button type="button" data-dismiss="modal" class="btn btn-light" >取消</button>
-								<button type="button" class="btn btn-primary" onclick="brokerOffline('brokerOffline${i}')" id="brokerOffline${i}Btn">确定</button>
+								<button type="button" class="btn btn-primary" onclick="brokerOffline('brokerOffline${i}', 'brokerOffline${i}Btn')" id="brokerOffline${i}Btn">确定</button>
 							</div>
 						</form>
 					</div>
@@ -1736,13 +1736,15 @@ function program(addr, programId){
 /**
  * 下线
  */
-function brokerOffline(formId){
+function brokerOffline(formId, btnId){
+	disable(btnId);
 	post('${request.contextPath}/admin/deploy/_shutdown', $("#"+formId).serialize(), function(data){
 		if (data.status == 200) {
-			toastr.success("下线成功");
+			toastr.success("下线成功, 系统将自动刷新");
 			reload(3000);
 		} else {
 			toastr.error("操作失败！" + data.message);
+			enable(btnId);
 		}
 	}, 'json');
 }
@@ -2091,7 +2093,8 @@ function modifyBrokerConfig(isCluster){
 /**
  * 启动实例
  */
-function startupBroker(ipAddr, brokerName, dir){
+function startupBroker(ipAddr, brokerName, dir, btnId){
+	disable(btnId);
 	post('${request.contextPath}/admin/deploy/startup/broker', {
 		ipAddr: ipAddr,
 		dir: dir
@@ -2101,6 +2104,7 @@ function startupBroker(ipAddr, brokerName, dir){
 			reload(5000);
 		} else {
 			toastr.error("启动失败！" + data.message);
+			enable(btnId);
 		}
 	}, 'json');
 }

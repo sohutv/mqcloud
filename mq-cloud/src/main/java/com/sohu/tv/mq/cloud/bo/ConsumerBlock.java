@@ -1,5 +1,7 @@
 package com.sohu.tv.mq.cloud.bo;
 
+import com.sohu.tv.mq.cloud.util.WebUtil;
+
 import java.util.Date;
 
 /**
@@ -89,8 +91,8 @@ public class ConsumerBlock {
         this.qid = qid;
     }
 
-    public long getBlockTimeInSecs() {
-        return blockTime / 1000;
+    public String getBlockTimeFormat() {
+        return WebUtil.timeFormat(blockTime);
     }
 
     @Override

@@ -38,7 +38,8 @@ public interface ControllerDao {
             + "<if test=\"baseDir != null\">,base_dir</if> "
             + ") values(#{cid},#{addr}"
             + "<if test=\"baseDir != null\">,#{baseDir}</if> "
-            + ")</script>")
+            + ") <if test=\"baseDir != null\">on duplicate key update base_dir=values(base_dir)</if>" +
+            "</script>")
     public Integer insert(@Param("cid") int cid, @Param("addr") String addr, @Param("baseDir") String baseDir);
 
     /**

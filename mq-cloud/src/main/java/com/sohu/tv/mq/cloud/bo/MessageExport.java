@@ -1,6 +1,7 @@
 package com.sohu.tv.mq.cloud.bo;
 
 import com.sohu.tv.mq.cloud.util.DateUtil;
+import com.sohu.tv.mq.cloud.util.WebUtil;
 
 import java.util.Date;
 
@@ -134,9 +135,9 @@ public class MessageExport {
      *
      * @return
      */
-    public long getUpdateTimeDelayMinutes() {
-        double delay = System.currentTimeMillis() - updateTime.getTime();
-        return (long) (delay / 1000 / 60);
+    public String getUpdateTimeDelayFormat() {
+        long delay = System.currentTimeMillis() - updateTime.getTime();
+        return WebUtil.timeFormat(delay);
     }
 
     public void setUpdateTime(Date updateTime) {

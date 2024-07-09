@@ -3,6 +3,7 @@ package com.sohu.tv.mq.cloud.service;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.sohu.tv.mq.cloud.util.WebUtil;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -32,12 +33,11 @@ public class UserWarnServiceTest {
         content.append("</b> 的消费者：<b>");
         content.append(consumer);
         content.append("</b> 检测到堆积，总堆积消息量：");
-        content.append(1024);
+        content.append(WebUtil.countFormat(460932));
         content.append("，单个队列最大堆积消息量：");
-        content.append(10);
+        content.append(WebUtil.countFormat(30738));
         content.append("，消费滞后时间(相对于broker最新消息时间)：");
-        content.append(80);
-        content.append("秒");
+        content.append(WebUtil.timeFormat(351084000));
         UserWarn userWarn = new UserWarn();
         userWarn.setContent(content.toString());
         Result<UserWarn> rst = userWarnService.saveWarnContent(userWarn);

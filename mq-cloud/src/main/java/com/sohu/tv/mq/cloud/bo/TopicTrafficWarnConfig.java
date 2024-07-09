@@ -15,6 +15,8 @@ public class TopicTrafficWarnConfig {
     private Integer alarmReceiver;
     // topic名称
     private String topic;
+    // 最新告警数量
+    private Long minWarnCount;
 
     public TopicTrafficWarnConfig() {}
 
@@ -30,6 +32,9 @@ public class TopicTrafficWarnConfig {
         }
         if (this.alarmReceiver == null) {
             this.alarmReceiver = defaultConfig.getAlarmReceiver();
+        }
+        if (this.minWarnCount == null) {
+            this.minWarnCount = defaultConfig.getMinWarnCount();
         }
     }
     /**
@@ -78,5 +83,13 @@ public class TopicTrafficWarnConfig {
 
     public void setTopic(String topic) {
         this.topic = topic;
+    }
+
+    public Long getMinWarnCount() {
+        return minWarnCount;
+    }
+
+    public void setMinWarnCount(Long minWarnCount) {
+        this.minWarnCount = minWarnCount;
     }
 }

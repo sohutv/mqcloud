@@ -14,6 +14,7 @@
         <table class="table table table-hover text-nowrap">
             <thead>
             <tr class="text-center ">
+                <th data-toggle="tooltip" title="当流量大于等于该值才会预警">最小预警数量</th>
                 <th data-toggle="tooltip" title="用于异常流量值判定,大于平均值乘以该参数则认为是异常流量,在统计分析中会被剔除">平均值系数</th>
                 <th data-toggle="tooltip" title="检测时，当前流量大于最大值平均值的增幅百分比，则预警">最大值的平均值增幅</th>
                 <th data-toggle="tooltip" title="检测时，当前流量大于最大值的增幅百分比，预警">最大值增幅</th>
@@ -24,13 +25,18 @@
             <tbody>
             <#if !response.OK || !response.result.defaultConfig??>
             <tr>
-                <td colspan="8"class="text-center" >
+                <td colspan="6" class="text-center">
                     暂无数据
                 </td>
             <tr>
             <#else>
                 <#assign defaultConfig = response.result.defaultConfig>
                 <tr class="text-center ">
+                    <td>
+                        <#if defaultConfig.minWarnCount??>
+                            ${defaultConfig.minWarnCount}
+                        </#if>
+                    </td>
                     <td>
                         <#if defaultConfig.avgMultiplier??>
                             ${defaultConfig.avgMultiplier?string('#.##')}倍
@@ -72,9 +78,10 @@
     <div class="card-body table-responsive p-0">
         <table class="table table-head-fixed table-striped" style="word-break:break-all; word-wrap:break-all;table-layout: fixed">
             <colgroup>
-                <col width="80px">
+                <col width="68px">
                 <col width="200px">
                 <col width="200px">
+                <col width="120px">
                 <col width="120px">
                 <col width="120px">
                 <col width="120px">
@@ -84,6 +91,7 @@
             <tr class="text-center">
                 <th>序号</th>
                 <th>topic</th>
+                <th>最小预警数量</th>
                 <th>平均值系数</th>
                 <th>最大值的平均值增幅</th>
                 <th>最大值增幅</th>
@@ -94,38 +102,43 @@
             <tbody>
             <#if !response.OK || !response.result.customConfigList??>
             <tr>
-                <td colspan="9"class="text-center" >
+                <td colspan="8" class="text-center">
                     暂无数据
                 </td>
             <tr>
-                <#else>
-                <#list response.result.customConfigList as alarmConfig>
+            <#else>
+            <#list response.result.customConfigList as alarmConfig>
             <tr class="text-center ">
                 <td>${alarmConfig_index+1}</td>
                 <td>${alarmConfig.topic}</td>
-                <td>
+                <td data-toggle="tooltip" title="当流量超过${alarmConfig.minWarnCount!defaultConfig.minWarnCount}才会预警">
+                    <#if alarmConfig.minWarnCount??>
+                        ${alarmConfig.minWarnCount}
+                    </#if>
+                </td>
+                <td data-toggle="tooltip" title="平均值系数为${alarmConfig.avgMultiplier!defaultConfig.avgMultiplier}倍">
                     <#if alarmConfig.avgMultiplier??>
-                    ${alarmConfig.avgMultiplier?string('#.##')}倍
-                </#if>
+                        ${alarmConfig.avgMultiplier?string('#.##')}倍
+                    </#if>
                 </td>
-                <td>
+                <td data-toggle="tooltip" title="最大值的平均值增幅为${alarmConfig.avgMaxPercentageIncrease!defaultConfig.avgMaxPercentageIncrease}%">
                     <#if alarmConfig.avgMaxPercentageIncrease??>
-                    ${alarmConfig.avgMaxPercentageIncrease?string('#.##')}%
-                </#if>
+                        ${alarmConfig.avgMaxPercentageIncrease?string('#.##')}%
+                    </#if>
                 </td>
-                <td>
+                <td data-toggle="tooltip" title="最大值增幅为${alarmConfig.maxMaxPercentageIncrease!defaultConfig.maxMaxPercentageIncrease}%">
                     <#if alarmConfig.maxMaxPercentageIncrease??>
-                    ${alarmConfig.maxMaxPercentageIncrease?string('#.##')}%
-                </#if>
+                        ${alarmConfig.maxMaxPercentageIncrease?string('#.##')}%
+                    </#if>
                 </td>
                 <td>
                     <#switch alarmConfig.alarmReceiver>
-                    <#case 0>生产者消费者及管理员<#break>
-                    <#case 1>生产者及管理员<#break>
-                    <#case 2>消费者及管理员<#break>
-                    <#case 3>仅管理员<#break>
-                    <#case 4>不报警<#break>
-                </#switch>
+                        <#case 0>生产者消费者及管理员<#break>
+                        <#case 1>生产者及管理员<#break>
+                        <#case 2>消费者及管理员<#break>
+                        <#case 3>仅管理员<#break>
+                        <#case 4>不报警<#break>
+                    </#switch>
                 </td>
                 <td>
                     <button type="button" onclick="updateAlarmConfig('${alarmConfig.topic}',true)" class="btn btn-warning"><span class="fas fa-edit" aria-hidden="true"></span></button>
@@ -164,6 +177,15 @@
                                 <option value="3">仅管理员</option>
                                 <option value="4">不报警</option>
                             </select>
+                        </div>
+                    </div>
+                    <div class="form-group row justify-content-center" id="minWarnCountID">
+                        <label class="col-form-label col-md-4"> 最小预警数量: </label>
+                        <div class="col-md-5">
+                            <div class="input-group">
+                                <input type="text" id="minWarnCountInput" name="minWarnCount"
+                                       data-toggle="modal" title="最小预警数量,默认100" class="form-control" />
+                            </div>
                         </div>
                     </div>
                     <div class="form-group row justify-content-center" id="avgMultiplierID">
@@ -304,6 +326,7 @@
             function(data){
                 if(data.status == 200){
                     $("#isAddAlarmRecord").val(1); // 设置为修改状态
+                    $("#minWarnCountInput").val(data.result.minWarnCount == null ? '':data.result.minWarnCount);
                     $("#avgMultiplierInput").val(data.result.avgMultiplier == null ? '':data.result.avgMultiplier);
                     $("#avgMaxPercentageIncreaseInput").val(data.result.avgMaxPercentageIncrease == null ? '':data.result.avgMaxPercentageIncrease);
                     $("#maxMaxPercentageIncreaseInput").val(data.result.maxMaxPercentageIncrease == null ? '':data.result.maxMaxPercentageIncrease);

@@ -1,16 +1,6 @@
 package com.sohu.tv.mq.cloud.web.controller.admin;
 
-import java.util.List;
-import java.util.Map;
-
-import org.apache.commons.lang3.math.NumberUtils;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
-
+import com.sohu.tv.mq.cloud.bo.CheckStatusEnum;
 import com.sohu.tv.mq.cloud.bo.Cluster;
 import com.sohu.tv.mq.cloud.bo.NameServer;
 import com.sohu.tv.mq.cloud.service.ClusterService;
@@ -20,6 +10,16 @@ import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper;
 import com.sohu.tv.mq.cloud.util.Result;
 import com.sohu.tv.mq.cloud.util.Status;
 import com.sohu.tv.mq.cloud.web.vo.UserInfo;
+import org.apache.commons.lang3.math.NumberUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import java.util.List;
+import java.util.Map;
 
 /**
  * name server
@@ -51,6 +51,17 @@ public class AdminNameServerController extends AdminViewController {
             return view();
         }
         Result<List<NameServer>> result = nameServerService.query(mqCluster.getId());
+        if (result.isNotEmpty()) {
+            // 检查状态
+            result.getResult().forEach(nameServer -> {
+                Result<?> healthCheckResult = nameServerService.healthCheck(mqCluster, nameServer.getAddr());
+                if (healthCheckResult.isOK()) {
+                    nameServer.setCheckStatus(CheckStatusEnum.OK.getStatus());
+                } else {
+                    nameServer.setCheckStatus(CheckStatusEnum.FAIL.getStatus());
+                }
+            });
+        }
         setResult(map, result);
         setResult(map, "clusters", clusterService.getAllMQCluster());
         setResult(map, "selectedCluster", mqCluster);
@@ -90,8 +101,6 @@ public class AdminNameServerController extends AdminViewController {
     /**
      * 下线
      * 
-     * @param cid
-     * @param broker
      * @return
      */
     @ResponseBody
@@ -106,11 +115,7 @@ public class AdminNameServerController extends AdminViewController {
         if (port == 0) {
             return Result.getResult(Status.PARAM_ERROR);
         }
-        Result<?> result = mqDeployer.shutdown(ip, port);
-        if (result.isOK()) {
-            nameServerService.delete(cid, addr);
-        }
-        return result;
+        return mqDeployer.shutdown(ip, port);
     }
     
     /**
