@@ -13,7 +13,6 @@ import com.sohu.tv.mq.cloud.web.vo.UserInfo;
 import com.sohu.tv.mq.metric.StackTraceMetric;
 import com.sohu.tv.mq.util.CommonUtil;
 import com.sohu.tv.mq.util.Constant;
-import com.sohu.tv.mq.util.JSONUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.message.MessageQueue;
@@ -755,8 +754,8 @@ public class ConsumerController extends ViewController {
      */
     @ResponseBody
     @RequestMapping("/queue/owner")
-    public Result<?> queueRoute(UserInfo userInfo, @RequestParam("cid") int cid,
-            @RequestParam("consumer") String consumerName) throws Exception {
+    public Result<?> queueOwner(UserInfo userInfo, @RequestParam("cid") int cid,
+                                @RequestParam("consumer") String consumerName) throws Exception {
         Cluster cluster = clusterService.getMQClusterById(cid);
         // 获取消费者运行时信息
         Consumer consumer = consumerService.queryConsumerByName(consumerName).getResult();
@@ -767,37 +766,63 @@ public class ConsumerController extends ViewController {
         }
         ConsumerConfig consumerConfig = consumerConfigService.getConsumerConfig(consumerName);
         // 组装vo
-        List<QueueOwnerVO> queueConsumerVOList = new ArrayList<QueueOwnerVO>();
+        List<QueueOwnerVO> queueConsumerVOList = new ArrayList<>();
         for (String clientId : map.keySet()) {
             boolean addConsumerRunningInfo = false;
             String ip = clientId.substring(0, clientId.indexOf("@"));
             ConsumerRunningInfo consumerRunningInfo = map.get(clientId);
             for (MessageQueue messageQueue : consumerRunningInfo.getMqTable().keySet()) {
                 QueueOwnerVO queueOwnerVO = new QueueOwnerVO();
-                if (!addConsumerRunningInfo
-                        && !CommonUtil.isRetryTopic(messageQueue.getTopic())
-                        && !CommonUtil.isDeadTopic(messageQueue.getTopic())) {
-                    ConsumerRunningInfoVO consumerRunningInfoVO = ConsumerRunningInfoVO.toConsumerRunningInfoVO(consumerRunningInfo);
-                    queueOwnerVO.setConsumerRunningInfoJson(JSONUtil.toJSONString(consumerRunningInfoVO));
-                    addConsumerRunningInfo = true;
+                if (!addConsumerRunningInfo) {
+                    addConsumerRunningInfo = setConsumerRunningInfo(messageQueue, consumerRunningInfo, queueOwnerVO);
                 }
                 BeanUtils.copyProperties(messageQueue, queueOwnerVO);
                 queueOwnerVO.setClientId(clientId);
                 queueOwnerVO.setIp(ip);
-                if (consumerConfig != null) {
-                    if (CollectionUtils.isEmpty(consumerConfig.getPauseConfig())) {
-                        if (consumerConfig.getPause() != null && consumerConfig.getPause()) {
-                            queueOwnerVO.setPaused(true);
-                            queueOwnerVO.setDisablePause(true);
-                        }
-                    } else if (consumerConfig.containsPauseConfig(clientId)) {
-                        queueOwnerVO.setPaused(true);
-                    }
-                }
+                setPauseInfo(consumerConfig, queueOwnerVO);
                 queueConsumerVOList.add(queueOwnerVO);
             }
         }
         return Result.getResult(queueConsumerVOList);
+    }
+
+    /**
+     * 设置消费者运行时信息
+     * @param messageQueue
+     * @param consumerRunningInfo
+     * @param queueOwnerVO
+     * @return
+     */
+    private boolean setConsumerRunningInfo(MessageQueue messageQueue, ConsumerRunningInfo consumerRunningInfo, QueueOwnerVO queueOwnerVO){
+        if (CommonUtil.isRetryTopic(messageQueue.getTopic()) || CommonUtil.isDeadTopic(messageQueue.getTopic())) {
+            return false;
+        }
+        ConsumerRunningInfoVO consumerRunningInfoVO = new ConsumerRunningInfoVO(consumerRunningInfo);
+        queueOwnerVO.setShowClientInfo(true);
+        queueOwnerVO.setWarnInfo(consumerRunningInfoVO.getWarnInfo());
+        queueOwnerVO.setLanguage(consumerRunningInfoVO.getLanguage());
+        queueOwnerVO.setConsumeFailed(consumerRunningInfoVO.isConsumeFailed());
+        queueOwnerVO.setFlowControlled(consumerRunningInfoVO.isFlowControled());
+        return true;
+    }
+
+    /**
+     * 设置暂停信息
+     * @param consumerConfig
+     * @param queueOwnerVO
+     */
+    private void setPauseInfo(ConsumerConfig consumerConfig, QueueOwnerVO queueOwnerVO) {
+        if (consumerConfig == null) {
+            return;
+        }
+        if (CollectionUtils.isEmpty(consumerConfig.getPauseConfig())) {
+            if (consumerConfig.getPause() != null && consumerConfig.getPause()) {
+                queueOwnerVO.setPaused(true);
+                queueOwnerVO.setDisablePause(true);
+            }
+        } else if (consumerConfig.containsPauseConfig(queueOwnerVO.getClientId())) {
+            queueOwnerVO.setPaused(true);
+        }
     }
 
     /**
@@ -1237,6 +1262,27 @@ public class ConsumerController extends ViewController {
     public String stats(UserInfo userInfo, @RequestParam("consumer") String consumer, Map<String, Object> map)
             throws Exception {
         return viewModule() + "/stats";
+    }
+
+    /**
+     * 客户端信息
+     */
+    @RequestMapping("/clientInfo")
+    public String clientInfo(@RequestParam("clientId") String clientId, @RequestParam("cid") int cid,
+                             @RequestParam("consumer") String consumerName, Map<String, Object> map) throws Exception {
+        String view = viewModule() + "/clientInfo";
+        Cluster cluster = clusterService.getMQClusterById(cid);
+        // 获取消费者运行时信息
+        Consumer consumer = consumerService.queryConsumerByName(consumerName).getResult();
+        Result<ConsumerRunningInfo> result = consumerService.getConsumerRunningInfo(cluster, consumerName, clientId,
+                consumer.isProxyRemoting());
+        if (result.isNotOK()) {
+            setResult(map, result);
+        }
+        ConsumeStats consumeStats = consumerService.examineConsumeStats(cluster, consumerName).getResult();
+        ConsumerRunningInfo consumerRunningInfo = result.getResult();
+        setResult(map, new ConsumerRunningInfoVO(consumerRunningInfo, consumeStats));
+        return view;
     }
 
     @Override

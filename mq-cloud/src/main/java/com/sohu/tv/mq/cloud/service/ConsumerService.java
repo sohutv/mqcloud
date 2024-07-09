@@ -974,6 +974,13 @@ public class ConsumerService {
             ConsumerRunningInfo consumerRunningInfo = getConsumerRunningInfo(cluster, consumerGroup, clientId,
                     isProxyRemoting).getResult();
             if (consumerRunningInfo != null) {
+                if (!consumerRunningInfo.getProperties().containsKey("language")) {
+                    if (LanguageCode.CPP.equals(connection.getLanguage())) {
+                        consumerRunningInfo.getProperties().put("language", LanguageCode.PYTHON.name());
+                    } else {
+                        consumerRunningInfo.getProperties().put("language", connection.getLanguage().name());
+                    }
+                }
                 infoMap.put(clientId, consumerRunningInfo);
             }
         }

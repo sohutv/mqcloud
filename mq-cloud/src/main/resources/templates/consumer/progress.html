@@ -13,6 +13,10 @@
 		font-weight: normal;
 		font-size:12px;
 	}
+	.tooltip .tooltip-inner {
+		max-width: 500px;
+		text-align: left;
+	}
 </style>
 <div class="row">
 <div class="col-md-12">
@@ -91,12 +95,16 @@
 									<p class="m-1"><span class="text-muted">归属于:</span>&nbsp;&nbsp;
 									<#if consumerProgressVO.ownerList??>
 										<#if consumerProgressVO.ownerList?seq_contains(userInfo.user) || userInfo.user.type == 1>
-											<#list consumerProgressVO.ownerList as user>
-												<#if user_index != 0>
-												,
-												</#if>
-												<span onclick="prepareDeleteUserConsumer(${user.id},'${user.name!user.getEmailName()}',${consumerProgressVO.consumer.id})" data-toggle="tooltip" title="移除${user.name!user.getEmailName()}?" class="producer_delete pointer">${user.name!user.getEmailName()}</span>
-											</#list>
+											<#if consumerProgressVO.ownerList?size == 1>
+												<span>${consumerProgressVO.ownerList[0].name!consumerProgressVO.ownerList[0].getEmailName()}</span>
+											<#else>
+												<#list consumerProgressVO.ownerList as user>
+													<#if user_index != 0>
+													,
+													</#if>
+													<span onclick="prepareDeleteUserConsumer(${user.id},'${user.name!user.getEmailName()}',${consumerProgressVO.consumer.id})" data-toggle="tooltip" title="移除${user.name!user.getEmailName()}?" class="producer_delete pointer">${user.name!user.getEmailName()}</span>
+												</#list>
+											</#if>
 											<span data-toggle="tooltip" title="授权其他用户查看${consumerProgressVO.consumer.name}?"><i onclick="associateUserConsumer(${consumerProgressVO.consumer.id},'${consumerProgressVO.consumer.name}')" class="fas fa-user-plus fa-xs text-secondary pointer"></i></span>
 										<#else>
 											<#list consumerProgressVO.ownerList as user>
@@ -283,7 +291,7 @@
 														<tbody>
 															<#list consumerProgressVO.offsetMap as k, v>
 																<tr>
-																	<td id="0_${consumerProgressVO.consumer.id}_${k.brokerName}_${k.queueId}" onclick="consumerRunningInfoModelShow(this)"></td>
+																	<td id="0_${consumerProgressVO.consumer.id}_${k.brokerName}_${k.queueId}" onclick="consumerRunningInfoModelShow('${consumerProgressVO.consumer.name}', this)"></td>
 																	<td>${k.brokerName}</td>
 																	<td>${k.queueId}</td>
 																	<td class="d-none d-sm-table-cell">
@@ -304,8 +312,8 @@
 																	</#if>
 																	<td>
 																		<#if consumerProgressVO.version??>
-																			<button type="button" class="btn btn-xs btn-outline-secondary" data-toggle="tooltip" title="消费线程诊断" onclick="showThreadMetricsForClustering('0_${consumerProgressVO.consumer.id}_${k.brokerName}_${k.queueId}', '${consumerProgressVO.consumer.name}')"><i class="fas fa-stethoscope"></i></button>
-																			<button type="button" class="btn btn-xs btn-outline-secondary" data-toggle="tooltip" title="消费异常诊断" onclick="showFailedMetricsForClustering('0_${consumerProgressVO.consumer.id}_${k.brokerName}_${k.queueId}', '${consumerProgressVO.consumer.name}')"><i class="fas fa-exclamation-circle"></i></button>
+																			<button id="0_${consumerProgressVO.consumer.id}_${k.brokerName}_${k.queueId}_thread" type="button" class="btn btn-xs btn-outline-secondary" data-toggle="tooltip" title="消费线程诊断" onclick="showThreadMetricsForClustering('0_${consumerProgressVO.consumer.id}_${k.brokerName}_${k.queueId}', '${consumerProgressVO.consumer.name}')"><i class="fas fa-stethoscope"></i></button>
+																			<button id="0_${consumerProgressVO.consumer.id}_${k.brokerName}_${k.queueId}_excption" type="button" class="btn btn-xs btn-outline-secondary" data-toggle="tooltip" title="消费异常诊断" onclick="showFailedMetricsForClustering('0_${consumerProgressVO.consumer.id}_${k.brokerName}_${k.queueId}', '${consumerProgressVO.consumer.name}')"><i class="fas fa-exclamation-circle"></i></button>
 																			<button id="0_${consumerProgressVO.consumer.id}_${k.brokerName}_${k.queueId}_pause" style="display: none" type="button" data-clientId="" class="btn btn-xs btn-outline-secondary" data-toggle="tooltip" title="暂停消费实例" onclick="showPauseConsumeConfigModel(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', true, this)"><i class="fas fa-pause-circle"></i></button>
 																			<button id="0_${consumerProgressVO.consumer.id}_${k.brokerName}_${k.queueId}_resume" style="display: none" type="button" data-clientId="" class="btn btn-xs btn-outline-secondary" data-toggle="tooltip" title="恢复消费实例" onclick="showPauseConsumeConfigModel(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', false, this)"><i class="fas fa-play-circle"></i></button>
 																		<#else>
@@ -395,12 +403,16 @@
 									<p class="m-1"><span class="text-muted">归属于:</span>&nbsp;&nbsp;
 									<#if consumerProgressVO.ownerList??>
 										<#if consumerProgressVO.ownerList?seq_contains(userInfo.user) || userInfo.user.type == 1>
-											<#list consumerProgressVO.ownerList as user>
-												<#if user_index != 0>
-												,
-												</#if>
-												<span onclick="prepareDeleteUserConsumer(${user.id},'${user.name!user.getEmailName()}',${consumerProgressVO.consumer.id})" data-toggle="tooltip" title="移除${user.name!user.getEmailName()}?" class="producer_delete pointer">${user.name!user.getEmailName()}</span>
-											</#list>
+											<#if consumerProgressVO.ownerList?size == 1>
+												<span>${consumerProgressVO.ownerList[0].name!consumerProgressVO.ownerList[0].getEmailName()}</span>
+											<#else>
+												<#list consumerProgressVO.ownerList as user>
+													<#if user_index != 0>
+													,
+													</#if>
+													<span onclick="prepareDeleteUserConsumer(${user.id},'${user.name!user.getEmailName()}',${consumerProgressVO.consumer.id})" data-toggle="tooltip" title="移除${user.name!user.getEmailName()}?" class="producer_delete pointer">${user.name!user.getEmailName()}</span>
+												</#list>
+											</#if>
 											<span data-toggle="tooltip" title="授权其他用户查看${consumerProgressVO.consumer.name}?"><i onclick="associateUserConsumer(${consumerProgressVO.consumer.id},'${consumerProgressVO.consumer.name}')" class="fas fa-user-plus fa-xs text-secondary pointer"></i></span>
 										<#else>
 											<#list consumerProgressVO.ownerList as user>
@@ -1337,17 +1349,17 @@
 	</div>
 </div>
 
-<!-- 客户端指标 -->
-<div id="consumerRunningInfoModel" class="modal fade">
-	<div class="modal-dialog modal-xl">
+<!-- 客户端实时信息 -->
+<div id="consumerRunningInfoModel" class="modal fade"  style="overflow-y: auto;">
+	<div class="modal-dialog  modal-xl">
 		<div class="modal-content">
 			<div class="modal-header">
-				<h5 class="modal-title">客户端指标</h5>
-				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+				<h5 class="modal-title"><span id="consumerRunningInfoClientIdSpan"></span>实时消费状况</h5>
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+					<span aria-hidden="true">&times;</span>
+				</button>
 			</div>
-			<div class="modal-body">
-				<div id="consumerRunningInfoJsonView">
-				</div>
+			<div class="modal-body" id="consumerRunningInfoModelBody">
 			</div>
 		</div>
 	</div>
@@ -1962,23 +1974,34 @@ function getQueueOwner(consumer, consumerId){
         		var id = "#" + data.result[i].topicType + "_" + consumerId + "_" + data.result[i].brokerName + "_" + data.result[i].queueId;
 				var prevTitle = $(id).attr("title");
 				if (prevTitle) {
-					prevTitle += ","
+					prevTitle += "<br/>"
 				} else {
 					prevTitle = "";
 				}
-				if(data.result[i].hasOwnProperty('consumerRunningInfoJson')){
-					$(id).attr("data", data.result[i].consumerRunningInfoJson);
+				if (data.result[i].showClientInfo) {
 					$(id).addClass("text-primary pointer");
-					$(id).attr("title", prevTitle + "查看"+data.result[i].clientId+"详情");
+					if (data.result[i].hasOwnProperty('warnInfo')) {
+						$(id).addClass("bg-warning");
+						$(id).attr("title", prevTitle + data.result[i].warnInfo);
+						if (data.result[i].consumeFailed) {
+							$(id + "_excption").addClass("bg-warning");
+						}
+						if (data.result[i].flowControlled) {
+							$(id + "_thread").addClass("bg-warning");
+						}
+					} else {
+						$(id).attr("title", prevTitle + "查看" + data.result[i].language + ":" + data.result[i].clientId + "详情");
+					}
 				} else {
 					$(id).attr("title", prevTitle + data.result[i].clientId);
 				}
-        		var prevContent = $(id).html();
-        		if(prevContent){
-        			prevContent += ","
-        		}
-        		$(id).attr("clientId", data.result[i].clientId);
-	        	$(id).html(prevContent + data.result[i].ip);
+				var prevContent = $(id).html();
+				if (prevContent) {
+					prevContent += "<br/>"
+				}
+				$(id).attr("clientId", data.result[i].clientId);
+				$(id).html(prevContent + data.result[i].ip);
+				$(id).attr("data-html", "true");
 				$(id).attr("data-placement", "right");
 				$(id).tooltip({boundary: 'window'});
 				// 设置是否暂停
@@ -2331,13 +2354,6 @@ function toggleMsgCheck(box) {
 	});
 }
 
-function consumerRunningInfoModelShow(comp) {
-	if(comp.hasAttribute("data")){
-		$("#consumerRunningInfoJsonView").jsonViewer(JSON.parse($(comp).attr("data")));
-		$("#consumerRunningInfoModel").modal('show');
-	}
-}
-
 var curConsumer;
 function showConsumerStats(consumer){
 	curConsumer = consumer;
@@ -2357,6 +2373,25 @@ function consumerStats(){
 	},
 	function(data){
 		$("#consumerStatsChart").html(data);
+	});
+}
+
+function consumerRunningInfoModelShow(consumer, comp) {
+	var clientId = $(comp).attr("clientId");
+	if (!clientId) {
+		alert("没有获取客户端链接无法进行操作");
+		return;
+	}
+	$.get('${request.contextPath}/consumer/clientInfo',
+	{
+		consumer: consumer,
+		clientId: clientId,
+		cid: ${topic.clusterId}
+	},
+	function(data){
+		$("#consumerRunningInfoClientIdSpan").html(clientId);
+		$("#consumerRunningInfoModelBody").html(data);
+		$('#consumerRunningInfoModel').modal('show');
 	});
 }
 </script>

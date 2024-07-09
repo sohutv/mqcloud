@@ -1,0 +1,192 @@
+<#if response.notOK>
+<div class="card mt-2">
+    <div class="card-header">
+        <b>错误：${response.message!}</b>
+    </div>
+</div>
+<#else>
+
+<!-- 客户端指标 -->
+<div id="consumerRunningJsonModel" class="modal fade">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">客户端指标</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="consumerRunningInfoJsonView">
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card mt-2">
+    <div class="card-header">
+        <b><a href="#" data-toggle="tooltip" title="点击查看更多数据" onclick="consumerRunningJsonModelShow()">客户端属性</a></b>
+    </div>
+    <div class="card-body table-responsive p-0">
+        <table class="table table-striped text-nowrap">
+            <tbody>
+                <tr>
+                    <td class="text-muted">启动时间</td>
+                    <td>${response.result.startTimeFormat!"暂无"}</td>
+                    <td class="text-muted" data-toggle="tooltip" title="单个队列缓存消息超过${response.result.pullThresholdForQueue}条将不再拉取新消息">限流消息量</td>
+                    <td>${response.result.pullThresholdForQueue}</td>
+                </tr>
+                <tr>
+                    <td class="text-muted">消费线程数量</td>
+                    <td>${response.result.threadpoolCoreSize!"未知"}</td>
+                    <td class="text-muted" data-toggle="tooltip" title="单个队列缓存消息超过${response.result.pullThresholdSizeForQueue}M将不再拉取新消息">限流消息大小</td>
+                    <td>${response.result.pullThresholdSizeForQueue}M</td>
+                </tr>
+                <tr>
+                    <td class="text-muted">顺序消费</td>
+                    <td><#if response.result.consumeOrderly>是<#else>否</#if></td>
+                    <td class="text-muted" data-toggle="tooltip" title="单个队列缓存消息跨度超过${response.result.consumeConcurrentlyMaxSpan}将不再拉取新消息">限流消息跨度</td>
+                    <td>${response.result.consumeConcurrentlyMaxSpan}</td>
+                </tr>
+                <tr>
+                    <td class="text-muted">批处理消息量</td>
+                    <td>${response.result.consumeMessageBatchMaxSize!"1"}</td>
+                    <td class="text-muted" data-toggle="tooltip" title="消费超过${response.result.consumeTimeout!15}分钟则会进行重试">消费超时时间</td>
+                    <td>${response.result.consumeTimeout!"15"}分钟</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<#if response.result.retryTopicConsumeStatus?? || response.result.topicConsumeStatus??>
+<div class="card mt-2">
+    <div class="card-header">
+        <b>近一分钟客户端消费平均状况统计</b>
+    </div>
+    <div class="card-body table-responsive p-0">
+        <table class="table table-striped text-nowrap">
+            <thead>
+            <tr>
+                <th>队列类型</th>
+                <th>消息拉取TPS</th>
+                <th>消息拉取耗时</th>
+                <th>消费成功TPS</th>
+                <th>消费失败TPS</th>
+                <th>消费耗时</th>
+                <th>近一小时消费失败量</th>
+            </tr>
+            </thead>
+            <tbody>
+            <#if response.result.retryTopicConsumeStatus??>
+            <tr>
+                <td>重试队列</td>
+                <td>${response.result.retryTopicConsumeStatus.pullTPS?string(",###.#")}</td>
+                <td>${(response.result.retryTopicConsumeStatus.pullRT/1000)?string(",###.###")}秒</td>
+                <td>${response.result.retryTopicConsumeStatus.consumeOKTPS?string(",###.#")}</td>
+                <td>${response.result.retryTopicConsumeStatus.consumeFailedTPS?string(",###.#")}</td>
+                <td>${(response.result.retryTopicConsumeStatus.consumeRT/1000)?string(",###.###")}秒</td>
+                <td <#if response.result.retryTopicConsumeStatus.consumeFailedMsgs gt 0>class="bg-warning"</#if>>${response.result.retryTopicConsumeStatus.consumeFailedMsgs}</td>
+            </tr>
+            </#if>
+            <#if response.result.topicConsumeStatus??>
+            <tr>
+                <td>普通队列</td>
+                <td>${response.result.topicConsumeStatus.pullTPS?string(",###.#")}</td>
+                <td>${(response.result.topicConsumeStatus.pullRT/1000)?string(",###.###")}秒</td>
+                <td>${response.result.topicConsumeStatus.consumeOKTPS?string(",###.#")}</td>
+                <td>${response.result.topicConsumeStatus.consumeFailedTPS?string(",###.#")}</td>
+                <td>${(response.result.topicConsumeStatus.consumeRT/1000)?string(",###.###")}秒</td>
+                <td <#if response.result.topicConsumeStatus.consumeFailedMsgs gt 0>class="bg-warning"</#if>>${response.result.topicConsumeStatus.consumeFailedMsgs}</td>
+            </tr>
+        </#if>
+        </tbody>
+        </table>
+    </div>
+</div>
+</#if>
+
+<#if response.result.retryTopicProcessQueue??>
+<div class="card mt-2">
+    <div class="card-header">
+        <b>重试队列消费详情</b>
+    </div>
+    <div class="card-body table-responsive p-0">
+        <table class="table table-striped text-nowrap">
+            <thead>
+            <tr>
+                <th>broker:queue</th>
+                <th>缓存消息量</th>
+                <th>缓存消息大小</th>
+                <th>缓存消息跨度</th>
+                <th>堆积量</th>
+                <th>消息拉取时间</th>
+                <th>消息消费时间</th>
+                <th>状态</th>
+            </tr>
+            </thead>
+            <tbody>
+            <#list response.result.retryTopicProcessQueue?keys as queue>
+                <tr>
+                    <td>${queue}</td>
+                    <td <#if response.result.retryTopicProcessQueue[queue].cachedMsgCountOverThreshold>class="bg-warning" data-toggle="tooltip" title="超过阈值:${response.result.retryTopicProcessQueue[queue].pullThresholdForQueue}"</#if>>${response.result.retryTopicProcessQueue[queue].cachedMsgCount}</td>
+                    <td <#if response.result.retryTopicProcessQueue[queue].cachedMsgSizeOverThreshold>class="bg-warning" data-toggle="tooltip" title="超过阈值:${response.result.retryTopicProcessQueue[queue].pullThresholdSizeForQueue}"</#if>>${response.result.retryTopicProcessQueue[queue].cachedMsgSizeInMiB}M</td>
+                    <td <#if response.result.retryTopicProcessQueue[queue].maxSpanOverThreshold>class="bg-warning" data-toggle="tooltip" title="超过阈值:${response.result.retryTopicProcessQueue[queue].consumeConcurrentlyMaxSpan}"</#if>>${response.result.retryTopicProcessQueue[queue].maxSpan}</td>
+                    <td>${response.result.retryTopicProcessQueue[queue].accumulationCount}</td>
+                    <td <#if response.result.retryTopicProcessQueue[queue].lastPullLate>class="bg-warning" data-toggle="tooltip" title="阈值:5分钟"</#if>>${response.result.retryTopicProcessQueue[queue].lastPullTimestampFormat}</td>
+                    <td>${response.result.retryTopicProcessQueue[queue].lastConsumeTimestampFormat}</td>
+                    <td <#if response.result.retryTopicProcessQueue[queue].droped>class="bg-warning"</#if>><#if response.result.retryTopicProcessQueue[queue].droped>废弃<#else>有效</#if></td>
+                </tr>
+            </#list>
+            </tbody>
+        </table>
+    </div>
+</div>
+</#if>
+
+<#if response.result.topicProcessQueue??>
+<div class="card mt-2">
+    <div class="card-header">
+        <b>正常队列消费详情</b>
+    </div>
+    <div class="card-body table-responsive p-0">
+        <table class="table table-striped text-nowrap">
+            <thead>
+            <tr>
+                <th>broker:queue</th>
+                <th>缓存消息量</th>
+                <th>缓存消息大小</th>
+                <th>缓存消息跨度</th>
+                <th>堆积量</th>
+                <th>消息拉取时间</th>
+                <th>消息消费时间</th>
+                <th>状态</th>
+            </tr>
+            </thead>
+            <tbody>
+            <#list response.result.topicProcessQueue?keys as queue>
+                <tr>
+                    <td>${queue}</td>
+                    <td <#if response.result.topicProcessQueue[queue].cachedMsgCountOverThreshold>class="bg-warning" data-toggle="tooltip" title="超过阈值:${response.result.topicProcessQueue[queue].pullThresholdForQueue}"</#if>>${response.result.topicProcessQueue[queue].cachedMsgCount}</td>
+                    <td <#if response.result.topicProcessQueue[queue].cachedMsgSizeOverThreshold>class="bg-warning" data-toggle="tooltip" title="超过阈值:${response.result.topicProcessQueue[queue].pullThresholdSizeForQueue}"</#if>>${response.result.topicProcessQueue[queue].cachedMsgSizeInMiB}M</td>
+                    <td <#if response.result.topicProcessQueue[queue].maxSpanOverThreshold>class="bg-warning" data-toggle="tooltip" title="超过阈值:${response.result.topicProcessQueue[queue].consumeConcurrentlyMaxSpan}"</#if>>${response.result.topicProcessQueue[queue].maxSpan}</td>
+                    <td>${response.result.topicProcessQueue[queue].accumulationCount}</td>
+                    <td <#if response.result.topicProcessQueue[queue].lastPullLate>class="bg-warning" data-toggle="tooltip" title="阈值:5分钟"</#if>>${response.result.topicProcessQueue[queue].lastPullTimestampFormat}</td>
+                    <td>${response.result.topicProcessQueue[queue].lastConsumeTimestampFormat}</td>
+                    <td <#if response.result.topicProcessQueue[queue].droped>class="bg-warning"</#if>><#if response.result.topicProcessQueue[queue].droped>废弃<#else>有效</#if></td>
+                </tr>
+            </#list>
+            </tbody>
+        </table>
+    </div>
+</div>
+</#if>
+
+<script type="text/javascript">
+    function consumerRunningJsonModelShow() {
+        $("#consumerRunningInfoJsonView").jsonViewer(${response.result.toJsonSting()});
+        $("#consumerRunningJsonModel").modal('show');
+    }
+    $("[data-toggle='tooltip']").tooltip({container: 'body'});
+</script>
+
+</#if>

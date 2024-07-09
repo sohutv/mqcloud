@@ -110,12 +110,16 @@
 											</#if>
 										</#list>
 										<#if flag == 1 || userInfo.user.type == 1>
-											<#list producers as producer>
-												<#if producer_index != 0>
-												,
-												</#if>
-												<span onclick="prepareDeleteUserProducer(${producer.id})" data-toggle="tooltip" title="移除${producer.username}?" id="producer_${producer.id}" class="producer_delete text-secondary pointer text-sm">${producer.username}</span>
-											</#list>
+											<#if producers?size == 1>
+												<span>${producers[0].username}</span>
+											<#else>
+												<#list producers as producer>
+													<#if producer_index != 0>
+													,
+													</#if>
+													<span onclick="prepareDeleteUserProducer(${producer.id})" data-toggle="tooltip" title="移除${producer.username}?" id="producer_${producer.id}" class="producer_delete text-secondary pointer text-sm">${producer.username}</span>
+												</#list>
+											</#if>
 											<span data-toggle="tooltip" title="授权其他用户查看${response.result.topic.name}?"><i class="fas fa-user-plus fa-xs text-secondary pointer" onclick="associateUserProducer('${key.producer}')"></i></span>
 										<#else>
 											<#list producers as producer>
