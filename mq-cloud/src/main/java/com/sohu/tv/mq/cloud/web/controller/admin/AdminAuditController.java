@@ -41,7 +41,7 @@ import static com.sohu.tv.mq.cloud.util.Status.WEB_ERROR;
  */
 @Controller
 @RequestMapping("/admin/audit")
-public class AuditController extends AdminViewController {
+public class AdminAuditController extends AdminViewController {
 
     @Autowired
     private AuditService auditService;

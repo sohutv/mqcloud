@@ -25,7 +25,7 @@ import java.util.Map;
  */
 @Controller
 @RequestMapping("/admin/trafficMonitor")
-public class TrafficMonitorController extends AdminViewController {
+public class AdminTrafficMonitorController extends AdminViewController {
 
     @Autowired
     private TopicTrafficWarnConfigService topicTrafficWarnConfigService;
@@ -78,6 +78,9 @@ public class TrafficMonitorController extends AdminViewController {
     @RequestMapping(value = "/config/add", method = RequestMethod.POST)
     @ResponseBody
     public Result<?> addWarnConfig(TopicTrafficWarnConfig topicTrafficWarnConfig) {
+        if (topicTrafficWarnConfig.getTopic() == null) {
+            topicTrafficWarnConfig.setTopic("");
+        }
         Result<Integer> saveResult = topicTrafficWarnConfigService.save(topicTrafficWarnConfig);
         return Result.getWebResult(saveResult);
     }
