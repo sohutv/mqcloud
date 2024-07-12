@@ -7,7 +7,7 @@
 
 ## 二、<span id="client">客户端依赖</span>
 
-使用rocketmq社区的[rocketmq-client-go](https://github.com/apache/rocketmq-client-go)，此版本为纯go语言实现，请使用最新版本2.2.1-rc2，之前的版本有某些bug，会导致生产或消费问题。
+使用rocketmq社区的[rocketmq-client-go](https://github.com/apache/rocketmq-client-go)，此版本为纯go语言实现，请使用2.1.1-rc2及之后的版本，之前的版本有bug，会导致生产或消费问题。
 
 ## 三、<span id="common">公共配置</span>
 
