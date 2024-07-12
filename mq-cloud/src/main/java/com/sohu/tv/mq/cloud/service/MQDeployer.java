@@ -845,7 +845,7 @@ public class MQDeployer {
         Result<?> result = wrapSSHResult(sshResult);
         if (result.isOK()) {
             // 检测是否已经启动
-            for (int i = 0; i < 40; ++i) {
+            for (int i = 0; i < 100; ++i) {
                 Result<?> programResult = getProgram(ip, port);
                 if (programResult != null && programResult.isOK() && programResult.getResult() != null) {
                     break;
