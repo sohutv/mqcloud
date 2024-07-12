@@ -1608,7 +1608,7 @@ $(function(){
 		format: 'YYYY-MM-DD HH:mm:ss',
 		minDate: moment({h:0, m:0, s:0, ms:0}).subtract(${cluster.fileReservedDays}, 'days'),
 		maxDate: '${.now?string("yyyy-MM-dd HH:mm:ss")}',
-		defaultDate: moment().subtract(3, 'seconds'),
+		defaultDate: '${.now?string("yyyy-MM-dd HH:mm:ss")}',
 		icons: { time: 'far fa-clock' },
 		focusOnShow: false
 	});
