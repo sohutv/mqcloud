@@ -14,8 +14,9 @@
 
 2. 参数：
 
-   * producer: 在MQCloud申请的生产者名称
-   * message: 消息
+   * 【必选】producer: 在MQCloud申请的生产者名称
+   * 【必选】message: 消息
+   * 【可选】keys:  key
 
 3. 响应说明：
 
@@ -103,10 +104,10 @@
 
 2. 参数：
 
-   * topic：打算消费的主题
-   * consumer: 在MQCloud申请的消费者名称
-   * requestId：请求id，用于确认上次消费完成
-   * clientId：广播模式消费时须携带，不同的clientId消费全量消息，可以设置为ip
+   * 【必选】topic：打算消费的主题
+   * 【必选】consumer: 在MQCloud申请的消费者名称
+   * 【必选】requestId：请求id，用于确认上次消费完成
+   * 【广播消费必选】clientId：广播模式消费时须携带，不同的clientId消费全量消息，可以设置为ip
 
 3. 响应说明：
 
