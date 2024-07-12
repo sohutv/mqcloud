@@ -43,7 +43,7 @@
                 </tr>
                 <tr>
                     <td class="text-muted">顺序消费</td>
-                    <td><#if response.result.consumeOrderly>是<#else>否</#if></td>
+                    <td <#if response.result.consumeOrderly>class="bg-warning"</#if>><#if response.result.consumeOrderly>是<#else>否</#if></td>
                     <td class="text-muted" data-toggle="tooltip" title="单个队列缓存消息跨度超过${response.result.consumeConcurrentlyMaxSpan}将不再拉取新消息">限流消息跨度</td>
                     <td>${response.result.consumeConcurrentlyMaxSpan}</td>
                 </tr>
