@@ -4,8 +4,8 @@
 			<label class="col-form-label">任务列表:</label>
 		</div>
 	</div>
-	<div class="card-body table-responsive p-0 text-nowrap">
-		<table class="table table-hover">
+	<div class="card-body table-responsive p-0">
+		<table class="table table-hover table-striped text-nowrap">
 			<thead>
 			<tr>
 				<th>ID</th>
@@ -37,7 +37,7 @@
 					<td>${migration.destIp}</td>
 					<td>${migration.destPath}</td>
 					<td>${migration.dataCountDesc}</td>
-					<td>${migration.createTimeDesc}</td>
+					<td class="text-wrap">${migration.createTimeDesc}</td>
 					<td>${migration.statusDesc}</td>
 					<td>${migration.costTimeDesc}</td>
 					<td class="text-wrap">${migration.info}</td>

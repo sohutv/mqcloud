@@ -43,13 +43,6 @@
 <div class="card">
 	<div class="card-body table-responsive p-0">
 		<table class="table table-hover table-striped text-nowrap">
-			<colgroup>
-				<col width="160px">
-				<col width="100px">
-				<col width="100px">
-				<col width="100px">
-				<col width="120px">
-			</colgroup>
 			<thead>
 				<tr>
 					<td>addr</td>
@@ -761,7 +754,6 @@ function disable_smartwizard(content, index) {
 	</div>
 </div>
 <script>
-$("[data-toggle='modal']").tooltip();
 function addCluster(){
 	disable("addClusterBtn");
 	$.post('${request.contextPath}/admin/cluster/add',

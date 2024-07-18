@@ -32,13 +32,6 @@
 <div class="card">
 	<div class="card-body table-responsive p-0">
 		<table class="table table-hover table-striped text-nowrap">
-			<colgroup>
-				<col width="160px">
-				<col width="100px">
-				<col width="100px">
-				<col width="100px">
-				<col width="200px">
-			</colgroup>
 			<thead>
 				<tr>
 					<td>addr</td>
@@ -698,8 +691,6 @@ function disable_smartwizard(content, index) {
 </#if>
 
 <script>
-$("[data-toggle='modal']").tooltip();
-
 function associateProxy(){
 	disable("associateProxyBtn");
 	$.post('${request.contextPath}/admin/proxy/add',

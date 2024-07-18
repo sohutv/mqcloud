@@ -273,7 +273,6 @@
 </div>
 <script>
     $(function () {
-        $("[data-toggle='tooltip']").tooltip({container: 'body'});
         //初始化topic列表
         $.get('${request.contextPath}/admin/trafficMonitor/topic/enabled',
             function(data) {
