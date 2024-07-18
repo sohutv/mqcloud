@@ -828,8 +828,11 @@ public class TopicMessageController extends ViewController {
         // 发送提醒邮件
         if (result.isOK()) {
             Result<Topic> topicResult = topicService.queryTopic(tid);
-            if (topicResult.isOK()) {
-                String tip = " topic:<b>" + topicResult.getResult().getName() + "</b> 消息量:" + msgIdArray.length;
+            Result<Consumer> consuemrResult = consumerService.queryById(cid);
+            if (topicResult.isOK() && consuemrResult.isOK()) {
+                String topic = topicResult.getResult().getName();
+                String link = mqCloudConfigHelper.getTopicConsumeHrefLink(topic, consuemrResult.getResult().getName());
+                String tip = " topic:<b>" + topic + "</b> 消费者:" + link + " 消息量:" + msgIdArray.length;
                 alertService.sendAuditMail(userInfo.getUser(), TypeEnum.RESEND_MESSAGE, tip);
             }
         }
