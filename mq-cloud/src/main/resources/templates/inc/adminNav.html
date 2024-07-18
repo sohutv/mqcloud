@@ -22,7 +22,7 @@
 	<div class="sidebar">
 		<!-- Sidebar Menu -->
 		<nav class="mt-2">
-			<ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
+			<ul class="nav nav-pills nav-sidebar flex-column nav-child-indent" data-widget="treeview" role="menu" data-accordion="false">
 				<!-- Add icons to the links using the .nav-icon class
                      with font-awesome or any other icon font library -->
 				<li class="nav-item">
@@ -32,118 +32,168 @@
 					</a>
 				</li>
 				<li class="nav-item">
-					<a href="${request.contextPath}/admin/nameserver/list" class="nav-link">
-						<i class="nav-icon fas fa-search text-info"></i>
-						<p>集群发现</p>
+					<a href="#" class="nav-link">
+						<i class="nav-icon fa-solid fa-network-wired"></i>
+						<p>
+							集群管理
+							<i class="right fas fa-angle-left"></i>
+						</p>
 					</a>
+					<ul class="nav nav-treeview">
+						<li class="nav-item">
+							<a href="${request.contextPath}/admin/nameserver/list" class="nav-link">
+								<i class="nav-icon fas fa-search text-info"></i>
+								<p>NameServer</p>
+							</a>
+						</li>
+						<li class="nav-item">
+							<a href="${request.contextPath}/admin/controller/list" class="nav-link">
+								<i class="nav-icon fas fa-adjust text-info"></i>
+								<p>Controller</p>
+							</a>
+						</li>
+						<li class="nav-item">
+							<a href="${request.contextPath}/admin/proxy/list" class="nav-link">
+								<i class="nav-icon fas fa-share-alt text-info"></i>
+								<p>Proxy</p>
+							</a>
+						</li>
+						<li class="nav-item">
+							<a href="${request.contextPath}/admin/cluster/list" class="nav-link">
+								<i class="nav-icon fa-solid fa-circle-nodes text-info"></i>
+								<p>Broker</p>
+							</a>
+						</li>
+						<li class="nav-item">
+							<a href="${request.contextPath}/admin/broker/config" class="nav-link">
+								<i class="nav-icon fas fa-cog text-info"></i>
+								<p>Broker配置</p>
+							</a>
+						</li>
+						<li class="nav-item">
+							<a href="${request.contextPath}/admin/broker/migration/list" class="nav-link">
+								<i class="nav-icon fa-solid fa-copy text-info"></i>
+								<p>Broker迁移</p>
+							</a>
+						</li>
+						<li class="nav-item">
+							<a href="${request.contextPath}/admin/topology/cluster" class="nav-link">
+								<i class="nav-icon fas fa-sitemap text-info"></i>
+								<p>集群拓扑</p>
+							</a>
+						</li>
+						<li class="nav-item">
+							<a href="${request.contextPath}/admin/clusterCapacity" class="nav-link">
+								<i class="nav-icon fas fa-database text-info"></i>
+								<p>集群容量</p>
+							</a>
+						</li>
+					</ul>
 				</li>
 				<li class="nav-item">
-					<a href="${request.contextPath}/admin/controller/list" class="nav-link">
-						<i class="nav-icon fas fa-adjust text-info"></i>
-						<p>集群控制</p>
+					<a href="#" class="nav-link">
+						<i class="nav-icon fa-solid fa-bell"></i>
+						<p>
+							监控管理
+							<i class="right fas fa-angle-left"></i>
+						</p>
 					</a>
+					<ul class="nav nav-treeview">
+						<li class="nav-item">
+							<a href="${request.contextPath}/admin/monitor/consumer?numOfPage=200" class="nav-link">
+								<i class="nav-icon fas fa-tools text-info"></i>
+								<p>消费监控</p>
+							</a>
+						</li>
+						<li class="nav-item">
+							<a href="${request.contextPath}/admin/trafficMonitor/topic" class="nav-link">
+								<i class="nav-icon fas fa-tachometer-alt text-info"></i>
+								<p>流量监控</p>
+							</a>
+						</li>
+					</ul>
 				</li>
 				<li class="nav-item">
-					<a href="${request.contextPath}/admin/proxy/list" class="nav-link">
-						<i class="nav-icon fas fa-share-alt text-info"></i>
-						<p>集群代理</p>
+					<a href="#" class="nav-link">
+						<i class="nav-icon fa-solid fa-circle-info"></i>
+						<p>
+							信息查询
+							<i class="right fas fa-angle-left"></i>
+						</p>
 					</a>
+					<ul class="nav nav-treeview">
+						<li class="nav-item">
+							<a href="${request.contextPath}/admin/topicManager/list" class="nav-link">
+								<i class="nav-icon fas fa-stream text-info"></i>
+								<p>主题查询</p>
+							</a>
+						</li>
+						<li class="nav-item">
+							<a href="${request.contextPath}/admin/consumer/list" class="nav-link">
+								<i class="nav-icon far fa-circle text-info"></i>
+								<p>消费查询</p>
+							</a>
+						</li>
+						<li class="nav-item">
+							<a href="${request.contextPath}/admin/task/list" class="nav-link">
+								<i class="nav-icon text-info fa-solid fa-list-check"></i>
+								<p>任务查询</p>
+							</a>
+						</li>
+						<li class="nav-item">
+							<a href="${request.contextPath}/admin/client/list" class="nav-link">
+								<i class="nav-icon fas fa-sort-amount-up-alt text-info"></i>
+								<p>客户端版本</p>
+							</a>
+						</li>
+						<li class="nav-item">
+							<a href="${request.contextPath}/admin/clientConnect/list" class="nav-link">
+								<i class="nav-icon fa-solid fa-language text-info"></i>
+								<p>客户端语言</p>
+							</a>
+						</li>
+					</ul>
 				</li>
 				<li class="nav-item">
-					<a href="${request.contextPath}/admin/cluster/list" class="nav-link">
-						<i class="nav-icon fas fa-project-diagram text-info"></i>
-						<p>集群管理</p>
+					<a href="#" class="nav-link">
+						<i class="nav-icon fa-solid fa-house"></i>
+						<p>
+							系统管理
+							<i class="right fas fa-angle-left"></i>
+						</p>
 					</a>
-				</li>
-				<li class="nav-item">
-					<a href="${request.contextPath}/admin/topology/cluster" class="nav-link">
-						<i class="nav-icon fas fa-sitemap text-info"></i>
-						<p>集群拓扑</p>
-					</a>
-				</li>
-				<li class="nav-item">
-					<a href="${request.contextPath}/admin/clusterCapacity" class="nav-link">
-						<i class="nav-icon fas fa-database text-info"></i>
-						<p>集群容量</p>
-					</a>
-				</li>
-				<li class="nav-item">
-					<a href="${request.contextPath}/admin/topicManager/list" class="nav-link">
-						<i class="nav-icon fas fa-stream text-info"></i>
-						<p>主题管理</p>
-					</a>
-				</li>
-				<li class="nav-item">
-					<a href="${request.contextPath}/admin/consumer/list" class="nav-link">
-						<i class="nav-icon far fa-circle text-info"></i>
-						<p>消费管理</p>
-					</a>
-				</li>
-				<li class="nav-item">
-					<a href="${request.contextPath}/admin/monitor/consumer?numOfPage=200" class="nav-link">
-						<i class="nav-icon fas fa-tools text-info"></i>
-						<p>监控管理</p>
-					</a>
-				</li>
-				<li class="nav-item">
-					<a href="${request.contextPath}/admin/trafficMonitor/topic" class="nav-link">
-						<i class="nav-icon fas fa-tachometer-alt text-info"></i>
-						<p>流量监控</p>
-					</a>
-				</li>
-				<li class="nav-item">
-					<a href="${request.contextPath}/admin/user/list?gid=-1" class="nav-link">
-						<i class="nav-icon fas fa-users text-info"></i>
-						<p>用户管理</p>
-					</a>
-				</li>
-				<li class="nav-item">
-					<a href="${request.contextPath}/admin/server/list" class="nav-link">
-						<i class="nav-icon fas fa-laptop text-info"></i>
-						<p>机器管理</p>
-					</a>
-				</li>
-				<li class="nav-item">
-					<a href="${request.contextPath}/admin/task/list" class="nav-link">
-						<i class="nav-icon text-info fa-solid fa-list-check"></i>
-						<p>任务管理</p>
-					</a>
-				</li>
-				<li class="nav-item">
-					<a href="${request.contextPath}/admin/notice/list" class="nav-link">
-						<i class="nav-icon fas fa-bell text-info"></i>
-						<p>通知管理</p>
-					</a>
-				</li>
-				<li class="nav-item">
-					<a href="${request.contextPath}/admin/client/list" class="nav-link">
-						<i class="nav-icon fas fa-sort-amount-up-alt text-info"></i>
-						<p>客户端版本</p>
-					</a>
-				</li>
-				<li class="nav-item">
-					<a href="${request.contextPath}/admin/clientConnect/list" class="nav-link">
-						<i class="nav-icon fas fa-layer-group text-info"></i>
-						<p>客户端语言</p>
-					</a>
-				</li>
-				<li class="nav-item">
-					<a href="${request.contextPath}/admin/feedback/list" class="nav-link">
-						<i class="nav-icon fas fa-comment-alt text-info"></i>
-						<p>用户反馈</p>
-					</a>
-				</li>
-				<li class="nav-item">
-					<a href="${request.contextPath}/admin/broker/config" class="nav-link">
-						<i class="nav-icon fas fa-file-alt text-info"></i>
-						<p>配置模板</p>
-					</a>
-				</li>
-				<li class="nav-item">
-					<a href="${request.contextPath}/admin/config/list" class="nav-link">
-						<i class="nav-icon fas fa-cogs text-info"></i>
-						<p>通用配置</p>
-					</a>
+					<ul class="nav nav-treeview">
+						<li class="nav-item">
+							<a href="${request.contextPath}/admin/user/list?gid=-1" class="nav-link">
+								<i class="nav-icon fa-solid fa-user-gear text-info"></i>
+								<p>用户管理</p>
+							</a>
+						</li>
+						<li class="nav-item">
+							<a href="${request.contextPath}/admin/server/list" class="nav-link">
+								<i class="nav-icon fas fa-laptop text-info"></i>
+								<p>机器管理</p>
+							</a>
+						</li>
+						<li class="nav-item">
+							<a href="${request.contextPath}/admin/config/list" class="nav-link">
+								<i class="nav-icon fas fa-cogs text-info"></i>
+								<p>通用配置</p>
+							</a>
+						</li>
+						<li class="nav-item">
+							<a href="${request.contextPath}/admin/notice/list" class="nav-link">
+								<i class="nav-icon fa-solid fa-bullhorn text-info"></i>
+								<p>通知管理</p>
+							</a>
+						</li>
+						<li class="nav-item">
+							<a href="${request.contextPath}/admin/feedback/list" class="nav-link">
+								<i class="nav-icon fas fa-comment-alt text-info"></i>
+								<p>用户反馈</p>
+							</a>
+						</li>
+					</ul>
 				</li>
 			</ul>
 		</nav>
@@ -156,8 +206,7 @@
 		// 解析当前URL，定位子标签
 		$('.nav-link').each(function(i,n){
 			if ($(this).attr("href").indexOf(window.location.pathname) == 0) {
-				$(this).addClass("active")
-						.children("i").removeClass('text-info').addClass('text-light');
+				$(this).addClass("active").parent().parent().parent().addClass("menu-open").addClass("menu-is-opening");
 			}
 		});
 	})

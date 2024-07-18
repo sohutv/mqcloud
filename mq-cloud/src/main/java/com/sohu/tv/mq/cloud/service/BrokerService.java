@@ -10,12 +10,14 @@ import com.sohu.tv.mq.cloud.common.model.TopicRateLimit;
 import com.sohu.tv.mq.cloud.common.model.UpdateSendMsgRateLimitRequestHeader;
 import com.sohu.tv.mq.cloud.common.mq.SohuMQAdmin;
 import com.sohu.tv.mq.cloud.dao.BrokerDao;
+import com.sohu.tv.mq.cloud.dao.BrokerTmpDao;
 import com.sohu.tv.mq.cloud.mq.DefaultCallback;
 import com.sohu.tv.mq.cloud.mq.MQAdminTemplate;
 import com.sohu.tv.mq.cloud.util.DBUtil;
 import com.sohu.tv.mq.cloud.util.Result;
 import com.sohu.tv.mq.cloud.util.Status;
 import com.sohu.tv.mq.cloud.web.controller.param.BrokerConfigUpdateParam;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.ibatis.session.SqlSessionFactory;
 import org.apache.rocketmq.client.exception.MQBrokerException;
 import org.apache.rocketmq.client.exception.MQClientException;
@@ -28,6 +30,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 
 /**
@@ -52,6 +55,9 @@ public class BrokerService {
 
     @Autowired
     private SqlSessionFactory mqSqlSessionFactory;
+
+    @Autowired
+    private BrokerTmpDao brokerTmpDao;
 
     /**
      * 查询集群的broker
@@ -289,14 +295,24 @@ public class BrokerService {
      * 查询broker
      */
     public Result<Broker> queryBroker(int cid, String addr) {
-        Broker broker = null;
         try {
-            broker = brokerDao.selectBroker(cid, addr);
+            return Result.getResult(brokerDao.selectBroker(cid, addr));
         } catch (Exception e) {
             logger.error("queryBroker:{} err", addr, e);
             return Result.getDBErrorResult(e);
         }
-        return Result.getResult(broker);
+    }
+
+    /**
+     * 查询临时broker
+     */
+    public Result<List<Broker>> queryTmpBroker(int cid) {
+        try {
+            return Result.getResult(brokerTmpDao.selectByClusterId(cid));
+        } catch (Exception e) {
+            logger.error("queryTmpBroker:{} err", cid, e);
+            return Result.getDBErrorResult(e);
+        }
     }
 
     /**
@@ -366,5 +382,68 @@ public class BrokerService {
                 dao.updateDayCount(brokerTraffic);
             }
         });
+    }
+
+    /**
+     * 保存broker到临时表
+     */
+    public Result<?> saveBrokerTmp(Map<String, Object> param){
+        Object brokerName = param.get("brokerName");
+        if (brokerName == null) {
+            return Result.getResult(Status.PARAM_ERROR);
+        }
+        Object brokerIdObj = param.get("brokerId");
+        if (brokerIdObj == null) {
+            return Result.getResult(Status.PARAM_ERROR);
+        }
+        int brokerId = NumberUtils.toInt(String.valueOf(brokerIdObj), -1);
+        if (brokerId == -1) {
+            return Result.getResult(Status.PARAM_ERROR);
+        }
+        Object ipObj = param.get("ip");
+        if (ipObj == null) {
+            return Result.getResult(Status.PARAM_ERROR);
+        }
+        Object portObj = param.get("listenPort");
+        if (portObj == null) {
+            return Result.getResult(Status.PARAM_ERROR);
+        }
+        Object dirObj = param.get("dir");
+        if (dirObj == null) {
+            return Result.getResult(Status.PARAM_ERROR);
+        }
+        Object cidObj = param.get("rmqAddressServerSubGroup");
+        if (cidObj == null) {
+            return Result.getResult(Status.PARAM_ERROR);
+        }
+        int cid = NumberUtils.toInt(String.valueOf(cidObj).split("-")[1]);
+        if (cid == 0) {
+            return Result.getResult(Status.PARAM_ERROR);
+        }
+        // 保存broker到临时表
+        Broker broker = new Broker();
+        broker.setBrokerName(brokerName.toString());
+        broker.setAddr(String.valueOf(ipObj) + ":" + String.valueOf(portObj));
+        broker.setBrokerID(brokerId);
+        broker.setCid(cid);
+        broker.setBaseDir(String.valueOf(dirObj));
+        try {
+            return Result.getResult(brokerTmpDao.insert(broker));
+        } catch (Exception e) {
+            logger.error("saveBrokerTmp:{}", param, e);
+            return Result.getDBErrorResult(e);
+        }
+    }
+
+    /**
+     * 删除broker到临时表
+     */
+    public Result<?> deleteBrokerTmp(int cid, String addr) {
+        try {
+            return Result.getResult(brokerTmpDao.delete(cid, addr));
+        } catch (Exception e) {
+            logger.error("deleteBrokerTmp:{}", addr, e);
+            return Result.getDBErrorResult(e);
+        }
     }
 }

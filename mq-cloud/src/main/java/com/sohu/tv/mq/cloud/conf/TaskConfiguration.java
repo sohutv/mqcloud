@@ -118,6 +118,11 @@ public class TaskConfiguration {
         return new TrafficAnalysisTask();
     }
 
+    @Bean
+    public DataMigrationTask dataMigrationTask() {
+        return new DataMigrationTask();
+    }
+
     /**
      * 使用数据库作为锁源
      * @param dataSource

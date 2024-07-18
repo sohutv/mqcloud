@@ -49,7 +49,7 @@ mqcloud支持的是一个master对应一个slave模式。管理员在列表页�
    <img src="img/brokerOnlineConfig.png" class="img-wiki">
 
 4. 点击broker的漏斗图标可以查看broker的限流配置及历史限速记录：
-   
+
    <img src="img/brokerOnlineLimit.png" class="img-wiki">
 
    broker的限速设置基于Topic维度，分为全局限速设置及单个Topic限速设置，全局设置是在未配置单个Topic限速的情况下生效。
@@ -86,10 +86,88 @@ data
 2. 拷贝完毕无法校验是否正确。
 3. 如果大批量迁移broker数据，手动执行拷贝极易出错。
 
-鉴于以上问题，MQCloud提供了**数据迁移**的功能，可以从如下两个入口进入数据迁移模块：
+鉴于以上问题，MQCloud提供了两种**数据迁移**的功能。
 
-1. MQCloud管理后台->集群管理->数据迁移按钮（适用于在任意两个broker间迁移数据）
-2. MQCloud管理后台->集群管理->下线broker->数据迁移（适用于迁移下线的broker数据）
+### 1、<span id="scp">基于rsync实现的数据迁移</span>
+
+由于采用了`rsync`实现数据传输，故需要在目标机器上安装rsync，具体如下：
+
+1. 以Ubuntu为例，安装命令如下：
+
+   ```
+   sudo apt-get install rsync
+   ```
+
+2. 配置`/etc/rsyncd.conf`：
+
+   ```
+   uid = 0
+   gid = 0
+   use chroot = no
+   max connections = 10
+   strict modes = yes
+   pid file = /var/run/rsyncd.pid
+   lock file = /var/run/rsync.lock
+   log file = /var/log/rsyncd.log
+
+   [mqcloud]
+   path = /opt/mqcloud/
+   comment = "rsync broker"
+   ignore errors
+   read only = no
+   write only = no
+   hosts allow = *
+   auth users = mqcloud
+   secrets file = /etc/rsync.password
+   ```
+
+   上面的`path`请配置为**broker部署目录的上级目录**，比如broker部署目录为`/opt/mqcloud/broker-a`，那么`path`配置为`/opt/mqcloud/`。
+
+   `auth users`可以参考MQCloud管理后台`通用配置`模块里的配置。
+
+3. 配置`/etc/rsync.password`：
+
+   ```
+   echo "mqcloud:rsync" > /etc/rsync.password
+   chmod 600 /etc/rsync.password
+   ```
+
+   `/etc/rsync.password`文件的内容是`user:password`，可以参考MQCloud管理后台`通用配置`模块里的配置。
+
+4. 启动rsync服务：
+
+   ```
+   /bin/rsync --daemon
+   ```
+
+5. 源机器上同样需要安装rsync，但是不需要配置和启动，因为MQCloud会采用rsync作为客户端从源机器向目标机器传输数据。
+
+rysnc环境配置完成后，可以从如下入口进入数据迁移模块：
+
+`MQCloud管理后台->集群管理->broker->数据迁移`
+
+点击后将跳至`Broker迁移模块`，在此模块可以提交迁移任务：<img src="img/addMigrationTask.png" class="img-wiki">
+
+**注意：** **迁移任务只会同步`data`目录，所以请务必先在目标机器上部署好broker，但不要启动**
+
+上面最后一个配置项：`rsync module的子路径`配置为**目标机器上部署的broker目录**即可。现在解释一下，比如上面的目标机器上rsync的配置`/etc/rsyncd.conf`：
+
+```
+[mqcloud]
+path = /opt/mqcloud/
+```
+
+`module`为mqcloud，其对应的路径为/opt/mqcloud/。当`rsync module的子路径` 配置为broker-a，则rsync在同步时自动会同步到/opt/mqcloud/broker-a下。
+
+整个rsync同步任务是后台执行的，MQCloud支持监控rsync日志以及重新运行任务。
+
+### 2、<span id="scp">基于scp实现的数据迁移</span>
+
+*注意：基于scp的实现的迁移数据传输较慢，不支持端点传输、增量传输等，不推荐使用。* 
+
+可以从如下入口进入数据迁移模块：
+
+`MQCloud管理后台->集群管理->broker->下线->数据迁移`
 
 迁移模块如下：
 
@@ -142,9 +220,3 @@ data
 2. 目标broker请先部署好，但是请勿启动。
 
 迁移过程其实就是将`源broker:data目录`下的数据通过ssh协议传输到`目标broker:data目录`下。
-
-为什么不采用linux的rsync？因为只需要传输一次即可。
-
-为什么不采用linux的nc？经过测试，传输大文件时，跟网卡和网络带宽有关，跟协议关系不大，另外nc有些linux并未预装。
-
-另外，对于consumequeue其下的小文件过多，故如果其下的topic有多个队列，将采用压缩传输。

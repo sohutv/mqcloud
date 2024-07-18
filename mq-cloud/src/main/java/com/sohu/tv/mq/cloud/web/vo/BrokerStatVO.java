@@ -5,6 +5,7 @@ import com.sohu.tv.mq.cloud.util.MessageDelayLevel;
 import com.sohu.tv.mq.cloud.util.WebUtil;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -34,11 +35,17 @@ public class BrokerStatVO {
     private DelayQueue delayQueue;
     
     private long commitLogMaxOffset;
-    
+
     private String baseDir;
 
     // 是否可以写入
     private boolean writable = true;
+
+    private String brokerId;
+
+    private Date createTime;
+
+    private long fallbehindSize;
 
     /**
      * 时间轮生产流程
@@ -70,6 +77,10 @@ public class BrokerStatVO {
 
     public String getBrokerAddr() {
         return brokerAddr;
+    }
+
+    public String getBrokerIp() {
+        return brokerAddr.split(":")[0];
     }
 
     public String getVersion() {
@@ -126,10 +137,6 @@ public class BrokerStatVO {
 
     public void setCommitLogMaxOffset(long commitLogMaxOffset) {
         this.commitLogMaxOffset = commitLogMaxOffset;
-    }
-    
-    public String format(long size) {
-        return WebUtil.sizeFormat(size);
     }
 
     public String getBaseDir() {
@@ -205,6 +212,38 @@ public class BrokerStatVO {
 
     public void setTimerCongestNum(long timerCongestNum) {
         this.timerCongestNum = timerCongestNum;
+    }
+
+    public String getBrokerId() {
+        return brokerId;
+    }
+
+    public void setBrokerId(String brokerId) {
+        this.brokerId = brokerId;
+    }
+
+    public Date getCreateTime() {
+        return createTime;
+    }
+
+    public void setCreateTime(Date createTime) {
+        this.createTime = createTime;
+    }
+
+    public long getFallbehindSize() {
+        return fallbehindSize;
+    }
+
+    public String getFallbehindSizeFormat() {
+        return WebUtil.sizeFormat(fallbehindSize);
+    }
+
+    public void setFallbehindSize(long fallbehindSize) {
+        this.fallbehindSize = fallbehindSize;
+    }
+
+    public boolean isMaster(){
+        return "0".endsWith(brokerId);
     }
 
     public class DelayQueue {

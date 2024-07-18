@@ -74,7 +74,7 @@ public class AdminClusterController extends AdminViewController {
         if (brokerListResult.isNotOK()) {
             brokerListResult = getBrokerListFromNameServer(mqCluster);
         }
-        Map<String, Map<String, BrokerStatVO>> brokerGroup = null;
+        Map<String, List<BrokerStatVO>> brokerGroup = null;
         if (brokerListResult.isOK()) {
             List<Broker> brokerList = brokerListResult.getResult();
             brokerGroup = fetchBrokerRuntimeStats(brokerList, mqCluster);
@@ -87,6 +87,33 @@ public class AdminClusterController extends AdminViewController {
         }
         if (brokerGroup != null && brokerGroup.size() > 0) {
             clusterInfoVO.setBrokerGroup(brokerGroup);
+            // 查询临时broker
+            Result<List<Broker>> brokerTmpList = brokerService.queryTmpBroker(mqCluster.getId());
+            if (brokerTmpList.isNotEmpty()) {
+                for (Broker broker : brokerTmpList.getResult()) {
+                    BrokerStatVO brokerStatVO = new BrokerStatVO();
+                    brokerStatVO.setBrokerAddr(broker.getAddr());
+                    brokerStatVO.setBrokerId(String.valueOf(broker.getBrokerID()));
+                    brokerStatVO.setBaseDir(broker.getBaseDir());
+                    brokerStatVO.setCreateTime(broker.getCreateTime());
+                    brokerGroup.computeIfAbsent(broker.getBrokerName(), k -> new ArrayList<>()).add(brokerStatVO);
+                }
+            }
+            // 设置slave落后量
+            for (List<BrokerStatVO> brokerStatVOList : brokerGroup.values()) {
+                brokerStatVOList.stream().filter(BrokerStatVO::isMaster).findAny().ifPresent(master -> {
+                    brokerStatVOList.stream()
+                            .filter(stat -> !stat.isMaster())
+                            .forEach(stat -> stat.setFallbehindSize(master.getCommitLogMaxOffset() - stat.getCommitLogMaxOffset()));
+                });
+                // 排序
+                Collections.sort(brokerStatVOList, (o1, o2) -> {
+                    if (o1.getBrokerId().equals(o2.getBrokerId())) {
+                        return o1.getCreateTime().compareTo(o2.getCreateTime());
+                    }
+                    return o1.getBrokerId().compareTo(o2.getBrokerId());
+                });
+            }
         }
         clusterInfoVO.setMqCluster(clusterService.getAllMQCluster());
         clusterInfoVO.setSelectedMQCluster(mqCluster);
@@ -372,23 +399,20 @@ public class AdminClusterController extends AdminViewController {
      * @param mqCluster
      * @return
      */
-    private Map<String, Map<String, BrokerStatVO>> fetchBrokerRuntimeStats(List<Broker> brokerList,
+    private Map<String, List<BrokerStatVO>> fetchBrokerRuntimeStats(List<Broker> brokerList,
             Cluster mqCluster) {
-        Map<String, Map<String, BrokerStatVO>> brokerGroup = mqAdminTemplate
-                .execute(new MQAdminCallback<Map<String, Map<String, BrokerStatVO>>>() {
-                    public Map<String, Map<String, BrokerStatVO>> callback(MQAdminExt mqAdmin) throws Exception {
-                        Map<String, Map<String, BrokerStatVO>> brokerGroup = new TreeMap<String, Map<String, BrokerStatVO>>();
+        return mqAdminTemplate
+                .execute(new MQAdminCallback<Map<String, List<BrokerStatVO>>>() {
+                    public Map<String, List<BrokerStatVO>> callback(MQAdminExt mqAdmin) throws Exception {
+                        Map<String, List<BrokerStatVO>> brokerGroup = new TreeMap<>();
                         for (Broker broker : brokerList) {
-                            Map<String, BrokerStatVO> brokerStatMap = brokerGroup.get(broker.getBrokerName());
-                            if (brokerStatMap == null) {
-                                brokerStatMap = new TreeMap<String, BrokerStatVO>();
-                                brokerGroup.put(broker.getBrokerName(), brokerStatMap);
-                            }
                             // 公共逻辑 拼接BrokerStatVO
                             BrokerStatVO brokerStatVO = new BrokerStatVO();
                             brokerStatVO.setBrokerAddr(broker.getAddr());
                             brokerStatVO.setBaseDir(broker.getBaseDir());
-                            brokerStatMap.put(String.valueOf(broker.getBrokerID()), brokerStatVO);
+                            brokerStatVO.setBrokerId(String.valueOf(broker.getBrokerID()));
+                            brokerStatVO.setCreateTime(broker.getCreateTime());
+                            brokerGroup.computeIfAbsent(broker.getBrokerName(), k -> new ArrayList<>()).add(brokerStatVO);
                             // 监控结果
                             brokerStatVO.setCheckStatus(broker.getCheckStatus());
                             brokerStatVO.setCheckTime(broker.getCheckTimeFormat());
@@ -412,12 +436,11 @@ public class AdminClusterController extends AdminViewController {
                         return mqCluster;
                     }
 
-                    public Map<String, Map<String, BrokerStatVO>> exception(Exception e) throws Exception {
+                    public Map<String, List<BrokerStatVO>> exception(Exception e) throws Exception {
                         logger.error("cluster:{} err", mqCluster(), e);
                         return null;
                     }
                 });
-        return brokerGroup;
     }
 
     /**

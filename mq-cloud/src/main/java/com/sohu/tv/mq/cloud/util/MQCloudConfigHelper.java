@@ -198,6 +198,9 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware, Comm
     // 全局顺序topic kv配置
     private Map<String, String> orderTopicKVConfig;
 
+    // rsync配置,包括path, user, password, port, bwlimit, module
+    private Map<String, String> rsyncConfig;
+
     @Autowired
     private CommonConfigService commonConfigService;
 
@@ -747,6 +750,42 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware, Comm
             return false;
         }
         return apiAuditUserEmail.contains(email);
+    }
+
+    public Map<String, String> getRsyncConfig() {
+        return rsyncConfig;
+    }
+
+    public String getRsyncUser() {
+        return rsyncConfig.get("user");
+    }
+
+    public String getRsyncPassword() {
+        return rsyncConfig.get("password");
+    }
+
+    public String getRsyncPort() {
+        Object port = rsyncConfig.get("port");
+        if (port == null) {
+            return null;
+        }
+        return String.valueOf(port);
+    }
+
+    public String getRsyncModule() {
+        return rsyncConfig.get("module");
+    }
+
+    public String getRsyncPath() {
+        return rsyncConfig.get("path");
+    }
+
+    public String getRsyncBwlimit() {
+        Object bwlimit = rsyncConfig.get("bwlimit");
+        if (bwlimit == null) {
+            return null;
+        }
+        return String.valueOf(bwlimit);
     }
 
     /**

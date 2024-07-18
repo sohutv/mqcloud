@@ -11,6 +11,7 @@ import com.sohu.tv.mq.cloud.util.Result;
 import com.sohu.tv.mq.cloud.util.Status;
 import com.sohu.tv.mq.cloud.web.controller.param.BrokerConfigParam;
 import com.sohu.tv.mq.cloud.web.controller.param.BrokerConfigUpdateParam;
+import com.sohu.tv.mq.cloud.web.controller.param.DataMigrationParam;
 import com.sohu.tv.mq.cloud.web.controller.param.UpdateSendMsgRateLimitParam;
 import com.sohu.tv.mq.cloud.web.vo.BrokerConfigGroupVO;
 import com.sohu.tv.mq.cloud.web.vo.BrokerConfigVO;
@@ -19,7 +20,6 @@ import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.rocketmq.common.constant.PermName;
 import org.apache.rocketmq.remoting.protocol.body.ClusterInfo;
 import org.apache.rocketmq.remoting.protocol.route.BrokerData;
-import org.apache.rocketmq.remoting.protocol.route.QueueData;
 import org.apache.rocketmq.remoting.protocol.route.TopicRouteData;
 import org.apache.rocketmq.tools.admin.MQAdminExt;
 import org.slf4j.Logger;
@@ -28,10 +28,7 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.util.CollectionUtils;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
 import java.util.*;
@@ -69,6 +66,9 @@ public class AdminBrokerController extends AdminViewController {
 
     @Autowired
     private MQCloudConfigHelper mqCloudConfigHelper;
+
+    @Autowired
+    private DataMigrationService dataMigrationService;
 
     @ResponseBody
     @RequestMapping(value = "/_refresh", method = RequestMethod.POST)
@@ -503,6 +503,68 @@ public class AdminBrokerController extends AdminViewController {
         Result<?> result = brokerService.getTimerWheelMetrics(cid, addr);
         setResult(map, result);
         return adminViewModule() + "/timerWheelMetrics";
+    }
+
+    /**
+     * 迁移列表
+     *
+     * @return
+     */
+    @GetMapping(value = "/migration/list")
+    public String migrationList(UserInfo ui, Map<String, Object> map) {
+        setView(map, "migration/list");
+        Result<?> result = dataMigrationService.queryAllDataMigration();
+        setResult(map, result);
+        setResult(map, "module", mqCloudConfigHelper.getRsyncModule());
+        return view();
+    }
+
+    /**
+     * 添加迁移任务
+     *
+     * @return
+     */
+    @ResponseBody
+    @PostMapping(value = "/migration/add")
+    public Result<?> addMigration(UserInfo ui, @Valid DataMigrationParam dataMigrationParam) {
+        DataMigration dataMigration = new DataMigration();
+        BeanUtils.copyProperties(dataMigrationParam, dataMigration);
+        Result<?> result = dataMigrationService.addDataMigration(dataMigration);
+        return result;
+    }
+
+    /**
+     * 重新运行任务
+     *
+     * @return
+     */
+    @ResponseBody
+    @PostMapping(value = "/migration/rerun")
+    public Result<?> rerunMigration(UserInfo ui, long id) {
+        return dataMigrationService.rerunDataMigration(id);
+    }
+
+    /**
+     * 空运行，用于提示
+     *
+     * @return
+     */
+    @ResponseBody
+    @PostMapping(value = "/migration/dry/run")
+    public Result<?> dryRunMigration(UserInfo ui, @Valid DataMigrationParam dataMigrationParam) {
+        DataMigration dataMigration = new DataMigration();
+        BeanUtils.copyProperties(dataMigrationParam, dataMigration);
+        Result<?> result = dataMigrationService.dryRunDataMigrationTask(dataMigration);
+        return result;
+    }
+
+    /**
+     * 监控日志
+     */
+    @ResponseBody
+    @GetMapping(value = "/migration/monitor/log")
+    public PageLog monitorLog(UserInfo ui, int id, String ip, int offset, int size) {
+        return dataMigrationService.tailLog(id, ip, offset, size);
     }
 
     /**

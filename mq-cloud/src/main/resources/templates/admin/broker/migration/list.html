@@ -1,0 +1,248 @@
+<div class="card mt-2">
+	<div class="card-header pl-1">
+		<div class="col-md-4 input-group">
+			<label class="col-form-label">任务列表:</label>
+		</div>
+	</div>
+	<div class="card-body table-responsive p-0 text-nowrap">
+		<table class="table table-hover">
+			<thead>
+			<tr>
+				<th>ID</th>
+				<th>源IP</th>
+				<th>源路径</th>
+				<th>目标IP</th>
+				<th>目标路径</th>
+				<th>数据量</th>
+				<th>创建时间</th>
+				<th>状态</th>
+				<th>耗时</th>
+				<th>信息</th>
+				<th>操作</th>
+			</tr>
+			</thead>
+			<tbody>
+			<#if response.empty>
+				<tr>
+					<td colspan="11" class="text-center">
+						暂无数据
+					</td>
+				<tr>
+			<#else>
+				<#list response.result as migration>
+				<tr>
+					<td>${migration.id}</td>
+					<td>${migration.sourceIp}</td>
+					<td>${migration.sourcePath}</td>
+					<td>${migration.destIp}</td>
+					<td>${migration.destPath}</td>
+					<td>${migration.dataCountDesc}</td>
+					<td>${migration.createTimeDesc}</td>
+					<td>${migration.statusDesc}</td>
+					<td>${migration.costTimeDesc}</td>
+					<td class="text-wrap">${migration.info}</td>
+					<td>
+						<#if migration.status != 0>
+						<button type="button" data-toggle="tooltip" title="查看rsync日志" class="btn btn-sm btn-info" onclick="viewLog(${migration.id}, '${migration.sourceIp}', ${migration.status})"><i class="fa-solid fa-file-lines"></i></button>
+						</#if>
+						<#if migration.finish>
+						<button id="rerunBtn${migration.id}" type="button" data-toggle="tooltip" title="重新运行任务" class="btn btn-sm btn-warning" onclick="rerunMigration(${migration.id}, '${migration.sourceIp}', '${migration.sourcePath}', '${migration.destIp}', '${migration.destPath}')"><i class="fa-solid fa-repeat"></i></button>
+						</#if>
+					</td>
+				</tr>
+				</#list>
+			</#if>
+			</tbody>
+		</table>
+	</div>
+</div>
+
+<div id="addMigrationModal" class="modal fade" tabindex="-1" data-width="400">
+	<div class="modal-dialog  modal-lg">
+		<div class="modal-content">
+
+			<div class="modal-header">
+				<h4 class="modal-title">新建迁移任务<a target="_blank" href="${request.contextPath}/wiki/adminGuide/broker#migrate" title="" data-toggle="tooltip" data-original-title="点击查看数据迁移说明"><i class="fas fa-question-circle fa-sm"></i></a></h4>
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+			</div>
+
+			<div class="modal-body">
+				<form class="form-horizontal form-bordered form-row-stripped" id="addMigrationForm">
+					<div class="form-body">
+						<div class="form-group row">
+							<label class="col-form-label col-md-3">源机器:</label>
+							<div class="col-md-9">
+								<input type="text" id="sourceIp" name="sourceIp" class="form-control" value="${RequestParameters.ip!}" readonly/>
+							</div>
+						</div>
+						<div class="form-group row">
+							<label class="col-form-label col-md-3">源目录:</label>
+							<div class="col-md-9">
+								<input type="text" id="sourcePath" name="sourcePath" class="form-control" value="${RequestParameters.path!}/data" readonly/>
+							</div>
+						</div>
+						<div class="form-group row">
+							<label class="col-form-label col-md-3">目标机器:</label>
+							<div class="col-md-9">
+								<select id="destIp" class="selectpicker border form-control" title="请选择" data-live-search-placeholder="搜索" name="destIp" data-live-search="true"></select>
+							</div>
+						</div>
+						<div class="form-group row">
+							<label class="col-form-label col-md-3">rsync模块的子路径:</label>
+							<div class="col-md-9">
+								<input type="text" id="destPath" name="destPath" class="form-control" placeholder="目标机器上broker部署的目录名"/>
+							</div>
+						</div>
+					</div>
+				</form>
+			</div>
+			<div class="modal-footer">
+				<button type="button" data-dismiss="modal" class="btn btn-light" >取消</button>
+				<button type="button" class="btn btn-primary" id="addMigrationBtn" onclick="addMigration()">确定</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<div id="migrationLogModal" class="modal fade" tabindex="-1" data-width="400">
+	<div class="modal-dialog  modal-xl modal-dialog-centered modal-dialog-scrollable">
+		<div class="modal-content" style="height: 80vh;">
+			<div class="modal-header">
+				<h4 class="modal-title">rsync日志监控</h4>
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+			</div>
+			<div class="modal-body">
+				<ol class="text-wrap list-unstyled" id="logUl">
+				</ol>
+			</div>
+		</div>
+	</div>
+</div>
+
+<script>
+	function addMigration() {
+		if (!$("#destIp").val()) {
+			alert("请选择目标机器");
+			return;
+		}
+		if (!$("#destPath").val()) {
+			alert("请输入rsync模块的子路径");
+			return;
+		}
+		if (!confirm("确定将" + $("#sourceIp").val() + "的" + $("#sourcePath").val() + "同步到" + $("#destIp").val() + "的rsync的模块:${module}的子目录:" + $("#destPath").val() + "？")) {
+			return;
+		}
+		disable("addMigrationBtn");
+		$.post('${request.contextPath}/admin/broker/migration/add',
+			$("#addMigrationForm").serialize(),
+	        function(data){
+	            if(data.status == 200){
+					toastr.success("操作成功，系统将自动刷新");
+					setTimeout("toListPage()", 1000);
+			    }else{
+			    	toastr.error("操作失败！"+data.message);
+			    	enable("addMigrationBtn");
+			    }
+	        }, 'json');
+	}
+
+	function rerunMigration(id, sourceIp, sourcePath, destIp, destPath) {
+		if (!confirm("确定将" + sourceIp + "的" + sourcePath + "同步到" + destIp + "的rsync的模块:${module}的子目录:" + destPath + "？")) {
+			return;
+		}
+		disable("rerunBtn"+id);
+		$.post('${request.contextPath}/admin/broker/migration/rerun',
+				{
+					id: id
+				},
+				function (data) {
+					if (data.status == 200) {
+						toastr.success("操作成功，系统将自动刷新");
+						setTimeout("toListPage()", 1000);
+					} else {
+						toastr.error("操作失败！" + data.message);
+						enable("rerunBtn"+id);
+					}
+				}, 'json');
+	}
+
+	function toListPage(){
+		window.location.href = "${request.contextPath}/admin/broker/migration/list";
+	}
+
+	function viewLog(id, ip, status) {
+		$("#logUl").html("");
+		$('#migrationLogModal').modal('show');
+		migrationLogModalOpen = true;
+		var size = 1000;
+		if (status == 1) {
+			size = 10;
+		}
+		moniorLog(id, ip, 1, size);
+	}
+
+	function moniorLog(id, ip, offset, size) {
+		if (migrationLogModalOpen == false) {
+			return;
+		}
+		$.get('${request.contextPath}/admin/broker/migration/monitor/log',
+				{
+					id: id,
+					ip: ip,
+					offset: offset,
+					size: size
+				},
+				function (data) {
+					if (data.error) {
+						toastr.error("数据日志失败！" + data.error);
+					} else {
+						for (var i in data.content) {
+							$("#logUl").append("<li>" + data.content[i] + "</li>");
+						}
+					}
+					var timeout = 3000;
+					if (data.more) {
+						timeout = 1000;
+					}
+					setTimeout(function () {
+						moniorLog(id, ip, data.nextOffset, size);
+					}, timeout);
+				}, 'json');
+	}
+
+	/**
+	 * 初始化server下拉列表
+	 */
+	function initServerList() {
+		$.get('${request.contextPath}/admin/server/all',
+				function (data) {
+					if (data.status == 200) {
+						var content = "";
+						for (var i in data.result) {
+							var server = data.result[i];
+							if( server.ip == '${RequestParameters.ip!}'){
+								continue;
+							}
+							content += "<option value='" + server.ip + "'>" + server.ip + "</option>";
+						}
+						$("#destIp").html(content).selectpicker('refresh');
+					} else {
+						toastr.error("数据获取失败！" + data.message);
+					}
+				}, 'json');
+	}
+	var migrationLogModalOpen = true;
+	$(function () {
+		<#if RequestParameters.ip?? && RequestParameters.path??>
+			initServerList();
+			$('#addMigrationModal').modal('show');
+		</#if>
+		$('#migrationLogModal').on('hide.bs.modal', function () {
+			migrationLogModalOpen = false;
+		});
+	});
+
+	function toBrokerPage() {
+		window.location.href = "${request.contextPath}/admin/cluster/list";
+	}
+</script>

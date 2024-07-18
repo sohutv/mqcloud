@@ -1,5 +1,6 @@
 package com.sohu.tv.mq.cloud.web.vo;
 
+import java.util.List;
 import java.util.Map;
 
 import com.sohu.tv.mq.cloud.bo.Cluster;
@@ -12,7 +13,7 @@ import com.sohu.tv.mq.cloud.bo.Cluster;
  * @date 2018年7月9日
  */
 public class ClusterInfoVO {
-    // 是否具有names erver了
+    // 是否具有nameserver了
     private boolean hasNameServer;
     
     private Cluster[] mqCluster;
@@ -20,7 +21,7 @@ public class ClusterInfoVO {
     private Cluster selectedMQCluster;
 
     // broker 信息
-    private Map<String/* brokerName */, Map<String/* brokerId */, BrokerStatVO>> brokerGroup;
+    private Map<String/* brokerName */, List<BrokerStatVO>> brokerGroup;
 
     public Cluster[] getMqCluster() {
         return mqCluster;
@@ -38,11 +39,11 @@ public class ClusterInfoVO {
         this.mqCluster = mqCluster;
     }
 
-    public Map<String, Map<String, BrokerStatVO>> getBrokerGroup() {
+    public Map<String, List<BrokerStatVO>> getBrokerGroup() {
         return brokerGroup;
     }
 
-    public void setBrokerGroup(Map<String, Map<String, BrokerStatVO>> brokerGroup) {
+    public void setBrokerGroup(Map<String, List<BrokerStatVO>> brokerGroup) {
         this.brokerGroup = brokerGroup;
     }
 

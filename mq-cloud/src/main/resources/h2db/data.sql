@@ -41,6 +41,7 @@ INSERT IGNORE INTO `common_config` VALUES ('32', 'exportedMessageLocalPath', '/t
 INSERT IGNORE INTO `common_config` VALUES ('33', 'exportedMessageRemotePath', '', '消息导出时的远程地址，例如127.0.0.1:/tmp，请赋予mqcloud权限');
 INSERT IGNORE INTO `common_config` VALUES ('34', 'exportedMessageDownloadUrlPrefix', '', '消息导出时的下载地址，例如http://127.0.0.1/tmp/，请用http开头');
 INSERT IGNORE INTO `common_config` VALUES ('35', 'orderTopicKVConfig', '{}', '全局有序topic路由配置');
+INSERT IGNORE INTO `common_config` VALUES ('36', 'rsyncConfig', '{"user":"mqcloud","module":"mqcloud","password":"rsync"}', 'rsync配置');
 -- ----------------------------
 -- warn_config init
 -- ----------------------------

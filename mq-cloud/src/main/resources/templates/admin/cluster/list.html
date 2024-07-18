@@ -65,9 +65,7 @@
 				<div class="dropdown-menu" role="menu">
 					<#if response.result.hasNameServer>
 					<a class="dropdown-item" href="#" title="添加broker节点后，从Name Server抓取broker列表，刷入数据库中，用于broker列表展示及监控" onclick="refresh()" data-toggle="modal"><span class="fas fa-sync-alt fa-fw"></span>&nbsp;刷新集群</a>
-					<div class="dropdown-divider"></div>
 					</#if>
-					<a class="dropdown-item" href="#" title="将broker数据迁移至远程机器" onclick="migrateBrokerData()" data-target="#migrateBrokerDataModal" data-toggle="modal"><i class="fa-solid fa-copy fa-fw"></i></span>&nbsp;迁移数据</a>
 					<#if response.result.brokerGroup??>
 					<div class="dropdown-divider"></div>
 					<a class="dropdown-item" href="#" data-placement="bottom" title="该功能用于将集群的topic或consumer写入MQCloud中" onclick="brokerChooseShow()" data-toggle="modal"><i class="fa-solid fa-download fa-fw"></i>&nbsp;初始化数据</a>
@@ -102,89 +100,90 @@
 				<#assign i = 0>
 				<#list brokerGroup?keys as key>
 					<#assign rowspaned = false>
-					<#list brokerGroup[key]?keys as bkey>
+					<#list brokerGroup[key] as brokerStat>
 						<tr>
 							<#assign i = i + 1>
 							<#if !rowspaned>
-								<#if bkey == "0">
-									<td rowspan=${brokerGroup[key]?size}><a onclick="showBrokerStoreStatModal('${brokerGroup[key][bkey].brokerAddr}')" data-toggle="tooltip" title="查看master存储性能" href="#">${key}</a></td>
+								<#if brokerStat.brokerId == "0">
+									<td rowspan=${brokerGroup[key]?size}><a onclick="showBrokerStoreStatModal('${brokerStat.brokerAddr!}')" data-toggle="tooltip" title="查看master存储性能" href="#">${key}</a></td>
 								<#else>
 									<td rowspan=${brokerGroup[key]?size}>${key}</td>
 								</#if>
 								<#assign rowspaned = true>
 							</#if>
-							<#if bkey == "0">
-								<td><a href='#' onclick="setIp('${brokerGroup[key][bkey].brokerAddr}')" data-target="#brokerTrafficModal" data-toggle="modal" title="查看master流量">${bkey}</a></td>
+							<#if brokerStat.brokerId == "0">
+								<td><a href='#' onclick="setIp('${brokerStat.brokerAddr!}')" data-target="#brokerTrafficModal" data-toggle="modal" title="查看master流量">${brokerStat.brokerId}</a></td>
 							<#else>
-								<td class="border-top-0 pt-0" style="padding-left: 12px;">${bkey}</td>
+								<td class="border-top-0 pt-0" style="padding-left: 12px;">${brokerStat.brokerId}</td>
 							</#if>
-							<td <#if bkey != "0">class="border-top-0 pt-0"</#if>><a href="#" onclick="showBrokerConfigModal('${brokerGroup[key][bkey].brokerAddr}')" data-toggle="tooltip" title="线上配置">${brokerGroup[key][bkey].brokerAddr}</a></td>
-							<td <#if bkey != "0">class="border-top-0 pt-0"</#if>>
-								<#if brokerGroup[key][bkey].inTps??>${brokerGroup[key][bkey].inTps}</#if>
+							<td <#if brokerStat.brokerId != "0">class="border-top-0 pt-0"</#if>>
+								<#if brokerStat.version??>
+									<a href="#" onclick="showBrokerConfigModal('${brokerStat.brokerAddr}')" data-toggle="tooltip" title="线上配置">${brokerStat.brokerAddr}</a>
+								<#else>
+									${brokerStat.brokerAddr}
+								</#if>
 							</td>
-							<td <#if bkey != "0">class="border-top-0 pt-0"</#if>>
-								<#if brokerGroup[key][bkey].outTps??>${brokerGroup[key][bkey].outTps}</#if>
+							<td <#if brokerStat.brokerId != "0">class="border-top-0 pt-0"</#if>>
+								<#if brokerStat.inTps??>${brokerStat.inTps}</#if>
 							</td>
-							<td <#if bkey != "0">class="border-top-0 pt-0"</#if>>
-								<a href="#" data-target="#timerWheelMetricsModal" data-toggle="modal" onclick="timerWheelMetrics('${brokerGroup[key][bkey].brokerAddr}')"><span data-toggle="tooltip" data-html="true" title="时间轮写入吞吐(timerEnqueueTps):${brokerGroup[key][bkey].timerEnqueueTpsFormat!}<br>commitlog写入吞吐(timerDequeueTps):${brokerGroup[key][bkey].timerDequeueTpsFormat!}<br>消费时间轮topic落后量(timerOffsetBehind):${brokerGroup[key][bkey].timerOffsetBehind!}<br>时间轮转动落后时间(timerReadBehind):${brokerGroup[key][bkey].timerReadBehind!}ms">${brokerGroup[key][bkey].timerCongestNum!}</span></a>
+							<td <#if brokerStat.brokerId != "0">class="border-top-0 pt-0"</#if>>
+								<#if brokerStat.outTps??>${brokerStat.outTps}</#if>
 							</td>
-							<td <#if bkey != "0">class="border-top-0 pt-0"</#if>>
-								<#if brokerGroup[key][bkey].delayQueue??>
+							<td <#if brokerStat.brokerId != "0">class="border-top-0 pt-0"</#if>>
+								<a href="#" data-target="#timerWheelMetricsModal" data-toggle="modal" onclick="timerWheelMetrics('${brokerStat.brokerAddr}')"><span data-toggle="tooltip" data-html="true" title="时间轮写入吞吐(timerEnqueueTps):${brokerStat.timerEnqueueTpsFormat!}<br>commitlog写入吞吐(timerDequeueTps):${brokerStat.timerDequeueTpsFormat!}<br>消费时间轮topic落后量(timerOffsetBehind):${brokerStat.timerOffsetBehind!}<br>时间轮转动落后时间(timerReadBehind):${brokerStat.timerReadBehind!}ms">${brokerStat.timerCongestNum!}</span></a>
+							</td>
+							<td <#if brokerStat.brokerId != "0">class="border-top-0 pt-0"</#if>>
+								<#if brokerStat.delayQueue??>
 									<a href="#" data-target="#delayMessageOffsetModal${i}" data-toggle="modal" title="查看延迟队列数据">
-									${brokerGroup[key][bkey].delayQueue.delayMessageOffset}
+									${brokerStat.delayQueue.delayMessageOffset}
 									</a>
 								<#else>
 									0
 								</#if>
 							</td>
-							<#if bkey == "0">
-								<td>0</td>
+							<#if brokerStat.brokerId == "0">
+								<td>0B</td>
 							<#else>
-								<#if brokerGroup[key]["0"]??>
-									<#assign fallbehindSize=brokerGroup[key]["0"].commitLogMaxOffset - brokerGroup[key][bkey].commitLogMaxOffset />
-									<td class="border-top-0 pt-0" data-toggle="tooltip" title="${fallbehindSize}">${brokerGroup[key]["0"].format(fallbehindSize)}</td>
-								<#else>
-									<td data-toggle="tooltip">0</td>
-								</#if>
+								<td class="border-top-0 pt-0">${brokerStat.fallbehindSizeFormat}</td>
 							</#if>
-							<td <#if bkey != "0">class="border-top-0 pt-0"</#if>>
-								<#if brokerGroup[key][bkey].version??>${brokerGroup[key][bkey].version}</#if>
+							<td <#if brokerStat.brokerId != "0">class="border-top-0 pt-0"</#if>>
+								<#if brokerStat.info??><a href="#" data-target="#clusterInfoModal${i}" data-toggle="modal" title="查看当前broker的其他状态信息"></#if>
+								<#if brokerStat.version??>${brokerStat.version}</#if>
+								<#if brokerStat.info??></a></#if>
 							</td>
-							<td <#if bkey != "0">class="border-top-0 pt-0"</#if>>
-								<#if brokerGroup[key][bkey].checkStatus == 2>
-									<font style='font-weight:bold' color='red'>${brokerGroup[key][bkey].checkStatusDesc}</font>
+							<td <#if brokerStat.brokerId != "0">class="border-top-0 pt-0"</#if>>
+								<#if brokerStat.checkStatus == 2>
+									<font style='font-weight:bold' color='red'>${brokerStat.checkStatusDesc}</font>
 								<#else>
-									${brokerGroup[key][bkey].checkStatusDesc}
+									${brokerStat.checkStatusDesc}
 								</#if>
 							</td>
-							<td class="text-wrap <#if bkey != "0">border-top-0 pt-0</#if>">
-								<#if brokerGroup[key][bkey].checkTime??>${brokerGroup[key][bkey].checkTime}</#if>
+							<td class="text-wrap <#if brokerStat.brokerId != "0">border-top-0 pt-0</#if>">
+								<#if brokerStat.checkTime??>${brokerStat.checkTime}</#if>
 							</td>
-							<td <#if bkey != "0">class="border-top-0 pt-0"</#if>>
-								<#if brokerGroup[key][bkey].info??>
-									<button data-target="#clusterInfoModal${i}" data-toggle="modal" type="button" class="btn btn-xs btn-info" title="查看当前broker的其他状态信息"><span class="fas fa-eye" aria-hidden="true"></span></button>
+							<td <#if brokerStat.brokerId != "0">class="border-top-0 pt-0"</#if>>
+								<button title="迁移Broker：基于rsync，适合大数量增量同步，推荐使用" data-toggle="modal" class="btn btn-xs btn-info" onclick="toMigratePage('${brokerStat.brokerIp}', '${brokerStat.baseDir}')"><i class="fa-fw fa-solid fa-copy"></i></button>
+								<#if brokerStat.version?? && brokerStat.brokerId == "0">
+									<button title="查看broker限速详情" data-toggle="modal" class="btn btn-xs btn-secondary" onclick="brokerRateLimitModalShow('${brokerStat.brokerAddr}')"><i class="fa-solid fa-fw fa-gauge"></i></button>
 								</#if>
-								<#if brokerGroup[key][bkey].version?? && bkey == "0">
-									<button title="查看broker限速详情" data-toggle="modal" class="btn btn-xs btn-secondary" onclick="brokerRateLimitModalShow('${brokerGroup[key][bkey].brokerAddr}')"><i class="fa-solid fa-fw fa-gauge"></i></button>
-								</#if>
-								<#if brokerGroup[key][bkey].version??>
-								<#if bkey == "0">
-									<#if brokerGroup[key][bkey].writable>
-										<button title="禁止客户端写入，broker下线前需要先禁止写入，等没有人写入后，再下线" type="button" onclick="program('${brokerGroup[key][bkey].brokerAddr}', 'program${i}')" class="btn btn-xs btn-warning" data-target="#nowriteModal${i}" data-toggle="modal">停写</button>
+								<#if brokerStat.version??>
+									<#if brokerStat.brokerId == "0">
+										<#if brokerStat.writable>
+											<button title="禁止客户端写入，broker下线前需要先禁止写入，等没有人写入后，再下线" type="button" onclick="program('${brokerStat.brokerAddr}', 'program${i}')" class="btn btn-xs btn-warning" data-target="#nowriteModal${i}" data-toggle="modal">停写</button>
+										<#else>
+											<button title="恢复写入" type="button" onclick="program('${brokerStat.brokerAddr}', 'program${i}')" class="btn btn-xs btn-info" data-target="#nowriteModal${i}" data-toggle="modal">恢复</button>
+										</#if>
+										<button title="已经停写的broker，可以进行关闭操作" type="button" class="btn btn-xs btn-danger" data-target="#brokerOfflineModal${i}" onclick="program('${brokerStat.brokerAddr}', 'brokerOfflineProgram${i}')" data-toggle="modal">下线</button>
+										<div class="d-inline-flex">
+											<button title="增加slave" type="button" class="btn btn-xs btn-primary"  onclick="addBroker('${key}', '${brokerStat.version}')" data-target="#addBrokerModal" data-toggle="modal"><span class="fas fa-plus" aria-hidden="true"></span></button>
+										</div>
 									<#else>
-										<button title="恢复写入" type="button" onclick="program('${brokerGroup[key][bkey].brokerAddr}', 'program${i}')" class="btn btn-xs btn-info" data-target="#nowriteModal${i}" data-toggle="modal">恢复</button>
+										<button title="slave可以直接进行关闭" type="button" class="btn btn-xs btn-danger" data-target="#brokerOfflineModal${i}" onclick="program('${brokerStat.brokerAddr}', 'brokerOfflineProgram${i}')" data-toggle="modal">下线</button>
 									</#if>
-									<button title="已经停写的broker，可以进行关闭操作" type="button" class="btn btn-xs btn-danger" data-target="#brokerOfflineModal${i}" onclick="program('${brokerGroup[key][bkey].brokerAddr}', 'brokerOfflineProgram${i}')" data-toggle="modal">下线</button>
-									<div class="d-inline-flex">
-										<button title="增加slave" type="button" class="btn btn-xs btn-primary"  onclick="addBroker('${key}', '${brokerGroup[key][bkey].version}')" data-target="#addBrokerModal" data-toggle="modal"><span class="fas fa-plus" aria-hidden="true"></span></button>
-									</div>
 								<#else>
-									<button title="slave可以直接进行关闭" type="button" class="btn btn-xs btn-danger" data-target="#brokerOfflineModal${i}" onclick="program('${brokerGroup[key][bkey].brokerAddr}', 'brokerOfflineProgram${i}')" data-toggle="modal">下线</button>
-								</#if>
-								<#else>
-									<button id="brokerBtn${i}" title="启动" data-toggle="tooltip" type="button" id="${key}<#if bkey != "0">-s</#if>Btn" class="btn btn-xs btn-success" onclick="startupBroker('${brokerGroup[key][bkey].brokerAddr}', '${key}<#if bkey != "0">-s</#if>', '${brokerGroup[key][bkey].baseDir!}', 'brokerBtn${i}')">启动</button>
-									<button title="在当前机器更新broker并保留数据" type="button" class="btn btn-xs btn-info"  onclick="upgradeBroker('${brokerGroup[key][bkey].brokerAddr}', '${key}<#if bkey != "0">-s${bkey}</#if>', '${brokerGroup[key][bkey].baseDir!}')" data-target="#upgradeBrokerModal" data-toggle="modal">升级</button>
-									<button title="将当前机器broker数据迁移至远程机器" type="button" class="btn btn-xs btn-info"  onclick="migrateBrokerData('${brokerGroup[key][bkey].brokerAddr}', '${brokerGroup[key][bkey].baseDir!}')" data-target="#migrateBrokerDataModal" data-toggle="modal">数据迁移</button>
+									<button id="brokerBtn${i}" title="启动" data-toggle="tooltip" type="button" id="${key}<#if brokerStat.brokerId != "0">-s</#if>Btn" class="btn btn-xs btn-success" onclick="startupBroker('${brokerStat.brokerAddr}', '${key}<#if brokerStat.brokerId != "0">-s</#if>', '${brokerStat.baseDir!}', 'brokerBtn${i}')">启动</button>
+									<button title="在当前机器更新broker并保留数据" type="button" class="btn btn-xs btn-info"  onclick="upgradeBroker('${brokerStat.brokerAddr}', '${key}<#if brokerStat.brokerId != "0">-s${brokerStat.brokerId}</#if>', '${brokerStat.baseDir!}')" data-target="#upgradeBrokerModal" data-toggle="modal">升级</button>
+									<button title="迁移Broker：基于scp协议实现，不支持增量传输，传输慢，不推荐使用" type="button" class="btn btn-xs btn-secondary disabled"  onclick="migrateBrokerData('${brokerStat.brokerAddr}', '${brokerStat.baseDir!}')" data-target="#migrateBrokerDataModal" data-toggle="modal"><i class="fa-fw fa-regular fa-copy"></i></button>
 								</#if>
 							</td>
 						</tr>
@@ -214,9 +213,9 @@
 	<#assign i = 0>
 	<#list brokerGroup?keys as key>
 		<#assign rowspaned = false>
-		<#list brokerGroup[key]?keys as bkey>
+		<#list brokerGroup[key] as brokerStat>
 			<#assign i = i + 1>
-			<#if brokerGroup[key][bkey].info??>
+			<#if brokerStat.info??>
 				<div id="clusterInfoModal${i}" class="modal fade" tabindex="-1" data-width="400" aria-hidden="true">
 					<div class="modal-dialog modal-lg">
 						<div class="modal-content">
@@ -234,11 +233,11 @@
 										</tr>
 									</thead>
 									<tbody>
-										<#list brokerGroup[key][bkey].info?keys as ikey>
+										<#list brokerStat.info?keys as ikey>
 										<tr>
 											<td>${ikey}</td>
 											<td class="text-wrap">
-												${brokerGroup[key][bkey].info[ikey]}
+												${brokerStat.info[ikey]}
 											</td>
 										<tr>
 										</#list>
@@ -249,12 +248,12 @@
 					</div>
 				</div>
 			</#if>
-			<#if brokerGroup[key][bkey].delayQueue??>
+			<#if brokerStat.delayQueue??>
 				<div id="delayMessageOffsetModal${i}" class="modal fade" tabindex="-1" data-width="400" aria-hidden="true">
 					<div class="modal-dialog">
 						<div class="modal-content">
 							<div class="modal-header">
-								<h4 class="modal-title">${brokerGroup[key][bkey].brokerAddr}延迟队列数据</h4>
+								<h4 class="modal-title">${brokerStat.brokerAddr}延迟队列数据</h4>
 								<button type="button" class="close" data-dismiss="modal"
 										aria-hidden="true">&times;</button>
 							</div>
@@ -271,7 +270,7 @@
 												</tr>
 											</thead>
 											<tbody>
-											<#list brokerGroup[key][bkey].delayQueue.delayQueueOffsetList as offset>
+											<#list brokerStat.delayQueue.delayQueueOffsetList as offset>
 												<tr>
 													<td>${offset.messageDelayLevel.time}</td>
 													<td>
@@ -297,13 +296,13 @@
 					</div>
 				</div>
 			</#if>
-			<#if brokerGroup[key][bkey].version?? && bkey == "0">
+			<#if brokerStat.version?? && brokerStat.brokerId == "0">
 				<!-- 停写 -->
 			<div id="nowriteModal${i}" class="modal fade" tabindex="-1" data-width="400">
 				<div class="modal-dialog modal-xl">
 					<div class="modal-content">
 						<div class="modal-header">
-							<h4 class="modal-title">确定要<#if brokerGroup[key][bkey].writable>停止<#else>恢复</#if>写入?</h4>
+							<h4 class="modal-title">确定要<#if brokerStat.writable>停止<#else>恢复</#if>写入?</h4>
 							<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
 						</div>
 						<form class="form-horizontal form-bordered form-row-stripped" id="nowrite${i}">
@@ -324,14 +323,14 @@
 												</div>
 											</div>
 											<input type="hidden" name="cid" value="${response.result.selectedMQCluster.id}">
-											<input type="hidden" name="addr" value="${brokerGroup[key][bkey].brokerAddr}">
+											<input type="hidden" name="addr" value="${brokerStat.brokerAddr}">
 										</div>
 									</div>
 								</div>
 							</div>
 							<div class="modal-footer">
 								<button type="button" data-dismiss="modal" class="btn btn-light" >取消</button>
-								<#if brokerGroup[key][bkey].writable>
+								<#if brokerStat.writable>
 								<button type="button" class="btn btn-primary" onclick="nowrite('nowrite${i}')" id="nowrite${i}Btn">确定</button>
 								<#else>
 								<button type="button" class="btn btn-primary" onclick="resumeWrite('nowrite${i}')" id="nowrite${i}Btn">确定</button>
@@ -358,7 +357,7 @@
 											<div class="form-group row justify-content-center">
 												<label class="col-form-label col-md-1"> 地址: </label>
 												<div class="col-md-10">
-													<input type="text" name="addr" value="${brokerGroup[key][bkey].brokerAddr}" class="form-control" readonly />
+													<input type="text" name="addr" value="${brokerStat.brokerAddr}" class="form-control" readonly />
 												</div>
 											</div>
 											<div class="form-group  row justify-content-center">
@@ -385,12 +384,12 @@
 	
 
 <!-- 新建broker -->
-<div id="addBrokerModal" class="modal fade" tabindex="-1">
+<div id="addBrokerModal" class="modal fade" tabindex="-1" data-backdrop="static" data-keyboard="false">
 	<div class="modal-dialog modal-xl">
 		<div class="modal-content">
 			<div class="modal-header">
 				<h4 class="modal-title">新建Broker</h4>
-				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true" onclick="reloadPage()">&times;</button>
 			</div>
 			<div class="modal-body">
 				<div class="sw sw-justified" id="addNewBroker">
@@ -1514,7 +1513,7 @@ function initConfig(){
  */
 function startup(){
 	active_smartwizard("addNewBroker", 8);
-	$.post('${request.contextPath}/admin/deploy/startup',
+	$.post('${request.contextPath}/admin/deploy/startup/new/broker?cid=${response.result.selectedMQCluster.id}',
 		$("#"+installId).serialize(),
         function(data){
             if(data.status == 200){
@@ -2097,7 +2096,8 @@ function startupBroker(ipAddr, brokerName, dir, btnId){
 	disable(btnId);
 	post('${request.contextPath}/admin/deploy/startup/broker', {
 		ipAddr: ipAddr,
-		dir: dir
+		dir: dir,
+		cid: ${response.result.selectedMQCluster.id}
 	}, function (data) {
 		if (data.status == 200) {
 			toastr.success("启动成功！即将刷新页面！");
@@ -2484,6 +2484,14 @@ function brokerChoose() {
 		initConsumer();
 	}
 	$("#brokerChooseModal").modal('hide');
+}
+
+function toMigratePage(ip, path) {
+	window.location.href = "${request.contextPath}/admin/broker/migration/list?ip=" + ip + "&path=" + path;
+}
+function reloadPage(){
+	toastr.success("即将自动刷新页面！");
+	reload(2000);
 }
 </script>
 </#if>

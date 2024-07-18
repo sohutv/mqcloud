@@ -60,7 +60,7 @@ public class CommonConfig {
         return key.equals("operatorContact") || key.equals("classList") || key.equals("mapWithByteList")
                 || key.equals("machineRoom") || key.equals("machineRoomList") || key.equals("machineRoomColor")
                 || key.equals("clientGroupNSConfig") || key.equals("oldReqestCodeBrokerSet") || key.equals("proxyAcls")
-                || key.equals("orderTopicKVConfig")
+                || key.equals("orderTopicKVConfig") || key.equals("rsyncConfig")
                 ;
     }
 

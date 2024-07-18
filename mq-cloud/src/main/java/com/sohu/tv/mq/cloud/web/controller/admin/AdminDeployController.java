@@ -1,8 +1,11 @@
 package com.sohu.tv.mq.cloud.web.controller.admin;
 
 import com.sohu.tv.mq.cloud.bo.Broker;
+import com.sohu.tv.mq.cloud.bo.DataMigration;
 import com.sohu.tv.mq.cloud.service.BrokerService;
+import com.sohu.tv.mq.cloud.service.DataMigrationService;
 import com.sohu.tv.mq.cloud.service.MQDeployer;
+import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper;
 import com.sohu.tv.mq.cloud.util.Result;
 import com.sohu.tv.mq.cloud.util.RocketMQVersion;
 import com.sohu.tv.mq.cloud.util.Status;
@@ -25,6 +28,8 @@ import java.util.Map;
 @RestController
 @RequestMapping("/admin/deploy")
 public class AdminDeployController extends AdminViewController {
+
+    public static final String BACKUP_SUFFIX = ".backup";
     
     @Autowired
     private MQDeployer mqDeployer;
@@ -32,7 +37,11 @@ public class AdminDeployController extends AdminViewController {
     @Autowired
     private BrokerService brokerService;
 
-    private static final String BACKUP_SUFFIX = ".backup";
+    @Autowired
+    private DataMigrationService dataMigrationService;
+
+    @Autowired
+    private MQCloudConfigHelper mqCloudConfigHelper;
     
     /**
      * 校验jdk
@@ -160,6 +169,7 @@ public class AdminDeployController extends AdminViewController {
         if(configResult.isNotOK()) {
             return configResult;
         }
+        brokerService.saveBrokerTmp(param);
         return Result.getOKResult();
     }
 
@@ -219,6 +229,23 @@ public class AdminDeployController extends AdminViewController {
         logger.warn("startup, ip:{}, dir:{}, user:{}", ip, dir, ui);
         return mqDeployer.startup(ip, dir, port);
     }
+
+    /**
+     * 启动新的broker
+     * @return
+     */
+    @RequestMapping(value="/startup/new/broker", method=RequestMethod.POST)
+    public Result<?> startupNewBroker(UserInfo ui, @RequestParam(name="ip") String ip,
+                             @RequestParam(name="dir") String dir,
+                             @RequestParam(name = "listenPort") int port,
+                             @RequestParam(name = "cid", defaultValue = "0") int cid) {
+        logger.warn("startup new broker, ip:{}, dir:{}, user:{}", ip, dir, ui);
+        Result<?> result = mqDeployer.startup(ip, dir, port);
+        if (cid != 0 && result.isOK()) {
+            brokerService.deleteBrokerTmp(cid, ip + ":" + port);
+        }
+        return result;
+    }
     
     /**
      * 启动，校验port方式重复启动
@@ -227,8 +254,9 @@ public class AdminDeployController extends AdminViewController {
      */
     @RequestMapping(value = "/startup/broker", method = RequestMethod.POST)
     public Result<?> startupBroker(UserInfo ui, @RequestParam(name = "ipAddr") String ipAddr,
-            @RequestParam(name = "dir") String dir) {
-        logger.warn("startup, ipAddr:{}, dir:{}, user:{}", ipAddr, dir, ui);
+            @RequestParam(name = "dir") String dir,
+            @RequestParam(name = "cid", defaultValue = "0") int cid) {
+        logger.warn("startup broker, ipAddr:{}, dir:{}, user:{}", ipAddr, dir, ui);
         // 参数校验
         String[] ips = ipAddr.split(":");
         if (ips.length != 2) {
@@ -242,13 +270,17 @@ public class AdminDeployController extends AdminViewController {
             // 端口被占
             if (result.getStatus() == Status.DB_ERROR.getKey()) {
                 if (result.getResult() != null) {
-                    result.setMessage(result.getResult().toString() + "端口被占用");
+                    result.setMessage(result.getResult().toString() + "端口被占用，请确定broker是否已经启动");
                 }
             }
             return result;
         }
         // 启动
-        return mqDeployer.startup(ip, dir, port);
+        Result<?> startupResult = mqDeployer.startup(ip, dir, port);
+        if (cid != 0 && startupResult.isOK()) {
+            brokerService.deleteBrokerTmp(cid, ip + ":" + port);
+        }
+        return startupResult;
     }
 
     @RequestMapping(value = "/_shutdown", method = RequestMethod.POST)
