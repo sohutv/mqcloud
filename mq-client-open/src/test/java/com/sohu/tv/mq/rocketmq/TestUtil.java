@@ -5,7 +5,20 @@ import com.sohu.tv.mq.rocketmq.redis.RedisBuilder;
 import com.sohu.tv.mq.serializable.StringSerializer;
 import org.apache.rocketmq.client.producer.TransactionListener;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+
 public class TestUtil {
+
+    public static String MQ_CLOUD_IP = "127.0.0.1";
+
+    static {
+        try {
+            MQ_CLOUD_IP = InetAddress.getByName("mq_cloud_ip").getHostAddress();
+            System.out.println("get mq_cloud_ip from config: " + MQ_CLOUD_IP);
+        } catch (UnknownHostException e) {
+        }
+    }
 
     public static RocketMQConsumer buildConsumer(String consumerGroup, String topic) {
         RocketMQConsumer consumer = new RocketMQConsumer(consumerGroup, topic);
@@ -36,7 +49,7 @@ public class TestUtil {
     }
 
     private static void setDomain(AbstractConfig abstractConfig) {
-        abstractConfig.setMqCloudDomain("127.0.0.1:8080");
+        abstractConfig.setMqCloudDomain(MQ_CLOUD_IP + ":8080");
         abstractConfig.setMessageSerializer(new StringSerializer<>());
     }
 }
