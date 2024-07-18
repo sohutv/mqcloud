@@ -14,7 +14,7 @@ def sendMessage():
 		# 定义生产消息的参数
 		payload = {'producer': 'mqcloud-http-test-topic-producer', 'message': '{"id":87312, "name":"abcd"}'}
 		# 发送消息生产请求
-		response = requests.post('http://${httpProducerUriPrefix}/mq/produce', data=payload)
+		response = requests.post('http://${httpProducerUriPrefix}/mq/produce', data=payload, timeout=10)
 		# 解析响应结果
 		if response.status_code == 200:
 			data = response.json()
@@ -52,7 +52,7 @@ def httpConsume():
 	while running:
 		try:
 			# 拉取消息
-			response = requests.get('http://${httpConsumerUriPrefix}/mq/message', params=payload)
+			response = requests.get('http://${httpConsumerUriPrefix}/mq/message', params=payload, timeout=10)
 			# 解析响应结果
 			if response.status_code == 200:
 				data = response.json()
