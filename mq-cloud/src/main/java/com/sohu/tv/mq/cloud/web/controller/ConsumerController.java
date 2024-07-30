@@ -35,6 +35,8 @@ import javax.validation.Valid;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static com.sohu.tv.mq.cloud.bo.Audit.TypeEnum.UPDATE_HTTP_CONSUMER_CONFIG;
+
 /**
  * 消费者接口
  * 
@@ -87,6 +89,12 @@ public class ConsumerController extends ViewController {
 
     @Autowired
     private AuditConsumerConfigService auditConsumerConfigService;
+
+    @Autowired
+    private MQProxyService mqProxyService;
+
+    @Autowired
+    private AuditHttpConsumerConfigService auditHttpConsumerConfigService;
 
     /**
      * 消费进度
@@ -965,6 +973,18 @@ public class ConsumerController extends ViewController {
     }
 
     /**
+     * 获取消费者配置
+     *
+     * @return
+     * @throws Exception
+     */
+    @ResponseBody
+    @GetMapping("/http/config/{consumer}")
+    public Result<?> httpConfig(@PathVariable String consumer) throws Exception {
+        return mqProxyService.getConsumerConfig(consumer);
+    }
+
+    /**
      * 更新消费者配置
      * 
      * @return
@@ -1010,7 +1030,7 @@ public class ConsumerController extends ViewController {
         // 保存记录
         Result<?> result = auditService.saveAuditAndConsumerConfig(audit, auditConsumerConfig);
         if (result.isOK()) {
-            String tip = getUpdateConsumerConfigTip(auditConsumerConfig);
+            String tip = getUpdateConsumerConfigTip(auditConsumerConfig.getConsumerId());
             alertService.sendAuditMail(userInfo.getUser(), TypeEnum.getEnumByType(audit.getType()), tip);
             // 重新定义返回文案
             result.setMessage(message);
@@ -1020,14 +1040,10 @@ public class ConsumerController extends ViewController {
 
     /**
      * 获取consumer的提示信息
-     * 
-     * @param tid
-     * @param cid
-     * @return
      */
-    private String getUpdateConsumerConfigTip(AuditConsumerConfig auditConsumerConfig) {
+    private String getUpdateConsumerConfigTip(long consumerId) {
         StringBuilder sb = new StringBuilder();
-        Result<Consumer> consumerResult = consumerService.queryById(auditConsumerConfig.getConsumerId());
+        Result<Consumer> consumerResult = consumerService.queryById(consumerId);
         if (consumerResult.isOK()) {
             Consumer consumer = consumerResult.getResult();
             sb.append(" consumer:");
@@ -1283,6 +1299,49 @@ public class ConsumerController extends ViewController {
         ConsumerRunningInfo consumerRunningInfo = result.getResult();
         setResult(map, new ConsumerRunningInfoVO(consumerRunningInfo, consumeStats));
         return view;
+    }
+
+    /**
+     * 更新http消费者配置
+     *
+     * @return
+     * @throws Exception
+     */
+    @ResponseBody
+    @PostMapping("/update/http/config")
+    public Result<?> updateHttpConfig(UserInfo userInfo, HttpConsumerConfigParam httpConsumerConfigParam) throws Exception {
+        // 校验用户是否有权限
+        Result<List<UserConsumer>> userResult = userConsumerService.queryUserConsumer(userInfo.getUser(),
+                httpConsumerConfigParam.getConsumerId());
+        if (userResult.isEmpty() && !userInfo.getUser().isAdmin()) {
+            return Result.getResult(Status.PERMISSION_DENIED_ERROR);
+        }
+        // 校验是否有未审核的记录
+        Result<Integer> unAuditCount = auditHttpConsumerConfigService.queryUnAuditCount(httpConsumerConfigParam.getConsumerId());
+        if (unAuditCount.isNotOK()) {
+            return unAuditCount;
+        }
+        if (unAuditCount.getResult() > 0) {
+            return Result.getResult(Status.AUDIT_RECORD_REPEAT);
+        }
+        httpConsumerConfigParam.reset();
+        // 构造审核记录
+        Audit audit = new Audit();
+        audit.setType(UPDATE_HTTP_CONSUMER_CONFIG.getType());
+        // 重新定义操作成功返回的文案
+        String message = UPDATE_HTTP_CONSUMER_CONFIG.getName() + "申请成功！请耐心等待！";
+        audit.setUid(userInfo.getUser().getId());
+        AuditHttpConsumerConfig auditHttpConsumerConfig = new AuditHttpConsumerConfig();
+        BeanUtils.copyProperties(httpConsumerConfigParam, auditHttpConsumerConfig);
+        // 保存记录
+        Result<?> result = auditService.saveAuditAndHttpConsumerConfig(audit, auditHttpConsumerConfig);
+        if (result.isOK()) {
+            String tip = getUpdateConsumerConfigTip(auditHttpConsumerConfig.getConsumerId());
+            alertService.sendAuditMail(userInfo.getUser(), UPDATE_HTTP_CONSUMER_CONFIG, tip);
+            // 重新定义返回文案
+            result.setMessage(message);
+        }
+        return Result.getWebResult(result);
     }
 
     @Override

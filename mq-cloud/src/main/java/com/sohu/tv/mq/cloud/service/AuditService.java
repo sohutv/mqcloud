@@ -120,6 +120,9 @@ public class AuditService {
     @Autowired
     private AuditTimespanMessageExportService auditTimespanMessageExportService;
 
+    @Autowired
+    private AuditHttpConsumerConfigService auditHttpConsumerConfigService;
+
     /**
      * 查询列表
      * 
@@ -780,6 +783,8 @@ public class AuditService {
                 return getCancelWheelMsgResult(aid);
             case TIMESPAN_MESSAGE_EXPORT:
                 return getTimespanMessageExportResult(aid);
+            case UPDATE_HTTP_CONSUMER_CONFIG:
+                return getUpdateHttpConsumerConfigResult(aid);
         }
         return null;
     }
@@ -1607,5 +1612,49 @@ public class AuditService {
             return Result.getDBErrorResult(e);
         }
         return Result.getResult(audit);
+    }
+
+    /**
+     * 保存审核以及消费者配置
+     */
+    @Transactional
+    public Result<?> saveAuditAndHttpConsumerConfig(Audit audit, AuditHttpConsumerConfig auditHttpConsumerConfig) {
+        Long count = null;
+        try {
+            count = auditDao.insert(audit);
+            if (count != null && count > 0) {
+                auditHttpConsumerConfig.setAid(audit.getId());
+                auditHttpConsumerConfigService.save(auditHttpConsumerConfig);
+            }
+        } catch (Exception e) {
+            logger.error("insert err, audit:{}", audit, e);
+            TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+            return Result.getDBErrorResult(e);
+        }
+        return Result.getResult(audit);
+    }
+
+    /**
+     * 获取http消费者配置
+     */
+    public Result<?> getUpdateHttpConsumerConfigResult(long aid) {
+        Result<AuditHttpConsumerConfig> result = auditHttpConsumerConfigService.query(aid);
+        if (result.isNotOK()) {
+            return result;
+        }
+        AuditHttpConsumerConfig auditHttpConsumerConfig = result.getResult();
+        Result<Consumer> consumerResult = consumerService.queryById(auditHttpConsumerConfig.getConsumerId());
+        if (consumerResult.isNotOK()) {
+            return consumerResult;
+        }
+        Result<Topic> topicResult = topicService.queryTopic(consumerResult.getResult().getTid());
+        if (topicResult.isNotOK()) {
+            return topicResult;
+        }
+        AuditHttpConsumerConfigVO auditHttpConsumerConfigVO = new AuditHttpConsumerConfigVO();
+        BeanUtils.copyProperties(auditHttpConsumerConfig, auditHttpConsumerConfigVO);
+        auditHttpConsumerConfigVO.setTopic(topicResult.getResult().getName());
+        auditHttpConsumerConfigVO.setConsumer(consumerResult.getResult().getName());
+        return Result.getResult(auditHttpConsumerConfigVO);
     }
 }

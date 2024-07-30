@@ -38,3 +38,17 @@ CREATE TABLE `broker_tmp`
     `base_dir`    varchar(360)          DEFAULT NULL COMMENT '安装路径',
     UNIQUE KEY `cid` (`cid`,`addr`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='broker临时表';
+
+-- ----------------------------
+-- Table structure for `audit_http_consumer_config`
+-- ----------------------------
+DROP TABLE IF EXISTS `audit_http_consumer_config`;
+CREATE TABLE `audit_http_consumer_config`
+(
+    `aid`             int(11) NOT NULL COMMENT '审核id',
+    `consumer_id`     int(11) NOT NULL COMMENT 'consumer id',
+    `pull_size`       int(11) DEFAULT NULL COMMENT '拉取消息量',
+    `pull_timeout`    int(11) DEFAULT NULL COMMENT '拉取超时时间，单位毫秒',
+    `consume_timeout` int(11) DEFAULT NULL COMMENT '消费超时时间，单位毫秒',
+    PRIMARY KEY (`aid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='审核HTTP消费者配置相关表';

@@ -1,5 +1,6 @@
 package com.sohu.tv.mq.cloud.service;
 
+import com.sohu.tv.mq.cloud.bo.HttpConsumerConfig;
 import com.sohu.tv.mq.cloud.bo.QueueOffset;
 import com.sohu.tv.mq.cloud.common.util.CipherHelper;
 import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper;
@@ -164,6 +165,35 @@ public class MQProxyService {
             }
         }
         return Result.getOKResult();
+    }
+
+    /**
+     * 消费者配置
+     *
+     * @param consumer
+     * @return
+     */
+    public Result<HttpConsumerConfig> getConsumerConfig(String consumer) {
+        String server = mqProxyServerChooser.choose();
+        if (server == null) {
+            return null;
+        }
+        String uriTemplate = "http://" + server + ":8081/mq/config/{consumer}";
+        URI url = restTemplate.getUriTemplateHandler().expand(uriTemplate, consumer);
+        try {
+            ResponseEntity<Result<HttpConsumerConfig>> response = restTemplate.exchange(url,
+                    HttpMethod.GET, null,
+                    new ParameterizedTypeReference<Result<HttpConsumerConfig>>() {
+                    });
+            Result<HttpConsumerConfig> result = response.getBody();
+            if (logger.isDebugEnabled()) {
+                logger.debug("url:{} result:{}", url, result);
+            }
+            return result;
+        } catch (Exception e) {
+            logger.error("getConsumerConfig err, url:{}", url, e);
+            return Result.getWebErrorResult(e);
+        }
     }
 
     /**

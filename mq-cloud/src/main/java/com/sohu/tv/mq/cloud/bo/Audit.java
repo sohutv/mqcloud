@@ -174,6 +174,7 @@ public class Audit {
         NEW_PRODUCER(21, "新建生产者", "associateProducer"),
         CANCEL_WHEEL_MSG(22, "取消定时消息", "cancelWheelMsg"),
         TIMESPAN_MESSAGE_EXPORT(23, "导出消息", "timespanMessageExport"),
+        UPDATE_HTTP_CONSUMER_CONFIG(24, "修改HTTP消费者配置", "updateHttpConsumerConfig"),
         ;
 
         private Integer type;

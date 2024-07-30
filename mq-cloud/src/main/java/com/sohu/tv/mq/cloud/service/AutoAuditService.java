@@ -6,8 +6,8 @@ import com.sohu.tv.mq.cloud.bo.Audit.TypeEnum;
 import com.sohu.tv.mq.cloud.bo.User;
 import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper;
 import com.sohu.tv.mq.cloud.util.Result;
-import com.sohu.tv.mq.cloud.web.controller.admin.AdminMessageController;
 import com.sohu.tv.mq.cloud.web.controller.admin.AdminAuditController;
+import com.sohu.tv.mq.cloud.web.controller.admin.AdminMessageController;
 import com.sohu.tv.mq.cloud.web.vo.UserInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -147,6 +147,9 @@ public class AutoAuditService {
                         break;
                     case TIMESPAN_MESSAGE_EXPORT:
                         result = auditController.timespanMessageExport(userInfo, aid);
+                        break;
+                    case UPDATE_HTTP_CONSUMER_CONFIG:
+                        result = auditController.updateHttpConsumerConfig(userInfo, aid);
                         break;
                 }
                 if (result != null) {

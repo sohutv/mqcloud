@@ -1,0 +1,49 @@
+<#if response.notOK>
+    <div class="text-center">异常数据</div>
+<#else>
+    <div class="form-group row">
+        <label class="col-md-3 col-form-label"> Topic: </label>
+        <div class="col-md-9">
+            <input type="text" value="${response.result.topic}" readonly="readonly" class="form-control" />
+        </div>
+    </div>
+    <div class="form-group row">
+        <label class="col-md-3 col-form-label"> 消费者: </label>
+        <div class="col-md-9">
+            <input type="text" value="${response.result.consumer}" readonly="readonly" class="form-control" />
+        </div>
+    </div>
+    <div class="form-group row">
+        <label class="col-form-label col-md-3"> 每次请求最多拉取: </label>
+        <div class="col-md-9">
+            <div class="input-group">
+                <input type="text" class="form-control" value="${response.result.pullSize!}" readonly="readonly"/>
+                <div class="input-group-append">
+                    <span class="input-group-text">条消息</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="form-group row">
+        <label class="col-form-label col-md-3"> 请求拉取超时时间: </label>
+        <div class="col-md-9">
+            <div class="input-group">
+                <input type="text" class="form-control" value="${response.result.pullTimeoutInSeconds!}" readonly="readonly"/>
+                <div class="input-group-append">
+                    <span class="input-group-text">秒</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="form-group row">
+        <label class="col-form-label col-md-3"> 消费超时时间: </label>
+        <div class="col-md-9">
+            <div class="input-group">
+                <input type="text" class="form-control" value="${response.result.consumeTimeoutInSeconds!}" readonly="readonly"/>
+                <div class="input-group-append">
+                    <span class="input-group-text">秒</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</#if>

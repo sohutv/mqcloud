@@ -50,9 +50,9 @@
 									<p class="m-1">
 										<span class="text-muted">消费模式:</span>&nbsp;&nbsp;
 										<#if consumerProgressVO.consumer.httpProtocol>
-											<font color="blue" data-toggle="tooltip" title="http方式消费">${consumerProgressVO.messageModel}</font>
+											<font color="blue" data-toggle="tooltip" title="消费协议：HTTP">${consumerProgressVO.messageModel}</font>
 											<#elseif consumerProgressVO.consumer.proxyRemoting>
-											<font color="blue" data-toggle="tooltip" title="Proxy Remoting方式消费">${consumerProgressVO.messageModel}</font>
+											<font color="blue" data-toggle="tooltip" title="消费协议：Proxy Remoting">${consumerProgressVO.messageModel}</font>
 											<#else>
 											${consumerProgressVO.messageModel}
 										</#if>
@@ -135,9 +135,9 @@
 													<button type="button" class="btn btn-xs btn-outline-secondary" title="暂停消费" onclick="showPauseConsumeConfigModel(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', true)" data-toggle="modal"><i class="fas fa-fw fa-pause"></i></button>
 												</#if>
 												<#if consumerProgressVO.consumerConfig?? && consumerProgressVO.consumerConfig.enableRateLimit?? && consumerProgressVO.consumerConfig.enableRateLimit>
-													<button type="button" class="btn btn-xs btn-outline-secondary" title="修改消费限速" onclick="showLimitConsumeConfigModel(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', true, <#if consumerProgressVO.consumerConfig.permitsPerSecond??>${consumerProgressVO.consumerConfig.permitsPerSecond}<#else>${limitConsumeTps}</#if>)" data-toggle="tooltip"><i class="fa-solid fa-fw fa-gauge"></i></button>
+													<button type="button" class="btn btn-xs btn-outline-secondary" title="修改消费限速" onclick="showLimitConsumeConfigModel(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', true, <#if consumerProgressVO.consumerConfig.permitsPerSecond??>${consumerProgressVO.consumerConfig.permitsPerSecond}<#else>${limitConsumeTps}</#if>)" data-toggle="tooltip"><i class="fa-fw fa-solid fa-faucet-drip"></i></button>
 												<#else>
-					                                <button type="button" class="btn btn-xs btn-outline-secondary" title="限制消费速率" onclick="showLimitConsumeConfigModel(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', false, <#if consumerProgressVO.consumerConfig?? && consumerProgressVO.consumerConfig.permitsPerSecond??>${consumerProgressVO.consumerConfig.permitsPerSecond}<#else>${limitConsumeTps}</#if>)" data-toggle="tooltip"><i class="fa-solid fa-fw fa-gauge-high"></i></button>
+					                                <button type="button" class="btn btn-xs btn-outline-secondary" title="限制消费速率" onclick="showLimitConsumeConfigModel(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', false, <#if consumerProgressVO.consumerConfig?? && consumerProgressVO.consumerConfig.permitsPerSecond??>${consumerProgressVO.consumerConfig.permitsPerSecond}<#else>${limitConsumeTps}</#if>)" data-toggle="tooltip"><i class="fa-fw fa-solid fa-faucet"></i></button>
 												</#if>
 												<#if topic.traceEnabled()>
 													<#if (consumerProgressVO.ownerList?? && consumerProgressVO.ownerList?seq_contains(userInfo.user)) || userInfo.user.type == 1>
@@ -148,9 +148,12 @@
 														</#if>
 													</#if>
 												</#if>
+												<#if consumerProgressVO.consumer.httpProtocol>
+													<button type="button" class="btn btn-xs btn-outline-secondary" title="修改HTTP消费配置" onclick="showHttpConfigModel(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}')" data-toggle="tooltip"><i class="fa-solid fa-gear"></i></button>
+												</#if>
 											<#else>
 												<button type="button" class="btn btn-xs btn-outline-secondary disabled" title="非MQCloud客户端暂不支持暂停消费" data-toggle="tooltip"><i class="fas fa-fw fa-pause"></i></button>
-												<button type="button" class="btn btn-xs btn-outline-secondary disabled" title="非MQCloud客户端暂不支持限制消费速率" data-toggle="tooltip"><i class="fa-solid fa-fw fa-gauge-high"></i></button>
+												<button type="button" class="btn btn-xs btn-outline-secondary disabled" title="非MQCloud客户端暂不支持限制消费速率" data-toggle="tooltip"><i class="fa-fw fa-solid fa-faucet-drip"></i></button>
 												<button type="button" class="btn btn-xs btn-outline-secondary disabled" data-toggle="tooltip" title="非MQCloud客户端暂不支持trace"><i class="fas fa-fw fa-eye-slash"></i></button>
 											</#if>
 			                    		</#if>
@@ -358,9 +361,9 @@
 									<p class="m-1">
 										<span class="text-muted">消费模式:</span>&nbsp;&nbsp;
 										<#if consumerProgressVO.consumer.httpProtocol>
-											<font color="blue" data-toggle="tooltip" title="http方式消费">${consumerProgressVO.messageModel}</font>
+											<font color="blue" data-toggle="tooltip" title="消费协议：HTTP">${consumerProgressVO.messageModel}</font>
 											<#elseif consumerProgressVO.consumer.proxyRemoting>
-											<font color="blue" data-toggle="tooltip" title="Proxy Remoting方式消费">${consumerProgressVO.messageModel}</font>
+											<font color="blue" data-toggle="tooltip" title="消费协议：Proxy Remoting">${consumerProgressVO.messageModel}</font>
 											<#else>
 											${consumerProgressVO.messageModel}
 										</#if>
@@ -443,13 +446,16 @@
 													<button type="button" class="btn btn-xs btn-outline-secondary" title="暂停消费" onclick="showPauseConsumeConfigModel(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', true)" data-toggle="tooltip"><i class="fas fa-fw fa-pause"></i></button>
 												</#if>
 												<#if consumerProgressVO.consumerConfig?? && consumerProgressVO.consumerConfig.enableRateLimit?? && consumerProgressVO.consumerConfig.enableRateLimit>
-													<button type="button" class="btn btn-xs btn-outline-secondary" title="修改消费限速" onclick="showLimitConsumeConfigModel(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', true, <#if consumerProgressVO.consumerConfig.permitsPerSecond??>${consumerProgressVO.consumerConfig.permitsPerSecond}<#else>${limitConsumeTps}</#if>)" data-toggle="tooltip"><i class="fa-solid fa-fw fa-gauge"></i></button>
+													<button type="button" class="btn btn-xs btn-outline-secondary" title="修改消费限速" onclick="showLimitConsumeConfigModel(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', true, <#if consumerProgressVO.consumerConfig.permitsPerSecond??>${consumerProgressVO.consumerConfig.permitsPerSecond}<#else>${limitConsumeTps}</#if>)" data-toggle="tooltip"><i class="fa-fw fa-solid fa-faucet-drip"></i></button>
 												<#else>
-													<button type="button" class="btn btn-xs btn-outline-secondary" title="限制消费速率" onclick="showLimitConsumeConfigModel(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', false, <#if consumerProgressVO.consumerConfig?? && consumerProgressVO.consumerConfig.permitsPerSecond??>${consumerProgressVO.consumerConfig.permitsPerSecond}<#else>${limitConsumeTps}</#if>)" data-toggle="tooltip"><i class="fa-solid fa-fw fa-gauge-high"></i></button>
+													<button type="button" class="btn btn-xs btn-outline-secondary" title="限制消费速率" onclick="showLimitConsumeConfigModel(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}', false, <#if consumerProgressVO.consumerConfig?? && consumerProgressVO.consumerConfig.permitsPerSecond??>${consumerProgressVO.consumerConfig.permitsPerSecond}<#else>${limitConsumeTps}</#if>)" data-toggle="tooltip"><i class="fa-fw fa-solid fa-faucet"></i></button>
+												</#if>
+												<#if consumerProgressVO.consumer.httpProtocol>
+													<button type="button" class="btn btn-xs btn-outline-secondary" title="修改HTTP消费配置" onclick="showHttpConfigModel(${consumerProgressVO.consumer.id}, '${consumerProgressVO.consumer.name}')" data-toggle="tooltip"><i class="fa-solid fa-gear"></i></button>
 												</#if>
 											<#else>
 												<button type="button" class="btn btn-xs btn-outline-secondary disabled" title="非MQCloud客户端暂不支持暂停消费" data-toggle="tooltip"><i class="fas fa-fw fa-pause"></i></button>
-												<button type="button" class="btn btn-xs btn-outline-secondary disabled" title="非MQCloud客户端暂不支持限制消费速率" data-toggle="tooltip"><i class="fa-solid fa-fw fa-gauge-high"></i></button>
+												<button type="button" class="btn btn-xs btn-outline-secondary disabled" title="非MQCloud客户端暂不支持限制消费速率" data-toggle="tooltip"><i class="fa-fw fa-solid fa-faucet-drip"></i></button>
 											</#if>
 			                    		</#if>
 			                    		<button type="button" class="btn btn-xs btn-outline-secondary" title="删除${consumerProgressVO.consumer.name}" data-toggle="tooltip"  onclick="deleteConsumerShow('${consumerProgressVO.consumer.name}', ${consumerProgressVO.consumer.id})"><i class="fas fa-fw fa-trash-alt"></i></button>
@@ -1381,7 +1387,67 @@
 		</div>
 	</div>
 </div>
-<!-- 删除consumer-->
+
+<!-- http消费配置 -->
+<div id="httpConfigModel" class="modal fade" tabindex="-1" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<span class="h5">HTTP消费配置</span>
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+			</div>
+			<div class="modal-body">
+				<form id="httpConsumeConfigForm">
+					<input type="hidden" name="consumerId" id="httpConsumerId">
+					<div class="form-group row">
+						<label class="col-form-label col-md-4"> 消费者: </label>
+						<div class="col-md-8">
+							<input type="text" readonly="readonly" id="httpConsumeName" name="consumer" value="" class="form-control" />
+						</div>
+					</div>
+					<div class="form-group row">
+						<label class="col-form-label col-md-4"> 每次请求最多拉取: </label>
+						<div class="col-md-8">
+							<div class="input-group">
+								<input type="text" id="pullSizeInput" data-toggle="tooltip" name="pullSize" title="最小为1，最大为128，非必要请勿修改" class="form-control" />
+								<div class="input-group-append">
+									<span class="input-group-text">条消息</span>
+								</div>
+							</div>
+						</div>
+					</div>
+					<div class="form-group row">
+						<label class="col-form-label col-md-4"> 请求拉取超时时间: </label>
+						<div class="col-md-8">
+							<div class="input-group">
+								<input type="text" id="pullTimeoutInput" data-toggle="tooltip" name="pullTimeout" title="最小为1秒，最大为60秒，非必要请勿修改" class="form-control" />
+								<div class="input-group-append">
+									<span class="input-group-text">秒</span>
+								</div>
+							</div>
+						</div>
+					</div>
+					<div class="form-group row">
+						<label class="col-form-label col-md-4"> 消费超时时间: </label>
+						<div class="col-md-8">
+							<div class="input-group">
+								<input type="text" id="consumeTimeoutInput" data-toggle="tooltip" name="consumeTimeout" title="最小为10秒，最大为10小时，非必要请勿修改" class="form-control" />
+								<div class="input-group-append">
+									<span class="input-group-text">秒</span>
+								</div>
+							</div>
+						</div>
+					</div>
+				</form>
+			</div>
+			<div  class="modal-footer justify-content-between">
+				<button type="button" data-dismiss="modal" class="btn btn-default" >取消</button>
+				<button type="button" id="httpConsumeBtn" class="btn btn-primary" onclick="httpConsumeConfig()">确定</button>
+			</div>
+		</div>
+	</div>
+</div>
+
 <#include "../inc/pagination.html">
 <script>
 /**
@@ -2393,5 +2459,67 @@ function consumerRunningInfoModelShow(consumer, comp) {
 		$("#consumerRunningInfoModelBody").html(data);
 		$('#consumerRunningInfoModel').modal('show');
 	});
+}
+
+/**
+ * 限制消费速率
+ */
+function showHttpConfigModel(consumerId, consumer) {
+	$("#httpConsumeName").val(consumer);
+	$("#httpConsumerId").val(consumerId);
+	$.get('${request.contextPath}/consumer/http/config/' + consumer, function (data) {
+		if (data.status == 200) {
+			$("#pullSizeInput").val(data.result.maxPullSize);
+			$("#pullTimeoutInput").val(data.result.consumerPullTimeoutInSeconds);
+			$("#consumeTimeoutInput").val(data.result.consumeTimeoutInSeconds);
+			$("#httpConfigModel").modal('show');
+		} else {
+			toastr.error("数据获取失败！" + data.message);
+		}
+	});
+}
+
+function httpConsumeConfig() {
+	var pullSize = $("#pullSizeInput").val();
+	if (!isValid("每次请求最多拉取消息量", pullSize, 1, 128)) {
+		return;
+	}
+	var pullTimeout = $("#pullTimeoutInput").val();
+	if (!isValid("请求拉取超时时间", pullTimeout, 1, 60)) {
+		return;
+	}
+	var consumeTimeout = $("#consumeTimeoutInput").val();
+	if (!isValid("消费超时时间", consumeTimeout, 10, 36000)) {
+		return;
+	}
+	disable("httpConsumeBtn");
+	$.post('${request.contextPath}/consumer/update/http/config',
+			$("#httpConsumeConfigForm").serialize(),
+			function(data){
+				if(data.status == 200){
+					toastr.success("申请成功，请稍后查看！即将跳转到我的工单");
+					toMyAuditPage();
+				}else{
+					toastr.error("申请失败！"+data.message);
+					enable("httpConsumeBtn");
+				}
+			}, 'json');
+}
+
+function isValid(flag, value, min, max) {
+	var newValue = Number(value);
+	if (!Number.isInteger(newValue)) {
+		alert(flag + "只能为正整数");
+		return false;
+	}
+	if (newValue < min) {
+		alert(flag + "不能小于" + min);
+		return false;
+	}
+	if (newValue > max) {
+		alert(flag + "不能大于" + max);
+		return false;
+	}
+	return true;
 }
 </script>

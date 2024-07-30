@@ -133,6 +133,9 @@ public class AdminAuditController extends AdminViewController {
     @Autowired
     private MessageExportService messageExportService;
 
+    @Autowired
+    private AuditHttpConsumerConfigService auditHttpConsumerConfigService;
+
     /**
      * 审核主列表
      * 
@@ -301,6 +304,7 @@ public class AdminAuditController extends AdminViewController {
                 case PAUSE_CONSUME:
                 case RESUME_CONSUME:
                 case LIMIT_CONSUME:
+                case UPDATE_HTTP_CONSUMER_CONFIG:
                     msg = getConsumerConfigMessage(aid);
                     break;
                 case UPDATE_TOPIC_TRAFFIC_WARN:
@@ -1844,6 +1848,53 @@ public class AdminAuditController extends AdminViewController {
         if (result.isNotOK()) {
             logger.error("save http consumer:{} httpConsumerConfig:{} failed", consumer.getName(), consumerConfig);
         }
+    }
+
+
+    /**
+     * 更新http消费者配置
+     */
+    @ResponseBody
+    @RequestMapping(value = "/updateHttpConsumerConfig", method = RequestMethod.POST)
+    public Result<?> updateHttpConsumerConfig(UserInfo userInfo, @RequestParam("aid") long aid) throws ParseException {
+        // 获取audit
+        Result<Audit> auditResult = auditService.queryAudit(aid);
+        if (auditResult.isNotOK()) {
+            return auditResult;
+        }
+        // 校验状态是否合法
+        Audit audit = auditResult.getResult();
+        if (INIT.getStatus() != audit.getStatus()) {
+            return getAuditStatusError(audit.getStatus());
+        }
+
+        // 查询审核记录
+        Result<AuditHttpConsumerConfig> result = auditHttpConsumerConfigService.query(aid);
+        if (result.isNotOK()) {
+            return result;
+        }
+        AuditHttpConsumerConfig auditHttpConsumerConfig = result.getResult();
+        // 查询consumer信息
+        Result<Consumer> consumerResult = consumerService.queryById(auditHttpConsumerConfig.getConsumerId());
+        if (consumerResult.isNotOK()) {
+            return consumerResult;
+        }
+        Consumer consumer = consumerResult.getResult();
+        ConsumerConfigParam consumerConfigParam = new ConsumerConfigParam();
+        consumerConfigParam.setConsumer(consumer.getName());
+        consumerConfigParam.setMaxPullSize(auditHttpConsumerConfig.getPullSize());
+        consumerConfigParam.setConsumeTimeoutInMillis(auditHttpConsumerConfig.getConsumeTimeout());
+        consumerConfigParam.setPullTimeoutInMillis(auditHttpConsumerConfig.getPullTimeout());
+        Result<?> updateResult = mqProxyService.consumerConfig(userInfo, consumerConfigParam);
+        if (updateResult.isNotOK()) {
+            return Result.getWebResult(updateResult);
+        }
+        // 更新申请状态
+        boolean updateOK = agreeAndTip(audit, userInfo.getUser().getEmail(), consumer.getName());
+        if (updateOK) {
+            return Result.getOKResult();
+        }
+        return Result.getResult(Status.DB_UPDATE_ERR_UPDATE_CONSUMER_CONFIG_OK);
     }
 
     @Override
