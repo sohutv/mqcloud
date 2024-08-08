@@ -1,5 +1,7 @@
 package com.sohu.tv.mq.cloud.bo;
 
+import org.apache.commons.lang3.math.NumberUtils;
+
 /**
  * broker配置
  * 
@@ -127,10 +129,27 @@ public class BrokerConfig {
         if (onlineValue == null || value == null || value.contains("核数")) {
             return key;
         }
+        // 先按照数值类型判断
+        try {
+            double onlineValueDouble = Double.parseDouble(onlineValue);
+            double valueDouble = Double.parseDouble(value);
+            if (onlineValueDouble != valueDouble) {
+                return toWarning(key);
+            } else {
+                return key;
+            }
+        } catch (NumberFormatException e) {
+            // ignore
+        }
+        // 在按照字符串判断
         if (!onlineValue.equals(value)) {
-            return "<b style= 'color:red'>" + key + "</b>";
+            return toWarning(key);
         }
         return key;
+    }
+
+    private String toWarning(String value) {
+        return "<b style= 'color:red'>" + value + "</b>";
     }
     
     public boolean isValueChanged() {

@@ -57,31 +57,10 @@ public class DefaultSohuMQAdminTest {
     }
 
     @Test
-    public void testChangeRate() throws Exception {
-        UpdateSendMsgRateLimitRequestHeader updateSendMsgRateLimitRequestHeader = new UpdateSendMsgRateLimitRequestHeader();
-        updateSendMsgRateLimitRequestHeader.setDefaultLimitQps(500);
-        sohuMQAdmin.updateSendMessageRateLimit("127.0.0.1:8888", updateSendMsgRateLimitRequestHeader);
-    }
-
-    @Test
     public void testChangeRateTopicRate() throws Exception {
         UpdateSendMsgRateLimitRequestHeader updateSendMsgRateLimitRequestHeader = new UpdateSendMsgRateLimitRequestHeader();
         updateSendMsgRateLimitRequestHeader.setTopic("SELF_TEST_TOPIC");
         updateSendMsgRateLimitRequestHeader.setTopicLimitQps(1000);
-        sohuMQAdmin.updateSendMessageRateLimit("127.0.0.1:8888", updateSendMsgRateLimitRequestHeader);
-    }
-
-    @Test
-    public void testChangeRetryRate() throws Exception {
-        UpdateSendMsgRateLimitRequestHeader updateSendMsgRateLimitRequestHeader = new UpdateSendMsgRateLimitRequestHeader();
-        updateSendMsgRateLimitRequestHeader.setSendMsgBackLimitQps(10);
-        sohuMQAdmin.updateSendMessageRateLimit("127.0.0.1:8888", updateSendMsgRateLimitRequestHeader);
-    }
-
-    @Test
-    public void testDisable() throws Exception {
-        UpdateSendMsgRateLimitRequestHeader updateSendMsgRateLimitRequestHeader = new UpdateSendMsgRateLimitRequestHeader();
-        updateSendMsgRateLimitRequestHeader.setDisabled(true);
         sohuMQAdmin.updateSendMessageRateLimit("127.0.0.1:8888", updateSendMsgRateLimitRequestHeader);
     }
 

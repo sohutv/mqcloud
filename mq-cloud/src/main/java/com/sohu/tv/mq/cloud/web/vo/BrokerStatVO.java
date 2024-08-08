@@ -47,6 +47,9 @@ public class BrokerStatVO {
 
     private long fallbehindSize;
 
+    // 临时broker
+    private boolean tmp;
+
     /**
      * 时间轮生产流程
      * 1.TimerEnqueueGetService从rmq_sys_wheel_timer拉取消息,封装TimerRequest写入enqueuePutQueue
@@ -244,6 +247,14 @@ public class BrokerStatVO {
 
     public boolean isMaster(){
         return "0".endsWith(brokerId);
+    }
+
+    public boolean isTmp() {
+        return tmp;
+    }
+
+    public void setTmp(boolean tmp) {
+        this.tmp = tmp;
     }
 
     public class DelayQueue {

@@ -22,6 +22,12 @@ public interface BrokerTmpDao {
     public List<Broker> selectByClusterId(@Param("cid") int cid);
 
     /**
+     * 查询
+     */
+    @Select("select * from broker_tmp where cid = #{cid} and addr = #{addr}")
+    public Broker select(@Param("cid") int cid, @Param("addr") String addr);
+
+    /**
      * 插入
      */
     @Insert("insert into broker_tmp(cid,addr,broker_name,broker_id,base_dir)" +

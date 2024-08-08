@@ -162,9 +162,11 @@
 								<#if brokerStat.checkTime??>${brokerStat.checkTime}</#if>
 							</td>
 							<td <#if brokerStat.brokerId != "0">class="border-top-0 pt-0"</#if>>
+								<#if !brokerStat.tmp>
 								<button title="迁移Broker：基于rsync，适合大数量增量同步，推荐使用" data-toggle="modal" class="btn btn-xs btn-info" onclick="toMigratePage('${brokerStat.brokerIp}', '${brokerStat.baseDir}')"><i class="fa-fw fa-solid fa-copy"></i></button>
+								</#if>
 								<#if brokerStat.version?? && brokerStat.brokerId == "0">
-									<button title="查看broker限速详情" data-toggle="modal" class="btn btn-xs btn-secondary" onclick="brokerRateLimitModalShow('${brokerStat.brokerAddr}')"><i class="fa-solid fa-fw fa-gauge"></i></button>
+									<button title="查看broker限速详情" data-toggle="modal" class="btn btn-xs btn-secondary" onclick="brokerRateLimitModalShow('${brokerStat.brokerAddr}')"><i class="fa-fw fa-solid fa-faucet-drip"></i></button>
 								</#if>
 								<#if brokerStat.version??>
 									<#if brokerStat.brokerId == "0">
@@ -182,8 +184,12 @@
 									</#if>
 								<#else>
 									<button id="brokerBtn${i}" title="启动" data-toggle="tooltip" type="button" id="${key}<#if brokerStat.brokerId != "0">-s</#if>Btn" class="btn btn-xs btn-success" onclick="startupBroker('${brokerStat.brokerAddr}', '${key}<#if brokerStat.brokerId != "0">-s</#if>', '${brokerStat.baseDir!}', 'brokerBtn${i}')">启动</button>
+									<#if brokerStat.tmp>
+									<button title="删除未成功部署的Broker" type="button" class="btn btn-xs btn-danger" data-target="#brokerDeleteModal" data-toggle="modal" onclick="deleteBroker('${brokerStat.brokerAddr}', '${brokerStat.baseDir!}')"><i class="fa-fw fas fa-trash-alt"></i></button>
+									<#else>
 									<button title="在当前机器更新broker并保留数据" type="button" class="btn btn-xs btn-info"  onclick="upgradeBroker('${brokerStat.brokerAddr}', '${key}<#if brokerStat.brokerId != "0">-s${brokerStat.brokerId}</#if>', '${brokerStat.baseDir!}')" data-target="#upgradeBrokerModal" data-toggle="modal">升级</button>
 									<button title="迁移Broker：基于scp协议实现，不支持增量传输，传输慢，不推荐使用" type="button" class="btn btn-xs btn-secondary disabled"  onclick="migrateBrokerData('${brokerStat.brokerAddr}', '${brokerStat.baseDir!}')" data-target="#migrateBrokerDataModal" data-toggle="modal"><i class="fa-fw fa-regular fa-copy"></i></button>
+									</#if>
 								</#if>
 							</td>
 						</tr>
@@ -982,8 +988,7 @@
 		<div class="modal-content">
 			<div class="modal-header">
 				<h4 class="modal-title"><span id="brokerRateLimitAddr"></span>限速详情</h4>
-				<button type="button" class="close" data-dismiss="modal"
-						aria-hidden="true">&times;</button>
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
 			</div>
 			<div id="brokerRateLimitDetail" class="modal-body">
 			</div>
@@ -997,8 +1002,7 @@
 		<div class="modal-content">
 			<div class="modal-header">
 				<h4 class="modal-title"><span id="rateLimitTopic"></span>限速修改</h4>
-				<button type="button" class="close" data-dismiss="modal"
-						aria-hidden="true">&times;</button>
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
 			</div>
 			<div class="modal-body">
 				<form class="form-horizontal form-row-stripped">
@@ -1017,8 +1021,8 @@
 			</div>
 			<div class="modal-footer">
 				<button type="button" data-dismiss="modal" class="btn btn-light" >取消</button>
-				<button type="button" class="btn btn-primary" onclick="updateTopicLimitRate()"
-						id="updateTopicLimitRateBtn">确定</button>
+				<button type="button" class="btn btn-primary" data-tooltip="true" title="在当前broker上更新限速" onclick="updateTopicLimitRate(false)" id="updateTopicLimitRateBtn">更新</button>
+				<button type="button" class="btn btn-primary" data-tooltip="true" title="在整个集群上更新限速" onclick="updateTopicLimitRate(true)" id="updateTopicLimitRateBtnAll">更新整个集群</button>
 			</div>
 		</div>
 	</div>
@@ -1029,9 +1033,8 @@
 	<div class="modal-dialog modal-lg">
 		<div class="modal-content">
 			<div class="modal-header">
-				<h4 class="modal-title"><span id="brokerRateLimitAddr"></span>时间轮指标详情</h4>
-				<button type="button" class="close" data-dismiss="modal"
-						aria-hidden="true">&times;</button>
+				<h4 class="modal-title">时间轮指标详情</h4>
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
 			</div>
 			<div class="modal-body card-body table-responsive p-0">
 				<table class="table table-head-fixed text-nowrap" style="margin-top: 0px">
@@ -1086,6 +1089,41 @@
 			<div class="modal-footer">
 				<button type="button" data-dismiss="modal" class="btn btn-light" >取消</button>
 				<button type="button" class="btn btn-primary" onclick="brokerChoose()" id="brokerChooseBtn">确定</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- 删除 -->
+<div id="brokerDeleteModal" class="modal fade" tabindex="-1" data-width="400">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h4 class="modal-title">确定要删除未成功部署的Broker?</h4>
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+			</div>
+			<div class="modal-body">
+				<form class="form-horizontal form-bordered form-row-stripped" id="brokerDeleteForm">
+					<div class="form-body">
+						<div class="form-group row justify-content-center">
+							<label class="col-form-label col-md-2"> 地址: </label>
+							<div class="col-md-6">
+								<input type="text" name="addr" id="brokerAddrInput" class="form-control" readonly />
+							</div>
+						</div>
+						<div class="form-group row justify-content-center">
+							<label class="col-form-label col-md-2"> 路径: </label>
+							<div class="col-md-6">
+								<input type="text" id="brokerDeployRootDir" class="form-control" readonly />
+							</div>
+						</div>
+					</div>
+					<input type="hidden" name="cid" value="${response.result.selectedMQCluster.id}">
+				</form>
+			</div>
+			<div class="modal-footer">
+				<button type="button" data-dismiss="modal" class="btn btn-light" >取消</button>
+				<button type="button" class="btn btn-primary" onclick="brokerDelete()" id="brokerDeleteBtn">确定</button>
 			</div>
 		</div>
 	</div>
@@ -2384,24 +2422,10 @@ function brokerRateLimitModalShow(addr){
 			function(data){
 				$("#brokerRateLimitDetail").html(data);
 				$("#brokerRateLimitModal").modal('show');
-				$("#rateLimitAddr").val(addr);
-				$("#rateLimitCid").val(${response.result.selectedMQCluster.id});
+				$('[data-tooltip="true"]').tooltip({
+					container: 'body'
+				});
 			});
-}
-
-function updateBrokerLimitRate() {
-	disable("brokerLimitRateFormBtn");
-	$.post('${request.contextPath}/admin/broker/ratelimit/update',
-			$("#brokerLimitRateForm").serialize(),
-			function(data){
-				if(data.status == 200){
-					toastr.success("修改成功, 系统将自动刷新");
-					reload(3000);
-				} else{
-					toastr.error("修改失败！"+data.message);
-					enable("brokerLimitRateFormBtn");
-				}
-			}, 'json');
 }
 
 function updateTopicLimitRateShow(topic, qps) {
@@ -2410,12 +2434,18 @@ function updateTopicLimitRateShow(topic, qps) {
 	$("#topicRateLimitModal").modal('show');
 }
 
-function updateTopicLimitRate() {
-	disable("updateTopicLimitRateBtn");
+function updateTopicLimitRate(all) {
+	var addr = $("#brokerRateLimitAddr").html();
+	if (all) {
+		disable("updateTopicLimitRateBtnAll");
+		addr = "-1";
+	} else {
+		disable("updateTopicLimitRateBtn");
+	}
 	$.post('${request.contextPath}/admin/broker/ratelimit/update',
 			{
 				cid: ${response.result.selectedMQCluster.id},
-				addr:  $("#rateLimitAddr").val(),
+				addr:  addr,
 				topic: $("#rateLimitTopic").html(),
 				topicLimitQps: $("#rateLimitTopicQps").val()
 			},
@@ -2425,7 +2455,11 @@ function updateTopicLimitRate() {
 					reload(3000);
 				} else{
 					toastr.error("修改失败！"+data.message);
-					enable("updateTopicLimitRateBtn");
+					if (all) {
+						enable("updateTopicLimitRateBtnAll");
+					} else {
+						enable("updateTopicLimitRateBtn");
+					}
 				}
 			}, 'json');
 }
@@ -2492,6 +2526,26 @@ function toMigratePage(ip, path) {
 function reloadPage(){
 	toastr.success("即将自动刷新页面！");
 	reload(2000);
+}
+
+function deleteBroker(brokerAddr, dir){
+	$("#brokerAddrInput").val(brokerAddr);
+	$("#brokerDeployRootDir").val(dir);
+}
+
+function brokerDelete() {
+	disable("brokerDeleteBtn");
+	post('${request.contextPath}/admin/deploy/delete/tmp/broker',
+			$("#brokerDeleteForm").serialize(),
+			function (data) {
+				if (data.status == 200) {
+					toastr.success("操作成功, 系统将自动刷新");
+					reload(3000);
+				} else {
+					toastr.error("操作失败！" + data.message);
+					enable("brokerDeleteBtn");
+				}
+			}, 'json');
 }
 </script>
 </#if>

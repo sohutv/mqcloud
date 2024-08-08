@@ -20,6 +20,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.remoting.protocol.body.ClusterInfo;
+import org.apache.rocketmq.remoting.protocol.body.KVTable;
 import org.apache.rocketmq.remoting.protocol.body.SubscriptionGroupWrapper;
 import org.apache.rocketmq.remoting.protocol.body.TopicConfigSerializeWrapper;
 import org.apache.rocketmq.remoting.protocol.route.BrokerData;
@@ -29,9 +30,11 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import java.io.File;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 
 /**
  * MQ部署
@@ -71,10 +74,12 @@ public class MQDeployer {
 
     public static final String PROXY_JSON = "rmq-proxy.json";
 
+    public static final String BROKER_RATE_LIMIT_JSON = "rateLimitConfig.json";
+
     // 部署broker时自动创建监控订阅组
     public static final String SUBSCRIPTIONGROUP_JSON = "echo '"
             + JSONUtil.toJSONString(SubscriptionGroup.buildMonitorSubscriptionGroup())
-            + "' > %s/data/config/subscriptionGroup.json";
+            + "' > %s/config/subscriptionGroup.json";
    
     protected Logger logger = LoggerFactory.getLogger(this.getClass());
     
@@ -92,6 +97,9 @@ public class MQDeployer {
     
     @Autowired
     private BrokerConfigService brokerConfigService;
+
+    @Autowired
+    private BrokerService brokerService;
     
     /**
      * 获取jdk版本
@@ -313,9 +321,10 @@ public class MQDeployer {
         String absoluteConfig = absoluteDir + "/" + CONFIG_FILE;
         String brokerIp = param.get("ip").toString();
         String runFileCommand = buildBrokerRunFileCommand(param);
+        String storePathRootDir = param.get("storePathRootDir").toString();
         // 1.基础配置
         String comm = String.format(DATA_LOGS_DIR, absoluteDir, absoluteDir)
-                + "mkdir -p " + param.get("storePathRootDir") + "/consumequeue " + param.get("storePathCommitLog")
+                + "mkdir -p " + storePathRootDir + "/consumequeue " + param.get("storePathCommitLog")
                 + " && echo -e \""
                 + map2String(param, cluster.getId())
                 + "\" > " + absoluteConfig + " && "
@@ -355,7 +364,7 @@ public class MQDeployer {
             return configResult;
         }
         // 3.初始化监控订阅信息
-        final String subscriptionGroupComm = String.format(SUBSCRIPTIONGROUP_JSON, absoluteDir);
+        final String subscriptionGroupComm = String.format(SUBSCRIPTIONGROUP_JSON, storePathRootDir);
         try {
             sshResult = sshTemplate.execute(brokerIp, new SSHCallback() {
                 public SSHResult call(SSHSession session) {
@@ -393,7 +402,7 @@ public class MQDeployer {
         }
         
         // 4.2保存topic配置
-        Result<?> topicSSHResult = saveConfig(brokerIp, result.getResult(), absoluteDir, "topics.json");
+        Result<?> topicSSHResult = saveConfig(brokerIp, result.getResult(), storePathRootDir, "topics.json");
         if(!topicSSHResult.isOK()) {
             return topicSSHResult;
         }
@@ -405,9 +414,46 @@ public class MQDeployer {
         }
         
         // 5.2保存consumer配置
-        Result<?> consumerSSHResult = saveConfig(brokerIp, consumerResult.getResult(), absoluteDir, 
-                "subscriptionGroup.json");
-        return consumerSSHResult;
+        Result<?> rst = saveConfig(brokerIp, consumerResult.getResult(), storePathRootDir, "subscriptionGroup.json");
+
+        // 6.1限速配置
+        String brokerRateLimitJson = getBrokerRateLimitJson(cluster, masterAddress);
+        if (StringUtils.isBlank(brokerRateLimitJson)) {
+            return rst;
+        }
+
+        // 6.2保存限速配置
+        return saveConfig(brokerIp, brokerRateLimitJson, storePathRootDir, BROKER_RATE_LIMIT_JSON);
+    }
+
+    /**
+     * 获取broker限速配置
+     */
+    private String getBrokerRateLimitJson(Cluster cluster, String brokerAddr) {
+        // 获取broker数据存储根路径
+        Properties properties = brokerService.fetchBrokerConfig(cluster, brokerAddr).getResult();
+        if (properties == null) {
+            return null;
+        }
+        String storePathRootDir = properties.getProperty("storePathRootDir");
+        if (storePathRootDir == null) {
+            return null;
+        }
+        String command = "cat " + storePathRootDir + "/config/" + BROKER_RATE_LIMIT_JSON;
+        try {
+            SSHResult sshResult = sshTemplate.execute(brokerAddr.split(":")[0], new SSHCallback() {
+                public SSHResult call(SSHSession session) {
+                    return session.executeCommand(command);
+                }
+            });
+            if (sshResult.isSuccess()) {
+                return sshResult.getResult();
+            }
+        } catch (SSHException e) {
+            logger.error(command, e);
+            return null;
+        }
+        return null;
     }
 
     /**
@@ -592,7 +638,7 @@ public class MQDeployer {
         return sb.toString();
     }
     
-    private Result<?> saveConfig(String ip, String content, String absoluteDir, String fileName) {
+    private Result<?> saveConfig(String ip, String content, String storePathRootDir, String fileName) {
         SSHResult sshResult = null;
         try {
             // save config to /tmp
@@ -600,7 +646,7 @@ public class MQDeployer {
             
             sshResult = sshTemplate.execute(ip, new SSHCallback() {
                 public SSHResult call(SSHSession session) {
-                    SSHResult sshResult = session.scpToDir("/tmp/" + fileName, absoluteDir+"/data/config/");
+                    SSHResult sshResult = session.scpToDir("/tmp/" + fileName, storePathRootDir + "/config/");
                     return sshResult;
                 }
             });
@@ -1337,6 +1383,19 @@ public class MQDeployer {
             return Result.getResult(true);
         }
         return Result.getResult(Status.NO_RESULT);
+    }
+
+    /**
+     * 删除某个目录
+     */
+    public Result<?> delete(String ip, String dir) {
+        String command = "sudo rm -rf " + dir;
+        try {
+            return wrapSSHResult(sshTemplate.execute(ip, session -> session.executeCommand(command)));
+        } catch (SSHException e) {
+            logger.error("unzip, ip:{} command:{}", ip, command, e);
+            return Result.getWebErrorResult(e);
+        }
     }
     
     /**

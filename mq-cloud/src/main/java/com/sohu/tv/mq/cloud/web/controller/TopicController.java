@@ -533,7 +533,7 @@ public class TopicController extends ViewController {
      */
     @ResponseBody
     @RequestMapping(value = "/detail")
-    public String updateTopicInfo(HttpServletResponse response, HttpServletRequest request,
+    public String detail(HttpServletResponse response, HttpServletRequest request,
             UserInfo userInfo, @RequestParam("topic") String topic,
             @RequestParam(name = "consumer", required = false) String consumer) throws Exception {
         if (!userInfo.getUser().isAdmin()) {

@@ -96,6 +96,7 @@ public class AdminClusterController extends AdminViewController {
                     brokerStatVO.setBrokerId(String.valueOf(broker.getBrokerID()));
                     brokerStatVO.setBaseDir(broker.getBaseDir());
                     brokerStatVO.setCreateTime(broker.getCreateTime());
+                    brokerStatVO.setTmp(true);
                     brokerGroup.computeIfAbsent(broker.getBrokerName(), k -> new ArrayList<>()).add(brokerStatVO);
                 }
             }
@@ -399,48 +400,32 @@ public class AdminClusterController extends AdminViewController {
      * @param mqCluster
      * @return
      */
-    private Map<String, List<BrokerStatVO>> fetchBrokerRuntimeStats(List<Broker> brokerList,
-            Cluster mqCluster) {
-        return mqAdminTemplate
-                .execute(new MQAdminCallback<Map<String, List<BrokerStatVO>>>() {
-                    public Map<String, List<BrokerStatVO>> callback(MQAdminExt mqAdmin) throws Exception {
-                        Map<String, List<BrokerStatVO>> brokerGroup = new TreeMap<>();
-                        for (Broker broker : brokerList) {
-                            // 公共逻辑 拼接BrokerStatVO
-                            BrokerStatVO brokerStatVO = new BrokerStatVO();
-                            brokerStatVO.setBrokerAddr(broker.getAddr());
-                            brokerStatVO.setBaseDir(broker.getBaseDir());
-                            brokerStatVO.setBrokerId(String.valueOf(broker.getBrokerID()));
-                            brokerStatVO.setCreateTime(broker.getCreateTime());
-                            brokerGroup.computeIfAbsent(broker.getBrokerName(), k -> new ArrayList<>()).add(brokerStatVO);
-                            // 监控结果
-                            brokerStatVO.setCheckStatus(broker.getCheckStatus());
-                            brokerStatVO.setCheckTime(broker.getCheckTimeFormat());
-                            brokerStatVO.setWritable(broker.isWritable());
-                            // 当有broker down时，数据库中的broker 地址已过时，增加异常处理
-                            try {
-                                // 抓取统计指标
-                                KVTable kvTable = mqAdmin.fetchBrokerRuntimeStats(broker.getAddr());
-                                // 处理broker stats 数据
-                                handleBrokerStat(broker, kvTable, brokerStatVO);
-                                brokerStatVO.setCheckStatus(CheckStatusEnum.OK.getStatus());
-                            } catch (Exception e) {
-                                brokerStatVO.setCheckStatus(CheckStatusEnum.FAIL.getStatus());
-                                logger.error("cluster:{} broker:{} err", mqCluster(), broker.getAddr(), e);
-                            }
-                        }
-                        return brokerGroup;
-                    }
-
-                    public Cluster mqCluster() {
-                        return mqCluster;
-                    }
-
-                    public Map<String, List<BrokerStatVO>> exception(Exception e) throws Exception {
-                        logger.error("cluster:{} err", mqCluster(), e);
-                        return null;
-                    }
-                });
+    private Map<String, List<BrokerStatVO>> fetchBrokerRuntimeStats(List<Broker> brokerList, Cluster mqCluster) {
+        Map<String, List<BrokerStatVO>> brokerGroup = new TreeMap<>();
+        for (Broker broker : brokerList) {
+            // 公共逻辑 拼接BrokerStatVO
+            BrokerStatVO brokerStatVO = new BrokerStatVO();
+            brokerStatVO.setBrokerAddr(broker.getAddr());
+            brokerStatVO.setBaseDir(broker.getBaseDir());
+            brokerStatVO.setBrokerId(String.valueOf(broker.getBrokerID()));
+            brokerStatVO.setCreateTime(broker.getCreateTime());
+            brokerGroup.computeIfAbsent(broker.getBrokerName(), k -> new ArrayList<>()).add(brokerStatVO);
+            // 监控结果
+            brokerStatVO.setCheckStatus(broker.getCheckStatus());
+            brokerStatVO.setCheckTime(broker.getCheckTimeFormat());
+            brokerStatVO.setWritable(broker.isWritable());
+            // 当有broker down时，数据库中的broker 地址已过时，增加异常处理
+            Result<KVTable> kvTableResult = brokerService.fetchBrokerRuntimeStats(broker.getAddr(), mqCluster);
+            KVTable kvTable = kvTableResult.getResult();
+            if (kvTable != null) {
+                // 处理broker stats 数据
+                handleBrokerStat(broker, kvTable, brokerStatVO);
+                brokerStatVO.setCheckStatus(CheckStatusEnum.OK.getStatus());
+            } else {
+                brokerStatVO.setCheckStatus(CheckStatusEnum.FAIL.getStatus());
+            }
+        }
+        return brokerGroup;
     }
 
     /**

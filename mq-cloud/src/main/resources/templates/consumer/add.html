@@ -38,10 +38,10 @@
 						<label class="col-md-3"> 开启Trace: </label>
 						<div class="col-md-7 checkbox">
 							<label data-toggle="tooltip" title="广播模式下不建议开启Trace">
-								<input type="radio" name="traceEnable" value="0" checked>否
+								<input id="traceDisableInput" type="radio" name="traceEnable" value="0" checked>否
 							</label>
 							<label data-toggle="tooltip" title="开启后，消费者会自动启用trace功能">
-								<input type="radio" name="traceEnable" value="1">是
+								<input id="traceEnableInput" type="radio" name="traceEnable" value="1">是
 							</label>
 						</div>
 					</div>
@@ -77,12 +77,12 @@
 	$(function(){
 		// 下拉框change事件
 		$('#topicSelectForConsumer').on('changed.bs.select',function(e, clickedIndex, newValue, oldValue){
-			if (topicMap[$(this).val()] == 0){
-				$("#addConsumerTraceDiv").addClass('hide');
-				$("input[name='traceEnable'][value='0']").prop("checked",true);
-				$("input[name='traceEnable'][value='1']").prop("checked",false);
+			if (topicMap[$(this).val()] == 0) {
+				$("#traceDisableInput").prop("checked", true).prop("disabled", true);
+				$("#traceEnableInput").prop("checked", false).prop("disabled", true);
 			} else {
-				$("#addConsumerTraceDiv").removeClass('hide');
+				$("#traceEnableInput").prop("disabled", false);
+				$("#traceDisableInput").prop("disabled", false);
 			}
 		});
 
@@ -173,11 +173,11 @@
 	
 	function consumerWayChange(type){
 		if (type == 1){
-			$("input[name='traceEnable'][value='1']").prop("checked",false);
-			$("input[name='traceEnable'][value='0']").prop("checked",true);
-			$("input[name='traceEnable']").prop("disabled",true);
+			$("#traceEnableInput").prop("checked",false).prop("disabled", true);
+			$("#traceDisableInput").prop("checked",true).prop("disabled", true);
 		} else if (type == 0){
-			$("input[name='traceEnable']").prop("disabled",false);
+			$("#traceEnableInput").prop("disabled", false);
+			$("#traceDisableInput").prop("disabled", false);
 		}
 	}
 </script>

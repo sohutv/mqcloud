@@ -52,3 +52,7 @@ CREATE TABLE `audit_http_consumer_config`
     `consume_timeout` int(11) DEFAULT NULL COMMENT '消费超时时间，单位毫秒',
     PRIMARY KEY (`aid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='审核HTTP消费者配置相关表';
+
+insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) values(4, 'sendMsgRateLimitQps', '10000', '发送消息限流qps', null, 4, 1, null, 0);
+insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) values(4, 'sendRetryMsgRateLimitQps', '1000', '发送重试消息限流qps', null, 5, 1, null, 0);
+insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) values(4, 'enableRateLimit', 'true', '是否启用发送消息限流', null, 6, 1, null, 0);

@@ -894,6 +894,9 @@ insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynami
 insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) values(4, 'useReentrantLockWhenPutMessage', 'false', '写消息是否使用重入锁', '若不使用建议配合transientStorePool使用；若使用要加大sendMessageThreadPoolNums', 1, 0, 'true:是;false:否;', 1);
 insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) values(4, 'sendMessageThreadPoolNums', '1', '处理发消息的线程池大小', '默认使用spin锁', 2, 0, null, 1);
 insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) values(4, 'waitTimeMillsInSendQueue', '200', '消息发送请求超过阈值没有处理则返回失败', '若出现broker busy建议调大', 3, 1, null, 1);
+insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) values(4, 'sendMsgRateLimitQps', '10000', '发送消息限流qps', null, 4, 1, null, 0);
+insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) values(4, 'sendRetryMsgRateLimitQps', '1000', '发送重试消息限流qps', null, 5, 1, null, 0);
+insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) values(4, 'enableRateLimit', 'true', '是否启用发送消息限流', null, 6, 1, null, 0);
 
 insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) values(5, 'sendThreadPoolQueueCapacity', '10000', '处理发消息的线程池队列大小', null, 2, 0, null, 0);
 insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) values(5, 'pullMessageThreadPoolNums', '16+核数*2', '处理拉消息的线程池大小', null, 3, 0, null, 0);
@@ -915,7 +918,7 @@ insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynami
 
 insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) values(7, 'mappedFileSizeCommitLog', '1073741824', 'CommitLog文件大小', '默认大小1G，如非必要请勿修改', 1, 0, null, 0);
 insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) values(7, 'flushIntervalCommitLog', '500', '异步刷盘时间间隔', '单位ms', 2, 1, null, 0);
-insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) values(7, 'flushCommitLogTimed', 'false', '是否定时刷CommitLog，若否会实时刷', null, 3, 1, 'true:是;false:否;', 0);
+insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) values(7, 'flushCommitLogTimed', 'true', '是否定时刷CommitLog，若否会实时刷', null, 3, 1, 'true:是;false:否;', 0);
 insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) values(7, 'flushCommitLogLeastPages', '4', '最少凑够多少页内存才刷CommitLog', null, 4, 1, null, 0);
 insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) values(7, 'flushCommitLogThoroughInterval', '10000', '两次刷CommitLog最大间隔，若超过，不校验页数直接刷', '单位ms,默认10秒', 5, 1, null, 0);
 insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) values(7, 'syncFlushTimeout', '5000', '同步刷CommitLog超时时间', '单位ms,默认5秒', 6, 1, null, 0);
@@ -981,12 +984,12 @@ insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynami
 insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) values(17, 'compressedRegister', 'false', '向NameServer注册时数据是否压缩', 'topic过多可以开启', 1, 1, 'true:是;false:否;', 0);
 insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) values(17, 'forceRegister', 'true', '向NameServer注册时是否强制每次发送数据', 'topic过多可以关闭', 2, 1, 'true:是;false:否;', 0);
 insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) values(17, 'registerNameServerPeriod', '30000', '向NameServer注册周期', '单位ms,默认30秒', 3, 0, null, 0);
-insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) values(17, 'registerBrokerTimeoutMills', '6000', '向NameServer注册时超时时间', '单位ms,默认6秒', 4, 1, null, 0);
+insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) values(17, 'registerBrokerTimeoutMills', '24000', '向NameServer注册时超时时间', '单位ms,默认24秒', 4, 1, null, 0);
 
 insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) values(18, 'rejectTransactionMessage', 'false', '是否拒绝发送事务消息', '非事务集群设置为true', 1, 1, 'true:是;false:否;', 0);
 insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) values(18, 'transactionTimeOut', '6000', '事务消息超过多久后首次检查', '单位ms,默认6秒', 2, 1, null, 0);
 insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) values(18, 'transactionCheckMax', '15', '事务消息最大检查次数', null, 3, 1, null, 0);
-insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) values(18, 'transactionCheckInterval', '60000', '事务消息检查间隔', '单位ms,默认60秒', 4, 1, null, 0);
+insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) values(18, 'transactionCheckInterval', '30000', '事务消息检查间隔', '单位ms,默认30秒', 4, 1, null, 0);
 
 insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) values(19, 'haSendHeartbeatInterval', '5000', 'slave与master心跳间隔', '单位ms,默认5秒', 1, 1, null, 0);
 insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) values(19, 'haMasterAddress', null, 'slave的HA master', '无需设置,向NameServer注册会返回master地址作为HA地址', 2, 0, null, 0);
@@ -1009,8 +1012,8 @@ insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynami
 insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) values(21, 'serverOnewaySemaphoreValue', '256', 'oneway信号量', null, 4, 0, null, 0);
 insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) values(21, 'serverAsyncSemaphoreValue', '64', 'aysnc信号量', null, 5, 0, null, 0);
 insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) values(21, 'serverChannelMaxIdleTimeSeconds', '120', 'idle最大时间', null, 6, 0, null, 0);
-insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) values(21, 'serverSocketSndBufSize', '131072', 'SO_SNDBUF', null, 7, 0, null, 0);
-insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) values(21, 'serverSocketRcvBufSize', '131072', 'SO_RCVBUF', null, 8, 0, null, 0);
+insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) values(21, 'serverSocketSndBufSize', '0', 'SO_SNDBUF', null, 7, 0, null, 0);
+insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) values(21, 'serverSocketRcvBufSize', '0', 'SO_RCVBUF', null, 8, 0, null, 0);
 insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) values(21, 'serverPooledByteBufAllocatorEnable', 'true', '是否开启bytebuffer池', null, 9, 0, 'true:是;false:否;', 0);
 insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) values(21, 'useEpollNativeSelector', 'false', '是否使用epoll', null, 10, 0, 'true:是;false:否;', 0);
 
@@ -1021,10 +1024,10 @@ insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynami
 insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) values(22, 'channelNotActiveInterval', '60000', '此项作废', null, 5, 0, null, 0);
 insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) values(22, 'clientChannelMaxIdleTimeSeconds', '120', '链接最大idle时间', null, 6, 0, null, 0);
 insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) values(22, 'connectTimeoutMillis', '3000', '连接超时时间', null, 7, 0, null, 0);
-insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) values(22, 'clientSocketSndBufSize', '131072', 'SO_SNDBUF', null, 8, 0, null, 0);
-insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) values(22, 'clientSocketRcvBufSize', '131072', 'SO_RCVBUF', null, 9, 0, null, 0);
+insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) values(22, 'clientSocketSndBufSize', '0', 'SO_SNDBUF', null, 8, 0, null, 0);
+insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) values(22, 'clientSocketRcvBufSize', '0', 'SO_RCVBUF', null, 9, 0, null, 0);
 insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) values(22, 'clientPooledByteBufAllocatorEnable', 'false', '是否开启bytebuffer池', null, 10, 0, 'true:是;false:否;', 0);
-insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) values(22, 'clientCloseSocketIfTimeout', 'false', '超时是否关闭连接', null, 11, 0, 'true:是;false:否;', 0);
+insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) values(22, 'clientCloseSocketIfTimeout', 'true', '超时是否关闭连接', null, 11, 0, 'true:是;false:否;', 0);
 insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) values(22, 'useTLS', 'false', '是否使用ssl', null, 12, 0, 'true:是;false:否;', 0);
 
 insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) values(23, 'storeReplyMessageEnable', 'true', '是否启用rpc消息', null, 1, 1, 'true:是;false:否;', 0);

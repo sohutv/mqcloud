@@ -307,9 +307,6 @@ function storageRemove(key) {
 }
 
 function getUnreadMsgCount() {
-	if (window.location.pathname.indexOf(contextPath + "/admin/") == 0) {
-		return;
-	}
 	// 获取用户未读消息
 	if (window.location.pathname != contextPath + "/login" && window.location.pathname != contextPath + "/register"
 		&& window.location.pathname != contextPath + "/user/guide") {
@@ -328,6 +325,10 @@ function getUnreadMsgCount() {
 	}
 }
 
+function isAdminPage() {
+	return window.location.pathname.indexOf(contextPath + "/admin/") == 0;
+}
+
 $(function () {
 	$("[data-toggle='tooltip']").tooltip({boundary: 'window'});
 	$("[data-toggle='modal']").tooltip({boundary: 'window'});
@@ -335,7 +336,9 @@ $(function () {
 		$(".modal.show").animate({scrollTop:0},300);
 		$("body , html").animate({scrollTop:0},300);
 	});
-	getUnreadMsgCount();
+	if (!isAdminPage()) {
+		getUnreadMsgCount();
+	}
 	$(document).on('mouseup touchend', function (e) {
 		var container = $('.bootstrap-datetimepicker-widget');
 		if (!container.is(e.target) && container.has(e.target).length === 0) {

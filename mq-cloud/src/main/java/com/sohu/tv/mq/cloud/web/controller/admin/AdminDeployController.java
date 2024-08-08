@@ -405,6 +405,25 @@ public class AdminDeployController extends AdminViewController {
                 storeFileParam.getDestIp(), storeFileParam.getDestHome(), storeFileParam.getStoreFile());
     }
 
+    /**
+     * 删除部署未成功的Broker
+     */
+    @PostMapping("/delete/tmp/broker")
+    public Result<?> deleteTmpBroker(UserInfo ui, @RequestParam(name = "addr") String addr,
+                                     @RequestParam(name = "cid") int cid) {
+        logger.warn("deleteTmpBroker, addr:{}, cid:{}, user:{}", addr, cid, ui);
+        Result<Broker> brokerResult = brokerService.queryTmpBroker(cid, addr);
+        if (brokerResult.isNotOK()) {
+            return Result.getWebResult(brokerResult);
+        }
+        Broker broker = brokerResult.getResult();
+        Result<?> deleteResult = mqDeployer.delete(addr.split(":")[0], broker.getBaseDir());
+        if (deleteResult.isOK()) {
+            return brokerService.deleteBrokerTmp(cid, addr);
+        }
+        return deleteResult;
+    }
+
     @Override
     public String viewModule() {
         return "deploy";

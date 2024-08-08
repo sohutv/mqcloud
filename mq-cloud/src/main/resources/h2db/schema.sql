@@ -885,7 +885,7 @@ CREATE TABLE IF NOT EXISTS `consumer_pause_config` (
     UNIQUE KEY `c_p_c` (`consumer`, `pause_client_id`)
 );
 
-CREATE TABLE IF NOT EXISTS TABLE `data_migration`
+CREATE TABLE IF NOT EXISTS `data_migration`
 (
     `id`          int(11) NOT NULL AUTO_INCREMENT,
     `source_ip`     varchar(255) NOT NULL COMMENT '源ip',
@@ -901,7 +901,7 @@ CREATE TABLE IF NOT EXISTS TABLE `data_migration`
     primary key (`id`)
 );
 
-CREATE TABLE IF NOT EXISTS TABLE `broker_tmp`
+CREATE TABLE IF NOT EXISTS `broker_tmp`
 (
     `cid`         int(11) NOT NULL COMMENT '集群id',
     `addr`        varchar(255) NOT NULL COMMENT 'broker 地址',
@@ -912,7 +912,7 @@ CREATE TABLE IF NOT EXISTS TABLE `broker_tmp`
     UNIQUE KEY `b_t_idx` (`cid`,`addr`)
 );
 
-CREATE TABLE IF NOT EXISTS TABLE `audit_http_consumer_config`
+CREATE TABLE IF NOT EXISTS `audit_http_consumer_config`
 (
     `aid`             int(11) NOT NULL COMMENT '审核id',
     `consumer_id`     int(11) NOT NULL COMMENT 'consumer id',

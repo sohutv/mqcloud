@@ -12,6 +12,7 @@ import com.sohu.tv.mq.cloud.common.mq.SohuMQAdmin;
 import com.sohu.tv.mq.cloud.dao.BrokerDao;
 import com.sohu.tv.mq.cloud.dao.BrokerTmpDao;
 import com.sohu.tv.mq.cloud.mq.DefaultCallback;
+import com.sohu.tv.mq.cloud.mq.MQAdminCallback;
 import com.sohu.tv.mq.cloud.mq.MQAdminTemplate;
 import com.sohu.tv.mq.cloud.util.DBUtil;
 import com.sohu.tv.mq.cloud.util.Result;
@@ -22,6 +23,7 @@ import org.apache.ibatis.session.SqlSessionFactory;
 import org.apache.rocketmq.client.exception.MQBrokerException;
 import org.apache.rocketmq.client.exception.MQClientException;
 import org.apache.rocketmq.remoting.protocol.RemotingSysResponseCode;
+import org.apache.rocketmq.remoting.protocol.body.KVTable;
 import org.apache.rocketmq.tools.admin.MQAdminExt;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -270,7 +272,7 @@ public class BrokerService {
     /**
      * 更新限速
      * @param cid
-     * @param brokerAddr
+     * @param brokerAddr -1表示更新整个集群
      * @param updateSendMsgRateLimitRequestHeader
      */
     public Result<?> updateSendMessageRateLimit(int cid, String brokerAddr, UpdateSendMsgRateLimitRequestHeader updateSendMsgRateLimitRequestHeader) {
@@ -280,7 +282,16 @@ public class BrokerService {
             }
 
             public Result<Void> callback(MQAdminExt mqAdmin) throws Exception {
-                ((SohuMQAdmin) mqAdmin).updateSendMessageRateLimit(brokerAddr, updateSendMsgRateLimitRequestHeader);
+                SohuMQAdmin sohuMQAdmin = (SohuMQAdmin) mqAdmin;
+                if ("-1".equals(brokerAddr)) {
+                    Result<List<Broker>> result = query(cid);
+                    List<Broker> brokers = result.getResult();
+                    for (Broker broker : brokers) {
+                        sohuMQAdmin.updateSendMessageRateLimit(broker.getAddr(), updateSendMsgRateLimitRequestHeader);
+                    }
+                } else {
+                    sohuMQAdmin.updateSendMessageRateLimit(brokerAddr, updateSendMsgRateLimitRequestHeader);
+                }
                 return Result.getOKResult();
             }
 
@@ -311,6 +322,18 @@ public class BrokerService {
             return Result.getResult(brokerTmpDao.selectByClusterId(cid));
         } catch (Exception e) {
             logger.error("queryTmpBroker:{} err", cid, e);
+            return Result.getDBErrorResult(e);
+        }
+    }
+
+    /**
+     * 查询临时broker
+     */
+    public Result<Broker> queryTmpBroker(int cid, String addr) {
+        try {
+            return Result.getResult(brokerTmpDao.select(cid, addr));
+        } catch (Exception e) {
+            logger.error("queryTmpBroker cid:{} addr:{} err", cid, addr, e);
             return Result.getDBErrorResult(e);
         }
     }
@@ -445,5 +468,25 @@ public class BrokerService {
             logger.error("deleteBrokerTmp:{}", addr, e);
             return Result.getDBErrorResult(e);
         }
+    }
+
+    /**
+     * 查询broker的运行时统计
+     */
+    public Result<KVTable> fetchBrokerRuntimeStats(String brokerAddr, Cluster mqCluster) {
+        return mqAdminTemplate.execute(new MQAdminCallback<Result<KVTable>>() {
+            public Result<KVTable> callback(MQAdminExt mqAdmin) throws Exception {
+                return Result.getResult(mqAdmin.fetchBrokerRuntimeStats(brokerAddr));
+            }
+
+            public Cluster mqCluster() {
+                return mqCluster;
+            }
+
+            public Result<KVTable> exception(Exception e) throws Exception {
+                logger.error("fetchBrokerRuntimeStats:{} err", brokerAddr, e);
+                return Result.getDBErrorResult(e);
+            }
+        });
     }
 }
