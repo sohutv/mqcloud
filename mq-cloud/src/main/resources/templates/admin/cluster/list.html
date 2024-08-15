@@ -163,7 +163,7 @@
 							</td>
 							<td <#if brokerStat.brokerId != "0">class="border-top-0 pt-0"</#if>>
 								<#if !brokerStat.tmp>
-								<button title="迁移Broker：基于rsync，适合大数量增量同步，推荐使用" data-toggle="modal" class="btn btn-xs btn-info" onclick="toMigratePage('${brokerStat.brokerIp}', '${brokerStat.baseDir}')"><i class="fa-fw fa-solid fa-copy"></i></button>
+								<button title="迁移Broker：基于rsync，适合大数量增量同步，推荐使用" data-toggle="modal" class="btn btn-xs btn-info" onclick="toMigratePage('${brokerStat.brokerIp}', '${brokerStat.baseDir!}')"><i class="fa-fw fa-solid fa-copy"></i></button>
 								</#if>
 								<#if brokerStat.version?? && brokerStat.brokerId == "0">
 									<button title="查看broker限速详情" data-toggle="modal" class="btn btn-xs btn-secondary" onclick="brokerRateLimitModalShow('${brokerStat.brokerAddr}')"><i class="fa-fw fa-solid fa-faucet-drip"></i></button>
