@@ -16,9 +16,27 @@
 								<span data-toggle="tooltip" title="取消收藏"><i id="unfavorite" class="fas fa-heart align-middle fa-xs text-secondary pointer" <#if response.result.favoriteId == 0>style="display:none;"</#if> onclick="unfavorite()"></i></span>
 							</td>
 						</tr>
-						<tr>
 							<td class="text-muted"><span class="d-none d-lg-inline">所属</span>集群</td>
-							<td colspan="3"><a href="javascript:void(0)" class="copied" data-toggle="tooltip" title="点击复制集群路由地址" data-clipboard-text="http://${mqcloudDomain}/rocketmq/nsaddr-${response.result.topic.cluster.id}">${response.result.topic.cluster.name}</a></td>
+							<td><a href="javascript:void(0)" class="copied" data-toggle="tooltip" title="点击复制集群路由地址" data-clipboard-text="http://${mqcloudDomain}/rocketmq/nsaddr-${response.result.topic.cluster.id}">${response.result.topic.cluster.name}</a></td>
+							<td class="text-muted">用途</td>
+						    <td>
+							<#if response.result.topic.info??>
+								<span class="text-sm">
+								<#if response.result.topic.info?length gt 10>
+									<span data-toggle="tooltip" title="${response.result.topic.info}">${response.result.topic.info?substring(0,10)}...</span>
+								<#else>
+									${response.result.topic.info}
+								</#if>
+								</span>
+								<#if response.result.own>
+									<span data-toggle="tooltip" title="修改用途"><i onclick="updateTopicInfoShow(${response.result.topic.id}, '${response.result.topic.name}', '${response.result.topic.info!}')" class="fas fa-edit fa-xs text-secondary pointer"></i></span>
+								</#if>
+							<#else>
+								<#if response.result.own>
+									<span data-toggle="tooltip" title="添加用途"><i onclick="updateTopicInfoShow(${response.result.topic.id}, '${response.result.topic.name}', '${response.result.topic.info!}')" class="far fa-edit fa-xs text-secondary pointer"></i></span>
+								</#if>
+							</#if>
+							</td>
 						</tr>
 						<tr>
 							<td class="text-muted"><span class="d-none d-lg-inline">broker</span>队列</td>
@@ -572,6 +590,33 @@ $(function() {
 	</div>
 </div>
 
+<#--修改topic描述-->
+<div id="updateTopicInfoModal" class="modal fade" tabindex="-1" data-width="400">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title"><span id="topicName"></span>描述更新</h5>
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+			</div>
+			<div class="modal-body">
+				<form id="addUserProducerModalForm">
+					<div class="input-group mb-2">
+						<label class="col-md-2"> 用途: </label>
+						<div class="col-md-10">
+							<input type="hidden" id="topicId">
+							<textarea id="topicInfo" rows="5" class="form-control"></textarea>
+						</div>
+					</div>
+				</form>
+			</div>
+			<div class="modal-footer justify-content-between">
+				<button type="button" data-dismiss="modal" class="btn btn-default" >取消</button>
+				<button type="button" class="btn btn-primary" id="updateTopicInfoBtn" onclick="updateTopicInfo()">确定</button>
+			</div>
+		</div>
+	</div>
+</div>
+
 <script>
 	$(function () {
 		// 初始化user列表
@@ -820,6 +865,35 @@ function showClientConnection(type, group) {
 		$('#clientConnectionModal').modal('show');
 		console.log($("#ipList").val());
 	});
+}
+
+function updateTopicInfoShow(tid, topicName, info){
+	$("#topicId").val(tid);
+	$("#topicName").html(topicName);
+	$("#topicInfo").val(info);
+	$('#updateTopicInfoModal').modal('show');
+}
+
+function updateTopicInfo(){
+	if(!$("#topicInfo").val()){
+		alert("请输入用途");
+		return;
+	}
+	disable("updateTopicInfoBtn");
+	$.post('${request.contextPath}/topic/update/info',
+			{
+				info: $("#topicInfo").val(),
+				tid: $("#topicId").val()
+			},
+			function(data){
+				if(data.status == 200){
+					toastr.success("操作成功！即将刷新页面！");
+					reload(2000);
+				}else{
+					toastr.error("操作失败！"+data.message);
+					enable("updateTopicInfoBtn");
+				}
+			}, 'json');
 }
 
 $(function () {
