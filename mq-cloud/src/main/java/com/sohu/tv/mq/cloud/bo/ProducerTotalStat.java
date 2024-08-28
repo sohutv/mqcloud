@@ -37,6 +37,9 @@ public class ProducerTotalStat {
     // broker
     private String broker;
 
+    // 异常总数
+    private String totalException;
+
     public long getId() {
         return id;
     }
@@ -141,11 +144,31 @@ public class ProducerTotalStat {
         this.broker = broker;
     }
 
+    public String getTotalException() {
+        return totalException;
+    }
+
+    public void setTotalException(String totalException) {
+        this.totalException = totalException;
+    }
+
     @Override
     public String toString() {
-        return "ProducerTotalStat [id=" + id + ", producer=" + producer + ", client=" + client + ", percent90="
-                + percent90 + ", percent99=" + percent99 + ", avg=" + avg + ", count=" + count + ", statTime="
-                + statTime + ", createDate=" + createDate + ", createTime=" + createTime + ", exception="
-                + exception + ", broker=" + broker + "]";
+        return "ProducerTotalStat{" +
+                "id=" + id +
+                ", producer='" + producer + '\'' +
+                ", client='" + client + '\'' +
+                ", percent90=" + percent90 +
+                ", percent99=" + percent99 +
+                ", avg=" + avg +
+                ", count=" + count +
+                ", statTime=" + statTime +
+                ", createDate=" + createDate +
+                ", createTime='" + createTime + '\'' +
+                ", statList=" + statList +
+                ", exception='" + exception + '\'' +
+                ", broker='" + broker + '\'' +
+                ", totalException='" + totalException + '\'' +
+                '}';
     }
 }
