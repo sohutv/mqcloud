@@ -306,8 +306,6 @@ consumer.shutdown();
    consumer.setDeduplicateWindowSeconds(600);
    ```
 
-   由于幂等实现依赖了redis，为了防止redis故障影响业务方，MQCloud使用了Hystrix隔离了redis操作。
-
    即当redis故障时，幂等逻辑将失效，消费业务将不受影响，继续消费。
 
    这里说明一点，MQCloud实现的幂等逻辑的同时保障消息不丢失，所以如下情况幂等逻辑将失效：

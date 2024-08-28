@@ -7,9 +7,11 @@ import com.sohu.tv.mq.common.MQRateLimitException;
 import com.sohu.tv.mq.common.SohuSendMessageHook;
 import com.sohu.tv.mq.dto.WebResult;
 import com.sohu.tv.mq.metric.MQMetricsExporter;
+import com.sohu.tv.mq.rocketmq.circuitbreaker.SentinelCircuitBreaker;
 import com.sohu.tv.mq.route.AffinityMQStrategy;
 import com.sohu.tv.mq.stats.StatsHelper;
 import com.sohu.tv.mq.util.CommonUtil;
+import org.apache.rocketmq.client.exception.MQBrokerException;
 import org.apache.rocketmq.client.exception.MQClientException;
 import org.apache.rocketmq.client.impl.factory.MQClientInstance;
 import org.apache.rocketmq.client.impl.producer.DefaultMQProducerImpl;
@@ -51,7 +53,8 @@ public class RocketMQProducer extends AbstractConfig {
     
     // 重试发送线程池
     private ExecutorService retrySenderExecutor;
-    
+
+    // 同步发送异步重试结果回调
     private Consumer<Result<SendResult>> resendResultConsumer;
 
     // 限流发生时，是否暂停一会发送线程
@@ -59,6 +62,15 @@ public class RocketMQProducer extends AbstractConfig {
 
     // 启动时是否获取topic路由信息（用于启动后发送消息前自动与ns和broker建联）
     private boolean fetchTopicRouteInfoWhenStart = true;
+
+    // 是否开启熔断，默认不开启
+    private boolean enableCircuitBreaker;
+
+    // 熔断器
+    private SentinelCircuitBreaker sentinelCircuitBreaker;
+
+    // 降级回调
+    private Consumer<MQMessage> circuitBreakerFallbackConsumer;
 
     public RocketMQProducer() {
     }
@@ -151,6 +163,9 @@ public class RocketMQProducer extends AbstractConfig {
     private void initAfterStart() {
         if (statsHelper != null) {
             statsHelper.setClientId(getMQClientInstance().getClientId());
+        }
+        if (enableCircuitBreaker) {
+            sentinelCircuitBreaker = new SentinelCircuitBreaker(topic, circuitBreakerFallbackConsumer);
         }
     }
 
@@ -706,45 +721,62 @@ public class RocketMQProducer extends AbstractConfig {
             return processException(e);
         }
     }
-    
+
     /**
      * 发送消息
      *
-     * @param message 消息
+     * @param mqMessage 消息
      * @return 发送结果
      */
-    @SuppressWarnings("rawtypes")
     public Result<SendResult> send(MQMessage mqMessage) {
+        try {
+            beforeMessageSend(mqMessage);
+            return _send(mqMessage);
+        } catch (Exception e) {
+            return messageSendError(mqMessage, e);
+        } finally {
+            if (mqMessage.isEnableCircuitBreaker()) {
+                sentinelCircuitBreaker.exit(mqMessage);
+            }
+        }
+    }
+
+    private void beforeMessageSend(MQMessage mqMessage) throws Exception {
         // 无body，序列化
         if (mqMessage.getBody() == null) {
-            try {
-                mqMessage.setBody(getMessageSerializer().serialize(mqMessage.getMessage()));
-            } catch (Exception e) {
-                logger.error(e.getMessage(), e);
-                return new Result<SendResult>(false, e);
-            }
+            mqMessage.setBody(getMessageSerializer().serialize(mqMessage.getMessage()));
         }
         // 设置属性
         mqMessage.setTopic(getTopic());
         mqMessage.resetRetryTimes(this.defaultRetryTimes);
-        // 消息发送
-        try {
-            SendResult sendResult = producer.send(mqMessage.getInnerMessage());
-            if (mqMessage.isExceptionForTest()) {
-                logger.info("send ok: msgId:{} offsetMsgId:{}", sendResult.getMsgId(), sendResult.getOffsetMsgId());
-                throw new RemotingException("exceptionForTest");
-            }
-            return new Result<SendResult>(true, sendResult);
-        } catch (MQClientException e) {
-            return processException(e);
-        } catch (Exception e) {
-            // 重试
-            if (mqMessage.getRetryTimes() > 0 && resend(mqMessage)) {
-                return new Result<SendResult>(false, e).setRetrying(true);
-            } else {
-                return processException(e);
-            }
+        mqMessage.resetEnableCircuitBreaker(this.enableCircuitBreaker);
+        // 获取熔断器资源
+        if (mqMessage.isEnableCircuitBreaker()) {
+            sentinelCircuitBreaker.entry(mqMessage);
         }
+    }
+
+    private Result _send(MQMessage mqMessage) throws MQBrokerException, RemotingException, InterruptedException, MQClientException {
+        SendResult sendResult = producer.send(mqMessage.getInnerMessage());
+        afterMessageSend(mqMessage, sendResult);
+        return new Result<SendResult>(true, sendResult);
+    }
+
+    private void afterMessageSend(MQMessage mqMessage, SendResult sendResult) throws RemotingException {
+        if (mqMessage.isExceptionForTest()) {
+            logger.info("send ok: msgId:{} offsetMsgId:{}", sendResult.getMsgId(), sendResult.getOffsetMsgId());
+            throw new RemotingException("exceptionForTest");
+        }
+    }
+
+    private Result<SendResult> messageSendError(MQMessage mqMessage, Exception e) {
+        if (mqMessage.isEnableCircuitBreaker()) {
+            sentinelCircuitBreaker.trace(e, mqMessage);
+        }
+        if (mqMessage.needRetry(e) && resend(mqMessage)) { // 重试
+            return new Result<SendResult>(false, e).setRetrying(true);
+        }
+        return processException(e);
     }
 
     /**
@@ -986,6 +1018,22 @@ public class RocketMQProducer extends AbstractConfig {
 
     public void setFetchTopicRouteInfoWhenStart(boolean fetchTopicRouteInfoWhenStart) {
         this.fetchTopicRouteInfoWhenStart = fetchTopicRouteInfoWhenStart;
+    }
+
+    public boolean isEnableCircuitBreaker() {
+        return enableCircuitBreaker;
+    }
+
+    public void setEnableCircuitBreaker(boolean enableCircuitBreaker) {
+        this.enableCircuitBreaker = enableCircuitBreaker;
+    }
+
+    public Consumer<MQMessage> getCircuitBreakerFallbackConsumer() {
+        return circuitBreakerFallbackConsumer;
+    }
+
+    public void setCircuitBreakerFallbackConsumer(Consumer<MQMessage> circuitBreakerFallbackConsumer) {
+        this.circuitBreakerFallbackConsumer = circuitBreakerFallbackConsumer;
     }
 
     @Override

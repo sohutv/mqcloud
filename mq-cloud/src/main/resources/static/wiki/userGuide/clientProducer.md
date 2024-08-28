@@ -265,27 +265,44 @@ if(!sendResult.isSuccess){
 }
 ```
 
-##  七、 <span id="hystrix">隔离发送消息示例</span>【hystrix版：不推荐使用】
+##  七、 <span id="sentinel">隔离发送消息示例</span>
 
 ```
-Map<String, String> map = new HashMap<String, String>();
-map.put("aid", "123456");
-map.put("vid", "765432");
-// 1.oneway方式 - 此种方式发送效率最高，但是无法获取返回的结果
-new PublishOnewayCommand(producer, map).execute();
-// 2.普通方式 - 此种方式即为普通方式的hystrix封装，与普通发送方式无异
-Result<SendResult> result = new PublishCommand(producer, map).execute();
+// 设置启用熔断器
+producer.setEnableCircuitBreaker(true);
+// 设置熔断降级回调
+producer.setCircuitBreakerFallbackConsumer(new Consumer<MQMessage>() {
+    public void accept(MQMessage message) {
+        // 在这里处理熔断时发送失败的消息
+    }
+});
+// 调用如下接口发送消息
+Result<SendResult> sendResult = producer.send(MQMessage.build(msg));
 ```
 
-注意：hystrix配置默认采用线程池隔离，容量为30，超时时间为rocketmq客户端默认超时3s，如果使用hystrix版，还需要显示依赖hystrix，如下：
+注意：需要显示添加如下依赖：
 
 ```
 <dependency>
-    <groupId>com.netflix.hystrix</groupId>
-    <artifactId>hystrix-core</artifactId>
-    <version>1.3.20</version>
+    <groupId>com.alibaba.csp</groupId>
+    <artifactId>sentinel-core</artifactId>
+    <version>1.8.8</version>
 </dependency>
 ```
+
+另外，默认的熔断规则如下：
+
+```
+1.慢调用熔断规则
+20秒内，响应超过1秒的请求数量达到20个，并且达到总请求量的60%，则熔断10秒。
+2.异常调用熔断规则
+60秒内，异常请求数量达到5个，并且达到总请求数量的80%，则熔断10秒。
+其中，异常类型如下：
+org.apache.rocketmq.remoting.exception.RemotingException: 远程异常
+org.apache.rocketmq.client.exception.MQBrokerException: broker明确响应异常，包括限流等
+```
+
+如果需要自定义熔断规则，请参考sentinel官方文档。
 
 ## 八、<span id="sync">同步发送消息问题</span>
 

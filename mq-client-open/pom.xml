@@ -18,8 +18,8 @@
 			<artifactId>mq-client-common-open</artifactId>
 		</dependency>
 		<dependency>
-			<groupId>com.netflix.hystrix</groupId>
-			<artifactId>hystrix-core</artifactId>
+			<groupId>com.alibaba.csp</groupId>
+			<artifactId>sentinel-core</artifactId>
 			<optional>true</optional>
 		</dependency>
 		<dependency>

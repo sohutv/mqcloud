@@ -16,8 +16,6 @@ import com.sohu.index.tv.mq.common.Result;
 import com.sohu.tv.mq.rocketmq.RocketMQConsumer;
 import com.sohu.tv.mq.rocketmq.RocketMQProducer.MessageDelayLevel;
 import com.sohu.tv.mq.rocketmq.consumer.SingleMessageConsumer;
-import com.sohu.tv.mq.rocketmq.redis.degradable.RedisGetCommand;
-import com.sohu.tv.mq.rocketmq.redis.degradable.RedisSetCommand;
 import com.sohu.tv.mq.util.CommonUtil;
 
 import redis.clients.jedis.params.SetParams;
@@ -142,10 +140,8 @@ public class DeduplicateSingleMessageConsumer<T> extends SingleMessageConsumer<T
     private boolean setFlag(String key, String flag, String offsetMsgId, SetParams setParams) {
         try {
             String value = offsetMsgId + ":" + flag;
-            Result<String> result = new RedisSetCommand(rocketMQConsumer.getRedis(), key, value, setParams).execute();
-            if (result.isSuccess()) {
-                return "OK".equals(result.getResult());
-            }
+            String result = rocketMQConsumer.getRedis().set(key, value, setParams);
+            return "OK".equals(result);
         } catch (Exception e) {
             logger.warn("setFlag:{} key:{} error:{}", flag, key, e.toString());
         }
@@ -161,7 +157,11 @@ public class DeduplicateSingleMessageConsumer<T> extends SingleMessageConsumer<T
      */
     private Pair<String, String> getFlag(String key) {
         try {
-            return new RedisGetCommand(rocketMQConsumer.getRedis(), key).execute();
+            String result = rocketMQConsumer.getRedis().get(key);
+            if (result != null) {
+                String[] array = result.split(":");
+                return new Pair<>(array[0], array[1]);
+            }
         } catch (Exception e) {
             logger.warn("getFlag:{} error:{}", key, e.toString());
         }

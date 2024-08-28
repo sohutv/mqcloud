@@ -2,6 +2,7 @@ package com.sohu.tv.mq.rocketmq;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Consumer;
 
 import org.apache.rocketmq.client.producer.SendResult;
 import org.junit.After;
@@ -14,11 +15,19 @@ import com.sohu.index.tv.mq.common.Result;
 
 public class RocketMQProducerTest {
 
+    public static final String TOPIC = "mqcloud-json-test-topic";
+
     private RocketMQProducer producer;
 
     @Before
     public void init() {
-        producer = TestUtil.buildProducer("basic-apitest-topic-producer", "basic-apitest-topic");
+        producer = TestUtil.buildProducer(TOPIC + "-producer", TOPIC);
+        producer.setEnableCircuitBreaker(true);
+        producer.setCircuitBreakerFallbackConsumer(new Consumer<MQMessage>() {
+            public void accept(MQMessage message) {
+                System.out.println("circuitBreakerFallbackConsumer:" + message);
+            }
+        });
         producer.start();
     }
 
@@ -101,6 +110,17 @@ public class RocketMQProducerTest {
         }
         System.out.println("=="+result);
         Thread.sleep(3 * 1000);
+    }
+
+    @Test
+    public void testCircuitBreakSend() throws InterruptedException {
+        while (true) {
+            Result<SendResult> result = producer.send(MQMessage.build("message"));
+            if (result.isSuccess()) {
+                System.out.println(result.getResult().getMsgId());
+            }
+            Thread.sleep(10);
+        }
     }
 
     @After

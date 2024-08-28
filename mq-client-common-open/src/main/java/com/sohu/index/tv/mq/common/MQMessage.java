@@ -1,8 +1,11 @@
 package com.sohu.index.tv.mq.common;
 
+import org.apache.rocketmq.client.exception.MQBrokerException;
+import org.apache.rocketmq.client.exception.MQClientException;
 import org.apache.rocketmq.common.message.Message;
 import org.apache.rocketmq.common.message.MessageClientExt;
 import org.apache.rocketmq.common.message.MessageExt;
+import org.apache.rocketmq.remoting.exception.RemotingException;
 
 /**
  * 批量消息
@@ -27,6 +30,11 @@ public class MQMessage<T> {
     
     // 发送异常，测试用
     private boolean exceptionForTest;
+
+    // 是否开启熔断
+    private Boolean enableCircuitBreaker;
+    // circuitBreaker entryResult
+    private Result entryResult;
 
     public MQMessage() {
     }
@@ -125,11 +133,62 @@ public class MQMessage<T> {
         return this;
     }
 
+    public boolean needRetry(Exception e) {
+        return retryTimes > 0 && isRemoteError(e);
+    }
+
+    /**
+     * 重置重试次数，未配置时采用默认值
+     */
     public MQMessage<T> resetRetryTimes(int retryTimes) {
         if (this.retryTimes == -1) {
             this.retryTimes = retryTimes;
         }
         return this;
+    }
+
+    /**
+     * 重置是否开启熔断，未配置时采用默认值
+     */
+    public MQMessage<T> resetEnableCircuitBreaker(boolean enableCircuitBreaker) {
+        if (this.enableCircuitBreaker == null) {
+            this.enableCircuitBreaker = enableCircuitBreaker;
+        }
+        return this;
+    }
+
+    public boolean isEnableCircuitBreaker() {
+        return enableCircuitBreaker == null ? false : enableCircuitBreaker;
+    }
+
+    public void setEnableCircuitBreaker(Boolean enableCircuitBreaker) {
+        this.enableCircuitBreaker = enableCircuitBreaker;
+    }
+
+    public Result getEntryResult() {
+        return entryResult;
+    }
+
+    public void setEntryResult(Result entryResult) {
+        this.entryResult = entryResult;
+    }
+
+    public boolean isEntryOK() {
+        return entryResult != null && entryResult.isSuccess();
+    }
+
+    public boolean isEntryFailed() {
+        return entryResult != null && !entryResult.isSuccess();
+    }
+
+    /**
+     * 是否是远程错误
+     */
+    public boolean isRemoteError(Throwable e) {
+        if (e instanceof MQClientException && e.getCause() != null) {
+            e = e.getCause();
+        }
+        return e instanceof RemotingException || e instanceof MQBrokerException;
     }
 
     /**
