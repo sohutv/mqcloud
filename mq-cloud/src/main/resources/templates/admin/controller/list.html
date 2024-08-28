@@ -65,7 +65,7 @@
 								<#if controller.checkStatusOK>
 								<button type="button" class="btn btn-sm btn-warning" title="kill Controller进程" data-target="#controllerOfflineModal" data-toggle="modal" onclick="offlineController('${controller.addr}');"><span>下线</span></button>
 								<#else>
-								<button id="controllerBtn${controller_index}" data-toggle="tooltip" type="button" class="btn btn-sm btn-success" onclick="startupController('${controller.ip}', ${controller.port}, '${controller.baseDir}', 'controllerBtn${controller_index}')">启动</button>
+								<button id="controllerBtn${controller_index}" data-toggle="tooltip" type="button" class="btn btn-sm btn-success" onclick="startupController('${controller.ip}', ${controller.port}, '${controller.baseDir!}', 'controllerBtn${controller_index}')">启动</button>
 								</#if>
 								<button type="button" class="btn btn-sm btn-danger" title="删除Controller地址" data-target="#controllerDeleteModal" data-toggle="modal" onclick="deleteController('${controller.addr}');"><span class="fas fa-trash-alt" aria-hidden="true"></span></button>
 							</td>

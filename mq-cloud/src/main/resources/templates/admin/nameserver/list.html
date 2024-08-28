@@ -76,7 +76,7 @@
 								<#if ns.checkStatusOK>
 								<button type="button" class="btn btn-sm btn-warning" title="Kill Name Server进程" data-target="#nameServerOfflineModal" data-toggle="modal" onclick="offlineNameServer('${ns.addr}');">下线</button>
 								<#else>
-								<button id="nameserverBtn${ns_index}" data-toggle="tooltip" type="button" class="btn btn-sm btn-success" onclick="startupNameServer('${ns.ip}', ${ns.port}, '${ns.baseDir}', 'nameserverBtn${ns_index}')">启动</button>
+								<button id="nameserverBtn${ns_index}" data-toggle="tooltip" type="button" class="btn btn-sm btn-success" onclick="startupNameServer('${ns.ip}', ${ns.port}, '${ns.baseDir!}', 'nameserverBtn${ns_index}')">启动</button>
 								</#if>
 								<button type="button" class="btn btn-sm btn-danger" title="删除Name Server地址" data-target="#nameServerDeleteModal" data-toggle="modal" onclick="deleteNameServer('${ns.addr}');"><span class="fas fa-trash-alt" aria-hidden="true"></span></button>
 							</td>

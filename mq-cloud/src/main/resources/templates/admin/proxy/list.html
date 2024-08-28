@@ -67,7 +67,7 @@
 								<button type="button" class="btn btn-sm btn-info" title="查看配置" data-target="#proxyConfigModal" data-toggle="modal" onclick="viewProxyConfig('proxy_${proxy_index + 1}')"><i class="fas fa-eye"></i></button>
 								<button type="button" class="btn btn-sm btn-warning" title="kill Proxy进程" data-target="#proxyOfflineModal" data-toggle="modal" onclick="offlineProxy('${proxy.addr}');">下线</button>
 								<#else>
-								<button id="proxyBtn${proxy_index}" data-toggle="tooltip" type="button" class="btn btn-sm btn-success" onclick="startupProxy('${proxy.ip}', ${proxy.port}, '${proxy.baseDir}', 'proxyBtn${proxy_index}')">启动</button>
+								<button id="proxyBtn${proxy_index}" data-toggle="tooltip" type="button" class="btn btn-sm btn-success" onclick="startupProxy('${proxy.ip}', ${proxy.port}, '${proxy.baseDir!}', 'proxyBtn${proxy_index}')">启动</button>
 								</#if>
 								<button type="button" class="btn btn-sm btn-danger" title="删除Proxy地址" data-target="#proxyDeleteModal" data-toggle="modal" onclick="deleteProxy('${proxy.addr}');"><span class="fas fa-trash-alt" aria-hidden="true"></span></button>
 							</td>

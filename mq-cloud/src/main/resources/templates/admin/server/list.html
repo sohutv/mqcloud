@@ -111,7 +111,7 @@
 									<#list server.serverRoleVO.roleVOList as roleVO>
 										<div class="row" data-html="true" data-trigger="hover" data-container="body"
 											 data-toggle="popover" data-placement="top"
-											 data-content="端口：${roleVO.port}<br>安装路径：${roleVO.baseDir}">
+											 data-content="端口：${roleVO.port}<br>安装路径：${roleVO.baseDir!}">
 											<div class="col-12">
 												${roleVO.deployment}
 											</div>

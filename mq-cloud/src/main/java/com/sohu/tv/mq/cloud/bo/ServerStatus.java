@@ -208,7 +208,7 @@ public class ServerStatus {
 	}
 
 	public DiskUsage getDiskUsage(String dir) {
-		if (dspace == null) {
+		if (dspace == null || dir == null) {
 			return null;
 		}
 		String[] mountItems = dspace.split(",");
