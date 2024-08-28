@@ -4,7 +4,7 @@
 
 *默认堆积的消息达到10000条并且超过5分钟进行预警，预警一次，一小时最多预警一次。*
 
-## 二、<span id="clientBlock">客户端阻塞</span>
+## 二、<span id="clientBlock">消费阻塞</span>
 
 <img src="img/5.1.png" class="img-wiki">
 

@@ -404,7 +404,7 @@ public class SohuMonitorListener implements MonitorListener {
     }
 
     /**
-     * 客户端阻塞预警
+     * 消费阻塞预警
      */
     public void blockWarn(Map<TopicConsumer, List<ConsumerBlock>> map) {
         for (TopicConsumer tc : map.keySet()) {

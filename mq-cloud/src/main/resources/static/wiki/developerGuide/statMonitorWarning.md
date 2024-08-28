@@ -210,9 +210,9 @@ RocketMQ针对消费者的消费情况提供了一种[监控实现](https://gith
       *该维度主要是通过broker上的数据情况来检测消费者消息的堆积情况。*
 
 
-## 三、<span id="clientBlock">客户端阻塞预警</span>
+## 三、<span id="clientBlock">消费阻塞预警</span>
 
-与[二、消费堆积预警](#consumeAccumulate)检测方式一样，MQCloud通过如下项来进行客户端阻塞检测：
+与[二、消费堆积预警](#consumeAccumulate)检测方式一样，MQCloud通过如下项来进行消费阻塞检测：
 
 1. 从Name Server获取到所有的topic。（api为：MQAdminExt.fetchAllTopicList()；）
 
@@ -225,11 +225,11 @@ RocketMQ针对消费者的消费情况提供了一种[监控实现](https://gith
 
    2. 每个队列的消息消费时间
 
-      据此，可以检测一个消费者订阅多个topic的情况，也可以检测客户端阻塞的情况。
+      据此，可以检测一个消费者订阅多个topic的情况，也可以检测消费阻塞的情况。
 
       *该维度主要是通过消费者自身的数据情况来检测消费者的阻塞情况。*
 
-[二、消费堆积预警](#consumeAccumulate)和[三、客户端阻塞预警](#clientBlock)两个维度的预警虽然一个从broker出发，一个从consumer出发，但是一般同时发生。因为如果消费者消费的慢，或者消费阻塞时，会直接导致消息的堆积，所以经常会有业务会同时收到**消费堆积**和**客户端阻塞**的预警。
+[二、消费堆积预警](#consumeAccumulate)和[三、消费阻塞预警](#clientBlock)两个维度的预警虽然一个从broker出发，一个从consumer出发，但是一般同时发生。因为如果消费者消费的慢，或者消费阻塞时，会直接导致消息的堆积，所以经常会有业务会同时收到**消费堆积**和**消费阻塞**的预警。
 
 ## 四、<span id="produceError">生产失败预警</span>
 

@@ -141,7 +141,7 @@
    }
    ```
 
-   **用途**：MQCloud用于分析订阅关系，客户端阻塞情况等。
+   **用途**：MQCloud用于分析订阅关系，消费阻塞情况等。
 
 8. 获取所有的消费者配置：MQAdminExt.getAllSubscriptionGroup(String brokerAddr, long timeoutMillis)
 

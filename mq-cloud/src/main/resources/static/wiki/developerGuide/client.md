@@ -111,7 +111,7 @@ protostuff其内部是protobuf，而protobuf源自于google，其压缩能力和
 
 4. 熔断机制
 
-   RocketMQ作为中间件，可能会发生整体集群不可用的极端情况，针对这种情况，有些业务如果对MQ不是强依赖，可以使用MQCloud提供的隔离版api，内部采用[hystrix](https://github.com/Netflix/Hystrix/releases)做熔断隔离，保障集群故障时不影响业务方。
+   RocketMQ作为中间件，可能会发生整体集群不可用的极端情况，针对这种情况，有些业务如果对MQ不是强依赖，可以使用MQCloud提供的隔离版api，内部采用[Sentinel](https://github.com/alibaba/Sentinel)做熔断隔离，保障集群故障时不影响业务方。
 
 ## <span id="consumer">五、消费者</span>
 
