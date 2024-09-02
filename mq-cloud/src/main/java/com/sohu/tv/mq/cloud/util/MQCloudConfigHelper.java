@@ -1,6 +1,9 @@
 package com.sohu.tv.mq.cloud.util;
 
+import com.sohu.tv.mq.cloud.bo.Audit;
+import com.sohu.tv.mq.cloud.bo.Audit.StatusEnum;
 import com.sohu.tv.mq.cloud.bo.CommonConfig;
+import com.sohu.tv.mq.cloud.common.model.BrokerStoreStat;
 import com.sohu.tv.mq.cloud.service.CommonConfigService;
 import com.sohu.tv.mq.util.CommonUtil;
 import com.sohu.tv.mq.util.JSONUtil;
@@ -201,6 +204,12 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware, Comm
     // rsync配置,包括path, user, password, port, bwlimit, module
     private Map<String, String> rsyncConfig;
 
+    // 是否暂停审核
+    private Boolean pauseAudit;
+
+    // cluster store警告配置
+    private List<Map<String, Integer>> clusterStoreWarnConfig;
+
     @Autowired
     private CommonConfigService commonConfigService;
 
@@ -269,7 +278,7 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware, Comm
     }
 
     public boolean isTestOnlineSohu() {
-        return profile.contains("test-online-sohu");
+        return profile.contains("test-online-sohu") || profile.contains("local-online-sohu");
     }
 
     /**
@@ -788,6 +797,10 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware, Comm
         return String.valueOf(bwlimit);
     }
 
+    public boolean isPauseAudit() {
+        return pauseAudit != null && pauseAudit;
+    }
+
     /**
      * 版本号比较
      * @param v1
@@ -862,6 +875,46 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware, Comm
             }
         }
         return false;
+    }
+
+    /**
+     * 是否可以审核
+     * 暂停审核时，直接设置为暂停审核状态
+     * 否则，只有初始状态的审核才可以审核
+     */
+    public boolean canAudit(Audit audit) {
+        if (isPauseAudit()) {
+            audit.setStatus(StatusEnum.PAUSE_AUDITING.getStatus());
+            return false;
+        }
+        return audit.isInitStatus();
+    }
+
+    /**
+     * broker存储耗时是否需要预警
+     */
+    public boolean needWarn(BrokerStoreStat brokerStoreStat) {
+        Integer defaultMax = 500;
+        Integer defaultPercent99 = 400;
+        if (clusterStoreWarnConfig == null) {
+            return brokerStoreStat.getMax() > defaultMax || brokerStoreStat.getPercent99() > defaultPercent99;
+        }
+        for (Map<String, Integer> map : clusterStoreWarnConfig) {
+            Integer clusterId = map.get("clusterId");
+            Integer max = map.get("max");
+            Integer percent99 = map.get("percent99");
+            // 默认值
+            if (clusterId == null) {
+                defaultMax = max;
+                defaultPercent99 = percent99;
+                continue;
+            }
+            // 集群匹配上采用集群配置
+            if (brokerStoreStat.getClusterId() == clusterId) {
+                return brokerStoreStat.getMax() > max || brokerStoreStat.getPercent99() > percent99;
+            }
+        }
+        return brokerStoreStat.getMax() > defaultMax || brokerStoreStat.getPercent99() > defaultPercent99;
     }
 
     public Pair<String, String> getProxyAcl(int clusterId) {

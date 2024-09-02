@@ -235,7 +235,7 @@ public class AdminAuditController extends AdminViewController {
         }
         // 校验状态是否合法
         Audit audit = auditResult.getResult();
-        if (INIT.getStatus() != audit.getStatus()) {
+        if (!mqCloudConfigHelper.canAudit(audit)) {
             return getAuditStatusError(audit.getStatus());
         }
 
@@ -550,7 +550,7 @@ public class AdminAuditController extends AdminViewController {
         }
         // 校验是否合法
         Audit audit = auditResult.getResult();
-        if (INIT.getStatus() != audit.getStatus()) {
+        if (!mqCloudConfigHelper.canAudit(audit)) {
             return getAuditStatusError(audit.getStatus());
         }
 
@@ -596,7 +596,7 @@ public class AdminAuditController extends AdminViewController {
         if (TypeEnum.NEW_TOPIC.getType() != audit.getType()) {
             return Result.getResult(Status.PARAM_ERROR);
         }
-        if (INIT.getStatus() != audit.getStatus()) {
+        if (!mqCloudConfigHelper.canAudit(audit)) {
             return getAuditStatusError(audit.getStatus());
         }
 
@@ -650,7 +650,7 @@ public class AdminAuditController extends AdminViewController {
         }
         // 校验是否合法
         Audit audit = auditResult.getResult();
-        if (INIT.getStatus() != audit.getStatus()) {
+        if (!mqCloudConfigHelper.canAudit(audit)) {
             return getAuditStatusError(audit.getStatus());
         }
 
@@ -733,7 +733,7 @@ public class AdminAuditController extends AdminViewController {
         }
         // 校验状态是否合法
         Audit audit = auditResult.getResult();
-        if (INIT.getStatus() != audit.getStatus()) {
+        if (!mqCloudConfigHelper.canAudit(audit)) {
             return getAuditStatusError(audit.getStatus());
         }
 
@@ -822,7 +822,7 @@ public class AdminAuditController extends AdminViewController {
         }
         // 校验状态是否合法
         Audit audit = auditResult.getResult();
-        if (INIT.getStatus() != audit.getStatus()) {
+        if (!mqCloudConfigHelper.canAudit(audit)) {
             return getAuditStatusError(audit.getStatus());
         }
 
@@ -872,7 +872,7 @@ public class AdminAuditController extends AdminViewController {
         }
         // 校验状态是否合法
         Audit audit = auditResult.getResult();
-        if (INIT.getStatus() != audit.getStatus()) {
+        if (!mqCloudConfigHelper.canAudit(audit)) {
             return getAuditStatusError(audit.getStatus());
         }
 
@@ -920,7 +920,7 @@ public class AdminAuditController extends AdminViewController {
         }
         // 校验状态是否合法
         Audit audit = auditResult.getResult();
-        if (INIT.getStatus() != audit.getStatus()) {
+        if (!mqCloudConfigHelper.canAudit(audit)) {
             return getAuditStatusError(audit.getStatus());
         }
 
@@ -970,7 +970,7 @@ public class AdminAuditController extends AdminViewController {
         }
         // 校验状态是否合法
         Audit audit = auditResult.getResult();
-        if (INIT.getStatus() != audit.getStatus()) {
+        if (!mqCloudConfigHelper.canAudit(audit)) {
             return getAuditStatusError(audit.getStatus());
         }
 
@@ -1024,7 +1024,7 @@ public class AdminAuditController extends AdminViewController {
         }
         // 校验状态是否合法
         Audit audit = auditResult.getResult();
-        if (INIT.getStatus() != audit.getStatus()) {
+        if (!mqCloudConfigHelper.canAudit(audit)) {
             return getAuditStatusError(audit.getStatus());
         }
 
@@ -1078,7 +1078,7 @@ public class AdminAuditController extends AdminViewController {
         }
         // 校验状态是否合法
         Audit audit = auditResult.getResult();
-        if (INIT.getStatus() != audit.getStatus()) {
+        if (!mqCloudConfigHelper.canAudit(audit)) {
             return getAuditStatusError(audit.getStatus());
         }
 
@@ -1125,7 +1125,7 @@ public class AdminAuditController extends AdminViewController {
         }
         // 校验状态是否合法
         Audit audit = auditResult.getResult();
-        if (INIT.getStatus() != audit.getStatus()) {
+        if (!mqCloudConfigHelper.canAudit(audit)) {
             return getAuditStatusError(audit.getStatus());
         }
 
@@ -1266,7 +1266,7 @@ public class AdminAuditController extends AdminViewController {
         }
         // 校验状态是否合法
         Audit audit = auditResult.getResult();
-        if (INIT.getStatus() != audit.getStatus()) {
+        if (!mqCloudConfigHelper.canAudit(audit)) {
             return getAuditStatusError(audit.getStatus());
         }
 
@@ -1307,7 +1307,7 @@ public class AdminAuditController extends AdminViewController {
         }
         // 校验状态是否合法
         Audit audit = auditResult.getResult();
-        if (INIT.getStatus() != audit.getStatus()) {
+        if (!mqCloudConfigHelper.canAudit(audit)) {
             return getAuditStatusError(audit.getStatus());
         }
         // 查询审核记录中未成功发送的消息
@@ -1396,7 +1396,7 @@ public class AdminAuditController extends AdminViewController {
         }
         // 校验状态是否合法
         Audit audit = auditResult.getResult();
-        if (INIT.getStatus() != audit.getStatus()) {
+        if (!mqCloudConfigHelper.canAudit(audit)) {
             return getAuditStatusError(audit.getStatus());
         }
 
@@ -1449,7 +1449,7 @@ public class AdminAuditController extends AdminViewController {
         }
         // 校验状态是否合法
         Audit audit = auditResult.getResult();
-        if (INIT.getStatus() != audit.getStatus()) {
+        if (!mqCloudConfigHelper.canAudit(audit)) {
             return getAuditStatusError(audit.getStatus());
         }
         // 查询 topic更新审核记录
@@ -1502,7 +1502,7 @@ public class AdminAuditController extends AdminViewController {
         }
         // 校验状态是否合法
         Audit audit = auditResult.getResult();
-        if (INIT.getStatus() != audit.getStatus()) {
+        if (!mqCloudConfigHelper.canAudit(audit)) {
             return getAuditStatusError(audit.getStatus());
         }
 
@@ -1615,7 +1615,7 @@ public class AdminAuditController extends AdminViewController {
         }
         // 校验状态是否合法
         Audit audit = auditResult.getResult();
-        if (INIT.getStatus() != audit.getStatus()) {
+        if (!mqCloudConfigHelper.canAudit(audit)) {
             return getAuditStatusError(audit.getStatus());
         }
 
@@ -1681,7 +1681,7 @@ public class AdminAuditController extends AdminViewController {
         }
         // 校验状态是否合法
         Audit audit = auditResult.getResult();
-        if (INIT.getStatus() != audit.getStatus()) {
+        if (!mqCloudConfigHelper.canAudit(audit)) {
             return getAuditStatusError(audit.getStatus());
         }
         // 查询审核记录
@@ -1736,7 +1736,7 @@ public class AdminAuditController extends AdminViewController {
         }
         // 校验状态是否合法
         Audit audit = auditResult.getResult();
-        if (INIT.getStatus() != audit.getStatus()) {
+        if (!mqCloudConfigHelper.canAudit(audit)) {
             return getAuditStatusError(audit.getStatus());
         }
         // 查询审核记录
@@ -1864,7 +1864,7 @@ public class AdminAuditController extends AdminViewController {
         }
         // 校验状态是否合法
         Audit audit = auditResult.getResult();
-        if (INIT.getStatus() != audit.getStatus()) {
+        if (!mqCloudConfigHelper.canAudit(audit)) {
             return getAuditStatusError(audit.getStatus());
         }
 

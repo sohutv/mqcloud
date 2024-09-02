@@ -8,6 +8,7 @@ import java.util.stream.Collectors;
 import com.sohu.tv.mq.cloud.bo.*;
 import com.sohu.tv.mq.cloud.service.*;
 import com.sohu.tv.mq.cloud.service.MQProxyService.ConsumerConfigParam;
+import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper;
 import com.sohu.tv.mq.cloud.web.vo.WheelCancelMessageVo;
 import org.apache.rocketmq.common.message.MessageClientIDSetter;
 import org.slf4j.Logger;
@@ -61,6 +62,9 @@ public class AdminMessageController {
     @Autowired
     private MQProxyService mqProxyService;
 
+    @Autowired
+    private MQCloudConfigHelper mqCloudConfigHelper;
+
     /**
      * resend message
      * 
@@ -78,7 +82,7 @@ public class AdminMessageController {
         }
         // 校验状态是否合法
         Audit audit = auditResult.getResult();
-        if (StatusEnum.INIT.getStatus() != audit.getStatus()) {
+        if (!mqCloudConfigHelper.canAudit(audit)) {
             return getAuditStatusError(audit.getStatus());
         }
 
@@ -177,7 +181,7 @@ public class AdminMessageController {
         }
         // 校验状态是否合法
         Audit audit = auditResult.getResult();
-        if (StatusEnum.INIT.getStatus() != audit.getStatus()) {
+        if (!mqCloudConfigHelper.canAudit(audit)) {
             return getAuditStatusError(audit.getStatus());
         }
 
@@ -272,7 +276,7 @@ public class AdminMessageController {
         }
         // 校验状态是否合法
         Audit audit = auditResult.getResult();
-        if (StatusEnum.INIT.getStatus() != audit.getStatus()) {
+        if (!mqCloudConfigHelper.canAudit(audit)) {
             return getAuditStatusError(audit.getStatus());
         }
         // 查询审核记录
@@ -365,8 +369,8 @@ public class AdminMessageController {
             return Result.getResult(Status.AUDIT_MESSAGE_NOT_SEND_OK).setResult(wheelCancelMessageVo);
         }
     }
-    
-    private Result<?> getAuditStatusError(int status){
-        return Result.getResult(Status.WEB_ERROR).setMessage("已"+StatusEnum.getNameByStatus(status));
+
+    private Result<?> getAuditStatusError(int status) {
+        return Result.getResult(Status.WEB_ERROR).setMessage("状态：" + StatusEnum.getNameByStatus(status));
     }
 }

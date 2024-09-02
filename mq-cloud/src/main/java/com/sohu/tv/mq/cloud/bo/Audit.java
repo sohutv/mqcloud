@@ -93,6 +93,10 @@ public class Audit {
         this.updateTime = updateTime;
     }
 
+    public boolean isInitStatus() {
+        return status == StatusEnum.INIT.getStatus();
+    }
+
     @Override
     public String toString() {
         return "Audit [id=" + id + ", uid=" + uid + ", type=" + type + ", info=" + info + ", status=" + status
@@ -108,6 +112,7 @@ public class Audit {
         REJECT(2, "驳回"),
         CANCEL(3, "撤销"),
         AUDITING(4, "审核中"),
+        PAUSE_AUDITING(5, "暂停中"),
         ;
 
         private Integer status;

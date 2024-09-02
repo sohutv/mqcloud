@@ -22,7 +22,8 @@ CREATE TABLE `data_migration`
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='数据迁移表';
 
 INSERT INTO `common_config`(`key`, `value`, `comment`) VALUES ('rsyncConfig', '{"user":"mqcloud","password":"rsync","module":"mqcloud"}', 'rsync配置');
-
+INSERT INTO `common_config`(`key`, `value`, `comment`) VALUES ('pauseAudit', 'false', '在集群运维时，设置为true，会暂停审核功能，保障数据安全');
+INSERT INTO `common_config`(`key`, `value`, `comment`) VALUES ('clusterStoreWarnConfig', '[{"max":500,"percent99":400}]', '集群broker存储过慢预警配置，默认为最大响应超过500ms或百分之99响应超过400ms进行预警，可以单独对某个集群进行配置，例如[{"max":500,"percent99":400},{"clusterId":1,"max":1000,"percent99":800}]');
 
 -- ----------------------------
 -- Table structure for `broker_tmp`

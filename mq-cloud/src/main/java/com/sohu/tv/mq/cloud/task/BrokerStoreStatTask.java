@@ -109,7 +109,7 @@ public class BrokerStoreStatTask {
             // 数据存储
             brokerStoreStatService.save(brokerStoreStat);
             ++size;
-            if (brokerStoreStat.getMax() < 500 && brokerStoreStat.getPercent99() < 400) {
+            if (!mqCloudConfigHelper.needWarn(brokerStoreStat)) {
                 continue;
             }
             brokerStoreStat.setClusterName(clusterService.getMQClusterById(brokerStoreStat.getClusterId()).getName());
