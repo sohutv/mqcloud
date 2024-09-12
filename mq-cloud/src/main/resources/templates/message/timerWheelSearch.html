@@ -25,7 +25,7 @@
 					<td><input title="选择消息：${msg_index + 1 + response.result.mqc.prevSize}" data-tooltip="true" type="checkbox" data="${msg.offsetMsgId}" dataIdx="${msg_index + 1 + response.result.mqc.prevSize}" id="${msg.msgId}" rollTimes="${msg.timerRollTimes}" deliverTime="${msg.timerDeliverTime}"></td>
 				</tr>
 				<tr>
-					<td style="border-top-width: 0px;" colspan="7" data-tooltip="true" title="序列化方式:<#if msg.messageBodySerializer??>${msg.messageBodySerializer.getName()}(${msg.messageBodyTypeString!})<#else>${msg.messageBodyTypeString!}</#if>,大小:${msg.formatMsgLength}"><#if msg.decodedBody?length gt 1000><pre>${msg.decodedBody}</pre><#else>${msg.decodedBody}</#if></td>
+					<td class="msgTd" msgLength="${msg.msgLength}" style="border-top-width: 0px;" colspan="7" data-tooltip="true" title="序列化方式:<#if msg.messageBodySerializer??>${msg.messageBodySerializer.getName()}(${msg.messageBodyTypeString!})<#else>${msg.messageBodyTypeString!}</#if>,大小:${msg.formatMsgLength}"><#if msg.decodedBody?length gt 1000><pre>${msg.decodedBody}</pre><#else>${msg.decodedBody}</#if></td>
 				</tr>
 			</#list>
 		<#else>

@@ -1306,10 +1306,10 @@ public class MessageService {
                 return Result.getResult(Status.NO_RESULT);
             } catch (Exception e) {
             }
-            long beginQueryTime = MessageClientIDSetter.getNearlyTimeFromID(msgId).getTime() - 1000 * 60 * 5L;
             return mqAdminTemplate.execute(new MQAdminCallback<Result<MessageExt>>() {
                 public Result<MessageExt> callback(MQAdminExt mqAdmin) throws Exception {
                     SohuMQAdmin sohuMQAdmin = (SohuMQAdmin) mqAdmin;
+                    long beginQueryTime = MessageClientIDSetter.getNearlyTimeFromID(msgId).getTime() - 1000 * 60 * 5L;
                     QueryResult queryResult = sohuMQAdmin.queryMessageByUniqKey(topic, msgId, 32, beginQueryTime, Long.MAX_VALUE);
                     if(queryResult.getMessageList() == null || queryResult.getMessageList().size() == 0){
                         return Result.getResult(Status.NO_RESULT);

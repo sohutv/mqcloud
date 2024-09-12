@@ -296,7 +296,7 @@
 							<th>broker:队列</th>
 							<th id="keysTD">keys</th>
 							<th id="tagsTD">tags</th>
-							<th id="detailTD">详情</th>
+							<th id="detailTD">详情 <img id="jsonImg" title="查看json格式消息" data-toggle="tooltip" onclick="toggleMsgJson()" src="${request.contextPath}/assets/img/json1.png" style="height:21px;cursor:pointer;vertical-align:bottom;"></th>
 							<th><input title="全选或取消全选" data-toggle="tooltip" onclick="toggleMsgCheck(this)" type="checkbox"></th>
 						</tr>
 					</thead>
@@ -633,6 +633,7 @@ function searchMessage(append){
 			$("#dataTable tbody").remove();
 		}
        	$("#dataTable").append(data);
+		msgSearchedCallback();
     });
 }
 //偏移量消息搜索
@@ -651,6 +652,7 @@ function searchOffsetMessage(append){
 			$("#dataTable tbody").remove();
 		}
        	$("#dataTable").append(data);
+		msgSearchedCallback();
     });
 }
 //消息id搜索
@@ -662,6 +664,7 @@ function viewMessage(){
 	post('${request.contextPath}/topic/message/id/search', $("#msgSearchForm").serialize(), function(data){
 		$("#dataTable tbody").remove();
        	$("#dataTable").append(data);
+		msgSearchedCallback();
     });
 }
 // 消息key搜索
@@ -673,6 +676,7 @@ function searchKeyMessage() {
 	post('${request.contextPath}/topic/message/key/search', $("#msgSearchForm").serialize(), function(data){
 		$("#dataTable tbody").remove();
        	$("#dataTable").append(data);
+		msgSearchedCallback();
     });
 }
 //消息Trace搜索
@@ -694,6 +698,7 @@ function searchTimerWheelMessage(append){
 			$("#dataTable tbody").remove();
 		}
 		$("#dataTable").append(data);
+		msgSearchedCallback();
 	});
 }
 // 定时消息轨迹查询
@@ -903,6 +908,13 @@ $(function(){
 	<#if RequestParameters.msgId??>
 		trace('${RequestParameters.msgId}', false, ${RequestParameters.time});
 	</#if>
+
+	var jsonView = localStorage.getItem("jsonView${RequestParameters.tid}");
+	if (jsonView && jsonView == "true") {
+		toggleMsgJsonImg(true);
+	} else {
+		toggleMsgJsonImg(false);
+	}
 });
 
 function timeChange(id){
@@ -1311,5 +1323,82 @@ function showTraceDetail(comp){
 		$("#jsonviewConsumer").jsonViewer(JSON.parse(cdata));
 	}
 	$("#traceDetailModel").modal('show');
+}
+
+function msgSearchedCallback() {
+	// json格式消息展示
+	showMsgJson();
+	// tooltip
+	$('[data-tooltip="true"]').tooltip({
+		boundary: 'window'
+	});
+}
+
+function toggleMsgJson() {
+	var showJsonMsg = $("#jsonImg").attr("src").endsWith("json1.png");
+	toggleMsgJsonImg(showJsonMsg);
+	showMsgJsonView(showJsonMsg);
+}
+
+function showMsgJson() {
+	var showJsonMsg = $("#jsonImg").attr("src").endsWith("json2.png");
+	showMsgJsonView(showJsonMsg);
+}
+
+function toggleMsgJsonImg(showJsonMsg){
+	if (showJsonMsg) {
+		localStorage.setItem("jsonView${RequestParameters.tid}", "true");
+		$("#jsonImg").attr("data-original-title", "查看原始消息").attr("src", "${request.contextPath}/assets/img/json2.png");
+	} else {
+		localStorage.removeItem("jsonView${RequestParameters.tid}");
+		$("#jsonImg").attr("data-original-title", "查看json格式消息").attr("src", "${request.contextPath}/assets/img/json1.png");
+	}
+}
+
+function showMsgJsonView(showJsonMsg){
+	$('.msgTd').each(function () {
+		if (showJsonMsg) {
+			if ($(this).attr("msg") != undefined) {
+				return;
+			}
+			var msg = $(this).html();
+			var jsonObj;
+			try {
+				var tmpMsg = msg;
+				if (msg.startsWith("<pre>")) {
+					tmpMsg = msg.substring(5, msg.length - 6);
+				}
+				// 针对模糊匹配的搜索，如果搜索结果没有双引号，需要加上双引号，否则json解析会出错
+				if (("offset" == prevSearchType && $("#offsetKey").val() != "") ||
+						("time" == prevSearchType && $("#key").val() != "") ||
+						("timerWheel" == prevSearchType && $("#timerWheelKey").val() != "")) {
+					tmpMsg = tmpMsg.replace(/<b>(.*?)<\/b>(?!['"])/g, '"<b>$1</b>"');
+				}
+				jsonObj = JSON.parse(tmpMsg);
+			} catch (e) {
+				console.warn("json parse error:" + msg, e);
+				return false;
+			}
+			if (typeof jsonObj == "object") {
+				// 100k以上的json采用原生方式展示，否则使用jsonViewer太慢了
+				if (Number($(this).attr("msgLength")) >= 100 * 1024) {
+					$(this).html("<pre>" + JSON.stringify(jsonObj, null, 2) + "</pre>");
+				} else {
+					$(this).jsonViewer(jsonObj, {withQuotes: true, rootCollapsable: false});
+				}
+				$(this).attr("msg", msg);
+			}
+		} else {
+			var msg = $(this).attr("msg");
+			if (msg != undefined) {
+				$(this).html(msg);
+				$(this).removeAttr("msg");
+			}
+		}
+	});
+}
+
+function toViewMessage(msgId) {
+	window.open("${request.contextPath}/user/topic/${RequestParameters.tid}/detail?tab=msg&queryType=msgId&unqId=" + msgId, '_blank');
 }
 </script>

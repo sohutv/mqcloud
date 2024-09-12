@@ -33,11 +33,12 @@
    * @return string
    */
   function htmlEscape(s) {
-    return s.replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/'/g, '&apos;')
-      .replace(/"/g, '&quot;');
+    return s;
+    // return s.replace(/&/g, '&amp;')
+    //   .replace(/</g, '&lt;')
+    //   .replace(/>/g, '&gt;')
+    //   .replace(/'/g, '&apos;')
+    //   .replace(/"/g, '&quot;');
   }
 
   /**

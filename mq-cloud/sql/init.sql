@@ -716,6 +716,8 @@ INSERT INTO `common_config`(`key`, `value`, `comment`) VALUES ('exportedMessageD
 INSERT INTO `common_config`(`key`, `value`, `comment`) VALUES ('ignoreErrorProducerSet', '[]', '忽略生产错误预警的生产者');
 INSERT INTO `common_config`(`key`, `value`, `comment`) VALUES ('orderTopicKVConfig', '{}', '全局有序topic路由配置');
 INSERT INTO `common_config`(`key`, `value`, `comment`) VALUES ('rsyncConfig', '{"user":"mqcloud","module":"mqcloud","password":"rsync"}', 'rsync配置');
+INSERT INTO `common_config`(`key`, `value`, `comment`) VALUES ('pauseAudit', 'false', '在集群运维时，设置为true，会暂停审核功能，保障数据安全');
+INSERT INTO `common_config`(`key`, `value`, `comment`) VALUES ('clusterStoreWarnConfig', '[{"max":500,"percent99":400}]', '集群broker存储过慢预警配置，默认为最大响应超过500ms或百分之99响应超过400ms进行预警，可以单独对某个集群进行配置，例如[{"max":500,"percent99":400},{"clusterId":1,"max":1000,"percent99":800}]');
 -- ----------------------------
 -- warn_config init
 -- ----------------------------

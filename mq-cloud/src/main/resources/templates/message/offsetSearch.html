@@ -3,7 +3,7 @@
 		<#if response.result.msgList?? && response.result.msgList?size gt 0>
 			<#list response.result.msgList as msg>
 				<tr id="${msg.msgId}" date-data="${msg.storeTimestamp?c}">
-					<td rowspan="2" class="text-center" style="padding-left:0px;">${msg_index + 1 + response.result.mqc.prevSize}</td>
+					<td rowspan="2" class="text-center" style="padding-left:0px;"><a href="javascript:void(0)" onclick="toViewMessage('${msg.msgId}')" data-tooltip="true" title="单独查看该消息">${msg_index + 1 + response.result.mqc.prevSize}</a></td>
 					<td>${msg.bornHostString}</td>
 					<td data-tooltip="true" title="存储时间:${msg.storeTimestamp?number_to_datetime?string("yyyy-MM-dd HH:mm:ss.SSS")}">${msg.bornTimestamp?number_to_datetime?string("yyyy-MM-dd HH:mm:ss.SSS")}</td>
 					<td data-tooltip="true" title="偏移量:${msg.queueOffset}">${msg.broker!}:${msg.queueId}</td>
@@ -17,7 +17,7 @@
 					<td><input title="选择消息：${msg_index + 1 + response.result.mqc.prevSize}" data-tooltip="true" type="checkbox" data="${msg.offsetMsgId}" dataIdx="${msg_index + 1 + response.result.mqc.prevSize}"></td>
 				</tr>
 				<tr>
-					<td style="border-top-width: 0px;" colspan="7" data-tooltip="true" title="序列化方式:<#if msg.messageBodySerializer??>${msg.messageBodySerializer.getName()}(${msg.messageBodyTypeString!})<#else>${msg.messageBodyTypeString!}</#if>,大小:${msg.formatMsgLength}"><#if msg.decodedBody?length gt 1000><pre>${msg.decodedBody}</pre><#else>${msg.decodedBody}</#if></td>
+					<td class="msgTd" msgLength="${msg.msgLength}" style="border-top-width: 0px;" colspan="7" data-tooltip="true" title="序列化方式:<#if msg.messageBodySerializer??>${msg.messageBodySerializer.getName()}(${msg.messageBodyTypeString!})<#else>${msg.messageBodyTypeString!}</#if>,大小:${msg.formatMsgLength}"><#if msg.decodedBody?length gt 1000><pre>${msg.decodedBody}</pre><#else>${msg.decodedBody}</#if></td>
 				</tr>
 			</#list>
 		<#else>
@@ -28,11 +28,6 @@
 	<script>
 		showPage(${response.result.mqc.times});
 		$("#messageParam").val('${response.result.mqc.serialize()}');
-		$(function() {
-	        $('[data-tooltip="true"]').tooltip({
-				boundary: 'window'
-	        });
-		});
 	</script>
 <#else>
 	<tbody>

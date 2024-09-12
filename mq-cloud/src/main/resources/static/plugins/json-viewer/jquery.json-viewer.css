@@ -11,11 +11,11 @@ ul.json-dict, ol.json-array {
   padding-left: 2em;
 }
 .json-string {
-  color: #0B7500;
+  /*color: #0B7500;*/
 }
 .json-literal {
-  color: #1A01CC;
-  font-weight: bold;
+  /*color: #1A01CC;*/
+  /*font-weight: bold;*/
 }
 
 /* Toggle button */
