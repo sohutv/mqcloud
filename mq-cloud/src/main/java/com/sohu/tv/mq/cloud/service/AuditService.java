@@ -378,7 +378,7 @@ public class AuditService {
     }
 
     /**
-     * 保存审核以及topic流量预警信息
+     * 保存审核以及topic流量突增预警信息
      *
      * @param audit
      * @param tid
@@ -1551,7 +1551,7 @@ public class AuditService {
     }
 
     /**
-     * 获取topic流量预警信息
+     * 获取topic流量突增预警信息
      *
      * @param aid
      * @return Result

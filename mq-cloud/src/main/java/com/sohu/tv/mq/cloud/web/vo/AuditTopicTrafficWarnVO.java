@@ -13,7 +13,7 @@ public class AuditTopicTrafficWarnVO {
     private long aid;
     // topic id
     private long tid;
-    // 流量预警是否开启
+    // 流量突增预警是否开启
     private int trafficWarnEnabled;
 
     public Topic getTopic() {

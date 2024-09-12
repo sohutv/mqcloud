@@ -8,9 +8,9 @@ package com.sohu.tv.mq.cloud.bo;
 public class TopicTrafficCheckResult {
     // topic id
     private long tid;
-    // 流量异常时间点
+    // 流量突增时间点
     private String time;
-    // 流量异常详情
+    // 流量突增详情
     private String warnInfo;
 
     public TopicTrafficCheckResult() {}

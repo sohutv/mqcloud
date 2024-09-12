@@ -97,7 +97,7 @@ public class AdminTrafficMonitorController extends AdminViewController {
     }
 
     /**
-     * 获取所有开启了流量预警功能topic列表
+     * 获取所有开启了流量突增预警功能topic列表
      * @return
      */
     @RequestMapping(value = "/topic/enabled", method = RequestMethod.GET)

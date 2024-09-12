@@ -39,13 +39,13 @@ public class TrafficAnalysisTask {
     }
 
     /**
-     * 每隔10分钟检测是否有topic流量预警开关发生变化,有变化则重新统计
+     * 每隔10分钟检测是否有topic流量突增预警开关发生变化,有变化则重新统计
      */
     @Scheduled(cron = "2 */10 * * * ?")
     @SchedulerLock(name = "topicTrafficWarnStatusCheckTask", lockAtMostFor = 120000, lockAtLeastFor = 12000)
     public void topicTrafficWarnStatusCheckTask() {
         long start = System.currentTimeMillis();
-        // 获取开启了流量预警的topic列表
+        // 获取开启了流量突增预警的topic列表
         List<Topic> topicList = topicTrafficStatService.queryTrafficWarnEnabledTopicList();
         // 获取所有已有统计分析数据的tid
         List<Long> trafficStatTidList = topicTrafficStatService.queryAllTid();

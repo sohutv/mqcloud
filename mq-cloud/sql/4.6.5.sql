@@ -3,7 +3,7 @@ alter table `common_config` modify column `value` varchar(20000) DEFAULT '' COMM
 INSERT INTO `common_config`(`key`, `value`, `comment`) VALUES ('consumeFallBehindSize', '1073741824', '消费落后多少进行预警,单位byte');
 alter table `audit_consumer` add column `permits_per_second` int(11) DEFAULT NULL COMMENT 'qps';
 
-alter table `topic` add column `traffic_warn_enabled` int(4) NOT NULL DEFAULT '0' COMMENT '0:不开启流量预警,1:开启流量预警';
+alter table `topic` add column `traffic_warn_enabled` int(4) NOT NULL DEFAULT '0' COMMENT '0:不开启流量突增预警,1:开启流量突增预警';
 CREATE TABLE `topic_traffic_stat` (
   `tid` int(11) NOT NULL COMMENT 'topic id',
   `avg_max` bigint(20) NOT NULL COMMENT '指定天数内,每天流量最大值的平均值',
@@ -22,11 +22,11 @@ CREATE TABLE `topic_traffic_warn_config` (
   `alarm_receiver` int(4) DEFAULT '0' COMMENT '告警接收人,0:生产者消费者及管理员,1:生产者和管理员,2:消费者和管理员,3:仅管理员,4:不告警',
   `topic` varchar(64) DEFAULT '' COMMENT 'topic名称，为空代表默认配置，只有一条默认配置',
   UNIQUE KEY `topic` (`topic`) USING BTREE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='topic流量预警阈值配置';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='topic流量突增预警阈值配置';
 INSERT INTO `topic_traffic_warn_config`(avg_multiplier,avg_max_percentage_increase,max_max_percentage_increase,alarm_receiver) VALUES (5, 200, 30, 0);
 
 CREATE TABLE `audit_topic_traffic_warn` (
   `aid` int(11) NOT NULL COMMENT '审核id',
   `tid` int(11) NOT NULL COMMENT 'topic id',
-  `traffic_warn_enabled` int(11) NOT NULL COMMENT '0:不开启topic流量预警,1:开启topic流量预警'
+  `traffic_warn_enabled` int(11) NOT NULL COMMENT '0:不开启topic流量突增预警,1:开启topic流量突增预警'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='审核topic trafficWarn相关表';

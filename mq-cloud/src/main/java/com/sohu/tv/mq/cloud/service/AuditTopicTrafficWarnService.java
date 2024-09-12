@@ -10,7 +10,7 @@ import com.sohu.tv.mq.cloud.dao.AuditTopicTrafficWarnDao;
 import com.sohu.tv.mq.cloud.util.Result;
 
 /**
- * topic流量预警审核service
+ * topic流量突增预警审核service
  * @author yongweizhao
  * @create 2020/9/24 12:11
  */

@@ -136,19 +136,17 @@ public class TopicService {
     }
 
     /**
-     * 根据集群获取开启了流量预警功能的topic列表
+     * 根据集群获取开启了流量突增预警功能的topic列表
      * @param mqCluster
      * @return Result<List<Topic>>
      */
     public Result<List<Topic>> queryTrafficWarnEnabledTopicList(Cluster mqCluster) {
-        List<Topic> topicList = null;
         try {
-            topicList = topicDao.selectTrafficWarnEnabledTopic(mqCluster.getId());
+            return Result.getResult(topicDao.selectTrafficWarnEnabledTopic(mqCluster.getId()));
         } catch (Exception e) {
             logger.error("queryTrafficWarnEnabledTopicList err, mqCluster:{}", mqCluster, e);
             return Result.getDBErrorResult(e);
         }
-        return Result.getResult(topicList);
     }
 
     /**
@@ -157,14 +155,12 @@ public class TopicService {
      * @param Result<List<Topic>>
      */
     public Result<List<Topic>> queryTopicList(String topic, long uid, int offset, int size, List<Integer> traceClusterIds) {
-        List<Topic> topicList = null;
         try {
-            topicList = topicDao.selectByUid(topic, uid, offset, size, traceClusterIds);
+            return Result.getResult(topicDao.selectByUid(topic, uid, offset, size, traceClusterIds));
         } catch (Exception e) {
             logger.error("selectByUid err, uid:{}", uid, e);
             return Result.getDBErrorResult(e);
         }
-        return Result.getResult(topicList);
     }
     
     /**
@@ -173,14 +169,12 @@ public class TopicService {
      * @param Result<Integer>
      */
     public Result<Integer> queryTopicListCount(String topic, long uid, List<Integer> traceClusterIds) {
-        Integer count = null;
         try {
-            count = topicDao.selectByUidCount(topic, uid, traceClusterIds);
+            return Result.getResult(topicDao.selectByUidCount(topic, uid, traceClusterIds));
         } catch (Exception e) {
             logger.error("selectByUidCount err, uid:{}", uid, e);
             return Result.getDBErrorResult(e);
         }
-        return Result.getResult(count);
     }
     
     /**
@@ -201,14 +195,12 @@ public class TopicService {
      * @param Result<TopicStat>
      */
     public Result<TopicStat> queryTopicStat(long uid, List<Integer> traceClusterIds) {
-        TopicStat topicStat = null;
         try {
-            topicStat = topicDao.selectTopicStat(uid, traceClusterIds);
+            return Result.getResult(topicDao.selectTopicStat(uid, traceClusterIds));
         } catch (Exception e) {
             logger.error("queryTopicStat err, uid:{}", uid, e);
             return Result.getDBErrorResult(e);
         }
-        return Result.getResult(topicStat);
     }
     
     /**
@@ -241,14 +233,12 @@ public class TopicService {
      * @param Result<List<Topic>>
      */
     public Result<List<Topic>> queryTopicList(Collection<Long> idCollection) {
-        List<Topic> topicList = null;
         try {
-            topicList = topicDao.selectByIdList(idCollection);
+            return Result.getResult(topicDao.selectByIdList(idCollection));
         } catch (Exception e) {
             logger.error("getTopicList err, idCollection:{}", idCollection, e);
             return Result.getDBErrorResult(e);
         }
-        return Result.getResult(topicList);
     }
     
     /**
@@ -257,14 +247,12 @@ public class TopicService {
      * @param Result<Topic>
      */
     public Result<Topic> queryTopic(String name) {
-        Topic topic = null;
         try {
-            topic = topicDao.selectByName(name);
+            return Result.getResult(topicDao.selectByName(name));
         } catch (Exception e) {
             logger.error("queryTopic err, name:{}", name, e);
             return Result.getDBErrorResult(e);
         }
-        return Result.getResult(topic);
     }
     
     /**
@@ -796,7 +784,7 @@ public class TopicService {
     }
 
     /**
-     * 更新topic流量预警
+     * 更新topic流量突增预警
      * @param audit
      * @param topic
      */

@@ -1433,7 +1433,7 @@ public class AdminAuditController extends AdminViewController {
     }
 
     /**
-     * 更新topic流量预警
+     * 更新topic流量突增预警
      *
      * @param aid
      * @return
