@@ -32,6 +32,9 @@ i.pointer.fa-xs:hover {
 i.pointer:hover {
     color: #007bff!important;
 }
+span.pointer:hover {
+    color: #007bff!important;
+}
 .selected{
     background-color: #d9edf7;
 }

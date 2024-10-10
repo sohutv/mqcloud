@@ -1,0 +1,26 @@
+<#if !response.OK>
+    <tr class="no_more_data"><td colspan=7 class="text-center">异常！${response.message}</td></tr>
+<#else>
+    <#if response.empty>
+        <tr><td colspan=7 class="text-center">暂无数据</td></tr>
+    <#else>
+        <#list response.result as config>
+            <tr id="warnConfig${config.id}">
+                <td>${config_index + 1}</td>
+                <td>${config.operandDesc}</td>
+                <td>${config.operatorDesc}</td>
+                <td>${config.thresholdString}</td>
+                <td>${config.warnIntervalString}</td>
+                <td>${config.warnTime!}</td>
+                <td>
+                    <button type="button" class="btn btn-xs btn-outline-secondary" onclick="editWarnConfig(${config.id})" data-toggle="tooltip" title="修改该规则"><i class="fas fa-fw fa-pen-to-square"></i></button>
+                    <span>
+                        <button <#if !config.enabled()>style="display:none"</#if> type="button" class="btn btn-xs btn-outline-secondary" onclick="updateWarnConfig(this,${config.id}, 0)" data-toggle="tooltip" title="禁用该规则"><i class="fas fa-fw fa-toggle-on"></i></button>
+                        <button <#if config.enabled()>style="display:none"</#if> type="button" class="btn btn-xs btn-outline-secondary" onclick="updateWarnConfig(this,${config.id}, 1)" data-toggle="tooltip" title="启用该规则"><i class="fas fa-fw fa-toggle-off"></i></button>
+                    </span>
+                    <button type="button" class="btn btn-xs btn-outline-secondary" onclick="deleteWarnConfig(${config.id})" data-toggle="tooltip" title="删除该规则"><i class="fas fa-fw fa-trash-alt"></i></button>
+                </td>
+            </tr>
+        </#list>
+    </#if>
+</#if>

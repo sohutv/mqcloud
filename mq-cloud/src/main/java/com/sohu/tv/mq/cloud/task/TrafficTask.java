@@ -49,6 +49,9 @@ public class TrafficTask {
     @Autowired
     private ClusterCapacityService clusterCapacityService;
 
+    @Autowired
+    private TopicWarnService topicWarnService;
+
     /**
      * topic流量收集
      */
@@ -103,21 +106,14 @@ public class TrafficTask {
             public void run() {
                 logger.info("aggregate topic traffic start");
                 Date now = new Date();
-                // 计算60分钟间隔
-                List<String> timeList = new ArrayList<String>();
-                Date begin = new Date(now.getTime() - 60 * ONE_MIN + 30);
-                while (begin.before(now)) {
-                    String time = DateUtil.getFormat(DateUtil.HHMM).format(begin);
-                    timeList.add(time);
-                    begin.setTime(begin.getTime() + ONE_MIN);
-                }
-
                 int size = 0;
                 int update = 0;
-                Result<List<TopicTraffic>> result = topicTrafficService.query(now, timeList);
+                Result<List<TopicTraffic>> result = topicTrafficService.query(DateUtil.getBefore1Hour());
                 if (result.isNotEmpty()) {
                     List<TopicTraffic> topicTrafficList = result.getResult();
                     size = topicTrafficList.size();
+                    // topic小时流量预警
+                    topicWarnService.warnHour(topicTrafficList);
                     Result<Integer> rst = topicService.updateCount(topicTrafficList);
                     if (rst.isOK()) {
                         update = rst.getResult();

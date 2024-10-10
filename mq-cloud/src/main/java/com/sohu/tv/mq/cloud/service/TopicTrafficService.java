@@ -19,8 +19,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 /**
  * topic流量服务
@@ -207,39 +209,40 @@ public class TopicTrafficService extends TrafficService<TopicTraffic> {
 
     /**
      * 查询指定一天时间内的流量
-     *
-     * @param tid
-     * @param createDate
-     * @param createTimeList
-     * @return
      */
-    public Result<List<TopicTraffic>> queryRangeTraffic(long tid, Date createDate, List<String> createTimeList) {
-        List<TopicTraffic> list = null;
+    public Result<List<TopicTraffic>> queryRangeTraffic(long tid, Map<String, List<String>> timeMap) {
+        List<TopicTraffic> list = new ArrayList<>();
         try {
-            list = topicTrafficDao.selectByCreateDateAndTime(tid, createDate, createTimeList);
+            for (Map.Entry<String, List<String>> entry : timeMap.entrySet()) {
+                List<TopicTraffic> topicTrafficList = topicTrafficDao.selectByCreateDateAndTime(tid, entry.getKey(), entry.getValue());
+                if (topicTrafficList != null) {
+                    list.addAll(topicTrafficList);
+                }
+            }
+            return Result.getResult(list);
         } catch (Exception e) {
-            logger.error("queryRangeTraffic err,tid:{},createDate:{},createTimeList:{}", tid, createDate, createTimeList, e);
+            logger.error("queryRangeTraffic err, tid:{}, timeMap:{}", tid, timeMap, e);
             return Result.getDBErrorResult(e);
         }
-        return Result.getResult(list);
     }
 
     /**
      * 查询时间段内的流量
-     *
-     * @param date
-     * @param timeList
-     * @return
      */
-    public Result<List<TopicTraffic>> query(Date date, List<String> timeList) {
-        List<TopicTraffic> list = null;
+    public Result<List<TopicTraffic>> query(Map<String, List<String>> timeMap) {
+        List<TopicTraffic> list = new ArrayList<>();
         try {
-            list = topicTrafficDao.selectByDateTime(date, timeList);
+            for (Map.Entry<String, List<String>> entry : timeMap.entrySet()) {
+                List<TopicTraffic> topicTrafficList = topicTrafficDao.selectByDateTime(entry.getKey(), entry.getValue());
+                if (topicTrafficList != null) {
+                    list.addAll(topicTrafficList);
+                }
+            }
+            return Result.getResult(list);
         } catch (Exception e) {
-            logger.error("query traffic err,date:{},timeList:{}", date, timeList, e);
+            logger.error("query traffic err, timeMap:{}", timeMap, e);
             return Result.getDBErrorResult(e);
         }
-        return Result.getResult(list);
     }
 
     @Override
@@ -271,7 +274,7 @@ public class TopicTrafficService extends TrafficService<TopicTraffic> {
         int size = 1000;
         int offset = 0;
         while (true) {
-            List<TopicTraffic> topicTrafficList = topicTrafficDao.selectSummarySize(day7Ago, day1Ago, offset, size);
+            List<TopicTraffic> topicTrafficList = topicTrafficDao.selectSummary(day7Ago, day1Ago, offset, size);
             if (topicTrafficList == null || topicTrafficList.size() == 0) {
                 logger.warn("selectSummarySize no data, day7Ago:{}, day1Agao:{}, offset:{}, size:{}", day7Ago, day1Ago,
                         offset, size);
@@ -313,11 +316,14 @@ public class TopicTrafficService extends TrafficService<TopicTraffic> {
                     break;
                 }
             }
+            int day = DateUtil.daysBetween(today, topicTraffic.getCreateDate());
             if (destTopicTraffic == null) {
-                setDaySize(topicTraffic, DateUtil.daysBetween(today, topicTraffic.getCreateDate()), topicTraffic.getSize());
+                setDaySize(topicTraffic, day, topicTraffic.getSize());
+                setDayCount(topicTraffic, day, topicTraffic.getCount());
                 result.add(topicTraffic);
             } else {
-                setDaySize(destTopicTraffic, DateUtil.daysBetween(today, topicTraffic.getCreateDate()), topicTraffic.getSize());
+                setDaySize(destTopicTraffic, day, topicTraffic.getSize());
+                setDayCount(destTopicTraffic, day, topicTraffic.getCount());
             }
         }
         return result;
@@ -344,6 +350,18 @@ public class TopicTrafficService extends TrafficService<TopicTraffic> {
             case 6:
             case 7:
                 topicTraffic.addSize7d(size);
+        }
+    }
+
+    /**
+     * 设置天数流量，count1d表示1天前的流量
+     */
+    private void setDayCount(TopicTraffic topicTraffic, int day, long count) {
+        switch (day) {
+            case 1:
+                topicTraffic.addCount1d(count);
+            case 2:
+                topicTraffic.addCount2d(count);
         }
     }
 

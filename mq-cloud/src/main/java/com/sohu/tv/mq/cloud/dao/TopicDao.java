@@ -90,7 +90,7 @@ public interface TopicDao {
     public List<String> selectOrderedTopic(@Param("clusterId") int clusterId);
 
     /**
-     * 根据cluster_id查询开启了流量预警功能的topic
+     * 根据cluster_id查询开启了流量突增预警功能的topic
      * @param clusterId
      * @return List<Topic>
      */
@@ -302,14 +302,17 @@ public interface TopicDao {
     /**
      * 重置日流量大小
      */
-    @Update("update topic set size_1d = 0, size_2d = 0, size_3d = 0, size_5d = 0, size_7d = 0")
+    @Update("update topic set size_1d = 0, size_2d = 0, size_3d = 0, size_5d = 0, size_7d = 0, count_1d = 0, count_2d = 0")
     public Integer resetDayCount();
 
     /**
      * 更新日流量大小
      */
     @Update("update topic set size_1d = size_1d + #{topicTraffic.size1d}, size_2d = size_2d + #{topicTraffic.size2d}, " +
-            "size_3d = size_3d + #{topicTraffic.size3d}, size_5d = size_5d + #{topicTraffic.size5d}, size_7d = size_7d + #{topicTraffic.size7d} where id = #{topicTraffic.tid}")
+            "size_3d = size_3d + #{topicTraffic.size3d}, size_5d = size_5d + #{topicTraffic.size5d}, " +
+            "size_7d = size_7d + #{topicTraffic.size7d}, " +
+            "count_1d = count_1d + #{topicTraffic.count1d}, count_2d = count_2d + #{topicTraffic.count2d} " +
+            "where id = #{topicTraffic.tid}")
     public Integer updateDayCount(@Param("topicTraffic") TopicTraffic topicTraffic);
 
     /**

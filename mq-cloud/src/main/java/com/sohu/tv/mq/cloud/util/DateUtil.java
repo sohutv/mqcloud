@@ -4,10 +4,7 @@ import org.apache.commons.lang3.math.NumberUtils;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Locale;
-import java.util.Map;
+import java.util.*;
 
 /**
  * 线程安全的日期工具类
@@ -122,5 +119,27 @@ public class DateUtil {
      */
     public static int daysBetween(Date date1, Date date2) {
         return (int) ((date1.getTime() - date2.getTime()) / (1000 * 60 * 60 * 24L));
+    }
+
+    public static Map<String, List<String>> getBefore5Minute() {
+        return getBeforeTimes(5);
+    }
+
+    public static Map<String, List<String>> getBefore1Hour() {
+        return getBeforeTimes(60);
+    }
+
+    /**
+     * 获取beforeTime前到当前时间之间的时间集合
+     */
+    public static Map<String, List<String>> getBeforeTimes(int beforeTime) {
+        Map<String, List<String>> map = new HashMap<>();
+        Date now = new Date();
+        Date begin = new Date(now.getTime() - beforeTime * 60 * 1000 + 30);
+        while (begin.before(now)) {
+            map.computeIfAbsent(formatYMD(begin), k -> new ArrayList<>()).add(getFormat(HHMM).format(begin));
+            begin.setTime(begin.getTime() + 60 * 1000);
+        }
+        return map;
     }
 }

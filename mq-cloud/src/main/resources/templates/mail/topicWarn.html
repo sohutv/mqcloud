@@ -1,0 +1,24 @@
+topic: ${topic} 命中流量预警规则:
+<br>
+<table border=1>
+    <thead>
+    <tr>
+        <th>检测项</th>
+        <th>检测条件</th>
+        <th>当前值</th>
+        <th>阈值</th>
+        <th>备注</th>
+    </tr>
+    </thead>
+    <tbody>
+    <#list list as config>
+    <tr>
+        <td>${config.operandDesc}</td>
+        <td>${config.actualValueString}</td>
+        <td>${config.operatorDesc}</td>
+        <td>${config.thresholdString}</td>
+        <td>${config.remark!}</td>
+    </tr>
+    </#list>
+    </tbody>
+</table>

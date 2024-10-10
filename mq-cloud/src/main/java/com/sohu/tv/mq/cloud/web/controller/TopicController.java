@@ -8,8 +8,8 @@ import com.sohu.tv.mq.cloud.util.DateUtil;
 import com.sohu.tv.mq.cloud.util.FreemarkerUtil;
 import com.sohu.tv.mq.cloud.util.Result;
 import com.sohu.tv.mq.cloud.util.Status;
-import com.sohu.tv.mq.cloud.web.controller.param.AssociateProducerParam;
 import com.sohu.tv.mq.cloud.web.controller.param.TopicParam;
+import com.sohu.tv.mq.cloud.web.controller.param.TopicWarnConfigParam;
 import com.sohu.tv.mq.cloud.web.vo.BrokersQueueOffsetVO;
 import com.sohu.tv.mq.cloud.web.vo.BrokersQueueOffsetVO.BrokerQueueOffset;
 import com.sohu.tv.mq.cloud.web.vo.BrokersQueueOffsetVO.QueueOffset;
@@ -82,6 +82,9 @@ public class TopicController extends ViewController {
 
     @Autowired
     private ClientConnectionService clientConnectionService;
+
+    @Autowired
+    private TopicWarnConfigService topicWarnConfigService;
 
     /**
      * 更新Topic路由
@@ -341,7 +344,7 @@ public class TopicController extends ViewController {
     }
 
     /**
-     * 更新topic 流量预警开关
+     * 更新topic 流量突增预警开关
      *
      * @return
      * @throws Exception
@@ -660,6 +663,88 @@ public class TopicController extends ViewController {
     public Result<?> getHttpTopicProducer() throws Exception {
         Result<List<TopicProducer>> result = topicService.queryHttpProducer();
         return Result.getWebResult(result);
+    }
+
+    /**
+     * 获取topic预警配置
+     */
+    @GetMapping("/warn/config/list/{tid}")
+    public String warnConfigList(UserInfo userInfo, @PathVariable long tid, Map<String, Object> map) throws Exception {
+        String view = viewModule() + "/warnConfigList";
+        setResult(map, topicWarnConfigService.query(tid));
+        return view;
+    }
+
+    /**
+     * 配置topic预警
+     */
+    @ResponseBody
+    @PostMapping("/warn/config/add")
+    public Result<Integer> warnConfigAdd(UserInfo userInfo, @Valid TopicWarnConfigParam topicWarnConfigParam) throws Exception {
+        logger.info("add topic warn config, user:{} topicWarnConfigParam:{}", userInfo, topicWarnConfigParam);
+        if (hasPermission(userInfo, topicWarnConfigParam.getTid()).isNotOK()) {
+            return Result.getResult(Status.PERMISSION_DENIED_ERROR);
+        }
+        TopicWarnConfig topicWarnConfig = new TopicWarnConfig();
+        BeanUtils.copyProperties(topicWarnConfigParam, topicWarnConfig);
+        return Result.getWebResult(topicWarnConfigService.save(topicWarnConfig));
+    }
+
+    /**
+     * 删除topic预警
+     */
+    @ResponseBody
+    @PostMapping("/warn/config/delete/{id}")
+    public Result<?> warnConfigDelete(UserInfo userInfo, @PathVariable long id) throws Exception {
+        logger.info("delete topic warn config, user:{} id:{}", userInfo, id);
+        Result<TopicWarnConfig> result = topicWarnConfigService.queryById(id);
+        if (result.isNotOK()) {
+            return Result.getWebResult(result);
+        }
+        if (hasPermission(userInfo, result.getResult().getTid()).isNotOK()) {
+            return Result.getResult(Status.PERMISSION_DENIED_ERROR);
+        }
+        return Result.getWebResult(topicWarnConfigService.delete(id));
+    }
+
+    /**
+     * 更新topic预警
+     */
+    @ResponseBody
+    @PostMapping("/warn/config/update/enable/{id}")
+    public Result<?> warnConfigDelete(UserInfo userInfo, @PathVariable long id, int enable) throws Exception {
+        logger.info("update topic warn config, user:{} id:{} enable:{}", userInfo, id, enable);
+        Result<TopicWarnConfig> result = topicWarnConfigService.queryById(id);
+        if (result.isNotOK()) {
+            return Result.getWebResult(result);
+        }
+        if (hasPermission(userInfo, result.getResult().getTid()).isNotOK()) {
+            return Result.getResult(Status.PERMISSION_DENIED_ERROR);
+        }
+        return Result.getWebResult(topicWarnConfigService.updateEnabled(id, enable));
+    }
+
+    /**
+     * 获取topic预警
+     */
+    @ResponseBody
+    @GetMapping("/warn/config/{id}")
+    public Result<?> warnConfig(@PathVariable long id) throws Exception {
+        return Result.getWebResult(topicWarnConfigService.queryById(id));
+    }
+
+    /**
+     * 是否有权限
+     */
+    private Result hasPermission(UserInfo userInfo, long tid) {
+        // 非admin用户需要校验是否有权限
+        if (!userInfo.getUser().isAdmin()) {
+            Result<UserProducer> userProducerResult = userProducerService.findUserProducer(userInfo.getUser().getId(),tid);
+            if (userProducerResult.isNotOK()) {
+                return Result.getResult(Status.PERMISSION_DENIED_ERROR);
+            }
+        }
+        return Result.getOKResult();
     }
 
     @Override

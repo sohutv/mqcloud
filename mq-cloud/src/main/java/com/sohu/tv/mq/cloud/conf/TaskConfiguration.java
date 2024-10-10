@@ -93,6 +93,11 @@ public class TaskConfiguration {
     }
 
     @Bean
+    public TopicWarnTask topicWarnTask(){
+        return new TopicWarnTask();
+    }
+
+    @Bean
     @ConditionalOnProperty(name = "rocketmq.customized", havingValue = "true")
     public DeadMessageTask deadMessageTask() {
         DeadMessageTask deadMessageTask = new DeadMessageTask();

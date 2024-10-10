@@ -1,14 +1,11 @@
 package com.sohu.tv.mq.cloud.service;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
+import com.sohu.tv.mq.cloud.bo.*;
+import com.sohu.tv.mq.cloud.bo.UserWarn.WarnType;
+import com.sohu.tv.mq.cloud.dao.TopicTrafficStatDao;
+import com.sohu.tv.mq.cloud.util.DateUtil;
+import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper;
+import com.sohu.tv.mq.cloud.util.Result;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,18 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
-import com.sohu.tv.mq.cloud.bo.Cluster;
-import com.sohu.tv.mq.cloud.bo.Topic;
-import com.sohu.tv.mq.cloud.bo.TopicTraffic;
-import com.sohu.tv.mq.cloud.bo.TopicTrafficCheckResult;
-import com.sohu.tv.mq.cloud.bo.TopicTrafficStat;
-import com.sohu.tv.mq.cloud.bo.TopicTrafficWarnConfig;
-import com.sohu.tv.mq.cloud.bo.User;
-import com.sohu.tv.mq.cloud.bo.UserWarn.WarnType;
-import com.sohu.tv.mq.cloud.dao.TopicTrafficStatDao;
-import com.sohu.tv.mq.cloud.util.DateUtil;
-import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper;
-import com.sohu.tv.mq.cloud.util.Result;
+import java.util.*;
 
 /**
  * @author yongweizhao
@@ -36,10 +22,6 @@ import com.sohu.tv.mq.cloud.util.Result;
 @Service
 public class TopicTrafficStatService {
     private Logger logger = LoggerFactory.getLogger(this.getClass());
-
-    private static final int ONE_MIN = 1 * 60 * 1000;
-
-    private static final int FIVE_MIN_BEFORE = 5;
 
     @Autowired
     private ClusterService clusterService;
@@ -124,7 +106,7 @@ public class TopicTrafficStatService {
     }
 
     /**
-     * 获取所有开启了流量预警功能的topic
+     * 获取所有开启了流量突增预警功能的topic
      */
     public List<Topic> queryTrafficWarnEnabledTopicList() {
         if (clusterService.getAllMQCluster() == null) {
@@ -216,11 +198,11 @@ public class TopicTrafficStatService {
         // 当天时间
         Date date = new Date();
         // 5分钟前时间间隔
-        List<String> timeList = getBeforeTimes(FIVE_MIN_BEFORE);
+        Map<String, List<String>> timeMap = DateUtil.getBefore5Minute();
         for (Topic topic : topicList) {
             // 2. 获取前5分钟topic流量列表
             long tid = topic.getId();
-            Result<List<TopicTraffic>> topicTrafficResult = topicTrafficService.queryRangeTraffic(tid, date, timeList);
+            Result<List<TopicTraffic>> topicTrafficResult = topicTrafficService.queryRangeTraffic(tid, timeMap);
             if (topicTrafficResult.isEmpty()) {
                 continue;
             }
@@ -247,22 +229,6 @@ public class TopicTrafficStatService {
         }
     }
 
-    /**
-     * 获取beforeTime前到当前时间之间的时间集合,格式HHMM
-     */
-    private List<String> getBeforeTimes(int beforeTime) {
-        Date now = new Date();
-        // 计算前beforeTime分钟间隔
-        List<String> timeList = new ArrayList<String>();
-        Date begin = new Date(now.getTime() - beforeTime * ONE_MIN + 30);
-        while (begin.before(now)) {
-            String time = DateUtil.getFormat(DateUtil.HHMM).format(begin);
-            timeList.add(time);
-            begin.setTime(begin.getTime() + ONE_MIN);
-        }
-        return timeList;
-    }
-
     // 发送报警
     public void sendAlert(List<TopicTrafficCheckResult> checkResultList, TopicTrafficWarnConfig config, Topic topic) {
         if (CollectionUtils.isEmpty(checkResultList) || !config.isAlert()) {
@@ -273,7 +239,7 @@ public class TopicTrafficStatService {
         paramMap.put("topic", mqCloudConfigHelper.getTopicProduceLink(topic.getId(), topic.getName()));
         paramMap.put("list", checkResultList);
         paramMap.put("resource", topic.getName());
-        alertService.sendWarn(userSet, WarnType.TOPIC_TRAFFIC, paramMap);
+        alertService.sendWarn(userSet, WarnType.TOPIC_SURGE_TRAFFIC, paramMap);
     }
 
     /**

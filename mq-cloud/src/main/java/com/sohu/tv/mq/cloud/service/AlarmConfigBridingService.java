@@ -1,19 +1,18 @@
 package com.sohu.tv.mq.cloud.service;
 
-import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
 import com.google.common.base.Joiner;
 import com.sohu.tv.mq.cloud.bo.AlarmConfig;
 import com.sohu.tv.mq.cloud.bo.NeedAlarmConfig;
 import com.sohu.tv.mq.cloud.dao.NeedAlarmConfigDao;
 import com.sohu.tv.mq.cloud.util.ConsumerWarnEnum;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 /**
  * 监控获取报警配置的service
@@ -70,6 +69,33 @@ public class AlarmConfigBridingService {
             return false;
         }
         return true;
+    }
+
+    /**
+     * 仅判断时间，超过destTimestamp则预警
+     */
+    public boolean needWarn(long warnIntervalInMillis, String... keys) {
+        if (warnIntervalInMillis <= 0) {
+            return true;
+        }
+        long currentTimeMillis = System.currentTimeMillis();
+        String key = getKey(keys);
+        NeedAlarmConfig nwc = needAlarmConfigDao.get(key);
+        if (nwc == null) {
+            nwc = new NeedAlarmConfig();
+            nwc.setoKey(key);
+            nwc.setUpdateTime(currentTimeMillis);
+            needAlarmConfigDao.insert(nwc);
+            return true;
+        }
+        // 超过阈值，重置时间
+        long gap = currentTimeMillis - nwc.getUpdateTime();
+        if (gap > warnIntervalInMillis) {
+            needAlarmConfigDao.reset(key, currentTimeMillis);
+            return true;
+        }
+        logger.info("key:{} time:{} gap:{} bigger than:{} not warn", key, nwc.getUpdateTime(), gap, warnIntervalInMillis);
+        return false;
     }
 
     /**

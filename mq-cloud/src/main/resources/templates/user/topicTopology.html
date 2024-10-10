@@ -81,20 +81,10 @@
 									</#if>
 								</#if>
 							</td>
-							<td class="text-muted">流量<span class="d-none d-lg-inline">预警</span></td>
+							<td><a data-target="#warnConfigListModal" data-toggle="modal" title="查看流量预警规则" class="pointer">流量<span class="d-none d-lg-inline">预警</span></a></td>
 							<td>
 								<#if response.result.own>
-									<#if response.result.topic.trafficWarnEnabled()>
-										<span data-toggle="tooltip" title="关闭预警?"><i onclick="updateTopicTrafficWarnShow(1,${response.result.topic.id})" class="fas fa-toggle-on text-secondary pointer"></i></span>
-									<#else>
-										<span data-toggle="tooltip" title="开启预警?"><i onclick="updateTopicTrafficWarnShow(0)" class="fas fa-toggle-off text-secondary pointer"></i></span>
-									</#if>
-								<#else>
-									<#if response.result.topic.trafficWarnEnabled()>
-										<i class="fas fa-toggle-on"></i>
-									<#else>
-										<i class="fas fa-toggle-off"></i>
-									</#if>
+									<span data-tooltip="true" onclick="addWarnConfig()" title="添加流量预警规则"><i class="fas fa-fw fa-regular fa-pen-to-square text-secondary pointer"></i></span>
 								</#if>
 							</td>
 						</tr>
@@ -563,12 +553,12 @@ $(function() {
 		</div>
 	</div>
 </div>
-<!-- 开启/关闭topic流量预警 -->
-<div id="updateTopicTrafficWarnModal" class="modal fade" data-width="400">
+<!-- 开启/关闭topic流量突增预警 -->
+<div id="updateTopicTrafficWarnModal" class="modal fade" data-width="400" style="z-index:2001;">
 	<div class="modal-dialog">
 		<div class="modal-content">
 			<div class="modal-header">
-				<h5>流量预警 </h5><a target=_blank href="${request.contextPath}/wiki/userGuide/monitorAndWarn#trafficMonitor" title="了解详情" data-toggle="tooltip"><i class="fas fa-question-circle fa-sm"></i></a>
+				<h5>流量突增预警 </h5>
 				<button type="button" class="close" data-dismiss="modal" aria-label="Close">
 					<span aria-hidden="true">&times;</span>
 				</button>
@@ -577,7 +567,7 @@ $(function() {
 				<form id="updateTopicTrafficWarnForm">
 					<div class="form-group">
 						<div class="form-control-static">
-							<b><span id='topicTrafficWarnSelect'></span> 流量预警 ?</b>
+							<b><span id='topicTrafficWarnSelect'></span> 流量突增预警 ?</b>
 						</div>
 					</div>
 				</form>
@@ -617,6 +607,148 @@ $(function() {
 	</div>
 </div>
 
+<!-- topic流量预警规则配置 -->
+<div id="topicWarnConfigModal" class="modal fade" tabindex="-1" data-width="400" style="z-index:2000;">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<span class="h5"><span id="topicWarnConfigTitle">添加</span>流量预警规则</span><a target=_blank href="${request.contextPath}/wiki/userGuide/monitorAndWarn#topicWarnConfig" title="了解详情" data-toggle="tooltip"><i class="fas fa-question-circle fa-sm"></i></a>
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+			</div>
+			<div class="modal-body">
+				<form id="topicWarnConfigForm">
+					<div class="input-group mb-3">
+						<label class="col-form-label col-md-3"> 检测项: </label>
+						<div class="col-md-8">
+							<select id="operandTypeSelect" class="form-control selectpicker border warnConfgSelect" name="operandType">
+								<option value="0">每5分钟的消息量</option>
+								<option value="1">每小时的消息量</option>
+								<option value="2">每天的消息量</option>
+								<option value="3">消息量按5分钟环比</option>
+								<option value="4">消息量按小时环比</option>
+								<option value="5">消息量按天环比</option>
+							</select>
+						</div>
+					</div>
+					<div class="input-group mb-3">
+						<label class="col-form-label col-md-3"> 检测条件: </label>
+						<div class="col-md-8">
+							<select id="operatorTypeSelect" class="form-control selectpicker border warnConfgSelect" name="operatorType">
+								<option value="0">大于</option>
+								<option value="1">小于</option>
+								<option value="2">大于等于</option>
+								<option value="3">小于等于</option>
+							</select>
+						</div>
+					</div>
+					<div class="input-group mb-3">
+						<label for="thresholdInput" class="col-form-label col-md-3"> 阈值: </label>
+						<div class="col-md-8">
+							<div class="input-group">
+								<input type="text" id="thresholdInput" name="threshold" class="form-control" />
+								<div class="input-group-append">
+									<span id="thresholdAppendSpan" class="input-group-text">条</span>
+								</div>
+							</div>
+						</div>
+					</div>
+					<div class="input-group mb-3">
+						<label class="col-form-label col-md-3"> 预警间隔: </label>
+						<div class="col-md-8">
+							<div class="input-group">
+								<input type="text" id="warnIntervalInput" name="warnInterval" class="form-control" placeholder="若无必要，请保持默认"/>
+								<div class="input-group-append">
+									<span class="input-group-text">分钟</span>
+								</div>
+							</div>
+						</div>
+					</div>
+					<div class="input-group mb-3">
+						<label class="col-form-label col-md-3"> 从此时间生效: </label>
+						<div class="col-md-8">
+							<div class="input-group" id="warnConfigTimeStartTimePicker" data-target-input="nearest">
+								<input type="text" id="warnConfigTimeStartTimePickerInput" placeholder="若无必要，请保持默认" name="warnConfigTimeStart" class="form-control datetimepicker-input" data-target="#warnConfigTimeStartTimePicker"/>
+								<div class="input-group-append" data-target="#warnConfigTimeStartTimePicker" data-toggle="datetimepicker">
+									<div class="input-group-text"><i class="far fa-clock"></i></div>
+								</div>
+							</div>
+						</div>
+					</div>
+					<div class="input-group mb-3">
+						<label class="col-form-label col-md-3"> 此时间后失效: </label>
+						<div class="col-md-8">
+							<div class="input-group" id="warnConfigTimeEndTimePicker" data-target-input="nearest">
+								<input type="text" id="warnConfigTimeEndTimePickerInput" placeholder="若无必要，请保持默认" name="warnConfigTimeEnd" class="form-control datetimepicker-input" data-target="#warnConfigTimeEndTimePicker"/>
+								<div class="input-group-append" data-target="#warnConfigTimeEndTimePicker" data-toggle="datetimepicker">
+									<div class="input-group-text"><i class="far fa-clock"></i></div>
+								</div>
+							</div>
+						</div>
+					</div>
+					<input type="hidden" name="tid" value="${response.result.topic.id}"/>
+					<input type="hidden" id="topicWarnConfigEnable" name="enabled" value="1"/>
+					<input type="hidden" id="topicWarnConfigId" name="id" disabled="true"/>
+				</form>
+			</div>
+			<div class="modal-footer justify-content-between">
+				<button type="button" data-dismiss="modal" class="btn btn-default" >取消</button>
+				<button type="button" onclick="topicWarnConfig()" id="topicWarnConfigBtn" class="btn btn-primary">确定</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- 流量预警规则 -->
+<div id="warnConfigListModal" class="modal fade">
+	<div class="modal-dialog modal-lg">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h4 class="modal-title">流量预警列表</h4>
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+			</div>
+			<div class="modal-body">
+				<div class="card">
+					<div class="card-body">
+						<a target=_blank href="${request.contextPath}/wiki/userGuide/monitorAndWarn#trafficMonitor" title="了解详情" data-toggle="tooltip"><i class="fas fa-question-circle fa-sm"></i></a>
+						<span class="text-muted">流量突增预警</span>
+						<#if response.result.topic.trafficWarnEnabled()>
+							<button type="button" class="btn btn-xs btn-outline-secondary" data-toggle="tooltip" title="关闭预警?" onclick="updateTopicTrafficWarnShow(1,${response.result.topic.id})"><i class="fas fa-fw fa-toggle-on"></i></button>
+						<#else>
+							<button type="button" class="btn btn-xs btn-outline-secondary" data-toggle="tooltip" title="开启预警?" onclick="updateTopicTrafficWarnShow(0)"><i class="fas fa-fw fa-toggle-off"></i></button>
+						</#if>
+					</div>
+				</div>
+				<div class="card">
+					<div class="card-header">
+						<a target=_blank href="${request.contextPath}/wiki/userGuide/monitorAndWarn#topicWarnConfig" title="了解详情" data-toggle="tooltip"><i class="fas fa-question-circle fa-sm"></i></a>
+						<span class="text-muted">流量预警规则</span>
+					</div>
+					<div class="card-body table-responsive p-0">
+						<table class="table table-striped table-hover text-nowrap">
+							<thead>
+								<tr>
+									<th>序号</th>
+									<th>检测项</th>
+									<th>检测条件</th>
+									<th>阈值</th>
+									<th>预警间隔</th>
+									<th>生效时间段</th>
+									<th>操作</th>
+								</tr>
+							</thead>
+							<tbody id="warnConfigListBody">
+								<tr>
+									<td colspan=7 class="text-center">暂无数据</td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
 <script>
 	$(function () {
 		// 初始化user列表
@@ -633,6 +765,23 @@ $(function() {
         $('#producerStatsModal').on('shown.bs.modal', function() {
         	producerStats();
         });
+
+		var defaultTimerOption = {
+			format: 'HH:mm',
+			icons: { time: 'far fa-clock' },
+			focusOnShow: false
+		}
+
+		$("#warnConfigTimeStartTimePicker").datetimepicker(defaultTimerOption);
+		$("#warnConfigTimeEndTimePicker").datetimepicker(defaultTimerOption);
+		$('.warnConfgSelect').selectpicker({
+			size: 6 // 设置下拉项的显示数量
+		});
+
+		$("#operandTypeSelect").selectpicker().on('changed.bs.select', function () {
+			var value = $('#operandTypeSelect option:selected').val();
+			updateThresholdAppendSpan(value);
+		});
 	});
 	
 	// 准备删除生产者
@@ -900,6 +1049,162 @@ $(function () {
 	<#if RequestParameters.from??>
 		showProducerStats('${RequestParameters.from}')
 	</#if>
+
+	$('#warnConfigListModal').on('shown.bs.modal', function() {
+		warnConfigList();
+	});
 });
+
+function topicWarnConfig() {
+	var threshold = $("#thresholdInput").val();
+	if (!threshold) {
+		alert("请输入阈值");
+		return;
+	}
+	if (isNaN(Number(threshold))) {
+		alert("阈值只能为数字");
+		return;
+	}
+	var startTime = $("#warnConfigTimeStartTimePickerInput").val();
+	var endTime = $("#warnConfigTimeEndTimePickerInput").val();
+	if (startTime || endTime) {
+		if (!startTime) {
+			alert("请输入生效时间");
+			return;
+		}
+		if (!endTime) {
+			alert("请输入失效时间");
+			return;
+		}
+	}
+	var warnInterval = $("#warnIntervalInput").val();
+	if (warnInterval) {
+		var warnInterval = Number(warnInterval);
+		if (isNaN(warnInterval) || warnInterval < 0) {
+			alert("预警间隔只能为数字");
+			return;
+		}
+	}
+
+	var tip = "";
+	if (startTime) {
+		tip += "在" + startTime + "至" + endTime + "之间，";
+	}
+	tip += "当" + $("#operandTypeSelect option:selected").text() + $("#operatorTypeSelect option:selected").text()
+			+ threshold + $("#thresholdAppendSpan").html();
+	tip += "时进行预警";
+	if (warnInterval) {
+		tip += "，" + warnInterval + "分钟内最多预警一次";
+	}
+	if (!confirm(tip)) {
+		return;
+	}
+	disable("topicWarnConfigBtn");
+	$.post('${request.contextPath}/topic/warn/config/add',
+			$("#topicWarnConfigForm").serialize(),
+			function (data) {
+				if (data.status == 200) {
+					toastr.success("操作成功！即将刷新页面！");
+					reload(2000);
+				} else {
+					toastr.error("操作失败！" + data.message);
+					enable("topicWarnConfigBtn");
+				}
+			}, 'json');
+}
+
+function warnConfigList() {
+	$.get('${request.contextPath}/topic/warn/config/list/${response.result.topic.id}', function (data) {
+		$("#warnConfigListBody").html(data);
+		$("[data-toggle='tooltip']").tooltip({boundary: 'window'});
+	});
+}
+function deleteWarnConfig(id) {
+	if (!confirm("确定要删除这条规则吗？")) {
+		return;
+	}
+	$.post('${request.contextPath}/topic/warn/config/delete/' + id, function (data) {
+		if (data.status == 200) {
+			toastr.success("操作成功！");
+			$("#warnConfig"+id).remove();
+		} else {
+			toastr.error("操作失败！" + data.message);
+		}
+	}, 'json');
+}
+function updateWarnConfig(element, id, enable) {
+	$(element).hide().siblings().show();
+	$.post('${request.contextPath}/topic/warn/config/update/enable/' + id, {
+		enable: enable
+	}, function (data) {
+		if (data.status == 200) {
+			toastr.success("操作成功！");
+		} else {
+			toastr.error("操作失败！" + data.message);
+			$(element).show().siblings().hide();
+		}
+	}, 'json');
+}
+
+function editWarnConfig(id) {
+	$("#topicWarnConfigTitle").html("修改");
+	$("#topicWarnConfigModal").modal('show');
+	$.get('${request.contextPath}/topic/warn/config/' + id, function (data) {
+		if (data.status != 200) {
+			toastr.error("获取数据失败！" + data.message);
+			return;
+		}
+		setWarnConfigFormForUpdate(data.result);
+	});
+}
+
+function addWarnConfig() {
+	$("#topicWarnConfigModal").modal('show');
+	resetsWarnConfigForm();
+}
+
+function resetsWarnConfigForm() {
+	$("#topicWarnConfigTitle").html("添加");
+	$("#topicWarnConfigEnable").val(1);
+	$("#topicWarnConfigId").prop('disabled', true);
+	$("#operandTypeSelect").val(0);
+	$("#operatorTypeSelect").val(0);
+	$("#thresholdInput").val("");
+	$("#warnIntervalInput").val("");
+	$("#warnConfigTimeStartTimePickerInput").val("");
+	$("#warnConfigTimeEndTimePickerInput").val("");
+	updateThresholdAppendSpan(0);
+}
+
+function setWarnConfigFormForUpdate(config) {
+	$("#topicWarnConfigEnable").val(config.enabled);
+	$("#topicWarnConfigId").val(config.id).prop('disabled', false);
+	$("#operandTypeSelect").val(config.operandType);
+	$("#operatorTypeSelect").val(config.operatorType);
+	$("#thresholdInput").val(config.threshold);
+	if (config.warnInterval > 0) {
+		$("#warnIntervalInput").val(config.warnInterval);
+	} else {
+		$("#warnIntervalInput").val("");
+	}
+	if (config.warnTime) {
+		var times = config.warnTime.split("-");
+		$("#warnConfigTimeStartTimePickerInput").val(times[0]);
+		$("#warnConfigTimeEndTimePickerInput").val(times[1]);
+	} else {
+		$("#warnConfigTimeStartTimePickerInput").val("");
+		$("#warnConfigTimeEndTimePickerInput").val("");
+	}
+	updateThresholdAppendSpan(config.operandType);
+}
+
+function updateThresholdAppendSpan(operandType) {
+	if (operandType == 3 || operandType == 4 || operandType == 5) {
+		$("#thresholdAppendSpan").html("%");
+	} else {
+		$("#thresholdAppendSpan").html("条");
+	}
+}
+
 </script>
 <#include "../inc/pagination.html">

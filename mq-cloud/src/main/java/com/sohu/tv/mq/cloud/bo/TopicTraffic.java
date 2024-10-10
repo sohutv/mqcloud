@@ -22,6 +22,11 @@ public class TopicTraffic extends Traffic {
     // 7天前的写入量大小
     private long size7d;
 
+    // 1天前的写入量
+    private long count1d;
+    // 2天前的写入量
+    private long count2d;
+
     public long getTid() {
         return tid;
     }
@@ -70,6 +75,22 @@ public class TopicTraffic extends Traffic {
         this.size7d = size7d;
     }
 
+    public long getCount1d() {
+        return count1d;
+    }
+
+    public void setCount1d(long count1d) {
+        this.count1d = count1d;
+    }
+
+    public long getCount2d() {
+        return count2d;
+    }
+
+    public void setCount2d(long count2d) {
+        this.count2d = count2d;
+    }
+
     public void addSize1d(long count) {
         this.size1d += count;
     }
@@ -88,6 +109,14 @@ public class TopicTraffic extends Traffic {
 
     public void addSize7d(long count) {
         this.size7d += count;
+    }
+
+    public void addCount1d(long count) {
+        this.count1d += count;
+    }
+
+    public void addCount2d(long count) {
+        this.count2d += count;
     }
 
     @Override

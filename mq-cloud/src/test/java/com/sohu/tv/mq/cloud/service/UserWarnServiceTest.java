@@ -3,7 +3,7 @@ package com.sohu.tv.mq.cloud.service;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.sohu.tv.mq.cloud.util.WebUtil;
+import com.sohu.tv.mq.cloud.common.util.WebUtil;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;

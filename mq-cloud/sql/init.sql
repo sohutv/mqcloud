@@ -473,13 +473,15 @@ CREATE TABLE `topic` (
   `create_date` date NOT NULL,
   `update_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   `serializer` int(4) NOT NULL DEFAULT '0' COMMENT '序列化器 0:Protobuf,1:String',
-  `traffic_warn_enabled` int(4) NOT NULL DEFAULT '0' COMMENT '0:不开启流量预警,1:开启流量预警',
+  `traffic_warn_enabled` int(4) NOT NULL DEFAULT '0' COMMENT '0:不开启流量突增预警,1:开启流量突增预警',
   `effective` int(4) NOT NULL DEFAULT '0' COMMENT '状态确认 0 未确认 1 确认',
   `size_1d` bigint(20) DEFAULT '0' COMMENT 'topic put size in one day',
   `size_2d` bigint(20) DEFAULT '0' COMMENT 'topic put size in two days',
   `size_3d` bigint(20) DEFAULT '0' COMMENT 'topic put size in three days',
   `size_5d` bigint(20) DEFAULT '0' COMMENT 'topic put size in five days',
   `size_7d` bigint(20) DEFAULT '0' COMMENT 'topic put size in seven days',
+  `count_1d` bigint(20) DEFAULT '0' COMMENT 'topic put count in one day',
+  `count_2d` bigint(20) DEFAULT '0' COMMENT 'topic put count in two days',
   PRIMARY KEY (`id`),
   UNIQUE KEY `name` (`name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='topic表';
@@ -1140,7 +1142,7 @@ CREATE TABLE `topic_traffic_warn_config` (
   `alarm_receiver` int(4) DEFAULT '0' COMMENT '告警接收人,0:生产者消费者及管理员,1:生产者和管理员,2:消费者和管理员,3:仅管理员,4:不告警',
   `topic` varchar(64) DEFAULT '' COMMENT 'topic名称，为空代表默认配置，只有一条默认配置',
   UNIQUE KEY `topic` (`topic`) USING BTREE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='topic流量预警阈值配置';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='topic流量突增预警阈值配置';
 
 -- ----------------------------
 -- topic_traffic_warn_config init
@@ -1153,7 +1155,7 @@ INSERT INTO `topic_traffic_warn_config`(avg_multiplier,avg_max_percentage_increa
 CREATE TABLE `audit_topic_traffic_warn` (
   `aid` int(11) NOT NULL COMMENT '审核id',
   `tid` int(11) NOT NULL COMMENT 'topic id',
-  `traffic_warn_enabled` int(11) NOT NULL COMMENT '0:不开启topic流量预警,1:开启topic流量预警'
+  `traffic_warn_enabled` int(11) NOT NULL COMMENT '0:不开启topic流量突增预警,1:开启topic流量突增预警'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='审核topic trafficWarn相关表';
 
 -- ----------------------------
@@ -1393,3 +1395,21 @@ CREATE TABLE `audit_http_consumer_config`
     `consume_timeout` int(11) DEFAULT NULL COMMENT '消费超时时间，单位毫秒',
     PRIMARY KEY (`aid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='审核HTTP消费者配置相关表';
+
+-- ----------------------------
+-- Table structure for `topic_warn_config`
+-- ----------------------------
+DROP TABLE IF EXISTS `topic_warn_config`;
+CREATE TABLE `topic_warn_config`
+(
+    `id`            int(11) NOT NULL AUTO_INCREMENT COMMENT 'id',
+    `tid`           int(11) NOT NULL COMMENT 'topic id',
+    `operand_type`  tinyint(4) DEFAULT 0 COMMENT '操作类型，0:5分钟生产条数;1:一小时生产条数;2:一天生产条数;3:5分钟环比;4:时环比;5:日环比',
+    `operator_type` tinyint(4) DEFAULT 0 COMMENT '比较符类型，0:大于;1:小于;2:大于等于;3:小于等于',
+    `threshold`     double DEFAULT 0 COMMENT '阈值',
+    `warn_interval` int(11) DEFAULT 0 COMMENT '报警间隔，单位分钟',
+    `warn_time`     varchar(64) COMMENT '预警时间，格式：HH:mm-HH:mm',
+    `enabled`       int(4) NOT NULL DEFAULT '1' COMMENT '0:未启用,1:启用',
+    PRIMARY KEY (`id`),
+    KEY `tid_idx` (`tid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='topic报警阈值配置表';

@@ -51,7 +51,7 @@ public class UserWarn {
         CONSUME_SUBSCRIBE_ERROR(6, "消费订阅错误", "consumeSubscribeError.html"),
         DEAD_MESSAGE(7, "死消息", "deadMessage.html"),
         CONSUME_FALL_BEHIND(8, "消费落后", "consumeFallBehind.html"),
-        TOPIC_TRAFFIC(9, "流量异常", "topicTraffic.html"),
+        TOPIC_SURGE_TRAFFIC(9, "流量突增", "topicTraffic.html"),
         BROKER_STORE_SLOW(10, "broker存储过慢", "brokerStoreSlow.html"),
         BROKER_ERROR(11, "Broker异常", "mqError.html"),
         NAMESERVER_ERROR(12, "NameServer异常", "mqError.html"),
@@ -61,6 +61,7 @@ public class UserWarn {
         PROXY_ERROR(14, "Proxy异常", "mqError.html"),
         MESSAGE_EXPORT_ERROR(15, "消息导出过慢", "messageExportFailed.html"),
         CAPACITY_REPORT(16, "容量日报", "capacityReport.html", false),
+        TOPIC_WARN(17, "Topic流量预警", "topicWarn.html"),
 
         UNKNOWN(100, "未知", "unknown.html"),
         ;

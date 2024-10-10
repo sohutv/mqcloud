@@ -57,3 +57,24 @@ CREATE TABLE `audit_http_consumer_config`
 insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) values(4, 'sendMsgRateLimitQps', '10000', '发送消息限流qps', null, 4, 1, null, 0);
 insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) values(4, 'sendRetryMsgRateLimitQps', '1000', '发送重试消息限流qps', null, 5, 1, null, 0);
 insert into broker_config(`gid`, `key`, `value`, `desc`, `tip`, `order`, `dynamic_modify`, `option`, `required`) values(4, 'enableRateLimit', 'true', '是否启用发送消息限流', null, 6, 1, null, 0);
+
+-- ----------------------------
+-- Table structure for `topic_warn_config`
+-- ----------------------------
+DROP TABLE IF EXISTS `topic_warn_config`;
+CREATE TABLE `topic_warn_config`
+(
+    `id`            int(11) NOT NULL AUTO_INCREMENT COMMENT 'id',
+    `tid`           int(11) NOT NULL COMMENT 'topic id',
+    `operand_type`  tinyint(4) DEFAULT 0 COMMENT '操作类型，0:5分钟生产条数;1:一小时生产条数;2:一天生产条数;3:5分钟环比;4:时环比;5:日环比',
+    `operator_type` tinyint(4) DEFAULT 0 COMMENT '比较符类型，0:大于;1:小于;2:大于等于;3:小于等于',
+    `threshold`     double DEFAULT 0 COMMENT '阈值',
+    `warn_interval` int(11) DEFAULT 0 COMMENT '报警间隔，单位分钟',
+    `warn_time`     varchar(64) COMMENT '预警时间，格式：HH:mm-HH:mm',
+    `enabled`       int(4) NOT NULL DEFAULT '1' COMMENT '0:未启用,1:启用',
+    PRIMARY KEY (`id`),
+    KEY `tid_idx` (`tid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='topic报警阈值配置表';
+
+alter table `topic` add column `count_1d` bigint(20) DEFAULT '0' COMMENT 'topic put count in one day';
+alter table `topic` add column `count_2d` bigint(20) DEFAULT '0' COMMENT 'topic put count in two days';

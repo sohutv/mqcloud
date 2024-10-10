@@ -70,11 +70,11 @@ public interface TopicTrafficDao {
      * @param createTimeList
      * @return
      */
-    @Select("<script>select tid, sum(count) count, sum(size) size from `topic_traffic` where create_date = #{createDate,jdbcType=DATE} "
+    @Select("<script>select tid, sum(count) count, sum(size) size from `topic_traffic` where create_date = #{createDate} "
             + "and create_time in "
             + "<foreach collection=\"createTimeList\" item=\"time\" separator=\",\" open=\"(\" close=\")\">#{time}</foreach>"
             + " group by tid</script>")
-    public List<TopicTraffic> selectByDateTime(@Param("createDate") Date createDate, @Param("createTimeList") List<String> createTimeList);
+    public List<TopicTraffic> selectByDateTime(@Param("createDate") String createDate, @Param("createTimeList") List<String> createTimeList);
 
     /**
      * 获取topic指定日期内的流量信息
@@ -85,11 +85,11 @@ public interface TopicTrafficDao {
     /**
      * 根据具体date和time列表查询
      */
-    @Select("<script>select * from `topic_traffic` where tid = #{tid} and create_date = #{createDate,jdbcType=DATE} and create_time in "
+    @Select("<script>select * from `topic_traffic` where tid = #{tid} and create_date = #{createDate} and create_time in "
             + "<foreach collection=\"createTimeList\" item=\"time\" separator=\",\" open=\"(\" close=\")\">#{time}</foreach>"
             + " order by create_time</script>")
     public List<TopicTraffic> selectByCreateDateAndTime(@Param("tid") long tid,
-           @Param("createDate") Date createDate, @Param("createTimeList") List<String> createTimeList);
+           @Param("createDate") String createDate, @Param("createTimeList") List<String> createTimeList);
 
     /**
      * 依据createTime时间范围和tid进行流量求和
@@ -116,10 +116,10 @@ public interface TopicTrafficDao {
     /**
      * 获取某段时间流量字节大小
      */
-    @Select("select tid,create_date,sum(size) size from topic_traffic where "
+    @Select("select tid,create_date,sum(size) size,sum(count) count from topic_traffic where "
             + "create_date BETWEEN #{startDate,jdbcType=DATE} and #{endDate,jdbcType=DATE} "
             + "group by tid,create_date limit #{offset},#{size}")
-    List<TopicTraffic> selectSummarySize(@Param("startDate") Date startDate, @Param("endDate") Date endDate, @Param("offset") int offset, @Param("size") int size);
+    List<TopicTraffic> selectSummary(@Param("startDate") Date startDate, @Param("endDate") Date endDate, @Param("offset") int offset, @Param("size") int size);
 
     /**
      * 获取某段时间流量字节大小
