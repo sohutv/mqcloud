@@ -3,21 +3,28 @@ package com.sohu.tv.mq.rocketmq;
 import com.sohu.index.tv.mq.common.PullResponse;
 import com.sohu.index.tv.mq.common.PullResponse.Status;
 import com.sohu.tv.mq.common.AbstractConfig;
+import com.sohu.tv.mq.header.SohuGetTopicStatsInfoRequestHeader;
 import com.sohu.tv.mq.rocketmq.limiter.NoneBlockingRateLimiter;
 import com.sohu.tv.mq.util.JSONUtil;
 import org.apache.rocketmq.client.consumer.DefaultMQPullConsumer;
 import org.apache.rocketmq.client.consumer.PullResult;
 import org.apache.rocketmq.client.exception.MQBrokerException;
 import org.apache.rocketmq.client.exception.MQClientException;
+import org.apache.rocketmq.client.impl.FindBrokerResult;
 import org.apache.rocketmq.client.impl.consumer.DefaultMQPullConsumerImpl;
+import org.apache.rocketmq.client.impl.factory.MQClientInstance;
 import org.apache.rocketmq.client.trace.AsyncTraceDispatcher;
 import org.apache.rocketmq.client.trace.hook.ConsumeMessageTraceHookImpl;
+import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.ServiceState;
 import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.common.message.MessageQueue;
 import org.apache.rocketmq.remoting.RPCHook;
-import org.apache.rocketmq.remoting.protocol.heartbeat.MessageModel;
 import org.apache.rocketmq.remoting.exception.RemotingException;
+import org.apache.rocketmq.remoting.protocol.RemotingCommand;
+import org.apache.rocketmq.remoting.protocol.RequestCode;
+import org.apache.rocketmq.remoting.protocol.admin.TopicStatsTable;
+import org.apache.rocketmq.remoting.protocol.heartbeat.MessageModel;
 
 import java.lang.reflect.Field;
 import java.util.HashSet;
@@ -41,6 +48,8 @@ public class RocketMQPullConsumer extends AbstractConfig {
     private boolean pause;
 
     private NoneBlockingRateLimiter rateLimiter;
+
+    private MQClientInstance mqClientInstance;
 
     public RocketMQPullConsumer() {
     }
@@ -72,6 +81,7 @@ public class RocketMQPullConsumer extends AbstractConfig {
             }
             // 消费者启动
             consumer.start();
+            setMQClientInstance();
             logger.info("topic:{} group:{} start", topic, group);
         } catch (MQClientException e) {
             logger.error(e.getMessage(), e);
@@ -189,5 +199,62 @@ public class RocketMQPullConsumer extends AbstractConfig {
     protected void registerTraceDispatcher(AsyncTraceDispatcher traceDispatcher) {
         consumer.getDefaultMQPullConsumerImpl().registerConsumeMessageHook(
                 new ConsumeMessageTraceHookImpl(traceDispatcher));
+    }
+
+    /**
+     * 获取订阅的broker地址
+     */
+    public Set<String> findBrokerAddressInSubscribe() {
+        Set<String> brokers = new HashSet<>();
+        try {
+            Set<MessageQueue> messageQueues = consumer.fetchSubscribeMessageQueues(topic);
+            for (MessageQueue mq : messageQueues) {
+                FindBrokerResult findBrokerResult = mqClientInstance.findBrokerAddressInSubscribe(
+                        mqClientInstance.getBrokerNameFromMessageQueue(mq),
+                        consumer.getDefaultMQPullConsumerImpl().getPullAPIWrapper().recalculatePullFromWhichNode(mq), false);
+                if (findBrokerResult != null) {
+                    brokers.add(findBrokerResult.getBrokerAddr());
+                }
+            }
+        } catch (Exception e) {
+            logger.error("findBrokerAddressInSubscribe:{} error", group, e);
+        }
+        return brokers;
+    }
+
+    /**
+     * 获取topic统计信息
+     */
+    public TopicStatsTable getTopicStatsTable(String brokerAddr) {
+        try {
+            SohuGetTopicStatsInfoRequestHeader requestHeader = new SohuGetTopicStatsInfoRequestHeader();
+            requestHeader.setTopic(topic);
+            requestHeader.setOnlyOffset(true);
+            RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.GET_TOPIC_STATS_INFO, requestHeader);
+            RemotingCommand response = mqClientInstance.getMQClientAPIImpl().getRemotingClient().invokeSync(
+                    MixAll.brokerVIPChannel(mqClientInstance.getClientConfig().isVipChannelEnabled(), brokerAddr), request, 3000);
+            switch (response.getCode()) {
+                case 0:
+                    TopicStatsTable topicStatsTable = (TopicStatsTable) TopicStatsTable.decode(response.getBody(), TopicStatsTable.class);
+                    return topicStatsTable;
+            }
+        } catch (Exception e) {
+            logger.error("getTopicStatsTable:{} error", group, e);
+        }
+        return null;
+    }
+
+    /**
+     * 获取MQClientInstance
+     */
+    public void setMQClientInstance() {
+        try {
+            DefaultMQPullConsumerImpl mqMQPullConsumerImpl = consumer.getDefaultMQPullConsumerImpl();
+            Field field = DefaultMQPullConsumerImpl.class.getDeclaredField("mQClientFactory");
+            field.setAccessible(true);
+            mqClientInstance = (MQClientInstance) field.get(mqMQPullConsumerImpl);
+        } catch (Exception e) {
+            logger.error("getMQClientInstance:{} error", group, e);
+        }
     }
 }

@@ -35,8 +35,16 @@ public class PullResponse {
         return pullResponse;
     }
 
-    public boolean isStatusFound() {
+    public boolean isFoundStatus() {
         return Status.FOUND == status;
+    }
+
+    public boolean isOffsetErrorStatus() {
+        return Status.OFFSET_ILLEGAL == status || Status.NO_MATCHED_MSG == status;
+    }
+
+    public boolean isNoNewMsgStatus() {
+        return Status.NO_NEW_MSG == status;
     }
 
     public Status getStatus() {
