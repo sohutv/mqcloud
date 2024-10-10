@@ -5,7 +5,7 @@ import com.sohu.tv.mq.cloud.bo.Consumer;
 import com.sohu.tv.mq.cloud.bo.ConsumerConfig;
 import com.sohu.tv.mq.cloud.bo.User;
 import com.sohu.tv.mq.cloud.util.DateUtil;
-import com.sohu.tv.mq.cloud.util.WebUtil;
+import com.sohu.tv.mq.cloud.common.util.WebUtil;
 import org.apache.rocketmq.common.message.MessageQueue;
 import org.apache.rocketmq.remoting.protocol.admin.OffsetWrapper;
 import org.apache.rocketmq.remoting.protocol.admin.TopicOffset;

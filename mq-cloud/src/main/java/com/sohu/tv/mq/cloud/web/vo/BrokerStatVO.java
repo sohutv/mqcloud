@@ -2,7 +2,7 @@ package com.sohu.tv.mq.cloud.web.vo;
 
 import com.sohu.tv.mq.cloud.bo.CheckStatusEnum;
 import com.sohu.tv.mq.cloud.util.MessageDelayLevel;
-import com.sohu.tv.mq.cloud.util.WebUtil;
+import com.sohu.tv.mq.cloud.common.util.WebUtil;
 
 import java.util.ArrayList;
 import java.util.Date;

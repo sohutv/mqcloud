@@ -6,7 +6,7 @@ import com.sohu.tv.mq.cloud.bo.User;
 import com.sohu.tv.mq.cloud.bo.UserWarn.WarnType;
 import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper;
 import com.sohu.tv.mq.cloud.util.Result;
-import com.sohu.tv.mq.cloud.util.WebUtil;
+import com.sohu.tv.mq.cloud.common.util.WebUtil;
 import org.apache.rocketmq.common.stats.Stats;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;

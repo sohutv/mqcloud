@@ -2,7 +2,7 @@ package com.sohu.tv.mq.cloud.bo;
 
 import java.util.Date;
 
-import com.sohu.tv.mq.cloud.util.WebUtil;
+import com.sohu.tv.mq.cloud.common.util.WebUtil;
 import com.sohu.tv.mq.serializable.MessageSerializerEnum;
 
 /**
@@ -60,7 +60,7 @@ public class Topic {
     // 序列化器
     private int serializer;
 
-    // 是否开启流量预警
+    // 是否开启流量突增预警
     private int trafficWarnEnabled;
 
     // 状态确认 0 未确认 1 确认
@@ -76,6 +76,11 @@ public class Topic {
     private long size5d;
     // 7天前的流量
     private long size7d;
+
+    // 1天前的消息量
+    private long count1d;
+    // 2天前的消息量
+    private long count2d;
 
     public long getId() {
         return id;
@@ -307,6 +312,22 @@ public class Topic {
 
     public String getSizeFormat() {
         return WebUtil.sizeFormat(size);
+    }
+
+    public long getCount1d() {
+        return count1d;
+    }
+
+    public void setCount1d(long count1d) {
+        this.count1d = count1d;
+    }
+
+    public long getCount2d() {
+        return count2d;
+    }
+
+    public void setCount2d(long count2d) {
+        this.count2d = count2d;
     }
 
     @Override

@@ -20,6 +20,12 @@ public class WebUtil {
 
     public static final String LOGIN_TOKEN = "TOKEN";
 
+    public static final Long ONE_DAY = 24 * 60 * 60 * 1000L;
+
+    public static final Long ONE_HOUR = 60 * 60 * 1000L;
+
+    public static final Long ONE_MINUTE = 60 * 1000L;
+
     /**
      * 从request中获取客户端ip
      * 
@@ -174,6 +180,7 @@ public class WebUtil {
     public static void setLoginCookie(HttpServletResponse response, String value) {
         Cookie cookie = new Cookie(LOGIN_TOKEN, value);
         cookie.setPath("/");
+        cookie.setMaxAge(3 * 24 * 60 * 60);
         response.addCookie(cookie);
     }
 
@@ -198,5 +205,78 @@ public class WebUtil {
      */
     public static void redirect(HttpServletResponse response, HttpServletRequest request, String path) throws IOException {
         response.sendRedirect(request.getContextPath() + path);
+    }
+
+    /**
+     * count格式化
+     * @param value
+     * @return
+     */
+    public static String countFormat(long value) {
+        if (value >= 100000000) {
+            return format(value / 100000000d) + "亿";
+        }
+        if (value >= 10000) {
+            return format(value / 10000d) + "万";
+        }
+        return format(value);
+    }
+
+    /**
+     * size格式化
+     * @param value
+     * @return
+     */
+    public static String sizeFormat(long value) {
+        if (value >= 1099511627776L) {
+            return format(value / 1099511627776d) + "T";
+        }
+        if (value >= 1073741824) {
+            return format(value / 1073741824d) + "G";
+        }
+        if (value >= 1048576) {
+            return format(value / 1048576d) + "M";
+        }
+        if (value >= 1024) {
+            return format(value / 1024d) + "K";
+        }
+        return format(value) + "B";
+    }
+
+    public static String format(double value) {
+        // 小数点后1位四舍五入
+        long v = Math.round(value * 10);
+        if (v % 10 == 0) {
+            return String.valueOf(v / 10);
+        }
+        return String.valueOf(v / 10.0);
+    }
+
+    /**
+     * 时间格式化
+     *
+     * @param timeInMills
+     * @return
+     */
+    public static String timeFormat(long timeInMills) {
+        StringBuilder builder = new StringBuilder();
+        long day = timeInMills / ONE_DAY;
+        if (day > 0) {
+            builder.append(day).append("天");
+        }
+        long hour = (timeInMills % ONE_DAY) / ONE_HOUR;
+        if (hour > 0) {
+            builder.append(hour).append("时");
+        }
+        long minute = (timeInMills % ONE_HOUR) / ONE_MINUTE;
+        if (minute > 0) {
+            builder.append(minute).append("分");
+        }
+        // 一般情况不用精确到秒
+        if (builder.length() > 0) {
+            return builder.toString();
+        }
+        long second = (timeInMills % ONE_MINUTE) / 1000;
+        return builder.append(second).append("秒").toString();
     }
 }

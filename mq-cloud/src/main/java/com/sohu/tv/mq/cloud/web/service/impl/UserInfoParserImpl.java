@@ -9,7 +9,7 @@ import org.springframework.stereotype.Component;
 import com.sohu.tv.mq.cloud.bo.User;
 import com.sohu.tv.mq.cloud.service.UserService;
 import com.sohu.tv.mq.cloud.util.Result;
-import com.sohu.tv.mq.cloud.util.WebUtil;
+import com.sohu.tv.mq.cloud.common.util.WebUtil;
 import com.sohu.tv.mq.cloud.web.service.UserInfoParser;
 import com.sohu.tv.mq.cloud.web.vo.UserInfo;
 /**

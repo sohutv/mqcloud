@@ -1,6 +1,6 @@
 package com.sohu.tv.mq.cloud.bo;
 
-import com.sohu.tv.mq.cloud.util.WebUtil;
+import com.sohu.tv.mq.cloud.common.util.WebUtil;
 import com.sohu.tv.mq.serializable.MessageSerializerEnum;
 import com.sohu.tv.mq.util.CommonUtil;
 import com.sohu.tv.mq.util.JSONUtil;

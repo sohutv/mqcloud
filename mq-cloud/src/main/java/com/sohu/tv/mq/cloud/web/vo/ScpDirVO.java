@@ -2,7 +2,7 @@ package com.sohu.tv.mq.cloud.web.vo;
 
 import java.util.Map;
 
-import com.sohu.tv.mq.cloud.util.WebUtil;
+import com.sohu.tv.mq.cloud.common.util.WebUtil;
 
 public class ScpDirVO {
     

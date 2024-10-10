@@ -13,7 +13,7 @@ import org.springframework.web.servlet.handler.HandlerInterceptorAdapter;
 import com.sohu.tv.mq.cloud.common.service.LoginService;
 import com.sohu.tv.mq.cloud.util.Result;
 import com.sohu.tv.mq.cloud.util.Status;
-import com.sohu.tv.mq.cloud.util.WebUtil;
+import com.sohu.tv.mq.cloud.common.util.WebUtil;
 import com.sohu.tv.mq.cloud.web.service.UserInfoParser;
 import com.sohu.tv.mq.cloud.web.vo.UserInfo;
 

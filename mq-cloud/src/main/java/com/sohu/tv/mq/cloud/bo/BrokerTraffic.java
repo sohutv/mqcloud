@@ -2,7 +2,7 @@ package com.sohu.tv.mq.cloud.bo;
 
 import java.util.Date;
 
-import com.sohu.tv.mq.cloud.util.WebUtil;
+import com.sohu.tv.mq.cloud.common.util.WebUtil;
 
 /**
  * broker流量

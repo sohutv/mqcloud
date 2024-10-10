@@ -5,7 +5,7 @@ import com.sohu.tv.mq.cloud.common.MemoryMQ;
 import com.sohu.tv.mq.cloud.service.*;
 import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper;
 import com.sohu.tv.mq.cloud.util.Result;
-import com.sohu.tv.mq.cloud.util.WebUtil;
+import com.sohu.tv.mq.cloud.common.util.WebUtil;
 import com.sohu.tv.mq.cloud.web.controller.param.TopicUserParam;
 import com.sohu.tv.mq.dto.ClusterInfoDTO;
 import com.sohu.tv.mq.stats.dto.ClientStats;

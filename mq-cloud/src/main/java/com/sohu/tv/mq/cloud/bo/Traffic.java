@@ -4,7 +4,7 @@ import java.util.Date;
 
 import org.apache.rocketmq.remoting.protocol.body.BrokerStatsData;
 
-import com.sohu.tv.mq.cloud.util.WebUtil;
+import com.sohu.tv.mq.cloud.common.util.WebUtil;
 /**
  * 流量
  * @Description: 

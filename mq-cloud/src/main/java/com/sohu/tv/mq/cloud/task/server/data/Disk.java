@@ -3,7 +3,7 @@ package com.sohu.tv.mq.cloud.task.server.data;
 import java.util.*;
 import java.util.regex.Pattern;
 
-import com.sohu.tv.mq.cloud.util.WebUtil;
+import com.sohu.tv.mq.cloud.common.util.WebUtil;
 import org.apache.commons.lang3.math.NumberUtils;
 
 import static com.sohu.tv.mq.cloud.task.server.nmon.NMONService.DISK_MQ_FLAG;

@@ -27,7 +27,7 @@ import com.sohu.tv.mq.cloud.service.TopicTrafficService;
 import com.sohu.tv.mq.cloud.service.UserService;
 import com.sohu.tv.mq.cloud.util.DateUtil;
 import com.sohu.tv.mq.cloud.util.Result;
-import com.sohu.tv.mq.cloud.util.WebUtil;
+import com.sohu.tv.mq.cloud.common.util.WebUtil;
 import com.sohu.tv.mq.cloud.web.controller.param.PaginationParam;
 import com.sohu.tv.mq.cloud.web.view.SearchHeader;
 import com.sohu.tv.mq.cloud.web.view.SearchHeader.DateSearchField;

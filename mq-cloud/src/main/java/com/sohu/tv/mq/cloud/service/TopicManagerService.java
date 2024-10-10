@@ -8,7 +8,7 @@ import com.sohu.tv.mq.cloud.dao.ConsumerDao;
 import com.sohu.tv.mq.cloud.dao.ConsumerTrafficDao;
 import com.sohu.tv.mq.cloud.util.DateUtil;
 import com.sohu.tv.mq.cloud.util.Result;
-import com.sohu.tv.mq.cloud.util.WebUtil;
+import com.sohu.tv.mq.cloud.common.util.WebUtil;
 import com.sohu.tv.mq.cloud.web.controller.param.ManagerParam;
 import com.sohu.tv.mq.cloud.web.controller.param.PaginationParam;
 import com.sohu.tv.mq.cloud.web.vo.TopicStateVo;

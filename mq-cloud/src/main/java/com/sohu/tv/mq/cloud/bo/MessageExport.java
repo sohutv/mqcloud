@@ -1,7 +1,7 @@
 package com.sohu.tv.mq.cloud.bo;
 
 import com.sohu.tv.mq.cloud.util.DateUtil;
-import com.sohu.tv.mq.cloud.util.WebUtil;
+import com.sohu.tv.mq.cloud.common.util.WebUtil;
 
 import java.util.Date;
 

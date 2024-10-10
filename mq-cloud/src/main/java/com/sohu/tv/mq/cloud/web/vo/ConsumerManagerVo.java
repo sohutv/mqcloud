@@ -2,7 +2,7 @@ package com.sohu.tv.mq.cloud.web.vo;
 
 import com.sohu.tv.mq.cloud.bo.Consumer;
 import com.sohu.tv.mq.cloud.bo.Topic;
-import com.sohu.tv.mq.cloud.util.WebUtil;
+import com.sohu.tv.mq.cloud.common.util.WebUtil;
 
 /**
  * @author fengwang219475

@@ -1,7 +1,7 @@
 package com.sohu.tv.mq.cloud.bo;
 
 import com.sohu.tv.mq.cloud.task.server.data.Disk.DiskUsage;
-import com.sohu.tv.mq.cloud.util.WebUtil;
+import com.sohu.tv.mq.cloud.common.util.WebUtil;
 
 import java.util.ArrayList;
 import java.util.List;
