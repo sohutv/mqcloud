@@ -5,6 +5,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,6 +34,9 @@ public class UserWarnService {
 
     @Autowired
     private UserService userService;
+
+    @Autowired
+    private MQCloudConfigHelper mqCloudConfigHelper;
 
     /**
      * 保存警告信息
@@ -162,6 +166,10 @@ public class UserWarnService {
         UserWarn result = null;
         try {
             result = userWarnDao.selectWarnInfo(wid);
+            // 小程序去除链接
+            if (result != null && mqCloudConfigHelper.isMiniApp() && result.getContent() != null) {
+                result.setContent(result.getContent().replaceAll("<a[^>]*>(.*?)</a>", "$1"));
+            }
         } catch (Exception e) {
             logger.error("queryWarnInfo err, wid:{}", wid, e);
             return Result.getDBErrorResult(e);

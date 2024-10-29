@@ -281,6 +281,10 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware, Comm
         return profile.contains("test-online-sohu") || profile.contains("local-online-sohu");
     }
 
+    public boolean isMiniApp() {
+        return profile.contains("miniapp");
+    }
+
     /**
      * 是否需要监控
      * 测试环境，需要监控；online环境，只监控online集群
@@ -401,7 +405,7 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware, Comm
     }
 
     public String getPrefix() {
-        return HTTP_SCHEMA + getDomain() + getContextPath();
+        return HTTP_SCHEMA + getDomain() + "/";
     }
 
     public String getServerUser() {
