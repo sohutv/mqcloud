@@ -1,0 +1,45 @@
+<div class="card mt-2">
+    <div class="card-header">
+        <h3 class="card-title">自定义流量预警规则:</h3>
+    </div>
+    <div class="card-body table-responsive p-0">
+        <table class="table table-striped table-hover text-nowrap">
+            <thead>
+            <tr>
+                <th>序号</th>
+                <th>Topic</th>
+                <th>检测项</th>
+                <th>检测条件</th>
+                <th>阈值</th>
+                <th>预警间隔</th>
+                <th>生效时间段</th>
+                <th>启用</th>
+            </tr>
+            </thead>
+            <tbody>
+            <#if !response.OK>
+                <tr>
+                    <td colspan="8" class="text-center">暂无数据</td>
+                <tr>
+            <#else>
+                <#list response.result as config>
+                    <#list config.topicWarnConfigs as warnConfig>
+                    <tr>
+                        <#if warnConfig_index == 0>
+                        <td rowspan="${config.topicWarnConfigSize}">${config_index+1}</td>
+                        <td rowspan="${config.topicWarnConfigSize}"><a href="${request.contextPath}/user/topic/${config.topic.id}/detail?traffic=1">${config.topic.name}</a></td>
+                        </#if>
+                        <td style="padding-left: 0.75rem;">${warnConfig.operandDesc}</td>
+                        <td>${warnConfig.operatorDesc}</td>
+                        <td>${warnConfig.thresholdString}</td>
+                        <td>${warnConfig.warnIntervalString}</td>
+                        <td>${warnConfig.warnTime!}</td>
+                        <td>${warnConfig.enabled()?string('是','否')}</td>
+                    </tr>
+                    </#list>
+                </#list>
+            </#if>
+            </tbody>
+        </table>
+    </div>
+</div>

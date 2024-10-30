@@ -19,14 +19,12 @@ import com.sohu.tv.mq.rocketmq.redis.IRedis;
 import com.sohu.tv.mq.route.AllocateMessageQueueByAffinity;
 import com.sohu.tv.mq.util.Constant;
 import com.sohu.tv.mq.util.JSONUtil;
-import org.apache.rocketmq.client.ClientConfig;
 import org.apache.rocketmq.client.consumer.DefaultMQPushConsumer;
 import org.apache.rocketmq.client.consumer.listener.*;
 import org.apache.rocketmq.client.exception.MQClientException;
 import org.apache.rocketmq.client.impl.consumer.DefaultMQPushConsumerImpl;
 import org.apache.rocketmq.client.impl.consumer.PullMessageService;
 import org.apache.rocketmq.client.impl.factory.MQClientInstance;
-import org.apache.rocketmq.client.impl.producer.DefaultMQProducerImpl;
 import org.apache.rocketmq.client.trace.AsyncTraceDispatcher;
 import org.apache.rocketmq.client.trace.hook.ConsumeMessageTraceHookImpl;
 import org.apache.rocketmq.common.ServiceState;
@@ -43,8 +41,6 @@ import org.apache.rocketmq.remoting.RemotingClient;
 
 import java.lang.reflect.*;
 import java.net.HttpURLConnection;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Executors;
@@ -178,37 +174,16 @@ public class RocketMQConsumer extends AbstractConfig {
         }
         started = true;
         try {
+            // 初始化配置
+            super.initConfig(consumer);
+            // 初始化消费回调
+            initConsumeCallback();
+            // 初始化定时调度任务
+            initScheduleTask();
+            // 从某个时间点开始消费需要先暂停
             if (consumeFromTimestampWhenBoot != 0) {
                 consumer.suspend();
             }
-            // 初始化配置
-            initConfig(consumer);
-            if (getClusterInfoDTO().isBroadcast()) {
-                consumer.setMessageModel(MessageModel.BROADCASTING);
-            }
-            consumer.subscribe(topic, subExpression);
-
-            // 构建消费者对象
-            messageConsumer = detectMessageConsumer();
-            // 注册顺序或并发消费
-            if (consumeOrderly) {
-                consumer.registerMessageListener(new MessageListenerOrderly() {
-                    public ConsumeOrderlyStatus consumeMessage(List<MessageExt> msgs, ConsumeOrderlyContext context) {
-                        return messageConsumer.consumeMessage(msgs, context);
-                    }
-                });
-            } else {
-                consumer.registerMessageListener(new MessageListenerConcurrently() {
-                    public ConsumeConcurrentlyStatus consumeMessage(List<MessageExt> msgs,
-                            ConsumeConcurrentlyContext context) {
-                        return messageConsumer.consumeMessage(msgs, context);
-                    }
-                });
-            }
-            // 初始化消费者参数类型
-            initConsumerParameterTypeClass();
-            // 初始化定时调度任务
-            initScheduleTask();
             // 消费者启动
             consumer.start();
             // init after start
@@ -220,75 +195,114 @@ public class RocketMQConsumer extends AbstractConfig {
     }
 
     /**
+     * 初始化消费回调
+     */
+    private void initConsumeCallback() throws MQClientException {
+        if (getClusterInfoDTO().isBroadcast()) {
+            consumer.setMessageModel(MessageModel.BROADCASTING);
+        }
+        consumer.subscribe(topic, subExpression);
+        // 构建消费者对象
+        messageConsumer = detectMessageConsumer();
+        // 注册顺序或并发消费
+        if (consumeOrderly) {
+            consumer.registerMessageListener(new MessageListenerOrderly() {
+                public ConsumeOrderlyStatus consumeMessage(List<MessageExt> msgs, ConsumeOrderlyContext context) {
+                    return messageConsumer.consumeMessage(msgs, context);
+                }
+            });
+        } else {
+            consumer.registerMessageListener(new MessageListenerConcurrently() {
+                public ConsumeConcurrentlyStatus consumeMessage(List<MessageExt> msgs,
+                                                                ConsumeConcurrentlyContext context) {
+                    return messageConsumer.consumeMessage(msgs, context);
+                }
+            });
+        }
+        // 初始化消费者参数类型
+        initConsumerParameterTypeClass();
+    }
+
+    /**
      * 从mqcloud更新动态配置
      */
     private void initScheduleTask() {
-        // 数据采样线程
+        // 启动前先初始化一次，拉取到最新的配置
+        initConsumerConfig(false);
         clientConfigScheduledExecutorService = Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {
             @Override
             public Thread newThread(Runnable r) {
                 return new Thread(r, "updateConsumerConfigThread-" + getGroup());
             }
         });
-        clientConfigScheduledExecutorService.scheduleWithFixedDelay(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    HttpResult result = HttpTinyClient.httpGet(
-                            "http://" + getMqCloudDomain() + "/consumer/config/" + getGroup(), null, null, "UTF-8",
-                            5000);
-                    if (HttpURLConnection.HTTP_OK != result.code) {
-                        logger.error("http response err: code:{},info:{}", result.code, result.content);
-                        return;
+        clientConfigScheduledExecutorService.scheduleWithFixedDelay(this::initConsumerConfig, 5, 60, TimeUnit.SECONDS);
+    }
+
+    /**
+     * 初始化消费者配置
+     */
+    public void initConsumerConfig() {
+        initConsumerConfig(true);
+    }
+
+    /**
+     * 初始化消费者配置
+     */
+    public void initConsumerConfig(boolean started) {
+        try {
+            HttpResult result = HttpTinyClient.httpGet(
+                    "http://" + getMqCloudDomain() + "/consumer/config/" + getGroup(), null, null, "UTF-8",
+                    5000);
+            if (HttpURLConnection.HTTP_OK != result.code) {
+                logger.error("http response err: code:{},info:{}", result.code, result.content);
+                return;
+            }
+            DTOResult<ConsumerConfigDTO> dtoResult = JSONUtil.parse(result.content, DTOResult.class,
+                    ConsumerConfigDTO.class);
+            ConsumerConfigDTO consumerConfigDTO = dtoResult.getResult();
+            if (consumerConfigDTO == null) {
+                return;
+            }
+            // 1.更新重试跳过时间戳
+            if (consumerConfigDTO.getRetryMessageResetTo() != null &&
+                    retryMessageResetTo != consumerConfigDTO.getRetryMessageResetTo()) {
+                setRetryMessageResetTo(consumerConfigDTO.getRetryMessageResetTo());
+            }
+            // 2.更新消费是否暂停
+            if (consumerConfigDTO.getPause() == null) { // 2.1.如果总配置为空，恢复消费
+                tryToResume("pause is null");
+            } else if (!consumerConfigDTO.getPause()) { // 2.2.如果总配置为不赞停，恢复消费
+                tryToResume("pause is false");
+            } else { // 2.3.总配置为暂停, 需要具体检测暂停实例
+                // 没有具体实例配置，暂停所有实例
+                if (consumerConfigDTO.getPauseConfig() == null || consumerConfigDTO.getPauseConfig().isEmpty()) {
+                    tryToPause(false, "pause instance is empty");
+                } else {
+                    // 有具体实例配置，只暂停当前实例
+                    if (consumerConfigDTO.getPauseConfig().containsKey(getClientId(started))) {
+                        tryToPause(consumerConfigDTO.getPauseConfig().get(getMQClientInstance().getClientId()), "pause instance");
+                    } else {
+                        // 没有包含当前实例，恢复消费
+                        tryToResume("not contains current instance");
                     }
-                    DTOResult<ConsumerConfigDTO> dtoResult = JSONUtil.parse(result.content, DTOResult.class,
-                            ConsumerConfigDTO.class);
-                    ConsumerConfigDTO consumerConfigDTO = dtoResult.getResult();
-                    if (consumerConfigDTO == null) {
-                        return;
-                    }
-                    // 1.更新重试跳过时间戳
-                    if (consumerConfigDTO.getRetryMessageResetTo() != null &&
-                            retryMessageResetTo != consumerConfigDTO.getRetryMessageResetTo()) {
-                        setRetryMessageResetTo(consumerConfigDTO.getRetryMessageResetTo());
-                    }
-                    // 2.更新消费是否暂停
-                    if (consumerConfigDTO.getPause() == null) { // 2.1.如果总配置为空，恢复消费
-                        tryToResume("pause is null");
-                    } else if (!consumerConfigDTO.getPause()) { // 2.2.如果总配置为不赞停，恢复消费
-                        tryToResume("pause is false");
-                    } else { // 2.3.总配置为暂停, 需要具体检测暂停实例
-                        // 没有具体实例配置，暂停所有实例
-                        if (consumerConfigDTO.getPauseConfig() == null || consumerConfigDTO.getPauseConfig().isEmpty()) {
-                            tryToPause(false, "pause instance is empty");
-                        } else {
-                            // 有具体实例配置，只暂停当前实例
-                            if (consumerConfigDTO.getPauseConfig().containsKey(getMQClientInstance().getClientId())) {
-                                tryToPause(consumerConfigDTO.getPauseConfig().get(getMQClientInstance().getClientId()), "pause instance");
-                            } else {
-                                // 没有包含当前实例，恢复消费
-                                tryToResume("not contains current instance");
-                            }
-                        }
-                    }
-                    // 3.更新限速
-                    if (consumerConfigDTO.getEnableRateLimit() != null &&
-                            isEnableRateLimit() != consumerConfigDTO.getEnableRateLimit()) {
-                        setEnableRateLimit(consumerConfigDTO.getEnableRateLimit());
-                    }
-                    if (consumerConfigDTO.getPermitsPerSecond() != null) {
-                        int rate = consumerConfigDTO.getPermitsPerSecond().intValue();
-                        if (getRate() != rate) {
-                            setRate(rate);
-                        }
-                    }
-                    // 更新重试消息跳过的key
-                    setRetryMessageSkipKey(consumerConfigDTO.getRetryMessageSkipKey());
-                } catch (Throwable ignored) {
-                    logger.warn("skipRetryMessage err:{}", ignored);
                 }
             }
-        }, 5, 60, TimeUnit.SECONDS);
+            // 3.更新限速
+            if (consumerConfigDTO.getEnableRateLimit() != null &&
+                    isEnableRateLimit() != consumerConfigDTO.getEnableRateLimit()) {
+                setEnableRateLimit(consumerConfigDTO.getEnableRateLimit());
+            }
+            if (consumerConfigDTO.getPermitsPerSecond() != null) {
+                int rate = consumerConfigDTO.getPermitsPerSecond().intValue();
+                if (getRate() != rate) {
+                    setRate(rate);
+                }
+            }
+            // 更新重试消息跳过的key
+            setRetryMessageSkipKey(consumerConfigDTO.getRetryMessageSkipKey());
+        } catch (Throwable ignored) {
+            logger.warn("skipRetryMessage err:{}", ignored);
+        }
     }
 
     public void shutdown() {
@@ -689,6 +703,16 @@ public class RocketMQConsumer extends AbstractConfig {
         return consumer.getDefaultMQPushConsumerImpl().getmQClientFactory();
     }
 
+    public String getClientId(boolean started) {
+        if (started) {
+            return getMQClientInstance().getClientId();
+        }
+        if (consumer.getMessageModel() == MessageModel.CLUSTERING) {
+            consumer.changeInstanceNameToPID();
+        }
+        return consumer.buildMQClientId();
+    }
+
     public void setEnableRateLimit(boolean enableRateLimit) {
         if (rateLimiter instanceof SwitchableRateLimiter) {
             ((SwitchableRateLimiter) rateLimiter).setEnabled(enableRateLimit);
@@ -949,5 +973,10 @@ public class RocketMQConsumer extends AbstractConfig {
     @Override
     protected Object getMQClient() {
         return consumer;
+    }
+
+    @Override
+    public ServiceState getServiceState() {
+        return consumer.getDefaultMQPushConsumerImpl().getServiceState();
     }
 }

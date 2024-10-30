@@ -1046,13 +1046,14 @@ function updateTopicInfo(){
 }
 
 $(function () {
-	<#if RequestParameters.from??>
-		showProducerStats('${RequestParameters.from}')
-	</#if>
-
 	$('#warnConfigListModal').on('shown.bs.modal', function() {
 		warnConfigList();
 	});
+	if (getQueryString("traffic")) {
+		$('#warnConfigListModal').modal('show');
+	} else if (getQueryString("from")) {
+		showProducerStats(getQueryString("from"))
+	}
 });
 
 function topicWarnConfig() {
@@ -1179,8 +1180,8 @@ function resetsWarnConfigForm() {
 function setWarnConfigFormForUpdate(config) {
 	$("#topicWarnConfigEnable").val(config.enabled);
 	$("#topicWarnConfigId").val(config.id).prop('disabled', false);
-	$("#operandTypeSelect").val(config.operandType);
-	$("#operatorTypeSelect").val(config.operatorType);
+	$('#operandTypeSelect').selectpicker('val', config.operandType);
+	$('#operatorTypeSelect').selectpicker('val', config.operatorType);
 	$("#thresholdInput").val(config.threshold);
 	if (config.warnInterval > 0) {
 		$("#warnIntervalInput").val(config.warnInterval);

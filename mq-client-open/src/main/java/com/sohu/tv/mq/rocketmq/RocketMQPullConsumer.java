@@ -257,4 +257,9 @@ public class RocketMQPullConsumer extends AbstractConfig {
             logger.error("getMQClientInstance:{} error", group, e);
         }
     }
+
+    @Override
+    public ServiceState getServiceState() {
+        return consumer.getDefaultMQPullConsumerImpl().getServiceState();
+    }
 }

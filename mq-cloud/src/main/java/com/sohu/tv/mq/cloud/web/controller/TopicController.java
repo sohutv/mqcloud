@@ -671,7 +671,7 @@ public class TopicController extends ViewController {
     @GetMapping("/warn/config/list/{tid}")
     public String warnConfigList(UserInfo userInfo, @PathVariable long tid, Map<String, Object> map) throws Exception {
         String view = viewModule() + "/warnConfigList";
-        setResult(map, topicWarnConfigService.query(tid));
+        setResult(map, topicWarnConfigService.queryByTid(tid));
         return view;
     }
 

@@ -4,16 +4,16 @@
             <div class="card-header p-0 border-bottom-0">
                 <ul class="nav nav-tabs">
                     <li class="nav-item">
-                        <a class="nav-link" data-toggle="tab" href="#myTab" role="tab" id="topology" data-url="${request.contextPath}/user/topic/${tid}/topology?<#if RequestParameters.from??>from=${RequestParameters.from}</#if><#if RequestParameters.currentPage??>&currentPage=${RequestParameters.currentPage}</#if>">详情</a>
+                        <a class="nav-link" data-toggle="tab" href="#myTab" role="tab" id="topology" data-url="${request.contextPath}/user/topic/${tid}/topology?<#if RequestParameters.currentPage??>&currentPage=${RequestParameters.currentPage}</#if>">详情</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" data-toggle="tab" href="#myTab" role="tab" id="produce" data-url="${request.contextPath}/topic/${tid}/produce/progress">生产详情</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" data-toggle="tab" href="#myTab" role="tab" id="consume" data-url="${request.contextPath}/consumer/progress?tid=${tid}<#if RequestParameters.consumer??>&consumer=${RequestParameters.consumer}</#if><#if RequestParameters.time??>&time=${RequestParameters.time}</#if><#if RequestParameters.consumerId??>&consumerId=${RequestParameters.consumerId}</#if><#if RequestParameters.currentPage??>&currentPage=${RequestParameters.currentPage}</#if>">消费详情</a>
+                        <a class="nav-link" data-toggle="tab" href="#myTab" role="tab" id="consume" data-url="${request.contextPath}/consumer/progress?tid=${tid}<#if RequestParameters.consumer??>&consumer=${RequestParameters.consumer}</#if><#if RequestParameters.currentPage??>&currentPage=${RequestParameters.currentPage}</#if>">消费详情</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" data-toggle="tab" href="#myTab" role="tab" id="msg" data-url="${request.contextPath}/topic/message/index?tid=${tid}<#if RequestParameters.msgId??>&msgId=${RequestParameters.msgId}</#if><#if RequestParameters.time??>&time=${RequestParameters.time}</#if>">消息</a>
+                        <a class="nav-link" data-toggle="tab" href="#myTab" role="tab" id="msg" data-url="${request.contextPath}/topic/message/index?tid=${tid}">消息</a>
                     </li>
                 </ul>
             </div>

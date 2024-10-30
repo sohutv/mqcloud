@@ -1068,6 +1068,11 @@ public class RocketMQProducer extends AbstractConfig {
         return producer;
     }
 
+    @Override
+    public ServiceState getServiceState() {
+        return producer.getDefaultMQProducerImpl().getServiceState();
+    }
+
     public MQClientInstance getMQClientInstance() {
         return producer.getDefaultMQProducerImpl().getMqClientFactory();
     }

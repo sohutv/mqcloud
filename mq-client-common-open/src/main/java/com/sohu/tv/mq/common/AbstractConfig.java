@@ -11,9 +11,9 @@ import com.sohu.tv.mq.util.CommonUtil;
 import com.sohu.tv.mq.util.Constant;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.rocketmq.client.ClientConfig;
-import org.apache.rocketmq.client.exception.MQClientException;
 import org.apache.rocketmq.client.trace.AsyncTraceDispatcher;
 import org.apache.rocketmq.common.MixAll;
+import org.apache.rocketmq.common.ServiceState;
 import org.apache.rocketmq.common.UtilAll;
 import org.apache.rocketmq.remoting.RPCHook;
 import org.slf4j.Logger;
@@ -442,4 +442,13 @@ public abstract class AbstractConfig {
     }
 
     protected abstract Object getMQClient();
+
+    public abstract ServiceState getServiceState();
+
+    /**
+     * 是否运行中
+     */
+    public boolean isRunning() {
+        return ServiceState.RUNNING == getServiceState();
+    }
 }

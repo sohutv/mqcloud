@@ -32,7 +32,7 @@ public class TopicWarnConfigDaoTest {
 
     @Test
     public void testSelect() {
-        List<TopicWarnConfig> topicWarnConfigList = topicWarnConfigDao.select(0);
+        List<TopicWarnConfig> topicWarnConfigList = topicWarnConfigDao.selectByTid(0);
         Assert.assertNotNull(topicWarnConfigList);
     }
 

@@ -1737,15 +1737,15 @@ $(function(){
 		});
 		<#if RequestParameters.consumer?? && RequestParameters.consumer != "">
 			$('a[data="${RequestParameters.consumer}"]').click();
-			<#if RequestParameters.consumerId??>
-				showResetRetryMessageOffsetModel(${RequestParameters.consumerId}, "${RequestParameters.consumer}");
-			<#elseif RequestParameters.time??>
+			if (getQueryString("consumerId")) {
+				showResetRetryMessageOffsetModel(getQueryString("consumerId"), "${RequestParameters.consumer}");
+			} else if (getQueryString("time")) {
 				$("#msgSearchModal").on('show.bs.modal', function () {
 					$("#dataTable tbody").html("<tr class='no_more_data'><td colspan=6 class='text-center'><i class='fa-solid fa-spinner fa-spin fa-lg'></i></td></tr>");
-					searchByTime(${RequestParameters.time});
+					searchByTime(getQueryString("time"));
 				})
 				$("#${RequestParameters.consumer}").click();
-			</#if>
+			}
 		</#if>
 	</#if>
 });
@@ -2363,7 +2363,7 @@ function showThreadMessage(msgId){
 
 // 按照时间查询
 function searchByTime(time){
-	var start = time - 60 * 60 * 1000;
+	var start = time - 2 * 60 * 60 * 1000;
 	var end = time + 60 * 60 * 1000;
 	var now = new Date().getTime();
 	if(end > now){

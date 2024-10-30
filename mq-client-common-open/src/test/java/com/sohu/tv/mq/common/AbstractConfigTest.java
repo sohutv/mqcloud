@@ -1,5 +1,6 @@
 package com.sohu.tv.mq.common;
 
+import org.apache.rocketmq.common.ServiceState;
 import org.apache.rocketmq.remoting.RPCHook;
 import org.junit.Test;
 
@@ -29,6 +30,11 @@ public class AbstractConfigTest {
             protected Object getMQClient() {
                 return null;
             }
+
+            @Override
+            public ServiceState getServiceState() {
+                throw new UnsupportedOperationException("not implement");
+            }
         };
         config.setMqCloudDomain("127.0.0.1:8080");
         config.init();
@@ -51,6 +57,11 @@ public class AbstractConfigTest {
             @Override
             protected Object getMQClient() {
                 return null;
+            }
+
+            @Override
+            public ServiceState getServiceState() {
+                throw new UnsupportedOperationException("not implement");
             }
         };
         config.setMqCloudDomain("127.0.0.1:8080");

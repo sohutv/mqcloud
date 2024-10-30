@@ -34,7 +34,13 @@ public interface TopicWarnConfigDao {
      * 查询
      */
     @Select("select * from topic_warn_config where tid = #{tid} order by id")
-    public List<TopicWarnConfig> select(@Param("tid") long tid);
+    public List<TopicWarnConfig> selectByTid(@Param("tid") long tid);
+
+    /**
+     * 查询
+     */
+    @Select("select * from topic_warn_config order by id")
+    public List<TopicWarnConfig> selectAll();
 
     /**
      * 查询

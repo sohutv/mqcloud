@@ -905,9 +905,9 @@ $(function(){
 	})
 
 	// 搜索trace
-	<#if RequestParameters.msgId??>
-		trace('${RequestParameters.msgId}', false, ${RequestParameters.time});
-	</#if>
+	if (getQueryString("msgId")) {
+		trace(getQueryString("msgId"), false, getQueryString("time"));
+	}
 
 	var jsonView = localStorage.getItem("jsonView${RequestParameters.tid}");
 	if (jsonView && jsonView == "true") {
