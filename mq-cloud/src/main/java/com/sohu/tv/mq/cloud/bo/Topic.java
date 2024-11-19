@@ -54,8 +54,8 @@ public class Topic {
     // topic描述
     private String info;
     
-    // 是否延迟消息
-    private int delayEnabled;
+    // 消息类型
+    private int msgType;
     
     // 序列化器
     private int serializer;
@@ -178,16 +178,16 @@ public class Topic {
         this.info = info;
     }
 
-    public int getDelayEnabled() {
-        return delayEnabled;
+    public int getMsgType() {
+        return msgType;
     }
 
-    public void setDelayEnabled(int delayEnabled) {
-        this.delayEnabled = delayEnabled;
+    public void setMsgType(int msgType) {
+        this.msgType = msgType;
     }
 
-    public boolean delayEnabled() {
-        return delayEnabled == 1;
+    public boolean isDelayMsgType() {
+        return msgType == 1;
     }
     
     public int getSerializer() {
@@ -347,7 +347,7 @@ public class Topic {
                 ", size=" + size +
                 ", traceEnabled=" + traceEnabled +
                 ", info='" + info + '\'' +
-                ", delayEnabled=" + delayEnabled +
+                ", msgType=" + msgType +
                 ", serializer=" + serializer +
                 ", trafficWarnEnabled=" + trafficWarnEnabled +
                 ", effective=" + effective +

@@ -21,9 +21,9 @@ public interface TopicDao {
      * @param topic
      */
     @Options(useGeneratedKeys = true, keyProperty = "topic.id")
-    @Insert("insert into topic(cluster_id, name, queue_num, ordered, create_date, trace_enabled, info, delay_enabled, serializer, traffic_warn_enabled) "
+    @Insert("insert into topic(cluster_id, name, queue_num, ordered, create_date, trace_enabled, info, msg_type, serializer, traffic_warn_enabled) "
             + "values(#{topic.clusterId},#{topic.name},#{topic.queueNum},#{topic.ordered},now(),#{topic.traceEnabled},"
-            + "#{topic.info}, #{topic.delayEnabled}, #{topic.serializer}, #{topic.trafficWarnEnabled})")
+            + "#{topic.info}, #{topic.msgType}, #{topic.serializer}, #{topic.trafficWarnEnabled})")
     public Integer insert(@Param("topic") Topic topic);
     
     /**

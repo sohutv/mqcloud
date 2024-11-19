@@ -32,7 +32,7 @@ public class AuditTopic {
     
     private int testEnabled;
     
-    private int delayEnabled;
+    private int msgType;
 
     // 序列化器
     private int serializer;
@@ -136,12 +136,12 @@ public class AuditTopic {
         return testEnabled == 1;
     }
 
-    public int getDelayEnabled() {
-        return delayEnabled;
+    public int getMsgType() {
+        return msgType;
     }
 
-    public void setDelayEnabled(int delayEnabled) {
-        this.delayEnabled = delayEnabled;
+    public void setMsgType(int msgType) {
+        this.msgType = msgType;
     }
 
     public int getSerializer() {
@@ -173,7 +173,7 @@ public class AuditTopic {
                 ", traceEnabled=" + traceEnabled +
                 ", transactionEnabled=" + transactionEnabled +
                 ", testEnabled=" + testEnabled +
-                ", delayEnabled=" + delayEnabled +
+                ", msgType=" + msgType +
                 ", serializer=" + serializer +
                 ", protocol=" + protocol +
                 '}';

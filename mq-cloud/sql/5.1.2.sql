@@ -78,3 +78,6 @@ CREATE TABLE `topic_warn_config`
 
 alter table `topic` add column `count_1d` bigint(20) DEFAULT '0' COMMENT 'topic put count in one day';
 alter table `topic` add column `count_2d` bigint(20) DEFAULT '0' COMMENT 'topic put count in two days';
+
+alter table `topic` add column `msg_type` int(4) NOT NULL DEFAULT '0' COMMENT '消息类型，0:普通消息，1:延迟消息，2:定时消息';
+alter table `audit_topic` add column `msg_type` int(4) NOT NULL DEFAULT '0' COMMENT '消息类型，0:普通消息，1:延迟消息，2:定时消息';

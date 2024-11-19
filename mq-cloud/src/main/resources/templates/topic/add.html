@@ -41,7 +41,7 @@
 						<label class="col-form-label col-md-3"> 消息量: </label>
 						<div class="col-md-7">
 							<div class="input-group">
-								<select name="qpd" class="form-control selectpicker">
+								<select name="qpd" class="form-control selectpicker border">
 									<option value="10000">1万</option>
 									<option value="100000">10万</option>
 									<option value="1000000">100万</option>
@@ -59,7 +59,7 @@
 						<label class="col-form-label col-md-3"> 高峰消息量: </label>
 						<div class="col-md-7">
 							<div class="input-group">
-								<select name="qps" class="form-control selectpicker">
+								<select name="qps" class="form-control selectpicker border">
 									<option value="100">100</option>
 									<option value="1000">1000</option>
 									<option value="10000">1万</option>
@@ -84,7 +84,7 @@
 							</label>
 						</div>
 					</div>
-					<div class="input-group mb-3">
+					<div class="input-group mb-3" style="display: none">
 						<label class="col-md-3" data-toggle="tooltip" title="序列化方式一旦选择，不可更改，请谨慎！"> 序列化方式: </label>
 						<div class="col-md-7 checkbox">
 							<label data-toggle="tooltip" title="优点：大多数情况下压缩比高，性能好。缺点：兼容性差，消费方须用Protobuf反序列化。不推荐使用。">
@@ -106,6 +106,20 @@
 							</label>
 							<label data-toggle="tooltip" title="代理模式的remoting协议">
 								<input type="radio" name="protocol" value="2">Proxy Remoting
+							</label>
+						</div>
+					</div>
+					<div class="input-group mb-3">
+						<label class="col-md-3"> 消息类型: </label>
+						<div class="col-md-7 checkbox">
+							<label data-toggle="tooltip">
+								<input type="radio" name="msgType" value="0" checked>普通消息
+							</label>
+							<label data-toggle="tooltip" title="该topic内会发送延迟消息">
+								<input type="radio" name="msgType" value="1">延迟消息 <a href="${request.contextPath}/wiki/userGuide/clientProducer#delay" data-toggle="tooltip" data-placement="bottom" title="点击查看延迟消息释义" target=_blank><i class="fas fa-question-circle fa-sm"></i></a>
+							</label>
+							<label data-toggle="tooltip" title="该topic内会发送定时消息">
+								<input type="radio" name="msgType" value="2">定时消息 <a href="${request.contextPath}/wiki/userGuide/clientProducer#timerWheel" data-toggle="tooltip" data-placement="bottom" title="点击查看定时消息释义" target=_blank><i class="fas fa-question-circle fa-sm"></i></a>
 							</label>
 						</div>
 					</div>
@@ -154,17 +168,6 @@
 								</label>
 								<label data-toggle="tooltip" title="开启后，会在事务集群上创建该topic">
 									<input type="radio" name="transactionEnabled" value="1">是
-								</label>
-							</div>
-						</div>
-						<div class="input-group mb-3">
-							<label class="col-md-3"> 消息延迟: </label>
-							<div class="col-md-7 checkbox">
-								<label data-toggle="tooltip" title="该topic内不会发送延迟消息">
-									<input type="radio" name="delayEnabled" value="0" checked>否
-								</label>
-								<label data-toggle="tooltip" title="该topic内会发送延迟消息">
-									<input type="radio" name="delayEnabled" value="1">是
 								</label>
 							</div>
 						</div>
@@ -258,8 +261,6 @@
 			$("input[name='traceEnabled'][value='0']").prop("checked",true);
 			$("input[name='transactionEnabled'][value='1']").prop("checked",false);
 			$("input[name='transactionEnabled'][value='0']").prop("checked",true);
-			$("input[name='delayEnabled'][value='1']").prop("checked",false);
-			$("input[name='delayEnabled'][value='0']").prop("checked",true);
 			$("input[name='ordered'][value='1']").prop("checked",false);
 			$("input[name='ordered'][value='0']").prop("checked",true);
 		} else {

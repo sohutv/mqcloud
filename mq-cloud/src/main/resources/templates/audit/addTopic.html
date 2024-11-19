@@ -84,5 +84,13 @@
 			<input type="radio" value="2" disabled="disabled" <#if response.result.protocol == 2>checked</#if>>Proxy Remoting
 		</div>
 	</div>
+	<div class="form-group row">
+		<label class="col-md-3"> 消息类型: </label>
+		<div class="col-md-9 checkbox">
+			<input type="radio" value="0" disabled="disabled" <#if response.result.msgType == 0>checked</#if>>普通消息
+			<input type="radio" value="1" disabled="disabled" <#if response.result.msgType == 1>checked</#if>>延迟消息
+			<input type="radio" value="2" disabled="disabled" <#if response.result.msgType == 2>checked</#if>>定时消息
+		</div>
+	</div>
 
 </#if>

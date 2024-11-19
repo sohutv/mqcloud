@@ -147,6 +147,7 @@ public class TopicMessageController extends ViewController {
         setConsumer(userInfo, map, tid);
         setTraceEnabled(map, topic.traceEnabled());
         setResult(map, "cluster", cluster);
+        setResult(map, "msgType", topic.getMsgType());
         return view;
     }
 

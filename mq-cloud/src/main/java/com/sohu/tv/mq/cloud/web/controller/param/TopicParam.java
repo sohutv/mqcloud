@@ -40,8 +40,8 @@ public class TopicParam {
     private int testEnabled;
     
     // 是否消息延迟
-    @Range(min = 0, max = 1)
-    private int delayEnabled;
+    @Range(min = 0, max = 2)
+    private int msgType;
     
     // 序列化器
     @Range(min = 0, max = 1)
@@ -112,12 +112,15 @@ public class TopicParam {
     public void setTestEnabled(int testEnabled) {
         this.testEnabled = testEnabled;
     }
-    public int getDelayEnabled() {
-        return delayEnabled;
+
+    public int getMsgType() {
+        return msgType;
     }
-    public void setDelayEnabled(int delayEnabled) {
-        this.delayEnabled = delayEnabled;
+
+    public void setMsgType(int msgType) {
+        this.msgType = msgType;
     }
+
     public int getSerializer() {
         return serializer;
     }
@@ -146,7 +149,7 @@ public class TopicParam {
                 ", qpd=" + qpd +
                 ", qps=" + qps +
                 ", testEnabled=" + testEnabled +
-                ", delayEnabled=" + delayEnabled +
+                ", msgType=" + msgType +
                 ", serializer=" + serializer +
                 ", protocol=" + protocol +
                 '}';

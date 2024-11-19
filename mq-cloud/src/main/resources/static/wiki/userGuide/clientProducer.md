@@ -460,16 +460,61 @@ org.apache.rocketmq.client.exception.MQBrokerException: broker明确响应异常
    在`onException`中处理异常。
 
 5. 其余与同步发送基本相同。
-
 ## 十、<span id="oneway">oneway发送消息问题</span>
 
 ### 1.与异步发送有哪些不同的地方？
 
 使用业务线程发送，没有重试机制，不等待响应。
 
-## 十一、<span id="timerWheel">定时消息</span>
+## 十一、<span id="delay">延迟消息</span>
 
-目前已支持30天内任意维度的定时消息，使用方式如下：
+延迟消息是指：延迟到固定时间后可以消费的消息。
+
+*注意：延迟消息与定时消息的区别是，延迟消息只支持固定的延迟时间，而定时消息则支持任意的时间延迟。*
+
+延迟消息固定的延迟级别如下：
+
+```
+LEVEL_1_SECOND(1, "1秒")
+LEVEL_5_SECONDS(2, "5秒")
+LEVEL_10_SECONDS(3, "10秒")
+LEVEL_30_SECONDS(4, "30秒")
+LEVEL_1_MINUTE(5, "1分钟")
+LEVEL_2_MINUTES(6, "2分钟")
+LEVEL_3_MINUTES(7, "3分钟")
+LEVEL_4_MINUTES(8, "4分钟")
+LEVEL_5_MINUTES(9, "5分钟")
+LEVEL_6_MINUTES(10, "6分钟")
+LEVEL_7_MINUTES(11, "7分钟")
+LEVEL_8_MINUTES(12, "8分钟")
+LEVEL_9_MINUTES(13, "9分钟")
+LEVEL_10_MINUTES(14, "10分钟")
+LEVEL_20_MINUTES(15, "20分钟")
+LEVEL_30_MINUTES(16, "30分钟")
+LEVEL_1_HOUR(17, "1小时")
+LEVEL_2_HOURS(18, "2小时")
+```
+
+使用方式如下：
+
+```
+// 5分钟后投递消息
+MQMessage<?> mqMessage = MQMessage.build(msg).setDelayTimeLevel(MessageDelayLevel.LEVEL_5_MINUTES.getLevel());
+Result<SendResult> sendResult = producer.send(mqMessage);
+if (!sendResult.isSuccess) { // 发送失败
+    System.out.println("发送失败");
+}
+```
+
+
+
+## 十二、<span id="timerWheel">定时消息</span>
+
+定时消息是指：延迟到指定时间后可以消费的消息。
+
+*注意：定时消息与延迟消息的区别是，定时消息则支持任意的时间延迟，而延迟消息只支持固定的延迟时间。*
+
+目前最大支持30天的定时，使用方式如下：
 
 ```
 // 24小时后投递消息
@@ -482,22 +527,18 @@ if (!sendResult.isSuccess) { // 发送失败
 ```
 
 #### 注意：
-- 投递消息的时间尽量分散，不建议在同一时间大量投递消息。
-- 定时投递在少数特殊情况下会产生重复消息，业务端需自行实现幂等
-- 如需取消定时消息，请自行保存msgId,获取方式如下：
-  ```
-  sendResult.getResult().getMsgId()
-  ```
-  使用方法参见[取消定时消息](#cancelTimeWheel)
+- 消息的过期时间尽量分散，不建议大量投递同一时间到期的消息。
+- 少数特殊情况下会产生重复消息，业务端需自行实现幂等
 
-## 十二、<span id="cancelTimeWheel">取消定时消息</span>
-当前支持两种方式取消定时消息：
+取消定时消息目前有两种途径：
 
 1. 页面取消
 
    [消息查询-定时消息](messageQuery#queryWheelMessage)页面支持点击<i class="fas fa-stopwatch"></i>取消定时消息。
 
 2. 接口取消
+
+   接口取消的前提是，自行保存msgId ：获取方式`sendResult.getResult().getMsgId()` 。
 
    1. 接口地址：
       ```

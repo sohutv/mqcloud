@@ -331,7 +331,7 @@ public class ProduceTrafficLineChartData implements LineChartData {
      */
     private Result<List<TopicTraffic>> getTopicTraffic(Topic topic, Date date) {
         Result<List<TopicTraffic>> result = null;
-        if (topic.delayEnabled()) {
+        if (topic.isDelayMsgType()) {
             result = delayMessageService.selectDelayMessageTraffic(topic.getId(), DateUtil.format(date));
         } else {
             result = topicTrafficService.query(topic.getId(), date);

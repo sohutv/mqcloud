@@ -27,8 +27,10 @@
 								<#if traceEnabled>
 								<option value="trace">trace</option>
 								</#if>
-								<option value="timerWheel">定时消息</option>
-								<option value="timerWheelTrace">定时消息轨迹</option>
+								<#if msgType == 2>
+									<option value="timerWheel">定时消息</option>
+									<option value="timerWheelTrace">定时消息轨迹</option>
+								</#if>
 							</select>
 						</div>
 						<div class="col-md-3">
@@ -884,8 +886,7 @@ $(function(){
 		changeQueryType(queryType);
 		$("#msgId").val(msgId);
 		viewMessage();
-	}
-	if (queryType == "timerWheelTrace"){
+	} else if (queryType == "timerWheelTrace"){
 		var msgId = getQueryString("unqId");
 		var broker = getQueryString("broker");
 		changeQueryType(queryType);
@@ -893,6 +894,8 @@ $(function(){
 		$("#traceUniqKey").val(msgId);
 		$(".resendMessageBtn").hide();
 		searchTimerWheelMessageRollTrace();
+	} else if (${msgType} == 2) {
+		changeQueryType("timerWheel");
 	}
 
 	// 初始化key查询方式的时间

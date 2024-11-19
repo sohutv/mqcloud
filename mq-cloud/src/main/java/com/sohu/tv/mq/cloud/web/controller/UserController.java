@@ -225,7 +225,7 @@ public class UserController extends ViewController {
         List<Long> tidList = new ArrayList<Long>(topicList.size());
         List<Long> delayTidList = new ArrayList<Long>();
         for (Topic topic : topicList) {
-            if (topic.delayEnabled()) {
+            if (topic.isDelayMsgType()) {
                 delayTidList.add(topic.getId());
             } else {
                 tidList.add(topic.getId());
@@ -391,7 +391,7 @@ public class UserController extends ViewController {
             List<Long> tidList = new ArrayList<Long>(1);
             tidList.add(topic.getId());
             Result<List<TopicTraffic>> topicTrafficListResult = null;
-            if (topic.delayEnabled()) {
+            if (topic.isDelayMsgType()) {
                 topicTrafficListResult = delayMessageService.query(tidList, DateUtil.format(oneMinuteAgo), time);
             } else {
                 topicTrafficListResult = topicTrafficService.query(tidList, oneMinuteAgo, time);
@@ -493,7 +493,7 @@ public class UserController extends ViewController {
 
             // 获取总流量
             Result<TopicTraffic> topicTrafficResult = null;
-            if (topic.delayEnabled()) {
+            if (topic.isDelayMsgType()) {
                 topicTrafficResult = delayMessageService.query(topic.getId(), DateUtil.format(oneMinuteAgo));
             } else {
                 topicTrafficResult = topicTrafficService.queryTotalTraffic(topic.getId(), oneMinuteAgo);
