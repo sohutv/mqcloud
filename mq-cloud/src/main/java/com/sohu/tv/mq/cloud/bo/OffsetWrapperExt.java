@@ -9,6 +9,7 @@ import org.apache.rocketmq.remoting.protocol.admin.OffsetWrapper;
  */
 public class OffsetWrapperExt extends OffsetWrapper {
     private long lockTimestamp;
+    private String clientIp;
 
     public long getLockTimestamp() {
         return lockTimestamp;
@@ -24,5 +25,13 @@ public class OffsetWrapperExt extends OffsetWrapper {
         }
         long time = System.currentTimeMillis() - lockTimestamp;
         return time / 1000 + "." + time % 1000;
+    }
+
+    public String getClientIp() {
+        return clientIp;
+    }
+
+    public void setClientIp(String clientIp) {
+        this.clientIp = clientIp;
     }
 }

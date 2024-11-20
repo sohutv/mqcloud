@@ -347,7 +347,7 @@ public class ConsumerService {
             }
             List<ConsumeStatsExt> consumeStatsList = null;
             if (consumer.isHttpProtocol()) {
-                consumeStatsList = getHttpConumeStats(clientIdSet, topicStatsTable, consumer);
+                consumeStatsList = getHttpConsumeStats(clientIdSet, topicStatsTable, consumer);
             } else {
                 consumeStatsList = fetchConsumeStats(cluster, topic, consumer, topicStatsTable, clientIdSet);
             }
@@ -436,12 +436,12 @@ public class ConsumerService {
      * @param consumer
      * @return
      */
-    private List<ConsumeStatsExt> getHttpConumeStats(Set<String> clientIdSet, TopicStatsTable topicStatsTable,
-                                                     Consumer consumer) {
+    private List<ConsumeStatsExt> getHttpConsumeStats(Set<String> clientIdSet, TopicStatsTable topicStatsTable,
+                                                      Consumer consumer) {
         if (consumer.isClustering()) {
-            return getHttpClusteringConumeStats(clientIdSet, topicStatsTable, consumer.getName());
+            return getHttpClusteringConsumeStats(clientIdSet, topicStatsTable, consumer.getName());
         }
-        return getHttpBroadcastConumeStats(clientIdSet, topicStatsTable, consumer.getName());
+        return getHttpBroadcastConsumeStats(clientIdSet, topicStatsTable, consumer.getName());
     }
 
     /**
@@ -468,8 +468,8 @@ public class ConsumerService {
      * @param consumer
      * @return
      */
-    private List<ConsumeStatsExt> getHttpClusteringConumeStats(Set<String> clientIdSet, TopicStatsTable topicStatsTable,
-                                                     String consumer) {
+    private List<ConsumeStatsExt> getHttpClusteringConsumeStats(Set<String> clientIdSet, TopicStatsTable topicStatsTable,
+                                                                String consumer) {
         List<ConsumeStatsExt> consumeStatsList = new ArrayList<ConsumeStatsExt>();
         StringBuilder clientIdBuilder = new StringBuilder();
         for (String clientId : clientIdSet) {
@@ -490,11 +490,12 @@ public class ConsumerService {
             if (topicOffset == null) {
                 continue;
             }
-            OffsetWrapper offsetWrapper = new OffsetWrapperExt();
+            OffsetWrapperExt offsetWrapper = new OffsetWrapperExt();
             offsetWrapper.setBrokerOffset(topicOffset.getMaxOffset());
             offsetWrapper.setConsumerOffset(queueOffset.getCommittedOffset());
             offsetWrapper.setLastTimestamp(queueOffset.getLastConsumeTimestamp());
-            ((OffsetWrapperExt)offsetWrapper).setLockTimestamp(queueOffset.getLockTimestamp());
+            offsetWrapper.setLockTimestamp(queueOffset.getLockTimestamp());
+            offsetWrapper.setClientIp(queueOffset.getLastConsumeClientIp());
             offsetTable.put(queueOffset.getMessageQueue(), offsetWrapper);
         }
         consumeStats.setOffsetTable(offsetTable);
@@ -507,8 +508,8 @@ public class ConsumerService {
      * @param consumer
      * @return
      */
-    private List<ConsumeStatsExt> getHttpBroadcastConumeStats(Set<String> clientIdSet,
-                                                              TopicStatsTable topicStatsTable, String consumer) {
+    private List<ConsumeStatsExt> getHttpBroadcastConsumeStats(Set<String> clientIdSet,
+                                                               TopicStatsTable topicStatsTable, String consumer) {
         Result<Map<String, List<QueueOffset>>> result = fetchHttpBroadcastQueueOffset(consumer);
         Map<String, List<QueueOffset>> map = result.getResult();
         if (map == null) {

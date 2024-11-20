@@ -490,7 +490,11 @@
 											</#if>
 											<thead>
 												<tr>
+													<#if consumerProgressVO.consumer.httpProtocol && consumerProgressVO.consumer.clustering>
+													<th>代理服务器</th>
+													<#else>
 													<th>clientId</th>
+													</#if>
 													<th>broker</th>
 													<th>队列</th>
 													<th class="d-none d-sm-table-cell">broker偏移量</th>
@@ -499,13 +503,16 @@
 													<#if consumerProgressVO.consumer.httpProtocol>
 													<th>消费时间</th>
 													<th data-toggle="tooltip" title="单位: 秒.毫秒">锁定时间</th>
+													<#if consumerProgressVO.consumer.clustering>
+													<th>客户端ip</th>
+													</#if>
 													</#if>
 												</tr>
 											</thead>
 											<tbody>
 												<#list consumerProgressVO.consumeStatsList as consumeStats>
 													<tr>
-														<td rowspan=${consumeStats.offsetTable?size+1} align="center">
+														<td rowspan=${consumeStats.offsetTable?size+1} <#if !consumerProgressVO.consumer.httpProtocol>align="center"</#if>>
 															<#if !consumerProgressVO.consumer.httpProtocol>
 																${consumeStats.clientId}
 																<br>
@@ -529,7 +536,7 @@
 													</tr>
 													<#list consumeStats.offsetTable as mq,offset>
 													<tr>
-														<td>${mq.brokerName}</td>
+														<td style="padding-left:0.3rem;">${mq.brokerName}</td>
 														<td>${mq.queueId}</td>
 														<td class="d-none d-sm-table-cell">
 															${offset.brokerOffset?string(",###")}
@@ -555,6 +562,11 @@
 														<td>
 															${offset.lockTime}
 														</td>
+														<#if consumerProgressVO.consumer.clustering>
+															<td>
+																${offset.clientIp!}
+															</td>
+														</#if>
 														</#if>
 													</tr>
 													</#list>
@@ -1431,7 +1443,7 @@
 						<label class="col-form-label col-md-4"> 消费超时时间: </label>
 						<div class="col-md-8">
 							<div class="input-group">
-								<input type="text" id="consumeTimeoutInput" data-toggle="tooltip" name="consumeTimeout" title="最小为10秒，最大为10小时，非必要请勿修改" class="form-control" />
+								<input type="text" id="consumeTimeoutInput" data-toggle="tooltip" name="consumeTimeout" title="最小为10秒，最大为36小时，非必要请勿修改" class="form-control" />
 								<div class="input-group-append">
 									<span class="input-group-text">秒</span>
 								</div>
@@ -2489,7 +2501,7 @@ function httpConsumeConfig() {
 		return;
 	}
 	var consumeTimeout = $("#consumeTimeoutInput").val();
-	if (!isValid("消费超时时间", consumeTimeout, 10, 36000)) {
+	if (!isValid("消费超时时间", consumeTimeout, 10, 129600)) {
 		return;
 	}
 	disable("httpConsumeBtn");

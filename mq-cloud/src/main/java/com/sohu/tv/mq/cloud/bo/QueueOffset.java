@@ -14,6 +14,7 @@ public class QueueOffset {
     private long committedOffset = -1;
     private long lockTimestamp;
     private long lastConsumeTimestamp;
+    private String lastConsumeClientIp;
 
     public MessageQueue getMessageQueue() {
         return messageQueue;
@@ -53,5 +54,13 @@ public class QueueOffset {
 
     public void setLastConsumeTimestamp(long lastConsumeTimestamp) {
         this.lastConsumeTimestamp = lastConsumeTimestamp;
+    }
+
+    public String getLastConsumeClientIp() {
+        return lastConsumeClientIp;
+    }
+
+    public void setLastConsumeClientIp(String lastConsumeClientIp) {
+        this.lastConsumeClientIp = lastConsumeClientIp;
     }
 }
