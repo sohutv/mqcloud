@@ -539,9 +539,6 @@ public class TopicController extends ViewController {
     public String detail(HttpServletResponse response, HttpServletRequest request,
             UserInfo userInfo, @RequestParam("topic") String topic,
             @RequestParam(name = "consumer", required = false) String consumer) throws Exception {
-        if (!userInfo.getUser().isAdmin()) {
-            return Result.getResult(Status.PERMISSION_DENIED_ERROR).toJson();
-        }
         Result<Topic> topicResult = null;
         if (CommonUtil.isRetryTopic(topic)) {
             String topicConsumer = topic.substring(MixAll.RETRY_GROUP_TOPIC_PREFIX.length());
