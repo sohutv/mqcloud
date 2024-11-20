@@ -6,9 +6,12 @@ import java.util.Map;
 import java.util.Set;
 
 import com.sohu.tv.mq.cloud.bo.*;
+import com.sohu.tv.mq.cloud.common.util.WebUtil;
 import com.sohu.tv.mq.cloud.service.*;
 import com.sohu.tv.mq.cloud.util.Status;
 import com.sohu.tv.mq.cloud.web.controller.param.AssociateProducerParam;
+import com.sohu.tv.mq.util.CommonUtil;
+import org.apache.rocketmq.common.MixAll;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -19,6 +22,8 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import com.sohu.tv.mq.cloud.util.Result;
 import com.sohu.tv.mq.cloud.web.vo.UserInfo;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
 
 /**
@@ -237,6 +242,21 @@ public class ProducerController extends ViewController {
             alertService.sendAuditMail(userInfo.getUser(), Audit.TypeEnum.ASSOCIATE_PRODUCER, tip);
         }
         return Result.getWebResult(result);
+    }
+
+    /**
+     * 详情 只供管理员使用
+     */
+    @ResponseBody
+    @RequestMapping(value = "/detail")
+    public String detail(UserInfo userInfo, HttpServletResponse response, HttpServletRequest request,
+                         @RequestParam(name = "producer") String producer) throws Exception {
+        Result<List<UserProducer>> result = userProducerService.queryUserProducer(producer);
+        if (result.isEmpty()) {
+            return Result.getWebResult(result).toJson();
+        }
+        WebUtil.redirect(response, request, "/user/topic/" + result.getResult().get(0).getTid() + "/detail");
+        return null;
     }
 
     @Override
