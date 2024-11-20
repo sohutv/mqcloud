@@ -1,7 +1,10 @@
 package com.sohu.tv.mq.cloud.service;
 
-import java.util.List;
-
+import com.sohu.tv.mq.cloud.Application;
+import com.sohu.tv.mq.cloud.bo.Cluster;
+import com.sohu.tv.mq.cloud.bo.Consumer;
+import com.sohu.tv.mq.cloud.bo.User;
+import com.sohu.tv.mq.cloud.util.Result;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -9,9 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
 
-import com.sohu.tv.mq.cloud.Application;
-import com.sohu.tv.mq.cloud.bo.User;
-import com.sohu.tv.mq.cloud.util.Result;
+import java.util.List;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = Application.class)
@@ -37,6 +38,17 @@ public class UserConsumerServiceTest {
         }
         System.out.println(email);
         Assert.assertNotNull(email);
+    }
+
+    @Test
+    public void test(){
+        Cluster cluster = new Cluster();
+        cluster.setId(3);
+        cluster.setName("test-cluster");
+        Consumer consumer = new Consumer();
+        consumer.setName("mqcloud-json-test-consumer");
+        Result result = userConsumerService.createAndUpdateConsumerOnCluster(cluster, consumer);
+        Assert.assertTrue(result.isOK());
     }
 
 }
