@@ -1,17 +1,12 @@
 package com.sohu.tv.mq.cloud.service;
 
-import com.sohu.tv.mq.cloud.bo.Broker;
-import com.sohu.tv.mq.cloud.bo.BrokerTraffic;
-import com.sohu.tv.mq.cloud.bo.CheckStatusEnum;
-import com.sohu.tv.mq.cloud.bo.Cluster;
-import com.sohu.tv.mq.cloud.common.model.BrokerRateLimitData;
-import com.sohu.tv.mq.cloud.common.model.TimerMetricsSerializeWrapper;
-import com.sohu.tv.mq.cloud.common.model.TopicRateLimit;
-import com.sohu.tv.mq.cloud.common.model.UpdateSendMsgRateLimitRequestHeader;
+import com.sohu.tv.mq.cloud.bo.*;
+import com.sohu.tv.mq.cloud.common.model.*;
 import com.sohu.tv.mq.cloud.common.mq.SohuMQAdmin;
 import com.sohu.tv.mq.cloud.dao.BrokerDao;
 import com.sohu.tv.mq.cloud.dao.BrokerTmpDao;
 import com.sohu.tv.mq.cloud.mq.DefaultCallback;
+import com.sohu.tv.mq.cloud.mq.DefaultSohuMQAdmin;
 import com.sohu.tv.mq.cloud.mq.MQAdminCallback;
 import com.sohu.tv.mq.cloud.mq.MQAdminTemplate;
 import com.sohu.tv.mq.cloud.util.DBUtil;
@@ -24,6 +19,7 @@ import org.apache.rocketmq.client.exception.MQBrokerException;
 import org.apache.rocketmq.client.exception.MQClientException;
 import org.apache.rocketmq.remoting.protocol.RemotingSysResponseCode;
 import org.apache.rocketmq.remoting.protocol.body.KVTable;
+import org.apache.rocketmq.remoting.protocol.body.ProducerTableInfo;
 import org.apache.rocketmq.tools.admin.MQAdminExt;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -485,6 +481,50 @@ public class BrokerService {
 
             public Result<KVTable> exception(Exception e) throws Exception {
                 logger.error("fetchBrokerRuntimeStats:{} err", brokerAddr, e);
+                return Result.getDBErrorResult(e);
+            }
+        });
+    }
+
+    /**
+     * 查询producer连接
+     */
+    public Result<ClientConnectionInfo> fetchAllProducerConnection(String brokerAddr, Cluster mqCluster) {
+        return mqAdminTemplate.execute(new MQAdminCallback<Result<ClientConnectionInfo>>() {
+            public Result<ClientConnectionInfo> callback(MQAdminExt mqAdmin) throws Exception {
+                DefaultSohuMQAdmin sohuMQAdmin = (DefaultSohuMQAdmin) mqAdmin;
+                ProducerTableInfo producerTableInfo = sohuMQAdmin.getAllProducerInfo(brokerAddr, true);
+                return Result.getResult(ClientConnectionInfo.build(producerTableInfo));
+            }
+
+            public Cluster mqCluster() {
+                return mqCluster;
+            }
+
+            public Result<ClientConnectionInfo> exception(Exception e) throws Exception {
+                logger.error("fetchAllProducerConnection:{} err", brokerAddr, e);
+                return Result.getDBErrorResult(e);
+            }
+        });
+    }
+
+    /**
+     * 查询consumer连接
+     */
+    public Result<ClientConnectionInfo> fetchAllConsumerConnection(String brokerAddr, Cluster mqCluster) {
+        return mqAdminTemplate.execute(new MQAdminCallback<Result<ClientConnectionInfo>>() {
+            public Result<ClientConnectionInfo> callback(MQAdminExt mqAdmin) throws Exception {
+                DefaultSohuMQAdmin sohuMQAdmin = (DefaultSohuMQAdmin) mqAdmin;
+                ConsumerTableInfo consumerTableInfo = sohuMQAdmin.getAllConsumerInfo(brokerAddr, true);
+                return Result.getResult(ClientConnectionInfo.build(consumerTableInfo));
+            }
+
+            public Cluster mqCluster() {
+                return mqCluster;
+            }
+
+            public Result<ClientConnectionInfo> exception(Exception e) throws Exception {
+                logger.error("fetchAllConsumerConnection:{} err", brokerAddr, e);
                 return Result.getDBErrorResult(e);
             }
         });

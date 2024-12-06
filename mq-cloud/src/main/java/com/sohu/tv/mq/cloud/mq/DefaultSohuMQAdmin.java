@@ -1,16 +1,15 @@
 package com.sohu.tv.mq.cloud.mq;
 
 import com.sohu.tv.mq.cloud.common.model.*;
+import com.sohu.tv.mq.cloud.common.mq.SohuMQAdmin;
 import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper;
 import org.apache.rocketmq.client.exception.MQBrokerException;
 import org.apache.rocketmq.client.exception.MQClientException;
 import org.apache.rocketmq.common.MixAll;
-import org.apache.rocketmq.remoting.protocol.ResponseCode;
 import org.apache.rocketmq.remoting.RPCHook;
-import org.apache.rocketmq.remoting.exception.*;
-
-import com.sohu.tv.mq.cloud.common.mq.SohuMQAdmin;
 import org.apache.rocketmq.remoting.protocol.RemotingCommand;
+import org.apache.rocketmq.remoting.protocol.ResponseCode;
+import org.apache.rocketmq.remoting.protocol.body.ProducerTableInfo;
 
 import static org.apache.rocketmq.remoting.protocol.RemotingSysResponseCode.SUCCESS;
 
@@ -166,5 +165,71 @@ public class DefaultSohuMQAdmin extends SohuMQAdmin {
                 break;
         }
         throw new MQBrokerException(response.getCode(), response.getRemark(), addr);
+    }
+
+    /**
+     * 获取客户端链接大小
+     */
+    public ClientConnectionSize getClientConnectionSize(String brokerAddr) throws Exception {
+        RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.GET_CLIENT_CONNECTION_SIZE, null);
+        RemotingCommand response = getMQClientInstance().getMQClientAPIImpl().getRemotingClient()
+                .invokeSync(MixAll.brokerVIPChannel(isVipChannelEnabled(), brokerAddr), request, getTimeoutMillis());
+        assert response != null;
+        switch (response.getCode()) {
+            case ResponseCode.SUCCESS: {
+                return ClientConnectionSize.decode(response.getBody(), ClientConnectionSize.class);
+            }
+            default:
+                break;
+        }
+        throw new MQBrokerException(response.getCode(), response.getRemark(), brokerAddr);
+    }
+
+    /**
+     * 获取全部消费者信息
+     */
+    public ConsumerTableInfo getAllConsumerInfo(String brokerAddr) throws Exception {
+        return getAllConsumerInfo(brokerAddr, false);
+    }
+
+
+    /**
+     * 获取全部消费者信息
+     */
+    public ConsumerTableInfo getAllConsumerInfo(String brokerAddr, boolean excludeSystemGroup) throws Exception {
+        GetAllConsumerInfoRequestHeader requestHeader = new GetAllConsumerInfoRequestHeader();
+        requestHeader.setExcludeSystemGroup(excludeSystemGroup);
+        RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.GET_ALL_CONSUMER_INFO, requestHeader);
+        RemotingCommand response = getMQClientInstance().getMQClientAPIImpl().getRemotingClient()
+                .invokeSync(MixAll.brokerVIPChannel(isVipChannelEnabled(), brokerAddr), request, getTimeoutMillis());
+        assert response != null;
+        switch (response.getCode()) {
+            case ResponseCode.SUCCESS: {
+                return ConsumerTableInfo.decode(response.getBody(), ConsumerTableInfo.class);
+            }
+            default:
+                break;
+        }
+        throw new MQBrokerException(response.getCode(), response.getRemark(), brokerAddr);
+    }
+
+    /**
+     * 获取全部生产者信息
+     */
+    public ProducerTableInfo getAllProducerInfo(String brokerAddr, boolean excludeSystemGroup) throws Exception {
+        GetAllProducerInfoRequestHeader requestHeader = new GetAllProducerInfoRequestHeader();
+        requestHeader.setExcludeSystemGroup(excludeSystemGroup);
+        RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.GET_ALL_PRODUCER_INFO, requestHeader);
+        RemotingCommand response = getMQClientInstance().getMQClientAPIImpl().getRemotingClient()
+                .invokeSync(MixAll.brokerVIPChannel(isVipChannelEnabled(), brokerAddr), request, getTimeoutMillis());
+        assert response != null;
+        switch (response.getCode()) {
+            case ResponseCode.SUCCESS: {
+                return ProducerTableInfo.decode(response.getBody(), ProducerTableInfo.class);
+            }
+            default:
+                break;
+        }
+        throw new MQBrokerException(response.getCode(), response.getRemark(), brokerAddr);
     }
 }

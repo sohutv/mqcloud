@@ -474,6 +474,12 @@ public class AdminClusterController extends AdminViewController {
         brokerStatVO.setTimerReadBehind(NumberUtils.toLong(removeFromMap(stats, "timerReadBehind")));
         // 其余指标
         brokerStatVO.setInfo(new TreeMap<String, String>(stats));
+
+        // 客户端连接数
+        brokerStatVO.setProducerSize(removeFromMap(stats, "producerSize"));
+        brokerStatVO.setConsumerSize(removeFromMap(stats, "consumerSize"));
+        brokerStatVO.setProducerConnectionSize(removeFromMap(stats, "producerConnectionSize"));
+        brokerStatVO.setConsumerConnectionSize(removeFromMap(stats, "consumerConnectionSize"));
     }
 
     @Override

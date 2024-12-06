@@ -1,18 +1,16 @@
 package com.sohu.tv.mq.cloud.mq;
 
 import com.sohu.tv.mq.cloud.Application;
-import com.sohu.tv.mq.cloud.common.model.BrokerMomentStatsData;
-import com.sohu.tv.mq.cloud.common.model.BrokerRateLimitData;
-import com.sohu.tv.mq.cloud.common.model.BrokerStoreStat;
-import com.sohu.tv.mq.cloud.common.model.UpdateSendMsgRateLimitRequestHeader;
+import com.sohu.tv.mq.cloud.common.model.*;
 import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper;
-import org.apache.rocketmq.remoting.protocol.RequestCode;
-import org.apache.rocketmq.remoting.protocol.header.ConsumerSendMsgBackRequestHeader;
-import org.apache.rocketmq.remoting.protocol.header.SendMessageRequestHeader;
 import org.apache.rocketmq.remoting.exception.RemotingConnectException;
 import org.apache.rocketmq.remoting.exception.RemotingSendRequestException;
 import org.apache.rocketmq.remoting.exception.RemotingTimeoutException;
 import org.apache.rocketmq.remoting.protocol.RemotingCommand;
+import org.apache.rocketmq.remoting.protocol.RequestCode;
+import org.apache.rocketmq.remoting.protocol.body.ProducerTableInfo;
+import org.apache.rocketmq.remoting.protocol.header.ConsumerSendMsgBackRequestHeader;
+import org.apache.rocketmq.remoting.protocol.header.SendMessageRequestHeader;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -36,6 +34,24 @@ public class DefaultSohuMQAdminTest {
     private MQCloudConfigHelper mqCloudConfigHelper;
 
     private DefaultSohuMQAdmin sohuMQAdmin;
+
+    @Test
+    public void testGetClientConnectionSize() throws Exception {
+        ClientConnectionSize clientConnectionSize = sohuMQAdmin.getClientConnectionSize("127.0.0.1:10911");
+        Assert.assertNotNull(clientConnectionSize);
+    }
+
+    @Test
+    public void testGetAllProducerInfo() throws Exception {
+        ProducerTableInfo producerTableInfo = sohuMQAdmin.getAllProducerInfo("127.0.0.1:10911");
+        Assert.assertNotNull(producerTableInfo);
+    }
+
+    @Test
+    public void testGetAllConsumerInfo() throws Exception {
+        ConsumerTableInfo consumerTableInfo = sohuMQAdmin.getAllConsumerInfo("127.0.0.1:10911");
+        Assert.assertNotNull(consumerTableInfo);
+    }
 
     @Test
     public void testGetBrokerStoreStats() throws Exception {

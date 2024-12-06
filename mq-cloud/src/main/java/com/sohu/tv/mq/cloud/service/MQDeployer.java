@@ -20,7 +20,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.remoting.protocol.body.ClusterInfo;
-import org.apache.rocketmq.remoting.protocol.body.KVTable;
 import org.apache.rocketmq.remoting.protocol.body.SubscriptionGroupWrapper;
 import org.apache.rocketmq.remoting.protocol.body.TopicConfigSerializeWrapper;
 import org.apache.rocketmq.remoting.protocol.route.BrokerData;
@@ -30,7 +29,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.io.File;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -143,23 +141,23 @@ public class MQDeployer {
     }
 
     /**
-     * 获取进程信息
-     * @param ip
-     * @return
+     * 获取broker pid，大于0表示存在，0表示不存在，-1表示未知，-2表示异常
      */
-    public Result<?> getProgram(String ip, String keyword){
-        SSHResult sshResult = null;
+    public int getBrokerPid(String ip, String baseDir) {
         try {
-            sshResult = sshTemplate.execute(ip, new SSHCallback() {
+            SSHResult sshResult = sshTemplate.execute(ip, new SSHCallback() {
                 public SSHResult call(SSHSession session) {
-                    SSHResult sshResult = session.executeCommand("sudo ps -ef | grep java | grep -v 'grep' | grep '/" + keyword + "/'");
-                    return sshResult;
+                    return session.executeCommand("sudo lsof -t " + baseDir + "/logs/broker.log");
                 }
             });
+            if (sshResult != null) {
+                return NumberUtils.toInt(sshResult.getResult(), 0);
+            }
+            return -1;
         } catch (SSHException e) {
-            logger.error("getProgram, ip:{}, keyword:{}", ip, keyword, e);
+            logger.error("getProgram, ip:{}, baseDir:{}", ip, baseDir, e);
+            return -2;
         }
-        return wrapSSHResult(sshResult);
     }
     
     /**
@@ -918,10 +916,8 @@ public class MQDeployer {
     
     /**
      * shutdown
-     * @param ip
-     * @return
      */
-    public Result<?> shutdown(String ip, int port, String name){
+    public Result<?> shutdown(String ip, int port, String baseDir){
         SSHResult sshResult = null;
         try {
             sshResult = sshTemplate.execute(ip, new SSHCallback() {
@@ -935,15 +931,16 @@ public class MQDeployer {
             return Result.getWebErrorResult(e);
         }
         Result<?> result = wrapSSHResult(sshResult);
-        if (name != null && result.isOK()) {
+        if (baseDir != null && result.isOK()) {
             // 检测broker是否已经关闭
             for (int i = 0; i < 20; ++i) {
-                Result<?> programResult = getProgram(ip, name);
-                if (programResult != null && programResult.isOK() && programResult.getResult() == null) {
+                int pid = getBrokerPid(ip, baseDir);
+                if (pid == 0) {
+                    logger.info("shutdown, ip:{}, port:{}, baseDir:{}, times:{}, result:{}", ip, port, baseDir, i, pid);
                     break;
                 }
                 try {
-                    logger.info("shutting down, ip:{}, port:{}, name:{}, times:{}, result:{}", ip, port, name, i, programResult);
+                    logger.info("shutting down, ip:{}, port:{}, baseDir:{}, times:{}, result:{}", ip, port, baseDir, i, pid);
                     Thread.sleep(3000);
                 } catch (InterruptedException e) {
                     break;

@@ -70,6 +70,12 @@ public class BrokerStatVO {
     // 时间轮还有多少消息，表示时间轮有多少消息未到时
     private long timerCongestNum;
 
+    // 客户端链接数量
+    private String producerSize;
+    private String consumerSize;
+    private String producerConnectionSize;
+    private String consumerConnectionSize;
+
     public Map<String, String> getInfo() {
         return info;
     }
@@ -255,6 +261,38 @@ public class BrokerStatVO {
 
     public void setTmp(boolean tmp) {
         this.tmp = tmp;
+    }
+
+    public String getProducerSize() {
+        return producerSize;
+    }
+
+    public void setProducerSize(String producerSize) {
+        this.producerSize = producerSize;
+    }
+
+    public String getConsumerSize() {
+        return consumerSize;
+    }
+
+    public void setConsumerSize(String consumerSize) {
+        this.consumerSize = consumerSize;
+    }
+
+    public String getProducerConnectionSize() {
+        return producerConnectionSize;
+    }
+
+    public void setProducerConnectionSize(String producerConnectionSize) {
+        this.producerConnectionSize = producerConnectionSize;
+    }
+
+    public String getConsumerConnectionSize() {
+        return consumerConnectionSize;
+    }
+
+    public void setConsumerConnectionSize(String consumerConnectionSize) {
+        this.consumerConnectionSize = consumerConnectionSize;
     }
 
     public class DelayQueue {

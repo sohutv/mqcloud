@@ -1,7 +1,6 @@
 package com.sohu.tv.mq.cloud.web.controller.admin;
 
 import com.sohu.tv.mq.cloud.bo.Broker;
-import com.sohu.tv.mq.cloud.bo.DataMigration;
 import com.sohu.tv.mq.cloud.service.BrokerService;
 import com.sohu.tv.mq.cloud.service.DataMigrationService;
 import com.sohu.tv.mq.cloud.service.MQDeployer;
@@ -16,7 +15,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.ModelAndView;
 
-import java.io.File;
 import java.util.Map;
 
 /**
@@ -308,13 +306,7 @@ public class AdminDeployController extends AdminViewController {
         if (brokerResult.isNotOK()) {
             return brokerResult;
         }
-        // use base dir as broker name
-        String brokerName = brokerResult.getResult().getBaseDir();
-        int idx = brokerName.lastIndexOf(File.separator);
-        if (idx != -1) {
-            brokerName = brokerName.substring(idx + 1);
-        }
-        Result<?> shutdownResult = mqDeployer.shutdown(ip, port, brokerName);
+        Result<?> shutdownResult = mqDeployer.shutdown(ip, port, brokerResult.getResult().getBaseDir());
         if (shutdownResult.isOK()) {
             // 关闭后的broker更新状态
             brokerService.updateWritable(cid, addr, true);

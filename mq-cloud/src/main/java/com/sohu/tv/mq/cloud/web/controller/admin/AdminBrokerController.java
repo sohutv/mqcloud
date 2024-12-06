@@ -568,6 +568,28 @@ public class AdminBrokerController extends AdminViewController {
     }
 
     /**
+     * producer连接
+     */
+    @GetMapping(value = "/producer/connection")
+    public String producerConnection(@RequestParam(name = "cid") int cid,
+                                     @RequestParam(name = "addr") String addr,
+                                     Map<String, Object> map) {
+        setResult(map, brokerService.fetchAllProducerConnection(addr, clusterService.getMQClusterById(cid)));
+        return adminViewModule() + "/clientConnectionInfo";
+    }
+
+    /**
+     * consumer连接
+     */
+    @GetMapping(value = "/consumer/connection")
+    public String consumerConnection(@RequestParam(name = "cid") int cid,
+                                     @RequestParam(name = "addr") String addr,
+                                     Map<String, Object> map) {
+        setResult(map, brokerService.fetchAllConsumerConnection(addr, clusterService.getMQClusterById(cid)));
+        return adminViewModule() + "/clientConnectionInfo";
+    }
+
+    /**
      * 属性解析为对象
      * 
      * @param properties

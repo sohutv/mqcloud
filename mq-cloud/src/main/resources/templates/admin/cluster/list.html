@@ -87,7 +87,7 @@
 					<td data-toggle="tooltip" title="单位:秒">消费</td>
 					<td data-toggle="tooltip" title="定时消息量,5.x支持的特性">定时</td>
 					<td data-toggle="tooltip" title="延时消息量">延时</td>
-					<td data-toggle="tooltip" title="slave的commitlog落后于master多少">落后量</td>
+					<td data-toggle="tooltip" title="生产者和消费者的实时链接数">链接</td>
 					<td>版本</td>
 					<td data-toggle="tooltip" title="MQCloud会定时监控broker是否存活">状态</td>
 					<td>监控时间</td>
@@ -114,7 +114,7 @@
 							<#if brokerStat.brokerId == "0">
 								<td><a href='#' onclick="setIp('${brokerStat.brokerAddr!}')" data-target="#brokerTrafficModal" data-toggle="modal" title="查看master流量">${brokerStat.brokerId}</a></td>
 							<#else>
-								<td class="border-top-0 pt-0" style="padding-left: 12px;">${brokerStat.brokerId}</td>
+								<td class="border-top-0 pt-0" style="padding-left: 12px;"><span class="text-blue" data-toggle="tooltip" title="commitlog落后于master：${brokerStat.fallbehindSizeFormat}">${brokerStat.brokerId}</span></td>
 							</#if>
 							<td <#if brokerStat.brokerId != "0">class="border-top-0 pt-0"</#if>>
 								<#if brokerStat.version??>
@@ -124,7 +124,13 @@
 								</#if>
 							</td>
 							<td <#if brokerStat.brokerId != "0">class="border-top-0 pt-0"</#if>>
-								<#if brokerStat.inTps??>${brokerStat.inTps}</#if>
+								<#if brokerStat.inTps??>
+									<#if brokerStat.version?? && brokerStat.brokerId == "0">
+										<a href="#" title="broker限速详情" data-toggle="modal" onclick="brokerRateLimitModalShow('${brokerStat.brokerAddr}')">${brokerStat.inTps}</a>
+									<#else>
+										${brokerStat.inTps}
+									</#if>
+								</#if>
 							</td>
 							<td <#if brokerStat.brokerId != "0">class="border-top-0 pt-0"</#if>>
 								<#if brokerStat.outTps??>${brokerStat.outTps}</#if>
@@ -141,11 +147,14 @@
 									0
 								</#if>
 							</td>
-							<#if brokerStat.brokerId == "0">
-								<td>0B</td>
-							<#else>
-								<td class="border-top-0 pt-0">${brokerStat.fallbehindSizeFormat}</td>
-							</#if>
+							<td <#if brokerStat.brokerId != "0">class="border-top-0 pt-0"</#if>>
+								<a href="#" data-target="#clientConnectionModal" data-toggle="modal" onclick="producerConnection('${brokerStat.brokerAddr}')" title="生产者：${brokerStat.producerSize!0}">
+									${brokerStat.producerConnectionSize!0}
+								</a>
+								<a href="#" data-target="#clientConnectionModal" data-toggle="modal" onclick="consumerConnection('${brokerStat.brokerAddr}')" title="消费者：${brokerStat.consumerSize!0}">
+									${brokerStat.consumerConnectionSize!0}
+								</a>
+							</td>
 							<td <#if brokerStat.brokerId != "0">class="border-top-0 pt-0"</#if>>
 								<#if brokerStat.info??><a href="#" data-target="#clusterInfoModal${i}" data-toggle="modal" title="查看当前broker的其他状态信息"></#if>
 								<#if brokerStat.version??>${brokerStat.version}</#if>
@@ -164,9 +173,6 @@
 							<td <#if brokerStat.brokerId != "0">class="border-top-0 pt-0"</#if>>
 								<#if !brokerStat.tmp>
 								<button title="迁移Broker：基于rsync，适合大数量增量同步，推荐使用" data-toggle="modal" class="btn btn-xs btn-info" onclick="toMigratePage('${brokerStat.brokerIp}', '${brokerStat.baseDir!}')"><i class="fa-fw fa-solid fa-copy"></i></button>
-								</#if>
-								<#if brokerStat.version?? && brokerStat.brokerId == "0">
-									<button title="查看broker限速详情" data-toggle="modal" class="btn btn-xs btn-secondary" onclick="brokerRateLimitModalShow('${brokerStat.brokerAddr}')"><i class="fa-fw fa-solid fa-faucet-drip"></i></button>
 								</#if>
 								<#if brokerStat.version??>
 									<#if brokerStat.brokerId == "0">
@@ -1028,7 +1034,7 @@
 	</div>
 </div>
 
-<!-- 查看broker限速详情 -->
+<!-- 查看broker定时消息详情 -->
 <div id="timerWheelMetricsModal" class="modal fade" tabindex="-1" data-width="400" aria-hidden="true" style="max-height: 600px">
 	<div class="modal-dialog modal-lg">
 		<div class="modal-content">
@@ -1124,6 +1130,35 @@
 			<div class="modal-footer">
 				<button type="button" data-dismiss="modal" class="btn btn-light" >取消</button>
 				<button type="button" class="btn btn-primary" onclick="brokerDelete()" id="brokerDeleteBtn">确定</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- 查看客户端链接详情 -->
+<div id="clientConnectionModal" class="modal fade" tabindex="-1" data-width="400" aria-hidden="true">
+	<div class="modal-dialog modal-xl">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h4 class="modal-title">客户端链接</h4>
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+			</div>
+			<div class="modal-body card-body table-responsive p-0">
+				<table class="table text-nowrap table-hover" style="margin-top: 0px">
+					<thead>
+					<tr>
+						<th>序号</th>
+						<th>group</th>
+						<th>客户端地址</th>
+						<th>语言</th>
+						<th>版本</th>
+						<th>更新时间</th>
+					</tr>
+					</thead>
+					<tbody id="clientConnectionBody">
+					<tr class="no_more_data"><td class="text-center" colspan="6">数据加载中...</td></tr>
+					</tbody>
+				</table>
 			</div>
 		</div>
 	</div>
@@ -2546,6 +2581,27 @@ function brokerDelete() {
 					enable("brokerDeleteBtn");
 				}
 			}, 'json');
+}
+
+function producerConnection(addr) {
+	clientConnection(addr, "producer");
+}
+
+function consumerConnection(addr) {
+	clientConnection(addr, "consumer");
+}
+
+function clientConnection(addr, type) {
+	$.get('${request.contextPath}/admin/broker/' + type + '/connection', {
+				cid: ${response.result.selectedMQCluster.id},
+				addr: addr
+			}, function (data) {
+				$("#clientConnectionBody").html(data);
+				$('[data-tooltip="true"]').tooltip({
+					container: 'body'
+				});
+			}
+	);
 }
 </script>
 </#if>
