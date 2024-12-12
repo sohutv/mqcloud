@@ -84,6 +84,10 @@ public class ClusterMonitorTask {
     @Scheduled(cron = "50 */5 * * * *")
     @SchedulerLock(name = "brokerMonitor", lockAtMostFor = 240000, lockAtLeastFor = 240000)
     public void brokerMonitor() {
+        // 更新期间不再执行broker监控任务
+        if (mqCloudConfigHelper.isPauseAudit()) {
+            return;
+        }
         if (clusterService.getAllMQCluster() == null) {
             logger.warn("brokerMonitor mqcluster is null");
             return;

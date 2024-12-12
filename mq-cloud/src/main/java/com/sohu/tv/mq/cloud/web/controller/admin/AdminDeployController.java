@@ -27,8 +27,6 @@ import java.util.Map;
 @RequestMapping("/admin/deploy")
 public class AdminDeployController extends AdminViewController {
 
-    public static final String BACKUP_SUFFIX = ".backup";
-    
     @Autowired
     private MQDeployer mqDeployer;
 
@@ -323,7 +321,7 @@ public class AdminDeployController extends AdminViewController {
     @RequestMapping(value="/backup", method=RequestMethod.POST)
     public Result<?> backup(UserInfo ui, @RequestParam(name = "ip") String ip, @RequestParam(name="dir") String dir) {
         logger.warn("backup, ip:{}, dir:{}, user:{}", ip, dir, ui);
-        Result<?> mvResult = mqDeployer.backup(ip, dir, dir + BACKUP_SUFFIX);
+        Result<?> mvResult = mqDeployer.backup(ip, dir);
         if(mvResult.isNotOK()) {
             return mvResult;
         }
@@ -341,7 +339,7 @@ public class AdminDeployController extends AdminViewController {
                              @RequestParam(name="dir") String dir) {
         logger.warn("recover, ip:{}, dir:{}, user:{}", ip, dir, ui);
         // 恢复数据
-        Result<?> mvResult = mqDeployer.recover(ip, dir + BACKUP_SUFFIX, dir);
+        Result<?> mvResult = mqDeployer.recover(ip, dir);
         if(mvResult.isNotOK()) {
             return mvResult;
         }

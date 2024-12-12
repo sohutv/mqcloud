@@ -4,7 +4,6 @@ import com.sohu.tv.mq.cloud.bo.BrokerTraffic;
 import com.sohu.tv.mq.cloud.bo.Cluster;
 import com.sohu.tv.mq.cloud.bo.User;
 import com.sohu.tv.mq.cloud.cache.LocalCache;
-import com.sohu.tv.mq.cloud.common.Destroyable;
 import com.sohu.tv.mq.cloud.common.MemoryMQ;
 import com.sohu.tv.mq.cloud.common.service.LoginService;
 import com.sohu.tv.mq.cloud.common.service.SmsSender;
@@ -21,14 +20,14 @@ import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper;
 import com.sohu.tv.mq.stats.dto.ClientStats;
 import com.sohu.tv.mq.stats.dto.ConsumerClientStats;
 import com.sohu.tv.mq.util.Constant;
+import net.javacrumbs.shedlock.core.LockProvider;
+import net.javacrumbs.shedlock.provider.jdbc.MQCloudJdbcLockProvider;
 import okhttp3.ConnectionPool;
 import okhttp3.OkHttpClient;
 import org.apache.commons.pool2.impl.GenericKeyedObjectPool;
 import org.apache.commons.pool2.impl.GenericKeyedObjectPoolConfig;
 import org.apache.rocketmq.tools.admin.MQAdminExt;
 import org.apache.sshd.client.session.ClientSession;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.client.RestTemplateBuilder;
@@ -36,14 +35,13 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.client.OkHttp3ClientHttpRequestFactory;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.web.client.RestTemplate;
 
-import javax.annotation.PreDestroy;
+import javax.sql.DataSource;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.security.GeneralSecurityException;
-import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -56,11 +54,6 @@ import java.util.concurrent.TimeUnit;
  */
 @Configuration
 public class CommonConfiguration {
-
-    private final Logger logger = LoggerFactory.getLogger(this.getClass());
-
-    @Autowired
-    private List<Destroyable> list;
 
     @Autowired
     private MQCloudConfigHelper mqCloudConfigHelper;
@@ -221,19 +214,6 @@ public class CommonConfiguration {
         return memoryMQ;
     }
     
-    @PreDestroy
-    public void destroy() {
-        Collections.sort(list);
-        for (Destroyable destroyable : list) {
-            try {
-                logger.info("destroy:{}", destroyable);
-                destroyable.destroy();
-            } catch (Exception e) {
-                logger.info("destroy err:{}", destroyable, e);
-            }
-        }
-    }
-
     /**
      * 初始化密码助手
      * 
@@ -286,5 +266,26 @@ public class CommonConfiguration {
                         .readTimeout(1000, TimeUnit.MILLISECONDS)
                         .writeTimeout(1000, TimeUnit.MILLISECONDS).build())).build();
         return restTemplate;
+    }
+
+    /**
+     * 使用数据库作为锁源
+     * @param dataSource
+     * @return
+     */
+    @Bean
+    public LockProvider lockProvider(DataSource dataSource) {
+        return new MQCloudJdbcLockProvider(dataSource);
+    }
+
+    /**
+     * 定时任务调度器
+     */
+    @Bean
+    public ThreadPoolTaskScheduler taskScheduler() {
+        ThreadPoolTaskScheduler scheduler = new ThreadPoolTaskScheduler();
+        scheduler.setPoolSize(5);
+        scheduler.setThreadNamePrefix("mqcloud-scheduled-task-");
+        return scheduler;
     }
 }

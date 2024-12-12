@@ -1,6 +1,9 @@
 package com.sohu.tv.mq.cloud.bo;
 
 import com.sohu.tv.mq.cloud.common.util.WebUtil;
+import com.sohu.tv.mq.cloud.util.RocketMQVersion;
+
+import java.util.Objects;
 
 /**
  * broker
@@ -30,6 +33,8 @@ public class Broker extends DeployableComponent {
     private long size5d;
     // 7天前的流量
     private long size7d;
+    // 版本
+    private String version;
     
     public int getBrokerID() {
         return brokerID;
@@ -135,6 +140,22 @@ public class Broker extends DeployableComponent {
         this.size7d = broker.size7d;
     }
 
+    public String getVersion() {
+        return version;
+    }
+
+    public RocketMQVersion getRocketMQVersion() {
+        return RocketMQVersion.getRocketMQVersion(version);
+    }
+
+    public boolean isRocketMQV5() {
+        return Objects.equals(version, RocketMQVersion.V5.getVersion());
+    }
+
+    public void setVersion(String version) {
+        this.version = version;
+    }
+
     @Override
     public String toString() {
         return "Broker{" +
@@ -147,6 +168,7 @@ public class Broker extends DeployableComponent {
                 ", size3d=" + size3d +
                 ", size5d=" + size5d +
                 ", size7d=" + size7d +
+                ", version='" + version +
                 "} " + super.toString();
     }
 }

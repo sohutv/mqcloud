@@ -404,6 +404,10 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware, Comm
         return getPrefix() + "admin/cluster/list?cid=" + cid;
     }
 
+    public String getBrokerAutoUpdateLink(int cid, int brokerAutoUpdateId, String brokerName) {
+        return getHrefLink(getPrefix() + "admin/cluster/list?cid=" + cid + "&brokerAutoUpdateId=" + brokerAutoUpdateId, brokerName);
+    }
+
     public String getPrefix() {
         return HTTP_SCHEMA + getDomain() + "/";
     }

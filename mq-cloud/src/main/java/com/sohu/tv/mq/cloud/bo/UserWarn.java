@@ -62,6 +62,7 @@ public class UserWarn {
         MESSAGE_EXPORT_ERROR(15, "消息导出过慢", "messageExportFailed.html"),
         CAPACITY_REPORT(16, "容量日报", "capacityReport.html", false),
         TOPIC_WARN(17, "Topic流量预警", "topicWarn.html"),
+        BROKER_AUTO_UPDATE_WARN(18, "broker自动更新", "brokerAutoUpdate.html", false),
 
         UNKNOWN(100, "未知", "unknown.html"),
         ;

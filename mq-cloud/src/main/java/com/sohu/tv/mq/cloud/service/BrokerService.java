@@ -18,6 +18,7 @@ import org.apache.ibatis.session.SqlSessionFactory;
 import org.apache.rocketmq.client.exception.MQBrokerException;
 import org.apache.rocketmq.client.exception.MQClientException;
 import org.apache.rocketmq.remoting.protocol.RemotingSysResponseCode;
+import org.apache.rocketmq.remoting.protocol.body.BrokerStatsData;
 import org.apache.rocketmq.remoting.protocol.body.KVTable;
 import org.apache.rocketmq.remoting.protocol.body.ProducerTableInfo;
 import org.apache.rocketmq.tools.admin.MQAdminExt;
@@ -526,6 +527,129 @@ public class BrokerService {
             public Result<ClientConnectionInfo> exception(Exception e) throws Exception {
                 logger.error("fetchAllConsumerConnection:{} err", brokerAddr, e);
                 return Result.getDBErrorResult(e);
+            }
+        });
+    }
+
+    /**
+     * 查看broker统计数据，不包括内置topic
+     */
+    public Result<BrokerStatsData> viewBrokerPutStats(int cid, String brokerAddr) {
+        Cluster cluster = clusterService.getMQClusterById(cid);
+        return viewBrokerStatsData(cluster, brokerAddr, "BROKER_PUT_NUMS_WITHOUT_SYSTEM_TOPIC", cluster.getName());
+    }
+
+    /**
+     * 查看broker统计数据
+     */
+    public Result<BrokerStatsData> viewBrokerStatsData(Cluster cluster, String brokerAddr, String statsName, String statsKey) {
+        return mqAdminTemplate.execute(new MQAdminCallback<Result<BrokerStatsData>>() {
+            public Result<BrokerStatsData> callback(MQAdminExt mqAdmin) throws Exception {
+                return Result.getResult(mqAdmin.viewBrokerStatsData(brokerAddr, statsName, statsKey));
+            }
+
+            @Override
+            public Result<BrokerStatsData> exception(Exception e) throws Exception {
+                logger.error("viewBrokerStatsData broker:{} err", brokerAddr, e);
+                return Result.getDBErrorResult(e);
+            }
+
+            public Cluster mqCluster() {
+                return cluster;
+            }
+        });
+    }
+
+    /**
+     * 擦除写权限
+     */
+    public Result<?> wipeWritePerm(int cid, String brokerName, String brokerAddr) {
+        Result<Integer> rst = mqAdminTemplate.execute(new MQAdminCallback<Result<Integer>>() {
+            public Result<Integer> callback(MQAdminExt mqAdmin) throws Exception {
+                List<String> namesrvList = mqAdmin.getNameServerAddressList();
+                if (namesrvList == null) {
+                    return Result.getResult(Status.NO_RESULT).setMessage("namesrvList is empty");
+                }
+                int totalWipeTopicCount = 0;
+                for (String namesrvAddr : namesrvList) {
+                    int wipeTopicCount = mqAdmin.wipeWritePermOfBroker(namesrvAddr, brokerName);
+                    totalWipeTopicCount += wipeTopicCount;
+                }
+                return Result.getResult(totalWipeTopicCount);
+            }
+
+            @Override
+            public Result<Integer> exception(Exception e) throws Exception {
+                logger.error("wipeWritePerm broker:{} err", brokerName, e);
+                return Result.getDBErrorResult(e);
+            }
+
+            public Cluster mqCluster() {
+                return clusterService.getMQClusterById(cid);
+            }
+        });
+        if (rst.isOK()) {
+            updateWritable(cid, brokerAddr, false);
+        }
+        return rst;
+    }
+
+    /**
+     * 添加写权限
+     */
+    public Result<?> addWritePerm(Broker broker) {
+        Result<Integer> rst = mqAdminTemplate.execute(new MQAdminCallback<Result<Integer>>() {
+            public Result<Integer> callback(MQAdminExt mqAdmin) throws Exception {
+                SohuMQAdmin sohuMQAdmin = (SohuMQAdmin) mqAdmin;
+                List<String> namesrvList = mqAdmin.getNameServerAddressList();
+                if (namesrvList == null) {
+                    return Result.getResult(Status.NO_RESULT).setMessage("namesrvList is empty");
+                }
+                int count = 0;
+                for (String namesrvAddr : namesrvList) {
+                    if (broker.isRocketMQV5()) {
+                        count += sohuMQAdmin.addWritePermOfBroker(namesrvAddr, broker.getBrokerName());
+                    } else {
+                        sohuMQAdmin.unregisterBroker(namesrvAddr, mqCluster().getName(), broker.getAddr(), broker.getBrokerName(), broker.getBrokerID());
+                    }
+                }
+                return Result.getResult(count);
+            }
+
+            @Override
+            public Result<Integer> exception(Exception e) throws Exception {
+                logger.error("addWritePerm {} err", broker, e);
+                return Result.getDBErrorResult(e);
+            }
+
+            public Cluster mqCluster() {
+                return clusterService.getMQClusterById(broker.getCid());
+            }
+        });
+        if (rst.isOK()) {
+            updateWritable(broker.getCid(), broker.getAddr(), true);
+        }
+        return rst;
+    }
+
+    /**
+     * 获取broker的连接数
+     */
+    public Result<ClientConnectionSize> getClientConnectionSize(int cid, String brokerAddr) {
+        return mqAdminTemplate.execute(new MQAdminCallback<Result<ClientConnectionSize>>() {
+            public Result<ClientConnectionSize> callback(MQAdminExt mqAdmin) throws Exception {
+                DefaultSohuMQAdmin sohuMQAdmin = (DefaultSohuMQAdmin) mqAdmin;
+                return Result.getResult(sohuMQAdmin.getClientConnectionSize(brokerAddr));
+            }
+
+            @Override
+            public Result<ClientConnectionSize> exception(Exception e) throws Exception {
+                logger.error("getClientConnectionSize {} err", brokerAddr, e);
+                return Result.getDBErrorResult(e);
+            }
+
+            public Cluster mqCluster() {
+                return clusterService.getMQClusterById(cid);
             }
         });
     }

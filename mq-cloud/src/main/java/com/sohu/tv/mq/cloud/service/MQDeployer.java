@@ -74,6 +74,8 @@ public class MQDeployer {
 
     public static final String BROKER_RATE_LIMIT_JSON = "rateLimitConfig.json";
 
+    public static final String BACKUP_SUFFIX = ".backup";
+
     // 部署broker时自动创建监控订阅组
     public static final String SUBSCRIPTIONGROUP_JSON = "echo '"
             + JSONUtil.toJSONString(SubscriptionGroup.buildMonitorSubscriptionGroup())
@@ -136,30 +138,38 @@ public class MQDeployer {
             });
         } catch (SSHException e) {
             logger.error("getProgram, ip:{},port{}", ip, port, e);
+            return Result.getWebErrorResult(e);
         }
         return wrapSSHResult(sshResult);
     }
 
     /**
-     * 获取broker pid，大于0表示存在，0表示不存在，-1表示未知，-2表示异常
+     * pid是否死亡
      */
-    public int getBrokerPid(String ip, String baseDir) {
+    public Result<?> isPidDead(String ip, int pid) {
         try {
             SSHResult sshResult = sshTemplate.execute(ip, new SSHCallback() {
                 public SSHResult call(SSHSession session) {
-                    return session.executeCommand("sudo lsof -t " + baseDir + "/logs/broker.log");
+                    return session.executeCommand("sudo kill -0 " + pid + " 2>/dev/null && echo 1 || echo 0");
                 }
             });
             if (sshResult != null) {
-                return NumberUtils.toInt(sshResult.getResult(), 0);
+                int rst = NumberUtils.toInt(sshResult.getResult(), -1);
+                if (rst == 0) {
+                    return Result.getOKResult();
+                }
+                if (rst == -1) {
+                    return Result.getErrorResult(sshResult.getResult() + " is not number");
+                }
+                return Result.getErrorResult("pid(" + sshResult.getResult() + ") is alive");
             }
-            return -1;
+            return Result.getErrorResult("ssh result is empty");
         } catch (SSHException e) {
-            logger.error("getProgram, ip:{}, baseDir:{}", ip, baseDir, e);
-            return -2;
+            logger.error("getPid, ip:{}, pid:{}", ip, pid, e);
+            return Result.getErrorResult("ssh result error:" + e.toString());
         }
     }
-    
+
     /**
      * 获取监听某个端口的信息
      * @param ip
@@ -773,6 +783,16 @@ public class MQDeployer {
 
     /**
      * 备份数据
+     *
+     * @param ip
+     * @param sourceDir
+     */
+    public Result<?> backup(String ip, String sourceDir) {
+        return backup(ip, sourceDir, sourceDir + BACKUP_SUFFIX);
+    }
+
+    /**
+     * 备份数据
      * @param ip
      * @param sourceDir
      * @param destDir
@@ -806,6 +826,16 @@ public class MQDeployer {
             dirWrite(ip, sourceDir);
         }
         return result;
+    }
+
+    /**
+     * 移动备份数据到新安装目录
+     *
+     * @param ip
+     * @param dir
+     */
+    public Result<?> recover(String ip, String dir) {
+        return recover(ip, dir + BACKUP_SUFFIX, dir);
     }
 
     /**
@@ -874,6 +904,15 @@ public class MQDeployer {
      * @return
      */
     public Result<?> startup(String ip, String absoluteDir, int port){
+        return startup(ip, absoluteDir, port, true);
+    }
+    
+    /**
+     * startup
+     * @param ip
+     * @return
+     */
+    public Result<?> startup(String ip, String absoluteDir, int port, boolean checkStartupStatus){
         SSHResult sshResult = null;
         try {
             sshResult = sshTemplate.execute(ip, new SSHCallback() {
@@ -887,7 +926,7 @@ public class MQDeployer {
             return Result.getWebErrorResult(e);
         }
         Result<?> result = wrapSSHResult(sshResult);
-        if (result.isOK()) {
+        if (result.isOK() && checkStartupStatus) {
             // 检测是否已经启动
             for (int i = 0; i < 100; ++i) {
                 Result<?> programResult = getProgram(ip, port);
@@ -922,7 +961,7 @@ public class MQDeployer {
         try {
             sshResult = sshTemplate.execute(ip, new SSHCallback() {
                 public SSHResult call(SSHSession session) {
-                    SSHResult sshResult = session.executeCommand(String.format(PID, port)  + "sudo kill $tmpVar");
+                    SSHResult sshResult = session.executeCommand(String.format(PID, port)  + "sudo kill $tmpVar && echo $tmpVar");
                     return sshResult;
                 }
             });
@@ -932,15 +971,28 @@ public class MQDeployer {
         }
         Result<?> result = wrapSSHResult(sshResult);
         if (baseDir != null && result.isOK()) {
+            int pid = NumberUtils.toInt(String.valueOf(result.getResult()), 0);
+            if (pid == 0) {
+                logger.error("cant shutdown, ip:{}, port:{}, baseDir:{} result:{}", ip, port, baseDir, result.getResult());
+                return Result.getResult(Status.DB_ERROR).setMessage("cant shutdown");
+            }
             // 检测broker是否已经关闭
+            int shutdownTimes = 0;
             for (int i = 0; i < 20; ++i) {
-                int pid = getBrokerPid(ip, baseDir);
-                if (pid == 0) {
-                    logger.info("shutdown, ip:{}, port:{}, baseDir:{}, times:{}, result:{}", ip, port, baseDir, i, pid);
-                    break;
+                Result<?> pidResult = isPidDead(ip, pid);
+                if (pidResult.isOK()) {
+                    // 连续两次检测到关闭才算成功
+                    if (++shutdownTimes >= 2) {
+                        logger.info("shutdown ok, ip:{}, port:{}, baseDir:{}, times:{}, result:{}", ip, port, baseDir, i, pid);
+                        break;
+                    } else {
+                        logger.info("shutdown detected, ip:{}, port:{}, baseDir:{}, times:{}, result:{}", ip, port, baseDir, i, pid);
+                    }
+                } else {
+                    shutdownTimes = 0;
                 }
                 try {
-                    logger.info("shutting down, ip:{}, port:{}, baseDir:{}, times:{}, result:{}", ip, port, baseDir, i, pid);
+                    logger.info("shutting down, ip:{}, port:{}, baseDir:{}, times:{}, result:{}", ip, port, baseDir, i, pidResult.getMessage());
                     Thread.sleep(3000);
                 } catch (InterruptedException e) {
                     break;

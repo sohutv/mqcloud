@@ -64,11 +64,13 @@
 				</button>
 				<div class="dropdown-menu" role="menu">
 					<#if response.result.hasNameServer>
-					<a class="dropdown-item" href="#" title="添加broker节点后，从Name Server抓取broker列表，刷入数据库中，用于broker列表展示及监控" onclick="refresh()" data-toggle="modal"><span class="fas fa-sync-alt fa-fw"></span>&nbsp;刷新集群</a>
+						<a class="dropdown-item" href="#" title="添加broker节点后，从Name Server抓取broker列表，刷入数据库中，用于broker列表展示及监控" onclick="refresh()" data-toggle="modal"><span class="fas fa-sync-alt fa-fw"></span>&nbsp;刷新集群</a>
+						<div class="dropdown-divider"></div>
+						<a class="dropdown-item" href="#" title="安全的更新集群中的broker" onclick="autoUpdateBrokerShow()" data-toggle="modal"><span class="fa-solid fa-robot fa-fw"></span>&nbsp;自动更新集群</a>
 					</#if>
 					<#if response.result.brokerGroup??>
-					<div class="dropdown-divider"></div>
-					<a class="dropdown-item" href="#" data-placement="bottom" title="该功能用于将集群的topic或consumer写入MQCloud中" onclick="brokerChooseShow()" data-toggle="modal"><i class="fa-solid fa-download fa-fw"></i>&nbsp;初始化数据</a>
+						<div class="dropdown-divider"></div>
+						<a class="dropdown-item" href="#" data-placement="bottom" title="该功能用于将集群的topic或consumer写入MQCloud中" onclick="brokerChooseShow()" data-toggle="modal"><i class="fa-solid fa-download fa-fw"></i>&nbsp;初始化数据</a>
 					</#if>
 				</div>
 			</div>
@@ -126,14 +128,16 @@
 							<td <#if brokerStat.brokerId != "0">class="border-top-0 pt-0"</#if>>
 								<#if brokerStat.inTps??>
 									<#if brokerStat.version?? && brokerStat.brokerId == "0">
-										<a href="#" title="broker限速详情" data-toggle="modal" onclick="brokerRateLimitModalShow('${brokerStat.brokerAddr}')">${brokerStat.inTps}</a>
+										<a href="#" title="生产(去除系统Topic): ${brokerStat.inCountWithoutSystemTopic!0}条/分，点击查看broker限速详情" data-toggle="modal" onclick="brokerRateLimitModalShow('${brokerStat.brokerAddr}')">${brokerStat.inTps}</a>
 									<#else>
-										${brokerStat.inTps}
+										<a href="#" data-toggle="tooltip" title="生产(去除系统Topic): ${brokerStat.inCountWithoutSystemTopic!0}条/分">${brokerStat.inTps}</a>
 									</#if>
 								</#if>
 							</td>
 							<td <#if brokerStat.brokerId != "0">class="border-top-0 pt-0"</#if>>
-								<#if brokerStat.outTps??>${brokerStat.outTps}</#if>
+								<#if brokerStat.outTps??>
+									<a href="#" data-toggle="tooltip" title="消费(去除系统Topic): ${brokerStat.outCountWithoutSystemTopic!0}条/分">${brokerStat.outTps}</a>
+								</#if>
 							</td>
 							<td <#if brokerStat.brokerId != "0">class="border-top-0 pt-0"</#if>>
 								<a href="#" data-target="#timerWheelMetricsModal" data-toggle="modal" onclick="timerWheelMetrics('${brokerStat.brokerAddr}')"><span data-toggle="tooltip" data-html="true" title="时间轮写入吞吐(timerEnqueueTps):${brokerStat.timerEnqueueTpsFormat!}<br>commitlog写入吞吐(timerDequeueTps):${brokerStat.timerDequeueTpsFormat!}<br>消费时间轮topic落后量(timerOffsetBehind):${brokerStat.timerOffsetBehind!}<br>时间轮转动落后时间(timerReadBehind):${brokerStat.timerReadBehind!}ms">${brokerStat.timerCongestNum!}</span></a>
@@ -1164,8 +1168,76 @@
 	</div>
 </div>
 
-<script>
+<!-- 集群自动更新 -->
+<div id="autoUpdateBrokerModal" class="modal fade" tabindex="-1" data-width="400" aria-hidden="true">
+	<div class="modal-dialog modal-lg">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h4 class="modal-title">自动更新任务列表</h4>&nbsp;
+				<h4>
+					<button id="addAutoUpdateBrokerBtn" type="button" class="btn btn-xs btn-primary" data-toggle="tooltip"
+							onclick="addAutoUpdateBroker()" title="创建自动更新任务"><span class="fas fa-plus"></span>
+					</button>
+				</h4>
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+			</div>
+			<div class="modal-body card-body table-responsive p-0">
+				<table class="table text-nowrap table-hover" style="margin-top: 0px">
+					<thead>
+					<tr>
+						<th>序号</th>
+						<th>创建时间</th>
+						<th>更新时间</th>
+						<th>状态</th>
+						<th>用时</th>
+						<th>操作</th>
+					</tr>
+					</thead>
+					<tbody id="autoUpdateBrokerBody">
+						<tr class="no_more_data"><td class="text-center" colspan="6">数据加载中...</td></tr>
+					</tbody>
+				</table>
+			</div>
+		</div>
+	</div>
+</div>
 
+<!-- 集群自动更新步骤 -->
+<div id="autoUpdateBrokerStepModal" class="modal fade" tabindex="-1" data-width="400" aria-hidden="true">
+	<div class="modal-dialog modal-xl">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h4 class="modal-title">自动更新步骤列表 <i id="autoUpdateBrokerStepSpin" style="display: none" class="fa-solid fa-spinner fa-spin"></i></h4>
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+			</div>
+			<div class="modal-body card-body table-responsive p-0">
+				<table class="table text-nowrap table-hover" style="margin-top: 0px">
+					<thead>
+					<tr>
+						<th>顺序</th>
+						<th>broker</th>
+						<th>id</th>
+						<th>地址</th>
+						<th>行为</th>
+						<th>状态</th>
+						<th>开始时间</th>
+						<th>结束时间</th>
+						<th>耗时</th>
+						<th>信息</th>
+						<th>操作</th>
+					</tr>
+					</thead>
+					<tbody id="autoUpdateBrokerStepBody">
+					<tr class="no_more_data"><td class="text-center" colspan="11">数据加载中...</td></tr>
+					</tbody>
+				</table>
+			</div>
+		</div>
+	</div>
+</div>
+
+<script>
+var brokerAutoUpdateId;
 $(function () {
 	$('#sourceIp').selectpicker({
 		width: '200px'
@@ -1215,6 +1287,13 @@ $(function () {
 			enableNavigation: false,
 		}
 	});
+	$('#autoUpdateBrokerStepModal').on('shown.bs.modal', function () {
+		setTimeout('getAutoUpdateBrokerStepData()', 5000);
+	});
+	brokerAutoUpdateId = getQueryString("brokerAutoUpdateId");
+	if (brokerAutoUpdateId) {
+		autoUpdateBrokerShow();
+	}
 })
 
 	
@@ -2602,6 +2681,133 @@ function clientConnection(addr, type) {
 				});
 			}
 	);
+}
+
+function autoUpdateBrokerShow() {
+	$("#autoUpdateBrokerModal").modal('show');
+	$.get('${request.contextPath}/admin/broker/autoUpdate/list', {
+				cid: ${response.result.selectedMQCluster.id},
+			}, function (data) {
+				$("#autoUpdateBrokerBody").html(data);
+				$('[data-toggle="modal"]').tooltip({
+					container: 'body'
+				});
+				if (brokerAutoUpdateId) {
+					autoUpdateBrokerStepShow(brokerAutoUpdateId, false);
+					brokerAutoUpdateId = false;
+				}
+			}
+	);
+}
+
+function refreshAutoUpdatePage() {
+	autoUpdateBrokerShow();
+}
+
+function addAutoUpdateBroker() {
+	disable("addAutoUpdateBrokerBtn");
+	post('${request.contextPath}/admin/broker/autoUpdate/add', {
+		cid: ${response.result.selectedMQCluster.id}
+	}, function (data) {
+		if (data.status == 200) {
+			toastr.success("操作成功");
+			refreshAutoUpdatePage();
+		} else {
+			toastr.error("操作失败！" + data.message);
+		}
+		enable("addAutoUpdateBrokerBtn");
+	}, 'json');
+}
+
+function readyAutoUpdateBroker(id, comp) {
+	updateAutoUpdateBroker(id, "ready", comp)
+}
+
+function pauseAutoUpdateBroker(id, comp) {
+	updateAutoUpdateBroker(id, "pause", comp)
+}
+
+function startAutoUpdateBroker(id, comp) {
+	updateAutoUpdateBroker(id, "start", comp)
+}
+
+function finishAutoUpdateBroker(id, comp) {
+	updateAutoUpdateBroker(id, "finish", comp)
+}
+
+function updateAutoUpdateBroker(id, action, comp) {
+	disableRaw(comp)
+	post('${request.contextPath}/admin/broker/autoUpdate/' + action, {
+		id: id
+	}, function (data) {
+		if (data.status == 200) {
+			toastr.success("操作成功");
+			refreshAutoUpdatePage();
+		} else {
+			toastr.error("操作失败！" + data.message);
+			enableRaw(comp)
+		}
+	}, 'json');
+}
+
+function autoUpdateBrokerStepShow(id, autoUpdateBrokerOver) {
+	refreshAutoUpdateBrokerStep = !autoUpdateBrokerOver;
+	if (refreshAutoUpdateBrokerStep) {
+		$("#autoUpdateBrokerStepSpin").show();
+	} else {
+		$("#autoUpdateBrokerStepSpin").hide();
+	}
+	$("#autoUpdateBrokerStepModal").modal('show');
+	getAutoUpdateBrokerStepData(id);
+}
+
+var autoUpdateBrokerId;
+var autoUpdateBrokerStepTimerId;
+var refreshAutoUpdateBrokerStep = false;
+function getAutoUpdateBrokerStepData(id) {
+	if (id == undefined) {
+		id = autoUpdateBrokerId;
+	} else {
+		autoUpdateBrokerId = id;
+	}
+	$.get('${request.contextPath}/admin/broker/autoUpdate/step/list', {
+				id: id,
+			}, function (data) {
+				$("#autoUpdateBrokerStepBody").html(data);
+				$('[data-tooltip="true"]').tooltip({
+					container: 'body'
+				});
+				if (autoUpdateBrokerStepTimerId) {
+					clearTimeout(autoUpdateBrokerStepTimerId);
+				}
+				if (refreshAutoUpdateBrokerStep && $('#autoUpdateBrokerStepModal').hasClass('show')) {
+					autoUpdateBrokerStepTimerId = setTimeout('getAutoUpdateBrokerStepData()', 5000);
+				}
+			}
+	);
+}
+
+function resetAutoUpdateBrokerStep(id, comp) {
+	updateAutoUpdateBrokerStep(id, "reset", comp)
+}
+
+function finishAutoUpdateBrokerStep(id, comp) {
+	updateAutoUpdateBrokerStep(id, "finish", comp)
+}
+
+function updateAutoUpdateBrokerStep(id, action, comp) {
+	disableRaw(comp)
+	post('${request.contextPath}/admin/broker/autoUpdateStep/' + action, {
+		id: id
+	}, function (data) {
+		if (data.status == 200) {
+			toastr.success("操作成功");
+			getAutoUpdateBrokerStepData();
+		} else {
+			toastr.error("操作失败！" + data.message);
+			enableRaw(comp)
+		}
+	}, 'json');
 }
 </script>
 </#if>

@@ -631,6 +631,7 @@ CREATE TABLE `broker` (
   `size_3d` bigint(20) DEFAULT '0' COMMENT 'put size in three days',
   `size_5d` bigint(20) DEFAULT '0' COMMENT 'put size in five days',
   `size_7d` bigint(20) DEFAULT '0' COMMENT 'put size in seven days',
+  `version` varchar(64) NOT NULL DEFAULT '5' COMMENT 'broker版本:4,5',
   UNIQUE KEY `cid` (`cid`,`addr`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='broker表';
 
@@ -1413,3 +1414,40 @@ CREATE TABLE `topic_warn_config`
     PRIMARY KEY (`id`),
     KEY `tid_idx` (`tid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='topic报警阈值配置表';
+
+-- ----------------------------
+-- Table structure for `broker_auto_update`
+-- ----------------------------
+DROP TABLE IF EXISTS `broker_auto_update`;
+CREATE TABLE `broker_auto_update`
+(
+    `id`          int(11) NOT NULL AUTO_INCREMENT COMMENT 'id',
+    `cid`         int(11) NOT NULL COMMENT 'cluster id',
+    `status`      tinyint(4) NOT NULL DEFAULT '0' COMMENT '1:未开始,2:已就绪,3:进行中,4:暂停中,5:成功,6:失败,7:手动结束',
+    `create_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `start_time`  timestamp NULL DEFAULT NULL COMMENT '开始时间',
+    `update_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='broker自动更新表';
+
+-- ----------------------------
+-- Table structure for `broker_auto_update_step`
+-- ----------------------------
+DROP TABLE IF EXISTS `broker_auto_update_step`;
+CREATE TABLE `broker_auto_update_step`
+(
+    `id`                    int(11) NOT NULL AUTO_INCREMENT COMMENT 'id',
+    `broker_auto_update_id` int(11) NOT NULL COMMENT 'broker_auto_update id',
+    `broker_addr`           varchar(255) NOT NULL COMMENT 'broker 地址',
+    `broker_name`           varchar(64)  NOT NULL COMMENT 'broker名字',
+    `broker_id`             int(4) NOT NULL COMMENT 'broker ID，0-master，1-slave',
+    `broker_base_dir`       varchar(360) NOT NULL COMMENT 'broker安装路径',
+    `broker_version`        varchar(64)  NOT NULL COMMENT 'broker版本：4, 5',
+    `order`                 int(11) NOT NULL COMMENT '操作顺序',
+    `action`                tinyint(4) NOT NULL DEFAULT '0' COMMENT '0:停写,1:取消注册,2:关闭,3:备份数据,4:下载安装包,5:解压安装包,6:恢复数据,7:启动,8:注册,9:恢复写入',
+    `status`                tinyint(4) NOT NULL DEFAULT '0' COMMENT '1:未开始,2:进行中,3:成功,4:失败,5:手动结束',
+    `info`                  text COMMENT '操作信息',
+    `start_time`            timestamp NULL DEFAULT NULL COMMENT '开始时间',
+    `end_time`              timestamp NULL DEFAULT NULL COMMENT '结束时间',
+    PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='broker自动更新步骤表';

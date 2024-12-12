@@ -60,11 +60,27 @@ function toPage(url, timeout){
 }
 
 function disable(id){
-	$("#"+id).attr("data-text", $("#"+id).html()).prop("disabled", true).html("<i class='fas fa-spinner fa-spin'></i>");
+	_disable($("#"+id));
+}
+
+function disableRaw(comp){
+	_disable($(comp));
+}
+
+function _disable(jqObject){
+	jqObject.attr("data-text", jqObject.html()).prop("disabled", true).html("<i class='fas fa-spinner fa-spin'></i>");
 }
 
 function enable(id){
-	$("#"+id).prop("disabled", false).html($("#"+id).attr("data-text"));
+	_enable($("#"+id));
+}
+
+function enableRaw(comp){
+	_enable($(comp));
+}
+
+function _enable(jqObject){
+	jqObject.prop("disabled", false).html(jqObject.attr("data-text"));
 }
 
 function formatDate(longDate) {

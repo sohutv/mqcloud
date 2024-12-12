@@ -8,6 +8,7 @@ import com.sohu.tv.mq.cloud.mq.MQAdminTemplate;
 import com.sohu.tv.mq.cloud.service.*;
 import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper;
 import com.sohu.tv.mq.cloud.util.Result;
+import com.sohu.tv.mq.cloud.util.RocketMQVersion;
 import com.sohu.tv.mq.cloud.util.Status;
 import com.sohu.tv.mq.cloud.web.controller.param.BrokerConfigParam;
 import com.sohu.tv.mq.cloud.web.controller.param.BrokerConfigUpdateParam;
@@ -17,8 +18,10 @@ import com.sohu.tv.mq.cloud.web.vo.BrokerConfigGroupVO;
 import com.sohu.tv.mq.cloud.web.vo.BrokerConfigVO;
 import com.sohu.tv.mq.cloud.web.vo.UserInfo;
 import org.apache.commons.lang3.math.NumberUtils;
+import org.apache.rocketmq.common.MQVersion.Version;
 import org.apache.rocketmq.common.constant.PermName;
 import org.apache.rocketmq.remoting.protocol.body.ClusterInfo;
+import org.apache.rocketmq.remoting.protocol.body.KVTable;
 import org.apache.rocketmq.remoting.protocol.route.BrokerData;
 import org.apache.rocketmq.remoting.protocol.route.TopicRouteData;
 import org.apache.rocketmq.tools.admin.MQAdminExt;
@@ -69,6 +72,15 @@ public class AdminBrokerController extends AdminViewController {
 
     @Autowired
     private DataMigrationService dataMigrationService;
+
+    @Autowired
+    private ClusterBrokerAutoUpdateService clusterBrokerAutoUpdateService;
+
+    @Autowired
+    private BrokerAutoUpdateService brokerAutoUpdateService;
+
+    @Autowired
+    private BrokerAutoUpdateStepService brokerAutoUpdateStepService;
 
     @ResponseBody
     @RequestMapping(value = "/_refresh", method = RequestMethod.POST)
@@ -122,6 +134,18 @@ public class AdminBrokerController extends AdminViewController {
                         broker.setBaseDir(rocketmqHome);
                         // 更新集群数据文件保留时间
                         clusterService.updateFileReservedTime(properties, cid);
+                        // 获取broker版本
+                        Result kvTableResult = brokerService.fetchBrokerRuntimeStats(broker.getAddr(), mqCluster());
+                        RocketMQVersion rocketMQVersion = RocketMQVersion.V5;
+                        if (kvTableResult.getResult() != null) {
+                            Map<String, String> map = ((KVTable) kvTableResult.getResult()).getTable();
+                            String versionOrdinalString = map.get("brokerVersion");
+                            int versionOrdinal = NumberUtils.toInt(versionOrdinalString, -1);
+                            if (versionOrdinal != -1 && versionOrdinal < Version.V5_0_0.ordinal()) {
+                                rocketMQVersion = RocketMQVersion.V4;
+                            }
+                        }
+                        broker.setVersion(rocketMQVersion.getVersion());
                     }
                 }
                 return Result.getResult(list);
@@ -674,6 +698,110 @@ public class AdminBrokerController extends AdminViewController {
             return o1.getBrokerConfigGroup().getOrder() - o2.getBrokerConfigGroup().getOrder();
         });
         return list;
+    }
+
+    /**
+     * broker自动更新列表
+     */
+    @GetMapping(value = "/autoUpdate/list")
+    public String autoUpdateList(@RequestParam(name = "cid") int cid, Map<String, Object> map) {
+        setResult(map, brokerAutoUpdateService.selectByCid(cid));
+        return adminViewModule() + "/autoUpdate/list";
+    }
+
+    /**
+     * 增加broker自动更新
+     */
+    @ResponseBody
+    @PostMapping(value = "/autoUpdate/add")
+    public Result<?> autoUpdateAdd(@RequestParam(name = "cid") int cid, Map<String, Object> map) {
+        Result<?> result = clusterBrokerAutoUpdateService.save(cid);
+        return Result.getWebResult(result);
+    }
+
+    /**
+     * 就绪broker自动更新
+     */
+    @ResponseBody
+    @PostMapping(value = "/autoUpdate/ready")
+    public Result<?> readyAutoUpdate(@RequestParam(name = "id") int id, Map<String, Object> map) {
+        return Result.getWebResult(updateAutoUpdate(id, BrokerAutoUpdate.Status.READY));
+    }
+
+    /**
+     * 暂停broker自动更新
+     */
+    @ResponseBody
+    @PostMapping(value = "/autoUpdate/pause")
+    public Result<?> pauseAutoUpdate(@RequestParam(name = "id") int id, Map<String, Object> map) {
+        return Result.getWebResult(updateAutoUpdate(id, BrokerAutoUpdate.Status.PAUSE));
+    }
+
+    /**
+     * 运行broker自动更新
+     */
+    @ResponseBody
+    @PostMapping(value = "/autoUpdate/start")
+    public Result<?> startAutoUpdate(@RequestParam(name = "id") int id, Map<String, Object> map) {
+        return Result.getWebResult(updateAutoUpdate(id, BrokerAutoUpdate.Status.RUNNING));
+    }
+
+    /**
+     * 人为结束broker自动更新
+     */
+    @ResponseBody
+    @PostMapping(value = "/autoUpdate/finish")
+    public Result<?> finishAutoUpdate(@RequestParam(name = "id") int id, Map<String, Object> map) {
+        return Result.getWebResult(updateAutoUpdate(id, BrokerAutoUpdate.Status.FINISHED));
+    }
+
+    public Result<?> updateAutoUpdate(int id, BrokerAutoUpdate.Status status) {
+        BrokerAutoUpdate brokerAutoUpdate = new BrokerAutoUpdate();
+        brokerAutoUpdate.setId(id);
+        brokerAutoUpdate.setStatus(status.getValue());
+        return brokerAutoUpdateService.update(brokerAutoUpdate);
+    }
+
+    /**
+     * broker自动更新步骤列表
+     */
+    @GetMapping(value = "/autoUpdate/step/list")
+    public String autoUpdateStepList(@RequestParam(name = "id") int id, Map<String, Object> map) {
+        Result<BrokerAutoUpdate> brokerAutoUpdateResult = brokerAutoUpdateService.selectById(id);
+        if (brokerAutoUpdateResult.isOK()) {
+            setResult(map, "brokerAutoUpdate", brokerAutoUpdateResult.getResult());
+        }
+        setResult(map, brokerAutoUpdateStepService.selectByBrokerAutoUpdateId(id));
+        return adminViewModule() + "/autoUpdate/stepList";
+    }
+
+    /**
+     * 人为结束broker自动更新步骤
+     */
+    @ResponseBody
+    @PostMapping(value = "/autoUpdateStep/finish")
+    public Result<?> finishAutoUpdateStep(@RequestParam(name = "id") int id, Map<String, Object> map) {
+        return Result.getWebResult(updateAutoUpdateStep(id, BrokerAutoUpdateStep.Status.FINISHED, new Date()));
+    }
+
+    /**
+     * 重置broker自动更新步骤
+     */
+    @ResponseBody
+    @PostMapping(value = "/autoUpdateStep/reset")
+    public Result<?> resetAutoUpdateStep(@RequestParam(name = "id") int id, Map<String, Object> map) {
+        return Result.getWebResult(updateAutoUpdateStep(id, BrokerAutoUpdateStep.Status.INIT, null));
+    }
+
+    public Result<?> updateAutoUpdateStep(int id, BrokerAutoUpdateStep.Status status, Date endTime) {
+        BrokerAutoUpdateStep brokerAutoUpdateStep = new BrokerAutoUpdateStep();
+        brokerAutoUpdateStep.setId(id);
+        brokerAutoUpdateStep.setStatus(status.getValue());
+        if (endTime != null) {
+            brokerAutoUpdateStep.setEndTime(endTime);
+        }
+        brokerAutoUpdateStep.setInfo("");
+        return brokerAutoUpdateStepService.update(brokerAutoUpdateStep);
     }
 
     @Override

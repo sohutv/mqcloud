@@ -1,0 +1,22 @@
+<#if response.notEmpty>
+    <#list response.result as brokerAutoUpdateStep>
+        <tr>
+            <td>${brokerAutoUpdateStep.order}</td>
+            <td data-tooltip="true" title="版本:${brokerAutoUpdateStep.rocketMQVersion}，部署目录:${brokerAutoUpdateStep.brokerBaseDir!}"><a href="#">${brokerAutoUpdateStep.brokerName}</a></td>
+            <td>${brokerAutoUpdateStep.brokerId}</td>
+            <td>${brokerAutoUpdateStep.brokerAddr}</td>
+            <td>${brokerAutoUpdateStep.actionDesc}</td>
+            <td class="${brokerAutoUpdateStep.statusColor}">${brokerAutoUpdateStep.statusDesc}</td>
+            <td>${brokerAutoUpdateStep.startTimeDesc!}</td>
+            <td>${brokerAutoUpdateStep.endTimeDesc!}</td>
+            <td>${brokerAutoUpdateStep.costTimeDesc!}</td>
+            <td class="text-wrap">${brokerAutoUpdateStep.info!}</td>
+            <td>
+                <button <#if brokerAutoUpdate.over || (!brokerAutoUpdateStep.failed && !brokerAutoUpdateStep.running)>disabled="disabled"</#if> title="重新执行" data-tooltip="true" class="btn btn-xs btn-warning" onclick="resetAutoUpdateBrokerStep(${brokerAutoUpdateStep.id}, this)"><i class="fa-solid fa-repeat fa-fw"></i></button>
+                <button <#if brokerAutoUpdate.over || brokerAutoUpdateStep.over>disabled="disabled"</#if> title="结束" data-tooltip="true" class="btn btn-xs btn-danger" onclick="finishAutoUpdateBrokerStep(${brokerAutoUpdateStep.id}, this)"><i class="fa-solid fa-stop fa-fw"></i></button>
+            </td>
+        </tr>
+    </#list>
+<#else>
+    <tr class="no_more_data"><td colspan=11 class="text-center">暂无数据</td></tr>
+</#if>

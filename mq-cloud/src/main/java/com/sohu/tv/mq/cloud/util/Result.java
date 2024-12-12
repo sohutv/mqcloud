@@ -158,6 +158,10 @@ public class Result<T> {
         return (Result<T>) getResult(status).setMessage(error);
     }
 
+    public static <T> Result<T> getErrorResult(String message) {
+        return (Result<T>) getResult(Status.NO_RESULT).setMessage(message);
+    }
+
     /**
      * 获取请求异常返回结果
      *
@@ -248,9 +252,26 @@ public class Result<T> {
 		return message;
 	}
 
-	public Result<T> setMessage(String message) {
+    public String getErrorMessage() {
+        StringBuilder errorMessage = new StringBuilder();
+        if (exception != null) {
+            errorMessage.append(exception.toString());
+        }
+        if (message != null) {
+            if (errorMessage.length() > 0) {
+                errorMessage.append(",");
+            }
+            errorMessage.append(message);
+        }
+        if (errorMessage.length() > 0) {
+            return errorMessage.toString();
+        }
+        return null;
+    }
+
+	public <T> Result<T> setMessage(String message) {
 		this.message = message;
-		return this;
+		return (Result<T>) this;
 	}
 
     public Result<T> formatMessage(Object... args) {

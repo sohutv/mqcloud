@@ -1,8 +1,6 @@
 package com.sohu.tv.mq.cloud.web.controller.admin;
 
 import com.sohu.tv.mq.cloud.bo.*;
-import com.sohu.tv.mq.cloud.common.mq.SohuMQAdmin;
-import com.sohu.tv.mq.cloud.mq.DefaultCallback;
 import com.sohu.tv.mq.cloud.mq.MQAdminCallback;
 import com.sohu.tv.mq.cloud.mq.MQAdminTemplate;
 import com.sohu.tv.mq.cloud.service.BrokerService;
@@ -147,31 +145,7 @@ public class AdminClusterController extends AdminViewController {
             return Result.getWebResult(brokerResult);
         }
         Broker broker = brokerResult.getResult();
-        Integer rst = mqAdminTemplate.execute(new DefaultCallback<Integer>() {
-            public Integer callback(MQAdminExt mqAdmin) throws Exception {
-                List<String> namesrvList = mqAdmin.getNameServerAddressList();
-                if (namesrvList == null) {
-                    return null;
-                }
-                int totalWipeTopicCount = 0;
-                for (String namesrvAddr : namesrvList) {
-                    try {
-                        int wipeTopicCount = mqAdmin.wipeWritePermOfBroker(namesrvAddr, broker.getBrokerName());
-                        totalWipeTopicCount += wipeTopicCount;
-                    } catch (Exception e) {
-                        logger.error("nowrite namesrvAddr:{}, broker:{} err", namesrvAddr, broker.getBrokerName(), e);
-                        throw e;
-                    }
-                }
-                brokerService.updateWritable(cid, broker.getAddr(), false);
-                return totalWipeTopicCount;
-            }
-
-            public Cluster mqCluster() {
-                return mqCluster;
-            }
-        });
-        return Result.getResult(rst);
+        return Result.getWebResult(brokerService.wipeWritePerm(cid, broker.getBrokerName(), broker.getAddr()));
     }
 
     /**
@@ -192,28 +166,7 @@ public class AdminClusterController extends AdminViewController {
             return Result.getWebResult(brokerResult);
         }
         Broker broker = brokerResult.getResult();
-        return mqAdminTemplate.execute(new DefaultCallback<Result<?>>() {
-            public Result<?> callback(MQAdminExt mqAdmin) throws Exception {
-                List<String> namesrvList = mqAdmin.getNameServerAddressList();
-                if (namesrvList == null) {
-                    return Result.getResult(null);
-                }
-                SohuMQAdmin sohuMQAdmin = (SohuMQAdmin) mqAdmin;
-                for (String namesrvAddr : namesrvList) {
-                    try {
-                        sohuMQAdmin.unregisterBroker(namesrvAddr, mqCluster.getName(), broker.getAddr(), broker.getBrokerName(), broker.getBrokerID());
-                    } catch (Exception e) {
-                        logger.error("unregisterBroker namesrvAddr:{}, broker:{} err", namesrvAddr, broker, e);
-                        return Result.getWebErrorResult(e);
-                    }
-                }
-                brokerService.updateWritable(cid, broker.getAddr(), true);
-                return Result.getOKResult();
-            }
-            public Cluster mqCluster() {
-                return mqCluster;
-            }
-        });
+        return brokerService.addWritePerm(broker);
     }
 
     /**
@@ -480,6 +433,22 @@ public class AdminClusterController extends AdminViewController {
         brokerStatVO.setConsumerSize(removeFromMap(stats, "consumerSize"));
         brokerStatVO.setProducerConnectionSize(removeFromMap(stats, "producerConnectionSize"));
         brokerStatVO.setConsumerConnectionSize(removeFromMap(stats, "consumerConnectionSize"));
+
+        // 不包含系统topic的生产消费量
+        String putStats = removeFromMap(stats, "brokerPutStatsWithoutSystemTopic");
+        if (putStats != null) {
+            String[] putStatsArray = putStats.split(" ");
+            if (putStatsArray.length == 2) {
+                brokerStatVO.setInCountWithoutSystemTopic(putStatsArray[1]);
+            }
+        }
+        String getStats = removeFromMap(stats, "brokerGetStatsWithoutSystemTopic");
+        if (getStats != null) {
+            String[] getStatsArray = getStats.split(" ");
+            if (getStatsArray.length == 2) {
+                brokerStatVO.setOutCountWithoutSystemTopic(getStatsArray[1]);
+            }
+        }
     }
 
     @Override

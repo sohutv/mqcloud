@@ -1,0 +1,20 @@
+<#if response.notEmpty>
+    <#list response.result as brokerAutoUpdate>
+        <tr>
+            <td>${brokerAutoUpdate_index + 1}</td>
+            <td>${brokerAutoUpdate.createTimeDesc}</td>
+            <td>${brokerAutoUpdate.updateTimeDesc}</td>
+            <td class="${brokerAutoUpdate.statusColor}">${brokerAutoUpdate.statusDesc}</td>
+            <td>${brokerAutoUpdate.costTimeDesc!}</td>
+            <td>
+                <button title="查看更新步骤" data-toggle="modal" class="btn btn-outline-primary btn-xs" onclick="autoUpdateBrokerStepShow(${brokerAutoUpdate.id}, ${brokerAutoUpdate.over?string("true","false")}, this)"><i class="fa-solid fa-list-ol fa-fw"></i></button>
+                <button <#if !brokerAutoUpdate.init>disabled="disabled"</#if> title="启动" data-toggle="modal" class="btn btn-xs btn-outline-success" onclick="readyAutoUpdateBroker(${brokerAutoUpdate.id}, this)"><i class="fa-solid fa-rocket fa-fw"></i></button>
+                <button <#if !brokerAutoUpdate.running>disabled="disabled"</#if> title="暂停" data-toggle="modal" class="btn btn-xs btn-warning" onclick="pauseAutoUpdateBroker(${brokerAutoUpdate.id}, this)"><i class="fa-solid fa-pause fa-fw"></i></button>
+                <button <#if !brokerAutoUpdate.pause>disabled="disabled"</#if> title="继续" data-toggle="modal" class="btn btn-xs btn-success" onclick="startAutoUpdateBroker(${brokerAutoUpdate.id}, this)"><i class="fa-solid fa-play fa-fw"></i></button>
+                <button <#if brokerAutoUpdate.over>disabled="disabled"</#if> title="结束" data-tooltip="true" class="btn btn-xs btn-danger" onclick="finishAutoUpdateBroker(${brokerAutoUpdate.id}, this)"><i class="fa-solid fa-stop fa-fw"></i></button>
+            </td>
+        </tr>
+    </#list>
+<#else>
+    <tr class="no_more_data"><td colspan=6 class="text-center">暂无数据</td></tr>
+</#if>

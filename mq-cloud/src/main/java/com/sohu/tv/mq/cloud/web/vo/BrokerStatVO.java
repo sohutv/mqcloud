@@ -1,8 +1,9 @@
 package com.sohu.tv.mq.cloud.web.vo;
 
 import com.sohu.tv.mq.cloud.bo.CheckStatusEnum;
-import com.sohu.tv.mq.cloud.util.MessageDelayLevel;
 import com.sohu.tv.mq.cloud.common.util.WebUtil;
+import com.sohu.tv.mq.cloud.util.MessageDelayLevel;
+import org.apache.commons.lang3.math.NumberUtils;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -21,9 +22,9 @@ public class BrokerStatVO {
     private String brokerAddr;
     // 版本
     private String version;
-    // 生成量
+    // 生产量
     private String inTps;
-    // 消息量
+    // 消费量
     private String outTps;
     // 监控结果 正常-异常
     private int checkStatus;
@@ -75,6 +76,11 @@ public class BrokerStatVO {
     private String consumerSize;
     private String producerConnectionSize;
     private String consumerConnectionSize;
+
+    // 生产量不包含系统topic
+    private String inCountWithoutSystemTopic;
+    // 消费量不包含系统topic
+    private String outCountWithoutSystemTopic;
 
     public Map<String, String> getInfo() {
         return info;
@@ -293,6 +299,22 @@ public class BrokerStatVO {
 
     public void setConsumerConnectionSize(String consumerConnectionSize) {
         this.consumerConnectionSize = consumerConnectionSize;
+    }
+
+    public String getInCountWithoutSystemTopic() {
+        return inCountWithoutSystemTopic;
+    }
+
+    public void setInCountWithoutSystemTopic(String inCountWithoutSystemTopic) {
+        this.inCountWithoutSystemTopic = inCountWithoutSystemTopic;
+    }
+
+    public String getOutCountWithoutSystemTopic() {
+        return outCountWithoutSystemTopic;
+    }
+
+    public void setOutCountWithoutSystemTopic(String outCountWithoutSystemTopic) {
+        this.outCountWithoutSystemTopic = outCountWithoutSystemTopic;
     }
 
     public class DelayQueue {
