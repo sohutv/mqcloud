@@ -6,7 +6,7 @@
 	<parent>
 		<groupId>com.sohu.tv</groupId>
 		<artifactId>mq</artifactId>
-		<version>5.1.2</version>
+		<version>5.1.3-SNAPSHOT</version>
 	</parent>
 
 	<artifactId>mq-cloud-common</artifactId>
