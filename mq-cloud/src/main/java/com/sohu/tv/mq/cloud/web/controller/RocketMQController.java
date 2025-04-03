@@ -15,6 +15,7 @@ import org.apache.commons.lang3.math.NumberUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletRequest;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -50,32 +51,16 @@ public class RocketMQController {
     @RequestMapping("/nsaddr-{clusterId}")
     public String nsaddr(@PathVariable int clusterId,
                          @RequestParam(value = "clientGroup", required = false) String clientGroup,
-                         @RequestParam(value = "protocol", required = false) Integer protocol) throws Exception {
+                         @RequestParam(value = "protocol", required = false) Integer protocol,
+                         HttpServletRequest request) throws Exception {
         // 测试环境禁止访问线上sohu
         if (mqCloudConfigHelper.isTestOnlineSohu()) {
             throw new IllegalAccessException("test online sohu route is forbidden");
         }
         // 优先使用mqcloud配置的nsaddr
-        if (StringUtils.isNotEmpty(clientGroup)) {
-            if (mqCloudConfigHelper.getClientGroupNSConfig() != null) {
-                String config = mqCloudConfigHelper.getClientGroupNSConfig().get(clientGroup);
-                if (config != null) {
-                    try {
-                        // 如果是数字，表示是集群id
-                        clusterId = Integer.parseInt(config);
-                        return getNameServerAddr(clusterId);
-                    } catch (NumberFormatException e) {
-                        // 如果不是数字，检测是否是ns地址
-                        if (config.contains(":")) {
-                            return config;
-                        } else if (config.startsWith("proxy-")) {
-                            // 如果是proxy-开头，表示是proxy集群
-                            String[] configArray = config.split("-");
-                            return getProxyAddr(NumberUtils.toInt(configArray[1]));
-                        }
-                    }
-                }
-            }
+        String customNameServerAddr = getCustomNameServerAddr(clientGroup);
+        if (customNameServerAddr != null) {
+            return customNameServerAddr;
         }
         // 判断是否是proxy-remoting协议
         if (protocol != null) {
@@ -83,17 +68,45 @@ public class RocketMQController {
                 return getProxyAddr(clusterId);
             }
         }
-        return getNameServerAddr(clusterId);
+        return getOKNameServerAddr(clusterId);
     }
 
     /**
-     * 获取ns地址列表
+     * 获取自定义ns地址
+     */
+    private String getCustomNameServerAddr(String clientGroup) {
+        if (StringUtils.isEmpty(clientGroup) || mqCloudConfigHelper.getClientGroupNSConfig() == null) {
+            return null;
+        }
+        String config = mqCloudConfigHelper.getClientGroupNSConfig().get(clientGroup);
+        if (config == null) {
+            return null;
+        }
+        try {
+            // 如果是数字，表示是集群id
+            int clusterId = Integer.parseInt(config);
+            return getOKNameServerAddr(clusterId);
+        } catch (NumberFormatException e) {
+            // 如果不是数字，检测是否是ns地址
+            if (config.contains(":")) {
+                return config;
+            } else if (config.startsWith("proxy-")) {
+                // 如果是proxy-开头，表示是proxy集群
+                String[] configArray = config.split("-");
+                return getProxyAddr(NumberUtils.toInt(configArray[1]));
+            }
+        }
+        return null;
+    }
+
+    /**
+     * 获取OK的ns地址列表
      *
      * @param clusterId
      * @return
      */
-    private String getNameServerAddr(int clusterId) {
-        Result<List<NameServer>> result = nameServerService.query(clusterId);
+    private String getOKNameServerAddr(int clusterId) {
+        Result<List<NameServer>> result = nameServerService.queryOK(clusterId);
         return Jointer.BY_SEMICOLON.join(result.getResult(), ns -> ns.getAddr());
     }
 
@@ -104,7 +117,7 @@ public class RocketMQController {
      * @return
      */
     private String getProxyAddr(int clusterId) {
-        Result<List<Proxy>> proxyListResult = proxyService.query(clusterId);
+        Result<List<Proxy>> proxyListResult = proxyService.queryOK(clusterId);
         return Jointer.BY_SEMICOLON.join(proxyListResult.getResult(), proxy -> proxy.getAddr());
     }
 
@@ -137,5 +150,29 @@ public class RocketMQController {
             orderTopicConfig.put(topic, kvConfig);
         }
         return Result.getResult(orderTopicConfig);
+    }
+
+    /**
+     * broker name server地址
+     */
+    @ResponseBody
+    @RequestMapping("/bknsaddr-{clusterId}")
+    public String bknsaddr(@PathVariable int clusterId) throws Exception {
+        // 测试环境禁止访问线上sohu
+        if (mqCloudConfigHelper.isTestOnlineSohu()) {
+            throw new IllegalAccessException("test online sohu route is forbidden");
+        }
+        return getNameServerAddr(clusterId);
+    }
+
+    /**
+     * 获取ns地址列表
+     *
+     * @param clusterId
+     * @return
+     */
+    private String getNameServerAddr(int clusterId) {
+        Result<List<NameServer>> result = nameServerService.query(clusterId);
+        return Jointer.BY_SEMICOLON.join(result.getResult(), ns -> ns.getAddr());
     }
 }

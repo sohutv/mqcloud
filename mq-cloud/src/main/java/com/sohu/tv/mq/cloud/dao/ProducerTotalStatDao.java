@@ -1,6 +1,8 @@
 package com.sohu.tv.mq.cloud.dao;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Insert;
@@ -20,10 +22,10 @@ public interface ProducerTotalStatDao {
      * 插入记录
      */
     @Options(useGeneratedKeys = true, keyProperty = "s.id")
-    @Insert("<script>insert into producer_total_stat(producer,client,percent90,percent99,"
+    @Insert("<script>insert into producer_total_stat(producer,client,ip,percent90,percent99,"
             + "avg,count,stat_time,create_date,create_time"
             + "<if test=\"s.exception != null\">,exception</if>"
-            + ") values(#{s.producer},#{s.client},#{s.percent90},#{s.percent99},#{s.avg},#{s.count},#{s.statTime},"
+            + ") values(#{s.producer},#{s.client},#{s.ip},#{s.percent90},#{s.percent99},#{s.avg},#{s.count},#{s.statTime},"
             + "#{s.createDate},#{s.createTime}"
             + "<if test=\"s.exception != null\">,#{s.exception}</if>"
             + ")</script>")
@@ -69,8 +71,16 @@ public interface ProducerTotalStatDao {
     /**
      * 根据时间和client查询
      */
-    @Select("select distinct producer from producer_total_stat where create_date = #{createDate} and client like '${client}%'")
+    @Select("select distinct producer from producer_total_stat where create_date = #{createDate} and ip like '${client}%'")
     public List<String> selectProducerList(@Param("client")String client, @Param("createDate")int createDate);
+
+    /**
+     * 根据时间和ip查询
+     */
+    @Select("<script>select ip, producer from producer_total_stat where create_date = #{createDate} and ip in "
+            + "<foreach collection=\"ips\" item=\"ip\" separator=\",\" open=\"(\" close=\")\">#{ip}</foreach> "
+            + "group by ip</script>")
+    public List<ProducerTotalStat> selectByDateAndIp(@Param("createDate")int createDate, @Param("ips") Set<String> ips);
     
     /**
      * 查看producer是否存在

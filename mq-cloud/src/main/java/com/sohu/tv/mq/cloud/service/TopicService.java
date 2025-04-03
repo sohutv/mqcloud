@@ -547,19 +547,18 @@ public class TopicService {
         return mqAdminTemplate.execute(new MQAdminCallback<Result<?>>() {
             public Result<?> callback(MQAdminExt mqAdmin) throws Exception {
                 long start = System.currentTimeMillis();
-                Set<String> masterSet = CommandUtil.fetchMasterAddrByClusterName(mqAdmin, mqCluster.getName());
-                mqAdmin.deleteTopicInBroker(masterSet, topic);
+                mqAdmin.deleteTopic(topic, mqCluster.getName());
                 long end = System.currentTimeMillis();
-                logger.info("delete topic use:{}ms,topic:{},broker:{}", (end- start), topic, masterSet);
-                mqAdmin.deleteTopicInNameServer(null, topic);
-                logger.info("delete topic use:{}ms,topic:{} in namesrv", (System.currentTimeMillis() - end), topic);
+                logger.info("delete topic use:{}ms, topic:{}, cluster:{}", (end - start), topic, mqCluster.getName());
                 return Result.getOKResult();
             }
+
             @Override
             public Result<?> exception(Exception e) throws Exception {
                 logger.error("delete topic:{} err:{}", topic, e.getMessage());
                 return Result.getWebErrorResult(e);
             }
+
             public Cluster mqCluster() {
                 return mqCluster;
             }

@@ -15,6 +15,8 @@ public class ProducerTotalStat {
     private String producer;
     // client
     private String client;
+    // ip
+    private String ip;
     // 百分之90
     private int percent90;
     // 百分之99
@@ -150,6 +152,14 @@ public class ProducerTotalStat {
 
     public void setTotalException(String totalException) {
         this.totalException = totalException;
+    }
+
+    public String getIp() {
+        return ip;
+    }
+
+    public void setIp(String ip) {
+        this.ip = ip;
     }
 
     @Override

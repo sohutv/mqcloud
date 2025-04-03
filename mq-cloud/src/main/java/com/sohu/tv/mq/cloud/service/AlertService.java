@@ -1,20 +1,5 @@
 package com.sohu.tv.mq.cloud.service;
 
-import java.io.StringWriter;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.stereotype.Service;
-
 import com.sohu.tv.mq.cloud.bo.Audit.TypeEnum;
 import com.sohu.tv.mq.cloud.bo.User;
 import com.sohu.tv.mq.cloud.bo.UserWarn.WarnType;
@@ -22,9 +7,17 @@ import com.sohu.tv.mq.cloud.common.service.MailSender;
 import com.sohu.tv.mq.cloud.common.service.SmsSender;
 import com.sohu.tv.mq.cloud.util.Jointer;
 import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper;
-
 import freemarker.template.Configuration;
 import freemarker.template.Template;
+import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.stereotype.Service;
+
+import java.io.StringWriter;
+import java.util.*;
 
 /**
  * 报警服务，从配置文件获取配置
@@ -246,12 +239,7 @@ public class AlertService {
             // 发送手机预警
             sendWarnPhone(users, warnType, param);
             // 保存预警信息
-            Object obj = param.get("resource");
-            String resource = warnType.getName();
-            if (obj != null) {
-                resource = obj.toString();
-            }
-            userWarnService.save(users, warnType, resource, warnContent);
+            userWarnService.save(users, warnType, param, warnContent);
             return true;
         } catch (Exception e) {
             logger.error("sendWarnMail error type:{}, param:{}", warnType, param, e);
@@ -297,16 +285,23 @@ public class AlertService {
      */
     public boolean sendWarnPhone(WarnType warnType, Map<String, Object> param, Collection<String> phones) {
         try {
-            Template template = configuration.getTemplate("phone/" + warnType.getWarnTemplate());
-            StringWriter stringWriter = new StringWriter();
-            param.put("newLine", "\n");
-            template.process(param, stringWriter);
-            String warnContent = stringWriter.toString();
+            String warnContent = buildWarnContent(warnType, param);
             sendPhone(warnType.getName(), warnContent, phones);
             return true;
         } catch (Exception e) {
             logger.warn("sendWarnPhone error type:{}, param:{}, error:{}", warnType, param, e.toString());
         }
         return false;
+    }
+
+    /**
+     * 构建警告内容
+     */
+    public String buildWarnContent(WarnType warnType, Map<String, Object> param) throws Exception {
+        Template template = configuration.getTemplate("phone/" + warnType.getWarnTemplate());
+        StringWriter stringWriter = new StringWriter();
+        param.put("newLine", "\n");
+        template.process(param, stringWriter);
+        return stringWriter.toString();
     }
 }

@@ -61,7 +61,7 @@ public class AdminClusterController extends AdminViewController {
     @RequestMapping("/list")
     public String list(@RequestParam(name = "cid", required = false) Integer cid, Map<String, Object> map) {
         setView(map, "list");
-        Cluster mqCluster = getMQCluster(cid);
+        Cluster mqCluster = clusterService.getOrDefaultMQCluster(cid);
         if (mqCluster == null) {
             return view();
         }
@@ -138,7 +138,7 @@ public class AdminClusterController extends AdminViewController {
     @RequestMapping(value = "/nowrite", method = RequestMethod.POST)
     public Result<?> nowrite(UserInfo ui, @RequestParam(name = "cid") Integer cid,
             @RequestParam(name = "addr") String addr) {
-        Cluster mqCluster = getMQCluster(cid);
+        Cluster mqCluster = clusterService.getOrDefaultMQCluster(cid);
         logger.warn("nowrite {}:{}, user:{}", mqCluster, addr, ui);
         Result<Broker> brokerResult = brokerService.queryBroker(cid, addr);
         if (brokerResult.isNotOK()) {
@@ -159,7 +159,7 @@ public class AdminClusterController extends AdminViewController {
     @RequestMapping(value = "/resume/write", method = RequestMethod.POST)
     public Result<?> resumeWrite(UserInfo ui, @RequestParam(name = "cid") Integer cid,
                              @RequestParam(name = "addr") String addr) {
-        Cluster mqCluster = getMQCluster(cid);
+        Cluster mqCluster = clusterService.getOrDefaultMQCluster(cid);
         logger.warn("resumeWrite {}:{}, user:{}", mqCluster, addr, ui);
         Result<Broker> brokerResult = brokerService.queryBroker(cid, addr);
         if (brokerResult.isNotOK()) {
@@ -285,17 +285,6 @@ public class AdminClusterController extends AdminViewController {
 
     private String removeFromMap(HashMap<String, String> map, String key) {
         return map.remove(key);
-    }
-
-    private Cluster getMQCluster(Integer cid) {
-        Cluster mqCluster = null;
-        if (cid != null) {
-            mqCluster = clusterService.getMQClusterById(cid);
-        }
-        if (mqCluster == null && clusterService.getAllMQCluster() != null) {
-            mqCluster = clusterService.getAllMQCluster()[0];
-        }
-        return mqCluster;
     }
 
     private String formatTraffic(String value) {
@@ -435,7 +424,7 @@ public class AdminClusterController extends AdminViewController {
         brokerStatVO.setConsumerConnectionSize(removeFromMap(stats, "consumerConnectionSize"));
 
         // 不包含系统topic的生产消费量
-        String putStats = removeFromMap(stats, "brokerPutStatsWithoutSystemTopic");
+        String putStats = removeFromMap(stats, "brokerPutStatsFromExternal");
         if (putStats != null) {
             String[] putStatsArray = putStats.split(" ");
             if (putStatsArray.length == 2) {

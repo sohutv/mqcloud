@@ -1,0 +1,22 @@
+<#if response.notEmpty>
+    <#list response.result as clientConnectionInfo>
+		<#list clientConnectionInfo.connectionInfoList as connectionInfo>
+            <tr>
+                <#if connectionInfo_index == 0>
+                <td rowspan=${clientConnectionInfo.connectionInfoListSize}>${clientConnectionInfo_index + 1}</td>
+                <td rowspan=${clientConnectionInfo.connectionInfoListSize}>
+                    <a target="_blank" href="${request.contextPath}/${connectionInfo.role}/detail?${connectionInfo.role}=${clientConnectionInfo.client}">
+                        ${clientConnectionInfo.client}
+                    </a>
+                </td>
+                </#if>
+				<td title="${connectionInfo.clientId}" data-tooltip="true" style="padding-left: 0.75rem;">${connectionInfo.remoteAddr}</td>
+				<td>${connectionInfo.language}</td>
+				<td>${connectionInfo.versionDesc}</td>
+				<td>${connectionInfo.lastUpdateTimestampReadable}</td>
+			</tr>
+		</#list>
+    </#list>
+<#else>
+	<tr class="no_more_data"><td colspan=6 class="text-center">暂无数据</td></tr>
+</#if>

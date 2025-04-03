@@ -157,7 +157,7 @@ public class AdminBrokerController extends AdminViewController {
             }
 
             public Cluster mqCluster() {
-                return getMQCluster(cid);
+                return clusterService.getOrDefaultMQCluster(cid);
             }
         });
         if (brokerListResult.isEmpty()) {
@@ -378,17 +378,6 @@ public class AdminBrokerController extends AdminViewController {
         }
         brokerConfigVO.setBrokerConfigGroups(sortBrokerConfigGroupVOColletion(groupMap.values()));
         return brokerConfigVO;
-    }
-
-    private Cluster getMQCluster(Integer cid) {
-        Cluster mqCluster = null;
-        if (cid != null) {
-            mqCluster = clusterService.getMQClusterById(cid);
-        }
-        if (mqCluster == null && clusterService.getAllMQCluster() != null) {
-            mqCluster = clusterService.getAllMQCluster()[0];
-        }
-        return mqCluster;
     }
 
     /**
@@ -714,8 +703,8 @@ public class AdminBrokerController extends AdminViewController {
      */
     @ResponseBody
     @PostMapping(value = "/autoUpdate/add")
-    public Result<?> autoUpdateAdd(@RequestParam(name = "cid") int cid, Map<String, Object> map) {
-        Result<?> result = clusterBrokerAutoUpdateService.save(cid);
+    public Result<?> autoUpdateAdd(@RequestParam(name = "cid") int cid, @RequestParam(name = "action") int action) {
+        Result<?> result = clusterBrokerAutoUpdateService.save(cid, action);
         return Result.getWebResult(result);
     }
 

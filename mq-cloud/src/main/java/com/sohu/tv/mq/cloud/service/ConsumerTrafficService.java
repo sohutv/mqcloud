@@ -3,6 +3,7 @@ package com.sohu.tv.mq.cloud.service;
 import java.util.Date;
 import java.util.List;
 
+import org.apache.rocketmq.common.Pair;
 import org.apache.rocketmq.common.stats.Stats;
 import org.apache.rocketmq.tools.admin.MQAdminExt;
 import org.slf4j.Logger;
@@ -71,14 +72,17 @@ public class ConsumerTrafficService extends TrafficService<ConsumerTraffic> {
      * @param mqCluster
      * @return topic size
      */
-    public int collectTraffic(Cluster mqCluster) {
+    public Pair<Integer, Integer> collectTraffic(Cluster mqCluster) {
+        // 第一个参数表示topic size，第二个参数表示收集失败的数量
+        Pair<Integer, Integer> pair = new Pair<>(0, 0);
         Result<List<Consumer>> consumerListResult = consumerService.queryConsumerList(mqCluster);
         if (consumerListResult.isEmpty()) {
             logger.warn("cannot get consumer list for cluster:{}", mqCluster);
-            return 0;
+            return pair;
         }
         String time = DateUtil.getFormatNow(DateUtil.HHMM);
         List<Consumer> consumerList = consumerListResult.getResult();
+        pair.setObject1(consumerList.size());
         mqAdminTemplate.execute(new DefaultInvoke() {
             public void invoke(MQAdminExt mqAdmin) {
                 for (Consumer consumer : consumerList) {
@@ -86,7 +90,10 @@ public class ConsumerTrafficService extends TrafficService<ConsumerTraffic> {
                     ConsumerTraffic consumerTraffic = new ConsumerTraffic();
                     consumerTraffic.setCreateTime(time);
                     consumerTraffic.setClusterId(mqCluster().getId());
-                    fetchTraffic(mqAdmin, consumer.getTopicName(), statKey, consumerTraffic);
+                    boolean hasFetchError = fetchTraffic(mqAdmin, consumer.getTopicName(), statKey, consumerTraffic);
+                    if (hasFetchError) {
+                        pair.setObject2(pair.getObject2() + 1);
+                    }
                     // 有数据才保存
                     if (consumerTraffic.getCount() != 0 || consumerTraffic.getSize() != 0) {
                         consumerTraffic.setConsumerId(consumer.getId());
@@ -101,7 +108,7 @@ public class ConsumerTrafficService extends TrafficService<ConsumerTraffic> {
         });
         // 保存broker流量
         brokerTrafficService.saveConsumeBrokerTraffic(time, mqCluster.getId());
-        return consumerList.size();
+        return pair;
     }
 
     /**

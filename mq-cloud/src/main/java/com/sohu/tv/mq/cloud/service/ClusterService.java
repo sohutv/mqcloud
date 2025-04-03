@@ -1,21 +1,19 @@
 package com.sohu.tv.mq.cloud.service;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Properties;
-
-import javax.annotation.PostConstruct;
-
+import com.sohu.tv.mq.cloud.bo.Cluster;
+import com.sohu.tv.mq.cloud.dao.ClusterDao;
+import com.sohu.tv.mq.cloud.util.Result;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import com.sohu.tv.mq.cloud.bo.Cluster;
-import com.sohu.tv.mq.cloud.dao.ClusterDao;
-import com.sohu.tv.mq.cloud.util.Result;
+import javax.annotation.PostConstruct;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Properties;
 
 /**
  * 集群服务
@@ -122,6 +120,13 @@ public class ClusterService {
             }
         }
         return null;
+    }
+
+    public Cluster getOrDefaultMQCluster(Integer id) {
+        if (id == null) {
+            return mqClusterArray == null ? null : mqClusterArray[0];
+        }
+        return getMQClusterById(id);
     }
     
     /**

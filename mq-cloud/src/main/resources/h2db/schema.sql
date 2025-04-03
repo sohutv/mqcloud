@@ -333,6 +333,7 @@ CREATE TABLE IF NOT EXISTS `producer_total_stat` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `producer` varchar(255) NOT NULL COMMENT 'producer',
   `client` varchar(100) NOT NULL COMMENT 'client',
+  `ip` varchar(100) NOT NULL COMMENT 'ip',
   `percent90` int(11) NOT NULL COMMENT '耗时百分位90',
   `percent99` int(11) NOT NULL COMMENT '耗时百分位99',
   `avg` double NOT NULL COMMENT '平均耗时',
@@ -531,6 +532,7 @@ CREATE TABLE IF NOT EXISTS `name_server` (
   `check_status` tinyint(4) DEFAULT 0 COMMENT '检测结果:0:未知,1:正常,2:异常',
   `check_time` datetime COMMENT '检测时间',
   `base_dir` varchar(360) DEFAULT '/opt/mqcloud/ns' COMMENT '安装路径',
+  `status` tinyint(4) DEFAULT 0 COMMENT '状态:0:正常,1:流量剔除',
   UNIQUE KEY `ns_cid` (`cid`,`addr`)
 );
 
@@ -810,6 +812,7 @@ CREATE TABLE IF NOT EXISTS `proxy` (
     `cid`          int(11) NOT NULL COMMENT '集群id',
     `addr`         varchar(255) NOT NULL COMMENT 'proxy grpc 地址',
     `create_time`  timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `status`       tinyint(4) default 0 comment '状态:0:正常,1:流量剔除',
     `check_status` tinyint(4) DEFAULT 0 COMMENT '检测结果:0:未知,1:正常,2:异常',
     `check_time`   datetime COMMENT '检测时间',
     `base_dir`     varchar(360) DEFAULT '/opt/mqcloud/proxy' COMMENT '安装路径',

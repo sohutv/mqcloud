@@ -19,6 +19,8 @@
    * 【可选】keys:  key
    * 【可选】orderId：发送顺序消息id，将用该参数定位消息发往的队列，定位方法采用orderId.hash%队列数
      例如，同一个订单的消息如果想保障顺序，orderId可以传订单id。
+   * 【可选】delayLevel：延时消息的延迟级别，取值为1~18，对应的含义请参考[延迟消息](clientProducer#delay)
+   * 【可选】deliveryTimestamp：定时消息的递交时间戳（需要保留到毫秒），对应的含义请参考[定时消息](clientProducer#timerWheel)
 
 3. 响应说明：
 
@@ -92,11 +94,77 @@
    </script>
    ```
 
-   ​
+## 三、<span id="batchProduce">批量生产接入</span>
+1. 接口：
+   ```
+   POST http://${httpProducerUriPrefix}/mq/produce/batch
+   ```
+2. 参数：
+   * 【必选】producer: 在MQCloud申请的生产者名称
+   * 【必选】messages: json格式的数组消息，例如：
+     ```
+     [{"id": "123","title": "video"},"only text"]
+     ```
+     如上所示，json数组内为一条一条的消息，消息可以为json或字符串等格式。
+3. 响应说明：
+   当全部发送成功时，返回如下响应：
+   ```
+   {
+       "status": 200,
+   }
+   ```
+   当发送出现失败时，返回类似如下响应：
+   ```
+   {
+       "status": 500,
+       "message": "some messages failed to send",
+       "result": [
+           {
+               "status": 400,
+               "message": "message body too long:4194304"
+           },
+           {
+               "status": 200
+           }
+       ]
+   }
+   ```
+   只需要检测`status`字段的值，如果不是200，就表明发送失败了。
 
+   另外，响应中如果没有`result`字段，表示消息全部发送失败了。
 
+   如果存在`result`字段，可以解析该数组，其中每个结果的下标与发送的消息下标相对应，根据每个结果的`status`字段，可以知道哪条消息发送失败了，以便进行重发，例如发送的消息和响应如下：
 
-## 三、<span id="consumer">消费接入</span>
+   ```
+   假如messages参数如下：
+   [
+     {
+       "id": "123",
+       "title": "video"
+     },
+     "only text"
+   ]
+   响应如下：
+   {
+       "status": 500,
+       "message": "some messages failed to send",
+       "result": [
+           {
+               "status": 400,
+               "message": "java.util.concurrent.TimeoutException"
+           },
+           {
+               "status": 200
+           }
+       ]
+   }
+   总体的status为非200，表示整体发送失败，但是可能部分发送成功，需要解析result数组。
+   result数组第一个结果status为400，代表第一条消息:{"id": "123","title": "video"}发送失败了。
+   第二个结果的status为200，代表第二条消息:"only text"发送成功了。
+   ```
+   另外，单条消息最大为4M，超过后将发送失败。
+
+## 四、<span id="consumer">消费接入</span>
 
 1. 消息消费接口：
 
@@ -281,5 +349,3 @@
    ```
 
    广播模式消费与集群模式唯一的区别是需要额外传递一个参数`clientId`，不同的clientId将消费全量消息。
-
-   ​

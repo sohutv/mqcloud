@@ -3,6 +3,7 @@ package com.sohu.tv.mq.cloud.service;
 import com.sohu.tv.mq.cloud.bo.Broker;
 import com.sohu.tv.mq.cloud.bo.BrokerAutoUpdate;
 import com.sohu.tv.mq.cloud.bo.BrokerAutoUpdateStep;
+import com.sohu.tv.mq.cloud.bo.BrokerAutoUpdateStepBuilder;
 import com.sohu.tv.mq.cloud.bo.UserWarn.WarnType;
 import com.sohu.tv.mq.cloud.service.action.BrokerActionChooser;
 import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper;
@@ -60,7 +61,7 @@ public class ClusterBrokerAutoUpdateService {
     /**
      * 保存自动更新
      */
-    public Result<?> save(int cid) {
+    public Result<?> save(int cid, int action) {
         // 查询broker
         Result<List<Broker>> brokerListResult = brokerService.query(cid);
         if (brokerListResult.isEmpty()) {
@@ -81,8 +82,10 @@ public class ClusterBrokerAutoUpdateService {
             if (undoneResult.isNotEmpty()) {
                 return Result.getResult(Status.DB_ERROR).setMessage("存在未完成的任务");
             }
+            // 构建自动更新步骤
+            List<BrokerAutoUpdateStep> steps = BrokerAutoUpdateStepBuilder.build(brokerListResult.getResult(), action);
             // 保存BrokerAutoUpdate
-            Result<?> result = brokerAutoUpdateService.save(cid, toBrokerAutoUpdateStep(brokerListResult.getResult()));
+            Result<?> result = brokerAutoUpdateService.save(cid, steps);
             if (result.isNotOK()) {
                 return result;
             }
@@ -90,90 +93,6 @@ public class ClusterBrokerAutoUpdateService {
         } finally {
             lockOptional.get().unlock();
         }
-    }
-
-    /**
-     * 分组broker
-     */
-    private List<BrokerAutoUpdateStep> toBrokerAutoUpdateStep(List<Broker> brokerList) {
-        Map<String, List<Broker>> brokerMap = groupBroker(brokerList);
-        // 转换为BrokerAutoUpdateStep
-        List<BrokerAutoUpdateStep> steps = new ArrayList<>();
-        for (List<Broker> brokerGroup : brokerMap.values()) {
-            // 如果只有一个broker, 则可以直接更新
-            if (brokerGroup.size() == 1) {
-                addSingleBrokerUpdateStep(steps, brokerGroup.get(0));
-            } else {
-                // 如果全部是slave，则直接更新
-                if (!brokerGroup.get(0).isMaster()) {
-                    for (Broker broker : brokerGroup) {
-                        addCommonBrokerUpdateStep(steps, broker);
-                    }
-                } else {
-                    addBrokerUpdateStepWithMaster(steps, brokerGroup);
-                }
-            }
-        }
-        return steps;
-    }
-
-    /**
-     * 添加有master的broker的更新步骤
-     */
-    private void addBrokerUpdateStepWithMaster(List<BrokerAutoUpdateStep> steps, List<Broker> brokers) {
-        Broker master = brokers.get(0);
-        // master停写
-        steps.add(BrokerAutoUpdateStep.build(steps.size(), master, STOP_WRITE));
-        // 更新所有slave
-        for (int i = 1; i < brokers.size(); ++i) {
-            addCommonBrokerUpdateStep(steps, brokers.get(i));
-        }
-        // master取消注册
-        steps.add(BrokerAutoUpdateStep.build(steps.size(), master, UNREGISTER));
-        // master更新
-        addCommonBrokerUpdateStep(steps, master);
-        // master注册
-        steps.add(BrokerAutoUpdateStep.build(steps.size(), master, REGISTER));
-        // master恢复写入
-        steps.add(BrokerAutoUpdateStep.build(steps.size(), master, RECOVER_WRITE));
-    }
-
-    /**
-     * 添加单个broker的更新步骤
-     */
-    private void addSingleBrokerUpdateStep(List<BrokerAutoUpdateStep> steps, Broker broker) {
-        if (broker.isMaster()) {
-            steps.add(BrokerAutoUpdateStep.build(steps.size(), broker, STOP_WRITE));
-        }
-        addCommonBrokerUpdateStep(steps, broker);
-        if (broker.isMaster()) {
-            steps.add(BrokerAutoUpdateStep.build(steps.size(), broker, RECOVER_WRITE));
-        }
-    }
-
-    /**
-     * 添加通用的broker的更新步骤
-     */
-    private void addCommonBrokerUpdateStep(List<BrokerAutoUpdateStep> steps, Broker broker) {
-        steps.add(BrokerAutoUpdateStep.build(steps.size(), broker, SHUTDOWN));
-        steps.add(BrokerAutoUpdateStep.build(steps.size(), broker, BACKUP_DATA));
-        steps.add(BrokerAutoUpdateStep.build(steps.size(), broker, DOWNLOAD));
-        steps.add(BrokerAutoUpdateStep.build(steps.size(), broker, UNZIP));
-        steps.add(BrokerAutoUpdateStep.build(steps.size(), broker, RECOVER_DATA));
-        steps.add(BrokerAutoUpdateStep.build(steps.size(), broker, START));
-    }
-
-    /**
-     * 分组broker
-     */
-    private Map<String, List<Broker>> groupBroker(List<Broker> brokerList) {
-        Map<String, List<Broker>> brokerMap = new TreeMap<>();
-        for (Broker broker : brokerList) {
-            brokerMap.computeIfAbsent(broker.getBrokerName(), k -> new ArrayList<>()).add(broker);
-        }
-        // 每组broker按照brokerID排序
-        brokerMap.values().forEach(brokers -> brokers.sort(Comparator.comparing(Broker::getBrokerID)));
-        return brokerMap;
     }
 
     /**

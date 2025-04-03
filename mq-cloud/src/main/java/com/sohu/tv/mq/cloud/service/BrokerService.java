@@ -532,11 +532,11 @@ public class BrokerService {
     }
 
     /**
-     * 查看broker统计数据，不包括内置topic
+     * 查看broker统计数据，只包括外部流量
      */
     public Result<BrokerStatsData> viewBrokerPutStats(int cid, String brokerAddr) {
         Cluster cluster = clusterService.getMQClusterById(cid);
-        return viewBrokerStatsData(cluster, brokerAddr, "BROKER_PUT_NUMS_WITHOUT_SYSTEM_TOPIC", cluster.getName());
+        return viewBrokerStatsData(cluster, brokerAddr, "BROKER_PUT_NUMS_FROM_EXTERNAL", cluster.getName());
     }
 
     /**

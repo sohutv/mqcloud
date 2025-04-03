@@ -1,11 +1,9 @@
 package com.sohu.tv.mq.cloud.mq;
 
 import com.sohu.tv.mq.cloud.bo.Cluster;
-import com.sohu.tv.mq.cloud.bo.Proxy;
 import com.sohu.tv.mq.cloud.common.mq.SohuMQAdmin;
 import com.sohu.tv.mq.cloud.service.ProxyService;
 import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper;
-import com.sohu.tv.mq.cloud.util.Result;
 import com.sohu.tv.mq.util.MQProtocol;
 import org.apache.rocketmq.acl.common.AclClientRPCHook;
 import org.apache.rocketmq.acl.common.SessionCredentials;
@@ -13,9 +11,7 @@ import org.apache.rocketmq.common.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.stream.Collectors;
 
 /**
  * sohu mq proxy admin 工厂

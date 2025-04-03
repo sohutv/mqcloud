@@ -1,0 +1,11 @@
+<#if response.notEmpty>
+    <#list response.result as conn>
+        <tr>
+            <td>${conn_index + 1}</td>
+            <td style="padding-left: 0.75rem;">${conn.addr}</td>
+            <td class="text-wrap">${conn.name!}</td>
+        </tr>
+    </#list>
+<#else>
+    <tr class="no_more_data"><td colspan=3 class="text-center">暂无数据</td></tr>
+</#if>

@@ -21,7 +21,7 @@ public class ClusterBrokerAutoUpdateServiceTest {
     @Test
     public void testSave() {
         int cid = clusterService.queryAll().getResult().get(0).getId();
-        Result<?> result = clusterBrokerAutoUpdateService.save(cid);
+        Result<?> result = clusterBrokerAutoUpdateService.save(cid, 0);
         Assert.assertTrue(result.isOK());
     }
 

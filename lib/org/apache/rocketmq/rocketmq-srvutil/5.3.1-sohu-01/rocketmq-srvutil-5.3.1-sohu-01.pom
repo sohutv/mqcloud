@@ -19,7 +19,7 @@
     <parent>
         <groupId>org.apache.rocketmq</groupId>
         <artifactId>rocketmq-all</artifactId>
-        <version>5.1.1-sohu-03</version>
+        <version>5.3.1-sohu-01</version>
     </parent>
 
     <modelVersion>4.0.0</modelVersion>

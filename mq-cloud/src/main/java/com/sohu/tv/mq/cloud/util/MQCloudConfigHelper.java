@@ -210,6 +210,17 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware, Comm
     // cluster store警告配置
     private List<Map<String, Integer>> clusterStoreWarnConfig;
 
+    // mqcloud的server列表
+    private Set<String> mqcloudServers;
+
+    // 发送预警到外部的消费者
+    private Set<String> consumersForSendWarnToOut;
+
+    // 登录类
+    private String loginClass;
+    // 用户警告服务类
+    private String userWarnServiceClass;
+
     @Autowired
     private CommonConfigService commonConfigService;
 
@@ -809,6 +820,37 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware, Comm
         return pauseAudit != null && pauseAudit;
     }
 
+    public String getLoginClass() {
+        return loginClass;
+    }
+
+    public void setLoginClass(String loginClass) {
+        this.loginClass = loginClass;
+    }
+
+    public String getUserWarnServiceClass() {
+        return userWarnServiceClass;
+    }
+
+    public void setUserWarnServiceClass(String userWarnServiceClass) {
+        this.userWarnServiceClass = userWarnServiceClass;
+    }
+
+    public Set<String> getConsumersForSendWarnToOut() {
+        return consumersForSendWarnToOut;
+    }
+
+    public void setConsumersForSendWarnToOut(Set<String> consumersForSendWarnToOut) {
+        this.consumersForSendWarnToOut = consumersForSendWarnToOut;
+    }
+
+    public boolean isConsumersForSendWarnToOut(String consumer) {
+        if (consumersForSendWarnToOut == null) {
+            return false;
+        }
+        return consumersForSendWarnToOut.contains(consumer);
+    }
+
     /**
      * 版本号比较
      * @param v1
@@ -966,6 +1008,14 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware, Comm
         } catch (Exception e) {
             logger.warn("init error:{}", e.toString());
         }
+    }
+
+    public Set<String> getMqcloudServers() {
+        return mqcloudServers;
+    }
+
+    public void setMqcloudServers(Set<String> mqcloudServers) {
+        this.mqcloudServers = mqcloudServers;
     }
 
     @Override

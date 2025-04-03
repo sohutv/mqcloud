@@ -21,6 +21,12 @@ public interface ProxyDao {
     public List<Proxy> selectByClusterId(@Param("cid") int cid);
 
     /**
+     * 查询
+     */
+    @Select("select * from proxy where cid = #{cid} and `status` = 0")
+    public List<Proxy> selectOKByClusterId(@Param("cid") int cid);
+
+    /**
      * 查询全部
      *
      * @return
@@ -49,6 +55,12 @@ public interface ProxyDao {
      */
     @Update("update proxy set check_status = #{checkStatus}, check_time = now()  where cid = #{cid} and addr = #{addr}")
     public Integer update(@Param("cid") int cid, @Param("addr") String addr, @Param("checkStatus") int checkStatus);
+
+    /**
+     * 更新
+     */
+    @Update("update proxy set status = #{status} where cid = #{cid} and addr = #{addr}")
+    public Integer updateStatus(@Param("cid") int cid, @Param("addr") String addr, @Param("status") int status);
 
     /**
      * 删除

@@ -418,6 +418,14 @@ public class RocketMQConsumer extends AbstractConfig {
     }
 
     /**
+     * 设置消费线程数
+     */
+    public void setConsumeThread(int num) {
+        setConsumeThreadMin(num);
+        setConsumeThreadMax(num);
+    }
+
+    /**
      * 消费线程数，默认20
      * 
      * @param num

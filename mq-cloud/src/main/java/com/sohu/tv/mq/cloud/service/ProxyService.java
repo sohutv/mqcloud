@@ -1,13 +1,19 @@
 package com.sohu.tv.mq.cloud.service;
 
 import com.sohu.tv.mq.cloud.bo.CheckStatusEnum;
+import com.sohu.tv.mq.cloud.bo.ClientConnectionInfo;
 import com.sohu.tv.mq.cloud.bo.Cluster;
-import com.sohu.tv.mq.cloud.bo.Controller;
 import com.sohu.tv.mq.cloud.bo.Proxy;
-import com.sohu.tv.mq.cloud.dao.ControllerDao;
+import com.sohu.tv.mq.cloud.common.model.ClientConnectionSize;
+import com.sohu.tv.mq.cloud.common.model.ConsumerTableInfo;
 import com.sohu.tv.mq.cloud.dao.ProxyDao;
+import com.sohu.tv.mq.cloud.mq.DefaultSohuMQAdmin;
+import com.sohu.tv.mq.cloud.mq.MQAdminCallback;
+import com.sohu.tv.mq.cloud.mq.MQAdminTemplate;
 import com.sohu.tv.mq.cloud.util.Result;
 import com.sohu.tv.mq.cloud.util.Status;
+import org.apache.rocketmq.remoting.protocol.body.ProducerTableInfo;
+import org.apache.rocketmq.tools.admin.MQAdminExt;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,6 +36,12 @@ public class ProxyService {
 
     @Autowired
     private ProxyDao proxyDao;
+
+    @Autowired
+    private MQAdminTemplate mqAdminTemplate;
+
+    @Autowired
+    private ClusterService clusterService;
 
     /**
      * 保存记录
@@ -55,6 +67,20 @@ public class ProxyService {
             return Result.getResult(proxyDao.selectByClusterId(cid));
         } catch (Exception e) {
             logger.error("query cid:{} err", cid, e);
+            return Result.getDBErrorResult(e);
+        }
+    }
+
+    /**
+     * 查询集群列表
+     *
+     * @return Result<List<Proxy>>
+     */
+    public Result<List<Proxy>> queryOK(int cid) {
+        try {
+            return Result.getResult(proxyDao.selectOKByClusterId(cid));
+        } catch (Exception e) {
+            logger.error("queryOK cid:{} err", cid, e);
             return Result.getDBErrorResult(e);
         }
     }
@@ -122,5 +148,91 @@ public class ProxyService {
         } catch (Exception e) {
             return Result.getDBErrorResult(e).setMessage("addr:" + addr + ";Exception: " + e.getMessage());
         }
+    }
+
+    public Result<?> updateStatus(int cid, String addr, int status) {
+        try {
+            return Result.getResult(proxyDao.updateStatus(cid, addr, status));
+        } catch (Exception e) {
+            logger.error("updateStatus err, cid:{}, addr:{}", cid, addr, e);
+            return Result.getDBErrorResult(e);
+        }
+    }
+
+    /**
+     * 获取proxy的连接数
+     */
+    public Result<ClientConnectionSize> getClientConnectionSize(Integer cid, String addr) {
+        return mqAdminTemplate.execute(new MQAdminCallback<Result<ClientConnectionSize>>() {
+            public Result<ClientConnectionSize> callback(MQAdminExt mqAdmin) throws Exception {
+                DefaultSohuMQAdmin sohuMQAdmin = (DefaultSohuMQAdmin) mqAdmin;
+                return Result.getResult(sohuMQAdmin.getClientConnectionSize(addr));
+            }
+
+            public Result<ClientConnectionSize> exception(Exception e) throws Exception {
+                logger.error("getClientConnectionSize {} err", addr, e);
+                return Result.getDBErrorResult(e);
+            }
+
+            public Cluster mqCluster() {
+                return clusterService.getOrDefaultMQCluster(cid);
+            }
+
+            public boolean isProxyRemoting() {
+                return true;
+            }
+        });
+    }
+
+    /**
+     * 查询producer连接
+     */
+    public Result<ClientConnectionInfo> fetchAllProducerConnection(String addr, Cluster mqCluster) {
+        return mqAdminTemplate.execute(new MQAdminCallback<Result<ClientConnectionInfo>>() {
+            public Result<ClientConnectionInfo> callback(MQAdminExt mqAdmin) throws Exception {
+                DefaultSohuMQAdmin sohuMQAdmin = (DefaultSohuMQAdmin) mqAdmin;
+                ProducerTableInfo producerTableInfo = sohuMQAdmin.getAllProducerInfo(addr, true);
+                return Result.getResult(ClientConnectionInfo.build(producerTableInfo));
+            }
+
+            public Cluster mqCluster() {
+                return mqCluster;
+            }
+
+            public Result<ClientConnectionInfo> exception(Exception e) throws Exception {
+                logger.error("fetchAllProducerConnection:{} err", addr, e);
+                return Result.getDBErrorResult(e);
+            }
+
+            public boolean isProxyRemoting() {
+                return true;
+            }
+        });
+    }
+
+    /**
+     * 查询consumer连接
+     */
+    public Result<ClientConnectionInfo> fetchAllConsumerConnection(String addr, Cluster mqCluster) {
+        return mqAdminTemplate.execute(new MQAdminCallback<Result<ClientConnectionInfo>>() {
+            public Result<ClientConnectionInfo> callback(MQAdminExt mqAdmin) throws Exception {
+                DefaultSohuMQAdmin sohuMQAdmin = (DefaultSohuMQAdmin) mqAdmin;
+                ConsumerTableInfo consumerTableInfo = sohuMQAdmin.getAllConsumerInfo(addr, true);
+                return Result.getResult(ClientConnectionInfo.build(consumerTableInfo));
+            }
+
+            public Cluster mqCluster() {
+                return mqCluster;
+            }
+
+            public Result<ClientConnectionInfo> exception(Exception e) throws Exception {
+                logger.error("fetchAllConsumerConnection:{} err", addr, e);
+                return Result.getDBErrorResult(e);
+            }
+
+            public boolean isProxyRemoting() {
+                return true;
+            }
+        });
     }
 }

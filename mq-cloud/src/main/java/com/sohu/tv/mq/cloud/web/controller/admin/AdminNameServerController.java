@@ -13,10 +13,7 @@ import com.sohu.tv.mq.cloud.web.vo.UserInfo;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
@@ -46,7 +43,7 @@ public class AdminNameServerController extends AdminViewController {
     @RequestMapping("/list")
     public String list(@RequestParam(name = "cid", required = false) Integer cid, Map<String, Object> map) {
         setView(map, "list");
-        Cluster mqCluster = getMQCluster(cid);
+        Cluster mqCluster = clusterService.getOrDefaultMQCluster(cid);
         if (mqCluster == null) {
             return view();
         }
@@ -57,6 +54,11 @@ public class AdminNameServerController extends AdminViewController {
                 Result<?> healthCheckResult = nameServerService.healthCheck(mqCluster, nameServer.getAddr());
                 if (healthCheckResult.isOK()) {
                     nameServer.setCheckStatus(CheckStatusEnum.OK.getStatus());
+                    // 获取链接数量
+                    Result<String> countResult = mqDeployer.getConnectionCount(nameServer.getIp(), nameServer.getPort());
+                    if (countResult.isOK()) {
+                        nameServer.setConnectionCount(NumberUtils.toInt(countResult.getResult()));
+                    }
                 } else {
                     nameServer.setCheckStatus(CheckStatusEnum.FAIL.getStatus());
                 }
@@ -151,15 +153,33 @@ public class AdminNameServerController extends AdminViewController {
         return result;
     }
 
-    private Cluster getMQCluster(Integer cid) {
-        Cluster mqCluster = null;
-        if (cid != null) {
-            mqCluster = clusterService.getMQClusterById(cid);
-        }
-        if (mqCluster == null && clusterService.getAllMQCluster() != null) {
-            mqCluster = clusterService.getAllMQCluster()[0];
-        }
-        return mqCluster;
+    /**
+     * 连接
+     */
+    @GetMapping(value = "/connection")
+    public String connection(int cid, String ip, int port, Map<String, Object> map) {
+        setResult(map, nameServerService.getConnectionAddress(cid, ip, port));
+        return adminViewModule() + "/connection";
+    }
+
+    /**
+     * 剔除流量
+     */
+    @ResponseBody
+    @RequestMapping(value = "/unregister", method = RequestMethod.POST)
+    public Result<?> unregister(UserInfo ui, @RequestParam(name = "addr") String addr, @RequestParam(name = "cid") int cid) {
+        logger.warn("unregister:{}, user:{}", addr, ui);
+        return Result.getWebResult(nameServerService.updateStatus(cid, addr, 1));
+    }
+
+    /**
+     * 恢复流量
+     */
+    @ResponseBody
+    @RequestMapping(value = "/register", method = RequestMethod.POST)
+    public Result<?> register(UserInfo ui, @RequestParam(name = "addr") String addr, @RequestParam(name = "cid") int cid) {
+        logger.warn("register:{}, user:{}", addr, ui);
+        return Result.getWebResult(nameServerService.updateStatus(cid, addr, 0));
     }
 
     @Override

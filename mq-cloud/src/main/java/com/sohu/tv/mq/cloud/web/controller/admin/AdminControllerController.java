@@ -45,7 +45,7 @@ public class AdminControllerController extends AdminViewController {
     @RequestMapping("/list")
     public String list(@RequestParam(name = "cid", required = false) Integer cid, Map<String, Object> map) {
         setView(map, "list");
-        Cluster mqCluster = getMQCluster(cid);
+        Cluster mqCluster = clusterService.getOrDefaultMQCluster(cid);
         if (mqCluster == null) {
             return view();
         }
@@ -150,17 +150,6 @@ public class AdminControllerController extends AdminViewController {
             controllerService.save(cid, ip + ":" + port, dir);
         }
         return result;
-    }
-
-    private Cluster getMQCluster(Integer cid) {
-        Cluster mqCluster = null;
-        if (cid != null) {
-            mqCluster = clusterService.getMQClusterById(cid);
-        }
-        if (mqCluster == null && clusterService.getAllMQCluster() != null) {
-            mqCluster = clusterService.getAllMQCluster()[0];
-        }
-        return mqCluster;
     }
 
     @Override

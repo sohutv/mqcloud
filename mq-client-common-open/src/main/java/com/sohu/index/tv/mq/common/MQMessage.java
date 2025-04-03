@@ -1,9 +1,14 @@
 package com.sohu.index.tv.mq.common;
 
+import com.sohu.tv.mq.serializable.MessageSerializer;
+import com.sohu.tv.mq.util.Constant;
+import com.sohu.tv.mq.util.MQProtocol;
 import org.apache.rocketmq.client.exception.MQBrokerException;
 import org.apache.rocketmq.client.exception.MQClientException;
+import org.apache.rocketmq.client.producer.SendCallback;
 import org.apache.rocketmq.common.message.Message;
 import org.apache.rocketmq.common.message.MessageClientExt;
+import org.apache.rocketmq.common.message.MessageConst;
 import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.remoting.exception.RemotingException;
 
@@ -35,6 +40,21 @@ public class MQMessage<T> {
     private Boolean enableCircuitBreaker;
     // circuitBreaker entryResult
     private Result entryResult;
+
+    // 顺序消息参数
+    private Object orderArg;
+
+    // 异步发送回调
+    private SendCallback sendCallback;
+
+    // 是否单向发送
+    private boolean oneWay;
+
+    // 是否事务消息
+    private boolean transaction;
+
+    // 事务消息回调参数
+    private Object transactionArg;
 
     public MQMessage() {
     }
@@ -84,7 +104,9 @@ public class MQMessage<T> {
     }
 
     public MQMessage<T> setTags(String tags) {
-        innerMessage.setTags(tags);
+        if (tags != null && tags.length() > 0) {
+            innerMessage.setTags(tags);
+        }
         return this;
     }
 
@@ -210,8 +232,12 @@ public class MQMessage<T> {
 
     public static <T> MQMessage<T> build(T message) {
         MQMessage<T> mqMessage = new MQMessage<>();
-        mqMessage.setMessage(message);
-        mqMessage.innerMessage = new Message();
+        if (message instanceof Message) {
+            mqMessage.innerMessage = (Message) message;
+        } else {
+            mqMessage.setMessage(message);
+            mqMessage.innerMessage = new Message();
+        }
         mqMessage.setWaitStoreMsgOK(true);
         return mqMessage;
     }
@@ -244,6 +270,65 @@ public class MQMessage<T> {
 
     public boolean isExceptionForTest() {
         return exceptionForTest;
+    }
+
+    public MQMessage<T> setOrderArg(Object orderArg) {
+        this.orderArg = orderArg;
+        return this;
+    }
+
+    public Object getOrderArg() {
+        return orderArg;
+    }
+
+    public MQMessage<T> setSendCallback(SendCallback sendCallback) {
+        this.sendCallback = sendCallback;
+        return this;
+    }
+
+    public SendCallback getSendCallback() {
+        return sendCallback;
+    }
+
+    public MQMessage<T> setOneWay(boolean oneWay) {
+        this.oneWay = oneWay;
+        return this;
+    }
+
+    public boolean isOneWay() {
+        return oneWay;
+    }
+
+    public MQMessage<T> setTransaction(boolean transaction) {
+        this.transaction = transaction;
+        return this;
+    }
+
+    public boolean isTransaction() {
+        return transaction;
+    }
+
+    public MQMessage<T> setTransactionArg(Object transactionArg) {
+        this.transactionArg = transactionArg;
+        return this;
+    }
+
+    public Object getTransactionArg() {
+        return transactionArg;
+    }
+
+    public MQMessage<T> setClientHost(String clientHost) {
+        if (clientHost != null && clientHost.length() > 0 && clientHost.length() < 16) {
+            innerMessage.getProperties().put(MessageConst.PROPERTY_BORN_HOST, clientHost);
+        }
+        return this;
+    }
+
+    public MQMessage<T> serialize(MessageSerializer messageSerializer) throws Exception {
+        if (innerMessage.getBody() == null) {
+            innerMessage.setBody(messageSerializer.serialize(message));
+        }
+        return this;
     }
 
     @Override

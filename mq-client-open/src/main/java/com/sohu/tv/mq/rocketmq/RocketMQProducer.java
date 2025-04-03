@@ -10,6 +10,7 @@ import com.sohu.tv.mq.metric.MQMetricsExporter;
 import com.sohu.tv.mq.rocketmq.circuitbreaker.SentinelCircuitBreaker;
 import com.sohu.tv.mq.route.AffinityMQStrategy;
 import com.sohu.tv.mq.stats.StatsHelper;
+import com.sohu.tv.mq.trace.SendMessageWithBornHostTraceHookImpl;
 import com.sohu.tv.mq.util.CommonUtil;
 import org.apache.rocketmq.client.exception.MQBrokerException;
 import org.apache.rocketmq.client.exception.MQClientException;
@@ -23,6 +24,7 @@ import org.apache.rocketmq.common.ServiceState;
 import org.apache.rocketmq.common.message.Message;
 import org.apache.rocketmq.remoting.RPCHook;
 import org.apache.rocketmq.remoting.exception.RemotingException;
+import org.apache.rocketmq.remoting.protocol.ResponseCode;
 
 import java.lang.reflect.Field;
 import java.util.Collection;
@@ -170,6 +172,37 @@ public class RocketMQProducer extends AbstractConfig {
     }
 
     /**
+     * 构建消息
+     */
+    public Message buildMessage(Object messageObject) throws Exception {
+        return buildMessage(messageObject, null, null, null, null);
+    }
+
+    /**
+     * 构建消息
+     */
+    public Message buildMessage(Object messageObject, String clientHost) throws Exception {
+        return buildMessage(messageObject, null, null, clientHost, null);
+    }
+
+    /**
+     * 构建消息
+     */
+    public Message buildMessage(Object messageObject, String tags, String keys, String clientHost,
+                                MessageDelayLevel delayLevel) throws Exception {
+        MQMessage mqMessage = MQMessage.build(messageObject).setTopic(getTopic()).setTags(tags).setKeys(keys)
+                .setClientHost(clientHost).serialize(getMessageSerializer());
+        if (mqMessage.getBody().length > producer.getMaxMessageSize()) {
+            throw new MQClientException(ResponseCode.MESSAGE_ILLEGAL,
+                    "the message body size over max value, MAX: " + producer.getMaxMessageSize());
+        }
+        if (delayLevel != null) {
+            mqMessage.setDelayTimeLevel(delayLevel.getLevel());
+        }
+        return mqMessage.getInnerMessage();
+    }
+
+    /**
      * 发送消息
      *
      * @param messageMap 消息数据
@@ -186,22 +219,7 @@ public class RocketMQProducer extends AbstractConfig {
      * @return 发送结果
      */
     public Result<SendResult> publish(Object messageObject) {
-        return publish(messageObject, "");
-    }
-
-    /**
-     * 发送消息
-     *
-     * @param messageObject 消息数据
-     * @param keys key
-     * @return 发送结果
-     */
-    public Result<SendResult> publishWithException(Object messageObject, String keys) throws Exception {
-        Result<SendResult> result = publish(messageObject, keys, null);
-        if (result.getException() != null) {
-            throw result.getException();
-        }
-        return result;
+        return publish(messageObject, null);
     }
 
     /**
@@ -224,29 +242,9 @@ public class RocketMQProducer extends AbstractConfig {
      * @return 发送结果
      */
     public Result<SendResult> publish(Object messageObject, String keys, MessageDelayLevel delayLevel) {
-        return publish(messageObject, "", keys, delayLevel);
+        return publish(messageObject, null, keys, delayLevel);
     }
-    
-    
-    /**
-     * 构建消息
-     * @param messageObject 消息
-     * @param tags tags
-     * @param keys key
-     * @param delayLevel 延时级别
-     * @return
-     * @throws Exception 
-     */
-    public Message buildMessage(Object messageObject, String tags, String keys, MessageDelayLevel delayLevel)
-            throws Exception {
-        byte[] bytes = getMessageSerializer().serialize(messageObject);
-        Message message = new Message(topic, tags, keys, bytes);
-        if (delayLevel != null) {
-            message.setDelayTimeLevel(delayLevel.getLevel());
-        }
-        return message;
-    }
-    
+
     /**
      * 发送消息
      * 
@@ -257,14 +255,11 @@ public class RocketMQProducer extends AbstractConfig {
      * @return 发送结果
      */
     public Result<SendResult> publish(Object messageObject, String tags, String keys, MessageDelayLevel delayLevel) {
-        Message message = null;
-        try {
-            message = buildMessage(messageObject, tags, keys, delayLevel);
-        } catch (Exception e) {
-            logger.error(e.getMessage(), e);
-            return new Result<SendResult>(false, e);
+        MQMessage mqMessage = MQMessage.build(messageObject).setTags(tags).setKeys(keys);
+        if (delayLevel != null) {
+            mqMessage.setDelayTimeLevel(delayLevel.getLevel());
         }
-        return publish(message);
+        return send(mqMessage);
     }
     
     /**
@@ -274,12 +269,7 @@ public class RocketMQProducer extends AbstractConfig {
      * @return 发送结果
      */
     public Result<SendResult> publish(Message message) {
-        try {
-            SendResult sendResult = producer.send(message);
-            return new Result<SendResult>(true, sendResult);
-        } catch (Exception e) {
-            return processException(e);
-        }
+        return send(MQMessage.build(message));
     }
     
     /**
@@ -288,7 +278,7 @@ public class RocketMQProducer extends AbstractConfig {
      * @param e
      * @return
      */
-    public Result<SendResult> processException(Exception e) {
+    public Result<SendResult> processException(Throwable e) {
         logger.error("send error", e);
         if (statsHelper != null) {
             statsHelper.recordException(e);
@@ -353,14 +343,11 @@ public class RocketMQProducer extends AbstractConfig {
      * @return 发送结果
      */
     public Result<SendResult> publishOrder(Object messageObject, String keys, Object arg, MessageDelayLevel delayLevel) {
-        Message message = null;
-        try {
-            message = buildMessage(messageObject, null, keys, delayLevel);
-        } catch (Exception e) {
-            logger.error(e.getMessage(), e);
-            return new Result<SendResult>(false, e);
+        MQMessage mqMessage = MQMessage.build(messageObject).setKeys(keys).setOrderArg(arg);
+        if (delayLevel != null) {
+            mqMessage.setDelayTimeLevel(delayLevel.getLevel());
         }
-        return publishOrder(message, arg);
+        return send(mqMessage);
     }
     
     /**
@@ -371,12 +358,7 @@ public class RocketMQProducer extends AbstractConfig {
      * @return 发送结果
      */
     public Result<SendResult> publishOrder(Message message, Object arg) {
-        try {
-            SendResult sendResult = producer.send(message, messageQueueSelector, arg);
-            return new Result<SendResult>(true, sendResult);
-        } catch (Exception e) {
-            return processException(e);
-        }
+        return send(MQMessage.build(message).setOrderArg(arg));
     }
 
     /**
@@ -390,7 +372,7 @@ public class RocketMQProducer extends AbstractConfig {
      */
     public void publishAsync(Object messageObject, String keys, MessageDelayLevel delayLevel,
             SendCallback sendCallback) {
-        publishAsync(messageObject, "", keys, delayLevel, sendCallback);
+        publishAsync(messageObject, null, keys, delayLevel, sendCallback);
     }
     
     /**
@@ -403,15 +385,12 @@ public class RocketMQProducer extends AbstractConfig {
      * @param sendCallback 回调函数
      */
     public void publishAsync(Object messageObject, String tags, String keys, MessageDelayLevel delayLevel,
-            SendCallback sendCallback) {
-        Message message = null;
-        try {
-            message = buildMessage(messageObject, tags, keys, delayLevel);
-        } catch (Exception e) {
-            logger.error(e.getMessage(), e);
-            sendCallback.onException(e);
+                             SendCallback sendCallback) {
+        MQMessage mqMessage = MQMessage.build(messageObject).setTags(tags).setKeys(keys).setSendCallback(sendCallback);
+        if (delayLevel != null) {
+            mqMessage.setDelayTimeLevel(delayLevel.getLevel());
         }
-        publishAsync(message, sendCallback);
+        send(mqMessage);
     }
     
     /**
@@ -421,29 +400,7 @@ public class RocketMQProducer extends AbstractConfig {
      * @param sendCallback 回调函数
      */
     public void publishAsync(Message message, final SendCallback sendCallback) {
-        try {
-            if(statsHelper == null) {
-                producer.send(message, sendCallback);
-            } else {
-                producer.send(message, new SendCallback() {
-                    public void onSuccess(SendResult sendResult) {
-                        sendCallback.onSuccess(sendResult);
-                    }
-                    public void onException(Throwable e) {
-                        if(statsHelper != null) {
-                            statsHelper.recordException(e);
-                        }
-                        sendCallback.onException(e);
-                    }
-                });
-            }
-        } catch (Exception e) {
-            logger.error(e.getMessage(), e);
-            if(statsHelper != null) {
-                statsHelper.recordException(e);
-            }
-            sendCallback.onException(e);
-        }
+        send(MQMessage.build(message).setSendCallback(sendCallback));
     }
 
     /**
@@ -463,60 +420,7 @@ public class RocketMQProducer extends AbstractConfig {
      * @param sendCallback 回调函数
      */
     public void publishAsync(Object messageObject, SendCallback sendCallback) {
-        publishAsync(messageObject, "", sendCallback);
-    }
-
-    /**
-     * 发送异步消息
-     * 异常时将在rocketmq线程进行回调，该方法无法把所有异常抛出，故废弃
-     * @param messageMap 消息数据
-     * @param messageMap key
-     * @param sendCallback 回调函数
-     */
-    @Deprecated
-    public void publishAsyncWithException(Object messageObject, String keys, SendCallback sendCallback)
-            throws Exception {
-        publishAsyncWithException(messageObject, "", keys, sendCallback);
-    }
-    
-    /**
-     * 发送异步消息
-     * 异常时将在rocketmq线程进行回调，该方法无法把所有异常抛出，故废弃
-     * @param messageObject 消息数据
-     * @param tags tags
-     * @param String keys
-     * @param sendCallback 回调函数
-     */
-    @Deprecated
-    public void publishAsyncWithException(Object messageObject, String tags, String keys, SendCallback sendCallback)
-            throws Exception {
-        Message message = null;
-        try {
-            message = buildMessage(messageObject, tags, keys, null);
-        } catch (Exception e) {
-            logger.error(e.getMessage(), e);
-            sendCallback.onException(e);
-            throw e;
-        }
-        publishAsyncWithException(message, sendCallback);
-    }
-    
-    /**
-     * 发送异步消息
-     * 异常时将在rocketmq线程进行回调，该方法无法把所有异常抛出，故废弃
-     * @param messageObject 消息数据
-     * @param sendCallback 回调函数
-     */
-    @Deprecated
-    public void publishAsyncWithException(Message message, SendCallback sendCallback)
-            throws Exception {
-        try {
-            producer.send(message, sendCallback);
-        } catch (Exception e) {
-            logger.error(e.getMessage(), e);
-            sendCallback.onException(e);
-            throw e;
-        }
+        publishAsync(messageObject, null, sendCallback);
     }
 
     /**
@@ -540,7 +444,7 @@ public class RocketMQProducer extends AbstractConfig {
      */
     @Deprecated
     public Result<SendResult> publishOneway(Object messageObject, String keys, MessageDelayLevel delayLevel) {
-        return publishOneway(messageObject, "", keys, delayLevel);
+        return publishOneway(messageObject, null, keys, delayLevel);
     }
     
     /**
@@ -554,14 +458,11 @@ public class RocketMQProducer extends AbstractConfig {
      */
     @Deprecated
     public Result<SendResult> publishOneway(Object messageObject, String tags, String keys, MessageDelayLevel delayLevel) {
-        Message message = null;
-        try {
-            message = buildMessage(messageObject, tags, keys, delayLevel);
-        } catch (Exception e) {
-            logger.error(e.getMessage(), e);
-            return new Result<SendResult>(false, e);
+        MQMessage mqMessage = MQMessage.build(messageObject).setTags(tags).setKeys(keys);
+        if (delayLevel != null) {
+            mqMessage.setDelayTimeLevel(delayLevel.getLevel());
         }
-        return publishOneway(message);
+        return send(mqMessage);
     }
 
     /**
@@ -572,12 +473,7 @@ public class RocketMQProducer extends AbstractConfig {
      */
     @Deprecated
     public Result<SendResult> publishOneway(Message message) {
-        try {
-            producer.sendOneway(message);
-            return new Result<SendResult>(true);
-        } catch (Exception e) {
-            return processException(e);
-        }
+        return send(MQMessage.build(message).setOneWay(true));
     }
     
     /**
@@ -599,23 +495,7 @@ public class RocketMQProducer extends AbstractConfig {
      */
     @Deprecated
     public Result<SendResult> publishOneway(Object messageObject) {
-        return publishOneway(messageObject, "");
-    }
-
-    /**
-     * 发送Oneway消息
-     * 
-     * @param messageObject 消息
-     * @param keys key
-     * @return Result.true or false with exception
-     */
-    @Deprecated
-    public Result<SendResult> publishOnewayWithExcetpion(Object messageObject, String keys) throws Exception {
-        Result<SendResult> result = publishOneway(messageObject, keys, null);
-        if (result.getException() != null) {
-            throw result.getException();
-        }
-        return result;
+        return publishOneway(messageObject, null);
     }
 
     /**
@@ -696,14 +576,7 @@ public class RocketMQProducer extends AbstractConfig {
      * @return 发送结果
      */
     public Result<SendResult> publishTransaction(Object messageObject, String tags, String keys, Object arg) {
-        Message message = null;
-        try {
-            message = buildMessage(messageObject, tags, keys, null);
-        } catch (Exception e) {
-            logger.error(e.getMessage(), e);
-            return new Result<SendResult>(false, e);
-        }
-        return publishTransaction(message, arg);
+        return send(MQMessage.build(messageObject).setTags(tags).setKeys(keys).setTransaction(true).setTransactionArg(arg));
     }
     
     /**
@@ -714,12 +587,7 @@ public class RocketMQProducer extends AbstractConfig {
      * @return 发送结果
      */
     public Result<SendResult> publishTransaction(Message message, Object arg) {
-        try {
-            SendResult sendResult = ((TransactionMQProducer) producer).sendMessageInTransaction(message, arg);
-            return new Result<SendResult>(true, sendResult);
-        } catch (Exception e) {
-            return processException(e);
-        }
+        return send(MQMessage.build(message).setTransaction(true).setTransactionArg(arg));
     }
 
     /**
@@ -757,9 +625,43 @@ public class RocketMQProducer extends AbstractConfig {
     }
 
     private Result _send(MQMessage mqMessage) throws MQBrokerException, RemotingException, InterruptedException, MQClientException {
-        SendResult sendResult = producer.send(mqMessage.getInnerMessage());
+        SendResult sendResult = null;
+        if (mqMessage.getOrderArg() != null) {
+            // 顺序发送
+            sendResult = producer.send(mqMessage.getInnerMessage(), messageQueueSelector, mqMessage.getOrderArg());
+        } else if (mqMessage.getSendCallback() != null) {
+            // 异步发送
+            _asyncSend(mqMessage);
+        } else if (mqMessage.isOneWay()) {
+            // 单向发送
+            producer.sendOneway(mqMessage.getInnerMessage());
+        } else if (mqMessage.isTransaction()) {
+            // 事务消息
+            sendResult = ((TransactionMQProducer) producer).sendMessageInTransaction(mqMessage.getInnerMessage(),
+                    mqMessage.getTransactionArg());
+        } else {
+            // 同步发送
+            sendResult = producer.send(mqMessage.getInnerMessage());
+        }
         afterMessageSend(mqMessage, sendResult);
         return new Result<SendResult>(true, sendResult);
+    }
+
+    private void _asyncSend(MQMessage mqMessage) throws RemotingException, InterruptedException, MQClientException {
+        if (statsHelper == null) {
+            producer.send(mqMessage.getInnerMessage(), mqMessage.getSendCallback());
+        } else {
+            producer.send(mqMessage.getInnerMessage(), new SendCallback() {
+                public void onSuccess(SendResult sendResult) {
+                    mqMessage.getSendCallback().onSuccess(sendResult);
+                }
+
+                public void onException(Throwable e) {
+                    processException(e);
+                    mqMessage.getSendCallback().onException(e);
+                }
+            });
+        }
     }
 
     private void afterMessageSend(MQMessage mqMessage, SendResult sendResult) throws RemotingException {
@@ -772,6 +674,9 @@ public class RocketMQProducer extends AbstractConfig {
     private Result<SendResult> messageSendError(MQMessage mqMessage, Exception e) {
         if (mqMessage.isEnableCircuitBreaker()) {
             sentinelCircuitBreaker.trace(e, mqMessage);
+        }
+        if (mqMessage.getSendCallback() != null) {
+            mqMessage.getSendCallback().onException(e);
         }
         if (mqMessage.needRetry(e) && resend(mqMessage)) { // 重试
             return new Result<SendResult>(false, e).setRetrying(true);
@@ -984,8 +889,8 @@ public class RocketMQProducer extends AbstractConfig {
 
     @Override
     protected void registerTraceDispatcher(AsyncTraceDispatcher traceDispatcher) {
-        producer.getDefaultMQProducerImpl().registerSendMessageHook(
-                new SendMessageTraceHookImpl(traceDispatcher));
+        producer.getDefaultMQProducerImpl().registerSendMessageHook(new SendMessageTraceHookImpl(traceDispatcher));
+        producer.getDefaultMQProducerImpl().registerSendMessageHook(new SendMessageWithBornHostTraceHookImpl());
     }
     
     public int getSendMsgTimeout() {

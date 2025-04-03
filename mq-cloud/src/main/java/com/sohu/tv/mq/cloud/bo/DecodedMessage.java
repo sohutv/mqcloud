@@ -3,8 +3,10 @@ package com.sohu.tv.mq.cloud.bo;
 import com.sohu.tv.mq.cloud.common.util.WebUtil;
 import com.sohu.tv.mq.serializable.MessageSerializerEnum;
 import com.sohu.tv.mq.util.CommonUtil;
+import com.sohu.tv.mq.util.Constant;
 import com.sohu.tv.mq.util.JSONUtil;
 import org.apache.rocketmq.common.MixAll;
+import org.apache.rocketmq.common.message.MessageConst;
 import org.apache.rocketmq.common.message.MessageExt;
 
 import java.net.InetSocketAddress;
@@ -183,6 +185,12 @@ public class DecodedMessage extends MessageExt {
 
     public void setTimerRollTimes(int timerRollTimes) {
         this.timerRollTimes = timerRollTimes;
+    }
+
+    @Override
+    public String getBornHostString() {
+        String bornHost = getUserProperty(MessageConst.PROPERTY_BORN_HOST);
+        return bornHost != null ? bornHost : super.getBornHostString();
     }
 
     /**

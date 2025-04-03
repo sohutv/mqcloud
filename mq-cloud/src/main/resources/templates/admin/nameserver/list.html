@@ -47,6 +47,7 @@
 				<tr>
 					<td>addr</td>
 					<td>创建时间</td>
+					<td>链接</td>
 					<td data-toggle="tooltip" title="MQCloud会定时监控NameServer是否存活">状态</td>
 					<td>监控时间</td>
 					<td>操作</td>
@@ -61,6 +62,15 @@
 							<td>${ns.addr}</td>
 							<td>${ns.createTime?string("yyyy-MM-dd HH:mm:ss")}</td>
 							<td>
+								<#if ns.connectionCount == 0>
+									0
+								<#else>
+									<a href="#" data-target="#connectionModal" data-toggle="modal" onclick="connection('${ns.ip}', '${ns.port}')" title="查看链接">
+										${ns.connectionCount}
+									</a>
+								</#if>
+							</td>
+							<td>
 								<#if ns.checkStatus == 2>
 									<font style='font-weight:bold' color='red'>${ns.checkStatusDesc}</font>
 								<#else>
@@ -74,11 +84,16 @@
 							</td>
 							<td>
 								<#if ns.checkStatusOK>
-								<button type="button" class="btn btn-sm btn-warning" title="Kill Name Server进程" data-target="#nameServerOfflineModal" data-toggle="modal" onclick="offlineNameServer('${ns.addr}');">下线</button>
+									<#if ns.statusOK>
+										<button type="button" class="btn btn-sm btn-danger" title="摘除NameServer流量，将该NameServer从MQ客户端发现地址中剔除，当没有客户端链接时，再安全下线" data-toggle="tooltip" onclick="switchNameServer(this, '${ns.addr}', 'unregister');"><i class="fas fa-ban"></i></button>
+									<#else>
+										<button type="button" class="btn btn-sm btn-success" title="恢复NameServer流量" data-toggle="tooltip" onclick="switchNameServer(this, '${ns.addr}', 'register');"><i class="fas fa-ban"></i></button>
+									</#if>
+								<button type="button" class="btn btn-sm btn-danger" title="关闭NameServer进程" data-target="#nameServerOfflineModal" data-toggle="modal" onclick="offlineNameServer('${ns.addr}');"><i class="fas fa-power-off"></i></button>
 								<#else>
-								<button id="nameserverBtn${ns_index}" data-toggle="tooltip" type="button" class="btn btn-sm btn-success" onclick="startupNameServer('${ns.ip}', ${ns.port}, '${ns.baseDir!}', 'nameserverBtn${ns_index}')">启动</button>
+								<button id="nameserverBtn${ns_index}" data-toggle="tooltip" type="button" title="启动NameServer" class="btn btn-sm btn-success" onclick="startupNameServer('${ns.ip}', ${ns.port}, '${ns.baseDir!}', 'nameserverBtn${ns_index}')"><i class="fas fa-power-off"></i></button>
 								</#if>
-								<button type="button" class="btn btn-sm btn-danger" title="删除Name Server地址" data-target="#nameServerDeleteModal" data-toggle="modal" onclick="deleteNameServer('${ns.addr}');"><span class="fas fa-trash-alt" aria-hidden="true"></span></button>
+								<button type="button" class="btn btn-sm btn-danger" title="从MQCloud中删除NameServer地址" data-target="#nameServerDeleteModal" data-toggle="modal" onclick="deleteNameServer('${ns.addr}');"><span class="fas fa-trash-alt" aria-hidden="true"></span></button>
 							</td>
 						</tr>
 					</#list>
@@ -311,6 +326,32 @@
 			<div class="modal-footer">
 				<button type="button" data-dismiss="modal" class="btn btn-light" >取消</button>
 				<button type="button" class="btn btn-primary" onclick="nameServerDelete()" id="nameServerDeleteBtn">确定</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- 查看链接详情 -->
+<div id="connectionModal" class="modal fade" tabindex="-1" data-width="400" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h4 class="modal-title">链接</h4>
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+			</div>
+			<div class="modal-body card-body table-responsive p-0">
+				<table class="table text-nowrap table-hover" style="margin-top: 0px">
+					<thead>
+					<tr>
+						<th>序号</th>
+						<th>地址</th>
+						<th>链接名</th>
+					</tr>
+					</thead>
+					<tbody id="connectionBody">
+						<tr class="no_more_data"><td class="text-center" colspan="3">数据加载中...</td></tr>
+					</tbody>
+				</table>
 			</div>
 		</div>
 	</div>
@@ -688,7 +729,7 @@ function disable_smartwizard(content, index) {
 								<div class="form-group row justify-content-center">
 									<label class="col-form-label col-md-3"> 集群id: </label>
 									<div class="col-md-8">
-										<input type="text" name="id" placeholder="集群id" data-toggle="modal" title="集群id将作为name server的一部分，使用递增的数字，自己保证唯一。" class="form-control" />
+										<input type="text" name="id" placeholder="集群id" data-toggle="modal" title="集群id将作为NameServer的一部分，使用递增的数字，自己保证唯一。" class="form-control" />
 									</div>
 								</div>
 								<div class="form-group row justify-content-center">
@@ -782,5 +823,32 @@ function associateNameSrv(){
 		    	enable("associateNameSrvBtn");
 		    }
         }, 'json');
+}
+
+function connection(ip, port) {
+	$.get('${request.contextPath}/admin/nameserver/connection', {
+				cid: ${selectedCluster.id},
+				ip: ip,
+				port: port
+			}, function (data) {
+				$("#connectionBody").html(data);
+			}
+	);
+}
+
+function switchNameServer(comp, addr, action) {
+	disable(comp);
+	$.post('${request.contextPath}/admin/nameserver/' + action, {
+		cid: ${selectedCluster.id},
+		addr: addr
+	}, function (data) {
+		if (data.status == 200) {
+			toastr.success("操作成功，将自动刷新");
+			reload(2000);
+		} else {
+			toastr.error("操作失败！" + data.message);
+			enable(comp);
+		}
+	}, 'json');
 }
 </script>

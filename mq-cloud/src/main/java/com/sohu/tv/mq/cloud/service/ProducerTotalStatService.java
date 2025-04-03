@@ -2,6 +2,8 @@ package com.sohu.tv.mq.cloud.service;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -160,6 +162,18 @@ public class ProducerTotalStatService {
             return Result.getResult(producerTotalStatDao.selectByProducerAndTime(producer, time));
         } catch (Exception e) {
             logger.error("query err, producer:{}, time:{}", producer, time, e);
+            return Result.getDBErrorResult(e);
+        }
+    }
+
+    /**
+     * 根据时间和ip查询
+     */
+    public Result<List<ProducerTotalStat>> queryByDateAndIp(Date date, Set<String> ips) {
+        try {
+            return Result.getResult(producerTotalStatDao.selectByDateAndIp(DateUtil.format(date), ips));
+        } catch (Exception e) {
+            logger.error("queryByDateAndIp err, date:{}, ips:{}", date, ips, e);
             return Result.getDBErrorResult(e);
         }
     }

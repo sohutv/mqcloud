@@ -371,6 +371,7 @@ DROP TABLE IF EXISTS `producer_total_stat`;
 CREATE TABLE `producer_total_stat` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `producer` varchar(255) NOT NULL COMMENT 'producer',
+  `ip` varchar(100) NOT NULL COMMENT 'ip',
   `client` varchar(100) NOT NULL COMMENT 'client',
   `percent90` int(11) NOT NULL COMMENT '耗时百分位90',
   `percent99` int(11) NOT NULL COMMENT '耗时百分位99',
@@ -383,7 +384,8 @@ CREATE TABLE `producer_total_stat` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `producer` (`producer`,`stat_time`,`client`),
   KEY `create_date` (`create_date`,`producer`),
-  KEY `date_client` (`create_date`,`client`)
+  KEY `date_client` (`create_date`,`client`),
+  KEY `date_ip` (`create_date`,`ip`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='生产者总体统计';
 
 -- ----------------------------
@@ -590,6 +592,7 @@ CREATE TABLE `name_server` (
   `check_status` tinyint(4) DEFAULT 0 COMMENT '检测结果:0:未知,1:正常,2:异常',
   `check_time` datetime COMMENT '检测时间',
   `base_dir` varchar(360) DEFAULT '/opt/mqcloud/ns' COMMENT '安装路径',
+  `status` tinyint(4) DEFAULT 0 COMMENT '状态:0:正常,1:流量剔除',
   UNIQUE KEY `cid` (`cid`,`addr`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='name server表';
 
@@ -721,6 +724,7 @@ INSERT INTO `common_config`(`key`, `value`, `comment`) VALUES ('orderTopicKVConf
 INSERT INTO `common_config`(`key`, `value`, `comment`) VALUES ('rsyncConfig', '{"user":"mqcloud","module":"mqcloud","password":"rsync"}', 'rsync配置');
 INSERT INTO `common_config`(`key`, `value`, `comment`) VALUES ('pauseAudit', 'false', '在集群运维时，设置为true，会暂停审核功能，保障数据安全');
 INSERT INTO `common_config`(`key`, `value`, `comment`) VALUES ('clusterStoreWarnConfig', '[{"max":500,"percent99":400}]', '集群broker存储过慢预警配置，默认为最大响应超过500ms或百分之99响应超过400ms进行预警，可以单独对某个集群进行配置，例如[{"max":500,"percent99":400},{"clusterId":1,"max":1000,"percent99":800}]');
+insert into `common_config`(`key`, `value`, `comment`) values ('mqcloudServers', '["127.0.0.1"]', 'mqcloud的server列表');
 -- ----------------------------
 -- warn_config init
 -- ----------------------------
@@ -1263,6 +1267,7 @@ CREATE TABLE `proxy` (
     `cid`          int(11) NOT NULL COMMENT '集群id',
     `addr`         varchar(255) NOT NULL COMMENT 'proxy grpc 地址',
     `create_time`  timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `status`       tinyint(4) default 0 comment '状态:0:正常,1:流量剔除',
     `check_status` tinyint(4) DEFAULT 0 COMMENT '检测结果:0:未知,1:正常,2:异常',
     `check_time`   datetime COMMENT '检测时间',
     `base_dir`     varchar(360) DEFAULT '/opt/mqcloud/proxy' COMMENT '安装路径',

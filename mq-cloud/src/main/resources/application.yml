@@ -69,9 +69,8 @@ mqcloud:
   consumeTimespanMessageSupportedVersion: 4.9.2
   httpProducerUriPrefix: 127.0.0.1:8081/http/producer
   httpConsumerUriPrefix: 127.0.0.1:8082/http/consumer
-
-login:
-  class: com.sohu.tv.mq.cloud.service.impl.DefaultLoginService
+  loginClass: com.sohu.tv.mq.cloud.service.impl.DefaultLoginService
+  userWarnServiceClass: com.sohu.tv.mq.cloud.service.UserWarnService
 
 rocketmq:
   customized: true

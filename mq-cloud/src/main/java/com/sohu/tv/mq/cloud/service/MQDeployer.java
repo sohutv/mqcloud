@@ -29,10 +29,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
+import java.util.*;
 
 /**
  * MQ部署
@@ -45,8 +42,6 @@ public class MQDeployer {
     
     @Autowired
     private MQCloudConfigHelper mqCloudConfigHelper;
-    
-    public static final String NS_SUB_GROUP = "nsaddr-%s";
     
     public static final String MQ_CLOUD_CONFIG_INIT_FLAG = "/home/mqcloud/.mq_cloud_inited";
     
@@ -75,6 +70,10 @@ public class MQDeployer {
     public static final String BROKER_RATE_LIMIT_JSON = "rateLimitConfig.json";
 
     public static final String BACKUP_SUFFIX = ".backup";
+    // 获取某个端口的链接地址
+    public static final String CONNECTION_ADDR = "sudo netstat -nt | grep ESTABLISHED | awk '$4 ~ /:%s$/ {print $5}'";
+    // 获取某个端口的链接数量
+    public static final String CONNECTION_COUNT = "sudo netstat -nt | grep ESTABLISHED | awk '$4 ~ /:%s$/ {count++} END {print count}'";
 
     // 部署broker时自动创建监控订阅组
     public static final String SUBSCRIPTIONGROUP_JSON = "echo '"
@@ -1445,6 +1444,40 @@ public class MQDeployer {
             logger.error("unzip, ip:{} command:{}", ip, command, e);
             return Result.getWebErrorResult(e);
         }
+    }
+
+    /**
+     * 获取某个端口链接数量
+     */
+    public Result<String> getConnectionCount(String ip, int port) {
+        try {
+            return (Result<String>) wrapSSHResult(sshTemplate.execute(ip,
+                    session -> session.executeCommand(String.format(CONNECTION_COUNT, port))));
+        } catch (SSHException e) {
+            logger.error("getConnectionCount, ip:{}, port:{}", ip, port, e);
+            return Result.getWebErrorResult(e);
+        }
+    }
+
+    /**
+     * 获取某个端口链接地址
+     */
+    public Result<List<String>> getConnectionAddress(String ip, int port) {
+        List<String> connectionAddrList = new ArrayList<>();
+        try {
+            sshTemplate.execute(ip, session -> session.executeCommand(String.format(CONNECTION_ADDR, port), new DefaultLineProcessor() {
+                public void process(String line, int lineNum) throws Exception {
+                    connectionAddrList.add(line);
+                }
+            }));
+        } catch (SSHException e) {
+            logger.error("getConnectionAddress, ip:{}, port:{}", ip, port, e);
+            return Result.getWebErrorResult(e);
+        }
+        if (connectionAddrList.isEmpty()) {
+            return Result.getResult(Status.NO_RESULT);
+        }
+        return Result.getResult(connectionAddrList);
     }
     
     /**

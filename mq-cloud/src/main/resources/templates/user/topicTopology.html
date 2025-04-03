@@ -1012,6 +1012,7 @@ function showClientConnection(type, group) {
 	}, function (content) {
 		$("#clientConnectionBody").html(content);
 		$('#clientConnectionModal').modal('show');
+		$("[data-toggle='tooltip']").tooltip({boundary: 'window'});
 		console.log($("#ipList").val());
 	});
 }

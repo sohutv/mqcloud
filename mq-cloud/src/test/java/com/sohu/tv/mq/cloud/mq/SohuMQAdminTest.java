@@ -102,29 +102,4 @@ public class SohuMQAdminTest {
             }
         });
     }
-
-    @Test
-    public void testQueryTimerMessage() {
-        mqAdminTemplate.execute(new MQAdminCallback<Void>() {
-            public Void callback(MQAdminExt mqAdmin) throws Exception {
-                SohuMQAdmin sohuMQAdmin = (SohuMQAdmin) mqAdmin;
-                String uniqKey = "0A0728383CB018B4AAC2037F3FE50001";
-                Long beginTime = MessageClientIDSetter.getNearlyTimeFromID(uniqKey).getTime() - 5 * 60 * 1000L;
-                QueryResult queryResult = sohuMQAdmin.queryTimerMessageByUniqKey("broker-2", uniqKey
-                        , beginTime, 0L, true);
-                Assert.assertTrue(queryResult.getMessageList().size() > 1);
-                return null;
-            }
-
-            public Cluster mqCluster() {
-                return clusterService.getMQClusterById(7);
-            }
-
-            @Override
-            public Void exception(Exception e) throws Exception {
-                e.printStackTrace();
-                return null;
-            }
-        });
-    }
 }

@@ -8,6 +8,7 @@ import org.apache.ibatis.annotations.Select;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Set;
 
 /**
  * 消费者-客户端统计
@@ -22,10 +23,24 @@ public interface ConsumerClientStatDao {
     public Integer saveConsumerClientStat(@Param("ccs")ConsumerClientStat consumerClientStat);
 
     /**
+     * 统计数量
+     */
+    @Select("select count(1) from consumer_client_stat where consumer = #{ccs.consumer} and client = #{ccs.client} and create_date = #{ccs.createDate}")
+    public Integer count(@Param("ccs")ConsumerClientStat consumerClientStat);
+
+    /**
      * 按时间和client查询
      */
     @Select("select distinct consumer from consumer_client_stat where create_date = #{date} and client like '${client}%'")
     public List<String> selectByDateAndClient(@Param("client")String client, @Param("date")Date date);
+
+    /**
+     * 按时间和client查询
+     */
+    @Select("<script>select * from consumer_client_stat where create_date = #{date} and client in "
+            + "<foreach collection=\"clients\" item=\"client\" separator=\",\" open=\"(\" close=\")\">#{client}</foreach> "
+            + "group by client</script>")
+    public List<ConsumerClientStat> selectByDateAndClients(@Param("date") String date, @Param("clients") Set<String> clients);
 
     /**
      * 删除记录

@@ -1,23 +1,22 @@
 package com.sohu.tv.mq.cloud.service;
 
-import java.util.Collection;
-import java.util.Date;
-import java.util.List;
-import java.util.stream.Collectors;
-
+import com.sohu.tv.mq.cloud.bo.User;
+import com.sohu.tv.mq.cloud.bo.UserWarn;
+import com.sohu.tv.mq.cloud.bo.UserWarn.WarnType;
+import com.sohu.tv.mq.cloud.bo.UserWarnCount;
+import com.sohu.tv.mq.cloud.dao.UserWarnDao;
 import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper;
+import com.sohu.tv.mq.cloud.util.Result;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
-import com.sohu.tv.mq.cloud.bo.User;
-import com.sohu.tv.mq.cloud.bo.UserWarn;
-import com.sohu.tv.mq.cloud.bo.UserWarnCount;
-import com.sohu.tv.mq.cloud.bo.UserWarn.WarnType;
-import com.sohu.tv.mq.cloud.dao.UserWarnDao;
-import com.sohu.tv.mq.cloud.util.Result;
+import java.util.Collection;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * 用户警告服务
@@ -25,9 +24,8 @@ import com.sohu.tv.mq.cloud.util.Result;
  * @author yongfeigao
  * @date 2021年9月13日
  */
-@Service
 public class UserWarnService {
-    private Logger logger = LoggerFactory.getLogger(this.getClass());
+    protected Logger logger = LoggerFactory.getLogger(this.getClass());
 
     @Autowired
     private UserWarnDao userWarnDao;
@@ -36,18 +34,19 @@ public class UserWarnService {
     private UserService userService;
 
     @Autowired
-    private MQCloudConfigHelper mqCloudConfigHelper;
+    protected MQCloudConfigHelper mqCloudConfigHelper;
 
     /**
      * 保存警告信息
-     * 
-     * @param users
-     * @param warnType
-     * @param resource
-     * @param content
-     * @return
      */
-    public Result<?> save(Collection<User> users, WarnType warnType, String resource, String content) {
+    public Result<?> save(Collection<User> users, WarnType warnType, Map<String, Object> param, String content) {
+        Object obj = param.get("resource");
+        String resource;
+        if (obj != null) {
+            resource = obj.toString();
+        } else {
+            resource = warnType.getName();
+        }
         if (content == null || !warnType.isNeedSave()) {
             return null;
         }

@@ -202,7 +202,7 @@ public class TokenBucketRateLimiter implements RateLimiter {
     }
 
     @Override
-    public synchronized int getRate() {
-        return (int) (SECONDS.toMicros(1L) / stableIntervalMicros);
+    public int getRate() {
+       return (int) maxPermits;
     }
 }

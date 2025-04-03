@@ -5,6 +5,8 @@ import com.sohu.index.tv.mq.common.PullResponse.Status;
 import com.sohu.tv.mq.common.AbstractConfig;
 import com.sohu.tv.mq.header.SohuGetTopicStatsInfoRequestHeader;
 import com.sohu.tv.mq.rocketmq.limiter.NoneBlockingRateLimiter;
+import com.sohu.tv.mq.trace.ClientHostThreadLocal;
+import com.sohu.tv.mq.trace.ConsumeMessageWithBornHostTraceHookImpl;
 import com.sohu.tv.mq.util.JSONUtil;
 import org.apache.rocketmq.client.consumer.DefaultMQPullConsumer;
 import org.apache.rocketmq.client.consumer.PullResult;
@@ -88,6 +90,10 @@ public class RocketMQPullConsumer extends AbstractConfig {
         }
     }
 
+    public PullResponse pull(MessageQueue mq, long offset) throws MQBrokerException, RemotingException, InterruptedException, MQClientException {
+        return pull(mq, offset, null);
+    }
+
     /**
      * 拉取消息
      *
@@ -99,7 +105,7 @@ public class RocketMQPullConsumer extends AbstractConfig {
      * @throws MQBrokerException
      * @throws InterruptedException
      */
-    public PullResponse pull(MessageQueue mq, long offset)
+    public PullResponse pull(MessageQueue mq, long offset, String clientHost)
             throws MQClientException, RemotingException, MQBrokerException, InterruptedException {
         if (isPause()) {
             return PullResponse.build(Status.PAUSED);
@@ -108,7 +114,15 @@ public class RocketMQPullConsumer extends AbstractConfig {
         if (!rateLimiter.acquire()) {
             return PullResponse.build(Status.RATE_LIMITED);
         }
-        PullResult rullResult = consumer.pull(mq, "*", offset, maxPullSize);
+        ClientHostThreadLocal.set(clientHost);
+        PullResult rullResult = null;
+        try {
+            rullResult = consumer.pull(mq, "*", offset, maxPullSize);
+        } finally {
+            if (clientHost != null) {
+                ClientHostThreadLocal.remove();
+            }
+        }
         // 执行限速统计
         if (rullResult.getMsgFoundList() != null) {
             int size = rullResult.getMsgFoundList().size();
@@ -197,8 +211,8 @@ public class RocketMQPullConsumer extends AbstractConfig {
 
     @Override
     protected void registerTraceDispatcher(AsyncTraceDispatcher traceDispatcher) {
-        consumer.getDefaultMQPullConsumerImpl().registerConsumeMessageHook(
-                new ConsumeMessageTraceHookImpl(traceDispatcher));
+        consumer.getDefaultMQPullConsumerImpl().registerConsumeMessageHook(new ConsumeMessageWithBornHostTraceHookImpl());
+        consumer.getDefaultMQPullConsumerImpl().registerConsumeMessageHook(new ConsumeMessageTraceHookImpl(traceDispatcher));
     }
 
     /**

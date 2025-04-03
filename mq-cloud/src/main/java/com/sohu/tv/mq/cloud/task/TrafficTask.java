@@ -6,12 +6,12 @@ import com.sohu.tv.mq.cloud.service.*;
 import com.sohu.tv.mq.cloud.util.DateUtil;
 import com.sohu.tv.mq.cloud.util.Result;
 import net.javacrumbs.shedlock.core.SchedulerLock;
+import org.apache.rocketmq.common.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -66,9 +66,9 @@ public class TrafficTask {
                 }
                 for (Cluster mqCluster : clusterService.getAllMQCluster()) {
                     long start = System.currentTimeMillis();
-                    int size = topicTrafficService.collectTraffic(mqCluster);
-                    logger.info("fetch cluster:{} topic traffic, size:{}, use:{}ms", mqCluster, size,
-                            System.currentTimeMillis() - start);
+                    Pair<Integer, Integer> result = topicTrafficService.collectTraffic(mqCluster);
+                    logger.info("fetch cluster:{} topic traffic, size:{}, errorSize:{}, use:{}ms", mqCluster,
+                            result.getObject1(), result.getObject2(), System.currentTimeMillis() - start);
                 }
             }
         });
@@ -88,9 +88,9 @@ public class TrafficTask {
                 }
                 for (Cluster mqCluster : clusterService.getAllMQCluster()) {
                     long start = System.currentTimeMillis();
-                    int size = consumerTrafficService.collectTraffic(mqCluster);
-                    logger.info("fetch cluster:{} consumer traffic, size:{}, use:{}ms", mqCluster, size,
-                            System.currentTimeMillis() - start);
+                    Pair<Integer, Integer> result = consumerTrafficService.collectTraffic(mqCluster);
+                    logger.info("fetch cluster:{} consumer traffic, size:{}, errorSize:{}, use:{}ms", mqCluster,
+                            result.getObject1(), result.getObject2(), System.currentTimeMillis() - start);
                 }
             }
         });

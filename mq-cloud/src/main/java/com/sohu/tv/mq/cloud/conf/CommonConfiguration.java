@@ -15,6 +15,7 @@ import com.sohu.tv.mq.cloud.mq.SohuMQProxyAdminFactory;
 import com.sohu.tv.mq.cloud.service.ClientStatsConsumer;
 import com.sohu.tv.mq.cloud.service.ConsumerClientStatsConsumer;
 import com.sohu.tv.mq.cloud.service.ProxyService;
+import com.sohu.tv.mq.cloud.service.UserWarnService;
 import com.sohu.tv.mq.cloud.ssh.SSHSessionPooledObjectFactory;
 import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper;
 import com.sohu.tv.mq.stats.dto.ClientStats;
@@ -29,7 +30,6 @@ import org.apache.commons.pool2.impl.GenericKeyedObjectPoolConfig;
 import org.apache.rocketmq.tools.admin.MQAdminExt;
 import org.apache.sshd.client.session.ClientSession;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -60,10 +60,6 @@ public class CommonConfiguration {
 
     @Autowired
     private ProxyService proxyService;
-
-    // 登录类
-    @Value("${login.class}")
-    private String loginClass;
 
     /**
      * 配置用户缓存
@@ -234,7 +230,7 @@ public class CommonConfiguration {
      */
     @Bean
     public LoginService loginService() throws Exception {
-        Class<?> clz = Class.forName(loginClass);
+        Class<?> clz = Class.forName(mqCloudConfigHelper.getLoginClass());
         AbstractLoginService loginService = (AbstractLoginService) clz.newInstance();
         loginService.setCipherHelper(cipherHelper());
         loginService.setTicketKey(mqCloudConfigHelper.getTicketKey());
@@ -256,6 +252,14 @@ public class CommonConfiguration {
         return (SmsSender) clz.newInstance();
     }
 
+    /**
+     * 用户警告服务
+     */
+    @Bean
+    public UserWarnService userWarnService() throws Exception {
+        Class<?> clz = Class.forName(mqCloudConfigHelper.getUserWarnServiceClass());
+        return (UserWarnService) clz.newInstance();
+    }
 
     @Bean
     public RestTemplate restTemplate(RestTemplateBuilder restTemplateBuilder) {

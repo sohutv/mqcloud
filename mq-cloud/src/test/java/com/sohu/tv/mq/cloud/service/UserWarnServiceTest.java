@@ -1,8 +1,11 @@
 package com.sohu.tv.mq.cloud.service;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
+import com.sohu.tv.mq.cloud.bo.User;
 import com.sohu.tv.mq.cloud.common.util.WebUtil;
 import org.junit.Assert;
 import org.junit.Test;
@@ -72,11 +75,9 @@ public class UserWarnServiceTest {
         content.append("，消费滞后时间(相对于broker最新消息时间)：");
         content.append(80);
         content.append("秒");
-        List<Long> uidList = new ArrayList<>();
-        uidList.add(7L);
-        uidList.add(8L);
-        uidList.add(9L);
-        Result<?> rst = userWarnService.save(null, WarnType.CONSUME_UNDONE, WarnType.CONSUME_UNDONE.getName(), content.toString());
+        Map<String, Object> map = new HashMap<>();
+        map.put("resource", consumer);
+        Result<?> rst = userWarnService.save(null, WarnType.CONSUME_UNDONE, map, content.toString());
         Assert.assertEquals(true, rst.isOK());
     }
     
@@ -95,10 +96,12 @@ public class UserWarnServiceTest {
         content.append("，消费滞后时间(相对于broker最新消息时间)：");
         content.append(80);
         content.append("秒");
+        Map<String, Object> map = new HashMap<>();
+        map.put("resource", consumer);
         for(WarnType warnType : WarnType.values()) {
             List<Long> uidList = new ArrayList<>();
             uidList.add(1L);
-            Result<?> rst = userWarnService.save(null, warnType, warnType.getName(), content.toString());
+            Result<?> rst = userWarnService.save(null, warnType, map, content.toString());
             Assert.assertEquals(true, rst.isOK());
         }
     }
@@ -121,4 +124,21 @@ public class UserWarnServiceTest {
         Assert.assertEquals(1, rst.getResult().size());
     }
 
+    @Test
+    public void testSave() {
+        String consumer = "test-consumer";
+        Map<String, Object> map = new HashMap<>();
+        map.put("resource", consumer);
+        map.put("topic", "test-topic");
+        map.put("undoneMsgsTotal", 1024);
+        map.put("undoneMsgsSingleMQ", 10);
+        map.put("undoneMsgsDelayTime", 80);
+        List<User> users = new ArrayList<>();
+        User user = new User();
+        user.setId(1);
+        user.setEmail("test@sohu-inc.com");
+        users.add(user);
+        Result<?> rst = userWarnService.save(users, WarnType.CONSUME_UNDONE, map, consumer + " alert");
+        Assert.assertEquals(true, rst.isOK());
+    }
 }

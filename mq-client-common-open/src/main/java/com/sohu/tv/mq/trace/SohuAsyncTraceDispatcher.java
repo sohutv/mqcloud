@@ -44,7 +44,7 @@ public class SohuAsyncTraceDispatcher extends AsyncTraceDispatcher {
     private String traceTopic;
 
     public SohuAsyncTraceDispatcher(String traceTopic, DefaultMQProducer traceProducer) {
-        super(null, null, null, null);
+        super(null, null, 10, null, null);
         // queueSize is greater than or equal to the n power of 2 of value
         this.queueSize = 2048;
         this.batchSize = 100;

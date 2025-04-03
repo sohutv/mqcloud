@@ -19,13 +19,13 @@
     <parent>
         <groupId>org.apache.rocketmq</groupId>
         <artifactId>rocketmq-all</artifactId>
-        <version>5.1.1-sohu-03</version>
+        <version>5.3.1-sohu-01</version>
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
     <packaging>jar</packaging>
-    <artifactId>rocketmq-client</artifactId>
-    <name>rocketmq-client ${project.version}</name>
+    <artifactId>rocketmq-remoting</artifactId>
+    <name>rocketmq-remoting ${project.version}</name>
 
     <properties>
         <project.root>${basedir}/..</project.root>
@@ -34,37 +34,21 @@
     <dependencies>
         <dependency>
             <groupId>${project.groupId}</groupId>
-            <artifactId>rocketmq-remoting</artifactId>
-            <exclusions>
-                <exclusion>
-                    <groupId>io.netty</groupId>
-                    <artifactId>netty-tcnative</artifactId>
-                </exclusion>
-            </exclusions>
+            <artifactId>rocketmq-common</artifactId>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.opentracing</groupId>
-            <artifactId>opentracing-api</artifactId>
+            <groupId>org.reflections</groupId>
+            <artifactId>reflections</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.opentracing</groupId>
-            <artifactId>opentracing-mock</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.google.guava</groupId>
-            <artifactId>guava</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.github.aliyunmq</groupId>
-            <artifactId>rocketmq-slf4j-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.github.aliyunmq</groupId>
-            <artifactId>rocketmq-logback-classic</artifactId>
+            <groupId>com.google.code.gson</groupId>
+            <artifactId>gson</artifactId>
+            <version>2.9.0</version>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 </project>

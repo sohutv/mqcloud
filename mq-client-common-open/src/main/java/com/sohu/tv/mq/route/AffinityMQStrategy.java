@@ -1,6 +1,7 @@
 package com.sohu.tv.mq.route;
 
 import com.sohu.tv.mq.util.CommonUtil;
+import org.apache.rocketmq.client.ClientConfig;
 import org.apache.rocketmq.client.impl.producer.TopicPublishInfo;
 import org.apache.rocketmq.client.latency.MQFaultStrategy;
 import org.apache.rocketmq.common.message.MessageQueue;
@@ -20,16 +21,14 @@ public class AffinityMQStrategy extends MQFaultStrategy {
 
     private boolean affinityIfBrokerNotSet;
 
-    public AffinityMQStrategy() {
-    }
-
     public AffinityMQStrategy(String affinityBrokerSuffix, boolean affinityIfBrokerNotSet) {
+        super(new ClientConfig(), null, null);
         this.affinityBrokerSuffix = affinityBrokerSuffix;
         this.affinityIfBrokerNotSet = affinityIfBrokerNotSet;
     }
 
     @Override
-    public MessageQueue selectOneMessageQueue(TopicPublishInfo tpInfo, String lastBrokerName) {
+    public MessageQueue selectOneMessageQueue(TopicPublishInfo tpInfo, String lastBrokerName, boolean resetIndex) {
         List<MessageQueue> messageQueueList = tpInfo.getMessageQueueList();
         for (int i = 0; i < messageQueueList.size(); i++) {
             int index = tpInfo.getSendWhichQueue().incrementAndGet();

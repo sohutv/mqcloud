@@ -181,19 +181,19 @@
 								<#if brokerStat.version??>
 									<#if brokerStat.brokerId == "0">
 										<#if brokerStat.writable>
-											<button title="禁止客户端写入，broker下线前需要先禁止写入，等没有人写入后，再下线" type="button" onclick="program('${brokerStat.brokerAddr}', 'program${i}')" class="btn btn-xs btn-warning" data-target="#nowriteModal${i}" data-toggle="modal">停写</button>
+											<button title="禁止客户端写入，broker下线前需要先禁止写入，等没有人写入后，再下线" type="button" onclick="program('${brokerStat.brokerAddr}', 'program${i}')" class="btn btn-xs btn-danger" data-target="#nowriteModal${i}" data-toggle="modal"><i class="fas fa-ban"></i></button>
 										<#else>
-											<button title="恢复写入" type="button" onclick="program('${brokerStat.brokerAddr}', 'program${i}')" class="btn btn-xs btn-info" data-target="#nowriteModal${i}" data-toggle="modal">恢复</button>
+											<button title="恢复写入" type="button" onclick="program('${brokerStat.brokerAddr}', 'program${i}')" class="btn btn-xs btn-success" data-target="#nowriteModal${i}" data-toggle="modal"><i class="fas fa-ban"></i></button>
 										</#if>
-										<button title="已经停写的broker，可以进行关闭操作" type="button" class="btn btn-xs btn-danger" data-target="#brokerOfflineModal${i}" onclick="program('${brokerStat.brokerAddr}', 'brokerOfflineProgram${i}')" data-toggle="modal">下线</button>
+										<button title="已经停写的broker，可以关闭" type="button" class="btn btn-xs btn-danger" data-target="#brokerOfflineModal${i}" onclick="program('${brokerStat.brokerAddr}', 'brokerOfflineProgram${i}')" data-toggle="modal"><i class="fas fa-power-off"></i></button>
 										<div class="d-inline-flex">
 											<button title="增加slave" type="button" class="btn btn-xs btn-primary"  onclick="addBroker('${key}', '${brokerStat.version}')" data-target="#addBrokerModal" data-toggle="modal"><span class="fas fa-plus" aria-hidden="true"></span></button>
 										</div>
 									<#else>
-										<button title="slave可以直接进行关闭" type="button" class="btn btn-xs btn-danger" data-target="#brokerOfflineModal${i}" onclick="program('${brokerStat.brokerAddr}', 'brokerOfflineProgram${i}')" data-toggle="modal">下线</button>
+										<button title="slave可以直接关闭" type="button" class="btn btn-xs btn-danger" data-target="#brokerOfflineModal${i}" onclick="program('${brokerStat.brokerAddr}', 'brokerOfflineProgram${i}')" data-toggle="modal"><i class="fas fa-power-off"></i></button>
 									</#if>
 								<#else>
-									<button id="brokerBtn${i}" title="启动" data-toggle="tooltip" type="button" id="${key}<#if brokerStat.brokerId != "0">-s</#if>Btn" class="btn btn-xs btn-success" onclick="startupBroker('${brokerStat.brokerAddr}', '${key}<#if brokerStat.brokerId != "0">-s</#if>', '${brokerStat.baseDir!}', 'brokerBtn${i}')">启动</button>
+									<button id="brokerBtn${i}" title="启动Broker" data-toggle="tooltip" type="button" id="${key}<#if brokerStat.brokerId != "0">-s</#if>Btn" class="btn btn-xs btn-success" onclick="startupBroker('${brokerStat.brokerAddr}', '${key}<#if brokerStat.brokerId != "0">-s</#if>', '${brokerStat.baseDir!}', 'brokerBtn${i}')"><i class="fas fa-power-off"></i></button>
 									<#if brokerStat.tmp>
 									<button title="删除未成功部署的Broker" type="button" class="btn btn-xs btn-danger" data-target="#brokerDeleteModal" data-toggle="modal" onclick="deleteBroker('${brokerStat.brokerAddr}', '${brokerStat.baseDir!}')"><i class="fa-fw fas fa-trash-alt"></i></button>
 									<#else>
@@ -1175,8 +1175,11 @@
 			<div class="modal-header">
 				<h4 class="modal-title">自动更新任务列表</h4>&nbsp;
 				<h4>
-					<button id="addAutoUpdateBrokerBtn" type="button" class="btn btn-xs btn-primary" data-toggle="tooltip"
-							onclick="addAutoUpdateBroker()" title="创建自动更新任务"><span class="fas fa-plus"></span>
+					<button type="button" class="btn btn-xs btn-outline-primary" data-toggle="tooltip"
+							onclick="addAutoUpdateBroker(this, 0)" title="升级新版本时使用"><span class="fas fa-plus"></span>新建更新任务</span>
+					</button>
+					<button id="addAutoRestartBrokerBtn" type="button" class="btn btn-xs btn-outline-primary" data-toggle="tooltip"
+							onclick="addAutoUpdateBroker(this, 1)" title="重启Broker时使用"><span class="fas fa-plus"></span>新建重启任务</span>
 					</button>
 				</h4>
 				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
@@ -1747,7 +1750,7 @@ function addBroker(brokerName, version){
 		    		$("#rmqAddressServerDomain").val('${mqcloudDomain}').attr("readonly","readonly");
 	    		}
 	    		if(!$("#rmqAddressServerSubGroup").val()){
-		    		$("#rmqAddressServerSubGroup").val('nsaddr-${response.result.selectedMQCluster.id}').attr("readonly","readonly");
+		    		$("#rmqAddressServerSubGroup").val('bknsaddr-${response.result.selectedMQCluster.id}').attr("readonly","readonly");
 	    		}
 	    		if(brokerName){
 	    			$("#brokerName").val(brokerName);
@@ -2704,10 +2707,11 @@ function refreshAutoUpdatePage() {
 	autoUpdateBrokerShow();
 }
 
-function addAutoUpdateBroker() {
-	disable("addAutoUpdateBrokerBtn");
+function addAutoUpdateBroker(comp, action) {
+	disable(comp);
 	post('${request.contextPath}/admin/broker/autoUpdate/add', {
-		cid: ${response.result.selectedMQCluster.id}
+		cid: ${response.result.selectedMQCluster.id},
+		action: action
 	}, function (data) {
 		if (data.status == 200) {
 			toastr.success("操作成功");
@@ -2715,7 +2719,7 @@ function addAutoUpdateBroker() {
 		} else {
 			toastr.error("操作失败！" + data.message);
 		}
-		enable("addAutoUpdateBrokerBtn");
+		enable(comp);
 	}, 'json');
 }
 
@@ -2736,7 +2740,7 @@ function finishAutoUpdateBroker(id, comp) {
 }
 
 function updateAutoUpdateBroker(id, action, comp) {
-	disableRaw(comp)
+	disable(comp)
 	post('${request.contextPath}/admin/broker/autoUpdate/' + action, {
 		id: id
 	}, function (data) {
@@ -2745,7 +2749,7 @@ function updateAutoUpdateBroker(id, action, comp) {
 			refreshAutoUpdatePage();
 		} else {
 			toastr.error("操作失败！" + data.message);
-			enableRaw(comp)
+			enable(comp)
 		}
 	}, 'json');
 }
@@ -2796,7 +2800,7 @@ function finishAutoUpdateBrokerStep(id, comp) {
 }
 
 function updateAutoUpdateBrokerStep(id, action, comp) {
-	disableRaw(comp)
+	disable(comp)
 	post('${request.contextPath}/admin/broker/autoUpdateStep/' + action, {
 		id: id
 	}, function (data) {
@@ -2805,7 +2809,7 @@ function updateAutoUpdateBrokerStep(id, action, comp) {
 			getAutoUpdateBrokerStepData();
 		} else {
 			toastr.error("操作失败！" + data.message);
-			enableRaw(comp)
+			enable(comp)
 		}
 	}, 'json');
 }

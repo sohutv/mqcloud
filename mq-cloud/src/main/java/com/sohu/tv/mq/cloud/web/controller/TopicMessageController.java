@@ -245,7 +245,6 @@ public class TopicMessageController extends ViewController {
                                    HttpServletResponse response,
                                    @RequestParam(name = "messageParam") String messageParam,
                                    @RequestParam(name = "cid") Long cid,
-                                   @RequestParam(name = "broker" ,required = false) String broker,
                                    @RequestParam("traceUniqKey") String traceUniqKey,
                                    Map<String, Object> map) throws Exception {
         String view = viewModule() + "/timerWheelRollTraceSearch";
@@ -263,18 +262,11 @@ public class TopicMessageController extends ViewController {
             return view;
         }
         Cluster cluster = clusterService.getMQClusterById(cid);
-        if (StringUtils.isBlank(broker)) {
-            Result<DecodedMessage> messageResult = messageService.queryMessage(cluster, RMQ_SYS_WHEEL_TIMER, traceUniqKey);
-            if (messageResult.isNotOK()) {
-                setResult(map, Result.getResult(Status.PARAM_ERROR));
-                return view;
-            }
-            broker = messageResult.getResult().getBroker();
-        }
+        long now = System.currentTimeMillis();
         // 查询原始消息
-        Result<List<DecodedMessage>> originalTimerMessageResult = messageService.queryTimerMessage(cluster, traceUniqKey,
-                broker, beginTime, 0L, true);
-        if (originalTimerMessageResult.isNotOK()) {
+        Result<List<DecodedMessage>> originalTimerMessageResult = messageService.queryMessageByKey(cluster,
+                RMQ_SYS_WHEEL_TIMER, traceUniqKey, beginTime, now, true);
+        if (originalTimerMessageResult.isEmpty()) {
             setResult(map, originalTimerMessageResult);
             return view;
         }
@@ -282,9 +274,9 @@ public class TopicMessageController extends ViewController {
         // 查询对应的取消类的消息
         String realTopic = originalTimerMessageResult.getResult().get(0).getRealTopic();
         String key = realTopic + "_" + traceUniqKey;
-        Result<List<DecodedMessage>> cancelTimerMessageResult = messageService.queryTimerMessage(cluster, key,
-                broker, beginTime, 0L, false);
-        if (cancelTimerMessageResult.isOK() && cancelTimerMessageResult.getResult() != null) {
+        Result<List<DecodedMessage>> cancelTimerMessageResult = messageService.queryMessageByKey(cluster,
+                RMQ_SYS_WHEEL_TIMER, key, beginTime, now);
+        if (cancelTimerMessageResult.isNotEmpty()) {
             result.addAll(cancelTimerMessageResult.getResult());
         }
         // 排序，按照存储时间排序
@@ -764,6 +756,7 @@ public class TopicMessageController extends ViewController {
                     endTime);
             setResult(map, result);
         }
+        setResult(map, "deadTopic", CommonUtil.isDeadTopic(topic));
         return view;
     }
 
@@ -905,7 +898,10 @@ public class TopicMessageController extends ViewController {
                 return Result.getResult(Status.INVALID_UNIQID).formatMessage(detail.middle);
             }
             // 校验消息是否是时间轮消息
-            DecodedMessage decodedMessage = result.getResult().get(0);
+            DecodedMessage decodedMessage = result.getResult().stream()
+                    .sorted(Comparator.comparing(DecodedMessage::getStoreTimestamp).reversed())
+                    .findFirst()
+                    .get();
             long timerDeliverMs = decodedMessage.getTimerDeliverTime();
             if (timerDeliverMs == 0) {
                 return Result.getResult(Status.NON_WHEEL_DELAY).formatMessage(detail.middle);

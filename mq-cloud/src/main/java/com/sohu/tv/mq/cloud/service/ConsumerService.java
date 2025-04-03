@@ -1247,7 +1247,7 @@ public class ConsumerService {
 
             @Override
             public Result<ConsumeStats> exception(Exception e) throws Exception {
-                logger.error("examineConsumeStats:{} err}", consumer, e);
+                logger.error("examineConsumeStats:{} err", consumer, e);
                 return Result.getWebErrorResult(e);
             }
 

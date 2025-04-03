@@ -61,6 +61,7 @@ public class CommonConfig {
                 || key.equals("machineRoom") || key.equals("machineRoomList") || key.equals("machineRoomColor")
                 || key.equals("clientGroupNSConfig") || key.equals("oldReqestCodeBrokerSet") || key.equals("proxyAcls")
                 || key.equals("orderTopicKVConfig") || key.equals("rsyncConfig") || key.equals("clusterStoreWarnConfig")
+                || key.equals("consumersForSendWarnToOut")
                 ;
     }
 

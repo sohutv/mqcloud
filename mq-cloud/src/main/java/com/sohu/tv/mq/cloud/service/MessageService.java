@@ -30,6 +30,7 @@ import org.apache.rocketmq.client.exception.MQClientException;
 import org.apache.rocketmq.client.producer.SendResult;
 import org.apache.rocketmq.client.trace.TraceBean;
 import org.apache.rocketmq.client.trace.TraceContext;
+import org.apache.rocketmq.client.trace.TraceDataEncoder;
 import org.apache.rocketmq.client.trace.TraceType;
 import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.TopicConfig;
@@ -137,7 +138,7 @@ public class MessageService {
                 QueryResult queryResult = null;
                 if (isUniqueKey) {
                     SohuMQAdmin sohuMQAdmin = (SohuMQAdmin) mqAdmin;
-                    queryResult = sohuMQAdmin.queryMessageByUniqKey(topic, key, 32, begin, end);
+                    queryResult = sohuMQAdmin.queryMessageByUniqKey(cluster.getName(), topic, key, 32, begin, end);
                 } else {
                     queryResult = mqAdmin.queryMessage(topic, key, 100, begin, end);
                 }
@@ -270,49 +271,6 @@ public class MessageService {
         md.setMp(messageQueryCondition);
         md.setMsgList(messageList);
         return Result.getResult(md);
-    }
-
-    /**
-     * 抓取时间轮定时消息
-     *
-     * @param cluster
-     * @param key
-     * @param broker
-     * @param begin
-     * @param end
-     * @param isUniqueKey
-     * @return
-     * @throws MQClientException
-     */
-    public Result<List<DecodedMessage>> queryTimerMessage(Cluster cluster,String key,
-                                                          String broker, long begin,
-                                                          long end, boolean isUniqueKey) {
-        Result<?> clusterInfoResult = examineBrokerClusterInfo(cluster);
-        if (clusterInfoResult.isNotOK()) {
-            return (Result<List<DecodedMessage>>) clusterInfoResult;
-        }
-        ClusterInfo clusterInfo = (ClusterInfo) clusterInfoResult.getResult();
-        return mqAdminTemplate.execute(new MQAdminCallback<Result<List<DecodedMessage>>>() {
-            @Override
-            public Result<List<DecodedMessage>> callback(MQAdminExt mqAdmin) throws Exception {
-                SohuMQAdmin sohuMQAdmin = (SohuMQAdmin) mqAdmin;
-                QueryResult queryResult = sohuMQAdmin.queryTimerMessageByUniqKey(broker, key, begin, end, isUniqueKey);
-                List<DecodedMessage> decodedMessages = decodeMessages(queryResult, RMQ_SYS_WHEEL_TIMER, clusterInfo);
-                if (decodedMessages == null) {
-                    return Result.getResult(Status.NO_RESULT);
-                }
-                return Result.getResult(decodedMessages);
-            }
-
-            public Result<List<DecodedMessage>> exception(Exception e) throws Exception {
-                logger.error("queryMessage cluster:{}  key:{}, err:{}", cluster, key, e.getMessage());
-                return Result.getWebErrorResult(e);
-            }
-
-            public Cluster mqCluster() {
-                return cluster;
-            }
-        });
     }
 
     /**
@@ -492,7 +450,7 @@ public class MessageService {
         if (decodedBody instanceof byte[]) {
             m.setMessageBodyType(MessageBodyType.BYTE_ARRAY);
             if (CommonUtil.isTraceTopic(msg.getTopic())) {
-                List<TraceContext> traceContextList = MsgTraceDecodeUtil
+                List<TraceContext> traceContextList = TraceDataEncoder
                         .decoderFromTraceDataString(new String((byte[]) decodedBody));
                 m.setDecodedBody(JSONUtil.toJSONString(traceContextList));
             } else {
@@ -535,6 +493,11 @@ public class MessageService {
         // 设置滚动次数(时间轮定时消息特有属性)
         String times = Optional.ofNullable(msg.getProperty("TIMER_ROLL_TIMES")).orElse("0");
         m.setTimerRollTimes(NumberUtils.toInt(times));
+        String bornHost = msg.getUserProperty(MessageConst.PROPERTY_BORN_HOST);
+        if (bornHost != null) {
+            m.getUserProperty(MessageConst.PROPERTY_BORN_HOST);
+            m.getProperties().put(MessageConst.PROPERTY_BORN_HOST, bornHost);
+        }
         return m;
     }
 
@@ -1201,20 +1164,22 @@ public class MessageService {
             for (TraceContext traceContext : traceContextList) {
                 TraceBean traceBean = traceContext.getTraceBeans().get(0);
                 // 过滤非相关消息
-                if (!msgKey.equals(traceBean.getMsgId()) && !msgKey.equals(traceBean.getKeys())) {
+                if (!containsMessageKey(traceBean, msgKey)) {
                     continue;
                 }
-                TraceViewVO traceViewVO = msgTraceViewMap.get(traceBean.getMsgId());
+                TraceViewVO traceViewVO = msgTraceViewMap.get(msgKey);
                 if (traceViewVO == null) {
                     traceViewVO = new TraceViewVO();
-                    msgTraceViewMap.put(traceBean.getMsgId(), traceViewVO);
+                    msgTraceViewMap.put(msgKey, traceViewVO);
                 }
                 // 构建消息详情
                 TraceMessageDetail traceMessageDetail = new TraceMessageDetail();
                 BeanUtils.copyProperties(traceContext, traceMessageDetail);
                 BeanUtils.copyProperties(traceBean, traceMessageDetail);
-                // ClientHost统一使用消息中的bornHost
-                traceMessageDetail.setClientHost(decodedMessage.getBornHostString());
+                if (traceBean.isClientHostEqualLocalHost()) {
+                    // ClientHost使用消息中的bornHost
+                    traceMessageDetail.setClientHost(decodedMessage.getBornHostString());
+                }
                 // 发送消息部分
                 if (TraceType.Pub == traceContext.getTraceType()) {
                     traceViewVO.buildProducer(traceMessageDetail, traceContext);
@@ -1244,7 +1209,29 @@ public class MessageService {
         }
         return msgTraceViewMap;
     }
-    
+
+    private boolean containsMessageKey(TraceBean traceBean, String msgKey) {
+        return containsMessageKey(traceBean.getKeys(), msgKey) || containsMessageKey(traceBean.getMsgId(), msgKey);
+    }
+
+    private boolean containsMessageKey(String msgKeys, String msgKey) {
+        if (msgKeys == null) {
+            return false;
+        }
+        return containsMessageKey(msgKeys, MessageConst.KEY_SEPARATOR, msgKey)
+                || containsMessageKey(msgKeys, ",", msgKey);
+    }
+
+    private boolean containsMessageKey(String msgKeys, String spliter, String msgKey) {
+        String[] keys = msgKeys.split(spliter);
+        for (String key : keys) {
+            if (key.equals(msgKey)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     /**
      * 配置改变
      */
@@ -1310,7 +1297,7 @@ public class MessageService {
                 public Result<MessageExt> callback(MQAdminExt mqAdmin) throws Exception {
                     SohuMQAdmin sohuMQAdmin = (SohuMQAdmin) mqAdmin;
                     long beginQueryTime = MessageClientIDSetter.getNearlyTimeFromID(msgId).getTime() - 1000 * 60 * 5L;
-                    QueryResult queryResult = sohuMQAdmin.queryMessageByUniqKey(topic, msgId, 32, beginQueryTime, Long.MAX_VALUE);
+                    QueryResult queryResult = sohuMQAdmin.queryMessageByUniqKey(cluster.getName(), topic, msgId, 32, beginQueryTime, Long.MAX_VALUE);
                     if(queryResult.getMessageList() == null || queryResult.getMessageList().size() == 0){
                         return Result.getResult(Status.NO_RESULT);
                     }

@@ -13,6 +13,7 @@ import com.sohu.tv.mq.cloud.util.DateUtil;
 import com.sohu.tv.mq.cloud.util.Result;
 import com.sohu.tv.mq.cloud.util.Status;
 import org.apache.ibatis.session.SqlSessionFactory;
+import org.apache.rocketmq.common.Pair;
 import org.apache.rocketmq.common.stats.Stats;
 import org.apache.rocketmq.tools.admin.MQAdminExt;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -73,15 +74,18 @@ public class TopicTrafficService extends TrafficService<TopicTraffic> {
      * @param mqCluster
      * @return topic size
      */
-    public int collectTraffic(Cluster mqCluster) {
+    public Pair<Integer, Integer> collectTraffic(Cluster mqCluster) {
+        // 第一个参数表示topic size，第二个参数表示收集失败的数量
+        Pair<Integer, Integer> pair = new Pair<>(0, 0);
         Result<List<Topic>> topicListResult = topicService.queryTopicList(mqCluster);
         if (topicListResult.isEmpty()) {
             logger.error("cannot get topic list for cluster:{}", mqCluster);
-            return 0;
+            return pair;
         }
         String time = DateUtil.getFormatNow(DateUtil.HHMM);
         Date date = new Date();
         List<Topic> topicList = topicListResult.getResult();
+        pair.setObject1(topicList.size());
         mqAdminTemplate.execute(new DefaultInvoke() {
             public void invoke(MQAdminExt mqAdmin) throws Exception {
                 for (Topic topic : topicList) {
@@ -89,7 +93,10 @@ public class TopicTrafficService extends TrafficService<TopicTraffic> {
                     topicTraffic.setCreateTime(time);
                     topicTraffic.setCreateDate(date);
                     topicTraffic.setClusterId(mqCluster().getId());
-                    fetchTraffic(mqAdmin, topic.getName(), topic.getName(), topicTraffic);
+                    boolean hasFetchError = fetchTraffic(mqAdmin, topic.getName(), topic.getName(), topicTraffic);
+                    if (hasFetchError) {
+                        pair.setObject2(pair.getObject2() + 1);
+                    }
                     if (topicTraffic.getCount() != 0 || topicTraffic.getSize() != 0) {
                         topicTraffic.setTid(topic.getId());
                         save(topicTraffic);
@@ -103,7 +110,7 @@ public class TopicTrafficService extends TrafficService<TopicTraffic> {
         });
         // 保存broker流量
         brokerTrafficService.saveProduceBrokerTraffic(time, mqCluster.getId());
-        return topicList.size();
+        return pair;
     }
 
     /**

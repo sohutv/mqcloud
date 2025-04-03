@@ -36,6 +36,7 @@
 				<tr>
 					<td>addr</td>
 					<td>创建时间</td>
+					<td>链接</td>
 					<td data-toggle="tooltip" title="MQCloud会定时监控Proxy是否存活">状态</td>
 					<td>监控时间</td>
 					<td>操作</td>
@@ -50,6 +51,14 @@
 							<td>${proxy.addr}</td>
 							<td>${proxy.createTime?string("yyyy-MM-dd HH:mm:ss")}</td>
 							<td>
+								<a href="#" data-target="#clientConnectionModal" data-toggle="modal" onclick="producerConnection('${proxy.addr}')" title="生产者：${proxy.producerSize!0}">
+									${proxy.producerConnectionSize!0}
+								</a>
+								<a href="#" data-target="#clientConnectionModal" data-toggle="modal" onclick="consumerConnection('${proxy.addr}')" title="消费者：${proxy.consumerSize!0}">
+									${proxy.consumerConnectionSize!0}
+								</a>
+							</td>
+							<td>
 								<#if proxy.checkStatus == 2>
 									<font style='font-weight:bold' color='red'>${proxy.checkStatusDesc}</font>
 								<#else>
@@ -63,11 +72,16 @@
 							</td>
 							<td>
 								<#if proxy.checkStatusOK>
-								<span id="proxy_${proxy_index + 1}" style="display: none">${proxy.config!}</span>
-								<button type="button" class="btn btn-sm btn-info" title="查看配置" data-target="#proxyConfigModal" data-toggle="modal" onclick="viewProxyConfig('proxy_${proxy_index + 1}')"><i class="fas fa-eye"></i></button>
-								<button type="button" class="btn btn-sm btn-warning" title="kill Proxy进程" data-target="#proxyOfflineModal" data-toggle="modal" onclick="offlineProxy('${proxy.addr}');">下线</button>
+									<span id="proxy_${proxy_index + 1}" style="display: none">${proxy.config!}</span>
+									<button type="button" class="btn btn-sm btn-info" title="查看配置" data-target="#proxyConfigModal" data-toggle="modal" onclick="viewProxyConfig('proxy_${proxy_index + 1}')"><i class="fas fa-eye"></i></button>
+									<#if proxy.statusOK>
+										<button type="button" class="btn btn-sm btn-danger" title="摘除Proxy流量，将该Proxy从MQ客户端发现地址中剔除，当没有客户端链接时，再安全下线" data-toggle="tooltip" onclick="switchProxy(this, '${proxy.addr}', 'unregister');"><i class="fas fa-ban"></i></button>
+									<#else>
+										<button type="button" class="btn btn-sm btn-success" title="恢复Proxy流量" data-toggle="tooltip" onclick="switchProxy(this, '${proxy.addr}', 'register');"><i class="fas fa-ban"></i></button>
+									</#if>
+									<button type="button" class="btn btn-sm btn-danger" title="关闭Proxy进程" data-target="#proxyOfflineModal" data-toggle="modal" onclick="offlineProxy('${proxy.addr}');"><i class="fas fa-power-off"></i></button>
 								<#else>
-								<button id="proxyBtn${proxy_index}" data-toggle="tooltip" type="button" class="btn btn-sm btn-success" onclick="startupProxy('${proxy.ip}', ${proxy.port}, '${proxy.baseDir!}', 'proxyBtn${proxy_index}')">启动</button>
+									<button id="proxyBtn${proxy_index}" data-toggle="tooltip" type="button" class="btn btn-sm btn-success" title="启动Proxy" onclick="startupProxy('${proxy.ip}', ${proxy.port}, '${proxy.baseDir!}', 'proxyBtn${proxy_index}')"><i class="fas fa-power-off"></i></button>
 								</#if>
 								<button type="button" class="btn btn-sm btn-danger" title="删除Proxy地址" data-target="#proxyDeleteModal" data-toggle="modal" onclick="deleteProxy('${proxy.addr}');"><span class="fas fa-trash-alt" aria-hidden="true"></span></button>
 							</td>
@@ -314,6 +328,35 @@
 			</div>
 			<div class="modal-footer">
 				<button type="button" data-dismiss="modal" class="btn btn-default" >关闭</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- 查看客户端链接详情 -->
+<div id="clientConnectionModal" class="modal fade" tabindex="-1" data-width="400" aria-hidden="true">
+	<div class="modal-dialog modal-xl">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h4 class="modal-title">客户端链接</h4>
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+			</div>
+			<div class="modal-body card-body table-responsive p-0">
+				<table class="table text-nowrap table-hover" style="margin-top: 0px">
+					<thead>
+					<tr>
+						<th>序号</th>
+						<th>group</th>
+						<th>客户端地址</th>
+						<th>语言</th>
+						<th>版本</th>
+						<th>更新时间</th>
+					</tr>
+					</thead>
+					<tbody id="clientConnectionBody">
+						<tr class="no_more_data"><td class="text-center" colspan="6">数据加载中...</td></tr>
+					</tbody>
+				</table>
 			</div>
 		</div>
 	</div>
@@ -687,23 +730,20 @@ function warn_smartwizard(content, index) {
 function disable_smartwizard(content, index) {
 	$('#'+ content).smartWizard("setState", [index], "disable");
 }
-</script>
-</#if>
 
-<script>
 function associateProxy(){
 	disable("associateProxyBtn");
 	$.post('${request.contextPath}/admin/proxy/add',
-		$("#associateProxyForm").serialize(),
-        function(data){
-            if(data.status == 200){
-				toastr.success("关联成功，将自动刷新");  
-				reload(3000);
-		    }else{
-		    	toastr.error("关联失败！"+data.message);
-		    	enable("associateProxyBtn");
-		    }
-        }, 'json');
+			$("#associateProxyForm").serialize(),
+			function(data){
+				if(data.status == 200){
+					toastr.success("关联成功，将自动刷新");
+					reload(3000);
+				}else{
+					toastr.error("关联失败！"+data.message);
+					enable("associateProxyBtn");
+				}
+			}, 'json');
 }
 
 function viewProxyConfig(configId) {
@@ -714,4 +754,42 @@ function viewProxyConfig(configId) {
 		$("#proxyConfigPre").html("关联的proxy暂无配置");
 	}
 }
+
+function producerConnection(addr) {
+	clientConnection(addr, "producer");
+}
+
+function consumerConnection(addr) {
+	clientConnection(addr, "consumer");
+}
+
+function clientConnection(addr, type) {
+	$.get('${request.contextPath}/admin/proxy/' + type + '/connection', {
+				cid: ${selectedCluster.id},
+				addr: addr
+			}, function (data) {
+				$("#clientConnectionBody").html(data);
+				$('[data-tooltip="true"]').tooltip({
+					container: 'body'
+				});
+			}
+	);
+}
+
+function switchProxy(comp, addr, action) {
+	disable(comp);
+	$.post('${request.contextPath}/admin/proxy/' + action, {
+		cid: ${selectedCluster.id},
+		addr: addr
+	}, function (data) {
+		if (data.status == 200) {
+			toastr.success("操作成功，将自动刷新");
+			reload(2000);
+		} else {
+			toastr.error("操作失败！" + data.message);
+			enable(comp);
+		}
+	}, 'json');
+}
 </script>
+</#if>

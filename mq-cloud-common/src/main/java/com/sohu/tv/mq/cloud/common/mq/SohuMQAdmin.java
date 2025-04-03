@@ -5,24 +5,31 @@ import com.alibaba.fastjson.JSONException;
 import com.alibaba.fastjson.JSONObject;
 import com.sohu.tv.mq.cloud.common.model.BrokerMomentStatsData;
 import com.sohu.tv.mq.cloud.common.model.BrokerRateLimitData;
-import com.sohu.tv.mq.cloud.common.model.UpdateSendMsgRateLimitRequestHeader;
 import com.sohu.tv.mq.cloud.common.model.*;
 import com.sohu.tv.mq.util.Constant;
 import org.apache.rocketmq.client.ClientConfig;
-import org.apache.rocketmq.client.QueryResult;
 import org.apache.rocketmq.client.exception.MQBrokerException;
 import org.apache.rocketmq.client.exception.MQClientException;
 import org.apache.rocketmq.client.impl.factory.MQClientInstance;
 import org.apache.rocketmq.client.producer.SendResult;
 import org.apache.rocketmq.common.MixAll;
-import org.apache.rocketmq.common.message.*;
-import org.apache.rocketmq.remoting.InvokeCallback;
+import org.apache.rocketmq.common.message.Message;
+import org.apache.rocketmq.common.message.MessageDecoder;
+import org.apache.rocketmq.common.message.MessageExt;
+import org.apache.rocketmq.common.message.MessageQueue;
 import org.apache.rocketmq.remoting.RPCHook;
-import org.apache.rocketmq.remoting.exception.*;
+import org.apache.rocketmq.remoting.exception.RemotingConnectException;
+import org.apache.rocketmq.remoting.exception.RemotingException;
+import org.apache.rocketmq.remoting.exception.RemotingSendRequestException;
+import org.apache.rocketmq.remoting.exception.RemotingTimeoutException;
+import org.apache.rocketmq.remoting.protocol.RemotingCommand;
+import org.apache.rocketmq.remoting.protocol.RemotingSysResponseCode;
 import org.apache.rocketmq.remoting.protocol.RequestCode;
-import org.apache.rocketmq.remoting.protocol.*;
+import org.apache.rocketmq.remoting.protocol.ResponseCode;
 import org.apache.rocketmq.remoting.protocol.body.*;
-import org.apache.rocketmq.remoting.protocol.header.*;
+import org.apache.rocketmq.remoting.protocol.header.ConsumeMessageDirectlyResultRequestHeader;
+import org.apache.rocketmq.remoting.protocol.header.GetConsumerRunningInfoRequestHeader;
+import org.apache.rocketmq.remoting.protocol.header.ResetOffsetRequestHeader;
 import org.apache.rocketmq.remoting.protocol.header.namesrv.UnRegisterBrokerRequestHeader;
 import org.apache.rocketmq.remoting.protocol.route.BrokerData;
 import org.apache.rocketmq.remoting.protocol.route.TopicRouteData;
@@ -32,10 +39,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Field;
-import java.nio.ByteBuffer;
-import java.util.*;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
 /**
  * sohu实现，为了添加扩展某些方法
@@ -661,135 +667,5 @@ public abstract class SohuMQAdmin extends DefaultMQAdminExt {
         } catch (Exception e) {
             logger.warn("setProtocol error:{}", e.toString());
         }
-    }
-
-    /**
-     * 查询时间轮定时消息
-     *
-     * @throws Exception
-     */
-    public QueryResult queryTimerMessageByUniqKey(String broker, String uniqKey,
-                                                  long begin, long end,
-                                                  boolean isUniqKey) throws Exception {
-        long nowTime = System.currentTimeMillis();
-        begin = begin == 0L ? nowTime - 30 * 24 * 60 * 60 * 1000L : begin;
-        end = end == 0L ? nowTime : end;
-        final String timerTopic = "rmq_sys_wheel_timer";
-        MQClientInstance mqClientInstance = getMQClientInstance();
-        TopicRouteData topicRouteData = mqClientInstance.getAnExistTopicRouteData(timerTopic);
-        if (null == topicRouteData) {
-            mqClientInstance.updateTopicRouteInfoFromNameServer(timerTopic);
-            topicRouteData = mqClientInstance.getAnExistTopicRouteData(timerTopic);
-        }
-        if (topicRouteData != null) {
-            String targetBroker = topicRouteData.getBrokerDatas().stream()
-                    .filter(t -> broker.equals(t.getBrokerName()))
-                    .map(BrokerData::selectBrokerAddr)
-                    .findFirst()
-                    .orElse(null);
-            if (targetBroker != null) {
-                final List<QueryResult> queryResultList = new LinkedList<>();
-                final CountDownLatch countDownLatch = new CountDownLatch(1);
-                try {
-                    QueryMessageRequestHeader requestHeader = new QueryMessageRequestHeader();
-                    requestHeader.setTopic(timerTopic);
-                    requestHeader.setKey(uniqKey);
-                    requestHeader.setMaxNum(64);
-                    requestHeader.setBeginTimestamp(begin);
-                    requestHeader.setEndTimestamp(end);
-                    mqClientInstance.getMQClientAPIImpl().queryMessage(targetBroker, requestHeader, 10000,
-                            (InvokeCallback) responseFuture -> {
-                                try {
-                                    RemotingCommand response = responseFuture.getResponseCommand();
-                                    if (response != null) {
-                                        switch (response.getCode()) {
-                                            case ResponseCode.SUCCESS: {
-                                                QueryMessageResponseHeader responseHeader = null;
-                                                try {
-                                                    responseHeader =
-                                                            (QueryMessageResponseHeader) response
-                                                                    .decodeCommandCustomHeader(QueryMessageResponseHeader.class);
-                                                } catch (RemotingCommandException e) {
-                                                    logger.error("decodeCommandCustomHeader exception", e);
-                                                    return;
-                                                }
-
-                                                List<MessageExt> wrappers =
-                                                        MessageDecoder.decodes(ByteBuffer.wrap(response.getBody()), true);
-
-                                                QueryResult qr = new QueryResult(responseHeader.getIndexLastUpdateTimestamp(), wrappers);
-                                                queryResultList.add(qr);
-                                                break;
-                                            }
-                                            default:
-                                                logger.warn("getResponseCommand failed, {} {}", response.getCode(), response.getRemark());
-                                                break;
-                                        }
-                                    } else {
-                                        logger.warn("getResponseCommand return null");
-                                    }
-                                } finally {
-                                    countDownLatch.countDown();
-                                }
-                            }, isUniqKey);
-                } catch (Exception e) {
-                    logger.warn("queryMessage exception", e);
-                }
-                boolean ok = countDownLatch.await(15000, TimeUnit.MILLISECONDS);
-                if (!ok) {
-                    logger.warn("queryMessage, maybe some broker failed");
-                }
-                long indexLastUpdateTimestamp = 0;
-                List<MessageExt> messageList = new LinkedList<>();
-                for (QueryResult qr : queryResultList) {
-                    if (qr.getIndexLastUpdateTimestamp() > indexLastUpdateTimestamp) {
-                        indexLastUpdateTimestamp = qr.getIndexLastUpdateTimestamp();
-                    }
-                    for (MessageExt msgExt : qr.getMessageList()) {
-                        if (isUniqKey) {
-                            if (msgExt.getMsgId().equals(uniqKey)) {
-                                messageList.add(msgExt);
-                            } else {
-                                logger.warn("queryMessage by uniqKey, find message key not matched, maybe hash duplicate {}", msgExt.toString());
-                            }
-                        } else {
-                            String keys = msgExt.getKeys();
-                            String msgTopic = msgExt.getTopic();
-                            if (keys != null) {
-                                boolean matched = false;
-                                String[] keyArray = keys.split(MessageConst.KEY_SEPARATOR);
-                                for (String k : keyArray) {
-                                    // both topic and key must be equal at the same time
-                                    if (Objects.equals(uniqKey, k) && Objects.equals(timerTopic, msgTopic)) {
-                                        matched = true;
-                                        break;
-                                    }
-                                }
-
-                                if (matched) {
-                                    messageList.add(msgExt);
-                                } else {
-                                    logger.warn("queryMessage, find message key not matched, maybe hash duplicate {}", msgExt.toString());
-                                }
-                            }
-                        }
-                    }
-                }
-
-                //If namespace not null , reset Topic without namespace.
-                if (null != mqClientInstance.getClientConfig().getNamespace()) {
-                    for (MessageExt messageExt : messageList) {
-                        messageExt.setTopic(NamespaceUtil.withoutNamespace(messageExt.getTopic(), mqClientInstance.getClientConfig().getNamespace()));
-                    }
-                }
-
-                if (!messageList.isEmpty()) {
-                    return new QueryResult(indexLastUpdateTimestamp, messageList);
-                } else {
-                    throw new MQClientException(ResponseCode.NO_MESSAGE, "query message by key finished, but no message.");
-                }
-            }
-        }
-        throw new MQClientException(ResponseCode.TOPIC_NOT_EXIST, "The topic[" + timerTopic + "] not matched route info, broker[" + broker + "]");
     }
 }

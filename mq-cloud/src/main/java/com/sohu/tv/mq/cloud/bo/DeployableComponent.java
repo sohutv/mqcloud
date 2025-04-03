@@ -22,6 +22,8 @@ public abstract class DeployableComponent {
     protected int checkStatus;
     // 检测时间
     protected Date checkTime;
+    // 状态
+    protected int status;
 
     public int getCid() {
         return cid;
@@ -101,6 +103,18 @@ public abstract class DeployableComponent {
         return CheckStatusEnum.getCheckStatusEnumByStatus(getCheckStatus()).getDesc();
     }
 
+    public int getStatus() {
+        return status;
+    }
+
+    public void setStatus(int status) {
+        this.status = status;
+    }
+
+    public boolean isStatusOK() {
+        return status == 0;
+    }
+
     @Override
     public String toString() {
         return "{" +
@@ -110,6 +124,7 @@ public abstract class DeployableComponent {
                 ", createTime=" + createTime +
                 ", checkStatus=" + checkStatus +
                 ", checkTime=" + checkTime +
+                ", status=" + status +
                 '}';
     }
 }

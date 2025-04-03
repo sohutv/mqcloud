@@ -1,11 +1,12 @@
 package com.sohu.tv.mq.cloud.service;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-
+import com.sohu.tv.mq.cloud.bo.ProducerStat;
+import com.sohu.tv.mq.cloud.bo.ProducerTotalStat;
+import com.sohu.tv.mq.cloud.common.MemoryMQConsumer;
+import com.sohu.tv.mq.cloud.util.DateUtil;
+import com.sohu.tv.mq.cloud.util.Result;
+import com.sohu.tv.mq.stats.InvokeStats.InvokeStatsResult;
+import com.sohu.tv.mq.stats.dto.ClientStats;
 import com.sohu.tv.mq.util.JSONUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,13 +15,11 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Component;
 
-import com.sohu.tv.mq.cloud.bo.ProducerStat;
-import com.sohu.tv.mq.cloud.bo.ProducerTotalStat;
-import com.sohu.tv.mq.cloud.common.MemoryMQConsumer;
-import com.sohu.tv.mq.cloud.util.DateUtil;
-import com.sohu.tv.mq.cloud.util.Result;
-import com.sohu.tv.mq.stats.InvokeStats.InvokeStatsResult;
-import com.sohu.tv.mq.stats.dto.ClientStats;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 /**
  * 客户端统计消费
  * 
@@ -86,6 +85,7 @@ public class ClientStatsConsumer implements MemoryMQConsumer<ClientStats> {
         ProducerTotalStat producerTotalStat = new ProducerTotalStat();
         producerTotalStat.setAvg(clientStats.getAvg());
         producerTotalStat.setClient(clientStats.getClient());
+        producerTotalStat.setIp(producerTotalStat.getClient().split("@")[0]);
         producerTotalStat.setCount(clientStats.getCounts());
         producerTotalStat.setPercent90(clientStats.getPercent90());
         producerTotalStat.setPercent99(clientStats.getPercent99());

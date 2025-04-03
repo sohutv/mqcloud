@@ -25,6 +25,12 @@ public interface NameServerDao {
     public List<NameServer> selectByClusterId(@Param("cid") int cid);
 
     /**
+     * 查询
+     */
+    @Select("select * from name_server where cid = #{cid} and `status` = 0")
+    public List<NameServer> selectOKByClusterId(@Param("cid") int cid);
+
+    /**
      * 根据addr查询
      */
     @Select("select * from name_server where addr = #{addr}")
@@ -58,7 +64,13 @@ public interface NameServerDao {
      */
     @Update("update name_server set check_status = #{checkStatus}, check_time = now()  where cid = #{cid} and addr = #{addr}")
     public Integer update(@Param("cid") int cid, @Param("addr") String addr, @Param("checkStatus") int checkStatus);
-    
+
+    /**
+     * 更新
+     */
+    @Update("update name_server set status = #{status} where cid = #{cid} and addr = #{addr}")
+    public Integer updateStatus(@Param("cid") int cid, @Param("addr") String addr, @Param("status") int status);
+
     /**
      * 删除
      * 

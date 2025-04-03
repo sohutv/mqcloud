@@ -3,6 +3,7 @@ package com.sohu.tv.mq.cloud.web.controller.admin;
 import com.sohu.tv.mq.cloud.bo.CheckStatusEnum;
 import com.sohu.tv.mq.cloud.bo.Cluster;
 import com.sohu.tv.mq.cloud.bo.Proxy;
+import com.sohu.tv.mq.cloud.common.model.ClientConnectionSize;
 import com.sohu.tv.mq.cloud.service.ClusterService;
 import com.sohu.tv.mq.cloud.service.MQDeployer;
 import com.sohu.tv.mq.cloud.service.ProxyService;
@@ -12,10 +13,7 @@ import com.sohu.tv.mq.cloud.util.Status;
 import com.sohu.tv.mq.cloud.web.vo.UserInfo;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
@@ -45,19 +43,26 @@ public class AdminProxyController extends AdminViewController {
     @RequestMapping("/list")
     public String list(@RequestParam(name = "cid", required = false) Integer cid, Map<String, Object> map) {
         setView(map, "list");
-        Cluster mqCluster = getMQCluster(cid);
+        Cluster mqCluster = clusterService.getOrDefaultMQCluster(cid);
         if (mqCluster == null) {
             return view();
         }
         Result<List<Proxy>> result = proxyService.query(mqCluster.getId());
         if (result.isNotEmpty()) {
             // 检查状态
-            result.getResult().forEach(nameServer -> {
-                Result<?> healthCheckResult = proxyService.healthCheck(nameServer.getAddr());
+            result.getResult().forEach(proxy -> {
+                Result<?> healthCheckResult = proxyService.healthCheck(proxy.getAddr());
                 if (healthCheckResult.isOK()) {
-                    nameServer.setCheckStatus(CheckStatusEnum.OK.getStatus());
+                    proxy.setCheckStatus(CheckStatusEnum.OK.getStatus());
+                    ClientConnectionSize connSize = proxyService.getClientConnectionSize(cid, proxy.getAddr()).getResult();
+                    if (connSize != null) {
+                        proxy.setProducerSize(connSize.getProducerSize());
+                        proxy.setProducerConnectionSize(connSize.getProducerConnectionSize());
+                        proxy.setConsumerSize(connSize.getConsumerSize());
+                        proxy.setConsumerConnectionSize(connSize.getConsumerConnectionSize());
+                    }
                 } else {
-                    nameServer.setCheckStatus(CheckStatusEnum.FAIL.getStatus());
+                    proxy.setCheckStatus(CheckStatusEnum.FAIL.getStatus());
                 }
             });
         }
@@ -160,15 +165,46 @@ public class AdminProxyController extends AdminViewController {
         return result;
     }
 
-    private Cluster getMQCluster(Integer cid) {
-        Cluster mqCluster = null;
-        if (cid != null) {
-            mqCluster = clusterService.getMQClusterById(cid);
-        }
-        if (mqCluster == null && clusterService.getAllMQCluster() != null) {
-            mqCluster = clusterService.getAllMQCluster()[0];
-        }
-        return mqCluster;
+    /**
+     * producer链接
+     */
+    @GetMapping(value = "/producer/connection")
+    public String producerConnection(@RequestParam(name = "cid") int cid,
+                                     @RequestParam(name = "addr") String addr,
+                                     Map<String, Object> map) {
+        setResult(map, proxyService.fetchAllProducerConnection(addr, clusterService.getMQClusterById(cid)));
+        return adminViewModule() + "/clientConnectionInfo";
+    }
+
+    /**
+     * consumer链接
+     */
+    @GetMapping(value = "/consumer/connection")
+    public String consumerConnection(@RequestParam(name = "cid") int cid,
+                                     @RequestParam(name = "addr") String addr,
+                                     Map<String, Object> map) {
+        setResult(map, proxyService.fetchAllConsumerConnection(addr, clusterService.getMQClusterById(cid)));
+        return adminViewModule() + "/clientConnectionInfo";
+    }
+
+    /**
+     * 剔除流量
+     */
+    @ResponseBody
+    @RequestMapping(value = "/unregister", method = RequestMethod.POST)
+    public Result<?> unregister(UserInfo ui, @RequestParam(name = "addr") String addr, @RequestParam(name = "cid") int cid) {
+        logger.warn("unregister:{}, user:{}", addr, ui);
+        return Result.getWebResult(proxyService.updateStatus(cid, addr, 1));
+    }
+
+    /**
+     * 恢复流量
+     */
+    @ResponseBody
+    @RequestMapping(value = "/register", method = RequestMethod.POST)
+    public Result<?> register(UserInfo ui, @RequestParam(name = "addr") String addr, @RequestParam(name = "cid") int cid) {
+        logger.warn("register:{}, user:{}", addr, ui);
+        return Result.getWebResult(proxyService.updateStatus(cid, addr, 0));
     }
 
     @Override

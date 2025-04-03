@@ -60,7 +60,11 @@ function toPage(url, timeout){
 }
 
 function disable(id){
-	_disable($("#"+id));
+	if (typeof id == "string") {
+		_disable($("#" + id));
+	} else {
+		disableRaw(id);
+	}
 }
 
 function disableRaw(comp){
@@ -71,8 +75,12 @@ function _disable(jqObject){
 	jqObject.attr("data-text", jqObject.html()).prop("disabled", true).html("<i class='fas fa-spinner fa-spin'></i>");
 }
 
-function enable(id){
-	_enable($("#"+id));
+function enable(id) {
+	if (typeof id == "string") {
+		_enable($("#" + id));
+	} else {
+		enableRaw(id);
+	}
 }
 
 function enableRaw(comp){

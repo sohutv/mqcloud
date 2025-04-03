@@ -170,10 +170,10 @@ public class DefaultSohuMQAdmin extends SohuMQAdmin {
     /**
      * 获取客户端链接大小
      */
-    public ClientConnectionSize getClientConnectionSize(String brokerAddr) throws Exception {
+    public ClientConnectionSize getClientConnectionSize(String addr) throws Exception {
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.GET_CLIENT_CONNECTION_SIZE, null);
         RemotingCommand response = getMQClientInstance().getMQClientAPIImpl().getRemotingClient()
-                .invokeSync(MixAll.brokerVIPChannel(isVipChannelEnabled(), brokerAddr), request, getTimeoutMillis());
+                .invokeSync(MixAll.brokerVIPChannel(isVipChannelEnabled(), addr), request, getTimeoutMillis());
         assert response != null;
         switch (response.getCode()) {
             case ResponseCode.SUCCESS: {
@@ -182,7 +182,7 @@ public class DefaultSohuMQAdmin extends SohuMQAdmin {
             default:
                 break;
         }
-        throw new MQBrokerException(response.getCode(), response.getRemark(), brokerAddr);
+        throw new MQBrokerException(response.getCode(), response.getRemark(), addr);
     }
 
     /**

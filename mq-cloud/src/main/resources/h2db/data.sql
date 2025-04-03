@@ -44,6 +44,7 @@ INSERT IGNORE INTO `common_config` VALUES ('35', 'orderTopicKVConfig', '{}', '�
 INSERT IGNORE INTO `common_config` VALUES ('36', 'rsyncConfig', '{"user":"mqcloud","module":"mqcloud","password":"rsync"}', 'rsync配置');
 INSERT IGNORE INTO `common_config` VALUES ('37', 'pauseAudit', 'false', '在集群运维时，设置为true，会暂停审核功能，保障数据安全');
 INSERT IGNORE INTO `common_config` VALUES ('38', 'clusterStoreWarnConfig', '[{"max":500,"percent99":400}]', '集群broker存储过慢预警配置，默认为最大响应超过500ms或百分之99响应超过400ms进行预警，可以单独对某个集群进行配置，例如[{"max":500,"percent99":400},{"clusterId":1,"max":1000,"percent99":800}]');
+insert IGNORE INTO `common_config` VALUES ('39', 'mqcloudServers', '["127.0.0.1"]', 'mqcloud的server列表');
 -- ----------------------------
 -- warn_config init
 -- ----------------------------

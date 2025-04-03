@@ -1146,8 +1146,9 @@ function trace(msgId, hasTime, time){
 	var start;
 	var end;
 	if(!time){
-		if(hasTime){
-			start = $("#" + searchType + "StartTimePickerInput").val();
+		if (hasTime) {
+			start = $("#" + searchType + "StartTime").val();
+			start = formatDateYMDHM(Number(start - 60 * 1000));
 			end = $("#" + searchType + "EndTimePickerInput").val();
 		} else {
 			start = $("#" + msgId).attr("date-data") - 60 * 60 * 1000;

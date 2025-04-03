@@ -19,7 +19,7 @@
 		<div class="col-12 col-sm-4">
 			<div class="info-box bg-light">
 				<div class="info-box-content">
-					<span class="info-box-text text-center text-muted">${conn.clientId}</span>
+					<span data-toggle="tooltip" title="${conn.clientId}" class="info-box-text text-center text-muted">${conn.clientId}</span>
 					<div>
 						<span class="info-box-number text-center text-muted mb-0 float-left">${conn.language}</span>
 						<span class="info-box-number text-center text-muted mb-0 float-right" title="${conn.versionStr!}">${mqVersion.getVersionDesc(conn.version)}</span>

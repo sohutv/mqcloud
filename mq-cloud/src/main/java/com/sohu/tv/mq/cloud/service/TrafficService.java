@@ -4,6 +4,7 @@ import com.sohu.tv.mq.cloud.bo.Traffic;
 import com.sohu.tv.mq.cloud.cache.LocalCache;
 import com.sohu.tv.mq.cloud.util.Result;
 import org.apache.rocketmq.common.MixAll;
+import org.apache.rocketmq.common.Pair;
 import org.apache.rocketmq.remoting.protocol.body.BrokerStatsData;
 import org.apache.rocketmq.remoting.protocol.route.BrokerData;
 import org.apache.rocketmq.remoting.protocol.route.TopicRouteData;
@@ -35,11 +36,12 @@ public abstract class TrafficService<T extends Traffic> {
 
     /**
      * 抓取topic流量
-     * 
+     *
      * @param Topic
      * @param mqAdmin
      */
-    protected void fetchTraffic(MQAdminExt mqAdmin, String topic, String statKey, T traffic) {
+    protected boolean fetchTraffic(MQAdminExt mqAdmin, String topic, String statKey, T traffic) {
+        boolean hasFetchError = false;
         // 获取topic路由
         TopicRouteData topicRouteData = null;
         try {
@@ -48,7 +50,7 @@ public abstract class TrafficService<T extends Traffic> {
             logger.warn("topic:{} route err", topic, e);
         }
         if (topicRouteData == null) {
-            return;
+            return true;
         }
         // 获取broker数据
         List<BrokerData> brokerList = topicRouteData.getBrokerDatas();
@@ -64,38 +66,41 @@ public abstract class TrafficService<T extends Traffic> {
                 if (logger.isDebugEnabled()) {
                     logger.debug("key:{} add to blacklist, not fetch!", key);
                 }
+                hasFetchError = true;
                 continue;
             }
-            if(getCountKey() != null) {
+            if (getCountKey() != null) {
                 try {
                     // 获取次数统计
                     BrokerStatsData brokerPutStatsData = mqAdmin.viewBrokerStatsData(masterAddr, getCountKey(), statKey);
                     traffic.addCount(brokerPutStatsData);
                 } catch (Exception e) {
-                    if(logger.isDebugEnabled()) {
+                    if (logger.isDebugEnabled()) {
                         logger.debug("fetch traffic, broker:{}, stat:{}, key:{}, err:{}", masterAddr, getCountKey(), statKey,
                                 e.toString());
                     }
                     fetchLocalCache.put(key, ERROR);
+                    hasFetchError = true;
                     continue;
                 }
             }
-            if(getSizeKey() != null) {
+            if (getSizeKey() != null) {
                 try {
                     // 获取大小统计
                     BrokerStatsData brokerSizeStatsData = mqAdmin.viewBrokerStatsData(masterAddr, getSizeKey(), statKey);
                     traffic.addSize(brokerSizeStatsData);
                 } catch (Exception e) {
-                    if(logger.isDebugEnabled()) {
+                    if (logger.isDebugEnabled()) {
                         logger.debug("fetch traffic, broker:{}, stat:{}, key:{}, err:{}", masterAddr, getSizeKey(),
                                 statKey, e.getMessage());
                     }
+                    hasFetchError = true;
                 }
             }
-            
             // 处理流量
             processBrokerTraffic(masterAddr, traffic);
         }
+        return hasFetchError;
     }
     
     /**

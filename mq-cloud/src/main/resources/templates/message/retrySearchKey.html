@@ -12,7 +12,11 @@
 						<td class="d-none d-sm-table-cell">第${msg.reconsumeTimes}次</td>
 					</#if>
 					<td class="d-none d-sm-table-cell">${msg.keys!}</td>
-					<td></td>
+					<td>
+						<#if deadTopic>
+							<input title="选择消息：${msg_index + 1}" data-tooltip="true" type="checkbox" data="${msg.offsetMsgId}" dataIdx="${msg_index + 1}">
+						</#if>
+					</td>
 				</tr>
 				<tr>
 					<td style="border-top-width: 0px;" colspan="5" data-tooltip="true" title="序列化方式:<#if msg.messageBodySerializer??>${msg.messageBodySerializer.getName()}(${msg.messageBodyTypeString!})<#else>${msg.messageBodyTypeString!}</#if>,大小:${msg.formatMsgLength}"><#if msg.decodedBody?length gt 1000><pre>${msg.decodedBody}</pre><#else>${msg.decodedBody}</#if></td>
