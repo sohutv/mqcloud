@@ -16,7 +16,6 @@ import org.apache.rocketmq.client.exception.MQBrokerException;
 import org.apache.rocketmq.client.exception.MQClientException;
 import org.apache.rocketmq.client.impl.factory.MQClientInstance;
 import org.apache.rocketmq.client.impl.producer.DefaultMQProducerImpl;
-import org.apache.rocketmq.client.impl.producer.TopicPublishInfo;
 import org.apache.rocketmq.client.producer.*;
 import org.apache.rocketmq.client.trace.AsyncTraceDispatcher;
 import org.apache.rocketmq.client.trace.hook.SendMessageTraceHookImpl;
@@ -27,7 +26,9 @@ import org.apache.rocketmq.remoting.exception.RemotingException;
 import org.apache.rocketmq.remoting.protocol.ResponseCode;
 
 import java.lang.reflect.Field;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -61,9 +62,6 @@ public class RocketMQProducer extends AbstractConfig {
 
     // 限流发生时，是否暂停一会发送线程
     private boolean suspendAWhileWhenRateLimited = false;
-
-    // 启动时是否获取topic路由信息（用于启动后发送消息前自动与ns和broker建联）
-    private boolean fetchTopicRouteInfoWhenStart = true;
 
     // 是否开启熔断，默认不开启
     private boolean enableCircuitBreaker;
@@ -113,6 +111,9 @@ public class RocketMQProducer extends AbstractConfig {
         }
         // 默认启用延迟容错，通过统计每个队列的发送耗时情况来计算broker是否可用
         producer.setSendLatencyFaultEnable(true);
+        List<String> topics = new ArrayList<>();
+        topics.add(topic);
+        producer.setTopics(topics);
         return this;
     }
 
@@ -131,9 +132,6 @@ public class RocketMQProducer extends AbstractConfig {
                 statsHelper.setMqCloudDomain(getMqCloudDomain());
                 MQMetricsExporter.getInstance().add(statsHelper);
                 producer.getDefaultMQProducerImpl().registerSendMessageHook(hook);
-            }
-            if (fetchTopicRouteInfoWhenStart) {
-                producer.getDefaultMQProducerImpl().updateTopicPublishInfo(getTopic(), new TopicPublishInfo());
             }
             producer.start();
             // 初始化重试线程池
@@ -917,12 +915,12 @@ public class RocketMQProducer extends AbstractConfig {
         this.suspendAWhileWhenRateLimited = suspendAWhileWhenRateLimited;
     }
 
-    public boolean isFetchTopicRouteInfoWhenStart() {
-        return fetchTopicRouteInfoWhenStart;
-    }
 
+    /**
+     * default is true
+     */
+    @Deprecated
     public void setFetchTopicRouteInfoWhenStart(boolean fetchTopicRouteInfoWhenStart) {
-        this.fetchTopicRouteInfoWhenStart = fetchTopicRouteInfoWhenStart;
     }
 
     public boolean isEnableCircuitBreaker() {
@@ -939,6 +937,10 @@ public class RocketMQProducer extends AbstractConfig {
 
     public void setCircuitBreakerFallbackConsumer(Consumer<MQMessage> circuitBreakerFallbackConsumer) {
         this.circuitBreakerFallbackConsumer = circuitBreakerFallbackConsumer;
+    }
+
+    public void setSendMsgMaxTimeoutPerRequest(int sendMsgMaxTimeoutPerRequest) {
+        producer.setSendMsgMaxTimeoutPerRequest(sendMsgMaxTimeoutPerRequest);
     }
 
     @Override

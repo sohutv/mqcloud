@@ -6,6 +6,7 @@ import com.sohu.tv.mq.cloud.bo.User;
 import com.sohu.tv.mq.cloud.cache.LocalCache;
 import com.sohu.tv.mq.cloud.common.MemoryMQ;
 import com.sohu.tv.mq.cloud.common.service.LoginService;
+import com.sohu.tv.mq.cloud.common.service.MailSender;
 import com.sohu.tv.mq.cloud.common.service.SmsSender;
 import com.sohu.tv.mq.cloud.common.service.impl.AbstractLoginService;
 import com.sohu.tv.mq.cloud.common.util.CipherHelper;
@@ -250,6 +251,15 @@ public class CommonConfiguration {
     public SmsSender smsSender() throws Exception {
         Class<?> clz = Class.forName("com.sohu.tv.mq.cloud.common.service.impl.DefaultSmsSender");
         return (SmsSender) clz.newInstance();
+    }
+
+    /**
+     * 邮件服务配置
+     */
+    @Bean
+    public MailSender mailSender() throws Exception {
+        Class<?> clz = Class.forName(mqCloudConfigHelper.getMailClass());
+        return (MailSender) clz.newInstance();
     }
 
     /**

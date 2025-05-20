@@ -29,7 +29,6 @@ public class DeadMessageTask {
     public void deadMessageTask() {
         taskExecutor.execute(new Runnable() {
             public void run() {
-                logger.info("monitor start");
                 long start = System.currentTimeMillis();
                 int size = consumerDeadTrafficService.collectHourTraffic();
                 logger.info("monitor, size:{},use:{}ms", size, System.currentTimeMillis() - start);

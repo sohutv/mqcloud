@@ -31,7 +31,7 @@ public interface ConsumerTrafficDao {
      * @param date
      * @return
      */
-    @Delete("delete from consumer_traffic where create_date < #{createDate}")
+    @Delete("delete from consumer_traffic where create_date < #{createDate,jdbcType=DATE}")
     public Integer delete(@Param("createDate")Date date);
     
     /**

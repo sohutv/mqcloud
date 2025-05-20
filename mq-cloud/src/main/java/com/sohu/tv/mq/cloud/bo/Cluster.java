@@ -28,6 +28,9 @@ public class Cluster {
     // broker保留的数据时间，单位小时，默认7天
     private volatile int fileReservedTime = 168;
 
+    // 0:正常, 1:broker更新中
+    private int status;
+
     public int getId() {
         return id;
     }
@@ -107,7 +110,19 @@ public class Cluster {
     public boolean test() {
         return !online();
     }
-    
+
+    public int getStatus() {
+        return status;
+    }
+
+    public void setStatus(int status) {
+        this.status = status;
+    }
+
+    public boolean isBrokerUpdating() {
+        return 1 == status;
+    }
+
     @Override
     public int hashCode() {
         final int prime = 31;

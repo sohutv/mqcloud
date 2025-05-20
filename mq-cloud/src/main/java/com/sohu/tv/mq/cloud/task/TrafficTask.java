@@ -5,6 +5,7 @@ import com.sohu.tv.mq.cloud.bo.TopicTraffic;
 import com.sohu.tv.mq.cloud.service.*;
 import com.sohu.tv.mq.cloud.util.DateUtil;
 import com.sohu.tv.mq.cloud.util.Result;
+import net.javacrumbs.shedlock.core.LockConfiguration;
 import net.javacrumbs.shedlock.core.SchedulerLock;
 import org.apache.rocketmq.common.Pair;
 import org.slf4j.Logger;
@@ -12,12 +13,13 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 
+import java.time.Instant;
 import java.util.Date;
 import java.util.List;
 
 /**
  * topic流量任务
- * 
+ *
  * @Description:
  * @author yongfeigao
  * @date 2018年6月26日
@@ -56,44 +58,42 @@ public class TrafficTask {
      * topic流量收集
      */
     @Scheduled(cron = "20 */1 * * * *")
-    @SchedulerLock(name = "collectTopicTraffic", lockAtMostFor = ONE_MIN, lockAtLeastFor = 59000)
     public void collectTopicTraffic() {
-        taskExecutor.execute(new Runnable() {
-            public void run() {
-                if (clusterService.getAllMQCluster() == null) {
-                    logger.warn("collectTopicTraffic mqcluster is null");
-                    return;
-                }
-                for (Cluster mqCluster : clusterService.getAllMQCluster()) {
-                    long start = System.currentTimeMillis();
-                    Pair<Integer, Integer> result = topicTrafficService.collectTraffic(mqCluster);
-                    logger.info("fetch cluster:{} topic traffic, size:{}, errorSize:{}, use:{}ms", mqCluster,
-                            result.getObject1(), result.getObject2(), System.currentTimeMillis() - start);
-                }
-            }
-        });
+        if (clusterService.getAllMQCluster() == null) {
+            logger.warn("collectTopicTraffic mqcluster is null");
+            return;
+        }
+        for (Cluster mqCluster : clusterService.getAllMQCluster()) {
+            LockConfiguration lockConfiguration = new LockConfiguration("collectTopicTraffic-" + mqCluster.getId(),
+                    Instant.now().plusSeconds(60), Instant.now().plusSeconds(40));
+            taskExecutor.execute(() -> {
+                long start = System.currentTimeMillis();
+                Pair<Integer, Integer> result = topicTrafficService.collectTraffic(mqCluster);
+                logger.info("fetch cluster:{} topic traffic, size:{}, errorSize:{}, use:{}ms", mqCluster,
+                        result.getObject1(), result.getObject2(), System.currentTimeMillis() - start);
+            }, lockConfiguration);
+        }
     }
 
     /**
      * 消费者流量收集
      */
     @Scheduled(cron = "30 */1 * * * *")
-    @SchedulerLock(name = "collectConsumerTraffic", lockAtMostFor = ONE_MIN, lockAtLeastFor = 59000)
     public void collectConsumerTraffic() {
-        taskExecutor.execute(new Runnable() {
-            public void run() {
-                if (clusterService.getAllMQCluster() == null) {
-                    logger.warn("collectConsumerTraffic mqcluster is null");
-                    return;
-                }
-                for (Cluster mqCluster : clusterService.getAllMQCluster()) {
-                    long start = System.currentTimeMillis();
-                    Pair<Integer, Integer> result = consumerTrafficService.collectTraffic(mqCluster);
-                    logger.info("fetch cluster:{} consumer traffic, size:{}, errorSize:{}, use:{}ms", mqCluster,
-                            result.getObject1(), result.getObject2(), System.currentTimeMillis() - start);
-                }
-            }
-        });
+        if (clusterService.getAllMQCluster() == null) {
+            logger.warn("collectConsumerTraffic mqcluster is null");
+            return;
+        }
+        for (Cluster mqCluster : clusterService.getAllMQCluster()) {
+            LockConfiguration lockConfiguration = new LockConfiguration("collectConsumerTraffic-" + mqCluster.getId(),
+                    Instant.now().plusSeconds(60), Instant.now().plusSeconds(40));
+            taskExecutor.execute(() -> {
+                long start = System.currentTimeMillis();
+                Pair<Integer, Integer> result = consumerTrafficService.collectTraffic(mqCluster);
+                logger.info("fetch cluster:{} consumer traffic, size:{}, errorSize:{}, use:{}ms", mqCluster,
+                        result.getObject1(), result.getObject2(), System.currentTimeMillis() - start);
+            }, lockConfiguration);
+        }
     }
 
     /**
@@ -137,7 +137,7 @@ public class TrafficTask {
 
     /**
      * 删除数据
-     * 
+     *
      * @param trafficService
      */
     private void delete(TrafficService<?> trafficService) {
@@ -157,7 +157,7 @@ public class TrafficTask {
             }
         }
     }
-    
+
     /**
      * 重置2天前的流量为0
      */

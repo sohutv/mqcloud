@@ -82,10 +82,9 @@ public class AdminMessageController {
         }
         // 校验状态是否合法
         Audit audit = auditResult.getResult();
-        if (!mqCloudConfigHelper.canAudit(audit)) {
+        if (!audit.isInitStatus()) {
             return getAuditStatusError(audit.getStatus());
         }
-
         // 查询审核记录
         Result<List<AuditResendMessage>> listResult = auditResendMessageService.query(aid);
         if (listResult.isEmpty()) {
@@ -98,6 +97,15 @@ public class AdminMessageController {
         if (topicResult.isNotOK()) {
             return topicResult;
         }
+        // 校验状态是否合法
+        Result<Cluster> clusterResult = clusterService.queryById(topicResult.getResult().getClusterId());
+        if (clusterResult.isNotOK()) {
+            return Result.getResult(Status.PARAM_ERROR);
+        }
+        Cluster cluster = clusterResult.getResult();
+        if (cluster.isBrokerUpdating()) {
+            return Result.getResult(Status.BROKER_UPDATING);
+        }
         String topic = topicResult.getResult().getName();
         
         // 获取消费者
@@ -106,10 +114,6 @@ public class AdminMessageController {
             return consumerResult;
         }
         Consumer consumer = consumerResult.getResult();
-
-        // 获取cluster
-        Cluster cluster = clusterService.getMQClusterById(topicResult.getResult().getClusterId());
-
         // 统计状态
         ResendMessageVO resendMessageVO = new ResendMessageVO();
         resendMessageVO.setTotal(auditResendMessageList.size());
@@ -181,10 +185,9 @@ public class AdminMessageController {
         }
         // 校验状态是否合法
         Audit audit = auditResult.getResult();
-        if (!mqCloudConfigHelper.canAudit(audit)) {
+        if (!audit.isInitStatus()) {
             return getAuditStatusError(audit.getStatus());
         }
-
         // 查询审核记录
         Result<AuditResendMessage> auditResendMessageResult = auditResendMessageService.queryOne(aid, msgId);
         if (auditResendMessageResult.isNotOK()) {
@@ -197,11 +200,16 @@ public class AdminMessageController {
         if (topicResult.isNotOK()) {
             return topicResult;
         }
+        // 校验状态是否合法
+        Result<Cluster> clusterResult = clusterService.queryById(topicResult.getResult().getClusterId());
+        if (clusterResult.isNotOK()) {
+            return Result.getResult(Status.PARAM_ERROR);
+        }
+        Cluster cluster = clusterResult.getResult();
+        if (cluster.isBrokerUpdating()) {
+            return Result.getResult(Status.BROKER_UPDATING);
+        }
         String topic = topicResult.getResult().getName();
-
-        // 获取cluster
-        Cluster cluster = clusterService.getMQClusterById(topicResult.getResult().getClusterId());
-        
         // 获取消费者
         Result<Consumer> consumerResult = auditResendMessageService.queryConsumer(aid);
         if(consumerResult.isNotOK()) {
@@ -276,7 +284,7 @@ public class AdminMessageController {
         }
         // 校验状态是否合法
         Audit audit = auditResult.getResult();
-        if (!mqCloudConfigHelper.canAudit(audit)) {
+        if (!audit.isInitStatus()) {
             return getAuditStatusError(audit.getStatus());
         }
         // 查询审核记录
@@ -313,9 +321,14 @@ public class AdminMessageController {
             return topicResult;
         }
         Topic topic = topicResult.getResult();
-        Cluster cluster = clusterService.getMQClusterById(topic.getClusterId());
-        if (cluster == null) {
-            return Result.getResult(Status.NO_RESULT);
+        // 校验状态是否合法
+        Result<Cluster> clusterResult = clusterService.queryById(topicResult.getResult().getClusterId());
+        if (clusterResult.isNotOK()) {
+            return Result.getResult(Status.PARAM_ERROR);
+        }
+        Cluster cluster = clusterResult.getResult();
+        if (cluster.isBrokerUpdating()) {
+            return Result.getResult(Status.BROKER_UPDATING);
         }
         for (AuditWheelMessageCancel wheelMessageCancel : auditWheelMessageCancels) {
             // 再次校验取消消息是否重复,防止消息发送成功，数据库更新失败场景

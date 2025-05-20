@@ -369,7 +369,7 @@ public class AdminDeployController extends AdminViewController {
     public ModelAndView getSotreFileList(@RequestParam(name = "sourceIp") String ip,
             @RequestParam(name = "sourceHome") String home, Map<String, Object> map) {
         setResult(map, mqDeployer.getStoreFileList(ip, home));
-        return new ModelAndView("admin/cluster/storeFile");
+        return new ModelAndView("admin/broker/storeFile");
     }
     
     /**

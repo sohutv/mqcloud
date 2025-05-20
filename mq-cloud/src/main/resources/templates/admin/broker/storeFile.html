@@ -1,0 +1,50 @@
+<#if response.OK>
+	<#list response.result.keySet() as key>
+		<tr data-tt-id="${key.ordinal()}">
+			<td><span class='folder'>${key.getName()}</span></td>
+			<td>${response.result.getSize(key)}</td>
+			<td></td>
+			<td></td>
+			<td></td>
+   		</tr>
+   		<#list response.result.getEntryList(key) as storeFile>
+   		  	<tr data-tt-id="${key.ordinal()}_${storeFile.id}" data-tt-parent-id="${key.ordinal()}" id="${key.ordinal()}_${storeFile.id}" <#if key.folder>date-type="folder"</#if> <#if storeFile.subEntryListSize != 1>data-json='${storeFile.toJsonString()}' status='0'</#if>>
+	   			<td><span <#if key.folder>class='dataFile folder'<#else>class='dataFile file'</#if>>${storeFile.name}</span></td>
+	   			<td>${storeFile.toHumanReadableSize()}</td>
+	   			<td><span class="fa-solid transComp" data-toggle="tooltip"></span><span class="fa-solid loading" onclick="skip('${key.ordinal()}_${storeFile.id}')" style="width:16.8px;height:16.8px;"></span></td>
+	   			<td><span class="fa-solid md5Comp" data-toggle="tooltip"></span></td>
+	   			<td><span class="fa-solid sizeComp" data-toggle="tooltip"></span></td>
+	    	</tr>
+	   		<#if key.folder>
+	   			 <#list storeFile.subEntryList() as file>
+			    	<tr data-tt-id="${key.ordinal()}_${storeFile.id}_${file.id}" data-tt-parent-id="${key.ordinal()}_${storeFile.id}" id="${key.ordinal()}_${storeFile.id}_${file.id}" <#if storeFile.subEntryListSize == 1>data-json='${file.toJsonString()}' status='0'</#if>>
+			   			<td><span class='dataFile file'>${file.name}</span></td>
+			   			<td>${file.toHumanReadableSize()}</td>
+			   			<td><span class="fa-solid transComp" data-toggle="tooltip"></span><span class="fa-solid loading" onclick="skip('${key.ordinal()}_${storeFile.id}_${file.id}')" style="width:16.8px;height:16.8px;"></span></td>
+			   			<td><span class="fa-solid md5Comp" data-toggle="tooltip"></span></td>
+			   			<td><span class="fa-solid sizeComp" data-toggle="tooltip"></span></td>
+			    	</tr>
+		    	</#list>
+	   		</#if>
+   		</#list>
+	</#list>
+   	<script>
+   	    var totalBytes = ${response.result.totalBytes};
+   	    var scpBytes = 0;
+   	    $("#migrateTotal").html("${response.result.toHumanReadableTotalBytes()}");
+   		$("#migrateTable").treetable({ expandable: true });
+   		$("#migrateTable").treetable("expandNode", 0);
+   		complete("migrateData");
+		$('[data-toggle="tooltip"]').tooltip({
+            container: 'body'
+        });
+   		setTimeout('active("migrateScp")', 500);
+   		setTimeout('migrateStroreFile()', 1000);
+	</script>
+<#else>
+	<tr class="no_more_data"><td colspan=5 class="text-center">异常！${response.message}</td></tr>
+	<script>
+		migrateGoOn("getSourceStoreFile");
+		warn("migrateData");
+	</script>
+</#if>

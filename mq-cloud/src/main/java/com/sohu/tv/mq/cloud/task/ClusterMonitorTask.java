@@ -2,7 +2,6 @@ package com.sohu.tv.mq.cloud.task;
 
 import com.sohu.tv.mq.cloud.bo.*;
 import com.sohu.tv.mq.cloud.bo.UserWarn.WarnType;
-import com.sohu.tv.mq.cloud.common.mq.SohuMQAdmin;
 import com.sohu.tv.mq.cloud.mq.MQAdminCallback;
 import com.sohu.tv.mq.cloud.mq.MQAdminTemplate;
 import com.sohu.tv.mq.cloud.service.*;
@@ -16,10 +15,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.util.CollectionUtils;
 
-import java.net.InetSocketAddress;
-import java.net.Socket;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * 集群实例状态监控
@@ -65,7 +66,6 @@ public class ClusterMonitorTask {
             logger.warn("nameServerMonitor mqcluster is null");
             return;
         }
-        logger.info("monitor NameServer start");
         long start = System.currentTimeMillis();
         List<ClusterStat> clusterStatList = new ArrayList<>();
         for (Cluster mqCluster : clusterService.getAllMQCluster()) {
@@ -84,31 +84,32 @@ public class ClusterMonitorTask {
     @Scheduled(cron = "50 */5 * * * *")
     @SchedulerLock(name = "brokerMonitor", lockAtMostFor = 240000, lockAtLeastFor = 240000)
     public void brokerMonitor() {
-        // 更新期间不再执行broker监控任务
-        if (mqCloudConfigHelper.isPauseAudit()) {
-            return;
-        }
-        if (clusterService.getAllMQCluster() == null) {
+        List<Cluster> clusters = clusterService.queryAll().getResult();
+        if (CollectionUtils.isEmpty(clusters)) {
             logger.warn("brokerMonitor mqcluster is null");
             return;
         }
-        logger.info("monitor broker start");
         long start = System.currentTimeMillis();
         // 缓存broker状态信息
         Map<Cluster, List<Broker>> clusterMap = new HashMap<>();
         List<ClusterStat> clusterStatList = new ArrayList<>();
-        for (Cluster mqCluster : clusterService.getAllMQCluster()) {
-            Result<List<Broker>> brokerListResult = brokerService.query(mqCluster.getId());
+        for (Cluster cluster : clusters) {
+            // 更新期间不再执行broker监控任务
+            if (cluster.isBrokerUpdating()) {
+                logger.info("cluster:{} monitor is pausing", cluster.getName());
+                continue;
+            }
+            Result<List<Broker>> brokerListResult = brokerService.query(cluster.getId());
             if (brokerListResult.isEmpty()) {
                 continue;
             }
             List<Broker> brokerList = brokerListResult.getResult();
-            ClusterStat clusterStat = monitorBroker(mqCluster, brokerList);
+            ClusterStat clusterStat = monitorBroker(cluster, brokerList);
             if (clusterStat != null) {
                 clusterStatList.add(clusterStat);
             }
             if (brokerList != null && !brokerList.isEmpty()) {
-                clusterMap.put(mqCluster, brokerList);
+                clusterMap.put(cluster, brokerList);
             }
         }
         handleAlarmMessage(clusterStatList, WarnType.BROKER_ERROR);
@@ -277,7 +278,6 @@ public class ClusterMonitorTask {
             logger.warn("controllerMonitor mqcluster is null");
             return;
         }
-        logger.info("monitor controller start");
         long start = System.currentTimeMillis();
         List<ClusterStat> clusterStatList = new ArrayList<>();
         for (Cluster mqCluster : clusterService.getAllMQCluster()) {
@@ -331,7 +331,6 @@ public class ClusterMonitorTask {
             logger.warn("proxyMonitor mqcluster is null");
             return;
         }
-        logger.info("monitor proxy start");
         long start = System.currentTimeMillis();
         List<ClusterStat> clusterStatList = new ArrayList<>();
         for (Cluster mqCluster : clusterService.getAllMQCluster()) {

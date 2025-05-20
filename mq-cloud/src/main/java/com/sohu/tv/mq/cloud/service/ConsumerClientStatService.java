@@ -86,4 +86,16 @@ public class ConsumerClientStatService {
         }
         return Result.getResult(result);
     }
+
+    /**
+     * 查询最新的记录
+     */
+    public Result<ConsumerClientStat> queryLatestByConsumer(String consumer) {
+        try {
+            return Result.getResult(consumerClientStatDao.selectLatestByConsumer(consumer));
+        } catch (Exception e) {
+            logger.error("query latest ConsumerClientStat err, consumer:{}", consumer, e);
+            return Result.getDBErrorResult(e);
+        }
+    }
 }

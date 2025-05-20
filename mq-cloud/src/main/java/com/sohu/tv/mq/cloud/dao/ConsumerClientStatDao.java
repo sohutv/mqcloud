@@ -25,7 +25,7 @@ public interface ConsumerClientStatDao {
     /**
      * 统计数量
      */
-    @Select("select count(1) from consumer_client_stat where consumer = #{ccs.consumer} and client = #{ccs.client} and create_date = #{ccs.createDate}")
+    @Select("select count(1) from consumer_client_stat where consumer = #{ccs.consumer} and client = #{ccs.client} and create_date = #{ccs.createDate,jdbcType=DATE}")
     public Integer count(@Param("ccs")ConsumerClientStat consumerClientStat);
 
     /**
@@ -47,4 +47,10 @@ public interface ConsumerClientStatDao {
      */
     @Delete("delete from consumer_client_stat where create_date <= #{date}")
     public Integer delete(@Param("date")Date date);
+
+    /**
+     * 查询最新的记录
+     */
+    @Select("select * from consumer_client_stat where consumer = #{consumer} order by create_date desc limit 1")
+    ConsumerClientStat selectLatestByConsumer(@Param("consumer") String consumer);
 }

@@ -112,7 +112,6 @@ public class Audit {
         REJECT(2, "驳回"),
         CANCEL(3, "撤销"),
         AUDITING(4, "审核中"),
-        PAUSE_AUDITING(5, "暂停中"),
         ;
 
         private Integer status;

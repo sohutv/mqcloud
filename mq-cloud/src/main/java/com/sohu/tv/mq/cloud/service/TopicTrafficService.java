@@ -6,12 +6,9 @@ import com.sohu.tv.mq.cloud.bo.Cluster;
 import com.sohu.tv.mq.cloud.bo.Topic;
 import com.sohu.tv.mq.cloud.bo.TopicTraffic;
 import com.sohu.tv.mq.cloud.dao.TopicTrafficDao;
-import com.sohu.tv.mq.cloud.mq.DefaultInvoke;
+import com.sohu.tv.mq.cloud.mq.DefaultCallback;
 import com.sohu.tv.mq.cloud.mq.MQAdminTemplate;
-import com.sohu.tv.mq.cloud.util.DBUtil;
-import com.sohu.tv.mq.cloud.util.DateUtil;
-import com.sohu.tv.mq.cloud.util.Result;
-import com.sohu.tv.mq.cloud.util.Status;
+import com.sohu.tv.mq.cloud.util.*;
 import org.apache.ibatis.session.SqlSessionFactory;
 import org.apache.rocketmq.common.Pair;
 import org.apache.rocketmq.common.stats.Stats;
@@ -24,6 +21,9 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Future;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * topic流量服务
@@ -48,6 +48,9 @@ public class TopicTrafficService extends TrafficService<TopicTraffic> {
 
     @Autowired
     private SqlSessionFactory mqSqlSessionFactory;
+
+    private ThreadPoolExecutor topicTrafficFetchThreadPool =
+            ThreadPoolUtil.createBlockingFixedThreadPool("topicTrafficFetch", 2);
 
     /**
      * 保存topic流量
@@ -75,42 +78,67 @@ public class TopicTrafficService extends TrafficService<TopicTraffic> {
      * @return topic size
      */
     public Pair<Integer, Integer> collectTraffic(Cluster mqCluster) {
-        // 第一个参数表示topic size，第二个参数表示收集失败的数量
-        Pair<Integer, Integer> pair = new Pair<>(0, 0);
         Result<List<Topic>> topicListResult = topicService.queryTopicList(mqCluster);
         if (topicListResult.isEmpty()) {
             logger.error("cannot get topic list for cluster:{}", mqCluster);
-            return pair;
+            return new Pair<>(0, 0);
         }
         String time = DateUtil.getFormatNow(DateUtil.HHMM);
         Date date = new Date();
+        AtomicInteger fetchErrorCount = new AtomicInteger();
+        List<Future> futures = new ArrayList<>();
         List<Topic> topicList = topicListResult.getResult();
-        pair.setObject1(topicList.size());
-        mqAdminTemplate.execute(new DefaultInvoke() {
-            public void invoke(MQAdminExt mqAdmin) throws Exception {
-                for (Topic topic : topicList) {
-                    TopicTraffic topicTraffic = new TopicTraffic();
-                    topicTraffic.setCreateTime(time);
-                    topicTraffic.setCreateDate(date);
-                    topicTraffic.setClusterId(mqCluster().getId());
-                    boolean hasFetchError = fetchTraffic(mqAdmin, topic.getName(), topic.getName(), topicTraffic);
-                    if (hasFetchError) {
-                        pair.setObject2(pair.getObject2() + 1);
+        for (Topic topic : topicList) {
+            Future future = topicTrafficFetchThreadPool.submit(() -> {
+                try {
+                    if (!collectTraffic(topic, date, time, mqCluster)) {
+                        fetchErrorCount.incrementAndGet();
                     }
-                    if (topicTraffic.getCount() != 0 || topicTraffic.getSize() != 0) {
-                        topicTraffic.setTid(topic.getId());
-                        save(topicTraffic);
-                    }
+                } catch (Throwable e) {
+                    logger.error("collect traffic err, topic:{}, time:{}, cluster:{}", topic, time, mqCluster, e);
                 }
+            });
+            futures.add(future);
+        }
+        // 等待所有任务执行完毕
+        for (Future future : futures) {
+            try {
+                future.get();
+            } catch (Throwable e) {
+                logger.error("collect traffic err", e);
+            }
+        }
+        // 保存broker流量
+        brokerTrafficService.saveProduceBrokerTraffic(time, mqCluster.getId());
+        // 第一个参数表示topic size，第二个参数表示收集失败的数量
+        Pair<Integer, Integer> pair = new Pair<>(0, 0);
+        pair.setObject1(topicList.size());
+        pair.setObject2(fetchErrorCount.get());
+        return pair;
+    }
+
+    /**
+     * 收集流量
+     */
+    private Boolean collectTraffic(Topic topic, Date date, String time, Cluster mqCluster) {
+        return mqAdminTemplate.execute(new DefaultCallback<Boolean>() {
+            public Boolean callback(MQAdminExt mqAdmin) throws Exception {
+                TopicTraffic topicTraffic = new TopicTraffic();
+                topicTraffic.setCreateTime(time);
+                topicTraffic.setCreateDate(date);
+                topicTraffic.setClusterId(mqCluster().getId());
+                boolean hasFetchError = fetchTraffic(mqAdmin, topic.getName(), topic.getName(), topicTraffic);
+                if (topicTraffic.getCount() != 0 || topicTraffic.getSize() != 0) {
+                    topicTraffic.setTid(topic.getId());
+                    save(topicTraffic);
+                }
+                return hasFetchError;
             }
 
             public Cluster mqCluster() {
                 return mqCluster;
             }
         });
-        // 保存broker流量
-        brokerTrafficService.saveProduceBrokerTraffic(time, mqCluster.getId());
-        return pair;
     }
 
     /**

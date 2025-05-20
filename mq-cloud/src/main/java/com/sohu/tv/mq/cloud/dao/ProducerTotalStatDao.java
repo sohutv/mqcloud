@@ -1,16 +1,10 @@
 package com.sohu.tv.mq.cloud.dao;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import org.apache.ibatis.annotations.Delete;
-import org.apache.ibatis.annotations.Insert;
-import org.apache.ibatis.annotations.Options;
-import org.apache.ibatis.annotations.Param;
-import org.apache.ibatis.annotations.Select;
-
 import com.sohu.tv.mq.cloud.bo.ProducerTotalStat;
+import org.apache.ibatis.annotations.*;
+
+import java.util.List;
+import java.util.Set;
 /**
  * 生产者总计统计dao
  * 
@@ -87,4 +81,10 @@ public interface ProducerTotalStatDao {
      */
     @Select("select sum(`count`) from producer_total_stat where producer = #{producer} and stat_time = #{time}")
     public Integer selectByProducerAndTime(@Param("producer")String producer, @Param("time")int time);
+
+    /**
+     * 查询最新的producer记录
+     */
+    @Select("select * from producer_total_stat where producer = #{producer} order by create_date desc, create_time desc limit 1")
+    public ProducerTotalStat selectLatestByProducer(@Param("producer")String producer);
 }

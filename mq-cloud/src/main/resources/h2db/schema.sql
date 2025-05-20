@@ -209,6 +209,7 @@ CREATE TABLE IF NOT EXISTS `cluster` (
   `online` tinyint(4) NOT NULL DEFAULT '0' COMMENT '是否为线上集群, 1:是, 0:否, 线上集群会开启流量抓取',
   `transaction_enabled` int(4) NOT NULL DEFAULT '0' COMMENT '0:不支持事务,1:支持事务',
   `trace_enabled` int(4) NOT NULL DEFAULT '0' COMMENT '0:不支持trace,1:支持trace',
+  `status` tinyint(4) default 0 comment '状态:0:正常,1:更新中',
   PRIMARY KEY (`id`)
 );
 

@@ -108,7 +108,7 @@ public class TopicMessageController extends ViewController {
         }
         Topic topic = topicResult.getResult();
         MessageQueryCondition messageQueryCondition = new MessageQueryCondition();
-        messageQueryCondition.setCid((int) topic.getClusterId());
+        messageQueryCondition.setCid(topic.getClusterId());
         messageQueryCondition.setTopic(topic.getName());
         // 舍掉毫秒
         long now = System.currentTimeMillis() / 1000 * 1000;
@@ -383,7 +383,7 @@ public class TopicMessageController extends ViewController {
         if (cid == null) {
             Result<Topic> topicResult = topicService.queryTopic(topic);
             if (topicResult.isOK()) {
-                cid = (int) topicResult.getResult().getClusterId();
+                cid = topicResult.getResult().getClusterId();
             }
         }
         Cluster cluster = clusterService.getMQClusterById(cid);

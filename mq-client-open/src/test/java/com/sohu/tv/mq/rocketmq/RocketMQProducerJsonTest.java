@@ -40,8 +40,8 @@ public class RocketMQProducerJsonTest {
             Video video = new Video(i, "搜狐tv"+i);
             String str = JSONUtil.toJSONString(video);
             Result<SendResult> sendResult = producer.publish(str, String.valueOf(i));
-//            System.out.println(sendResult);
-//            Assert.assertTrue(sendResult.isSuccess());
+            System.out.println(sendResult);
+            Assert.assertTrue(sendResult.isSuccess());
             Thread.sleep(1000);
         }
     }

@@ -62,6 +62,7 @@ public enum Status {
     ROUTE_NOT_EXIST_ERROR(525, "路由不存在"),
     BROKER_AUTO_UPDATE_CHECK_STATUS_ERROR(526, "broker自动更新检查状态异常"),
     BROKER_AUTO_UPDATE_CHECK_STATUS_FINISHED(527, "broker自动更新检查状态人工结束"),
+    BROKER_UPDATING(528, "集群审核暂停中"),
     
     // 6xx代表web请求异常
     WEB_ERROR(600, "请求错误"),

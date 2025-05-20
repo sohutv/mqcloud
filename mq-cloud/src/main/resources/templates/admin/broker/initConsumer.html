@@ -1,0 +1,51 @@
+<div class="table-responsive p-0">
+	<table class="table table-hover text-nowrap">
+	<colgroup>
+	  <col width='50px'>
+	  <col width='200px'>
+	  <col width='200px'>
+	  <col width='50px'>
+	  <col>
+	</colgroup>
+	<thead>
+		<tr>
+			<td>序号</td>
+			<td>topic</td>
+			<td>consumer</td>
+			<td>状态</td>
+			<td>原因</td>
+		</tr>
+	</thead>
+	<tbody>
+		<#if response.notOK>
+			<tr>
+				<td colspan=5 class="text-center"><#if response.exception??><b>异常:</b> ${response.exception.class.name},</#if><b>提醒:</b> ${response.message}</td>
+			</tr>
+		<#else>
+			<#if response.empty>
+				<td colspan=5 class="text-center">暂无数据</td>
+			<#else>
+				<#list response.result as topic,result>
+					<tr>
+						<td rowspan=${result?size}>${topic_index + 1}</td>
+						<td rowspan=${result?size}>${topic}</td>
+						<#list result as rst>
+							<#if rst_index != 0>
+								<tr>
+							</#if>
+							<td>${rst.result}</td>
+							<#if rst.OK>
+								<td><i class="fa-solid fa-check"></i></td>
+								<td>成功</td>
+							<#else>
+								<td><i class="fa-solid fa-xmark"></i></td>
+								<td><#if rst.exception??><b>异常:</b> ${rst.exception.class.name},</#if><b>提醒:</b> ${rst.message!}</td>
+							</#if>
+							</tr>
+						</#list>
+				</#list>
+			</#if>
+		</#if>
+	</tbody>
+</table>
+</div>

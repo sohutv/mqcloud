@@ -60,7 +60,7 @@ MQCloud作为其运维平台，需要考虑如下事情：
 
 ## 三、<span id="bkOnlineConfig">broker线上配置</span>
 
-在[集群管理](/admin/cluster/list)模块，点击broker的地址，将会弹出broker线上配置：
+在[集群管理](/admin/broker/list)模块，点击broker的地址，将会弹出broker线上配置：
 
 <img src="img/brokerOnlineConfig.png" class="img-wiki">
 

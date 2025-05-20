@@ -6,9 +6,6 @@
 			<div class="form-group">
 				<label for="mqClusterSelect"> 集群: 暂无数据 </label>
 			</div>
-			<div class="form-group">
-				<button type="button" class="btn btn-primary" data-target="#addClusterModal" data-toggle="modal"><span class="fas fa-plus" aria-hidden="true"></span>&nbsp;集群记录</button>
-			</div>
 		</form>
 	</div>
 </div>
@@ -28,14 +25,8 @@
 				</select>
 			</div>
 			<div class="btn-group">
-				<button type="button" class="btn btn-default" title="新建集群" data-target="#addClusterModal" data-toggle="modal"><span class="fas fa-plus"></span><span class="d-none d-lg-inline">集群</span></button>
-				<button type="button" class="btn btn-default dropdown-toggle dropdown-hover dropdown-icon" data-toggle="dropdown">
-					<span class="sr-only">Toggle Dropdown</span>
-				</button>
-				<div class="dropdown-menu" role="menu">
-					<a class="dropdown-item" href="#" title="新建NameServer" onclick="addNameSrv()" data-target="#addNameSrvModal" data-toggle="modal"><span class="fas fa-plus fa-fw"></span>&nbsp;NameServer</a>
-					<a class="dropdown-item" href="#" data-placement="bottom" title="关联已有NameServer集群到MQCloud中" data-target="#associateNameSrvModal" data-toggle="modal"><span class="fas fa-link fa-fw"></span>&nbsp;NameServer</a>
-				</div>
+				<button type="button" class="btn btn-default" title="新建NameServer" onclick="addNameSrv()" data-target="#addNameSrvModal" data-toggle="modal"><span class="fas fa-plus"></span><span class="d-none d-lg-inline">NameServer</span></button>
+				<button type="button" class="btn btn-default" title="关联已有NameServer集群到MQCloud中" data-target="#associateNameSrvModal" data-toggle="modal"><span class="fas fa-link"></span><span class="d-none d-lg-inline">NameServer</span></button>
 			</div>
 		</div>
 	</div>
@@ -711,105 +702,7 @@ function disable_smartwizard(content, index) {
 }
 </script>
 </#if>
-
-<div id="addClusterModal" class="modal fade" tabindex="-1" data-width="400" data-keyboard="false">
-	<div class="modal-dialog">
-		<div class="modal-content">
-
-			<div class="modal-header">
-				<h4 class="modal-title">新增集群记录</h4>
-				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-			</div>
-
-			<form class="form-horizontal form-bordered form-row-stripped" id="addClusterForm">
-				<div class="modal-body">
-					<div class="row">
-						<div class="col-md-12">
-							<div class="form-body">
-								<div class="form-group row justify-content-center">
-									<label class="col-form-label col-md-3"> 集群id: </label>
-									<div class="col-md-8">
-										<input type="text" name="id" placeholder="集群id" data-toggle="modal" title="集群id将作为NameServer的一部分，使用递增的数字，自己保证唯一。" class="form-control" />
-									</div>
-								</div>
-								<div class="form-group row justify-content-center">
-									<label class="col-form-label col-md-3"> 集群名: </label>
-									<div class="col-md-8">
-										<input type="text" name="name" placeholder="即brokerClusterName的值" class="form-control" />
-									</div>
-								</div>
-								<div class="form-group row justify-content-center">
-									<label class="col-md-3"> 虚拟通道: </label>
-									<div class="col-md-8 checkbox">
-										<label data-toggle="tooltip" title="rocketmq4.x设置为开启">
-										    <input type="radio" name="vipChannelEnabled" value="1" checked>开启
-										</label>
-										<label data-toggle="tooltip" title="rocketmq3.x需要关闭">
-										    <input type="radio" name="vipChannelEnabled" value="0">关闭
-										</label>
-									</div>
-								</div>
-								<div class="form-group row justify-content-center">
-									<label class="col-md-3"> 环境: </label>
-									<div class="col-md-8 checkbox">
-										<label data-toggle="tooltip" title="线上集群，会开启流量抓取和监控">
-										    <input type="radio" name="online" value="1" checked>线上
-										</label>
-										<label data-toggle="tooltip" title="测试集群，不会进行流量抓取和监控">
-										    <input type="radio" name="online" value="0">测试
-										</label>
-									</div>
-								</div>
-								<div class="form-group row justify-content-center">
-									<label class="col-md-3"> Trace: </label>
-									<div class="col-md-8 checkbox">
-										<label>
-									    	<input type="radio" name="traceEnabled" value="1">支持
-									    </label>
-									    <label>
-									   		<input type="radio" name="traceEnabled" value="0" checked>不支持
-									    </label>
-									</div>
-								</div>
-								<div class="form-group row justify-content-center">
-									<label class="col-md-3"> 事务: </label>
-									<div class="col-md-8 checkbox">
-										<label>
-										    <input type="radio" name="transactionEnabled" value="1">支持
-										</label>
-										<label>
-										    <input type="radio" name="transactionEnabled" value="0" checked>不支持
-										</label>
-									</div>
-								</div>
-							</div>
-						</div>
-					</div>
-				</div>
-				<div class="modal-footer">
-					<button type="button" data-dismiss="modal" class="btn btn-light" >取消</button>
-					<button type="button" class="btn btn-primary" id="addClusterBtn" onclick="addCluster()">创建</button>
-				</div>
-			</form>
-		</div>
-	</div>
-</div>
 <script>
-function addCluster(){
-	disable("addClusterBtn");
-	$.post('${request.contextPath}/admin/cluster/add',
-		$("#addClusterForm").serialize(),
-        function(data){
-            if(data.status == 200){
-				toastr.success("集群创建成功，将自动刷新");  
-				reload(3000);
-		    }else{
-		    	toastr.error("集群创建失败！"+data.message);
-		    	enable("addClusterBtn");
-		    }
-        }, 'json');
-}
-
 function associateNameSrv(){
 	disable("associateNameSrvBtn");
 	$.post('${request.contextPath}/admin/nameserver/add',

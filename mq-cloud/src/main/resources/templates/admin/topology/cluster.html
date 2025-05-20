@@ -370,10 +370,10 @@
 						if(params.data._type){
 							if(params.data._type == 'cluster'){
 								var tempwindow=window.open('_blank');
-								tempwindow.location.href = "${request.contextPath}/admin/cluster/list?cid="+params.data._cid;
+								tempwindow.location.href = "${request.contextPath}/admin/broker/list?cid="+params.data._cid;
 							} else {
 								var tempwindow=window.open('_blank');
-								tempwindow.location.href = "${request.contextPath}/admin/cluster/list?cid="+params.data._cid+"&ip="+params.data._ip;
+								tempwindow.location.href = "${request.contextPath}/admin/broker/list?cid="+params.data._cid+"&ip="+params.data._ip;
 							}
 						} else {
 							var tempwindow=window.open('_blank');

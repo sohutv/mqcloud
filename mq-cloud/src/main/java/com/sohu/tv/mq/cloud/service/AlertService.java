@@ -65,9 +65,6 @@ public class AlertService {
             username = user.getEmail();
         }
         String title = "MQCloud申请";
-        if (mqCloudConfigHelper.isLocal()) {
-            title = "local-" + title;
-        }
         return sendMail(title, username + "申请" + type.getName() + " " + content +
                 ", <a href='" + mqCloudConfigHelper.getAuditLink() + "'>去审核</a>");
     }
@@ -83,7 +80,7 @@ public class AlertService {
         if (mailSender == null) {
             return false;
         }
-        return mailSender.send(title, content, getDevelopers());
+        return mailSender.send(getTitle(title), content, getDevelopers());
     }
 
     /**
@@ -98,7 +95,7 @@ public class AlertService {
         if (mailSender == null) {
             return false;
         }
-        return mailSender.send(title, content, email, getDevelopers(), 0);
+        return mailSender.send(getTitle(title), content, email, getDevelopers(), 10000);
     }
 
     /**
@@ -172,6 +169,13 @@ public class AlertService {
         return false;
     }
 
+    private String getTitle(String title) {
+        if (!mqCloudConfigHelper.isOnline()) {
+            return mqCloudConfigHelper.getProfile() + "-" + title;
+        }
+        return title;
+    }
+
     /**
      * 发送报警邮件
      * 
@@ -182,16 +186,10 @@ public class AlertService {
      */
     private boolean sendWarnMailInternal(String email, String flag, String content) {
         String title = "MQCloud " + flag + "预警";
-        if (mqCloudConfigHelper.isLocal()) {
-            title = "local-" + title;
-        }
         if (StringUtils.isBlank(email)) {
             return sendMail(title, content);
         } else {
-            if (mailSender == null) {
-                return false;
-            }
-            return mailSender.send(title, content, email, getDevelopers(), 10000);
+            return sendMail(title, content, email);
         }
     }
 

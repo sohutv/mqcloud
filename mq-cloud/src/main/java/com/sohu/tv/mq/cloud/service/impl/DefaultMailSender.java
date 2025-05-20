@@ -1,21 +1,18 @@
 package com.sohu.tv.mq.cloud.service.impl;
 
-import java.util.Properties;
-
-import javax.mail.MessagingException;
-import javax.mail.internet.MimeMessage;
-
+import com.sohu.tv.mq.cloud.common.service.MailSender;
+import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper;
+import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper.MQCloudConfigEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.event.EventListener;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
 import org.springframework.mail.javamail.MimeMessageHelper;
-import org.springframework.stereotype.Component;
 
-import com.sohu.tv.mq.cloud.common.service.MailSender;
-import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper;
-import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper.MQCloudConfigEvent;
+import javax.mail.MessagingException;
+import javax.mail.internet.MimeMessage;
+import java.util.Properties;
 
 /**
  * 默认实现
@@ -23,7 +20,6 @@ import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper.MQCloudConfigEvent;
  * @author yongfeigao
  * @date 2018年10月10日
  */
-@Component
 public class DefaultMailSender implements MailSender {
 
     private Logger logger = LoggerFactory.getLogger(this.getClass());
@@ -95,7 +91,7 @@ public class DefaultMailSender implements MailSender {
 
     @Override
     public boolean send(String title, String content, String email) {
-        return send(title, content, email, null, 0);
+        return send(title, content, email, null, 10000);
     }
 
     @Override

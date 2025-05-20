@@ -62,6 +62,18 @@ public class ClusterService {
         return Result.getResult(list);
     }
 
+    /**
+     * 根据集群id查询集群
+     */
+    public Result<Cluster> queryById(int id) {
+        try {
+            return Result.getResult(clusterDao.selectById(id));
+        } catch (Exception e) {
+            logger.error("queryById:{}", id, e);
+            return Result.getDBErrorResult(e);
+        }
+    }
+
     public Cluster[] getAllMQCluster() {
         return mqClusterArray;
     }
@@ -179,5 +191,17 @@ public class ClusterService {
             return;
         }
         cluster.setFileReservedTime(fileReservedTime);
+    }
+
+    /**
+     * 更新集群状态
+     */
+    public Result<List<Cluster>> updateStatus(int id, int status) {
+        try {
+            return Result.getResult(clusterDao.updateStatus(id, status));
+        } catch (Exception e) {
+            logger.error("updateStatus:{}", id, e);
+            return Result.getDBErrorResult(e);
+        }
     }
 }

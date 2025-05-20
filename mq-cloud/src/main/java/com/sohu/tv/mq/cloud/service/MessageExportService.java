@@ -144,7 +144,7 @@ public class MessageExportService {
         }
         int serializerType = topicResult.getResult().getSerializer();
         // 查询nameserver信息
-        Result<List<NameServer>> nsListResult = nameServerService.query((int) topicResult.getResult().getClusterId());
+        Result<List<NameServer>> nsListResult = nameServerService.query(topicResult.getResult().getClusterId());
         if (nsListResult.isNotOK()) {
             updateRecord(aid, "ns不存在");
             return nsListResult;

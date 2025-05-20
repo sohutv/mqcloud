@@ -21,7 +21,7 @@ public class Topic {
     // id
     private long id;
     // cluster id
-    private long clusterId;
+    private int clusterId;
     // topic name
     private String name;
     // queue num
@@ -90,11 +90,11 @@ public class Topic {
         this.id = id;
     }
 
-    public long getClusterId() {
+    public int getClusterId() {
         return clusterId;
     }
 
-    public void setClusterId(long clusterId) {
+    public void setClusterId(int clusterId) {
         this.clusterId = clusterId;
     }
 

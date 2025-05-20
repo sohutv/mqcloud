@@ -1,7 +1,5 @@
 package com.sohu.tv.mq.cloud.util;
 
-import com.sohu.tv.mq.cloud.bo.Audit;
-import com.sohu.tv.mq.cloud.bo.Audit.StatusEnum;
 import com.sohu.tv.mq.cloud.bo.CommonConfig;
 import com.sohu.tv.mq.cloud.common.model.BrokerStoreStat;
 import com.sohu.tv.mq.cloud.service.CommonConfigService;
@@ -204,9 +202,6 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware, Comm
     // rsync配置,包括path, user, password, port, bwlimit, module
     private Map<String, String> rsyncConfig;
 
-    // 是否暂停审核
-    private Boolean pauseAudit;
-
     // cluster store警告配置
     private List<Map<String, Integer>> clusterStoreWarnConfig;
 
@@ -220,6 +215,8 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware, Comm
     private String loginClass;
     // 用户警告服务类
     private String userWarnServiceClass;
+    // 邮件类
+    private String mailClass;
 
     @Autowired
     private CommonConfigService commonConfigService;
@@ -277,7 +274,7 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware, Comm
     }
 
     public boolean isOnline() {
-        return "online".equals(profile) || "online-sohu".equals(profile);
+        return "online".equals(profile) || "online-sohu".equals(profile) || "miniapp-online".equals(profile);
     }
 
     public boolean isSohu() {
@@ -308,6 +305,10 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware, Comm
 
     public boolean isLocal() {
         return "local".equals(profile) || "local-sohu".equals(profile);
+    }
+
+    public String getProfile() {
+        return profile;
     }
 
     public String getDomain() {
@@ -396,7 +397,7 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware, Comm
     }
 
     public String getBrokerStoreLink(int cid, String ip) {
-        return getHrefLink(getPrefix() + "admin/cluster/list?cid=" + cid + "&brokerStoreIp=" + ip, ip);
+        return getHrefLink(getPrefix() + "admin/broker/list?cid=" + cid + "&brokerStoreIp=" + ip, ip);
     }
 
     public String getNameServerMonitorLink(int cid) {
@@ -412,11 +413,11 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware, Comm
     }
 
     public String getBrokerMonitorLink(int cid) {
-        return getPrefix() + "admin/cluster/list?cid=" + cid;
+        return getPrefix() + "admin/broker/list?cid=" + cid;
     }
 
     public String getBrokerAutoUpdateLink(int cid, int brokerAutoUpdateId, String brokerName) {
-        return getHrefLink(getPrefix() + "admin/cluster/list?cid=" + cid + "&brokerAutoUpdateId=" + brokerAutoUpdateId, brokerName);
+        return getHrefLink(getPrefix() + "admin/broker/list?cid=" + cid + "&brokerAutoUpdateId=" + brokerAutoUpdateId, brokerName);
     }
 
     public String getPrefix() {
@@ -816,16 +817,20 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware, Comm
         return String.valueOf(bwlimit);
     }
 
-    public boolean isPauseAudit() {
-        return pauseAudit != null && pauseAudit;
-    }
-
     public String getLoginClass() {
         return loginClass;
     }
 
     public void setLoginClass(String loginClass) {
         this.loginClass = loginClass;
+    }
+
+    public String getMailClass() {
+        return mailClass;
+    }
+
+    public void setMailClass(String mailClass) {
+        this.mailClass = mailClass;
     }
 
     public String getUserWarnServiceClass() {
@@ -925,19 +930,6 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware, Comm
             }
         }
         return false;
-    }
-
-    /**
-     * 是否可以审核
-     * 暂停审核时，直接设置为暂停审核状态
-     * 否则，只有初始状态的审核才可以审核
-     */
-    public boolean canAudit(Audit audit) {
-        if (isPauseAudit()) {
-            audit.setStatus(StatusEnum.PAUSE_AUDITING.getStatus());
-            return false;
-        }
-        return audit.isInitStatus();
     }
 
     /**

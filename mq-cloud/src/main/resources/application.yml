@@ -71,6 +71,7 @@ mqcloud:
   httpConsumerUriPrefix: 127.0.0.1:8082/http/consumer
   loginClass: com.sohu.tv.mq.cloud.service.impl.DefaultLoginService
   userWarnServiceClass: com.sohu.tv.mq.cloud.service.UserWarnService
+  mailClass: com.sohu.tv.mq.cloud.service.impl.DefaultMailSender
 
 rocketmq:
   customized: true

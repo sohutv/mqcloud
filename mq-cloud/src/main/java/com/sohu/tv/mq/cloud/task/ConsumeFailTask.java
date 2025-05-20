@@ -31,10 +31,9 @@ public class ConsumeFailTask {
     public void consumeFailTask() {
         taskExecutor.execute(new Runnable() {
             public void run() {
-                logger.info("monitor start");
                 long start = System.currentTimeMillis();
                 int size = consumerRetryTrafficService.collectHourTraffic();
-                logger.info("monitor, size:{},use:{}ms", size, System.currentTimeMillis() - start);
+                logger.info("monitor size:{},use:{}ms", size, System.currentTimeMillis() - start);
             }
         });
     }

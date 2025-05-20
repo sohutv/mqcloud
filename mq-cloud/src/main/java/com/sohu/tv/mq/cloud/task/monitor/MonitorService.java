@@ -9,6 +9,7 @@ import com.sohu.tv.mq.cloud.mq.MQAdminTemplate;
 import com.sohu.tv.mq.cloud.service.ConsumerService;
 import com.sohu.tv.mq.cloud.service.TopicService;
 import com.sohu.tv.mq.cloud.util.Result;
+import com.sohu.tv.mq.cloud.util.ThreadPoolUtil;
 import com.sohu.tv.mq.util.CommonUtil;
 import org.apache.rocketmq.client.consumer.DefaultMQPullConsumer;
 import org.apache.rocketmq.client.consumer.DefaultMQPushConsumer;
@@ -42,6 +43,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.Map.Entry;
+import java.util.concurrent.ThreadPoolExecutor;
 
 /**
  * copy from org.apache.rocketmq.tools.monitor.MonitorService
@@ -69,6 +71,8 @@ public class MonitorService {
     private MQAdminTemplate mqAdminTemplate;
 
     private TopicService topicService;
+
+    private ThreadPoolExecutor monitorThreadPool = ThreadPoolUtil.createBlockingFixedThreadPool("monitor", 2);
 
     public MonitorService(Cluster mqCluster, SohuMonitorListener monitorListener) {
         this.cluster = mqCluster;
@@ -136,13 +140,11 @@ public class MonitorService {
         this.defaultMQPushConsumer.shutdown();
     }
 
-    public void doMonitorWork() throws RemotingException, MQClientException, InterruptedException {
+    public void doMonitorWork() {
         if(!initialized) {
             logger.warn("doMonitorWork not initialized!");
             return;
         }
-        long beginTime = System.currentTimeMillis();
-        this.monitorListener.beginRound();
         // 获取所有topic
         TopicList topicList = mqAdminTemplate.execute(new DefaultCallback<TopicList>(){
             public TopicList callback(MQAdminExt mqAdmin) throws Exception {
@@ -157,50 +159,56 @@ public class MonitorService {
         }
         // 检测集群模式消费者
         for (String topic : topicList.getTopicList()) {
-            if (CommonUtil.isRetryTopic(topic)) {
-                String consumerGroup = topic.substring(MixAll.RETRY_GROUP_TOPIC_PREFIX.length());
-                // 内置consumer不检测
-                if (MixAll.TOOLS_CONSUMER_GROUP.equals(consumerGroup) || MixAll.MONITOR_CONSUMER_GROUP.equals(consumerGroup)) {
-                    continue;
-                }
-                // 链接在线检测
-                Consumer consumer = consumerService.queryConsumerByName(consumerGroup).getResult();
-                if (consumer == null) {
-                    consumer = new Consumer();
-                    consumer.setName(consumerGroup);
-                }
-                ConsumerConnection cc = consumerService.examineConsumerConnectionInfo(consumerGroup, cluster, consumer.isProxyRemoting()).getResult();
-                if (cc == null) {
-                    continue;
-                }
-
-                // http consumer 监控
-                if (consumer.isHttpProtocol()) {
-                    reportHttpUndoneMsgs(consumer, cc);
-                } else {
-                    try {
-                        this.reportUndoneMsgs(consumer, cc);
-                    } catch (Exception e) {
-                        logger.warn("reportUndoneMsgs Exception", e);
-                    }
-
-                    try {
-                        this.reportConsumerRunningInfo(consumer, cc);
-                    } catch (Exception e) {
-                        logger.warn("reportConsumerRunningInfo Exception", e);
-                    }
-                }
-
+            monitorThreadPool.execute(() -> {
                 try {
-                    this.monitorListener.saveConsumerGroupClientInfo(consumerGroup, cc);
-                } catch (Exception e) {
-                    logger.warn("saveConsumerGroupClientInfo Exception", e);
+                    doMonitorWork(topic);
+                } catch (Throwable e) {
+                    logger.error("doMonitorWork err, topic:{}", topic, e);
                 }
+            });
+        }
+    }
+
+    private void doMonitorWork(String topic) {
+        if (!CommonUtil.isRetryTopic(topic)) {
+            return;
+        }
+        String consumerGroup = topic.substring(MixAll.RETRY_GROUP_TOPIC_PREFIX.length());
+        // 内置consumer不检测
+        if (MixAll.TOOLS_CONSUMER_GROUP.equals(consumerGroup) || MixAll.MONITOR_CONSUMER_GROUP.equals(consumerGroup)) {
+            return;
+        }
+        // 链接在线检测
+        Consumer consumer = consumerService.queryConsumerByName(consumerGroup).getResult();
+        if (consumer == null) {
+            consumer = new Consumer();
+            consumer.setName(consumerGroup);
+        }
+        ConsumerConnection cc = consumerService.examineConsumerConnectionInfo(consumerGroup, cluster, consumer.isProxyRemoting()).getResult();
+        if (cc == null) {
+            return;
+        }
+        // http consumer 监控
+        if (consumer.isHttpProtocol()) {
+            reportHttpUndoneMsgs(consumer, cc);
+        } else {
+            try {
+                this.reportUndoneMsgs(consumer, cc);
+            } catch (Exception e) {
+                logger.warn("reportUndoneMsgs Exception", e);
+            }
+
+            try {
+                this.reportConsumerRunningInfo(consumer, cc);
+            } catch (Exception e) {
+                logger.warn("reportConsumerRunningInfo Exception", e);
             }
         }
-        this.monitorListener.endRound();
-        long spentTimeMills = System.currentTimeMillis() - beginTime;
-        logger.info("{} monitor use: {}ms", cluster, spentTimeMills);
+        try {
+            this.monitorListener.saveConsumerGroupClientInfo(consumerGroup, cc);
+        } catch (Exception e) {
+            logger.warn("saveConsumerGroupClientInfo Exception", e);
+        }
     }
     
     private void reportUndoneMsgs(Consumer consumer, ConsumerConnection cc) {

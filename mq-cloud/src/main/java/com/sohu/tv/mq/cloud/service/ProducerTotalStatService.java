@@ -1,20 +1,18 @@
 package com.sohu.tv.mq.cloud.service;
 
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
+import com.sohu.tv.mq.cloud.bo.ProducerTotalStat;
+import com.sohu.tv.mq.cloud.dao.ProducerTotalStatDao;
+import com.sohu.tv.mq.cloud.util.DateUtil;
+import com.sohu.tv.mq.cloud.util.Result;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 
-import com.sohu.tv.mq.cloud.bo.ProducerTotalStat;
-import com.sohu.tv.mq.cloud.dao.ProducerTotalStatDao;
-import com.sohu.tv.mq.cloud.util.DateUtil;
-import com.sohu.tv.mq.cloud.util.Result;
+import java.util.Date;
+import java.util.List;
+import java.util.Set;
 
 /**
  * 生产者总体统计服务
@@ -174,6 +172,18 @@ public class ProducerTotalStatService {
             return Result.getResult(producerTotalStatDao.selectByDateAndIp(DateUtil.format(date), ips));
         } catch (Exception e) {
             logger.error("queryByDateAndIp err, date:{}, ips:{}", date, ips, e);
+            return Result.getDBErrorResult(e);
+        }
+    }
+
+    /**
+     * 查询最新的生产者统计数据
+     */
+    public Result<ProducerTotalStat> queryLastest(String producer) {
+        try {
+            return Result.getResult(producerTotalStatDao.selectLatestByProducer(producer));
+        } catch (Exception e) {
+            logger.error("queryLastest err, producer:{}", producer, e);
             return Result.getDBErrorResult(e);
         }
     }

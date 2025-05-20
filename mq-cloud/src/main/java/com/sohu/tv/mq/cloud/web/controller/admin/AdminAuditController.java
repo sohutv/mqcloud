@@ -235,7 +235,7 @@ public class AdminAuditController extends AdminViewController {
         }
         // 校验状态是否合法
         Audit audit = auditResult.getResult();
-        if (!mqCloudConfigHelper.canAudit(audit)) {
+        if (!audit.isInitStatus()) {
             return getAuditStatusError(audit.getStatus());
         }
 
@@ -550,7 +550,7 @@ public class AdminAuditController extends AdminViewController {
         }
         // 校验是否合法
         Audit audit = auditResult.getResult();
-        if (!mqCloudConfigHelper.canAudit(audit)) {
+        if (!audit.isInitStatus()) {
             return getAuditStatusError(audit.getStatus());
         }
 
@@ -596,7 +596,7 @@ public class AdminAuditController extends AdminViewController {
         if (TypeEnum.NEW_TOPIC.getType() != audit.getType()) {
             return Result.getResult(Status.PARAM_ERROR);
         }
-        if (!mqCloudConfigHelper.canAudit(audit)) {
+        if (!audit.isInitStatus()) {
             return getAuditStatusError(audit.getStatus());
         }
 
@@ -606,14 +606,18 @@ public class AdminAuditController extends AdminViewController {
             return auditTopicResult;
         }
         // 获取集群
-        Cluster mqCluster = clusterService.getMQClusterById(cid);
-        if (mqCluster == null || mqCluster.getId() != cid) {
+        Result<Cluster> mqClusterResult = clusterService.queryById(cid);
+        if (mqClusterResult.isNotOK()) {
             return Result.getResult(Status.PARAM_ERROR);
+        }
+        Cluster cluster = mqClusterResult.getResult();
+        if (cluster.isBrokerUpdating()) {
+            return Result.getResult(Status.BROKER_UPDATING);
         }
 
         AuditTopic auditTopic = auditTopicResult.getResult();
         // 创建topic
-        Result<?> createResult = topicService.createTopic(mqCluster, audit, auditTopic);
+        Result<?> createResult = topicService.createTopic(cluster, audit, auditTopic);
         if (createResult.isNotOK()) {
             return createResult;
         }
@@ -634,10 +638,6 @@ public class AdminAuditController extends AdminViewController {
 
     /**
      * 创建消费者
-     * 
-     * @param aid
-     * @param map
-     * @return
      */
     @ResponseBody
     @RequestMapping(value = "/addConsumer", method = RequestMethod.POST)
@@ -648,12 +648,10 @@ public class AdminAuditController extends AdminViewController {
         if (auditResult.isNotOK()) {
             return auditResult;
         }
-        // 校验是否合法
         Audit audit = auditResult.getResult();
-        if (!mqCloudConfigHelper.canAudit(audit)) {
+        if (!audit.isInitStatus()) {
             return getAuditStatusError(audit.getStatus());
         }
-
         // 获取AuditConsumer
         Result<AuditConsumer> auditConsumerResult = auditConsumerService.queryAuditConsumer(aid);
         if (auditConsumerResult.isNotOK()) {
@@ -667,9 +665,14 @@ public class AdminAuditController extends AdminViewController {
             return topicResult;
         }
         // 查询cluster
-        Cluster cluster = clusterService.getMQClusterById(topicResult.getResult().getClusterId());
-        if (cluster == null) {
+        Result<Cluster> clusterResult = clusterService.queryById(topicResult.getResult().getClusterId());
+        if (clusterResult.isNotOK()) {
             return Result.getResult(Status.PARAM_ERROR);
+        }
+        Cluster cluster = clusterResult.getResult();
+        // 校验是否合法
+        if (cluster.isBrokerUpdating()) {
+            return Result.getResult(Status.BROKER_UPDATING);
         }
 
         // 构建userConsumer
@@ -733,7 +736,7 @@ public class AdminAuditController extends AdminViewController {
         }
         // 校验状态是否合法
         Audit audit = auditResult.getResult();
-        if (!mqCloudConfigHelper.canAudit(audit)) {
+        if (!audit.isInitStatus()) {
             return getAuditStatusError(audit.getStatus());
         }
 
@@ -822,7 +825,7 @@ public class AdminAuditController extends AdminViewController {
         }
         // 校验状态是否合法
         Audit audit = auditResult.getResult();
-        if (!mqCloudConfigHelper.canAudit(audit)) {
+        if (!audit.isInitStatus()) {
             return getAuditStatusError(audit.getStatus());
         }
 
@@ -872,10 +875,9 @@ public class AdminAuditController extends AdminViewController {
         }
         // 校验状态是否合法
         Audit audit = auditResult.getResult();
-        if (!mqCloudConfigHelper.canAudit(audit)) {
+        if (!audit.isInitStatus()) {
             return getAuditStatusError(audit.getStatus());
         }
-
         // 查询 topic删除审核记录
         Result<AuditTopicDelete> auditTopicDeleteResult = auditTopicDeleteService.queryAuditTopicDelete(aid);
         if (auditTopicDeleteResult.isNotOK()) {
@@ -886,6 +888,15 @@ public class AdminAuditController extends AdminViewController {
         Result<Topic> topicResult = topicService.queryTopic(auditTopicDelete.getTid());
         if (topicResult.isNotOK()) {
             return topicResult;
+        }
+        // 校验状态是否合法
+        Result<Cluster> clusterResult = clusterService.queryById(topicResult.getResult().getClusterId());
+        if (clusterResult.isNotOK()) {
+            return Result.getResult(Status.PARAM_ERROR);
+        }
+        Cluster cluster = clusterResult.getResult();
+        if (cluster.isBrokerUpdating()) {
+            return Result.getResult(Status.BROKER_UPDATING);
         }
 
         // 删除topic
@@ -920,10 +931,9 @@ public class AdminAuditController extends AdminViewController {
         }
         // 校验状态是否合法
         Audit audit = auditResult.getResult();
-        if (!mqCloudConfigHelper.canAudit(audit)) {
+        if (!audit.isInitStatus()) {
             return getAuditStatusError(audit.getStatus());
         }
-
         // 查询 topic更新审核记录
         Result<AuditTopicUpdate> auditTopicUpdateResult = auditTopicUpdateService.queryAuditTopicUpdate(aid);
         if (auditTopicUpdateResult.isNotOK()) {
@@ -937,6 +947,16 @@ public class AdminAuditController extends AdminViewController {
         }
         // 构造更新用的topic
         Topic topic = topicResult.getResult();
+        // 校验状态是否合法
+        Result<Cluster> clusterResult = clusterService.queryById(topic.getClusterId());
+        if (clusterResult.isNotOK()) {
+            return Result.getResult(Status.PARAM_ERROR);
+        }
+        Cluster cluster = clusterResult.getResult();
+        if (cluster.isBrokerUpdating()) {
+            return Result.getResult(Status.BROKER_UPDATING);
+        }
+
         topic.setQueueNum(auditTopicUpdate.getQueueNum());
         // 更新topic
         Result<?> updateResult = topicService.updateTopic(topic);
@@ -970,10 +990,9 @@ public class AdminAuditController extends AdminViewController {
         }
         // 校验状态是否合法
         Audit audit = auditResult.getResult();
-        if (!mqCloudConfigHelper.canAudit(audit)) {
+        if (!audit.isInitStatus()) {
             return getAuditStatusError(audit.getStatus());
         }
-
         // 查询consumer删除审核记录
         Result<AuditConsumerDelete> auditConsumerDeleteResult = auditConsumerDeleteService
                 .queryAuditConsumerDelete(aid);
@@ -992,9 +1011,18 @@ public class AdminAuditController extends AdminViewController {
         if (topicResult.isNotOK()) {
             return topicResult;
         }
+        Topic topic = topicResult.getResult();
+        // 校验状态是否合法
+        Result<Cluster> clusterResult = clusterService.queryById(topic.getClusterId());
+        if (clusterResult.isNotOK()) {
+            return Result.getResult(Status.PARAM_ERROR);
+        }
+        Cluster cluster = clusterResult.getResult();
+        if (cluster.isBrokerUpdating()) {
+            return Result.getResult(Status.BROKER_UPDATING);
+        }
 
         // 删除消费者
-        Cluster cluster = clusterService.getMQClusterById(topicResult.getResult().getClusterId());
         Result<?> deleteResult = consumerService.deleteConsumer(cluster, consumer, audit.getUid());
         if (deleteResult.isNotOK()) {
             return deleteResult;
@@ -1024,7 +1052,7 @@ public class AdminAuditController extends AdminViewController {
         }
         // 校验状态是否合法
         Audit audit = auditResult.getResult();
-        if (!mqCloudConfigHelper.canAudit(audit)) {
+        if (!audit.isInitStatus()) {
             return getAuditStatusError(audit.getStatus());
         }
 
@@ -1078,7 +1106,7 @@ public class AdminAuditController extends AdminViewController {
         }
         // 校验状态是否合法
         Audit audit = auditResult.getResult();
-        if (!mqCloudConfigHelper.canAudit(audit)) {
+        if (!audit.isInitStatus()) {
             return getAuditStatusError(audit.getStatus());
         }
 
@@ -1125,7 +1153,7 @@ public class AdminAuditController extends AdminViewController {
         }
         // 校验状态是否合法
         Audit audit = auditResult.getResult();
-        if (!mqCloudConfigHelper.canAudit(audit)) {
+        if (!audit.isInitStatus()) {
             return getAuditStatusError(audit.getStatus());
         }
 
@@ -1182,7 +1210,15 @@ public class AdminAuditController extends AdminViewController {
                     return topicResult;
                 }
                 Topic topic = topicResult.getResult();
-                Cluster cluster = clusterService.getMQClusterById(topic.getClusterId());
+                // 校验状态是否合法
+                Result<Cluster> clusterResult = clusterService.queryById(topic.getClusterId());
+                if (clusterResult.isNotOK()) {
+                    return Result.getResult(Status.PARAM_ERROR);
+                }
+                Cluster cluster = clusterResult.getResult();
+                if (cluster.isBrokerUpdating()) {
+                    return Result.getResult(Status.BROKER_UPDATING);
+                }
                 Result<?> resetOffsetResult = null;
                 if (consumer.isProxyRemoting()) {
                     resetOffsetResult = consumerService.resetOffsetOfProxyRemoting(cluster, topic.getName(),
@@ -1266,7 +1302,7 @@ public class AdminAuditController extends AdminViewController {
         }
         // 校验状态是否合法
         Audit audit = auditResult.getResult();
-        if (!mqCloudConfigHelper.canAudit(audit)) {
+        if (!audit.isInitStatus()) {
             return getAuditStatusError(audit.getStatus());
         }
 
@@ -1307,7 +1343,7 @@ public class AdminAuditController extends AdminViewController {
         }
         // 校验状态是否合法
         Audit audit = auditResult.getResult();
-        if (!mqCloudConfigHelper.canAudit(audit)) {
+        if (!audit.isInitStatus()) {
             return getAuditStatusError(audit.getStatus());
         }
         // 查询审核记录中未成功发送的消息
@@ -1396,8 +1432,17 @@ public class AdminAuditController extends AdminViewController {
         }
         // 校验状态是否合法
         Audit audit = auditResult.getResult();
-        if (!mqCloudConfigHelper.canAudit(audit)) {
+        if (!audit.isInitStatus()) {
             return getAuditStatusError(audit.getStatus());
+        }
+        // 校验状态是否合法
+        Result<Cluster> clusterResult = clusterService.queryById(traceClusterId);
+        if (clusterResult.isNotOK()) {
+            return Result.getResult(Status.PARAM_ERROR);
+        }
+        Cluster cluster = clusterResult.getResult();
+        if (cluster.isBrokerUpdating()) {
+            return Result.getResult(Status.BROKER_UPDATING);
         }
 
         // 查询 topic更新审核记录
@@ -1449,7 +1494,7 @@ public class AdminAuditController extends AdminViewController {
         }
         // 校验状态是否合法
         Audit audit = auditResult.getResult();
-        if (!mqCloudConfigHelper.canAudit(audit)) {
+        if (!audit.isInitStatus()) {
             return getAuditStatusError(audit.getStatus());
         }
         // 查询 topic更新审核记录
@@ -1502,7 +1547,7 @@ public class AdminAuditController extends AdminViewController {
         }
         // 校验状态是否合法
         Audit audit = auditResult.getResult();
-        if (!mqCloudConfigHelper.canAudit(audit)) {
+        if (!audit.isInitStatus()) {
             return getAuditStatusError(audit.getStatus());
         }
 
@@ -1615,7 +1660,7 @@ public class AdminAuditController extends AdminViewController {
         }
         // 校验状态是否合法
         Audit audit = auditResult.getResult();
-        if (!mqCloudConfigHelper.canAudit(audit)) {
+        if (!audit.isInitStatus()) {
             return getAuditStatusError(audit.getStatus());
         }
 
@@ -1681,7 +1726,7 @@ public class AdminAuditController extends AdminViewController {
         }
         // 校验状态是否合法
         Audit audit = auditResult.getResult();
-        if (!mqCloudConfigHelper.canAudit(audit)) {
+        if (!audit.isInitStatus()) {
             return getAuditStatusError(audit.getStatus());
         }
         // 查询审核记录
@@ -1700,8 +1745,16 @@ public class AdminAuditController extends AdminViewController {
         if (topicResult.isNotOK()) {
             return topicResult;
         }
-        // 获取cluster
-        Cluster cluster = clusterService.getMQClusterById(topicResult.getResult().getClusterId());
+        Topic topic = topicResult.getResult();
+        // 校验状态是否合法
+        Result<Cluster> clusterResult = clusterService.queryById(topic.getClusterId());
+        if (clusterResult.isNotOK()) {
+            return Result.getResult(Status.PARAM_ERROR);
+        }
+        Cluster cluster = clusterResult.getResult();
+        if (cluster.isBrokerUpdating()) {
+            return Result.getResult(Status.BROKER_UPDATING);
+        }
         // 消费
         Result<?> consumeResult = consumerService.consumeTimespanMessage(cluster, auditTimespanMessageConsume,
                 consResult.getResult().isProxyRemoting());
@@ -1736,7 +1789,7 @@ public class AdminAuditController extends AdminViewController {
         }
         // 校验状态是否合法
         Audit audit = auditResult.getResult();
-        if (!mqCloudConfigHelper.canAudit(audit)) {
+        if (!audit.isInitStatus()) {
             return getAuditStatusError(audit.getStatus());
         }
         // 查询审核记录
@@ -1745,6 +1798,20 @@ public class AdminAuditController extends AdminViewController {
             return result;
         }
         AuditTimespanMessageExport messageExport = result.getResult();
+        // 获取topic
+        Result<Topic> topicResult = topicService.queryTopic(messageExport.getTopic());
+        if (topicResult.isNotOK()) {
+            return topicResult;
+        }
+        // 校验状态是否合法
+        Result<Cluster> clusterResult = clusterService.queryById(topicResult.getResult().getClusterId());
+        if (clusterResult.isNotOK()) {
+            return Result.getResult(Status.PARAM_ERROR);
+        }
+        Cluster cluster = clusterResult.getResult();
+        if (cluster.isBrokerUpdating()) {
+            return Result.getResult(Status.BROKER_UPDATING);
+        }
         try {
             messageExportService.exportAsync(audit.getId(), messageExport.getTopic(), messageExport.getStart(), messageExport.getEnd(), exportResult -> {
                 if (exportResult.isNotOK()) {
@@ -1864,7 +1931,7 @@ public class AdminAuditController extends AdminViewController {
         }
         // 校验状态是否合法
         Audit audit = auditResult.getResult();
-        if (!mqCloudConfigHelper.canAudit(audit)) {
+        if (!audit.isInitStatus()) {
             return getAuditStatusError(audit.getStatus());
         }
 
