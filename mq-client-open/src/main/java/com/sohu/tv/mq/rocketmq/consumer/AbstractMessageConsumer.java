@@ -18,6 +18,9 @@ import org.slf4j.Logger;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.locks.LockSupport;
 
 /**
  * 公共逻辑
@@ -37,6 +40,8 @@ public abstract class AbstractMessageConsumer<T, C> implements IMessageConsumer<
     // 消费统计
     protected ConsumeStats consumeStats;
 
+    protected Set<Thread> pausedThreads = ConcurrentHashMap.newKeySet();
+
     public AbstractMessageConsumer(RocketMQConsumer rocketMQConsumer) {
         this.rocketMQConsumer = rocketMQConsumer;
         this.logger = rocketMQConsumer.getLogger();
@@ -54,10 +59,6 @@ public abstract class AbstractMessageConsumer<T, C> implements IMessageConsumer<
      * @return
      */
     public ConsumeConcurrentlyStatus consumeMessage(List<MessageExt> msgs, ConsumeConcurrentlyContext context) {
-        if (rocketMQConsumer.getMQClientInstance().selectConsumer(rocketMQConsumer.getGroup()) == null) {
-            logger.warn("{} has unregistered, ignore msgSize:{}", rocketMQConsumer.getGroup(), msgs.size());
-            return ConsumeConcurrentlyStatus.CONSUME_SUCCESS;
-        }
         long start = System.currentTimeMillis();
         ConsumeStatus consumeStatus = consume(new MessageContext(msgs, context));
         if (consumeStatus.isFail() && rocketMQConsumer.isReconsume()) {
@@ -79,10 +80,6 @@ public abstract class AbstractMessageConsumer<T, C> implements IMessageConsumer<
      * @return
      */
     public ConsumeOrderlyStatus consumeMessage(List<MessageExt> msgs, ConsumeOrderlyContext context) {
-        if (rocketMQConsumer.getMQClientInstance().selectConsumer(rocketMQConsumer.getGroup()) == null) {
-            logger.warn("{} has unregistered, ignore msgSize:{}", rocketMQConsumer.getGroup(), msgs.size());
-            return ConsumeOrderlyStatus.SUCCESS;
-        }
         long start = System.currentTimeMillis();
         ConsumeStatus consumeStatus = consume(new MessageContext(msgs, context));
         if (consumeStatus.isFail() && rocketMQConsumer.isReconsume()) {
@@ -111,10 +108,13 @@ public abstract class AbstractMessageConsumer<T, C> implements IMessageConsumer<
         ConsumeThreadStat metric = ConsumeStatManager.getInstance().getConsumeThreadMetrics(group);
         try {
             metric.set(buildThreadConsumeMetric(messageList));
+            if (rocketMQConsumer.isPause()) {
+                pause();
+            }
             // 消费消息
             for (MQMessage<T> mqMessage : messageList) {
                 try {
-                    // 获取许可
+                    // 获取限速许可
                     acquirePermit();
                     consume(mqMessage.getMessage(), mqMessage.getMessageExt());
                 } catch (Throwable e) {
@@ -130,6 +130,17 @@ public abstract class AbstractMessageConsumer<T, C> implements IMessageConsumer<
             metric.remove();
         }
         return ConsumeStatus.OK;
+    }
+
+    public void pause() {
+        Thread currentThread = Thread.currentThread();
+        pausedThreads.add(currentThread);
+        LockSupport.park();
+        pausedThreads.remove(currentThread);
+    }
+
+    public void resume() {
+        pausedThreads.forEach(LockSupport::unpark);
     }
 
     /**

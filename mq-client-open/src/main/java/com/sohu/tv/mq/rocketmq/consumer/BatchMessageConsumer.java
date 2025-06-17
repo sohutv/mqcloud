@@ -31,6 +31,9 @@ public class BatchMessageConsumer<C> extends AbstractMessageConsumer<Object, C> 
         ConsumeThreadStat metric = ConsumeStatManager.getInstance().getConsumeThreadMetrics(rocketMQConsumer.getGroup());
         try {
             metric.set(buildThreadConsumeMetric(msgList));
+            if (rocketMQConsumer.isPause()) {
+                pause();
+            }
             // 获取许可
             acquirePermit(msgList.size());
             rocketMQConsumer.getBatchConsumerCallback().call(msgList, context.context);

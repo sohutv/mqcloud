@@ -41,6 +41,16 @@ public interface IMessageConsumer<C> {
     public void setClientId(String clientId);
 
     /**
+     * 暂停消费
+     */
+    void pause();
+
+    /**
+     * 恢复消费
+     */
+    void resume();
+
+    /**
      * 消费状态
      * 
      * @author yongfeigao

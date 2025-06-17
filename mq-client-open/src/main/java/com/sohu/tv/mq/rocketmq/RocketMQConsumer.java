@@ -32,12 +32,12 @@ import org.apache.rocketmq.common.ServiceThread;
 import org.apache.rocketmq.common.consumer.ConsumeFromWhere;
 import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.common.message.MessageQueue;
-import org.apache.rocketmq.remoting.RPCHook;
-import org.apache.rocketmq.remoting.protocol.RequestCode;
-import org.apache.rocketmq.remoting.protocol.heartbeat.MessageModel;
 import org.apache.rocketmq.common.utils.HttpTinyClient;
 import org.apache.rocketmq.common.utils.HttpTinyClient.HttpResult;
+import org.apache.rocketmq.remoting.RPCHook;
 import org.apache.rocketmq.remoting.RemotingClient;
+import org.apache.rocketmq.remoting.protocol.RequestCode;
+import org.apache.rocketmq.remoting.protocol.heartbeat.MessageModel;
 
 import java.lang.reflect.*;
 import java.net.HttpURLConnection;
@@ -118,6 +118,9 @@ public class RocketMQConsumer extends AbstractConfig {
 
     // 是否启动过了
     private boolean started;
+
+    // 是否暂停消费
+    private volatile boolean pause = false;
 
     public RocketMQConsumer() {
     }
@@ -690,11 +693,14 @@ public class RocketMQConsumer extends AbstractConfig {
 
     public void setPause(boolean pause) {
         logger.info("topic:{}'s consumer:{} pause changed: {}->{}", getTopic(), getGroup(), isPause(), pause);
-        consumer.getDefaultMQPushConsumerImpl().setPause(pause);
+        this.pause = pause;
+        if (!pause) {
+            messageConsumer.resume();
+        }
     }
 
     public boolean isPause() {
-        return consumer.getDefaultMQPushConsumerImpl().isPause();
+        return pause;
     }
 
     public void unregister() {
