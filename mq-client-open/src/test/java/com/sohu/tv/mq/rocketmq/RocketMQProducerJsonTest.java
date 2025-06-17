@@ -1,5 +1,6 @@
 package com.sohu.tv.mq.rocketmq;
 
+import com.sohu.index.tv.mq.common.MQMessage;
 import com.sohu.index.tv.mq.common.Result;
 import com.sohu.tv.mq.util.JSONUtil;
 import org.apache.rocketmq.client.producer.MessageQueueSelector;
@@ -21,7 +22,6 @@ public class RocketMQProducerJsonTest {
     @Before
     public void init() {
         producer = TestUtil.buildProducer("mqcloud-json-test-topic-producer", "mqcloud-json-test-topic");
-        producer.setFetchTopicRouteInfoWhenStart(true);
         producer.start();
     }
 
@@ -30,6 +30,17 @@ public class RocketMQProducerJsonTest {
         Video video = new Video(1, "搜狐tv");
         String str = JSONUtil.toJSONString(video);
         Result<SendResult> sendResult = producer.publish(str, String.valueOf(1));
+        System.out.println(sendResult);
+        Assert.assertTrue(sendResult.isSuccess());
+    }
+
+    @Test
+    public void produce2() {
+        byte[] msg = new byte[30];
+        for (int i = 0; i < msg.length; ++i) {
+            msg[i] = (byte) (i + 230);
+        }
+        Result<SendResult> sendResult = producer.send(MQMessage.build(msg));
         System.out.println(sendResult);
         Assert.assertTrue(sendResult.isSuccess());
     }

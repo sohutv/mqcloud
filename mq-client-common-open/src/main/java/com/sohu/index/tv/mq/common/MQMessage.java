@@ -234,6 +234,9 @@ public class MQMessage<T> {
         MQMessage<T> mqMessage = new MQMessage<>();
         if (message instanceof Message) {
             mqMessage.innerMessage = (Message) message;
+        } else if (message instanceof byte[]) {
+            mqMessage.innerMessage = new Message();
+            mqMessage.setBody((byte[]) message);
         } else {
             mqMessage.setMessage(message);
             mqMessage.innerMessage = new Message();
