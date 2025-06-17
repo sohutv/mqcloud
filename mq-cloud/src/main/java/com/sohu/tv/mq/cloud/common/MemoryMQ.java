@@ -1,18 +1,13 @@
 package com.sohu.tv.mq.cloud.common;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
-
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.SmartLifecycle;
 
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.*;
 
 /**
  * 基于内存的MQ
@@ -22,7 +17,7 @@ import com.google.common.util.concurrent.ThreadFactoryBuilder;
  * @date 2018年3月5日
  * @param <T> 存储类型
  */
-public class MemoryMQ<T> implements Destroyable {
+public class MemoryMQ<T> implements SmartLifecycle {
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
     // 缓冲队列
     private BlockingQueue<T> bufferQueue;
@@ -271,20 +266,6 @@ public class MemoryMQ<T> implements Destroyable {
         this.destroyOrder = destroyOrder;
     }
 
-    @Override
-    public int compareTo(Destroyable o) {
-        return order() - o.order();
-    }
-
-    @Override
-    public void destroy() throws Exception {
-        shutdown();
-    }
-
-    @Override
-    public int order() {
-        return destroyOrder;
-    }
 
     @Override
     public String toString() {
@@ -296,5 +277,28 @@ public class MemoryMQ<T> implements Destroyable {
                 + checkIntervaMillisWhenShutdownInvoked + ", maxCheckIntervaWhenShutdownInvoked="
                 + maxCheckIntervaWhenShutdownInvoked + ", memoryMQConsumer=" + memoryMQConsumer + ", reconsume="
                 + reconsume + ", destroyOrder=" + destroyOrder + "]";
+    }
+
+    @Override
+    public void start() {
+    }
+
+    @Override
+    public void stop() {
+        try {
+            shutdown();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    public boolean isRunning() {
+        return !shutdown;
+    }
+
+    @Override
+    public int getPhase() {
+        return destroyOrder;
     }
 }

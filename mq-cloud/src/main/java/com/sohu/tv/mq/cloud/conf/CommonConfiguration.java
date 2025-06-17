@@ -193,6 +193,7 @@ public class CommonConfiguration {
         memoryMQ.setMinBatchDealSize(3);
         memoryMQ.setReconsume(true);
         memoryMQ.setMemoryMQConsumer(clientStatsConsumer);
+        memoryMQ.setDestroyOrder(1);
         memoryMQ.init();
         return memoryMQ;
     }
@@ -207,6 +208,7 @@ public class CommonConfiguration {
         memoryMQ.setMinBatchDealSize(3);
         memoryMQ.setReconsume(true);
         memoryMQ.setMemoryMQConsumer(consumerClientStatsConsumer);
+        memoryMQ.setDestroyOrder(2);
         memoryMQ.init();
         return memoryMQ;
     }

@@ -47,7 +47,8 @@ public class AuthWebMvcConfigurerAdapter implements WebMvcConfigurer {
         // 用户登录拦截器
         registry.addInterceptor(authInterceptor).excludePathPatterns("/error", "/admin/**", "/user/guide/**",
                 "/cluster/**", "/register/**", "/login/**", "/rocketmq/**", "/consumer/reset/*", "/consumer/config/*"
-                , "/topic/httpConsumer", "/topic/httpProducer", "/assets/**", "/plugins/**", "/software/**", "/favicon.ico");
+                , "/topic/httpConsumer", "/topic/httpProducer", "/assets/**", "/plugins/**", "/software/**",
+                "/favicon.ico", "/check/**");
         // 用户引导拦截器
         registry.addInterceptor(userGuideInterceptor).addPathPatterns("/user/guide/**");
         // admin模块拦截器

@@ -1,12 +1,12 @@
 package com.sohu.tv.mq.cloud.task;
 
-import com.sohu.tv.mq.cloud.common.Destroyable;
 import net.javacrumbs.shedlock.core.LockConfiguration;
 import net.javacrumbs.shedlock.core.LockProvider;
 import net.javacrumbs.shedlock.core.SimpleLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.SmartLifecycle;
 import org.springframework.stereotype.Component;
 
 import java.util.Optional;
@@ -19,7 +19,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @date 2018年9月29日
  */
 @Component("mqTaskExecutor")
-public class TaskExecutor implements Destroyable {
+public class TaskExecutor implements SmartLifecycle {
 
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
@@ -81,26 +81,34 @@ public class TaskExecutor implements Destroyable {
     }
 
     @Override
-    public void destroy() throws Exception {
-        shutdown = true;
-        while (counter.get() > 0) {
-            logger.info("{} task executing", counter.get());
-            Thread.sleep(1000);
+    public String toString() {
+        return "TaskExecutor [counter=" + counter.get() + "]";
+    }
+
+    @Override
+    public void start() {
+    }
+
+    @Override
+    public void stop() {
+        try {
+            shutdown = true;
+            while (counter.get() > 0) {
+                logger.info("{} task executing", counter.get());
+                Thread.sleep(1000);
+            }
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
         }
     }
 
     @Override
-    public int compareTo(Destroyable o) {
-        return this.order() - o.order();
+    public boolean isRunning() {
+        return !shutdown;
     }
 
     @Override
-    public int order() {
-        return 99;
-    }
-
-    @Override
-    public String toString() {
-        return "TaskExecutor [counter=" + counter.get() + "]";
+    public int getPhase() {
+        return 100;
     }
 }
