@@ -225,6 +225,14 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware, Comm
 
 	@PostConstruct
     public void init() throws IllegalArgumentException, IllegalAccessException {
+        refresh(true);
+    }
+
+    public void refresh() throws IllegalArgumentException, IllegalAccessException {
+        refresh(false);
+    }
+
+    public void refresh(boolean init) throws IllegalArgumentException, IllegalAccessException {
         Result<List<CommonConfig>> result = commonConfigService.query();
         if (result.isEmpty()) {
             logger.error("no CommonConfig data found!");
@@ -261,7 +269,7 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware, Comm
         }
         // 发布更新时间
         publisher.publishEvent(new MQCloudConfigEvent());
-        logger.info("init ok:{}", this);
+        logger.info("config:{}", init ? this : "refreshed");
     }
 
     private CommonConfig findCommonConfig(List<CommonConfig> commonConfigList, String key) {

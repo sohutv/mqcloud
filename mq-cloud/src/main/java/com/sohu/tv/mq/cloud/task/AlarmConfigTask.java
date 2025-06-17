@@ -1,17 +1,16 @@
 package com.sohu.tv.mq.cloud.task;
 
-import java.util.List;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.scheduling.annotation.Scheduled;
-
 import com.sohu.tv.mq.cloud.bo.AlarmConfig;
 import com.sohu.tv.mq.cloud.service.AlarmConfigBridingService;
 import com.sohu.tv.mq.cloud.service.AlarmConfigService;
 import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper;
 import com.sohu.tv.mq.cloud.util.Result;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Scheduled;
+
+import java.util.List;
 
 /**
  * 报警配置定时刷新
@@ -43,9 +42,9 @@ public class AlarmConfigTask {
         alarmConfigBridingService.setConfigTable(userAlarmConfigResult.getResult());
         // 更新mqcloud配置
         try {
-            mqCloudConfigHelper.init();
+            mqCloudConfigHelper.refresh();
         } catch (Exception e) {
-            logger.error("");
+            logger.error(e.toString(), e);
         }
         logger.info("refresh alarm config use: {}ms", (System.currentTimeMillis() - start));
     }
