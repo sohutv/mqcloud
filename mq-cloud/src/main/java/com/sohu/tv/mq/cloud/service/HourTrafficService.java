@@ -1,5 +1,6 @@
 package com.sohu.tv.mq.cloud.service;
 
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 
@@ -98,7 +99,7 @@ public abstract class HourTrafficService extends TrafficService<Traffic> {
         throw new UnsupportedOperationException();
     }
 
-    public Result<List<Traffic>> query(List<Long> idList, Date date) {
+    public Result<List<Traffic>> query(Collection<Long> idList, Date date) {
         throw new UnsupportedOperationException();
     }
 

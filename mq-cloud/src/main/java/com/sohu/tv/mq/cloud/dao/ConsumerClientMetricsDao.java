@@ -6,6 +6,7 @@ import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -45,4 +46,13 @@ public interface ConsumerClientMetricsDao {
      */
     @Delete("delete from consumer_client_metrics where create_date=#{createDate}")
     public Integer delete(@Param("createDate")int createDate);
+
+    /**
+     * 获取多个consumer客户端指标
+     */
+    @Select("<script>select consumer, sum(count) count, create_date, create_time from consumer_client_metrics "
+            + "where create_date = #{createDate} and consumer in "
+            + "<foreach collection=\"consumers\" item=\"consumer\" separator=\",\" open=\"(\" close=\")\">#{consumer}</foreach> "
+            + "group by consumer, create_time</script>")
+    public List<ConsumerClientMetrics> selectListByDate(@Param("consumers") Collection<String> consumers, @Param("createDate")int createDate);
 }

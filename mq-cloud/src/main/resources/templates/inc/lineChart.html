@@ -8,11 +8,19 @@
 					<input type="text" class="form-control" name="${searchItem.key}" value="${searchItem.value!}" placeholder="${searchItem.title}">
 				</#if>
 				<#if searchItem.type == 1>
-					<select name="${searchItem.key}" class="form-control selectpicker">
+					<select id="chartSelect_${searchItem.key}" name="${searchItem.key}" class="form-control selectpicker border mr-1">
 						<#list searchItem.kvList as kv>
-							<option value="${kv.k}" <#if kv.v == searchItem.value> selected="selected" </#if>>${kv.v}</option>
+							<option value="${kv.k}" <#if kv.k == searchItem.value> selected="selected" </#if>>${kv.v}</option>
 						</#list>
 					</select>
+					<script>
+						$(function () {
+							$('#chartSelect_${searchItem.key}').selectpicker();
+							$('#chartSelect_${searchItem.key}').on('change',function(){
+								drawLineChart('${response.result.path}');
+							});
+						});
+					</script>
 			  	</#if>
 				<#if searchItem.type == 2>
 					<div class="input-group date" id="${response.result.path}_date" data-target-input="nearest" style="width:210px;">

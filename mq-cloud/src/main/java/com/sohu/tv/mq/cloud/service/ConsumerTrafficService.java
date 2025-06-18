@@ -21,6 +21,7 @@ import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.Future;
@@ -183,7 +184,7 @@ public class ConsumerTrafficService extends TrafficService<ConsumerTraffic> {
     }
 
     @Override
-    public Result<List<ConsumerTraffic>> query(List<Long> idList, Date date) {
+    public Result<List<ConsumerTraffic>> query(Collection<Long> idList, Date date) {
         if (idList == null || idList.size() == 0) {
             return Result.getResult(Status.NO_RESULT);
         }

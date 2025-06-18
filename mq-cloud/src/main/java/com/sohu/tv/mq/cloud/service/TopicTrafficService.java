@@ -17,12 +17,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.Future;
-import java.util.concurrent.ThreadPoolExecutor;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -48,9 +43,6 @@ public class TopicTrafficService extends TrafficService<TopicTraffic> {
 
     @Autowired
     private SqlSessionFactory mqSqlSessionFactory;
-
-    private ThreadPoolExecutor topicTrafficFetchThreadPool =
-            ThreadPoolUtil.createBlockingFixedThreadPool("topicTrafficFetch", 2);
 
     /**
      * 保存topic流量
@@ -86,26 +78,14 @@ public class TopicTrafficService extends TrafficService<TopicTraffic> {
         String time = DateUtil.getFormatNow(DateUtil.HHMM);
         Date date = new Date();
         AtomicInteger fetchErrorCount = new AtomicInteger();
-        List<Future> futures = new ArrayList<>();
         List<Topic> topicList = topicListResult.getResult();
         for (Topic topic : topicList) {
-            Future future = topicTrafficFetchThreadPool.submit(() -> {
-                try {
-                    if (!collectTraffic(topic, date, time, mqCluster)) {
-                        fetchErrorCount.incrementAndGet();
-                    }
-                } catch (Throwable e) {
-                    logger.error("collect traffic err, topic:{}, time:{}, cluster:{}", topic, time, mqCluster, e);
-                }
-            });
-            futures.add(future);
-        }
-        // 等待所有任务执行完毕
-        for (Future future : futures) {
             try {
-                future.get();
+                if (!collectTraffic(topic, date, time, mqCluster)) {
+                    fetchErrorCount.incrementAndGet();
+                }
             } catch (Throwable e) {
-                logger.error("collect traffic err", e);
+                logger.error("collect traffic err, topic:{}, time:{}, cluster:{}", topic, time, mqCluster, e);
             }
         }
         // 保存broker流量
@@ -194,7 +174,7 @@ public class TopicTrafficService extends TrafficService<TopicTraffic> {
     }
 
     @Override
-    public Result<List<TopicTraffic>> query(List<Long> idList, Date date) {
+    public Result<List<TopicTraffic>> query(Collection<Long> idList, Date date) {
         throw new UnsupportedOperationException();
     }
 

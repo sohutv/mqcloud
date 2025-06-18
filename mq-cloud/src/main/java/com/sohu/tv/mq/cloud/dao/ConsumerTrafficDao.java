@@ -1,5 +1,6 @@
 package com.sohu.tv.mq.cloud.dao;
 
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 
@@ -64,7 +65,7 @@ public interface ConsumerTrafficDao {
     @Select("<script>select * from consumer_traffic where create_date=#{createDate,jdbcType=DATE} and consumer_id in "
             + "<foreach collection=\"idList\" item=\"id\" separator=\",\" open=\"(\" close=\")\">#{id}</foreach>"
             + "</script>")
-    public List<ConsumerTraffic> selectByIdList(@Param("idList") List<Long> idList,
+    public List<ConsumerTraffic> selectByIdList(@Param("idList") Collection<Long> idList,
             @Param("createDate") Date createDate);
 
     /**

@@ -9,7 +9,6 @@ import com.sohu.tv.mq.cloud.mq.MQAdminTemplate;
 import com.sohu.tv.mq.cloud.service.ConsumerService;
 import com.sohu.tv.mq.cloud.service.TopicService;
 import com.sohu.tv.mq.cloud.util.Result;
-import com.sohu.tv.mq.cloud.util.ThreadPoolUtil;
 import com.sohu.tv.mq.util.CommonUtil;
 import org.apache.rocketmq.client.consumer.DefaultMQPullConsumer;
 import org.apache.rocketmq.client.consumer.DefaultMQPushConsumer;
@@ -43,7 +42,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.Map.Entry;
-import java.util.concurrent.ThreadPoolExecutor;
 
 /**
  * copy from org.apache.rocketmq.tools.monitor.MonitorService
@@ -71,8 +69,6 @@ public class MonitorService {
     private MQAdminTemplate mqAdminTemplate;
 
     private TopicService topicService;
-
-    private ThreadPoolExecutor monitorThreadPool = ThreadPoolUtil.createBlockingFixedThreadPool("monitor", 2);
 
     public MonitorService(Cluster mqCluster, SohuMonitorListener monitorListener) {
         this.cluster = mqCluster;
@@ -159,13 +155,11 @@ public class MonitorService {
         }
         // 检测集群模式消费者
         for (String topic : topicList.getTopicList()) {
-            monitorThreadPool.execute(() -> {
-                try {
-                    doMonitorWork(topic);
-                } catch (Throwable e) {
-                    logger.error("doMonitorWork err, topic:{}", topic, e);
-                }
-            });
+            try {
+                doMonitorWork(topic);
+            } catch (Throwable e) {
+                logger.error("doMonitorWork err, topic:{}", topic, e);
+            }
         }
     }
 

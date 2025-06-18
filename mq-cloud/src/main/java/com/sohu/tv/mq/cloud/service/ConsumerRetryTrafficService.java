@@ -23,7 +23,7 @@ import java.util.Map;
  * @date 2018年6月26日
  */
 @Service
-public class ConsumerRetryTrafficService extends HourTrafficService{
+public class ConsumerRetryTrafficService extends HourTrafficService {
 
     @Autowired
     private AlertService alertService;

@@ -13,6 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 
@@ -141,7 +142,7 @@ public abstract class TrafficService<T extends Traffic> {
      * @param date
      * @return Result<List<T>>
      */
-    public abstract Result<List<T>> query(List<Long> idList, Date date);
+    public abstract Result<List<T>> query(Collection<Long> idList, Date date);
 
     /**
      * 查询数据

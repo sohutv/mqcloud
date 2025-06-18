@@ -1,44 +1,31 @@
 package com.sohu.tv.mq.cloud.web.view.data;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
-
-import javax.servlet.http.HttpServletRequest;
-
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.math.NumberUtils;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
-
-import com.sohu.tv.mq.cloud.bo.Consumer;
-import com.sohu.tv.mq.cloud.bo.ConsumerTraffic;
-import com.sohu.tv.mq.cloud.bo.Topic;
-import com.sohu.tv.mq.cloud.bo.TopicTopology;
-import com.sohu.tv.mq.cloud.bo.TopicTraffic;
-import com.sohu.tv.mq.cloud.bo.Traffic;
-import com.sohu.tv.mq.cloud.service.ConsumerTrafficService;
-import com.sohu.tv.mq.cloud.service.DelayMessageService;
-import com.sohu.tv.mq.cloud.service.TopicTrafficService;
-import com.sohu.tv.mq.cloud.service.UserService;
+import com.sohu.tv.mq.cloud.bo.*;
+import com.sohu.tv.mq.cloud.common.util.WebUtil;
+import com.sohu.tv.mq.cloud.service.*;
 import com.sohu.tv.mq.cloud.util.DateUtil;
 import com.sohu.tv.mq.cloud.util.Result;
-import com.sohu.tv.mq.cloud.common.util.WebUtil;
 import com.sohu.tv.mq.cloud.web.controller.param.PaginationParam;
 import com.sohu.tv.mq.cloud.web.view.SearchHeader;
 import com.sohu.tv.mq.cloud.web.view.SearchHeader.DateSearchField;
 import com.sohu.tv.mq.cloud.web.view.SearchHeader.HiddenSearchField;
 import com.sohu.tv.mq.cloud.web.view.SearchHeader.SearchField;
+import com.sohu.tv.mq.cloud.web.view.SearchHeader.SelectSearchField;
+import com.sohu.tv.mq.cloud.web.view.SearchHeader.SelectSearchField.KV;
 import com.sohu.tv.mq.cloud.web.view.chart.LineChart;
 import com.sohu.tv.mq.cloud.web.view.chart.LineChart.XAxis;
 import com.sohu.tv.mq.cloud.web.view.chart.LineChart.YAxis;
 import com.sohu.tv.mq.cloud.web.view.chart.LineChart.YAxisGroup;
 import com.sohu.tv.mq.cloud.web.view.chart.LineChartData;
 import com.sohu.tv.mq.cloud.web.vo.UserInfo;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
+import javax.servlet.http.HttpServletRequest;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * topic消费者流量数据
@@ -58,6 +45,7 @@ public class ConsumeTrafficLineChartData implements LineChartData {
     public static final String DATE_FIELD_TITLE = "日期";
     public static final String CONSUMER_FIELD = "_consumer";
     public static final String CURRENTPAGE_FIELD = "currentPage";
+    public static final String TYPE = "type";
 
     @Autowired
     private TopicTrafficService topicTrafficService;
@@ -70,6 +58,9 @@ public class ConsumeTrafficLineChartData implements LineChartData {
     
     @Autowired
     private DelayMessageService delayMessageService;
+
+    @Autowired
+    private ConsumerClientMetricsService consumerClientMetricsService;
     
     // x轴数据
     private List<String> xDataList;
@@ -89,6 +80,22 @@ public class ConsumeTrafficLineChartData implements LineChartData {
     public void initSearchHeader() {
         searchHeader = new SearchHeader();
         List<SearchField> searchFieldList = new ArrayList<SearchHeader.SearchField>();
+
+        // type
+        List<KV> kvList = new ArrayList<KV>();
+        KV kv = new KV();
+        kv.setK("0");
+        kv.setV("服务端指标");
+        kvList.add(kv);
+        kv = new KV();
+        kv.setK("1");
+        kv.setV("客户端指标");
+        kvList.add(kv);
+        SelectSearchField typeSearchField = new SelectSearchField();
+        typeSearchField.setKvList(kvList);
+        typeSearchField.setKey(TYPE);
+        typeSearchField.setValue("0");
+        searchFieldList.add(typeSearchField);
 
         // time
         DateSearchField dateSearchField = new DateSearchField();
@@ -265,15 +272,6 @@ public class ConsumeTrafficLineChartData implements LineChartData {
      */
     private LineChart getConsumerLineChart(Map<String, Object> searchMap, Date date, TopicTopology topicTopology, 
             Map<String, Traffic> producerTrafficMap) {
-        List<Consumer> consumerList = topicTopology.getConsumerList();
-        List<Long> idList = new ArrayList<Long>();
-        for(Consumer consumer : consumerList) {
-            idList.add(consumer.getId());
-        }
-        Result<List<ConsumerTraffic>> listResult = consumerTrafficService.query(idList, date);
-        if (!listResult.isOK()) {
-            //return null;
-        }
         // 构造曲线图对象
         LineChart lineChart = new LineChart();
         lineChart.setChartId("consumer");
@@ -295,8 +293,10 @@ public class ConsumeTrafficLineChartData implements LineChartData {
         yAxisGroupList.add(countYAxisGroup);
         lineChart.setyAxisGroupList(yAxisGroupList);
 
-        Map<Long, List<ConsumerTraffic>> map = list2ConsumerMap(listResult.getResult());
-        for (Consumer consumer : consumerList) {
+        int type = NumberUtils.toInt(searchMap.get(TYPE).toString());
+        List<ConsumerTraffic> consumerTraffics = fetchConsumerTraffic(type, topicTopology.getConsumerList(), date);
+        Map<Long, List<ConsumerTraffic>> map = list2ConsumerMap(consumerTraffics);
+        for (Consumer consumer : topicTopology.getConsumerList()) {
             List<ConsumerTraffic> list = map.get(consumer.getId());
             // 将list转为map方便数据查找
             Map<String, Traffic> trafficMap = list2Map(list);
@@ -322,7 +322,31 @@ public class ConsumeTrafficLineChartData implements LineChartData {
         countYAxisList.add(producerCountYAxis);
         return lineChart;
     }
-    
+
+
+    public List<ConsumerTraffic> fetchConsumerTraffic(int searchType, List<Consumer> consumerList, Date date) {
+        Map<String, Long> consumerIdMap = new HashMap<>();
+        for (Consumer consumer : consumerList) {
+            consumerIdMap.put(consumer.getName(), consumer.getId());
+        }
+        // 服务端指标
+        if (searchType == 0) {
+            return consumerTrafficService.query(consumerIdMap.values(), date).getResult();
+        }
+        // 客户端指标
+        List<ConsumerClientMetrics> consumerClientMetrics = consumerClientMetricsService.queryListByDate(consumerIdMap.keySet(), date).getResult();
+        if (consumerClientMetrics == null) {
+            return null;
+        }
+        return consumerClientMetrics.stream().map(consumerClientMetric -> {
+            ConsumerTraffic consumerTraffic = new ConsumerTraffic();
+            consumerTraffic.setConsumerId(consumerIdMap.get(consumerClientMetric.getConsumer()));
+            consumerTraffic.setCreateTime(consumerClientMetric.getCreateTime());
+            consumerTraffic.setCount(consumerClientMetric.getCount());
+            return consumerTraffic;
+        }).collect(Collectors.toList());
+    }
+
     /**
      * 获取长整型数据
      * 

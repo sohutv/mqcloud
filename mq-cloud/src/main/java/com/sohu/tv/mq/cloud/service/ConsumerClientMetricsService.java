@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 
@@ -85,5 +86,17 @@ public class ConsumerClientMetricsService {
             return Result.getDBErrorResult(e);
         }
         return Result.getResult(result);
+    }
+
+    /**
+     * 获取多个consumer客户端指标
+     */
+    public Result<List<ConsumerClientMetrics>> queryListByDate(Collection<String> consumers, Date date) {
+        try {
+            return Result.getResult(consumerClientMetricsDao.selectListByDate(consumers, DateUtil.format(date)));
+        } catch (Exception e) {
+            logger.error("queryListByDate err, consumers:{}, date:{}", consumers, date, e);
+            return Result.getDBErrorResult(e);
+        }
     }
 }
