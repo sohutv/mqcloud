@@ -4,8 +4,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.stereotype.Component;
-
 import com.sohu.tv.mq.cloud.util.FileDeleteUtil;
 /**
  * access日志清理任务
@@ -13,7 +11,7 @@ import com.sohu.tv.mq.cloud.util.FileDeleteUtil;
  * @author yongfeigao
  * @date 2019年1月11日
  */
-@Component
+@Deprecated
 public class AccessLogCleanTask {
     
     private final Logger logger = LoggerFactory.getLogger(this.getClass());

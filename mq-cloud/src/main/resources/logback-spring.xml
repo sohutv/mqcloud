@@ -2,7 +2,7 @@
 <!-- Example LOGBACK Configuration File http://logback.qos.ch/manual/configuration.html -->
 <configuration scan="true" scanPeriod="30 seconds">
 	<property name="LOG_PATH" value="${PROJECT_DIR}/logs" />
-	<springProfile name="online,online-sohu">
+	<springProfile name="online">
 		<appender name="stdout" class="ch.qos.logback.core.rolling.RollingFileAppender">
 			<file>${LOG_PATH}/stdout.log</file>
 			<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
@@ -13,31 +13,38 @@
 				<pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} {%thread} %-5level %logger{50}-%L - %msg%n</pattern>
 			</encoder>
 		</appender>
-		<!-- rocketmq log -->
-		<appender name="RocketmqClientAppender" class="ch.qos.logback.core.rolling.RollingFileAppender">
-			<file>${LOG_PATH}/rocketmq.log</file>
+		<appender name="asyncStdout" class="ch.qos.logback.classic.AsyncAppender">
+			<queueSize>2048</queueSize>
+			<neverBlock>true</neverBlock>
+			<appender-ref ref="stdout" />
+		</appender>
+		<appender name="accessLogAppender" class="ch.qos.logback.core.rolling.RollingFileAppender">
+			<file>${LOGS_DIR}/access.log</file>
 			<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-				<fileNamePattern>${LOG_PATH}/otherdays/rocketmq.log.%d{yyyy-MM-dd}
-				</fileNamePattern>
-				<maxHistory>40</maxHistory>
+				<fileNamePattern>${LOGS_DIR}/otherdays/access.log.%d{yyyy-MM-dd}</fileNamePattern>
+				<maxHistory>10</maxHistory>
 			</rollingPolicy>
 			<encoder>
-				<pattern>%d{yyy-MM-dd HH:mm:ss,GMT+8} %p %t - %m%n</pattern>
-				<charset class="java.nio.charset.Charset">UTF-8</charset>
+				<pattern>%msg%n</pattern>
 			</encoder>
 		</appender>
-		<logger name="com.sohu.tv.index.cloud.metrics" level="warn" additivity="false">
-	        <appender-ref ref="stdout" />
-	    </logger>
+		<appender name="asyncAccessLogAppender" class="ch.qos.logback.classic.AsyncAppender">
+			<queueSize>2048</queueSize>
+			<neverBlock>true</neverBlock>
+			<appender-ref ref="accessLogAppender" />
+		</appender>
+		<logger name="accessLog" level="INFO" additivity="false">
+			<appender-ref ref="asyncAccessLogAppender" />
+		</logger>
 	   	<logger name="com.netflix.util.concurrent.ShutdownEnabledTimer" level="warn" additivity="false">
-	        <appender-ref ref="stdout" />
+	        <appender-ref ref="asyncStdout" />
 	    </logger>
 		<root level="INFO">
-			<appender-ref ref="stdout" />
+			<appender-ref ref="asyncStdout" />
 		</root>
 	</springProfile>
 
-	<springProfile name="local,demo,test-sohu,local-sohu,test-online-sohu">
+	<springProfile name="local,demo">
 		<appender name="stdout" class="ch.qos.logback.core.ConsoleAppender">
 			<encoder>
 				<pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} {%thread} %-5level %logger{50}-%L - %msg%n</pattern>
@@ -45,6 +52,9 @@
 		</appender>
 		<!-- show sql -->
 		<logger name="com.sohu.tv.mq.cloud.dao" level="DEBUG" additivity="false">
+			<appender-ref ref="stdout" />
+		</logger>
+		<logger name="accessLog" level="INFO" additivity="false">
 			<appender-ref ref="stdout" />
 		</logger>
 		<root level="INFO">
