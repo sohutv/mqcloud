@@ -1,4 +1,3 @@
-var drawLineChartCallback;
 /**
  * 绘制曲线图
  * @param lineName
@@ -22,8 +21,7 @@ function drawSearchArea(lineName, callback, chartCallback, loadingEffect){
 		if(callback){
 			callback();
 		}
-		drawLineChartCallback = chartCallback;
-		drawLineChart(lineName, loadingEffect);
+		drawLineChart(lineName, loadingEffect, chartCallback);
 	});
 }
 /**
@@ -31,14 +29,10 @@ function drawSearchArea(lineName, callback, chartCallback, loadingEffect){
  * @param lineName
  * @returns
  */
-function drawLineChart(lineName, loadingEffect){
-	// 回调
-	if(drawLineChartCallback){
-		drawLineChartCallback();
-	}
+function drawLineChart(lineName, loadingEffect, chartCallback){
     post(contextPath + '/line/'+lineName+'/data', $("#"+lineName+"_searchForm").serialize(), function(data) {
     	if(data.status != 200){
-			alert(divComponent + " chart data err!");
+			alert(lineName + " chart data err!");
 			return;
 		}
     	var divComponent = $("#" + lineName + "_lineChart");
@@ -90,8 +84,8 @@ function drawLineChart(lineName, loadingEffect){
 			}
 			
 			// 回调
-			if(drawLineChartCallback){
-				drawLineChartCallback(chart);
+			if (chartCallback) {
+				chartCallback(chart);
 			}
 			if ($("#"+chart.chart.renderTo).length == 0) {
 				var div = "<div id='"+chart.chart.renderTo+"' style='float: left;margin: 10px;'/>";
