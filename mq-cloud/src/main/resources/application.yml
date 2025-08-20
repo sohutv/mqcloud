@@ -5,11 +5,6 @@ server:
   tomcat:
     maxThreads: 500
     uriEncoding: utf-8
-    basedir: '${PROJECT_DIR:/tmp}' 
-    accesslog: 
-      enabled: true
-      buffered: false
-      pattern: '%{yyyy-MM-dd HH:mm:ss.sss}t %I %r %h %s %b %D %F %{X-Forwarded-For}i'
 
 eureka: 
   client: 
