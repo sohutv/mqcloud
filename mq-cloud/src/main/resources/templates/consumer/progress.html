@@ -2413,7 +2413,7 @@ function showFailedMetrics(clientId, consumer){
 }
 
 function failedMetrics(){
-	$.post('${request.contextPath}/consumer/failedMetrics',
+	post('${request.contextPath}/consumer/failedMetrics',
 		{
 			clientId: $("#failedClientIdSpan").html(),
 			consumer: $("#failedConsumerGroup").html()
@@ -2460,7 +2460,7 @@ function consumerRunningInfoModelShow(consumer, comp) {
 		alert("没有获取客户端链接无法进行操作");
 		return;
 	}
-	$.get('${request.contextPath}/consumer/clientInfo',
+	post('${request.contextPath}/consumer/clientInfo',
 	{
 		consumer: consumer,
 		clientId: clientId,
