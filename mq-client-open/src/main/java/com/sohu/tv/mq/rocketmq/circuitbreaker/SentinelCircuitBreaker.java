@@ -90,9 +90,9 @@ public class SentinelCircuitBreaker {
     public void initDefaultRules() {
         Set<DegradeRule> degradeRules = new HashSet<>(DegradeRuleManager.getRules());
         Set<FlowRule> flowRules = new HashSet<>(FlowRuleManager.getRules());
-        degradeRules.add(buildSlowRequestDegradeRule("*"));
-        degradeRules.add(buildExceptionDegradeRule("*"));
-        flowRules.add(buildFlowRule("*"));
+        degradeRules.add(buildSlowRequestDegradeRule(resource));
+        degradeRules.add(buildExceptionDegradeRule(resource));
+        flowRules.add(buildFlowRule(resource));
         DegradeRuleManager.loadRules(new ArrayList<>(degradeRules));
         FlowRuleManager.loadRules(new ArrayList<>(flowRules));
         DefaultCircuitBreakerRuleManager.loadRules(new ArrayList<>(degradeRules));
