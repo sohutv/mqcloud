@@ -1,17 +1,7 @@
 package com.sohu.tv.mq.cloud.web.view.data;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
-
-import com.sohu.tv.mq.cloud.common.util.WebUtil;
-import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
-
 import com.sohu.tv.mq.cloud.bo.BrokerTraffic;
+import com.sohu.tv.mq.cloud.common.util.WebUtil;
 import com.sohu.tv.mq.cloud.service.BrokerTrafficService;
 import com.sohu.tv.mq.cloud.util.DateUtil;
 import com.sohu.tv.mq.cloud.util.Result;
@@ -24,6 +14,11 @@ import com.sohu.tv.mq.cloud.web.view.chart.LineChart.XAxis;
 import com.sohu.tv.mq.cloud.web.view.chart.LineChart.YAxis;
 import com.sohu.tv.mq.cloud.web.view.chart.LineChart.YAxisGroup;
 import com.sohu.tv.mq.cloud.web.view.chart.LineChartData;
+import org.apache.commons.collections.MapUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
+import java.util.*;
 
 /**
  * broker流量数据
@@ -105,8 +100,11 @@ public class BrokerTrafficLineChartData implements LineChartData {
         
         // 解析参数
         Date date = getDate(searchMap, DATE_FIELD);
-        String ip = getValue(searchMap, IP_FIELD);
-        
+        String ip = MapUtils.getString(searchMap, IP_FIELD);
+        if (ip == null) {
+            return lineChartList;
+        }
+
         //获取流量
         Result<List<BrokerTraffic>> result = brokerTrafficService.query(ip, date);
         if (!result.isOK()) {
@@ -360,46 +358,6 @@ public class BrokerTrafficLineChartData implements LineChartData {
         return map;
     }
     
-    /**
-     * 获取数据
-     * 
-     * @param searchMap
-     * @param key
-     * @return
-     */
-    protected String getValue(Map<String, Object> searchMap, String key) {
-        if (searchMap == null) {
-            return null;
-        }
-        Object obj = searchMap.get(key);
-        if (obj == null) {
-            return null;
-        }
-        return obj.toString();
-    }
-
-    /**
-     * 获取日期数据
-     * 
-     * @param searchMap
-     * @param key
-     * @return
-     */
-    protected Date getDate(Map<String, Object> searchMap, String key) {
-        if (searchMap == null) {
-            return new Date();
-        }
-        Object obj = searchMap.get(key);
-        if (obj == null) {
-            return new Date();
-        }
-        String date = obj.toString();
-        if (!StringUtils.isEmpty(date)) {
-            return DateUtil.parseYMD(date);
-        }
-        return new Date();
-    }
-
     @Override
     public SearchHeader getSearchHeader() {
         return searchHeader;

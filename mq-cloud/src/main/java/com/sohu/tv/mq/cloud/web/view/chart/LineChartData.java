@@ -1,10 +1,14 @@
 package com.sohu.tv.mq.cloud.web.view.chart;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+import com.sohu.tv.mq.cloud.util.DateUtil;
 import com.sohu.tv.mq.cloud.web.view.PageView;
 import com.sohu.tv.mq.cloud.web.view.SearchHeader;
+import org.apache.commons.collections.MapUtils;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * 曲线图数据接口
@@ -26,4 +30,12 @@ public interface LineChartData extends PageView {
      * @return
      */
     public List<LineChart> getLineChartData(Map<String, Object> searchMap);
+
+    default Date getDate(Map<String, Object> searchMap, String key) {
+        String date = MapUtils.getString(searchMap, key);
+        if (StringUtils.isEmpty(date)) {
+            return new Date();
+        }
+        return DateUtil.parseYMD(date);
+    }
 }

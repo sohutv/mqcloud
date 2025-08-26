@@ -18,6 +18,7 @@ import com.sohu.tv.mq.cloud.web.view.chart.LineChart.YAxis;
 import com.sohu.tv.mq.cloud.web.view.chart.LineChart.YAxisGroup;
 import com.sohu.tv.mq.cloud.web.view.chart.LineChartData;
 import com.sohu.tv.mq.cloud.web.vo.UserInfo;
+import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -149,8 +150,8 @@ public class ConsumeTrafficLineChartData implements LineChartData {
         
         // 解析参数
         Date date = getDate(searchMap, DATE_FIELD);
-        Long tid = getLongValue(searchMap, TID_FIELD);
-        if (tid == null) {
+        long tid = MapUtils.getLongValue(searchMap, TID_FIELD, 0L);
+        if (tid <= 0) {
             return lineChartList;
         }
         
@@ -164,10 +165,6 @@ public class ConsumeTrafficLineChartData implements LineChartData {
             return lineChartList;
         }
         TopicTopology topicTopology = topicTopologyResult.getResult();
-        
-        if (tid == null || tid <= 0) {
-            return lineChartList;
-        } 
         //获取topic流量
         Result<List<TopicTraffic>> result = getTopicTraffic(topicTopology.getTopic(), date);
         if (!result.isOK()) {
@@ -195,26 +192,18 @@ public class ConsumeTrafficLineChartData implements LineChartData {
      */
     private void filterConsumer(Map<String, Object> searchMap, TopicTopology topicTopology) {
         List<Consumer> consumerList = topicTopology.getConsumerList();
-        Object object = searchMap.get(CONSUMER_FIELD);
-        if (object != null) {
-            String tmp = object.toString();
-            if (StringUtils.isBlank(tmp)) {
-                return;
-            }
-            tmp = tmp.trim();
+        String consumerParam = MapUtils.getString(searchMap, CONSUMER_FIELD);
+        if (consumerParam != null) {
+            consumerParam = consumerParam.trim();
             Iterator<Consumer> iterator = consumerList.iterator();
             while (iterator.hasNext()) {
                 Consumer consumer = iterator.next();
-                if (!consumer.getName().equals(tmp)) {
+                if (!consumer.getName().equals(consumerParam)) {
                     iterator.remove();
                 }
             }
         } else {
-            Object currentPageObject = searchMap.get(CURRENTPAGE_FIELD);
-            int currentPage = 1;
-            if (currentPageObject != null) {
-                currentPage = NumberUtils.toInt(currentPageObject.toString());
-            }
+            int currentPage = MapUtils.getIntValue(searchMap, CURRENTPAGE_FIELD, 1);
             paginationParam.setCurrentPage(currentPage);
             paginationParam.caculatePagination(consumerList.size());
             List<Consumer> tmpList = new ArrayList<>();
@@ -293,7 +282,7 @@ public class ConsumeTrafficLineChartData implements LineChartData {
         yAxisGroupList.add(countYAxisGroup);
         lineChart.setyAxisGroupList(yAxisGroupList);
 
-        int type = NumberUtils.toInt(searchMap.get(TYPE).toString());
+        int type = MapUtils.getIntValue(searchMap, TYPE, 0);
         List<ConsumerTraffic> consumerTraffics = fetchConsumerTraffic(type, topicTopology.getConsumerList(), date);
         Map<Long, List<ConsumerTraffic>> map = list2ConsumerMap(consumerTraffics);
         for (Consumer consumer : topicTopology.getConsumerList()) {
@@ -345,46 +334,6 @@ public class ConsumeTrafficLineChartData implements LineChartData {
             consumerTraffic.setCount(consumerClientMetric.getCount());
             return consumerTraffic;
         }).collect(Collectors.toList());
-    }
-
-    /**
-     * 获取长整型数据
-     * 
-     * @param searchMap
-     * @param key
-     * @return
-     */
-    protected Long getLongValue(Map<String, Object> searchMap, String key) {
-        if (searchMap == null) {
-            return null;
-        }
-        Object obj = searchMap.get(key);
-        if (obj == null) {
-            return null;
-        }
-        return NumberUtils.toLong(obj.toString());
-    }
-
-    /**
-     * 获取日期数据
-     * 
-     * @param searchMap
-     * @param key
-     * @return
-     */
-    protected Date getDate(Map<String, Object> searchMap, String key) {
-        if (searchMap == null) {
-            return new Date();
-        }
-        Object obj = searchMap.get(key);
-        if (obj == null) {
-            return new Date();
-        }
-        String date = obj.toString();
-        if (!StringUtils.isEmpty(date)) {
-            return DateUtil.parseYMD(date);
-        }
-        return new Date();
     }
 
     /**

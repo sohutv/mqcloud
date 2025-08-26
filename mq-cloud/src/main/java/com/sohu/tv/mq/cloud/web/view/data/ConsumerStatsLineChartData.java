@@ -13,6 +13,7 @@ import com.sohu.tv.mq.cloud.web.view.chart.LineChart.XAxis;
 import com.sohu.tv.mq.cloud.web.view.chart.LineChart.YAxis;
 import com.sohu.tv.mq.cloud.web.view.chart.LineChart.YAxisGroup;
 import com.sohu.tv.mq.cloud.web.view.chart.LineChartData;
+import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -103,7 +104,10 @@ public class ConsumerStatsLineChartData implements LineChartData {
 
         // 解析参数
         Date date = getDate(searchMap, DATE_FIELD);
-        String consumer = searchMap.get(CONSUMER_FIELD).toString();
+        String consumer = MapUtils.getString(searchMap, CONSUMER_FIELD);
+        if (consumer == null) {
+            return lineChartList;
+        }
 
         //获取总体统计
         Result<List<ConsumerClientMetrics>> result = consumerClientMetricsService.query(consumer, date);
@@ -287,28 +291,6 @@ public class ConsumerStatsLineChartData implements LineChartData {
             }
         });
         return map;
-    }
-
-    /**
-     * 获取日期数据
-     *
-     * @param searchMap
-     * @param key
-     * @return
-     */
-    protected Date getDate(Map<String, Object> searchMap, String key) {
-        if (searchMap == null) {
-            return new Date();
-        }
-        Object obj = searchMap.get(key);
-        if (obj == null) {
-            return new Date();
-        }
-        String date = obj.toString();
-        if (!StringUtils.isEmpty(date)) {
-            return DateUtil.parseYMD(date);
-        }
-        return new Date();
     }
 
     @Override

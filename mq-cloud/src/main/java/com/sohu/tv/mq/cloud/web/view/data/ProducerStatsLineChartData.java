@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.TreeMap;
 
 import com.sohu.tv.mq.cloud.web.service.LineChartService;
+import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -114,9 +115,12 @@ public class ProducerStatsLineChartData implements LineChartData {
         List<LineChart> lineChartList = new ArrayList<LineChart>();
         
         // 解析参数
+        String producer = MapUtils.getString(searchMap, PRODUCER_FIELD);
+        if (producer == null) {
+            return lineChartList;
+        }
         Date date = getDate(searchMap, DATE_FIELD);
-        String producer = searchMap.get(PRODUCER_FIELD).toString();
-        
+
         //获取producer总体统计
         Result<List<ProducerTotalStat>> result = producerTotalStatService.query(producer, date);
         if (result.isEmpty()) {
@@ -354,28 +358,6 @@ public class ProducerStatsLineChartData implements LineChartData {
             plist.add(producerStat);
         }
         return map;
-    }
-    
-    /**
-     * 获取日期数据
-     * 
-     * @param searchMap
-     * @param key
-     * @return
-     */
-    protected Date getDate(Map<String, Object> searchMap, String key) {
-        if (searchMap == null) {
-            return new Date();
-        }
-        Object obj = searchMap.get(key);
-        if (obj == null) {
-            return new Date();
-        }
-        String date = obj.toString();
-        if (!StringUtils.isEmpty(date)) {
-            return DateUtil.parseYMD(date);
-        }
-        return new Date();
     }
 
     @Override

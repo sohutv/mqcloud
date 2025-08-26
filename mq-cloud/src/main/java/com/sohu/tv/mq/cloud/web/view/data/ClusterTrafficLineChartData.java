@@ -7,8 +7,7 @@ import java.util.Map;
 import java.util.TreeMap;
 
 import com.sohu.tv.mq.cloud.common.util.WebUtil;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.math.NumberUtils;
+import org.apache.commons.collections.MapUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -106,8 +105,11 @@ public class ClusterTrafficLineChartData implements LineChartData {
         
         // 解析参数
         Date date = getDate(searchMap, DATE_FIELD);
-        int clusterId = getIntValue(searchMap, CLUSTER_ID_FIELD);
-        
+        int clusterId = MapUtils.getIntValue(searchMap, CLUSTER_ID_FIELD, -1);
+        if (clusterId == -1) {
+            return lineChartList;
+        }
+
         //获取流量
         Result<List<BrokerTraffic>> result = brokerTrafficService.queryClusterTraffic(clusterId, date);
         if (!result.isOK()) {
@@ -374,49 +376,8 @@ public class ClusterTrafficLineChartData implements LineChartData {
         return obj.toString();
     }
 
-    /**
-     * 获取日期数据
-     * 
-     * @param searchMap
-     * @param key
-     * @return
-     */
-    protected Date getDate(Map<String, Object> searchMap, String key) {
-        if (searchMap == null) {
-            return new Date();
-        }
-        Object obj = searchMap.get(key);
-        if (obj == null) {
-            return new Date();
-        }
-        String date = obj.toString();
-        if (!StringUtils.isEmpty(date)) {
-            return DateUtil.parseYMD(date);
-        }
-        return new Date();
-    }
-
     @Override
     public SearchHeader getSearchHeader() {
         return searchHeader;
     }
-    
-    /**
-     * 获取数据
-     * 
-     * @param searchMap
-     * @param key
-     * @return
-     */
-    protected int getIntValue(Map<String, Object> searchMap, String key) {
-        if (searchMap == null) {
-            return 0;
-        }
-        Object obj = searchMap.get(key);
-        if (obj == null) {
-            return 0;
-        }
-        return NumberUtils.toInt(obj.toString());
-    }
-
 }

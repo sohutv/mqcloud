@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.TreeMap;
 
 import com.sohu.tv.mq.cloud.common.util.WebUtil;
+import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -133,9 +134,8 @@ public class ProduceTrafficLineChartData implements LineChartData {
         
         // 解析参数
         Date date = getDate(searchMap, DATE_FIELD);
-        Long tid = getLongValue(searchMap, TID_FIELD);
-        
-        if (tid == null || tid <= 0) {
+        long tid = MapUtils.getLongValue(searchMap, TID_FIELD, 0);
+        if (tid <= 0) {
             return lineChartList;
         }
         Result<Topic> topicResult = topicService.queryTopic(tid);
@@ -371,46 +371,6 @@ public class ProduceTrafficLineChartData implements LineChartData {
             checkStrategy = new TrafficSimpleStatStrategy(topicTrafficStat, topicTrafficWarnConfig);
         }
         return checkStrategy;
-    }
-    
-    /**
-     * 获取长整型数据
-     * 
-     * @param searchMap
-     * @param key
-     * @return
-     */
-    protected Long getLongValue(Map<String, Object> searchMap, String key) {
-        if (searchMap == null) {
-            return null;
-        }
-        Object obj = searchMap.get(key);
-        if (obj == null) {
-            return null;
-        }
-        return NumberUtils.toLong(obj.toString());
-    }
-
-    /**
-     * 获取日期数据
-     * 
-     * @param searchMap
-     * @param key
-     * @return
-     */
-    protected Date getDate(Map<String, Object> searchMap, String key) {
-        if (searchMap == null) {
-            return new Date();
-        }
-        Object obj = searchMap.get(key);
-        if (obj == null) {
-            return new Date();
-        }
-        String date = obj.toString();
-        if (!StringUtils.isEmpty(date)) {
-            return DateUtil.parseYMD(date);
-        }
-        return new Date();
     }
 
     @Override
