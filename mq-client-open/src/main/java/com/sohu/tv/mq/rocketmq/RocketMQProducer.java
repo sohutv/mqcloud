@@ -72,6 +72,9 @@ public class RocketMQProducer extends AbstractConfig {
     // 降级回调
     private Consumer<MQMessage> circuitBreakerFallbackConsumer;
 
+    // 是否启动过了
+    private boolean started;
+
     public RocketMQProducer() {
     }
 
@@ -120,7 +123,11 @@ public class RocketMQProducer extends AbstractConfig {
     /**
      * 启动
      */
-    public void start() {
+    public synchronized void start() {
+        if (started) {
+            logger.info("topic:{} producer:{} has started, do not start again!", topic, group);
+            return;
+        }
         try {
             // 初始化配置
             initConfig(producer);
@@ -154,6 +161,7 @@ public class RocketMQProducer extends AbstractConfig {
             }
             // init after start
             initAfterStart();
+            started = true;
             logger.info("topic:{} group:{} start", topic, group);
         } catch (MQClientException e) {
             logger.error(e.getMessage(), e);
