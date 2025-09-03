@@ -3,6 +3,7 @@ package com.sohu.tv.mq.rocketmq;
 import com.sohu.index.tv.mq.common.BatchConsumerCallback;
 import com.sohu.index.tv.mq.common.ConsumerCallback;
 import com.sohu.tv.mq.common.AbstractConfig;
+import com.sohu.tv.mq.common.MQCloudClientException;
 import com.sohu.tv.mq.dto.ConsumerConfigDTO;
 import com.sohu.tv.mq.dto.DTOResult;
 import com.sohu.tv.mq.metric.ConsumeStatManager;
@@ -170,12 +171,15 @@ public class RocketMQConsumer extends AbstractConfig {
         return this;
     }
 
-    public synchronized void start() {
+    public synchronized boolean start() {
+        return start(false);
+    }
+
+    private boolean start(boolean async) {
         if (started) {
             logger.info("topic:{} group:{} has started, do not start again!", topic, group);
-            return;
+            return true;
         }
-        started = true;
         try {
             // 初始化配置
             super.initConfig(consumer);
@@ -191,10 +195,34 @@ public class RocketMQConsumer extends AbstractConfig {
             consumer.start();
             // init after start
             initAfterStart();
+            started = true;
             logger.info("topic:{} group:{} start", topic, group);
+            return true;
         } catch (MQClientException e) {
             logger.error(e.getMessage(), e);
+        } catch (MQCloudClientException e) {
+            logger.error("init failed, turn to async init", e);
+            if (!async) {
+                asyncStart();
+            }
         }
+        return false;
+    }
+
+    /**
+     * 异步启动
+     */
+    private void asyncStart() {
+        new Thread(() -> {
+            try {
+                do {
+                    logger.info("topic:{} group:{} is waiting async start", topic, group);
+                    Thread.sleep(5000);
+                } while (!start(true));
+            } catch (Throwable e) {
+                logger.error("async start err", e);
+            }
+        }, "RocketMQConsumer-AsyncStart-" + getGroup()).start();
     }
 
     /**
@@ -304,7 +332,7 @@ public class RocketMQConsumer extends AbstractConfig {
             // 更新重试消息跳过的key
             setRetryMessageSkipKey(consumerConfigDTO.getRetryMessageSkipKey());
         } catch (Throwable ignored) {
-            logger.warn("skipRetryMessage err:{}", ignored);
+            logger.warn("fetch consumer config err", ignored);
         }
     }
 

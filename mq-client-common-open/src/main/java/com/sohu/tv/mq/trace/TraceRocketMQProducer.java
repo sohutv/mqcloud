@@ -1,6 +1,7 @@
 package com.sohu.tv.mq.trace;
 
 import com.sohu.tv.mq.common.AbstractConfig;
+import com.sohu.tv.mq.common.MQCloudClientException;
 import com.sohu.tv.mq.route.AffinityMQStrategy;
 import org.apache.rocketmq.client.exception.MQClientException;
 import org.apache.rocketmq.client.impl.producer.DefaultMQProducerImpl;
@@ -44,6 +45,8 @@ public class TraceRocketMQProducer extends AbstractConfig {
             logger.info("trace topic:{} group:{} start", topic, group);
         } catch (MQClientException e) {
             logger.error(e.getMessage(), e);
+        } catch (MQCloudClientException e) {
+            logger.error("init config error, group:{}", group, e);
         }
     }
     

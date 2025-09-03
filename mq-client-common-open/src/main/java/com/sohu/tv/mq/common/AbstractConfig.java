@@ -1,5 +1,6 @@
 package com.sohu.tv.mq.common;
 
+import com.sohu.index.tv.mq.common.Result;
 import com.sohu.tv.mq.acl.AclClientRPCHook;
 import com.sohu.tv.mq.acl.SessionCredentials;
 import com.sohu.tv.mq.dto.ClusterInfoDTO;
@@ -131,23 +132,29 @@ public abstract class AbstractConfig {
      */
     protected void init() {
         for (int i = 1; i <= maxRetryTimesWhenFetchClusterInfo; ++i) {
-            clusterInfoDTO = CommonUtil.fetchClusterInfo(mqCloudDomain, getTopic(), group, role());
-            if (clusterInfoDTO == null) {
-                if (i == maxRetryTimesWhenFetchClusterInfo) {
-                    throw new RuntimeException("cannot fetch config, topic:[" + getTopic() + "], group:[" + group
-                            + "], role:[" + role() + "], mqCloudDomain:[" + mqCloudDomain + "]");
+            Result<ClusterInfoDTO> result = CommonUtil.fetchClusterInfo(mqCloudDomain, getTopic(), group, role());
+            if (result.isSuccess()) {
+                clusterInfoDTO = result.getResult();
+                if (clusterInfoDTO == null) {
+                    throw new RuntimeException(buildErrorMessage());
                 }
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException e) {
-                    logger.warn("init interrupted");
-                }
-            } else {
-                logger.info("topic:{}, group:{}, role:{}, init ok:{}, times:{}", getTopic(), group, role(), clusterInfoDTO, i);
                 break;
             }
+            if (i == maxRetryTimesWhenFetchClusterInfo) {
+                throw new MQCloudClientException(buildErrorMessage());
+            }
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                logger.warn("init interrupted");
+            }
         }
+        logger.info("topic:{}, group:{}, role:{}, init ok:{}", getTopic(), group, role(), clusterInfoDTO);
         setProperty(Constant.ROCKETMQ_NAMESRV_DOMAIN, getMqCloudDomain());
+    }
+
+    private String buildErrorMessage() {
+        return String.format("init topic:%s, group:%s, role:%d, mqCloudDomain:%s error", getTopic(), getGroup(), role(), getMqCloudDomain());
     }
 
     /**
@@ -450,5 +457,13 @@ public abstract class AbstractConfig {
      */
     public boolean isRunning() {
         return ServiceState.RUNNING == getServiceState();
+    }
+
+    public static String getConfigDomain(String defaultDomain) {
+        String configDomain = System.getProperty("mqcloud_domain");
+        if (StringUtils.isBlank(configDomain)) {
+            configDomain = System.getenv("mqcloud_domain");
+        }
+        return StringUtils.isNotBlank(configDomain) ? configDomain : defaultDomain;
     }
 }

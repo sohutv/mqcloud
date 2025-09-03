@@ -1,5 +1,6 @@
 package com.sohu.tv.mq.util;
 
+import com.sohu.index.tv.mq.common.Result;
 import com.sohu.tv.mq.dto.ClusterInfoDTO;
 import com.sohu.tv.mq.dto.DTOResult;
 import com.sohu.tv.mq.dto.WebResult;
@@ -103,9 +104,9 @@ public class CommonUtil {
      * @param role
      * @return
      */
-    public static ClusterInfoDTO fetchClusterInfo(String mqCloudDomain, String topic, String group, int role) {
+    public static Result<ClusterInfoDTO> fetchClusterInfo(String mqCloudDomain, String topic, String group, int role) {
         long start = System.currentTimeMillis();
-        List<String> paramValues = new ArrayList<String>();
+        List<String> paramValues = new ArrayList<>();
         paramValues.add("topic");
         paramValues.add(topic);
         paramValues.add("group");
@@ -114,20 +115,21 @@ public class CommonUtil {
         paramValues.add(String.valueOf(role));
         paramValues.add("v");
         paramValues.add(Version.get());
+        Result<ClusterInfoDTO> result = new Result<>(true);
         // 从MQCLoud拉取配置信息
-        HttpTinyClient.HttpResult result = null;
         try {
-            result = HttpTinyClient.httpGet("http://" + mqCloudDomain + "/cluster/info", null,
+            HttpTinyClient.HttpResult response = HttpTinyClient.httpGet("http://" + mqCloudDomain + "/cluster/info", null,
                     paramValues,
                     "UTF-8", 3000);
-            if (HttpURLConnection.HTTP_OK == result.code) {
-                DTOResult<ClusterInfoDTO> clusterInfoDTOResult = JSONUtil.parse(result.content, DTOResult.class,
+            if (HttpURLConnection.HTTP_OK == response.code) {
+                DTOResult<ClusterInfoDTO> clusterInfoDTOResult = JSONUtil.parse(response.content, DTOResult.class,
                         ClusterInfoDTO.class);
                 if (clusterInfoDTOResult == null) {
-                    return null;
+                    return result;
                 }
                 if (clusterInfoDTOResult.ok()) {
-                    return clusterInfoDTOResult.getResult();
+                    result.setResult(clusterInfoDTOResult.getResult());
+                    return result;
                 } else {
                     if (clusterInfoDTOResult.getStatus() == 201) {
                         logger.warn("please register your {}:{} topic:{} in MQCloud!", role == 1 ? "producer"
@@ -138,13 +140,16 @@ public class CommonUtil {
                     }
                 }
             } else {
-                logger.error("http connection err: code:{}, info:{}", result.code, result.content);
+                result.setSuccess(false);
+                logger.error("http connection err: code:{}, info:{}", response.code, response.content);
             }
         } catch (Throwable e) {
             logger.error("http err, domain:{},topic:{},group:{},use:{}ms", mqCloudDomain, topic, group,
                     (System.currentTimeMillis() - start), e);
+            result.setSuccess(false);
+            result.setException(e);
         }
-        return null;
+        return result;
     }
 
     public static WebResult<String> cancelDelayedMsg(String topic, String uniqId,
