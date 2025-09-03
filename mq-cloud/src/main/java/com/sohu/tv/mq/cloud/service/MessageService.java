@@ -463,10 +463,10 @@ public class MessageService {
                 mqCloudConfigHelper.getMapWithByteList() != null &&
                 !mqCloudConfigHelper.getMapWithByteList().contains(msg.getTopic())) {
             m.setMessageBodyType(MessageBodyType.Map);
-            m.setDecodedBody(decodedBody.toString());
+            m.setDecodedBody(HtmlUtils.htmlEscape(decodedBody.toString()));
         } else {
             m.setMessageBodyType(MessageBodyType.OBJECT);
-            m.setDecodedBody(JSONUtil.toJSONString(decodedBody));
+            m.setDecodedBody(HtmlUtils.htmlEscape(JSONUtil.toJSONString(decodedBody)));
         }
         // fix json 反序列化空指针异常
         try {
