@@ -15,11 +15,14 @@ import org.apache.rocketmq.remoting.protocol.header.namesrv.PutKVConfigRequestHe
 import org.apache.rocketmq.tools.admin.MQAdminExt;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
 import java.util.*;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -29,7 +32,7 @@ import java.util.stream.Collectors;
  * @date 2018年10月23日
  */
 @Service
-public class NameServerService {
+public class NameServerService implements InitializingBean {
 
     private Logger logger = LoggerFactory.getLogger(this.getClass());
 
@@ -62,6 +65,8 @@ public class NameServerService {
 
     @Autowired
     private ProducerTotalStatService producerTotalStatService;
+
+    private Map<Integer, List<NameServer>> cacheMap = Collections.emptyMap();
 
     /**
      * 保存记录
@@ -150,7 +155,7 @@ public class NameServerService {
      */
     public Result<List<NameServer>> queryOK(int cid) {
         try {
-            return Result.getResult(nameServerDao.selectOKByClusterId(cid));
+            return Result.getResult(cacheMap.get(cid));
         } catch (Exception e) {
             logger.error("queryOK:{} err", cid, e);
             return Result.getDBErrorResult(e);
@@ -381,5 +386,32 @@ public class NameServerService {
                 .forEach(conn -> {
                     conn.setName(map.get(conn.getIp()));
                 });
+    }
+
+    /**
+     * 定时更新
+     */
+    public void afterPropertiesSet() {
+        Executors.newSingleThreadScheduledExecutor(r -> new Thread(r, "updateNameServerThread"))
+                .scheduleAtFixedRate(this::update, 0, 8, TimeUnit.SECONDS);
+    }
+
+    /**
+     * 更新
+     */
+    public void update() {
+        try {
+            List<NameServer> nameServers = nameServerDao.selectAll();
+            if (nameServers == null || nameServers.size() == 0) {
+                logger.error("name server is empty");
+                cacheMap = Collections.emptyMap();
+                return;
+            }
+            // 转为map
+            cacheMap = nameServers.stream().filter(NameServer::isStatusOK)
+                    .collect(Collectors.groupingBy(NameServer::getCid));
+        } catch (Exception e) {
+            logger.error("query all err", e);
+        }
     }
 }

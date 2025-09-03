@@ -25,12 +25,6 @@ public interface NameServerDao {
     public List<NameServer> selectByClusterId(@Param("cid") int cid);
 
     /**
-     * 查询
-     */
-    @Select("select * from name_server where cid = #{cid} and `status` = 0")
-    public List<NameServer> selectOKByClusterId(@Param("cid") int cid);
-
-    /**
      * 根据addr查询
      */
     @Select("select * from name_server where addr = #{addr}")
