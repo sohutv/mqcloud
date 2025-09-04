@@ -202,7 +202,7 @@ public class ManagerBaseService {
      */
     private List<Long> getTidListByUid(Long uid) {
         // 限制用户 需要关联user-consumer,user-producer
-        List<Long> consumerTids = userConsumerDao.selectConsumerFeildListByUid(uid, "tid");
+        List<Long> consumerTids = userConsumerDao.selectTidListByUid(uid);
         List<Long> producerTids = userProducerDao.selectTidListByUid(uid);
         return Stream.concat(consumerTids.stream(), producerTids.stream()).distinct().collect(Collectors.toList());
     }
@@ -212,7 +212,7 @@ public class ManagerBaseService {
      */
     private List<Long> getTidListByGid(long gid) {
         // 限制组织 需要管理user-group,user-consumer,user-producer
-        List<Long> consumerTids = userConsumerDao.selectConsumerFeildListByGid(gid, "tid");
+        List<Long> consumerTids = userConsumerDao.selectTidListByGid(gid);
         List<Long> producerTids = userProducerDao.selectTidListByGid(gid);
         return Stream.concat(consumerTids.stream(), producerTids.stream()).distinct().collect(Collectors.toList());
     }

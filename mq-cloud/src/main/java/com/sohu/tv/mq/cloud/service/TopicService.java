@@ -156,7 +156,7 @@ public class TopicService {
      */
     public Result<List<Topic>> queryTopicList(String topic, long uid, int offset, int size, List<Integer> traceClusterIds) {
         try {
-            return Result.getResult(topicDao.selectByUid(topic, uid, offset, size, traceClusterIds));
+            return Result.getResult(topicDao.selectByUid(toQueryTopic(topic), uid, offset, size, traceClusterIds));
         } catch (Exception e) {
             logger.error("selectByUid err, uid:{}", uid, e);
             return Result.getDBErrorResult(e);
@@ -170,11 +170,18 @@ public class TopicService {
      */
     public Result<Integer> queryTopicListCount(String topic, long uid, List<Integer> traceClusterIds) {
         try {
-            return Result.getResult(topicDao.selectByUidCount(topic, uid, traceClusterIds));
+            return Result.getResult(topicDao.selectByUidCount(toQueryTopic(topic), uid, traceClusterIds));
         } catch (Exception e) {
             logger.error("selectByUidCount err, uid:{}", uid, e);
             return Result.getDBErrorResult(e);
         }
+    }
+
+    private String toQueryTopic(String topic) {
+        if (topic == null) {
+            return null;
+        }
+        return "%" + topic + "%";
     }
     
     /**

@@ -141,7 +141,7 @@ public class ProducerTotalStatService {
     public Result<List<String>> queryProducerList(String client, Date date) {
         List<String> result = null;
         try {
-            result = producerTotalStatDao.selectProducerList(client, DateUtil.format(date));
+            result = producerTotalStatDao.selectProducerList(client + "%", DateUtil.format(date));
         } catch (Exception e) {
             logger.error("queryProducerList err, client:{}, date:{}", client, date, e);
             return Result.getDBErrorResult(e);

@@ -31,7 +31,7 @@ public interface ConsumerClientStatDao {
     /**
      * 按时间和client查询
      */
-    @Select("select distinct consumer from consumer_client_stat where create_date = #{date} and client like '${client}%'")
+    @Select("select distinct consumer from consumer_client_stat where create_date = #{date} and client like #{client}")
     public List<String> selectByDateAndClient(@Param("client")String client, @Param("date")Date date);
 
     /**

@@ -97,13 +97,13 @@ public interface ConsumerDao {
             "<if test=\"tidList != null\"> " +
             "tid in " +
             "<foreach collection=\"tidList\" item=\"id\" open=\"(\" separator=\",\" close=\")\"> " +
-            "${id} " +
+            "#{id} " +
             "</foreach> " +
             "</if> " +
             "<if test=\"cidList != null\"> " +
             "and id in " +
             "<foreach collection=\"cidList\" item=\"cid\" open=\"(\" separator=\",\" close=\")\"> " +
-            "${cid} " +
+            "#{cid} " +
             "</foreach> " +
             "</if> " +
             " </where>"+

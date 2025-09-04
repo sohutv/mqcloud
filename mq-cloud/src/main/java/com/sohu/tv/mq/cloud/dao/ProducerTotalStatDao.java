@@ -65,7 +65,7 @@ public interface ProducerTotalStatDao {
     /**
      * 根据时间和client查询
      */
-    @Select("select distinct producer from producer_total_stat where create_date = #{createDate} and ip like '${client}%'")
+    @Select("select distinct producer from producer_total_stat where create_date = #{createDate} and ip like #{client}")
     public List<String> selectProducerList(@Param("client")String client, @Param("createDate")int createDate);
 
     /**

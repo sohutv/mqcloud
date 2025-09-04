@@ -45,7 +45,7 @@ public interface TopicDao {
             + "<if test=\"uid != 0\"> and id in (select tid from user_producer where uid = #{uid} union select tid from user_consumer where uid = #{uid})"
             + "<if test=\"traceClusterIds.size > 0\"> and cluster_id not in <foreach collection=\"traceClusterIds\" item=\"id\" separator=\",\" open=\"(\" close=\")\">#{id}</foreach></if>"
             + "</if>"
-            + "<if test=\"topic != null\"> and name like '%${topic}%' </if> "
+            + "<if test=\"topic != null\"> and name like #{topic} </if> "
             + "order by count desc limit #{m},#{n}</script>")
     public List<Topic> selectByUid(@Param("topic") String topic, @Param("uid") long uid, @Param("m") int m, @Param("n") int size, @Param("traceClusterIds") List<Integer> traceClusterIds);
     
@@ -58,7 +58,7 @@ public interface TopicDao {
             + "<if test=\"uid != 0\"> and id in (select tid from user_producer where uid = #{uid} union select tid from user_consumer where uid = #{uid})"
             + "<if test=\"traceClusterIds.size > 0\"> and cluster_id not in <foreach collection=\"traceClusterIds\" item=\"id\" separator=\",\" open=\"(\" close=\")\">#{id}</foreach></if>"
             + "</if>"
-            + "<if test=\"topic != null\"> and name like '%${topic}%' </if>"
+            + "<if test=\"topic != null\"> and name like #{topic} </if>"
             + "</script>")
     public Integer selectByUidCount(@Param("topic") String topic, @Param("uid") long uid, @Param("traceClusterIds") List<Integer> traceClusterIds);
     

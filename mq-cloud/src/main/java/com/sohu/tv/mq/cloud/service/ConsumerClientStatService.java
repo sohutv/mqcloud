@@ -51,7 +51,7 @@ public class ConsumerClientStatService {
     public Result<List<String>> selectByDateAndClient(String client, Date date) {
         List<String> result = null;
         try {
-            result = consumerClientStatDao.selectByDateAndClient(client, date);
+            result = consumerClientStatDao.selectByDateAndClient(client + "%", date);
         } catch (Exception e) {
             logger.error("select consumerClientStat err, date:{},client:{}", date, client, e);
             return Result.getDBErrorResult(e);
