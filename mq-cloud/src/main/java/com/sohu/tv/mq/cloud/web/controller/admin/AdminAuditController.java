@@ -11,8 +11,10 @@ import com.sohu.tv.mq.cloud.util.Result;
 import com.sohu.tv.mq.cloud.util.Status;
 import com.sohu.tv.mq.cloud.web.controller.param.PaginationParam;
 import com.sohu.tv.mq.cloud.web.vo.*;
+import com.sohu.tv.mq.util.CommonUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.remoting.protocol.body.Connection;
 import org.apache.rocketmq.remoting.protocol.body.ProducerConnection;
 import org.springframework.beans.BeanUtils;
@@ -1798,8 +1800,19 @@ public class AdminAuditController extends AdminViewController {
             return result;
         }
         AuditTimespanMessageExport messageExport = result.getResult();
-        // 获取topic
-        Result<Topic> topicResult = topicService.queryTopic(messageExport.getTopic());
+        // 获取topic信息
+        boolean isDLQ = CommonUtil.isDeadTopic(messageExport.getTopic());
+        Result<Topic> topicResult = null;
+        if (isDLQ) {
+            String consumer = messageExport.getTopic().substring(MixAll.DLQ_GROUP_TOPIC_PREFIX.length());
+            Result<Consumer> consResult = consumerService.queryConsumerByName(consumer);
+            if (consResult.isNotOK()) {
+                return consResult;
+            }
+            topicResult = topicService.queryTopic(consResult.getResult().getTid());
+        } else {
+            topicResult = topicService.queryTopic(messageExport.getTopic());
+        }
         if (topicResult.isNotOK()) {
             return topicResult;
         }
