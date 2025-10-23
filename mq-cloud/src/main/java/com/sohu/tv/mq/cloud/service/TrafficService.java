@@ -1,14 +1,13 @@
 package com.sohu.tv.mq.cloud.service;
 
+import com.sohu.tv.mq.cloud.bo.Cluster;
 import com.sohu.tv.mq.cloud.bo.Traffic;
 import com.sohu.tv.mq.cloud.cache.LocalCache;
 import com.sohu.tv.mq.cloud.util.Result;
 import org.apache.rocketmq.common.MixAll;
-import org.apache.rocketmq.common.Pair;
 import org.apache.rocketmq.remoting.protocol.body.BrokerStatsData;
 import org.apache.rocketmq.remoting.protocol.route.BrokerData;
 import org.apache.rocketmq.remoting.protocol.route.TopicRouteData;
-import org.apache.rocketmq.tools.admin.MQAdminExt;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,27 +34,24 @@ public abstract class TrafficService<T extends Traffic> {
     @Autowired
     private LocalCache<String> fetchLocalCache;
 
+    @Autowired
+    private BrokerService brokerService;
+
     /**
      * 抓取topic流量
      *
      * @param Topic
      * @param mqAdmin
      */
-    protected boolean fetchTraffic(MQAdminExt mqAdmin, String topic, String statKey, T traffic) {
-        boolean hasFetchError = false;
-        // 获取topic路由
-        TopicRouteData topicRouteData = null;
-        try {
-            topicRouteData = topicService.route(mqAdmin, topic);
-        } catch (Exception e) {
-            logger.warn("topic:{} route err", topic, e);
-        }
+    protected boolean fetchTraffic(Cluster cluster, String topic, String statKey, T traffic) {
+        // 获取topic路由信息
+        TopicRouteData topicRouteData = fetchTopicRouteData(cluster, topic);
         if (topicRouteData == null) {
-            return true;
+            logger.warn("cannot get topic route data, cluster:{}, topic:{}", cluster, topic);
+            return false;
         }
-        // 获取broker数据
-        List<BrokerData> brokerList = topicRouteData.getBrokerDatas();
-        for (BrokerData brokerData : brokerList) {
+        boolean hasFetchError = false;
+        for (BrokerData brokerData : topicRouteData.getBrokerDatas()) {
             // 获取broker master
             String masterAddr = brokerData.getBrokerAddrs().get(MixAll.MASTER_ID);
             if (masterAddr == null) {
@@ -71,37 +67,41 @@ public abstract class TrafficService<T extends Traffic> {
                 continue;
             }
             if (getCountKey() != null) {
-                try {
-                    // 获取次数统计
-                    BrokerStatsData brokerPutStatsData = mqAdmin.viewBrokerStatsData(masterAddr, getCountKey(), statKey);
-                    traffic.addCount(brokerPutStatsData);
-                } catch (Exception e) {
-                    if (logger.isDebugEnabled()) {
-                        logger.debug("fetch traffic, broker:{}, stat:{}, key:{}, err:{}", masterAddr, getCountKey(), statKey,
-                                e.toString());
-                    }
+                Result<BrokerStatsData> result = brokerService.viewBrokerStatsData(cluster, masterAddr, getCountKey(), statKey, false);
+                if (result.getException() != null) {
                     fetchLocalCache.put(key, ERROR);
                     hasFetchError = true;
                     continue;
                 }
+                traffic.addCount(result.getResult());
             }
             if (getSizeKey() != null) {
-                try {
-                    // 获取大小统计
-                    BrokerStatsData brokerSizeStatsData = mqAdmin.viewBrokerStatsData(masterAddr, getSizeKey(), statKey);
-                    traffic.addSize(brokerSizeStatsData);
-                } catch (Exception e) {
-                    if (logger.isDebugEnabled()) {
-                        logger.debug("fetch traffic, broker:{}, stat:{}, key:{}, err:{}", masterAddr, getSizeKey(),
-                                statKey, e.getMessage());
-                    }
+                Result<BrokerStatsData> result = brokerService.viewBrokerStatsData(cluster, masterAddr, getSizeKey(), statKey, false);
+                if (result.getException() != null) {
                     hasFetchError = true;
                 }
+                traffic.addSize(result.getResult());
             }
             // 处理流量
             processBrokerTraffic(masterAddr, traffic);
         }
         return hasFetchError;
+    }
+
+
+    private TopicRouteData fetchTopicRouteData(Cluster mqCluster, String topic) {
+        for (int i = 0; i < 3; i++) {
+            TopicRouteData topicRouteData = topicService.route(mqCluster, topic);
+            if (topicRouteData != null) {
+                return topicRouteData;
+            }
+            logger.warn("fetch topic route data failed, cluster:{}, topic:{}, retry:{}", mqCluster, topic, (i + 1));
+            try {
+                Thread.sleep(500);
+            } catch (InterruptedException e) {
+            }
+        }
+        return null;
     }
     
     /**

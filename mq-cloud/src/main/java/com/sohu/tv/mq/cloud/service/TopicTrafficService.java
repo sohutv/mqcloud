@@ -36,9 +36,6 @@ public class TopicTrafficService extends TrafficService<TopicTraffic> {
     private TopicService topicService;
 
     @Autowired
-    private MQAdminTemplate mqAdminTemplate;
-
-    @Autowired
     private BrokerTrafficService brokerTrafficService;
 
     @Autowired
@@ -101,24 +98,16 @@ public class TopicTrafficService extends TrafficService<TopicTraffic> {
      * 收集流量
      */
     private Boolean collectTraffic(Topic topic, Date date, String time, Cluster mqCluster) {
-        return mqAdminTemplate.execute(new DefaultCallback<Boolean>() {
-            public Boolean callback(MQAdminExt mqAdmin) throws Exception {
-                TopicTraffic topicTraffic = new TopicTraffic();
-                topicTraffic.setCreateTime(time);
-                topicTraffic.setCreateDate(date);
-                topicTraffic.setClusterId(mqCluster().getId());
-                boolean hasFetchError = fetchTraffic(mqAdmin, topic.getName(), topic.getName(), topicTraffic);
-                if (topicTraffic.getCount() != 0 || topicTraffic.getSize() != 0) {
-                    topicTraffic.setTid(topic.getId());
-                    save(topicTraffic);
-                }
-                return hasFetchError;
-            }
-
-            public Cluster mqCluster() {
-                return mqCluster;
-            }
-        });
+        TopicTraffic topicTraffic = new TopicTraffic();
+        topicTraffic.setCreateTime(time);
+        topicTraffic.setCreateDate(date);
+        topicTraffic.setClusterId(mqCluster.getId());
+        boolean hasFetchError = fetchTraffic(mqCluster, topic.getName(), topic.getName(), topicTraffic);
+        if (topicTraffic.getCount() != 0 || topicTraffic.getSize() != 0) {
+            topicTraffic.setTid(topic.getId());
+            save(topicTraffic);
+        }
+        return hasFetchError;
     }
 
     /**

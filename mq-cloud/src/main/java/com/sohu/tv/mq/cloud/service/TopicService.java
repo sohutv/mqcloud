@@ -9,9 +9,7 @@ import com.sohu.tv.mq.cloud.mq.MQAdminTemplate;
 import com.sohu.tv.mq.cloud.util.*;
 import com.sohu.tv.mq.util.CommonUtil;
 import org.apache.ibatis.session.SqlSessionFactory;
-import org.apache.rocketmq.client.exception.MQClientException;
 import org.apache.rocketmq.common.TopicConfig;
-import org.apache.rocketmq.remoting.exception.RemotingException;
 import org.apache.rocketmq.remoting.protocol.admin.TopicStatsTable;
 import org.apache.rocketmq.remoting.protocol.body.TopicConfigSerializeWrapper;
 import org.apache.rocketmq.remoting.protocol.body.TopicList;
@@ -87,28 +85,13 @@ public class TopicService {
     public TopicRouteData route(Cluster cluster, String topic) {
         return mqAdminTemplate.execute(new DefaultCallback<TopicRouteData>() {
             public TopicRouteData callback(MQAdminExt mqAdmin) throws Exception {
-                return route(mqAdmin, topic);
+                return mqAdmin.examineTopicRouteInfo(topic);
             }
 
             public Cluster mqCluster() {
                 return cluster;
             }
         });
-    }
-
-    /**
-     * 获取topic路由数据
-     * 
-     * @param mqAdmin
-     * @param topic
-     * @return TopicRouteData
-     * @throws InterruptedException
-     * @throws MQClientException
-     * @throws RemotingException
-     */
-    public TopicRouteData route(MQAdminExt mqAdmin, String topic)
-            throws RemotingException, MQClientException, InterruptedException {
-        return mqAdmin.examineTopicRouteInfo(topic);
     }
 
     /**
