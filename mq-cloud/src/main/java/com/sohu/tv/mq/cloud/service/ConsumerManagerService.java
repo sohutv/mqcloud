@@ -53,7 +53,7 @@ public class ConsumerManagerService extends ManagerBaseService{
             List<Long> cidListByUid = Optional.ofNullable(param.getUid())
                     .map(u -> userConsumerDao.selectConsumerIdListByUid(u)).orElse(null);
             List<Long> cidListByGid = Optional.ofNullable(param.getGid())
-                    .map(u -> userConsumerDao.selectConsumerIdListByGid(u)).orElse(null);
+                    .map(g -> userConsumerDao.selectConsumerIdListByGid(g)).orElse(null);
             Set<Long> queryCidSet = intersectionToSet(cidListByUid, cidListByGid);
             List<Consumer> consumers = consumerDao.selectByTidAndCidList(tidList, queryCidSet);
             if (CollectionUtils.isEmpty(consumers)){
