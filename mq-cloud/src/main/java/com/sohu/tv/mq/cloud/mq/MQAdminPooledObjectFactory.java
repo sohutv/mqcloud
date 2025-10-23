@@ -26,7 +26,7 @@ public class MQAdminPooledObjectFactory implements KeyedPooledObjectFactory<Clus
     public PooledObject<MQAdminExt> makeObject(Cluster key) throws Exception {
         DefaultPooledObject<MQAdminExt> pooledObject = new DefaultPooledObject<MQAdminExt>(
                 sohuMQAdminFactory.getInstance(key));
-        logger.info("{}:create object, key:{}", sohuMQAdminFactory, key);
+        logger.info("{}:create object:{}, key:{}", sohuMQAdminFactory, pooledObject.hashCode(), key);
         return pooledObject;
     }
 
@@ -37,19 +37,23 @@ public class MQAdminPooledObjectFactory implements KeyedPooledObjectFactory<Clus
             try {
                 mqAdmin.shutdown();
             } catch (Exception e) {
-                logger.warn("{}shutdown err, key:{}", sohuMQAdminFactory, key, e);
+                logger.warn("{} shutdown object:{} err, key:{}", sohuMQAdminFactory, p.hashCode(), key, e);
             }
         }
-        logger.info("{}:destroy object {}", sohuMQAdminFactory, key);
+        logger.info("{}:destroy object:{} key:{}", sohuMQAdminFactory, p.hashCode(), key);
     }
 
     @Override
     public boolean validateObject(Cluster key, PooledObject<MQAdminExt> p) {
         SohuMQAdmin mqAdmin = (SohuMQAdmin) p.getObject();
         try {
-            return mqAdmin.isAlive();
+            boolean isAlive = mqAdmin.isAlive();
+            if (!isAlive) {
+                logger.warn("{}:object:{} not alive, key:{}", sohuMQAdminFactory, p.hashCode(), key);
+            }
+            return isAlive;
         } catch (Exception e) {
-            logger.warn("{}:validate object err, key:{}", sohuMQAdminFactory, key, e);
+            logger.warn("{}:validate object:{} err, key:{}", sohuMQAdminFactory, p.hashCode(), key, e);
         }
         return false;
     }
