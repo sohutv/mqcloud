@@ -43,8 +43,9 @@ public class SSHSessionPooledObjectFactory implements KeyedPooledObjectFactory<S
         ClientSession session = sshClient.getClient().connect(mqCloudConfigHelper.getServerUser(), ip,
                 mqCloudConfigHelper.getServerPort()).verify(mqCloudConfigHelper.getServerConnectTimeout(), TimeUnit.MILLISECONDS).getSession();
         session.auth().verify(mqCloudConfigHelper.getServerConnectTimeout(), TimeUnit.MILLISECONDS);
-        logger.info("create object, key:{}", ip);
-        return new DefaultPooledObject<>(session);
+        PooledObject<ClientSession> pooledObject = new DefaultPooledObject<>(session);
+        logger.info("create object:{}, key:{}", pooledObject.hashCode(), ip);
+        return pooledObject;
     }
 
     @Override
@@ -54,17 +55,17 @@ public class SSHSessionPooledObjectFactory implements KeyedPooledObjectFactory<S
             try {
                 clientSession.close();
             } catch (Exception e) {
-                logger.warn("close err, key:{}", ip, e);
+                logger.warn("close err object:{}, key:{}", pooledObject.hashCode(), ip, e);
             }
         }
-        logger.info("destroy object {}", ip);
+        logger.info("destroy object:{} ip:{}", pooledObject.hashCode(), ip);
     }
 
     @Override
     public boolean validateObject(String ip, PooledObject<ClientSession> pooledObject) {
         boolean closed = pooledObject.getObject().isClosed();
         if (closed) {
-            logger.warn("{} session closed", ip);
+            logger.warn("object:{} ip:{} session closed", pooledObject.hashCode(), ip);
             return false;
         }
         return true;
