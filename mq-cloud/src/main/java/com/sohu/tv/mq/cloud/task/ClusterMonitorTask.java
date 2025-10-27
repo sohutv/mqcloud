@@ -2,15 +2,12 @@ package com.sohu.tv.mq.cloud.task;
 
 import com.sohu.tv.mq.cloud.bo.*;
 import com.sohu.tv.mq.cloud.bo.UserWarn.WarnType;
-import com.sohu.tv.mq.cloud.mq.MQAdminCallback;
-import com.sohu.tv.mq.cloud.mq.MQAdminTemplate;
 import com.sohu.tv.mq.cloud.service.*;
 import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper;
 import com.sohu.tv.mq.cloud.util.Result;
 import net.javacrumbs.shedlock.core.SchedulerLock;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.rocketmq.remoting.protocol.body.KVTable;
-import org.apache.rocketmq.tools.admin.MQAdminExt;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,19 +18,17 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 
 /**
  * 集群实例状态监控
- * 
+ *
  * @Description:
  * @author zhehongyuan
  * @date 2018年10月11日
  */
 public class ClusterMonitorTask {
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
-
-    @Autowired
-    private MQAdminTemplate mqAdminTemplate;
 
     @Autowired
     private AlertService alertService;
@@ -120,7 +115,7 @@ public class ClusterMonitorTask {
 
     /**
      * ping name server
-     * 
+     *
      * @param mqCluster
      */
     private ClusterStat monitorNameServer(Cluster mqCluster) {
@@ -134,7 +129,7 @@ public class ClusterMonitorTask {
         }
         List<String> statList = new ArrayList<>();
         for (String addr : nameServerAddressList) {
-            Result<?> result = nameServerService.healthCheck(mqCluster, addr);
+            Result<?> result = retry(() -> nameServerService.healthCheck(mqCluster, addr));
             if (result.isOK()) {
                 nameServerService.update(mqCluster.getId(), addr, CheckStatusEnum.OK);
             } else {
@@ -154,37 +149,23 @@ public class ClusterMonitorTask {
 
     /**
      * ping Broker
-     * 
+     *
      * @param mqCluster
      */
     private ClusterStat monitorBroker(Cluster mqCluster, List<Broker> brokerList) {
         List<String> statList = new ArrayList<>();
-        mqAdminTemplate.execute(new MQAdminCallback<Void>() {
-            public Void callback(MQAdminExt mqAdmin) throws Exception {
-                for (Broker broker : brokerList) {
-                    try {
-                        KVTable kvTable = mqAdmin.fetchBrokerRuntimeStats(broker.getAddr());
-                        broker.setMaxOffset(NumberUtils.toLong(kvTable.getTable().get("commitLogMaxOffset")));
-                        brokerService.update(mqCluster.getId(), broker.getAddr(), CheckStatusEnum.OK);
-                    } catch (Exception e) {
-                        brokerService.update(mqCluster.getId(), broker.getAddr(), CheckStatusEnum.FAIL);
-                        statList.add(broker.getBrokerName() + ":" + (broker.isMaster() ? "master" : "slave") + ":"
-                                + broker.getAddr() + ";Exception: " + e.getMessage());
-                    }
-                }
-                return null;
+        for (Broker broker : brokerList) {
+            Result<KVTable> result = retry(() -> brokerService.fetchBrokerRuntimeStats(broker.getAddr(), mqCluster));
+            KVTable kvTable = result.getResult();
+            if (kvTable != null) {
+                broker.setMaxOffset(NumberUtils.toLong(kvTable.getTable().get("commitLogMaxOffset")));
+                brokerService.update(mqCluster.getId(), broker.getAddr(), CheckStatusEnum.OK);
+            } else if (result.getException() != null) {
+                brokerService.update(mqCluster.getId(), broker.getAddr(), CheckStatusEnum.FAIL);
+                statList.add(broker.getBrokerName() + ":" + (broker.isMaster() ? "master" : "slave") + ":"
+                        + broker.getAddr() + ";Exception: " + result.getException().getMessage());
             }
-
-            public Cluster mqCluster() {
-                return mqCluster;
-            }
-
-            @Override
-            public Void exception(Exception e) throws Exception {
-                statList.add("Exception: " + e.getMessage());
-                return null;
-            }
-        });
+        }
         if (statList.size() == 0) {
             return null;
         }
@@ -197,7 +178,7 @@ public class ClusterMonitorTask {
 
     /**
      * 处理报警信息
-     * 
+     *
      * @param clusterStatList
      * @param warnType
      */
@@ -213,7 +194,7 @@ public class ClusterMonitorTask {
 
     /**
      * broker最大offset预警
-     * 
+     *
      * @param clusterMap
      */
     private void brokerFallBehindWarn(Map<Cluster, List<Broker>> clusterMap) {
@@ -303,7 +284,7 @@ public class ClusterMonitorTask {
         List<String> statList = new ArrayList<>();
         listResult.getResult().stream().forEach(controller -> {
             String addr = controller.getAddr();
-            Result<?> result = controllerService.healthCheck(mqCluster, addr);
+            Result<?> result = retry(() -> controllerService.healthCheck(mqCluster, addr));
             if (result.isOK()) {
                 controllerService.update(mqCluster.getId(), addr, CheckStatusEnum.OK);
             } else {
@@ -355,7 +336,7 @@ public class ClusterMonitorTask {
         }
         List<String> statList = new ArrayList<>();
         listResult.getResult().stream().forEach(proxy -> {
-            Result<?> result = proxyService.healthCheck(proxy.getAddr());
+            Result<?> result = retry(() -> proxyService.healthCheck(proxy.getAddr()));
             if (result.isOK()) {
                 proxyService.update(mqCluster.getId(), proxy.getAddr(), CheckStatusEnum.OK);
             } else {
@@ -371,5 +352,27 @@ public class ClusterMonitorTask {
         clusterStat.setClusterName(mqCluster.getName());
         clusterStat.setStats(statList);
         return clusterStat;
+    }
+
+    public <T> Result<T> retry(Supplier<Result<T>> supplier) {
+        return retry(supplier, 3);
+    }
+
+    public <T> Result<T> retry(Supplier<Result<T>> supplier, int retryTimes) {
+        Result<T> result = null;
+        for (int i = 0; i < retryTimes; i++) {
+            result = supplier.get();
+            if (result != null && result.isOK()) {
+                return result;
+            }
+            if (i < retryTimes - 1) {
+                try {
+                    Thread.sleep(500);
+                } catch (InterruptedException e) {
+                    return result;
+                }
+            }
+        }
+        return result;
     }
 }

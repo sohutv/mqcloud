@@ -1,12 +1,13 @@
 package com.sohu.tv.mq.cloud.task;
 
+import com.sohu.tv.mq.cloud.Application;
+import com.sohu.tv.mq.cloud.util.Result;
+import com.sohu.tv.mq.cloud.util.Status;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
-
-import com.sohu.tv.mq.cloud.Application;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = Application.class)
@@ -42,5 +43,13 @@ public class ClusterMonitorTaskTest {
     @Test
     public void testControllerMonitorStatus() {
         monitorServiceTask.controllerMonitor();
+    }
+
+    @Test
+    public void testRetry() {
+        monitorServiceTask.retry(()->{
+            System.out.println("retry");
+            return Result.getResult(Status.DB_ERROR);
+        });
     }
 }
