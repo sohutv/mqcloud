@@ -539,10 +539,14 @@ public class BrokerService {
         return viewBrokerStatsData(cluster, brokerAddr, "BROKER_PUT_NUMS_FROM_EXTERNAL", cluster.getName());
     }
 
+    public Result<BrokerStatsData> viewBrokerStatsData(Cluster cluster, String brokerAddr, String statsName, String statsKey) {
+        return viewBrokerStatsData(cluster, brokerAddr, statsName, statsKey, true);
+    }
+
     /**
      * 查看broker统计数据
      */
-    public Result<BrokerStatsData> viewBrokerStatsData(Cluster cluster, String brokerAddr, String statsName, String statsKey) {
+    public Result<BrokerStatsData> viewBrokerStatsData(Cluster cluster, String brokerAddr, String statsName, String statsKey, boolean logWhenError) {
         return mqAdminTemplate.execute(new MQAdminCallback<Result<BrokerStatsData>>() {
             public Result<BrokerStatsData> callback(MQAdminExt mqAdmin) throws Exception {
                 return Result.getResult(mqAdmin.viewBrokerStatsData(brokerAddr, statsName, statsKey));
@@ -550,7 +554,11 @@ public class BrokerService {
 
             @Override
             public Result<BrokerStatsData> exception(Exception e) throws Exception {
-                logger.error("viewBrokerStatsData broker:{} err", brokerAddr, e);
+                if (logWhenError) {
+                    logger.error("viewBrokerStatsData broker:{} statsName:{} statsKey:{} err", brokerAddr, statsName, statsKey, e);
+                } else {
+                    logger.debug("viewBrokerStatsData broker:{} statsName:{} statsKey:{} err", brokerAddr, statsName, statsKey, e);
+                }
                 return Result.getDBErrorResult(e);
             }
 

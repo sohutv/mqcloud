@@ -1,22 +1,13 @@
 package com.sohu.tv.mq.cloud.service;
 
+import com.sohu.tv.mq.cloud.bo.*;
+import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper;
+import com.sohu.tv.mq.cloud.util.Result;
+import org.springframework.beans.factory.annotation.Autowired;
+
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
-
-import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper;
-import org.apache.rocketmq.tools.admin.MQAdminExt;
-import org.springframework.beans.factory.annotation.Autowired;
-
-import com.sohu.tv.mq.cloud.bo.Cluster;
-import com.sohu.tv.mq.cloud.bo.Consumer;
-import com.sohu.tv.mq.cloud.bo.TopicConsumer;
-import com.sohu.tv.mq.cloud.bo.TopicHourTraffic;
-import com.sohu.tv.mq.cloud.bo.Traffic;
-import com.sohu.tv.mq.cloud.bo.User;
-import com.sohu.tv.mq.cloud.mq.DefaultInvoke;
-import com.sohu.tv.mq.cloud.mq.MQAdminTemplate;
-import com.sohu.tv.mq.cloud.util.Result;
 
 /**
  * 小时流量服务
@@ -28,9 +19,6 @@ public abstract class HourTrafficService extends TrafficService<Traffic> {
 
     @Autowired
     private TopicService topicService;
-
-    @Autowired
-    private MQAdminTemplate mqAdminTemplate;
 
     @Autowired
     private UserConsumerService userConsumerService;
@@ -61,25 +49,17 @@ public abstract class HourTrafficService extends TrafficService<Traffic> {
             if (!mqCloudConfigHelper.needMonitor(cluster.online())) {
                 continue;
             }
-            mqAdminTemplate.execute(new DefaultInvoke() {
-                public void invoke(MQAdminExt mqAdmin) throws Exception {
-                    String statKey = topicConsumer.getTopic() + "@" + topicConsumer.getConsumer();
-                    TopicHourTraffic topicTraffic = new TopicHourTraffic();
-                    fetchTraffic(mqAdmin, topicConsumer.getTopic(), statKey, topicTraffic);
-                    if (topicTraffic.getCount() > 0) {
-                        Result<List<User>> userListResult = userConsumerService.queryUserByConsumer(
-                                topicConsumer.getTid(), topicConsumer.getCid());
-                        alert(topicTraffic, topicConsumer, userListResult.getResult());
-                        // 打印报警信息
-                        logger.warn("alert! consumer fail topic:{}, consumer:{}, consumerFailCount:{}",
-                                topicConsumer.getTopic(), topicConsumer.getConsumer(), topicTraffic.getCount());
-                    }
-                }
-
-                public Cluster mqCluster() {
-                    return cluster;
-                }
-            });
+            String statKey = topicConsumer.getTopic() + "@" + topicConsumer.getConsumer();
+            TopicHourTraffic topicTraffic = new TopicHourTraffic();
+            fetchTraffic(cluster, topicConsumer.getTopic(), statKey, topicTraffic);
+            if (topicTraffic.getCount() > 0) {
+                Result<List<User>> userListResult = userConsumerService.queryUserByConsumer(
+                        topicConsumer.getTid(), topicConsumer.getCid());
+                alert(topicTraffic, topicConsumer, userListResult.getResult());
+                // 打印报警信息
+                logger.warn("alert! consumer fail topic:{}, consumer:{}, consumerFailCount:{}",
+                        topicConsumer.getTopic(), topicConsumer.getConsumer(), topicTraffic.getCount());
+            }
             ++consumerSize;
         }
         return consumerSize;

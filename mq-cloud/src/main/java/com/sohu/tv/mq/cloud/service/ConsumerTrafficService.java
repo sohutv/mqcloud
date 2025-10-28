@@ -5,15 +5,12 @@ import com.sohu.tv.mq.cloud.bo.Cluster;
 import com.sohu.tv.mq.cloud.bo.Consumer;
 import com.sohu.tv.mq.cloud.bo.ConsumerTraffic;
 import com.sohu.tv.mq.cloud.dao.ConsumerTrafficDao;
-import com.sohu.tv.mq.cloud.mq.DefaultCallback;
-import com.sohu.tv.mq.cloud.mq.MQAdminTemplate;
 import com.sohu.tv.mq.cloud.util.DateUtil;
 import com.sohu.tv.mq.cloud.util.Result;
 import com.sohu.tv.mq.cloud.util.Status;
 import com.sohu.tv.mq.cloud.util.ThreadPoolUtil;
 import org.apache.rocketmq.common.Pair;
 import org.apache.rocketmq.common.stats.Stats;
-import org.apache.rocketmq.tools.admin.MQAdminExt;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -47,10 +44,10 @@ public class ConsumerTrafficService extends TrafficService<ConsumerTraffic> {
     private ConsumerService consumerService;
 
     @Autowired
-    private MQAdminTemplate mqAdminTemplate;
+    private BrokerTrafficService brokerTrafficService;
 
     @Autowired
-    private BrokerTrafficService brokerTrafficService;
+    private TopicService topicService;
 
     private ThreadPoolExecutor consumerTrafficFetchThreadPool =
             ThreadPoolUtil.createBlockingFixedThreadPool("consumerTrafficFetch", 2);
@@ -123,25 +120,17 @@ public class ConsumerTrafficService extends TrafficService<ConsumerTraffic> {
      * 收集流量
      */
     private Boolean collectTraffic(Consumer consumer, String time, Cluster mqCluster) {
-        return mqAdminTemplate.execute(new DefaultCallback<Boolean>() {
-            public Boolean callback(MQAdminExt mqAdmin) {
-                String statKey = consumer.getTopicName() + "@" + consumer.getName();
-                ConsumerTraffic consumerTraffic = new ConsumerTraffic();
-                consumerTraffic.setCreateTime(time);
-                consumerTraffic.setClusterId(mqCluster().getId());
-                boolean hasFetchError = fetchTraffic(mqAdmin, consumer.getTopicName(), statKey, consumerTraffic);
-                // 有数据才保存
-                if (consumerTraffic.getCount() != 0 || consumerTraffic.getSize() != 0) {
-                    consumerTraffic.setConsumerId(consumer.getId());
-                    save(consumerTraffic);
-                }
-                return hasFetchError;
-            }
-
-            public Cluster mqCluster() {
-                return mqCluster;
-            }
-        });
+        String statKey = consumer.getTopicName() + "@" + consumer.getName();
+        ConsumerTraffic consumerTraffic = new ConsumerTraffic();
+        consumerTraffic.setCreateTime(time);
+        consumerTraffic.setClusterId(mqCluster.getId());
+        boolean hasFetchError = fetchTraffic(mqCluster, consumer.getTopicName(), statKey, consumerTraffic);
+        // 有数据才保存
+        if (consumerTraffic.getCount() != 0 || consumerTraffic.getSize() != 0) {
+            consumerTraffic.setConsumerId(consumer.getId());
+            save(consumerTraffic);
+        }
+        return hasFetchError;
     }
 
     /**
