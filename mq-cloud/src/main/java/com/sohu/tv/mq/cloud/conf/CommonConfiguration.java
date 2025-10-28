@@ -22,6 +22,7 @@ import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper;
 import com.sohu.tv.mq.stats.dto.ClientStats;
 import com.sohu.tv.mq.stats.dto.ConsumerClientStats;
 import com.sohu.tv.mq.util.Constant;
+import io.micrometer.core.instrument.binder.MeterBinder;
 import net.javacrumbs.shedlock.core.LockProvider;
 import net.javacrumbs.shedlock.provider.jdbc.MQCloudJdbcLockProvider;
 import okhttp3.ConnectionPool;
@@ -36,15 +37,19 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.client.OkHttp3ClientHttpRequestFactory;
+import org.springframework.jmx.export.MBeanExporter;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.web.client.RestTemplate;
 
+import javax.annotation.PostConstruct;
 import javax.sql.DataSource;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.security.GeneralSecurityException;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+
+import static io.micrometer.core.instrument.Metrics.globalRegistry;
 
 /**
  * 通用配置
@@ -61,6 +66,12 @@ public class CommonConfiguration {
 
     @Autowired
     private ProxyService proxyService;
+
+    @PostConstruct
+    public void init() throws Exception {
+        Class<?> clz = Class.forName(mqCloudConfigHelper.getCommonsObjectPool2MetricsClass());
+        ((MeterBinder) clz.newInstance()).bindTo(globalRegistry);
+    }
 
     /**
      * 配置用户缓存
@@ -128,11 +139,12 @@ public class CommonConfiguration {
         GenericKeyedObjectPoolConfig genericKeyedObjectPoolConfig = new GenericKeyedObjectPoolConfig();
         genericKeyedObjectPoolConfig.setTestWhileIdle(true);
         genericKeyedObjectPoolConfig.setMaxTotalPerKey(5);
-        genericKeyedObjectPoolConfig.setMaxIdlePerKey(2);
+        genericKeyedObjectPoolConfig.setMaxIdlePerKey(5);
         genericKeyedObjectPoolConfig.setMinIdlePerKey(1);
         genericKeyedObjectPoolConfig.setMaxWaitMillis(10000);
-        genericKeyedObjectPoolConfig.setTimeBetweenEvictionRunsMillis(20000);
-        genericKeyedObjectPoolConfig.setJmxEnabled(false);
+        genericKeyedObjectPoolConfig.setTimeBetweenEvictionRunsMillis(60000);
+        genericKeyedObjectPoolConfig.setJmxEnabled(true);
+        genericKeyedObjectPoolConfig.setJmxNamePrefix("mqAdminPool");
         MQAdminPooledObjectFactory mqAdminPooledObjectFactory = new MQAdminPooledObjectFactory();
         SohuMQAdminFactory sohuMQAdminFactory = new SohuMQAdminFactory(mqCloudConfigHelper);
         mqAdminPooledObjectFactory.setSohuMQAdminFactory(sohuMQAdminFactory);
@@ -147,11 +159,12 @@ public class CommonConfiguration {
         GenericKeyedObjectPoolConfig genericKeyedObjectPoolConfig = new GenericKeyedObjectPoolConfig();
         genericKeyedObjectPoolConfig.setTestWhileIdle(true);
         genericKeyedObjectPoolConfig.setMaxTotalPerKey(2);
-        genericKeyedObjectPoolConfig.setMaxIdlePerKey(1);
+        genericKeyedObjectPoolConfig.setMaxIdlePerKey(2);
         genericKeyedObjectPoolConfig.setMinIdlePerKey(1);
         genericKeyedObjectPoolConfig.setMaxWaitMillis(10000);
-        genericKeyedObjectPoolConfig.setTimeBetweenEvictionRunsMillis(20000);
-        genericKeyedObjectPoolConfig.setJmxEnabled(false);
+        genericKeyedObjectPoolConfig.setTimeBetweenEvictionRunsMillis(60000);
+        genericKeyedObjectPoolConfig.setJmxEnabled(true);
+        genericKeyedObjectPoolConfig.setJmxNamePrefix("mqProxyAdminPool");
         MQAdminPooledObjectFactory mqAdminPooledObjectFactory = new MQAdminPooledObjectFactory();
         SohuMQProxyAdminFactory sohuMQAdminFactory = new SohuMQProxyAdminFactory(mqCloudConfigHelper, proxyService);
         mqAdminPooledObjectFactory.setSohuMQAdminFactory(sohuMQAdminFactory);
@@ -169,18 +182,25 @@ public class CommonConfiguration {
     public GenericKeyedObjectPool<String, ClientSession> clientSessionPool() throws GeneralSecurityException, IOException {
         GenericKeyedObjectPoolConfig genericKeyedObjectPoolConfig = new GenericKeyedObjectPoolConfig();
         genericKeyedObjectPoolConfig.setTestWhileIdle(true);
-        genericKeyedObjectPoolConfig.setTestOnReturn(true);
         genericKeyedObjectPoolConfig.setMaxTotalPerKey(5);
-        genericKeyedObjectPoolConfig.setMaxIdlePerKey(1);
+        genericKeyedObjectPoolConfig.setMaxIdlePerKey(2);
         genericKeyedObjectPoolConfig.setMinIdlePerKey(1);
         genericKeyedObjectPoolConfig.setMaxWaitMillis(30000);
-        genericKeyedObjectPoolConfig.setTimeBetweenEvictionRunsMillis(20000);
-        genericKeyedObjectPoolConfig.setJmxEnabled(false);
+        genericKeyedObjectPoolConfig.setTimeBetweenEvictionRunsMillis(60000);
+        genericKeyedObjectPoolConfig.setJmxEnabled(true);
+        genericKeyedObjectPoolConfig.setJmxNamePrefix("sshSessionPool");
         SSHSessionPooledObjectFactory factory = new SSHSessionPooledObjectFactory(mqCloudConfigHelper);
         GenericKeyedObjectPool<String, ClientSession> genericKeyedObjectPool = new GenericKeyedObjectPool<>(
                 factory,
                 genericKeyedObjectPoolConfig);
         return genericKeyedObjectPool;
+    }
+
+    @Bean
+    public MBeanExporter mBeanExporter() {
+        MBeanExporter exporter = new MBeanExporter();
+        exporter.setExcludedBeans("mqPool", "mqProxyPool", "clientSessionPool");
+        return exporter;
     }
 
     @Bean

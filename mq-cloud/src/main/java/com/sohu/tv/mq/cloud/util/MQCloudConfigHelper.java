@@ -217,6 +217,8 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware, Comm
     private String userWarnServiceClass;
     // 邮件类
     private String mailClass;
+    // commons object pool2 metrics class
+    private String commonsObjectPool2MetricsClass;
 
     @Autowired
     private CommonConfigService commonConfigService;
@@ -862,6 +864,14 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware, Comm
             return false;
         }
         return consumersForSendWarnToOut.contains(consumer);
+    }
+
+    public String getCommonsObjectPool2MetricsClass() {
+        return commonsObjectPool2MetricsClass;
+    }
+
+    public void setCommonsObjectPool2MetricsClass(String commonsObjectPool2MetricsClass) {
+        this.commonsObjectPool2MetricsClass = commonsObjectPool2MetricsClass;
     }
 
     /**

@@ -67,6 +67,7 @@ mqcloud:
   loginClass: com.sohu.tv.mq.cloud.service.impl.DefaultLoginService
   userWarnServiceClass: com.sohu.tv.mq.cloud.service.UserWarnService
   mailClass: com.sohu.tv.mq.cloud.service.impl.DefaultMailSender
+  commonsObjectPool2MetricsClass: io.micrometer.core.instrument.binder.commonspool2.CommonsObjectPool2Metrics
 
 rocketmq:
   customized: true
