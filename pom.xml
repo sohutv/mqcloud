@@ -19,7 +19,7 @@
 	<properties>
 		<slf4j.version>1.7.5</slf4j.version>
 		<junit.version>4.13.1</junit.version>
-		<rocketmq.version>5.3.1-sohu-01</rocketmq.version>
+		<rocketmq.version>5.3.1-sohu-02</rocketmq.version>
 		<java.version>1.8</java.version>
 		<protostuff.version>1.5.0</protostuff.version>
 		<logback.version>1.2.13</logback.version>
@@ -32,7 +32,7 @@
 		<okhttp.version>3.8.1</okhttp.version>
 		<jackson.version>2.14.2</jackson.version>
 		<flink.version>1.13.0</flink.version>
-		<sentinel.version>1.8.8</sentinel.version>
+		<sentinel.version>1.8.7</sentinel.version>
 	</properties>
 
 	<dependencyManagement>

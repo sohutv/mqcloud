@@ -44,10 +44,7 @@ import java.lang.reflect.*;
 import java.net.HttpURLConnection;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 /**
  * rocketmq 消费者
@@ -1020,5 +1017,21 @@ public class RocketMQConsumer extends AbstractConfig {
     @Override
     public ServiceState getServiceState() {
         return consumer.getDefaultMQPushConsumerImpl().getServiceState();
+    }
+
+    public ThreadPoolExecutor getConsumeExecutor() {
+        return consumer.getConsumeExecutor();
+    }
+
+    public void setConsumeExecutor(ThreadPoolExecutor consumeExecutor) {
+        consumer.setConsumeExecutor(consumeExecutor);
+    }
+
+    public int getConsumeThreadMax() {
+        return consumer.getConsumeThreadMax();
+    }
+
+    public int getConsumeThreadMin() {
+        return consumer.getConsumeThreadMin();
     }
 }
