@@ -80,7 +80,9 @@ public abstract class TrafficService<T extends Traffic> {
                 if (result.getException() != null) {
                     hasFetchError = true;
                 }
-                traffic.addSize(result.getResult());
+                if (result.isOK()) {
+                    traffic.addSize(result.getResult());
+                }
             }
             // 处理流量
             processBrokerTraffic(masterAddr, traffic);
