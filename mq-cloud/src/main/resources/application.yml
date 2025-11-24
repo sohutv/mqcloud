@@ -47,7 +47,7 @@ spring:
       min-evictable-idle-time-millis: 55000
       num-tests-per-eviction-run: 20
       remove-abandoned: true
-      remove-abandoned-timeout: 180
+      remove-abandoned-timeout: 1200
       log-abandoned: true
   main:
     allow-circular-references: true
