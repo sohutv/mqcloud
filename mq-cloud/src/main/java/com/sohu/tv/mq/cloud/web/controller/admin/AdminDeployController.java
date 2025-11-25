@@ -273,8 +273,11 @@ public class AdminDeployController extends AdminViewController {
         }
         // 启动
         Result<?> startupResult = mqDeployer.startup(ip, dir, port);
-        if (cid != 0 && startupResult.isOK()) {
-            brokerService.deleteBrokerTmp(cid, ip + ":" + port);
+        if (startupResult.isOK()) {
+            brokerService.updateWritable(cid, ipAddr, true);
+            if (cid != 0) {
+                brokerService.deleteBrokerTmp(cid, ipAddr);
+            }
         }
         return startupResult;
     }
@@ -290,7 +293,7 @@ public class AdminDeployController extends AdminViewController {
      * @param broker
      * @return
      */
-    @RequestMapping(value="/shutdown", method=RequestMethod.POST)
+    @RequestMapping(value = "/shutdown", method = RequestMethod.POST)
     public Result<?> shutdown(UserInfo ui, @RequestParam(name = "cid") int cid, @RequestParam(name = "addr") String addr) {
         logger.warn("shutdown:{}, user:{}", addr, ui);
         String[] addrs = addr.split(":");
@@ -304,12 +307,7 @@ public class AdminDeployController extends AdminViewController {
         if (brokerResult.isNotOK()) {
             return brokerResult;
         }
-        Result<?> shutdownResult = mqDeployer.shutdown(ip, port, brokerResult.getResult().getBaseDir());
-        if (shutdownResult.isOK()) {
-            // 关闭后的broker更新状态
-            brokerService.updateWritable(cid, addr, true);
-        }
-        return shutdownResult;
+        return mqDeployer.shutdown(ip, port, brokerResult.getResult().getBaseDir());
     }
 
     /**
