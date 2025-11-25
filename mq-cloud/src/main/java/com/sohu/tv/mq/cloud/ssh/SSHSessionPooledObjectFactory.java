@@ -63,7 +63,8 @@ public class SSHSessionPooledObjectFactory implements KeyedPooledObjectFactory<S
 
     @Override
     public boolean validateObject(String ip, PooledObject<ClientSession> pooledObject) {
-        boolean closed = pooledObject.getObject().isClosed();
+        ClientSession session = pooledObject.getObject();
+        boolean closed = session.isClosed() || session.isClosing() || !session.isOpen();
         if (closed) {
             logger.warn("object:{} ip:{} session closed", pooledObject.hashCode(), ip);
             return false;

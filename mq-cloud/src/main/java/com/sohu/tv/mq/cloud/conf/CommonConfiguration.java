@@ -182,6 +182,7 @@ public class CommonConfiguration {
     public GenericKeyedObjectPool<String, ClientSession> clientSessionPool() throws GeneralSecurityException, IOException {
         GenericKeyedObjectPoolConfig genericKeyedObjectPoolConfig = new GenericKeyedObjectPoolConfig();
         genericKeyedObjectPoolConfig.setTestWhileIdle(true);
+        genericKeyedObjectPoolConfig.setTestOnReturn(true);
         genericKeyedObjectPoolConfig.setMaxTotalPerKey(5);
         genericKeyedObjectPoolConfig.setMaxIdlePerKey(2);
         genericKeyedObjectPoolConfig.setMinIdlePerKey(1);

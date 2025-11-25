@@ -205,6 +205,18 @@ public class SSHTemplate {
                     }
                 }
                 return new SSHResult(true, null);
+            } catch (IllegalStateException e) {
+                if (e.getMessage().contains("closed")) {
+                    logger.error("execute ip:{} cmd:{} session closed", address, cmd, e);
+                    try {
+                        clientSession.close();
+                    } catch (IOException ex) {
+                        logger.error("close session err", ex);
+                    }
+                    return new SSHResult(false, "ssh session closed");
+                }
+                logger.error("execute ip:{} cmd:{}", address, cmd, e);
+                return new SSHResult(e);
             } catch (Exception e) {
                 logger.error("execute ip:{} cmd:{}", address, cmd, e);
                 return new SSHResult(e);
