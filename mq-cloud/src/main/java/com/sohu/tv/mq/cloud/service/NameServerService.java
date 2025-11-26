@@ -25,6 +25,9 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+import static com.sohu.tv.mq.cloud.bo.DeployableComponent.STATUS_ERROR;
+import static com.sohu.tv.mq.cloud.bo.DeployableComponent.STATUS_OK;
+
 /**
  * name server
  *
@@ -221,6 +224,14 @@ public class NameServerService implements InitializingBean {
         }
     }
 
+    public Result<?> updateStatusOK(int cid, String addr) {
+        return updateStatus(cid, addr, STATUS_OK);
+    }
+
+    public Result<?> updateStatusError(int cid, String addr) {
+        return updateStatus(cid, addr, STATUS_ERROR);
+    }
+
     /**
      * 更新状态
      *
@@ -265,6 +276,20 @@ public class NameServerService implements InitializingBean {
                 return Result.getDBErrorResult(e).setMessage("Exception: " + e.getMessage());
             }
         });
+    }
+
+    /**
+     * 客户端连接数量
+     */
+    public int clientConnectionCount(int cid, String ip, int port) {
+        // 获取连接信息
+        Result<List<String>> result = mqDeployer.getConnectionAddress(ip, port);
+        if (result.isEmpty()) {
+            return 0;
+        }
+        // 构建连接信息
+        List<ComponentConnection> connections = buildComponentConnection(cid, ip, result.getResult());
+        return (int) connections.stream().filter(connection -> connection.getName() == null).count();
     }
 
     /**

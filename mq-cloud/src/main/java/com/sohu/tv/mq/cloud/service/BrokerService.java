@@ -312,6 +312,18 @@ public class BrokerService {
     }
 
     /**
+     * 查询broker
+     */
+    public Result<Broker> queryBroker(String addr) {
+        try {
+            return Result.getResult(brokerDao.selectBrokerByAddr(addr));
+        } catch (Exception e) {
+            logger.error("queryBroker:{} err", addr, e);
+            return Result.getDBErrorResult(e);
+        }
+    }
+
+    /**
      * 查询临时broker
      */
     public Result<List<Broker>> queryTmpBroker(int cid) {

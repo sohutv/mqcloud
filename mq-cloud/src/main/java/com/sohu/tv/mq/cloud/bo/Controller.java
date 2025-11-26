@@ -9,6 +9,12 @@ import java.util.Date;
  * @date 2023年05月22日
  */
 public class Controller extends DeployableComponent {
+
+    @Override
+    public String getComponentName() {
+        return "controller";
+    }
+
     @Override
     public String toString() {
         return "Controller " + super.toString();

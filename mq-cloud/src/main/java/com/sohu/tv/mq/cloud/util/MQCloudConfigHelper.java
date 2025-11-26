@@ -220,6 +220,12 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware, Comm
     // commons object pool2 metrics class
     private String commonsObjectPool2MetricsClass;
 
+    // 自动化操作token
+    private String autoOperateToken;
+
+    // 自动化操作最大等待时间，单位毫秒
+    private int autoOperateMaxWait = 300 * 1000;
+
     @Autowired
     private CommonConfigService commonConfigService;
 
@@ -872,6 +878,18 @@ public class MQCloudConfigHelper implements ApplicationEventPublisherAware, Comm
 
     public void setCommonsObjectPool2MetricsClass(String commonsObjectPool2MetricsClass) {
         this.commonsObjectPool2MetricsClass = commonsObjectPool2MetricsClass;
+    }
+
+    public boolean isAutoOperateToken(String token) {
+        return token != null && token.equals(autoOperateToken);
+    }
+
+    public String getAutoOperateToken() {
+        return autoOperateToken;
+    }
+
+    public boolean isAutoOperateTimeout(long startTimeMillis) {
+        return System.currentTimeMillis() - startTimeMillis > autoOperateMaxWait;
     }
 
     /**

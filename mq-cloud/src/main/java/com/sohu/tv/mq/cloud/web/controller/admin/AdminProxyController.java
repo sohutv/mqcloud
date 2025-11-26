@@ -194,7 +194,7 @@ public class AdminProxyController extends AdminViewController {
     @RequestMapping(value = "/unregister", method = RequestMethod.POST)
     public Result<?> unregister(UserInfo ui, @RequestParam(name = "addr") String addr, @RequestParam(name = "cid") int cid) {
         logger.warn("unregister:{}, user:{}", addr, ui);
-        return Result.getWebResult(proxyService.updateStatus(cid, addr, 1));
+        return Result.getWebResult(proxyService.updateStatusError(cid, addr));
     }
 
     /**
@@ -204,7 +204,7 @@ public class AdminProxyController extends AdminViewController {
     @RequestMapping(value = "/register", method = RequestMethod.POST)
     public Result<?> register(UserInfo ui, @RequestParam(name = "addr") String addr, @RequestParam(name = "cid") int cid) {
         logger.warn("register:{}, user:{}", addr, ui);
-        return Result.getWebResult(proxyService.updateStatus(cid, addr, 0));
+        return Result.getWebResult(proxyService.updateStatusOK(cid, addr));
     }
 
     @Override

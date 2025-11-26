@@ -66,6 +66,14 @@ public interface BrokerDao {
     public Broker selectBroker(@Param("cid") int cid, @Param("addr") String addr);
 
     /**
+     * 查询
+     *
+     * @return
+     */
+    @Select("select * from broker where addr = #{addr}")
+    public Broker selectBrokerByAddr(@Param("addr") String addr);
+
+    /**
      * 更新
      *
      * @param notice

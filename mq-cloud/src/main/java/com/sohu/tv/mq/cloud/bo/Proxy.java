@@ -1,7 +1,5 @@
 package com.sohu.tv.mq.cloud.bo;
 
-import java.util.Date;
-
 /**
  * Proxy
  *
@@ -56,6 +54,11 @@ public class Proxy extends DeployableComponent {
 
     public void setConsumerConnectionSize(int consumerConnectionSize) {
         this.consumerConnectionSize = consumerConnectionSize;
+    }
+
+    @Override
+    public String getComponentName() {
+        return "proxy";
     }
 
     @Override

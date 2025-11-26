@@ -10,6 +10,8 @@ import java.util.Date;
  * @date 2024年05月32日
  */
 public abstract class DeployableComponent {
+    public static final int STATUS_OK = 0;
+    public static final int STATUS_ERROR = 1;
     // cluster id
     protected int cid;
     // ip:port
@@ -112,8 +114,10 @@ public abstract class DeployableComponent {
     }
 
     public boolean isStatusOK() {
-        return status == 0;
+        return status == STATUS_OK;
     }
+
+    public abstract String getComponentName();
 
     @Override
     public String toString() {

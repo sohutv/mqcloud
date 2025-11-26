@@ -69,4 +69,10 @@ public interface ProxyDao {
      */
     @Delete("delete from proxy where cid=#{cid} and addr=#{addr}")
     public Integer delete(@Param("cid") int cid, @Param("addr") String addr);
+
+    /**
+     * 根据addr查询
+     */
+    @Select("select * from proxy where addr = #{addr}")
+    public Proxy selectByAddr(@Param("addr") String addr);
 }

@@ -21,6 +21,11 @@ public class NameServer extends DeployableComponent {
     }
 
     @Override
+    public String getComponentName() {
+        return "nameserver";
+    }
+
+    @Override
     public String toString() {
         return "NameServer " + super.toString();
     }

@@ -63,6 +63,7 @@ public class UserWarn {
         CAPACITY_REPORT(16, "容量日报", "capacityReport.html", false),
         TOPIC_WARN(17, "Topic流量预警", "topicWarn.html"),
         BROKER_AUTO_UPDATE_WARN(18, "broker自动更新", "brokerAutoUpdate.html", false),
+        AUTO_OPERATE(19, "自动运维", "autoOperate.html", false),
 
         UNKNOWN(100, "未知", "unknown.html"),
         ;

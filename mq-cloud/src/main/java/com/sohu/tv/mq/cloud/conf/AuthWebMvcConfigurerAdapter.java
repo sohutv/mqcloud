@@ -52,7 +52,7 @@ public class AuthWebMvcConfigurerAdapter implements WebMvcConfigurer {
         // 用户引导拦截器
         registry.addInterceptor(userGuideInterceptor).addPathPatterns("/user/guide/**");
         // admin模块拦截器
-        registry.addInterceptor(adminInterceptor).addPathPatterns("/admin/**");
+        registry.addInterceptor(adminInterceptor).addPathPatterns("/admin/**").excludePathPatterns("/admin/auto/**");
     }
 
     @Override

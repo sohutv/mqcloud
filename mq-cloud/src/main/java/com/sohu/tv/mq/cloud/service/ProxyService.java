@@ -23,6 +23,9 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.util.List;
 
+import static com.sohu.tv.mq.cloud.bo.DeployableComponent.STATUS_ERROR;
+import static com.sohu.tv.mq.cloud.bo.DeployableComponent.STATUS_OK;
+
 /**
  * ProxyService
  *
@@ -150,11 +153,31 @@ public class ProxyService {
         }
     }
 
+    public Result<?> updateStatusOK(int cid, String addr) {
+        return updateStatus(cid, addr, STATUS_OK);
+    }
+
+    public Result<?> updateStatusError(int cid, String addr) {
+        return updateStatus(cid, addr, STATUS_ERROR);
+    }
+
     public Result<?> updateStatus(int cid, String addr, int status) {
         try {
             return Result.getResult(proxyDao.updateStatus(cid, addr, status));
         } catch (Exception e) {
             logger.error("updateStatus err, cid:{}, addr:{}", cid, addr, e);
+            return Result.getDBErrorResult(e);
+        }
+    }
+
+    /**
+     * 查询proxy
+     */
+    public Result<Proxy> query(String addr) {
+        try {
+            return Result.getResult(proxyDao.selectByAddr(addr));
+        } catch (Exception e) {
+            logger.error("query addr:{} err", addr, e);
             return Result.getDBErrorResult(e);
         }
     }

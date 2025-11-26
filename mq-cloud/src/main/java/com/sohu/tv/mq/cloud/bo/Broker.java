@@ -157,6 +157,11 @@ public class Broker extends DeployableComponent {
     }
 
     @Override
+    public String getComponentName() {
+        return brokerName + ":" + (isMaster() ? "master" : "slave-" + brokerID);
+    }
+
+    @Override
     public String toString() {
         return "Broker{" +
                 "brokerID=" + brokerID +
