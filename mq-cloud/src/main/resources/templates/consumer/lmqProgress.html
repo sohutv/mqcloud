@@ -717,7 +717,34 @@
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
-            <div class="modal-body" id="popAckInfoBody">
+            <div class="modal-body">
+                <div class="card mt-2">
+                    <div class="card-header">
+                        <b>正在POP消费的消息(还未ACK)</b>
+                    </div>
+                    <div class="card-body table-responsive p-0">
+                        <table class="table table-striped text-nowrap">
+                            <thead>
+                            <tr>
+                                <th>broker</th>
+                                <th>队列</th>
+                                <th>偏移量</th>
+                                <th>消息量</th>
+                                <th>重试次数</th>
+                                <th>拉取时间</th>
+                                <th>过期时间</th>
+                                <th>客户端</th>
+                                <th>操作</th>
+                            </tr>
+                            </thead>
+                            <tbody id="popAckInfoBody">
+                            <tr>
+                                <td colspan="9" class="text-center">暂无数据</td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -1103,6 +1130,21 @@
         }, function (data) {
             $("#popAckInfoBody").html(data);
             $("#popAckInfoModel").modal('show');
+        });
+    }
+
+    function nextPopAckInfo(comp, consumer, page, pageSize, clientId) {
+        var param = {
+            consumer: consumer,
+            page: page,
+            pageSize: pageSize
+        }
+        if (clientId) {
+            param.clientId = clientId;
+        }
+        $.get('${request.contextPath}/consumer/popAckInfo', param, function (data) {
+            $(comp).parent().parent().remove();
+            $("#popAckInfoBody").append(data);
         });
     }
 
