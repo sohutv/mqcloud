@@ -28,3 +28,4 @@ dependency-reduced-pom.xml
 *.iml
 
 mqcloud.db.*
+.flattened-pom.xml
