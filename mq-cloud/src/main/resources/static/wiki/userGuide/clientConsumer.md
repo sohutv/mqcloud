@@ -446,9 +446,22 @@ consumer.shutdown();
 
      会导致消费混乱，consumer1可能无法收到正确的消息。
 
-  ​
+11. <span id="resetOffset">启动从某个偏移量消费</span>
 
-  ​
+    消费者启动时支持从某个时间戳或偏移量进行消费，api如下：
 
-  ​
+    ```
+    // 从最大偏移量消费
+    consumer.setConsumeFromMaxOffsetWhenBoot();
+    // 从某个时间戳开始消费
+    consumer.setConsumeFromTimestampWhenBoot(resetOffsetTimestamp)
+    // 轻量消息消费者从某个偏移量消费 queueOffset格式： brokerName:offset
+    liteConsumer.setConsumeFromQueueOffsetWhenBoot(queueOffset)
+    ```
+
+    ​
+
+    ​
+
+    ​
 

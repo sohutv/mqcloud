@@ -1,11 +1,13 @@
 package com.sohu.tv.mq.cloud.service;
 
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-
-import com.sohu.tv.mq.cloud.bo.ClientLanguage;
-import org.apache.rocketmq.remoting.protocol.body.Connection;
+import com.sohu.tv.mq.cloud.bo.Cluster;
+import com.sohu.tv.mq.cloud.bo.User;
+import com.sohu.tv.mq.cloud.bo.UserProducer;
+import com.sohu.tv.mq.cloud.dao.UserProducerDao;
+import com.sohu.tv.mq.cloud.mq.MQAdminCallback;
+import com.sohu.tv.mq.cloud.mq.MQAdminTemplate;
+import com.sohu.tv.mq.cloud.util.Result;
+import com.sohu.tv.mq.cloud.util.Status;
 import org.apache.rocketmq.remoting.protocol.body.ProducerConnection;
 import org.apache.rocketmq.tools.admin.MQAdminExt;
 import org.slf4j.Logger;
@@ -15,14 +17,8 @@ import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.sohu.tv.mq.cloud.bo.Cluster;
-import com.sohu.tv.mq.cloud.bo.User;
-import com.sohu.tv.mq.cloud.bo.UserProducer;
-import com.sohu.tv.mq.cloud.dao.UserProducerDao;
-import com.sohu.tv.mq.cloud.mq.MQAdminCallback;
-import com.sohu.tv.mq.cloud.mq.MQAdminTemplate;
-import com.sohu.tv.mq.cloud.util.Result;
-import com.sohu.tv.mq.cloud.util.Status;
+import java.util.Collection;
+import java.util.List;
 /**
  * 用户生产者服务
  * @Description: 
@@ -65,6 +61,21 @@ public class UserProducerService {
             return Result.getDBErrorResult(e);
         }
         return Result.getResult(list);
+    }
+
+    /**
+     * 检查是否可以删除producer（只有一个producer时不可删除）
+     */
+    public Result<?> checkProducerDeletable(UserProducer userProducer) {
+        Result<List<UserProducer>> listResult = queryUserProducerByTid(userProducer.getTid());
+        if (listResult.isEmpty()) {
+            return listResult;
+        }
+        boolean hasMore = listResult.getResult().stream().anyMatch(up -> up.getId() != userProducer.getId());
+        if (hasMore) {
+            return Result.getOKResult();
+        }
+        return Result.getResult(Status.DELETE_ERR_ONLY_ONE_PRODUCER_RESULT);
     }
     
     /**

@@ -10,9 +10,28 @@ import java.util.Date;
  */
 public class Controller extends DeployableComponent {
 
+    private boolean leader;
+    private String group;
+
     @Override
     public String getComponentName() {
         return "controller";
+    }
+
+    public boolean isLeader() {
+        return leader;
+    }
+
+    public void setLeader(boolean leader) {
+        this.leader = leader;
+    }
+
+    public String getGroup() {
+        return group;
+    }
+
+    public void setGroup(String group) {
+        this.group = group;
     }
 
     @Override

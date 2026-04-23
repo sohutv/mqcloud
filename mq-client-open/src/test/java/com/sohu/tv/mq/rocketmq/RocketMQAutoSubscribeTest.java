@@ -27,7 +27,7 @@ public class RocketMQAutoSubscribeTest {
     @Test
     public void testAutoSubscribe() throws InterruptedException {
         int begin = 0;
-        int end = 5;
+        int end = 10;
         String tagName = "tag";
         String consumerSuffix = "consumer";
         ConcurrentMap<String, List<String>> consumerTagMap = new ConcurrentHashMap<>();

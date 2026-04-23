@@ -15,6 +15,8 @@ public class QueueOffset {
     private long lockTimestamp;
     private long lastConsumeTimestamp;
     private String lastConsumeClientIp;
+    // 消费到的时间戳
+    private long consumeToTimestamp;
 
     public MessageQueue getMessageQueue() {
         return messageQueue;
@@ -62,5 +64,13 @@ public class QueueOffset {
 
     public void setLastConsumeClientIp(String lastConsumeClientIp) {
         this.lastConsumeClientIp = lastConsumeClientIp;
+    }
+
+    public long getConsumeToTimestamp() {
+        return consumeToTimestamp;
+    }
+
+    public void setConsumeToTimestamp(long consumeToTimestamp) {
+        this.consumeToTimestamp = consumeToTimestamp;
     }
 }

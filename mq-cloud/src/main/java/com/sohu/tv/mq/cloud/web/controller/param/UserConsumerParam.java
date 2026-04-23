@@ -1,5 +1,6 @@
 package com.sohu.tv.mq.cloud.web.controller.param;
 
+import com.sohu.tv.mq.util.MQProtocol;
 import org.hibernate.validator.constraints.Range;
 
 public class UserConsumerParam {
@@ -13,6 +14,12 @@ public class UserConsumerParam {
     private long cid;
     
     private String messageKey;
+
+    private String topic;
+
+    private String consumer;
+
+    private int protocol;
 
     public long getTid() {
         return tid;
@@ -52,6 +59,34 @@ public class UserConsumerParam {
 
     public void setMessageKey(String messageKey) {
         this.messageKey = messageKey;
+    }
+
+    public String getTopic() {
+        return topic;
+    }
+
+    public void setTopic(String topic) {
+        this.topic = topic;
+    }
+
+    public String getConsumer() {
+        return consumer;
+    }
+
+    public void setConsumer(String consumer) {
+        this.consumer = consumer;
+    }
+
+    public int getProtocol() {
+        return protocol;
+    }
+
+    public void setProtocol(int protocol) {
+        this.protocol = protocol;
+    }
+
+    public boolean isHttpProtocol() {
+        return protocol == MQProtocol.HTTP.getType();
     }
 
     @Override

@@ -21,6 +21,7 @@ import org.apache.rocketmq.remoting.protocol.RemotingSysResponseCode;
 import org.apache.rocketmq.remoting.protocol.body.BrokerStatsData;
 import org.apache.rocketmq.remoting.protocol.body.KVTable;
 import org.apache.rocketmq.remoting.protocol.body.ProducerTableInfo;
+import org.apache.rocketmq.remoting.protocol.header.controller.ElectMasterResponseHeader;
 import org.apache.rocketmq.tools.admin.MQAdminExt;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -127,15 +128,11 @@ public class BrokerService {
 
     /**
      * 更新记录
-     * 
-     * @param cid
-     * @param addr
-     * @return
      */
-    public Result<?> update(int cid, String addr, CheckStatusEnum checkStatusEnum) {
+    public Result<?> update(int cid, String addr, CheckStatusEnum checkStatusEnum, int brokerId) {
         Integer result = null;
         try {
-            result = brokerDao.update(cid, addr, checkStatusEnum.getStatus());
+            result = brokerDao.update(cid, addr, checkStatusEnum.getStatus(), brokerId);
         } catch (Exception e) {
             logger.error("update err, cid:{}, addr:{}", cid, addr, e);
             return Result.getDBErrorResult(e);
@@ -176,6 +173,23 @@ public class BrokerService {
                 return Result.getDBErrorResult(e);
             }
         });
+    }
+
+    public boolean resetBrokerId(Cluster cluster, Broker broker) {
+        Properties config = fetchBrokerConfig(cluster, broker.getAddr()).getResult();
+        if (config == null) {
+            return false;
+        }
+        if (!"true".equals(config.get("enableControllerMode"))) {
+            return false;
+        }
+        int brokerId = NumberUtils.toInt(config.getProperty("brokerId"), -1);
+        if (brokerId == broker.getBrokerID()) {
+            return false;
+        }
+        logger.info("resetBrokerId broker:{} oldBrokerId:{} newBrokerId:{}", broker.getAddr(), broker.getBrokerID(), brokerId);
+        broker.setBrokerID(brokerId);
+        return true;
     }
     
     /**
@@ -529,7 +543,7 @@ public class BrokerService {
             public Result<ClientConnectionInfo> callback(MQAdminExt mqAdmin) throws Exception {
                 DefaultSohuMQAdmin sohuMQAdmin = (DefaultSohuMQAdmin) mqAdmin;
                 ConsumerTableInfo consumerTableInfo = sohuMQAdmin.getAllConsumerInfo(brokerAddr, true);
-                return Result.getResult(ClientConnectionInfo.build(consumerTableInfo));
+                return Result.getResult(ClientConnectionInfo.build(mqCluster.getId(), consumerTableInfo));
             }
 
             public Cluster mqCluster() {
@@ -670,6 +684,36 @@ public class BrokerService {
 
             public Cluster mqCluster() {
                 return clusterService.getMQClusterById(cid);
+            }
+        });
+    }
+
+    /**
+     * 切换主备
+     */
+    public Result<Boolean> switchToMaster(Cluster cluster, Broker broker) {
+        String brokerAddr = broker.getAddr();
+        Properties properties = fetchBrokerConfig(cluster, brokerAddr).getResult();
+        String controllerAddr = properties.getProperty("controllerAddr").split(";")[0];
+        long brokerId = NumberUtils.toLong(properties.getProperty("brokerId"));
+        return mqAdminTemplate.execute(new MQAdminCallback<Result<Boolean>>() {
+            public Result<Boolean> callback(MQAdminExt mqAdmin) throws Exception {
+                ElectMasterResponseHeader response = mqAdmin.electMaster(controllerAddr, cluster.getName(),
+                        broker.getBrokerName(), brokerId).getObject1();
+                String newMasterAddr = response.getMasterAddress();
+                boolean success = brokerAddr.equals(newMasterAddr);
+                logger.info("switchToMaster broker:{} success:{}", brokerAddr, success);
+                return Result.getResult(success);
+            }
+
+            @Override
+            public Result<Boolean> exception(Exception e) throws Exception {
+                logger.error("switchToMaster {} err", brokerAddr, e);
+                return Result.getDBErrorResult(e);
+            }
+
+            public Cluster mqCluster() {
+                return cluster;
             }
         });
     }

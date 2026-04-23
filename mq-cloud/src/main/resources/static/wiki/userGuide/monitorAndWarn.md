@@ -22,19 +22,31 @@
 
 *针对集群消费方式的消费者，每小时消费失败量达到10次，预警一次。*
 
-## 五、<span id="offset">偏移量错误</span>
+## 五、<span id="consumeDead">死消息预警</span>
+
+<img src="img/consumeDead.jpg" class="img-wiki">
+
+*针对集群消费方式的消费者，若产生死消息，每小时预警一次。*
+
+## 六、<span id="warnThresholdConfig">预警阈值修改</span>
+
+可以到消费详情页，进行修改，如下：
+
+<img src="img/warnThresholdConfig.jpg" class="img-wiki">
+
+## 七、<span id="offset">偏移量错误</span>
 
 <img src="img/5.4.png" class="img-wiki">
 
 *消费者消费的消息在broker上不存在时，一般是偏移量错误，此时会进行预警，预警频率：实时。*
 
-## 六、<span id="subError">订阅错误</span>
+## 八、<span id="subError">订阅错误</span>
 
 <img src="img/5.5.png" class="img-wiki">
 
 *一个消费者订阅了多个topic时，进行预警。*
 
-## 七、<span id="trafficMonitor">流量突增预警</span>
+## 九、<span id="trafficMonitor">流量突增预警</span>
 
 <img src="img/trafficMonitor.png" class="img-wiki">
 
@@ -48,7 +60,7 @@
 2. 流量检测时，若检测到流量值超过设定的avgMax或maxMax百分比阈值时，进行预警。
 3. 剔除异常值的认定标准、avgMax或maxMax百分比阈值等配置请咨询管理员了解具体情况。
 
-## 八、<span id="topicWarnConfig">自定义流量预警规则</span>
+## 十、<span id="topicWarnConfig">自定义流量预警规则</span>
 
 除了流量突增预警，MQCloud也支持自定义流量预警规则，入口如下：
 
@@ -91,6 +103,6 @@
 
 <img src="img/topicWarnConfigList.png" class="img-wiki">
 
-## 九、<span id="statMonitorWarning">统计，监控，预警</span>
+## 十一、<span id="statMonitorWarning">统计，监控，预警</span>
 
 关于这块的内容，感兴趣的可以参考开发指南的[统计监控预警](../developerGuide/statMonitorWarning)部分。

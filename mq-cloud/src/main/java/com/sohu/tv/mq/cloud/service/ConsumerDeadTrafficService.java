@@ -33,6 +33,10 @@ public class ConsumerDeadTrafficService extends HourTrafficService {
     private AlarmConfigBridingService alarmConfigBridingService;
     
     protected void alert(TopicHourTraffic topicTraffic, TopicConsumer topicConsumer, List<User> userList) {
+        long consumerDeadCount = alarmConfigBridingService.getConsumerDeadCount(topicConsumer.getConsumer());
+        if (topicTraffic.getCount() <= consumerDeadCount) {
+            return;
+        }
         // 验证报警频率
         if (alarmConfigBridingService.needWarn("consumerDead", topicConsumer.getTopic(), topicConsumer.getConsumer())) {
             Map<String, Object> paramMap = new HashMap<>();

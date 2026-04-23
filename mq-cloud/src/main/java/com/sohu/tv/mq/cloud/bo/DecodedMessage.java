@@ -3,7 +3,6 @@ package com.sohu.tv.mq.cloud.bo;
 import com.sohu.tv.mq.cloud.common.util.WebUtil;
 import com.sohu.tv.mq.serializable.MessageSerializerEnum;
 import com.sohu.tv.mq.util.CommonUtil;
-import com.sohu.tv.mq.util.Constant;
 import com.sohu.tv.mq.util.JSONUtil;
 import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.message.MessageConst;
@@ -40,6 +39,8 @@ public class DecodedMessage extends MessageExt {
     private long timerDeliverTime;
 
     private int timerRollTimes;
+
+    private String lmqOffsetInfo;
 
     public String getBroker() {
         return broker;
@@ -191,6 +192,14 @@ public class DecodedMessage extends MessageExt {
     public String getBornHostString() {
         String bornHost = getUserProperty(MessageConst.PROPERTY_BORN_HOST);
         return bornHost != null ? bornHost : super.getBornHostString();
+    }
+
+    public String getLmqOffsetInfo() {
+        return lmqOffsetInfo;
+    }
+
+    public void setLmqOffsetInfo(String lmqOffsetInfo) {
+        this.lmqOffsetInfo = lmqOffsetInfo;
     }
 
     /**

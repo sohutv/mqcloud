@@ -69,5 +69,9 @@ public class RequestCode {
      */
     public static final int GET_ALL_CONSUMER_INFO = 9005;
 
+    public static final int QUERY_CONSUMER_BY_TOPIC = 9006;
+
+    public static final int QUERY_LMQ_BY_PARENT_TOPIC = 9007;
+
     public static final int GET_ALL_PRODUCER_INFO = 328;
 }

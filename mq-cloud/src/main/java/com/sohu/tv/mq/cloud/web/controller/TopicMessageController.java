@@ -24,10 +24,14 @@ import org.apache.rocketmq.common.message.MessageClientIDSetter;
 import org.apache.rocketmq.remoting.protocol.admin.TopicOffset;
 import org.apache.rocketmq.remoting.protocol.admin.TopicStatsTable;
 import org.apache.rocketmq.remoting.protocol.body.ClusterInfo;
+import org.apache.rocketmq.remoting.protocol.body.Connection;
+import org.apache.rocketmq.remoting.protocol.body.ConsumerConnection;
+import org.apache.rocketmq.remoting.protocol.body.ConsumerRunningInfo;
 import org.apache.rocketmq.tools.admin.MQAdminExt;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
+import org.springframework.util.CollectionUtils;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -98,6 +102,7 @@ public class TopicMessageController extends ViewController {
     @RequestMapping("/index")
     public String index(UserInfo userInfo,
             @RequestParam("tid") int tid,
+            @RequestParam(name = "liteTopic", required = false) String liteTopic,
             Map<String, Object> map) throws Exception {
         String view = viewModule() + "/index";
         // 获取topic
@@ -110,6 +115,10 @@ public class TopicMessageController extends ViewController {
         MessageQueryCondition messageQueryCondition = new MessageQueryCondition();
         messageQueryCondition.setCid(topic.getClusterId());
         messageQueryCondition.setTopic(topic.getName());
+        if (liteTopic != null) {
+            liteTopic = CommonUtil.buildLmqTopic(topic.getName(), liteTopic);
+            messageQueryCondition.setLiteTopic(liteTopic);
+        }
         // 舍掉毫秒
         long now = System.currentTimeMillis() / 1000 * 1000;
         long startTime = now - TIME_SPAN;
@@ -132,7 +141,7 @@ public class TopicMessageController extends ViewController {
         setResult(map, "brokerSize", brokerSize);
 
         // 获取topic最大偏移量
-        TopicStatsTable topicStatsTable = topicService.stats(cluster, topic.getName());
+        TopicStatsTable topicStatsTable = topicService.stats(cluster, liteTopic == null ? topic.getName() : liteTopic);
         if (topicStatsTable != null) {
             long maxOffset = 0;
             for (TopicOffset topicOffset : topicStatsTable.getOffsetTable().values()) {
@@ -334,7 +343,7 @@ public class TopicMessageController extends ViewController {
         Result<?> result = messageService.queryMessage(cluster, topic, msgId);
         setResult(map, result);
         MessageQueryCondition messageQueryCondition = parseParam(0L, 1L, null, messageParam, false);
-        if(messageQueryCondition != null) {
+        if (messageQueryCondition != null) {
             setTraceEnabled(map, messageQueryCondition.getTopic());
         }
         return view;
@@ -436,9 +445,10 @@ public class TopicMessageController extends ViewController {
             return view;
         }
         // topic校验
+        Result<Topic> topicResult = topicService.queryTopic(topic);
         String traceTopic = CommonUtil.buildTraceTopic(topic);
         Result<Topic> traceTopicResult = topicService.queryTopic(traceTopic);
-        if (traceTopicResult.isNotOK()) {
+        if (topicResult.isNotOK() || traceTopicResult.isNotOK()) {
             setResult(map, traceTopicResult);
             return view;
         }
@@ -456,12 +466,7 @@ public class TopicMessageController extends ViewController {
                 msgKey);
         setResult(map, viewMap);
         // 管理员直接返回
-        if (userInfo.getUser().isAdmin()) {
-            return view;
-        }
-        // 校验
-        Result<Topic> topicResult = topicService.queryTopic(topic);
-        if (topicResult.isNotOK()) {
+        if (userInfo.getUser().isAdmin() || topicResult.getResult().isLiteParentTopic()) {
             return view;
         }
         Result<UserProducer> userProducerResult = userProducerService.findUserProducer(userInfo.getUser().getId(),
@@ -801,6 +806,30 @@ public class TopicMessageController extends ViewController {
         if (!isOwner(userInfo, tid, cid)) {
             return Result.getResult(Status.PERMISSION_DENIED_ERROR);
         }
+        Result<Topic> topicResult = topicService.queryTopic(tid);
+        if (topicResult.isNotOK()) {
+            return topicResult;
+        }
+        Topic topic = topicResult.getResult();
+        Result<Consumer> consuemrResult = consumerService.queryById(cid);
+        if (consuemrResult.isNotOK()) {
+            return consuemrResult;
+        }
+        Consumer consumer = consuemrResult.getResult();
+        // 校验是否在线
+        Cluster cluster = clusterService.getMQClusterById(topic.getClusterId());
+        Result<ConsumerConnection> connResult = consumerService.examineConsumerConnectionInfo(cluster, consumer);
+        if (connResult.isNotOK()) {
+            return Result.getResult(Status.NO_ONLINE);
+        }
+        Set<Connection> connSet = connResult.getResult().getConnectionSet();
+        if (CollectionUtils.isEmpty(connSet)) {
+            return Result.getResult(Status.NO_ONLINE);
+        }
+        if (isConsumeOrderly(cluster, connSet, consumer)) {
+            return Result.getErrorResult("顺序消费者不支持重发消息");
+        }
+
         // 构造审核记录
         Audit audit = new Audit();
         audit.setType(TypeEnum.RESEND_MESSAGE.getType());
@@ -821,16 +850,30 @@ public class TopicMessageController extends ViewController {
                 auditResendMessageConsumer);
         // 发送提醒邮件
         if (result.isOK()) {
-            Result<Topic> topicResult = topicService.queryTopic(tid);
-            Result<Consumer> consuemrResult = consumerService.queryById(cid);
-            if (topicResult.isOK() && consuemrResult.isOK()) {
-                String topic = topicResult.getResult().getName();
-                String link = mqCloudConfigHelper.getTopicConsumeHrefLink(topic, consuemrResult.getResult().getName());
-                String tip = " topic:<b>" + topic + "</b> 消费者:" + link + " 消息量:" + msgIdArray.length;
-                alertService.sendAuditMail(userInfo.getUser(), TypeEnum.RESEND_MESSAGE, tip);
-            }
+            String topicName = topic.getName();
+            String link = mqCloudConfigHelper.getTopicConsumeHrefLink(topicName, consumer.getName());
+            String tip = " topic:<b>" + topicName + "</b> 消费者:" + link + " 消息量:" + msgIdArray.length;
+            alertService.sendAuditMail(userInfo.getUser(), TypeEnum.RESEND_MESSAGE, tip);
         }
         return Result.getWebResult(result);
+    }
+
+    /**
+     * 是否是顺序消费
+     */
+    private boolean isConsumeOrderly(Cluster cluster, Set<Connection> connSet, Consumer consumer) {
+        for (Connection connection : connSet) {
+            Result<ConsumerRunningInfo> consumerRunningInfoResult = consumerService.getConsumerRunningInfo(cluster,
+                    consumer, connection.getClientId());
+            if (consumerRunningInfoResult.isNotOK()) {
+                continue;
+            }
+            ConsumerRunningInfo consumerRunningInfo = consumerRunningInfoResult.getResult();
+            if ("true".equals(consumerRunningInfo.getProperties().getProperty("PROP_CONSUMEORDERLY"))) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**

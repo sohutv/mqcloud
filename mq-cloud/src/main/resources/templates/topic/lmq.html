@@ -1,0 +1,35 @@
+<div class="card">
+    <div class="card-body table-responsive p-0">
+        <table class="table table-striped table-hover text-nowrap">
+            <thead>
+            <tr>
+                <th>序号</th>
+                <th>Topic</th>
+            </tr>
+            </thead>
+            <tbody>
+            <#if response.notOK>
+            <tr>
+                <td colspan=2 align="center">
+                    ${response.message}
+                </td>
+            </tr>
+            <#else>
+                <#list response.result as topic>
+                    <#assign row = (pagination.result.currentPage - 1)*pagination.result.numOfPage + topic_index + 1>
+                    <tr>
+                        <td>${row}</td>
+                        <td><a data-toggle="tooltip" title="点击查看该Topic的消费者" href="${request.contextPath}/user/topic/${RequestParameters.tid}/detail?tab=lmqConsume&liteTopic=${topic}" target="_blank">${topic}</a></td>
+                    </tr>
+                </#list>
+            </#if>
+            </tbody>
+        </table>
+    </div>
+    <#if pagination.OK && pagination.result.totalPages gt 1>
+        <div class="card-footer clearfix">
+            <ul id="pagination" data-url="${request.contextPath}/user/topic/${RequestParameters.tid}/detail?tab=liteTopic" style="float:right"></ul>
+        </div>
+    </#if>
+</div>
+<#include "../inc/pagination.html">

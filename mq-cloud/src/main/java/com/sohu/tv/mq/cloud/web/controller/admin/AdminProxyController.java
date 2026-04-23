@@ -123,6 +123,13 @@ public class AdminProxyController extends AdminViewController {
         if (port == 0) {
             return Result.getResult(Status.PARAM_ERROR);
         }
+        Result<Proxy> proxyResult = proxyService.query(addr);
+        if (proxyResult.isNotOK()) {
+            return Result.getWebResult(proxyResult);
+        }
+        if (proxyResult.getResult().isStatusOK()) {
+            return Result.getResult(Status.PROXY_SHOULD_OFFLINE);
+        }
         return mqDeployer.shutdown(ip, port);
     }
 
@@ -136,6 +143,13 @@ public class AdminProxyController extends AdminViewController {
     public Result<?> delete(UserInfo ui, @RequestParam(name = "addr") String addr,
                             @RequestParam(name = "cid") int cid) {
         logger.warn("offline:{}, user:{}", addr, ui);
+        Result<Proxy> proxyResult = proxyService.query(addr);
+        if (proxyResult.isNotOK()) {
+            return Result.getWebResult(proxyResult);
+        }
+        if (proxyResult.getResult().isStatusOK()) {
+            return Result.getResult(Status.PROXY_SHOULD_OFFLINE);
+        }
         Result<?> result = proxyService.delete(cid, addr);
         return Result.getWebResult(result);
     }

@@ -1,16 +1,19 @@
 package com.sohu.index.tv.mq.common;
 
 import com.sohu.tv.mq.serializable.MessageSerializer;
-import com.sohu.tv.mq.util.Constant;
-import com.sohu.tv.mq.util.MQProtocol;
+import com.sohu.tv.mq.util.CommonUtil;
 import org.apache.rocketmq.client.exception.MQBrokerException;
 import org.apache.rocketmq.client.exception.MQClientException;
 import org.apache.rocketmq.client.producer.SendCallback;
+import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.message.Message;
 import org.apache.rocketmq.common.message.MessageClientExt;
 import org.apache.rocketmq.common.message.MessageConst;
 import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.remoting.exception.RemotingException;
+
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * 批量消息
@@ -55,6 +58,8 @@ public class MQMessage<T> {
 
     // 事务消息回调参数
     private Object transactionArg;
+
+    private Set<String> liteTopics;
 
     public MQMessage() {
     }
@@ -332,6 +337,39 @@ public class MQMessage<T> {
             innerMessage.setBody(messageSerializer.serialize(message));
         }
         return this;
+    }
+
+    public Set<String> getLiteTopics() {
+        return liteTopics;
+    }
+
+    public void setLiteTopics(Set<String> liteTopics) {
+        this.liteTopics = liteTopics;
+    }
+
+    public MQMessage<T> addLiteTopic(String liteTopic) {
+        if (liteTopics == null) {
+            liteTopics = new HashSet<String>();
+        }
+        liteTopics.add(liteTopic);
+        return this;
+    }
+
+    public void setLmqProperty(String parentTopic) {
+        if (liteTopics == null) {
+            return;
+        }
+        StringBuilder liteTopicBuilder = new StringBuilder();
+        for(String liteTopic : liteTopics) {
+            if (liteTopicBuilder.length() > 0) {
+                liteTopicBuilder.append(MixAll.LMQ_DISPATCH_SEPARATOR);
+            }
+            liteTopicBuilder.append(MixAll.LMQ_PREFIX)
+                    .append(parentTopic)
+                    .append(CommonUtil.LMQ_TOPIC_SEPARATOR)
+                    .append(liteTopic);
+        }
+        innerMessage.putUserProperty(MessageConst.PROPERTY_INNER_MULTI_DISPATCH, liteTopicBuilder.toString());
     }
 
     @Override

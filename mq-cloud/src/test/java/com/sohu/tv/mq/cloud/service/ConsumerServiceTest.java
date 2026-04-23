@@ -6,6 +6,7 @@ import com.sohu.tv.mq.cloud.bo.ConsumeStatsExt;
 import com.sohu.tv.mq.cloud.bo.Consumer;
 import com.sohu.tv.mq.cloud.bo.Topic;
 import com.sohu.tv.mq.cloud.util.Result;
+import com.sohu.tv.mq.util.MQProtocol;
 import org.apache.rocketmq.remoting.protocol.body.ConsumerRunningInfo;
 import org.junit.Assert;
 import org.junit.Test;
@@ -57,8 +58,9 @@ public class ConsumerServiceTest {
     @Test
     public void testGetConsumerRunningInfo() {
         Cluster cluster = clusterService.getMQClusterById(8);
-        String consumer = "mqcloud5-test-consumer";
-        Map<String, ConsumerRunningInfo> map = consumerService.getConsumerRunningInfo(cluster, consumer, true);
+        Consumer consumer = new Consumer();
+        consumer.setName("mqcloud5-test-consumer");
+        Map<String, ConsumerRunningInfo> map = consumerService.getConsumerRunningInfo(cluster, consumer);
         Assert.assertNotNull(map);
     }
 
@@ -71,5 +73,18 @@ public class ConsumerServiceTest {
         Cluster cluster = clusterService.getMQClusterById(topic.getClusterId());
         Result result = consumerService.createConsumer(cluster, consumer, null);
         Assert.assertTrue(result.isOK());
+    }
+
+    @Test
+    public void testCreateAndUpdateConsumerOnCluster() {
+        Consumer consumer = new Consumer();
+        consumer.setName("compatible-proxy-remoting-test-consumer");
+        consumer.setProtocol(MQProtocol.PROXY_REMOTING.getType());
+        consumerService.createAndUpdateConsumerOnCluster(clusterService.getMQClusterById(8), consumer);
+    }
+
+    @Test
+    public void testDeleteConsumer() {
+        consumerService.deleteUnusedAutoSubscribeConsumer();
     }
 }

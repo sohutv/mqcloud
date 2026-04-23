@@ -2,7 +2,9 @@ package com.sohu.tv.mq.cloud.bo;
 
 import java.util.Date;
 
+import com.sohu.tv.mq.util.CommonUtil;
 import org.apache.rocketmq.client.trace.TraceType;
+import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.message.MessageType;
 
 import com.sohu.tv.mq.cloud.util.DateUtil;
@@ -65,6 +67,9 @@ public class TraceMessageDetail {
     }
 
     public String getGroupName() {
+        if (MixAll.isLmq(groupName)) {
+            return CommonUtil.stripLmqPrefix(groupName);
+        }
         return groupName;
     }
 

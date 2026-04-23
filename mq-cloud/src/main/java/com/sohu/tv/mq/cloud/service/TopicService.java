@@ -4,15 +4,18 @@ import com.sohu.tv.mq.cloud.bo.*;
 import com.sohu.tv.mq.cloud.common.mq.SohuMQAdmin;
 import com.sohu.tv.mq.cloud.dao.TopicDao;
 import com.sohu.tv.mq.cloud.mq.DefaultCallback;
+import com.sohu.tv.mq.cloud.mq.DefaultSohuMQAdmin;
 import com.sohu.tv.mq.cloud.mq.MQAdminCallback;
 import com.sohu.tv.mq.cloud.mq.MQAdminTemplate;
 import com.sohu.tv.mq.cloud.util.*;
 import com.sohu.tv.mq.util.CommonUtil;
 import org.apache.ibatis.session.SqlSessionFactory;
+import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.TopicConfig;
 import org.apache.rocketmq.remoting.protocol.admin.TopicStatsTable;
 import org.apache.rocketmq.remoting.protocol.body.TopicConfigSerializeWrapper;
 import org.apache.rocketmq.remoting.protocol.body.TopicList;
+import org.apache.rocketmq.remoting.protocol.body.TopicPageList;
 import org.apache.rocketmq.remoting.protocol.route.BrokerData;
 import org.apache.rocketmq.remoting.protocol.route.TopicRouteData;
 import org.apache.rocketmq.tools.admin.MQAdminExt;
@@ -73,6 +76,21 @@ public class TopicService {
      */
     public TopicRouteData route(Topic topic) {
         return route(clusterService.getMQClusterById(topic.getClusterId()), topic.getName());
+    }
+
+    public String selectTopicBrokerAddr(Cluster mqCluster, String topic) {
+        if (topic == null) {
+            return null;
+        }
+        TopicRouteData topicRouteData = route(mqCluster, topic);
+        for (BrokerData bd : topicRouteData.getBrokerDatas()) {
+            String addr = bd.selectBrokerAddr();
+            if (addr == null) {
+                continue;
+            }
+            return addr;
+        }
+        return null;
     }
     
     /**
@@ -308,7 +326,12 @@ public class TopicService {
     public TopicStatsTable stats(Cluster cluster, String topic) {
         return mqAdminTemplate.execute(new MQAdminCallback<TopicStatsTable>() {
             public TopicStatsTable callback(MQAdminExt mqAdmin) throws Exception {
-                TopicRouteData topicRouteData = mqAdmin.examineTopicRouteInfo(topic);
+                TopicRouteData topicRouteData = null;
+                if (MixAll.isLmq(topic)) {
+                    topicRouteData = mqAdmin.examineTopicRouteInfo(cluster.getName());
+                } else {
+                    topicRouteData = mqAdmin.examineTopicRouteInfo(topic);
+                }
                 TopicStatsTable topicStatsTable = new TopicStatsTable();
                 for (BrokerData bd : topicRouteData.getBrokerDatas()) {
                     String addr = bd.selectBrokerAddr();
@@ -401,21 +424,61 @@ public class TopicService {
         }
         return Result.getOKResult();
     }
+
+    public Result<?> createAndUpdateTopicOnCluster(Cluster mqCluster, AuditTopic auditTopic) {
+        return createAndUpdateTopicOnCluster(mqCluster, auditTopic, true);
+    }
     
     /**
      * 创建topic
      * @param mqCluster
      * @param auditTopic
      */
-    public Result<?> createAndUpdateTopicOnCluster(Cluster mqCluster, AuditTopic auditTopic) {
-        TopicConfig topicConfig = new TopicConfig();
-        topicConfig.setReadQueueNums(auditTopic.getQueueNum());
-        topicConfig.setWriteQueueNums(auditTopic.getQueueNum());
-        topicConfig.setTopicName(auditTopic.getName());
-        if(auditTopic.getOrdered() == AuditTopic.HAS_ORDER) {
-            topicConfig.setOrder(true);
+    public Result<?> createAndUpdateTopicOnCluster(Cluster mqCluster, AuditTopic auditTopic, boolean create) {
+        TopicConfig topicConfig = null;
+        if (create) {
+            topicConfig = new TopicConfig();
+            topicConfig.setReadQueueNums(auditTopic.getQueueNum());
+            topicConfig.setWriteQueueNums(auditTopic.getQueueNum());
+            topicConfig.setTopicName(auditTopic.getName());
+            if(auditTopic.getOrdered() == AuditTopic.HAS_ORDER) {
+                topicConfig.setOrder(true);
+            }
+        } else {
+            topicConfig = examineTopicConfig(mqCluster, auditTopic.getName());
+            topicConfig.setReadQueueNums(auditTopic.getQueueNum());
+            topicConfig.setWriteQueueNums(auditTopic.getQueueNum());
         }
         return createAndUpdateTopicOnCluster(mqCluster, topicConfig);
+    }
+
+    public TopicConfig examineTopicConfig(Cluster mqCluster, String topic) {
+        return mqAdminTemplate.execute(new MQAdminCallback<TopicConfig>() {
+            public TopicConfig callback(MQAdminExt mqAdmin) throws Exception {
+                Set<String> masterSet = CommandUtil.fetchMasterAddrByClusterName(mqAdmin, mqCluster.getName());
+                if (masterSet.size() == 0) {
+                    logger.error("examine topic config failed:no master node, cluser:{}, topic:{}", mqCluster, topic);
+                    return null;
+                }
+                for (String addr : masterSet) {
+                    TopicConfig topicConfig = mqAdmin.examineTopicConfig(addr, topic);
+                    if (topicConfig != null) {
+                        return topicConfig;
+                    }
+                }
+                return null;
+            }
+
+            @Override
+            public TopicConfig exception(Exception e) throws Exception {
+                logger.error("examine topic config:{} err:{}", topic, e.getMessage());
+                return null;
+            }
+
+            public Cluster mqCluster() {
+                return mqCluster;
+            }
+        });
     }
     
     /**
@@ -481,7 +544,7 @@ public class TopicService {
             AuditTopic auditTopic = new AuditTopic();
             BeanUtils.copyProperties(topic, auditTopic);
             Cluster mqCluster = clusterService.getMQClusterById(topic.getClusterId());
-            Result<?> result = createAndUpdateTopicOnCluster(mqCluster, auditTopic);
+            Result<?> result = createAndUpdateTopicOnCluster(mqCluster, auditTopic, false);
             if(result.isNotOK()) {
                 throw new RuntimeException("update topic:"+auditTopic.getName()+" on cluster err!");
             }
@@ -693,20 +756,15 @@ public class TopicService {
     
     /**
      * 重置topic流量
-     * @param topicTrafficList
-     * @return
      */
-    public Result<Integer> resetCount(int dayAgo) {
-        Integer result = null;
+    public Result<Integer> resetCount(int hourAgo) {
         try {
-            Date dt = new Date(System.currentTimeMillis() - dayAgo * 24 * 60 * 60 * 1000);
-            dt = DateUtil.parseYMD(DateUtil.formatYMD(dt));
-            result = topicDao.resetCount(dt);
+            Date dt = new Date(System.currentTimeMillis() - hourAgo * 60 * 60 * 1000);
+            return Result.getResult(topicDao.resetCount(dt));
         } catch (Exception e) {
-            logger.error("resetCount err, dayAgo:{}", dayAgo, e);
+            logger.error("resetCount err, hourAgo:{}", hourAgo, e);
             return Result.getDBErrorResult(e);
         }
-        return Result.getResult(result);
     }
     
     /**
@@ -881,6 +939,35 @@ public class TopicService {
             logger.error("queryTopNSizeTopicList err, mqCluster:{}", mqCluster, e);
             return Result.getDBErrorResult(e);
         }
+    }
+
+    /**
+     * 根据topic的lmq列表
+     */
+    public Result<TopicPageList> queryLmq(Cluster cluster, String topic, int page, int pageSize) {
+        String brokerAddr = selectTopicBrokerAddr(cluster, topic);
+        if (brokerAddr == null) {
+            return Result.getResult(Status.NO_RESULT);
+        }
+        String parentTopic = CommonUtil.buildLmqParentTopic(topic);
+        Result<TopicPageList> result = mqAdminTemplate.execute(new MQAdminCallback<Result<TopicPageList>>() {
+            public Result<TopicPageList> callback(MQAdminExt mqAdmin) throws Exception {
+                DefaultSohuMQAdmin sohuMQAdmin = (DefaultSohuMQAdmin) mqAdmin;
+                TopicPageList topicPageList = sohuMQAdmin.queryLmqByTopic(brokerAddr, parentTopic, page, pageSize);
+                return Result.getResult(topicPageList);
+            }
+
+            public Cluster mqCluster() {
+                return cluster;
+            }
+
+            @Override
+            public Result<TopicPageList> exception(Exception e) throws Exception {
+                logger.error("queryLmq topic:{} cluster:{} error", topic, cluster, e);
+                return Result.getResult(e);
+            }
+        });
+        return result;
     }
 }
 

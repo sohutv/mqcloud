@@ -4,10 +4,7 @@ import com.sohu.tv.mq.cloud.bo.*;
 import com.sohu.tv.mq.cloud.common.mq.SohuMQAdmin;
 import com.sohu.tv.mq.cloud.dao.ConsumerDao;
 import com.sohu.tv.mq.cloud.dao.UserConsumerDao;
-import com.sohu.tv.mq.cloud.mq.DefaultCallback;
-import com.sohu.tv.mq.cloud.mq.DefaultInvoke;
-import com.sohu.tv.mq.cloud.mq.MQAdminCallback;
-import com.sohu.tv.mq.cloud.mq.MQAdminTemplate;
+import com.sohu.tv.mq.cloud.mq.*;
 import com.sohu.tv.mq.cloud.service.MQProxyService.ConsumerConfigParam;
 import com.sohu.tv.mq.cloud.util.DateUtil;
 import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper;
@@ -15,6 +12,7 @@ import com.sohu.tv.mq.cloud.util.Result;
 import com.sohu.tv.mq.cloud.util.Status;
 import com.sohu.tv.mq.cloud.web.vo.UserInfo;
 import com.sohu.tv.mq.metric.StackTraceMetric;
+import com.sohu.tv.mq.util.CommonUtil;
 import com.sohu.tv.mq.util.Constant;
 import com.sohu.tv.mq.util.JSONUtil;
 import org.apache.rocketmq.client.exception.MQBrokerException;
@@ -37,6 +35,7 @@ import org.apache.rocketmq.remoting.protocol.route.QueueData;
 import org.apache.rocketmq.remoting.protocol.route.TopicRouteData;
 import org.apache.rocketmq.remoting.protocol.subscription.SubscriptionGroupConfig;
 import org.apache.rocketmq.tools.admin.DefaultMQAdminExt;
+import org.apache.rocketmq.tools.admin.DefaultMQAdminExtImpl;
 import org.apache.rocketmq.tools.admin.MQAdminExt;
 import org.apache.rocketmq.tools.command.CommandUtil;
 import org.slf4j.Logger;
@@ -92,6 +91,9 @@ public class ConsumerService {
 
     @Autowired
     private ApplicationContext context;
+
+    @Autowired
+    private ClientVersionService clientVersionService;
 
     /**
      * 保存Consumer记录
@@ -153,14 +155,17 @@ public class ConsumerService {
      * @return Result<Consumer>
      */
     public Result<Consumer> queryConsumerByName(String name) {
-        Consumer consumer = null;
+        if (MixAll.isLmq(name)) {
+            Consumer consumer = new Consumer();
+            consumer.setName(name);
+            return Result.getResult(consumer);
+        }
         try {
-            consumer = consumerDao.selectByName(name);
+            return Result.getResult(consumerDao.selectByName(name));
         } catch (Exception e) {
             logger.error("queryConsumerByName err:{}", name, e);
             return Result.getDBErrorResult(e);
         }
-        return Result.getResult(consumer);
     }
 
     /**
@@ -339,8 +344,7 @@ public class ConsumerService {
         }
         // 遍历consumer列表
         for (Consumer consumer : consumerList) {
-            Result<ConsumerConnection> consumerConnectionResult = examineConsumerConnectionInfo(consumer.getName(),
-                    cluster, consumer.isProxyRemoting());
+            Result<ConsumerConnection> consumerConnectionResult = examineConsumerConnectionInfo(cluster, consumer);
             ConsumerConnection consumerConnection = consumerConnectionResult.getResult();
             if(consumerConnection == null) {
                 continue;
@@ -384,8 +388,7 @@ public class ConsumerService {
         List<ConsumeStatsExt> consumeStatsList = new ArrayList<ConsumeStatsExt>();
         for (String clientId : clientIdSet) {
             // 抓取状态
-            ConsumerRunningInfo consumerRunningInfo = getConsumerRunningInfo(cluster, consumer.getName(), clientId,
-                    consumer.isProxyRemoting()).getResult();
+            ConsumerRunningInfo consumerRunningInfo = getConsumerRunningInfo(cluster, consumer, clientId).getResult();
             if (consumerRunningInfo == null) {
                 continue;
             }
@@ -445,7 +448,7 @@ public class ConsumerService {
      * @param consumer
      * @return
      */
-    private List<ConsumeStatsExt> getHttpConsumeStats(Set<String> clientIdSet, TopicStatsTable topicStatsTable,
+    public List<ConsumeStatsExt> getHttpConsumeStats(Set<String> clientIdSet, TopicStatsTable topicStatsTable,
                                                       Consumer consumer) {
         if (consumer.isClustering()) {
             return getHttpClusteringConsumeStats(clientIdSet, topicStatsTable, consumer.getName());
@@ -477,7 +480,7 @@ public class ConsumerService {
      * @param consumer
      * @return
      */
-    private List<ConsumeStatsExt> getHttpClusteringConsumeStats(Set<String> clientIdSet, TopicStatsTable topicStatsTable,
+    public List<ConsumeStatsExt> getHttpClusteringConsumeStats(Set<String> clientIdSet, TopicStatsTable topicStatsTable,
                                                                 String consumer) {
         List<ConsumeStatsExt> consumeStatsList = new ArrayList<ConsumeStatsExt>();
         StringBuilder clientIdBuilder = new StringBuilder();
@@ -505,6 +508,7 @@ public class ConsumerService {
             offsetWrapper.setLastTimestamp(queueOffset.getLastConsumeTimestamp());
             offsetWrapper.setLockTimestamp(queueOffset.getLockTimestamp());
             offsetWrapper.setClientIp(queueOffset.getLastConsumeClientIp());
+            offsetWrapper.setConsumeToTimestamp(queueOffset.getConsumeToTimestamp());
             offsetTable.put(queueOffset.getMessageQueue(), offsetWrapper);
         }
         consumeStats.setOffsetTable(offsetTable);
@@ -517,7 +521,7 @@ public class ConsumerService {
      * @param consumer
      * @return
      */
-    private List<ConsumeStatsExt> getHttpBroadcastConsumeStats(Set<String> clientIdSet,
+    public List<ConsumeStatsExt> getHttpBroadcastConsumeStats(Set<String> clientIdSet,
                                                                TopicStatsTable topicStatsTable, String consumer) {
         Result<Map<String, List<QueueOffset>>> result = fetchHttpBroadcastQueueOffset(consumer);
         Map<String, List<QueueOffset>> map = result.getResult();
@@ -541,11 +545,13 @@ public class ConsumerService {
                 if (topicOffset == null) {
                     continue;
                 }
-                OffsetWrapper offsetWrapper = new OffsetWrapperExt();
+                OffsetWrapperExt offsetWrapper = new OffsetWrapperExt();
                 offsetWrapper.setBrokerOffset(topicOffset.getMaxOffset());
                 offsetWrapper.setConsumerOffset(queueOffset.getCommittedOffset());
                 offsetWrapper.setLastTimestamp(queueOffset.getLastConsumeTimestamp());
                 ((OffsetWrapperExt)offsetWrapper).setLockTimestamp(queueOffset.getLockTimestamp());
+                offsetWrapper.setConsumeToTimestamp(queueOffset.getConsumeToTimestamp());
+                offsetWrapper.setClientIp(queueOffset.getLastConsumeClientIp());
                 offsetTable.put(queueOffset.getMessageQueue(), offsetWrapper);
             }
             ConsumeStatsExt consumeStats = new ConsumeStatsExt();
@@ -581,9 +587,14 @@ public class ConsumerService {
             }
             if (consumer.isClustering()) {
                 topicService.deleteTopicOnCluster(mqCluster, MixAll.RETRY_GROUP_TOPIC_PREFIX + consumer.getName());
+                topicService.deleteTopicOnCluster(mqCluster, MixAll.DLQ_GROUP_TOPIC_PREFIX + consumer.getName());
             }
             // 第四步：删除consumer报警配置
             alarmConfigService.deleteByConsumer(consumer.getName());
+            // 第五步：删除客户端版本记录
+            if (consumer.getTopicName() != null) {
+                clientVersionService.delete(consumer.getTopicName(), consumer.getName());
+            }
         } catch (Exception e) {
             logger.error("deleteConsumer:{}", consumer.getName(), e);
             TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
@@ -604,7 +615,7 @@ public class ConsumerService {
                 long start = System.currentTimeMillis();
                 Set<String> masterSet = CommandUtil.fetchMasterAddrByClusterName(mqAdmin, mqCluster.getName());
                 for (String master : masterSet) {
-                    mqAdmin.deleteSubscriptionGroup(master, consumerGroup);
+                    mqAdmin.deleteSubscriptionGroup(master, consumerGroup, true);
                 }
                 long end = System.currentTimeMillis();
                 logger.info("delete consumer use:{}ms,consumerGroup:{},cluster:{}", (end - start), consumerGroup,
@@ -647,6 +658,12 @@ public class ConsumerService {
      * @param consumer
      */
     public Result<?> resetOffset(Cluster mqCluster, String topic, String consumerGroup, long timeInMillis) {
+        Consumer consumer = new Consumer();
+        consumer.setName(consumerGroup);
+        Result<ConsumerConnection> connectionResult = examineConsumerConnectionInfo(mqCluster, consumer);
+        if (connectionResult.isNotOK()) {
+            return connectionResult;
+        }
         return mqAdminTemplate.execute(new MQAdminCallback<Result<?>>() {
             public Result<?> callback(MQAdminExt mqAdmin) throws Exception {
                 long start = System.currentTimeMillis();
@@ -654,7 +671,7 @@ public class ConsumerService {
                 boolean consumerOnline = true;
                 boolean isC = false;
                 try {
-                    ConsumerConnection conn = mqAdmin.examineConsumerConnectionInfo(consumerGroup);
+                    ConsumerConnection conn = connectionResult.getResult();
                     // 判断是否消费者是c++客户端
                     Set<Connection> connectionSet = conn.getConnectionSet();
                     if (connectionSet != null && connectionSet.size() != 0) {
@@ -670,11 +687,11 @@ public class ConsumerService {
                 if (consumerOnline) {
                     env = "online";
                     // 重置consumer端, consumer在线
-                    ((DefaultMQAdminExt) mqAdmin).resetOffsetByTimestamp(topic, consumerGroup, timeInMillis, true, isC);
+                    ((DefaultMQAdminExt) mqAdmin).resetOffsetByTimestamp(mqCluster.getName(), topic, consumerGroup, timeInMillis, true, isC);
                 } else {
                     // 重置broker端, consumer不在线
                     env = "offline";
-                    mqAdmin.resetOffsetByTimestampOld(consumerGroup, topic, timeInMillis, true);
+                    ((DefaultMQAdminExtImpl) mqAdmin).resetOffsetByTimestampOld(mqCluster.getName(), consumerGroup, topic, timeInMillis, true);
                 }
                 String time = DateUtil.getFormat(DateUtil.YMD_DASH_BLANK_HMS_COLON).format(new Date(timeInMillis));
                 logger.info("resetOffset {} to {} use:{},topic={},group={}", env, time,
@@ -701,9 +718,10 @@ public class ConsumerService {
      * @param mqCluster
      * @param consumer
      */
-    public Result<?> resetOffsetOfProxyRemoting(Cluster mqCluster, String topic, String consumerGroup, long timeInMillis) {
+    public Result<?> resetOffsetOfProxyRemoting(Cluster mqCluster, String topic, Consumer consumer, long timeInMillis) {
+        String consumerGroup = consumer.getName();
         // 第一步：判断consumer是否在线
-        Result<ConsumerConnection> onlineResult = examineConsumerConnectionInfo(consumerGroup, mqCluster, true);
+        Result<ConsumerConnection> onlineResult = examineConsumerConnectionInfo(mqCluster, consumer);
         // 第二步，consumer不在线，到broker端重置
         if (onlineResult.isNotOK()) {
             return mqAdminTemplate.execute(new MQAdminCallback<Result<?>>() {
@@ -804,12 +822,17 @@ public class ConsumerService {
      * @param mqCluster
      * @return
      */
-    public Result<ConsumerConnection> examineConsumerConnectionInfo(String consumerGroup, Cluster mqCluster,
-                                                                    boolean isProxyRemoting) {
+    public Result<ConsumerConnection> examineConsumerConnectionInfo(Cluster mqCluster, Consumer consumer) {
+        if (consumer.isLmqConsumer()) {
+            consumer.setTopicName(mqCluster.getName());
+        }
+        String brokerAddr = selectTopicBrokerAddr(mqCluster, consumer.getTopicName());
         Result<ConsumerConnection> result = mqAdminTemplate.execute(new MQAdminCallback<Result<ConsumerConnection>>() {
             public Result<ConsumerConnection> callback(MQAdminExt mqAdmin) throws Exception {
-                ConsumerConnection consumerConnection = mqAdmin.examineConsumerConnectionInfo(consumerGroup);
-                return Result.getResult(consumerConnection);
+                if (brokerAddr == null) {
+                    return Result.getResult(mqAdmin.examineConsumerConnectionInfo(consumer.getName()));
+                }
+                return Result.getResult(mqAdmin.examineConsumerConnectionInfo(consumer.getName(), brokerAddr));
             }
 
             public Result<ConsumerConnection> exception(Exception e) throws Exception {
@@ -818,7 +841,7 @@ public class ConsumerService {
                     result.setException(e);
                     return result;
                 }
-                logger.warn("cluster:{} consumerGroup:{} error:{}", mqCluster, consumerGroup, e.getMessage());
+                logger.warn("cluster:{} consumerGroup:{} error:{}", mqCluster, consumer.getName(), e.getMessage());
                 return Result.getRequestErrorResult(e);
             }
 
@@ -827,10 +850,17 @@ public class ConsumerService {
             }
 
             public boolean isProxyRemoting() {
-                return isProxyRemoting;
+                return consumer.isProxyRemoting();
             }
         });
         return result;
+    }
+
+    private String selectTopicBrokerAddr(Cluster mqCluster, String topic) {
+        if (topic == null) {
+            return null;
+        }
+        return topicService.selectTopicBrokerAddr(mqCluster, topic);
     }
 
     /**
@@ -969,9 +999,8 @@ public class ConsumerService {
      * @param consumerGroup
      * @return
      */
-    public Map<String, ConsumerRunningInfo> getConsumerRunningInfo(Cluster cluster, String consumerGroup,
-                                                                   boolean isProxyRemoting) {
-        Result<ConsumerConnection> connectionResult = examineConsumerConnectionInfo(consumerGroup, cluster, isProxyRemoting);
+    public Map<String, ConsumerRunningInfo> getConsumerRunningInfo(Cluster cluster, Consumer consumer) {
+        Result<ConsumerConnection> connectionResult = examineConsumerConnectionInfo(cluster, consumer);
         ConsumerConnection consumerConnection = connectionResult.getResult();
         if (consumerConnection == null) {
             return null;
@@ -983,8 +1012,7 @@ public class ConsumerService {
                 continue;
             }
             String clientId = connection.getClientId();
-            ConsumerRunningInfo consumerRunningInfo = getConsumerRunningInfo(cluster, consumerGroup, clientId,
-                    isProxyRemoting).getResult();
+            ConsumerRunningInfo consumerRunningInfo = getConsumerRunningInfo(cluster, consumer, clientId).getResult();
             if (consumerRunningInfo != null) {
                 if (!consumerRunningInfo.getProperties().containsKey("language")) {
                     if (LanguageCode.CPP.equals(connection.getLanguage())) {
@@ -1000,23 +1028,47 @@ public class ConsumerService {
     }
 
     /**
-     * 获取consumer运行时信息
-     *
-     * @param cluster
-     * @param consumerGroup
-     * @param clientId
-     * @param isProxyRemoting
-     * @return
+     * 获取lmq consumer运行时信息
      */
-    public Result<ConsumerRunningInfo> getConsumerRunningInfo(Cluster cluster, String consumerGroup,
-                                                      String clientId, boolean isProxyRemoting) {
+    public Map<String, ConsumerRunningInfo> getLmqConsumerRunningInfo(Cluster cluster, String consumerGroup) {
+        Consumer consumer = new Consumer();
+        consumer.setName(consumerGroup);
+        ConsumerConnection consumerConnection = examineConsumerConnectionInfo(cluster, consumer).getResult();
+        if (consumerConnection == null || CollectionUtils.isEmpty(consumerConnection.getConnectionSet())) {
+            return null;
+        }
+        Map<String, ConsumerRunningInfo> infoMap = new HashMap<>();
+        for (Connection connection : consumerConnection.getConnectionSet()) {
+            String clientId = connection.getClientId();
+            Result<ConsumerRunningInfo> infoResult = getConsumerRunningInfo(cluster, consumer, clientId);
+            if (infoResult.isOK()) {
+                infoMap.put(clientId, infoResult.getResult());
+            }
+        }
+        return infoMap;
+    }
+
+    /**
+     * 获取consumer运行时信息
+     */
+    public Result<ConsumerRunningInfo> getConsumerRunningInfo(Cluster cluster, Consumer consumer, String clientId) {
+        if (consumer.isLmqConsumer()) {
+            consumer.setTopicName(cluster.getName());
+        }
+        String brokerAddr = selectTopicBrokerAddr(cluster, consumer.getTopicName());
         return mqAdminTemplate.execute(new MQAdminCallback<Result<ConsumerRunningInfo>>() {
             public Result<ConsumerRunningInfo> callback(MQAdminExt mqAdmin) throws Exception {
-                return Result.getResult(mqAdmin.getConsumerRunningInfo(consumerGroup, clientId, false));
+                if (brokerAddr == null) {
+                    return Result.getResult(mqAdmin.getConsumerRunningInfo(consumer.getName(), clientId, false));
+                }
+                SohuMQAdmin admin = ((SohuMQAdmin) mqAdmin);
+                ConsumerRunningInfo consumerRunningInfo = admin.getMQClientInstance().getMQClientAPIImpl()
+                        .getConsumerRunningInfo(brokerAddr, consumer.getName(), clientId, false, admin.getTimeoutMillis());
+                return Result.getResult(consumerRunningInfo);
             }
 
             public Result<ConsumerRunningInfo> exception(Exception e) throws Exception {
-                logger.warn("cluster:{}, consumer:{}, err:{}", cluster, consumerGroup, e.getMessage());
+                logger.warn("cluster:{}, consumer:{}, err:{}", cluster, consumer.getName(), e.getMessage());
                 return Result.getWebErrorResult(e);
             }
 
@@ -1027,7 +1079,7 @@ public class ConsumerService {
 
             @Override
             public boolean isProxyRemoting() {
-                return isProxyRemoting;
+                return consumer.isProxyRemoting();
             }
         });
     }
@@ -1041,13 +1093,12 @@ public class ConsumerService {
      * @param connection
      * @return
      */
-    public Result<?> fetchConsumerStatus(Cluster cluster, String topic, String consumer,
-                                         Connection connection, boolean isProxyRemoting) {
+    public Result<?> fetchConsumerStatus(Cluster cluster, String topic, Consumer consumer, Connection connection) {
         if (LanguageCode.GO == connection.getLanguage()) {
             return fetchGoConsumerStatus(cluster, topic, consumer, connection.getClientId());
         }
         Result<Map<String, Map<MessageQueue, Long>>> consumeStatusResult = getConsumeStatus(cluster, topic, consumer,
-                connection.getClientId(), isProxyRemoting);
+                connection.getClientId());
         if (consumeStatusResult.isNotOK()) {
             return consumeStatusResult;
         }
@@ -1055,9 +1106,8 @@ public class ConsumerService {
         return Result.getResult(consumerStatusTable.get(connection.getClientId()));
     }
 
-    public Result<?> fetchGoConsumerStatus(Cluster cluster, String topic, String consumer,
-                                           String clientId) {
-        Result<ConsumerRunningInfo> infoResult = getConsumerRunningInfo(cluster, consumer, clientId, false);
+    public Result<?> fetchGoConsumerStatus(Cluster cluster, String topic, Consumer consumer, String clientId) {
+        Result<ConsumerRunningInfo> infoResult = getConsumerRunningInfo(cluster, consumer, clientId);
         if (infoResult.isNotOK()) {
             return infoResult;
         }
@@ -1082,16 +1132,16 @@ public class ConsumerService {
      * @param isProxyRemoting
      * @return
      */
-    public Result<Map<String, Map<MessageQueue, Long>>> getConsumeStatus(Cluster cluster, String topic, String consumer,
-                                                                         String clientId, boolean isProxyRemoting) {
+    public Result<Map<String, Map<MessageQueue, Long>>> getConsumeStatus(Cluster cluster, String topic, Consumer consumer,
+                                                                         String clientId) {
         return mqAdminTemplate.execute(
                 new MQAdminCallback<Result<Map<String, Map<MessageQueue, Long>>>>() {
                     public Result<Map<String, Map<MessageQueue, Long>>> callback(MQAdminExt mqAdmin) throws Exception {
-                        return Result.getResult(mqAdmin.getConsumeStatus(topic, consumer, clientId));
+                        return Result.getResult(mqAdmin.getConsumeStatus(topic, consumer.getName(), clientId));
                     }
 
                     public Result<Map<String, Map<MessageQueue, Long>>> exception(Exception e) throws Exception {
-                        logger.warn("cluster:{}, consumer:{}, getConsumeStatus err:{}", cluster, consumer, e.getMessage());
+                        logger.warn("cluster:{}, consumer:{}, getConsumeStatus err:{}", cluster, consumer.getName(), e.getMessage());
                         return Result.getWebErrorResult(e);
                     }
 
@@ -1102,7 +1152,7 @@ public class ConsumerService {
 
                     @Override
                     public boolean isProxyRemoting() {
-                        return isProxyRemoting;
+                        return consumer.isProxyRemoting();
                     }
                 });
     }
@@ -1241,8 +1291,13 @@ public class ConsumerService {
     public Result<ConsumeStats> examineConsumeStats(Cluster cluster, String consumer) {
         return mqAdminTemplate.execute(new MQAdminCallback<Result<ConsumeStats>>() {
             public Result<ConsumeStats> callback(MQAdminExt mqAdmin) throws Exception {
-                String retryTopic = MixAll.getRetryTopic(consumer);
-                TopicRouteData topicRouteData = mqAdmin.examineTopicRouteInfo(retryTopic);
+                TopicRouteData topicRouteData = null;
+                if (MixAll.isLmq(consumer)) {
+                    topicRouteData = mqAdmin.examineTopicRouteInfo(cluster.getName());
+                } else {
+                    String retryTopic = MixAll.getRetryTopic(consumer);
+                    topicRouteData = mqAdmin.examineTopicRouteInfo(retryTopic);
+                }
                 ConsumeStats result = new ConsumeStats();
                 for (BrokerData bd : topicRouteData.getBrokerDatas()) {
                     String addr = bd.selectBrokerAddr();
@@ -1382,9 +1437,8 @@ public class ConsumerService {
                 continue;
             }
             // 消费者链接校验
-            Result<ConsumerConnection> connectionResult = examineConsumerConnectionInfo(consumer.getName(),
-                    cluster, consumer.isProxyRemoting());
-            ConsumerConnection consumerConnection = connectionResult.getResult();
+            consumer.setTopicName(topic.getName());
+            Result<ConsumerConnection> connectionResult = examineConsumerConnectionInfo(cluster, consumer);
             if (Status.NO_ONLINE.getKey() == connectionResult.getStatus()) {
                 logger.info("delete unused auto subscribe consumer:{}", consumer.getName());
                 consumerService.deleteConsumer(cluster, consumer, 0L);
@@ -1392,5 +1446,66 @@ public class ConsumerService {
             }
         }
         return deleteCount;
+    }
+
+    /**
+     * 根据父topic查询轻量级消费者列表
+     */
+    public Result<GroupPageList> queryLiteConsumerByParentTopic(Topic topic, int page, int pageSize) {
+        Cluster cluster = clusterService.getMQClusterById(topic.getClusterId());
+        String brokerAddr = selectTopicBrokerAddr(cluster, topic.getName());
+        if (brokerAddr == null) {
+            return Result.getResult(Collections.emptyList());
+        }
+        String realTopic;
+        if (topic.getLiteTopic() == null) {
+            realTopic = CommonUtil.buildLmqParentTopic(topic.getName());
+        } else {
+            realTopic = CommonUtil.buildLmqTopic(topic.getName(), topic.getLiteTopic());
+        }
+        return mqAdminTemplate.execute(new MQAdminCallback<Result<GroupPageList>>() {
+            public Result<GroupPageList> callback(MQAdminExt mqAdmin) throws Exception {
+                GroupPageList pageList = ((DefaultSohuMQAdmin) mqAdmin).queryConsumerByTopic(brokerAddr, realTopic, page, pageSize);
+                return Result.getResult(pageList);
+            }
+
+            @Override
+            public Result<GroupPageList> exception(Exception e) throws Exception {
+                logger.error("queryLiteConsumerByParentTopic:{} err:{}", realTopic, e.getMessage());
+                return Result.getWebErrorResult(e);
+            }
+
+            public Cluster mqCluster() {
+                return cluster;
+            }
+        });
+    }
+
+    public Result<GroupPageList> queryLiteConsumer(Cluster cluster, String consumerGroup) {
+        return queryLiteConsumer(cluster, null, consumerGroup);
+    }
+
+    public Result<GroupPageList> queryLiteConsumer(Cluster cluster, String parentTopic, String consumerGroup) {
+        Consumer consumer = new Consumer();
+        consumer.setName(consumerGroup);
+        ConsumerConnection consumerConnection = examineConsumerConnectionInfo(cluster, consumer).getResult();
+        if (consumerConnection == null || consumerConnection.getSubscriptionTable() == null) {
+            return Result.getResult(Status.NO_RESULT);
+        }
+        if (parentTopic != null) {
+            String realTopic = CommonUtil.buildLmqParentTopic(parentTopic);
+            boolean topicExist = consumerConnection.getSubscriptionTable().keySet()
+                    .stream()
+                    .anyMatch(topic -> topic.startsWith(realTopic));
+            if (!topicExist) {
+                return Result.getResult(Status.NO_RESULT);
+            }
+        }
+        consumerConnection.getSubscriptionTable();
+        consumerConnection.setGroupName(consumerGroup);
+        GroupPageList groupPageList = new GroupPageList();
+        groupPageList.setTotal(1);
+        groupPageList.setGroupList(Collections.singletonList(consumerConnection));
+        return Result.getResult(groupPageList);
     }
 }

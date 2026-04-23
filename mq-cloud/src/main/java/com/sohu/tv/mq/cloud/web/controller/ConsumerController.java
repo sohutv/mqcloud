@@ -13,6 +13,7 @@ import com.sohu.tv.mq.cloud.web.vo.UserInfo;
 import com.sohu.tv.mq.metric.StackTraceMetric;
 import com.sohu.tv.mq.util.CommonUtil;
 import com.sohu.tv.mq.util.Constant;
+import com.sohu.tv.mq.util.MQProtocol;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.message.MessageQueue;
@@ -22,6 +23,7 @@ import org.apache.rocketmq.remoting.protocol.admin.TopicStatsTable;
 import org.apache.rocketmq.remoting.protocol.body.Connection;
 import org.apache.rocketmq.remoting.protocol.body.ConsumerConnection;
 import org.apache.rocketmq.remoting.protocol.body.ConsumerRunningInfo;
+import org.apache.rocketmq.remoting.protocol.body.GroupPageList;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -36,6 +38,9 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static com.sohu.tv.mq.cloud.bo.Audit.TypeEnum.UPDATE_HTTP_CONSUMER_CONFIG;
+import static com.sohu.tv.mq.util.Constant.BROADCAST;
+import static org.apache.rocketmq.remoting.protocol.heartbeat.ConsumeType.CONSUME_ACTIVELY;
+import static org.apache.rocketmq.remoting.protocol.heartbeat.MessageModel.CLUSTERING;
 
 /**
  * 消费者接口
@@ -96,6 +101,12 @@ public class ConsumerController extends ViewController {
     @Autowired
     private AuditHttpConsumerConfigService auditHttpConsumerConfigService;
 
+    @Autowired
+    private AlarmConfigService alarmConfigService;
+
+    @Autowired
+    private UserProducerService userProducerService;
+
     /**
      * 消费进度
      * 
@@ -149,7 +160,7 @@ public class ConsumerController extends ViewController {
                 consumerSelector.getBroadcastConsumerList(), consumerMap);
         // 获取消费者配置
         for (ConsumerProgressVO vo : list) {
-            vo.setConsumerConfig(consumerConfigService.getConsumerConfig(vo.getConsumer().getName()));
+            vo.setConsumerConfig(consumerConfigService.getConsumerConfig(vo.getConsumer()));
             vo.setVersion(clientVersionMap.get(vo.getConsumer().getName()));
             vo.resetClientPauseConfig();
         }
@@ -313,38 +324,41 @@ public class ConsumerController extends ViewController {
                 continue;
             }
             List<ConsumeStatsExt> consumeStatsList = consumeStatsMap.get(consumer.getId());
-            if (consumeStatsList == null) {
-                list.add(consumerProgressVO);
-                continue;
-            }
-            Map<MessageQueue, OffsetWrapper> offsetMap = new TreeMap<MessageQueue, OffsetWrapper>();
-            for (ConsumeStatsExt consumeStats : consumeStatsList) {
-                consumerProgressVO.setConsumeTps(consumerProgressVO.getConsumeTps() + consumeStats.getConsumeTps());
-                Map<MessageQueue, OffsetWrapper> offsetTable = consumeStats.getOffsetTable();
-                for (MessageQueue mq : offsetTable.keySet()) {
-                    OffsetWrapper prev = offsetMap.get(mq);
-                    if (prev == null) {
-                        prev = new OffsetWrapper();
-                        offsetMap.put(mq, prev);
-                    }
-                    OffsetWrapper cur = offsetTable.get(mq);
-                    if (cur.getConsumerOffset() < 0) {
-                        cur.setConsumerOffset(0);
-                    }
-                    prev.setBrokerOffset(prev.getBrokerOffset() + cur.getBrokerOffset());
-                    prev.setConsumerOffset(prev.getConsumerOffset() + cur.getConsumerOffset());
-                    // 取最小的更新时间
-                    if (prev.getLastTimestamp() == 0 || prev.getLastTimestamp() > cur.getLastTimestamp()) {
-                        prev.setLastTimestamp(cur.getLastTimestamp());
-                    }
-                }
-            }
-            consumerProgressVO.setOffsetMap(offsetMap);
-            consumerProgressVO.setConsumeStatsList(consumeStatsList);
-            consumerProgressVO.computeTotalDiff();
+            setConsumeStatsList(consumerProgressVO, consumeStatsList);
             list.add(consumerProgressVO);
         }
         return list;
+    }
+
+    public void setConsumeStatsList(ConsumerProgressVO consumerProgressVO, List<ConsumeStatsExt> consumeStatsList) {
+        if (CollectionUtils.isEmpty(consumeStatsList)) {
+            return;
+        }
+        Map<MessageQueue, OffsetWrapper> offsetMap = new TreeMap<>();
+        for (ConsumeStatsExt consumeStats : consumeStatsList) {
+            consumerProgressVO.setConsumeTps(consumerProgressVO.getConsumeTps() + consumeStats.getConsumeTps());
+            Map<MessageQueue, OffsetWrapper> offsetTable = consumeStats.getOffsetTable();
+            for (MessageQueue mq : offsetTable.keySet()) {
+                OffsetWrapper prev = offsetMap.get(mq);
+                if (prev == null) {
+                    prev = new OffsetWrapper();
+                    offsetMap.put(mq, prev);
+                }
+                OffsetWrapper cur = offsetTable.get(mq);
+                if (cur.getConsumerOffset() < 0) {
+                    cur.setConsumerOffset(0);
+                }
+                prev.setBrokerOffset(prev.getBrokerOffset() + cur.getBrokerOffset());
+                prev.setConsumerOffset(prev.getConsumerOffset() + cur.getConsumerOffset());
+                // 取最小的更新时间
+                if (prev.getLastTimestamp() == 0 || prev.getLastTimestamp() > cur.getLastTimestamp()) {
+                    prev.setLastTimestamp(cur.getLastTimestamp());
+                }
+            }
+        }
+        consumerProgressVO.setOffsetMap(offsetMap);
+        consumerProgressVO.setConsumeStatsList(consumeStatsList);
+        consumerProgressVO.computeTotalDiff();
     }
 
     /**
@@ -488,8 +502,7 @@ public class ConsumerController extends ViewController {
         String consumer = consumerResult.getResult().getName();
         if (!consumerResult.getResult().isHttpProtocol()) {
             Cluster cluster = clusterService.getMQClusterById(topicResult.getResult().getClusterId());
-            Result<ConsumerConnection> connectionResult = consumerService.examineConsumerConnectionInfo(consumer,
-                    cluster, consumerResult.getResult().isProxyRemoting());
+            Result<ConsumerConnection> connectionResult = consumerService.examineConsumerConnectionInfo(cluster, consumerResult.getResult());
             if (connectionResult.isOK()) {
                 return Result.getResult(Status.CONSUMER_CONNECTION_EXIST_ERROR);
             }
@@ -766,9 +779,13 @@ public class ConsumerController extends ViewController {
                                 @RequestParam("consumer") String consumerName) throws Exception {
         Cluster cluster = clusterService.getMQClusterById(cid);
         // 获取消费者运行时信息
-        Consumer consumer = consumerService.queryConsumerByName(consumerName).getResult();
-        Map<String, ConsumerRunningInfo> map = consumerService.getConsumerRunningInfo(cluster, consumerName,
-                consumer.isProxyRemoting());
+        Map<String, ConsumerRunningInfo> map = null;
+        if (!MixAll.isLmq(consumerName)) {
+            Consumer consumer = consumerService.queryConsumerByName(consumerName).getResult();
+            map = consumerService.getConsumerRunningInfo(cluster, consumer);
+        } else {
+            map = consumerService.getLmqConsumerRunningInfo(cluster, consumerName);
+        }
         if (map == null) {
             return Result.getResult(Status.NO_RESULT);
         }
@@ -985,6 +1002,18 @@ public class ConsumerController extends ViewController {
     }
 
     /**
+     * 获取消费者配置
+     *
+     * @return
+     * @throws Exception
+     */
+    @ResponseBody
+    @GetMapping("/http/lmqConfig/{consumer}")
+    public Result<?> httpLmqConfig(@PathVariable String consumer) throws Exception {
+        return mqProxyService.getConsumerConfig(CommonUtil.buildLmqConsumer(consumer));
+    }
+
+    /**
      * 更新消费者配置
      * 
      * @return
@@ -1064,8 +1093,7 @@ public class ConsumerController extends ViewController {
             @RequestParam("group") String group, Map<String, Object> map) throws Exception {
         Cluster cluster = clusterService.getMQClusterById(cid);
         Consumer consumer = consumerService.queryConsumerByName(group).getResult();
-        Result<ConsumerConnection> result = consumerService.examineConsumerConnectionInfo(group, cluster,
-                consumer.isProxyRemoting());
+        Result<ConsumerConnection> result = consumerService.examineConsumerConnectionInfo(cluster, consumer);
         if (result.isNotOK()) {
             if (Status.NO_ONLINE.getKey() == result.getStatus()) {
                 return result;
@@ -1093,7 +1121,8 @@ public class ConsumerController extends ViewController {
      */
     @RequestMapping("/threadMetrics")
     public String threadMetrics(UserInfo userInfo, @RequestParam("clientId") String clientId,
-            @RequestParam(value = "consumer") String consumer, Map<String, Object> map) throws Exception {
+                                @RequestParam(value = "cid", required = false, defaultValue = "0") int cid,
+                                @RequestParam(value = "consumer") String consumer, Map<String, Object> map) throws Exception {
         String view = viewModule() + "/threadMetrics";
         // 获取消费者
         Result<Consumer> consumerResult = consumerService.queryConsumerByName(consumer);
@@ -1101,22 +1130,25 @@ public class ConsumerController extends ViewController {
             setResult(map, consumerResult);
             return view;
         }
-        Result<Topic> topicResult = topicService.queryTopic(consumerResult.getResult().getTid());
-        if (topicResult.isNotOK()) {
-            setResult(map, topicResult);
-            return view;
+        Consumer cs = consumerResult.getResult();
+        if (!cs.isLmqConsumer()) {
+            Result<Topic> topicResult = topicService.queryTopic(cs.getTid());
+            if (topicResult.isNotOK()) {
+                setResult(map, topicResult);
+                return view;
+            }
+            // 判断客户端版本
+            Result<ClientVersion> cvResult = clientVersionService.query(topicResult.getResult().getName(), consumer);
+            if (cvResult.isNotOK() || !mqCloudConfigHelper.threadMetricSupported(cvResult.getResult().getVersion())) {
+                setResult(map, Result.getResult(Status.PARAM_ERROR)
+                        .setMessage("请升级客户端至" + mqCloudConfigHelper.getThreadMetricSupportedVersion() + "及以上版本"));
+                return view;
+            }
         }
-        // 判断客户端版本
-        Result<ClientVersion> cvResult = clientVersionService.query(topicResult.getResult().getName(), consumer);
-        if (cvResult.isNotOK() || !mqCloudConfigHelper.threadMetricSupported(cvResult.getResult().getVersion())) {
-            setResult(map, Result.getResult(Status.PARAM_ERROR)
-                    .setMessage("请升级客户端至" + mqCloudConfigHelper.getThreadMetricSupportedVersion() + "及以上版本"));
-            return view;
-        }
-        Cluster cluster = clusterService.getMQClusterById(topicResult.getResult().getClusterId());
+        Cluster cluster = clusterService.getMQClusterById(cid);
         // 获取线程指标
         Result<List<StackTraceMetric>> result = consumerService.getConsumeThreadMetrics(cluster, clientId, consumer,
-                consumerResult.getResult().isProxyRemoting());
+                cs.isProxyRemoting());
         // 排序
         List<StackTraceMetric> threadMetricList = result.getResult();
         if (threadMetricList != null) {
@@ -1140,7 +1172,8 @@ public class ConsumerController extends ViewController {
      */
     @RequestMapping("/failedMetrics")
     public String failedMetrics(UserInfo userInfo, @RequestParam("clientId") String clientId,
-            @RequestParam(value = "consumer") String consumer, Map<String, Object> map) throws Exception {
+                                @RequestParam(value = "cid", required = false) int cid,
+                                @RequestParam(value = "consumer") String consumer, Map<String, Object> map) throws Exception {
         String view = viewModule() + "/failedMetrics";
         // 获取消费者
         Result<Consumer> consumerResult = consumerService.queryConsumerByName(consumer);
@@ -1148,23 +1181,24 @@ public class ConsumerController extends ViewController {
             setResult(map, consumerResult);
             return view;
         }
-        Result<Topic> topicResult = topicService.queryTopic(consumerResult.getResult().getTid());
-        if (topicResult.isNotOK()) {
-            setResult(map, topicResult);
-            return view;
+        Consumer cs = consumerResult.getResult();
+        if (!cs.isLmqConsumer()) {
+            Result<Topic> topicResult = topicService.queryTopic(consumerResult.getResult().getTid());
+            if (topicResult.isNotOK()) {
+                setResult(map, topicResult);
+                return view;
+            }
+            // 判断客户端版本
+            Result<ClientVersion> cvResult = clientVersionService.query(topicResult.getResult().getName(), consumer);
+            if (cvResult.isNotOK() || !mqCloudConfigHelper.threadMetricSupported(cvResult.getResult().getVersion())) {
+                setResult(map, Result.getResult(Status.PARAM_ERROR)
+                        .setMessage("请升级客户端至" + mqCloudConfigHelper.getConsumeFailedMetricSupportedVersion() + "及以上版本"));
+                return view;
+            }
         }
-        // 判断客户端版本
-        Result<ClientVersion> cvResult = clientVersionService.query(topicResult.getResult().getName(), consumer);
-        if (cvResult.isNotOK() || !mqCloudConfigHelper.threadMetricSupported(cvResult.getResult().getVersion())) {
-            setResult(map, Result.getResult(Status.PARAM_ERROR)
-                    .setMessage(
-                            "请升级客户端至" + mqCloudConfigHelper.getConsumeFailedMetricSupportedVersion() + "及以上版本"));
-            return view;
-        }
-        Cluster cluster = clusterService.getMQClusterById(topicResult.getResult().getClusterId());
-        // 获取线程指标
+        Cluster cluster = clusterService.getMQClusterById(cid);
         Result<List<StackTraceMetric>> result = consumerService.getConsumeFailedMetrics(cluster, clientId, consumer,
-                consumerResult.getResult().isProxyRemoting());
+                cs.isProxyRemoting());
         // 排序
         List<StackTraceMetric> threadMetricList = result.getResult();
         if (threadMetricList != null) {
@@ -1252,9 +1286,20 @@ public class ConsumerController extends ViewController {
     @ResponseBody
     @RequestMapping(value = "/detail")
     public String detail(UserInfo userInfo, HttpServletResponse response, HttpServletRequest request,
+                         @RequestParam(value = "cid", defaultValue = "0", required = false) int cid,
                          @RequestParam(name = "consumer") String consumer) throws Exception {
         if (!userInfo.getUser().isAdmin()) {
             return Result.getResult(Status.PERMISSION_DENIED_ERROR).toJson();
+        }
+        if (MixAll.isLmq(consumer)) {
+            List<ConsumerConnection> consumerConnections = consumerService.queryLiteConsumer(
+                    clusterService.getMQClusterById(cid), consumer).getResult().getGroupList();
+            String lmqTopic = consumerConnections.iterator().next().getSubscriptionTable().keySet().iterator().next();
+            String parentTopic = CommonUtil.findLmqParentTopic(lmqTopic);
+            Topic topic = topicService.queryTopic(parentTopic).getResult();
+            String lmqConsumer = CommonUtil.stripLmqPrefix(consumer);
+            WebUtil.redirect(response, request, "/user/topic/" + topic.getId() + "/detail?tab=lmqConsume&lmqConsumer=" + lmqConsumer);
+            return null;
         }
         if (CommonUtil.isRetryTopic(consumer)) {
             consumer = consumer.substring(MixAll.RETRY_GROUP_TOPIC_PREFIX.length());
@@ -1290,8 +1335,7 @@ public class ConsumerController extends ViewController {
         Cluster cluster = clusterService.getMQClusterById(cid);
         // 获取消费者运行时信息
         Consumer consumer = consumerService.queryConsumerByName(consumerName).getResult();
-        Result<ConsumerRunningInfo> result = consumerService.getConsumerRunningInfo(cluster, consumerName, clientId,
-                consumer.isProxyRemoting());
+        Result<ConsumerRunningInfo> result = consumerService.getConsumerRunningInfo(cluster, consumer, clientId);
         if (result.isNotOK()) {
             setResult(map, result);
         }
@@ -1342,6 +1386,419 @@ public class ConsumerController extends ViewController {
             result.setMessage(message);
         }
         return Result.getWebResult(result);
+    }
+
+    /**
+     * 更新http消费者配置
+     *
+     * @return
+     * @throws Exception
+     */
+    @ResponseBody
+    @PostMapping("/update/http/lmqConfig")
+    public Result<?> updateHttpLmqConfig(UserInfo userInfo, HttpConsumerConfigParam httpConsumerConfigParam) throws Exception {
+        // 校验用户是否有权限
+        if (!userInfo.getUser().isAdmin()) {
+            Result<UserProducer> upResult = userProducerService.findUserProducer(userInfo.getUser().getId(),
+                    httpConsumerConfigParam.getTid());
+            if (upResult.isNotOK()) {
+                return Result.getResult(Status.PERMISSION_DENIED_ERROR);
+            }
+        }
+        logger.info("update lmq consumer http config, user:{}, consumerConfigParam:{}", userInfo, httpConsumerConfigParam);
+        String consumer = CommonUtil.buildLmqConsumer(httpConsumerConfigParam.getConsumer());
+        MQProxyService.ConsumerConfigParam consumerConfigParam = new MQProxyService.ConsumerConfigParam();
+        consumerConfigParam.setConsumer(consumer);
+        consumerConfigParam.setMaxPullSize(httpConsumerConfigParam.getPullSize());
+        consumerConfigParam.setConsumeTimeoutInMillis(httpConsumerConfigParam.getConsumeTimeout());
+        consumerConfigParam.setPullTimeoutInMillis(httpConsumerConfigParam.getPullTimeout());
+        Result<?> updateResult = mqProxyService.consumerConfig(userInfo, consumerConfigParam);
+        return updateResult;
+    }
+
+    /**
+     * 获取报警配置详情
+     */
+    @RequestMapping(value = "/warn/config")
+    public String getWarnConfig(@RequestParam("consumer") String consumer, Map<String, Object> map) {
+        String view = viewModule() + "/warnConfig";
+        Result<AlarmConfig> result = alarmConfigService.getAlarmConfigWithDefault(consumer);
+        setResult(map, result);
+        return view;
+    }
+
+    /**
+     * 更报警配置
+     */
+    @RequestMapping(value = "/warn/config/update", method = RequestMethod.POST)
+    @ResponseBody
+    public Result<?> updateUserAlarmConfig(UserInfo userInfo, @Valid AlarmConfigParam alarmConfigParam) {
+        logger.info("update alarm config, user:{}, alarmConfigParam:{}", userInfo, alarmConfigParam);
+        if (alarmConfigParam.getConsumer() == null) {
+            alarmConfigParam.setConsumer("");
+        }
+        if (!userInfo.getUser().isAdmin()) {
+            Result<List<Consumer>> consumerResult = consumerService.queryUserConsumer(userInfo.getUser().getId());
+            if (consumerResult.isEmpty()) {
+                return Result.getResult(Status.PERMISSION_DENIED_ERROR);
+            }
+            List<Consumer> consumers = consumerResult.getResult();
+            boolean exist = consumers.stream().anyMatch(c -> c.getName().equals(alarmConfigParam.getConsumer()));
+            if (!exist) {
+                return Result.getResult(Status.PERMISSION_DENIED_ERROR);
+            }
+        }
+        Result<?> validResult = alarmConfigParam.validAndResetProperties();
+        if (validResult.isNotOK()) {
+            return validResult;
+        }
+        AlarmConfig alarmConfig = new AlarmConfig();
+        BeanUtils.copyProperties(alarmConfigParam, alarmConfig);
+        Result<?> saveResult = alarmConfigService.save(alarmConfig);
+        return saveResult;
+    }
+
+    /**
+     * 消费进度
+     */
+    @RequestMapping("lmq/progress")
+    public String lmqProgress(UserInfo userInfo, @RequestParam("tid") int tid,
+                              @Valid PaginationParam paginationParam,
+                              @RequestParam(value = "liteTopic", required = false) String liteTopic,
+                              @RequestParam(value = "lmqConsumer", required = false) String consumer,
+                              Map<String, Object> map) throws Exception {
+        liteTopic = liteTopic == null ? null : liteTopic.trim();
+        consumer = consumer == null ? null : consumer.trim();
+        String view = viewModule() + "/lmqProgress";
+        setPagination(map, paginationParam);
+        setResult(map, Result.getOKResult());
+        setResult(map, "resultExt", Result.getOKResult());
+        // 获取消费者
+        Result<Topic> topicResult = topicService.queryTopic(tid);
+        if (topicResult.isNotOK()) {
+            setResult(map, topicResult);
+            return view;
+        }
+        Topic topic = topicResult.getResult();
+        Cluster cluster = clusterService.getMQClusterById(topic.getClusterId());
+        setResult(map, "topic", topic);
+        FreemarkerUtil.set("long", Long.class, map);
+        setResult(map, "cluster", cluster);
+        setResult(map, "limitConsumeTps", Constant.LIMIT_CONSUME_TPS);
+
+        Result<GroupPageList> groupPageListResult = null;
+        if (StringUtils.isNotBlank(consumer)) {
+            String lmqConsumer = CommonUtil.buildLmqConsumer(consumer);
+            groupPageListResult = consumerService.queryLiteConsumer(cluster, topic.getName(), lmqConsumer);
+        } else {
+            if (StringUtils.isNotBlank(liteTopic)) {
+                topic.setLiteTopic(liteTopic);
+            }
+            groupPageListResult = consumerService.queryLiteConsumerByParentTopic(topic,
+                    paginationParam.getCurrentPage(), paginationParam.getNumOfPage());
+        }
+        if (groupPageListResult.isNotOK()) {
+            setResult(map, groupPageListResult);
+            return view;
+        }
+        // 设置分页
+        GroupPageList groupPageList = groupPageListResult.getResult();
+        paginationParam.caculatePagination(groupPageList.getTotal());
+        if (groupPageList.getGroupList() == null) {
+            return view;
+        }
+        // 构建数据
+        List<ConsumerProgressVO> clusterList = new ArrayList<>();
+        List<ConsumerProgressVO> broadcastList = new ArrayList<>();
+        for (int i = 0; i < groupPageList.getGroupList().size(); i++) {
+            ConsumerConnection consumerConnection = groupPageList.getGroupList().get(i);
+            ConsumerProgressVO consumerProgressVO = toConsumerProgressVO(consumerConnection, i + 1);
+            addConsumeStats(consumerProgressVO, cluster, consumerConnection);
+            addOwner(topic, consumerProgressVO);
+            clusterList.add(consumerProgressVO);
+        }
+        setResult(map, clusterList);
+        // 记录访问足迹
+        UserFootprint userFootprint = new UserFootprint();
+        userFootprint.setUid(userInfo.getUser().getId());
+        userFootprint.setTid(tid);
+        userFootprintService.save(userFootprint);
+        return view;
+    }
+
+    /**
+     * 构建ConsumerProgressVO
+     */
+    private ConsumerProgressVO toConsumerProgressVO(ConsumerConnection consumerConnection, int index) {
+        ConsumerProgressVO consumerProgressVO = new ConsumerProgressVO();
+        Consumer consumerVO = new Consumer();
+        consumerVO.setId(index);
+        consumerVO.setName(consumerConnection.getGroupName());
+        consumerVO.setConsumeWay(CLUSTERING.equals(consumerConnection.getMessageModel()) ?
+                Constant.CLUSTERING : BROADCAST);
+        if (CONSUME_ACTIVELY == consumerConnection.getConsumeType()) {
+            consumerVO.setProtocol(MQProtocol.HTTP.getType());
+        }
+        consumerProgressVO.setConsumer(consumerVO);
+        String lmqTopic = consumerConnection.getSubscriptionTable().keySet().iterator().next();
+        consumerProgressVO.setTopic(CommonUtil.stripLmqParentPrefix(lmqTopic));
+        ConsumerConfig consumerConfig = consumerConfigService.getConsumerConfig(consumerVO);
+        if (consumerConfig!= null && consumerVO.isHttpProtocol()) {
+            // http消费的消费方式从consumerConnection里取不准，重置一下
+            consumerVO.setConsumeWay(CLUSTERING.equals(consumerConfig.getMessageModel()) ? Constant.CLUSTERING : BROADCAST);
+        }
+        consumerProgressVO.setConsumerConfig(consumerConfig);
+        return consumerProgressVO;
+    }
+
+    /**
+     * 添加消费统计信息
+     */
+    public void addConsumeStats(ConsumerProgressVO consumerProgressVO, Cluster cluster, ConsumerConnection consumerConnection) {
+        // http消费是pull
+        if (consumerProgressVO.getConsumer().isHttpProtocol()) {
+            addHttpStats(consumerProgressVO, cluster, consumerConnection);
+            return;
+        }
+        if (CLUSTERING == consumerConnection.getMessageModel()) {
+            addClusteringStats(consumerProgressVO, cluster, consumerConnection);
+        } else {
+            addBroadcastStats(consumerProgressVO, cluster, consumerConnection);
+        }
+    }
+
+    /**
+     * 添加消费统计信息
+     */
+    public void addClusteringStats(ConsumerProgressVO consumerProgressVO, Cluster cluster, ConsumerConnection consumerConnection) {
+        ConsumeStats consumeStats = consumerService.examineConsumeStats(cluster, consumerConnection.getGroupName()).getResult();
+        if (consumeStats == null) {
+            return;
+        }
+        consumerProgressVO.setConsumeTps(consumeStats.getConsumeTps());
+        Map<MessageQueue, OffsetWrapper> offsetTable = consumeStats.getOffsetTable();
+        Map<MessageQueue, OffsetWrapper> offsetMap = new TreeMap<>();
+        for (MessageQueue mq : offsetTable.keySet()) {
+            offsetMap.put(mq, offsetTable.get(mq));
+        }
+        consumerProgressVO.setOffsetMap(offsetMap);
+        consumerProgressVO.computeTotalDiff();
+    }
+
+    /**
+     * 添加消费统计信息
+     */
+    public void addBroadcastStats(ConsumerProgressVO consumerProgressVO, Cluster cluster, ConsumerConnection consumerConnection) {
+        if (CollectionUtils.isEmpty(consumerConnection.getSubscriptionTable())
+                || CollectionUtils.isEmpty(consumerConnection.getConnectionSet())) {
+            return;
+        }
+        try {
+            String lmqTopic = consumerConnection.getSubscriptionTable().keySet().iterator().next();
+            TopicStatsTable topicStatsTable = topicService.stats(cluster, lmqTopic);
+            Consumer consumer = new Consumer();
+            consumer.setName(consumerConnection.getGroupName());
+            Set<String> clientIdSet = consumerConnection.getConnectionSet().stream()
+                    .map(Connection::getClientId)
+                    .collect(Collectors.toSet());
+            List<ConsumeStatsExt> consumeStatsList = consumerService.fetchConsumeStats(cluster, lmqTopic, consumer,
+                    topicStatsTable, clientIdSet);
+            setConsumeStatsList(consumerProgressVO, consumeStatsList);
+        } catch (Exception e) {
+            logger.error("addBroadcastStats error:{}", consumerConnection, e);
+        }
+    }
+
+    /**
+     * 添加消费统计信息
+     */
+    public void addHttpStats(ConsumerProgressVO consumerProgressVO, Cluster cluster, ConsumerConnection consumerConnection) {
+        if (CollectionUtils.isEmpty(consumerConnection.getSubscriptionTable())
+                || CollectionUtils.isEmpty(consumerConnection.getConnectionSet())) {
+            return;
+        }
+        try {
+            String lmqTopic = consumerConnection.getSubscriptionTable().keySet().iterator().next();
+            TopicStatsTable topicStatsTable = topicService.stats(cluster, lmqTopic);
+            Consumer consumer = consumerProgressVO.getConsumer();
+            Set<String> clientIdSet = consumerConnection.getConnectionSet().stream()
+                    .map(Connection::getClientId)
+                    .collect(Collectors.toSet());
+            List<ConsumeStatsExt> consumeStatsList = consumerService.getHttpConsumeStats(clientIdSet, topicStatsTable, consumer);
+            setConsumeStatsList(consumerProgressVO, consumeStatsList);
+        } catch (Exception e) {
+            logger.error("addBroadcastStats error:{}", consumerConnection, e);
+        }
+    }
+
+    /**
+     * 添加owner信息
+     */
+    private void addOwner(Topic topic, ConsumerProgressVO consumerProgressVO) {
+        Result<List<UserProducer>> result = userProducerService.queryUserProducerByTid(topic.getId());
+        if (result.isEmpty()) {
+            return;
+        }
+        Set<Long> uidList = result.getResult().stream().map(UserProducer::getUid).collect(Collectors.toSet());
+        Result<List<User>> userListResult = userService.query(uidList);
+        if (userListResult.isEmpty()) {
+            return;
+        }
+        for (UserProducer userProducer : result.getResult()) {
+            for (User user : userListResult.getResult()) {
+                if (userProducer.getUid() == user.getId()) {
+                    if (consumerProgressVO.getOwnerList() == null) {
+                        consumerProgressVO.setOwnerList(new ArrayList<>());
+                    }
+                    consumerProgressVO.getOwnerList().add(user);
+                }
+            }
+        }
+    }
+
+    /**
+     * 重置偏移量
+     */
+    @ResponseBody
+    @RequestMapping("/resetLmqOffset")
+    public Result<?> resetLmqOffset(UserInfo userInfo, @Valid UserConsumerParam userConsumerParam) throws Exception {
+        // 校验用户是否能重置，防止误调用接口
+        if (!userInfo.getUser().isAdmin()) {
+            Result<UserProducer> upResult = userProducerService.findUserProducer(userInfo.getUser().getId(),
+                    userConsumerParam.getTid());
+            if (upResult.isNotOK()) {
+                return Result.getResult(Status.PERMISSION_DENIED_ERROR);
+            }
+        }
+        long resetTo = -1;
+        if (userConsumerParam.getOffset() != null) {
+            try {
+                resetTo = DateUtil.getFormat(DateUtil.YMD_DASH_BLANK_HMS_COLON)
+                        .parse(userConsumerParam.getOffset()).getTime();
+            } catch (Exception e) {
+                logger.error("resetOffsetTo param err:{}", userConsumerParam.getOffset(), e);
+                return Result.getResult(Status.PARAM_ERROR);
+            }
+        } else {
+            // 跳过堆积：重置到一分钟之前
+            resetTo = System.currentTimeMillis() - 60000;
+        }
+        if (resetTo == -1) {
+            return Result.getResult(Status.PARAM_ERROR);
+        }
+        String lmqConsumer = CommonUtil.buildLmqConsumer(userConsumerParam.getConsumer());
+        if (userConsumerParam.isHttpProtocol()) {
+            return consumerService.resetOffset(userInfo, lmqConsumer, resetTo);
+        }
+        Cluster cluster = clusterService.getMQClusterById(userConsumerParam.getCid());
+        Topic topic = topicService.queryTopic(userConsumerParam.getTid()).getResult();
+        String lmqTopic = CommonUtil.buildLmqTopic(topic.getName(), userConsumerParam.getTopic());
+        return consumerService.resetOffset(cluster, lmqTopic, lmqConsumer, resetTo);
+    }
+
+    /**
+     * 更新消费者配置
+     */
+    @ResponseBody
+    @RequestMapping("/update/lmqConfig")
+    public Result<?> updateLmqConfig(UserInfo userInfo, @Valid ConsumerConfigParam consumerConfigParam) throws Exception {
+        // 校验用户是否有权限
+        if (!userInfo.getUser().isAdmin()) {
+            Result<UserProducer> upResult = userProducerService.findUserProducer(userInfo.getUser().getId(),
+                    consumerConfigParam.getTid());
+            if (upResult.isNotOK()) {
+                return Result.getResult(Status.PERMISSION_DENIED_ERROR);
+            }
+        }
+        consumerConfigParam.setConsumer(CommonUtil.buildLmqConsumer(consumerConfigParam.getConsumer()));
+        logger.info("update lmq consumer config, user:{}, consumerConfigParam:{}", userInfo, consumerConfigParam);
+        if (consumerConfigParam.isHttpProtocol()) {
+            return updateHttpLmqConsumerConfig(userInfo, consumerConfigParam);
+        }
+        // 更新配置表
+        ConsumerConfig consumerConfig = new ConsumerConfig();
+        BeanUtils.copyProperties(consumerConfigParam, consumerConfig);
+        Result<?> saveResult = null;
+        if (Audit.TypeEnum.PAUSE_CONSUME == consumerConfigParam.getType()) {
+            consumerConfig.addPauseConfig(consumerConfigParam.getPauseClientId(), consumerConfigParam.getUnregister());
+            saveResult = consumerConfigService.savePause(consumerConfig);
+        } else if (TypeEnum.RESUME_CONSUME == consumerConfigParam.getType()) {
+            consumerConfig.addPauseConfig(consumerConfigParam.getPauseClientId(), consumerConfigParam.getUnregister());
+            saveResult = consumerConfigService.saveResume(consumerConfig);
+        } else {
+            saveResult = consumerConfigService.save(consumerConfig);
+        }
+        return saveResult;
+    }
+
+    public Result<?> updateHttpLmqConsumerConfig(UserInfo userInfo, ConsumerConfigParam consumerConfigParam) {
+        MQProxyService.ConsumerConfigParam httpConsumerConfigParam = new MQProxyService.ConsumerConfigParam();
+        httpConsumerConfigParam.setConsumer(consumerConfigParam.getConsumer());
+        // 设置是否暂停
+        if (consumerConfigParam.getPause() != null) {
+            if (consumerConfigParam.getPause()) {
+                httpConsumerConfigParam.setPause(1);
+            } else {
+                httpConsumerConfigParam.setPause(0);
+            }
+        }
+        httpConsumerConfigParam.setClientId(consumerConfigParam.getPauseClientId());
+        // 设置是否限速
+        if (consumerConfigParam.getEnableRateLimit() != null) {
+            if (consumerConfigParam.getEnableRateLimit()) {
+                httpConsumerConfigParam.setRateLimitEnabled(1);
+            } else {
+                httpConsumerConfigParam.setRateLimitEnabled(0);
+            }
+        }
+        httpConsumerConfigParam.setLimitRate(consumerConfigParam.getPermitsPerSecond());
+        return mqProxyService.consumerConfig(userInfo, httpConsumerConfigParam);
+    }
+
+    /**
+     * pop ack info
+     */
+    @RequestMapping("/popAckInfo")
+    public String popAckInfo(UserInfo userInfo, @RequestParam(value = "consumer") String consumer,
+                             @RequestParam(value = "clientId", required = false) String clientId,
+                             @RequestParam(value = "page", required = false, defaultValue = "1") int page,
+                             @RequestParam(value = "pageSize", required = false, defaultValue = "50") int pageSize,
+                             Map<String, Object> map) throws Exception {
+        String view = viewModule() + "/popAckInfo";
+        setResult(map, "consumer", consumer);
+        Result<List<PopAckInfo>> result = null;
+        if (clientId == null) {
+            result = mqProxyService.clusteringPopAckInfo(consumer, page, pageSize);
+        } else {
+            result = mqProxyService.broadcastPopAckInfo(consumer, clientId, page, pageSize);
+            setResult(map, "clientId", clientId);
+        }
+        if (Status.NO_RESULT.getKey() == result.getStatus()) {
+            setResult(map, Result.getResult(Status.NO_RESULT));
+            return view;
+        }
+        setResult(map, result);
+        setResult(map, "page", page);
+        setResult(map, "pageSize", pageSize);
+        setResult(map, "hasNext", result.getResult().size() == pageSize);
+        setResult(map, "consumer", consumer);
+        setResult(map, "clientId", clientId);
+        return view;
+    }
+
+    /**
+     * 提交pop ack
+     */
+    @ResponseBody
+    @RequestMapping("/commitPopAck")
+    public Result<?> commitPopAck(UserInfo userInfo
+            , @RequestParam(value = "topic") String topic
+            , @RequestParam(value = "liteTopic", required = false) String liteTopic
+            , @RequestParam(value = "consumer") String consumer
+            , @RequestParam(value = "requestId") String requestId
+            , @RequestParam(value = "clientId", required = false) String clientId, Map<String, Object> map) {
+        logger.info("commit pop ack, user:{}, topic:{}, consumer:{}, requestId:{}, clientId:{}", userInfo, topic, consumer, requestId, clientId);
+        return mqProxyService.commitPopAck(topic, liteTopic, consumer, requestId, clientId);
     }
 
     @Override

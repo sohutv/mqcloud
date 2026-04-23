@@ -17,10 +17,12 @@
    * 【必选】producer: 在MQCloud申请的生产者名称
    * 【必选】message: 消息
    * 【可选】keys:  key
-   * 【可选】orderId：发送顺序消息id，将用该参数定位消息发往的队列，定位方法采用orderId.hash%队列数
-     例如，同一个订单的消息如果想保障顺序，orderId可以传订单id。
+   * 【可选】orderId：发送顺序消息id，例如，同一个订单的消息如果想保障顺序，orderId可以传订单id
    * 【可选】delayLevel：延时消息的延迟级别，取值为1~18，对应的含义请参考[延迟消息](clientProducer#delay)
    * 【可选】deliveryTimestamp：定时消息的递交时间戳（需要保留到毫秒），对应的含义请参考[定时消息](clientProducer#timerWheel)
+   * 【可选】roundRobin：是否顺序轮训队列发送消息，为true可以保障消息绝对均匀的发送到所有队列
+   * 【可选】clientIp：生产实例的ip，默认从网关获取，当开启trace查看消息轨迹时，可以看到消息来自于哪个ip
+   * 【可选】liteTopics：轻量级topic，可以传多个，用逗号分割，具体参见[轻量消息](liteTopic)
 
 3. 响应说明：
 
@@ -175,10 +177,63 @@
 2. 参数：
 
    * 【必选】topic：打算消费的主题
+
    * 【必选】consumer: 在MQCloud申请的消费者名称
+
    * 【必选】requestId：请求id，用于确认上次消费完成
+
+   * 【可选】pop：是否采用pop消费。pop消费和普通消费区别说明如下：
+
+     假设消费者有两个实例，分别为consumer-1和consumer-2，普通消费示意如下图：
+
+     <img src="img/non-pop.jpg" class="img-wiki">
+
+     如上图所示，一个消息队列，同一时间只能被consumer-1加锁消费，consumer-2只能等待consumer-1消费完毕解锁后，才能消费该队列。
+
+     而pop消费示意图如下：
+
+     <img src="img/pop.jpg" class="img-wiki">
+
+     如上图所示，一个消息队列，同一时间可以被consumer-1和consumer-2同时消费，因为pop方式的加锁级别不再是队列级别，而是队列中的消息段。
+
+     pop消费适用于如下场景：
+
+     **场景1：希望全局有序且均匀消费**：
+
+     1. 首先，申请topic时队列数量填1即可，这样会在每个broker创建一个队列，即保障全局有序，又保障高可用。
+
+     2. 其次，生产者需要顺序发送，配置如下：
+          ```
+          1 http发送消息设置：orderId=topicName
+          2 java发送消息设置：MQMessage.setOrderArg(topicName)
+          注意：topicName参数设置为真实的topic名字即可
+          ```
+
+     3. 最后，消费者指定pop=true，可以保障每次拉取的消息都是有序的。
+
+     **场景2：单条消息消费时间比较长**：
+
+     1. 普通消费会锁定队列，等下次拉取消息时才会解锁队列，那么在此期间其他实例无法拉取该队列的消息进行消费。
+     2. pop消费不会锁定队列，可以保障这种情况下，后续消息被其他实例拉取消费。
+
+     **场景3：高并发消费**：
+
+     1. 由于单队列不再加锁，并行度不再受队列数量限制，可以大幅提升消费并行度。
+     2. 虽然单队列不再加锁，仍然可以保障单队列拉取消息时是顺序拉取。
+
+     **注意：pop消费超过consumeTimeout（默认5分钟）的消息将会放到retryMsgList中进行重试。**
+
    * 【广播消费必选】clientId：广播模式消费时须携带，不同的clientId消费全量消息，可以设置为ip
+
    * 【可选】clientIp:  用于记录客户端与消费队列的关系，默认会自动解析clientIp，只有自动解析不正确时才需要传递该参数
+
+   * 【可选】liteTopic：轻量topic名字，想要消费轻量消息必传，具体参见[轻量消息](liteTopic)
+
+   * 【可选】maxPullSize：每次请求最多拉取的消息量，默认为32，传参需要介于0和128之间
+
+   * 【可选】consumeTimeout：消费超时时间，默认为300秒，传参需要介于10和129600之间
+
+   * 【可选】pullTimeout：请求拉取消息超时时间，默认为10秒，传参需要介于1和60之间
 
 3. 响应说明：
 
@@ -279,7 +334,8 @@
    <script>
        var param = {
            topic: "mqcloud-json-test-topic",
-           consumer: "http-clustering-consumer"
+           consumer: "http-clustering-consumer",
+           pop: true
        };
 
        function httpConsume() {
@@ -319,7 +375,8 @@
        var param = {
            topic: "mqcloud-json-test-topic",
            consumer: "http-clustering-consumer",
-           clientId: "127.0.0.1"
+           clientId: "127.0.0.1",
+           pop: true
        };
 
        function httpConsume() {

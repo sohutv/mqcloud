@@ -692,16 +692,13 @@ public class AdminAuditController extends AdminViewController {
             return saveResult;
         }
 
-        // 保存限速数据
         ConsumerConfig consumerConfig = new ConsumerConfig();
         consumerConfig.setConsumer(auditConsumer.getConsumer());
         consumerConfig.setPermitsPerSecond(Double.valueOf(auditConsumer.getPermitsPerSecond()));
         consumerConfig.setEnableRateLimit(true);
-        Result<?> consumerConfigResult = consumerConfigService.save(consumerConfig);
-        if (consumerConfigResult.isNotOK()) {
-            logger.error("save consumer{} rate limit error", auditConsumer.getConsumer());
-        } else {
-            // http消费需要单独设置限速
+
+        // 保存限速数据
+        if (consumer.isHttpProtocol()) {
             try {
                 AuditConsumerConfig auditConsumerConfig = new AuditConsumerConfig();
                 auditConsumerConfig.setPermitsPerSecond(consumerConfig.getPermitsPerSecond());
@@ -709,6 +706,11 @@ public class AdminAuditController extends AdminViewController {
                 httpConsumerConfig(userInfo, consumer, auditConsumerConfig);
             } catch (Exception e) {
                 logger.error("httpConsumerConfig error:{} config:{}", consumer, consumerConfig, e);
+            }
+        } else {
+            Result<?> consumerConfigResult = consumerConfigService.save(consumerConfig);
+            if (consumerConfigResult.isNotOK()) {
+                logger.error("save consumer{} rate limit error", auditConsumer.getConsumer());
             }
         }
 
@@ -1025,6 +1027,7 @@ public class AdminAuditController extends AdminViewController {
         }
 
         // 删除消费者
+        consumer.setTopicName(topic.getName());
         Result<?> deleteResult = consumerService.deleteConsumer(cluster, consumer, audit.getUid());
         if (deleteResult.isNotOK()) {
             return deleteResult;
@@ -1076,6 +1079,11 @@ public class AdminAuditController extends AdminViewController {
         Result<Topic> topicResult = topicService.queryTopic(userProducer.getTid());
         if (topicResult.isNotOK()) {
             return topicResult;
+        }
+
+        Result<?> producerDeletable = userProducerService.checkProducerDeletable(userProducer);
+        if (producerDeletable.isNotOK()) {
+            return producerDeletable;
         }
 
         // 删除userProducer
@@ -1223,8 +1231,7 @@ public class AdminAuditController extends AdminViewController {
                 }
                 Result<?> resetOffsetResult = null;
                 if (consumer.isProxyRemoting()) {
-                    resetOffsetResult = consumerService.resetOffsetOfProxyRemoting(cluster, topic.getName(),
-                            consumer.getName(), resetTo);
+                    resetOffsetResult = consumerService.resetOffsetOfProxyRemoting(cluster, topic.getName(), consumer, resetTo);
                 } else {
                     resetOffsetResult = consumerService.resetOffset(cluster, topic.getName(), consumer.getName(), resetTo);
                 }
@@ -1646,11 +1653,6 @@ public class AdminAuditController extends AdminViewController {
 
     /**
      * 更新客户端配置
-     * 
-     * @param aid
-     * @param map
-     * @return
-     * @throws ParseException
      */
     @ResponseBody
     @RequestMapping(value = "/limitConsume", method = RequestMethod.POST)
@@ -1678,26 +1680,27 @@ public class AdminAuditController extends AdminViewController {
             return consumerResult;
         }
         Consumer consumer = consumerResult.getResult();
-
-        // 更新配置表
-        ConsumerConfig consumerConfig = new ConsumerConfig();
-        BeanUtils.copyProperties(auditConsumerConfig, consumerConfig);
-        consumerConfig.setConsumer(consumer.getName());
         Result<?> saveResult = null;
-        if (Audit.TypeEnum.PAUSE_CONSUME.getType() == audit.getType()) {
-            consumerConfig.addPauseConfig(auditConsumerConfig.getPauseClientId(), auditConsumerConfig.getUnregister());
-            saveResult = consumerConfigService.savePause(consumerConfig);
-        } else if (TypeEnum.RESUME_CONSUME.getType() == audit.getType()) {
-            consumerConfig.addPauseConfig(auditConsumerConfig.getPauseClientId(), auditConsumerConfig.getUnregister());
-            saveResult = consumerConfigService.saveResume(consumerConfig);
+        if (consumer.isHttpProtocol()) {
+            saveResult = httpConsumerConfig(userInfo, consumer, auditConsumerConfig);
         } else {
-            saveResult = consumerConfigService.save(consumerConfig);
+            // 更新配置表
+            ConsumerConfig consumerConfig = new ConsumerConfig();
+            BeanUtils.copyProperties(auditConsumerConfig, consumerConfig);
+            consumerConfig.setConsumer(consumer.getName());
+            if (Audit.TypeEnum.PAUSE_CONSUME.getType() == audit.getType()) {
+                consumerConfig.addPauseConfig(auditConsumerConfig.getPauseClientId(), auditConsumerConfig.getUnregister());
+                saveResult = consumerConfigService.savePause(consumerConfig);
+            } else if (TypeEnum.RESUME_CONSUME.getType() == audit.getType()) {
+                consumerConfig.addPauseConfig(auditConsumerConfig.getPauseClientId(), auditConsumerConfig.getUnregister());
+                saveResult = consumerConfigService.saveResume(consumerConfig);
+            } else {
+                saveResult = consumerConfigService.save(consumerConfig);
+            }
         }
         if (saveResult.isNotOK()) {
             return Result.getWebResult(saveResult);
         }
-        // http消费需要单独设置限速
-        httpConsumerConfig(userInfo, consumer, auditConsumerConfig);
         // 更新申请状态
         boolean updateOK = agreeAndTip(audit, userInfo.getUser().getEmail(), consumer.getName());
         if (updateOK) {
@@ -1897,10 +1900,7 @@ public class AdminAuditController extends AdminViewController {
      * @param consumer
      * @param consumerConfig
      */
-    public void httpConsumerConfig(UserInfo userInfo, Consumer consumer, AuditConsumerConfig consumerConfig) {
-        if (!consumer.isHttpProtocol()) {
-            return;
-        }
+    public Result<?> httpConsumerConfig(UserInfo userInfo, Consumer consumer, AuditConsumerConfig consumerConfig) {
         ConsumerConfigParam consumerConfigParam = new ConsumerConfigParam();
         consumerConfigParam.setConsumer(consumer.getName());
         // 设置是否暂停
@@ -1924,10 +1924,7 @@ public class AdminAuditController extends AdminViewController {
             }
         }
         consumerConfigParam.setLimitRate(consumerConfig.getPermitsPerSecond());
-        Result<?> result = mqProxyService.consumerConfig(userInfo, consumerConfigParam);
-        if (result.isNotOK()) {
-            logger.error("save http consumer:{} httpConsumerConfig:{} failed", consumer.getName(), consumerConfig);
-        }
+        return mqProxyService.consumerConfig(userInfo, consumerConfigParam);
     }
 
 

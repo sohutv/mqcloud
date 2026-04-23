@@ -1,16 +1,15 @@
 package com.sohu.tv.mq.cloud.service;
 
-import java.util.List;
-
+import com.sohu.tv.mq.cloud.Application;
+import com.sohu.tv.mq.cloud.bo.AlarmConfig;
+import com.sohu.tv.mq.cloud.util.Result;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
 
-import com.sohu.tv.mq.cloud.Application;
-import com.sohu.tv.mq.cloud.bo.AlarmConfig;
-import com.sohu.tv.mq.cloud.util.Result;
+import java.util.List;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = Application.class)
@@ -42,6 +41,8 @@ public class AlarmConfigBridingServiceTest {
             System.out.println(accumulateTime);
             long blockTime = alarmConfigBridingService.getBlockTime(consumer[i]);
             System.out.println(blockTime);
+            long deadCount = alarmConfigBridingService.getConsumerDeadCount(consumer[i]);
+            System.out.println(deadCount);
         }
 
     }

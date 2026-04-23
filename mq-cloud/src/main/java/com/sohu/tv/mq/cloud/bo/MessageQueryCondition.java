@@ -50,6 +50,8 @@ public class MessageQueryCondition {
     private boolean showSysMessage;
     // 总队列数
     private int totalQueueNum;
+    // 轻量级topic
+    private String liteTopic;
 
     public List<MQOffset> getMqOffsetList() {
         return mqOffsetList;
@@ -280,5 +282,21 @@ public class MessageQueryCondition {
 
     public void setTotalQueueNum(int totalQueueNum) {
         this.totalQueueNum = totalQueueNum;
+    }
+
+    public String getLiteTopic() {
+        return liteTopic;
+    }
+
+    public void setLiteTopic(String liteTopic) {
+        this.liteTopic = liteTopic;
+    }
+
+    public String getRealTopic() {
+        return liteTopic == null ? topic : liteTopic;
+    }
+
+    public String getTopicShow() {
+        return liteTopic == null ? topic : CommonUtil.stripLmqParentPrefix(liteTopic);
     }
 }

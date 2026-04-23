@@ -74,8 +74,7 @@ public class TopicDaoTest {
     
     @Test
     public void testRestCount() {
-        Date dt = new Date(System.currentTimeMillis() - 2 * 24 * 60 * 60 * 1000);
-        dt = DateUtil.parseYMD(DateUtil.formatYMD(dt));
+        Date dt = new Date(System.currentTimeMillis() - 60 * 60 * 1000);
         Integer count = topicDao.resetCount(dt);
         Assert.assertNotNull(count);
     }

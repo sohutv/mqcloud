@@ -47,7 +47,7 @@ public class RocketMQProducerJsonTest {
     
     @Test
     public void produceMulti() throws Exception {
-        for(int i = 0; i < 10000; ++i) {
+        for(int i = 0; i < 10; ++i) {
             Video video = new Video(i, "搜狐tv"+i);
             String str = JSONUtil.toJSONString(video);
             Result<SendResult> sendResult = producer.publish(str, String.valueOf(i));

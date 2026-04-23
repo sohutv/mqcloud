@@ -12,6 +12,7 @@ import com.sohu.tv.mq.dto.ClusterInfoDTO;
 import com.sohu.tv.mq.stats.dto.ClientStats;
 import com.sohu.tv.mq.stats.dto.ConsumerClientStats;
 import com.sohu.tv.mq.util.JSONUtil;
+import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -105,6 +106,8 @@ public class ClusterController {
             if (Status.NO_RESULT.getKey() == consumerResult.getStatus()) {
                 consumerResult = createAutoSubscribeConsumer(topic, topicUserParam);
             }
+        } else if (topic.isLiteParentTopic() && MixAll.isLmq(topicUserParam.getGroup())) {
+            consumerResult = Result.getResult(buildConsumer(topic, topicUserParam));
         } else {
             consumerResult = consumerService.queryTopicConsumerByName(topic.getId(), topicUserParam.getGroup());
         }
@@ -121,13 +124,26 @@ public class ClusterController {
         if (topic.traceEnabled()) {
             clusterInfoDTO.setTraceEnabled(consumer.traceEnabled());
         }
-        saveClientVersion(topicUserParam);
+        // 轻量级父topic且group为lmq的消费者不保存版本信息，因为这种消费者是自动创建的，版本不确定
+        if (!(topic.isLiteParentTopic() && MixAll.isLmq(topicUserParam.getGroup()))) {
+            saveClientVersion(topicUserParam);
+        }
         clusterInfoDTO.setProtocol(consumer.getProtocol());
         setAcl(mqCluster, clusterInfoDTO);
         return Result.getResult(clusterInfoDTO);
     }
 
     public Result createAutoSubscribeConsumer(Topic topic, TopicUserParam topicUserParam) {
+        Consumer consumer = buildConsumer(topic, topicUserParam);
+        Cluster cluster = clusterService.getMQClusterById(topic.getClusterId());
+        Result result = consumerService.createConsumer(cluster, consumer, null);
+        if (result.isNotOK()) {
+            return result;
+        }
+        return Result.getResult(consumer);
+    }
+
+    public Consumer buildConsumer(Topic topic, TopicUserParam topicUserParam) {
         Consumer consumer = new Consumer();
         consumer.setName(topicUserParam.getGroup());
         consumer.setConsumeWay(topicUserParam.getConsumeWay());
@@ -135,12 +151,7 @@ public class ClusterController {
         if (topic.traceEnabled()) {
             consumer.setTraceEnabled(1);
         }
-        Cluster cluster = clusterService.getMQClusterById(topic.getClusterId());
-        Result result = consumerService.createConsumer(cluster, consumer, null);
-        if (result.isNotOK()) {
-            return result;
-        }
-        return Result.getResult(consumer);
+        return consumer;
     }
 
     private void setAcl(Cluster cluster, ClusterInfoDTO clusterInfoDTO) {
@@ -209,7 +220,7 @@ public class ClusterController {
         cv.setTopic(topicUserParam.getTopic());
         cv.setClient(topicUserParam.getGroup());
         cv.setRole(topicUserParam.getRole());
-        if(topicUserParam.getV() == null) {
+        if (topicUserParam.getV() == null) {
             cv.setVersion("1.8.3");
         } else {
             cv.setVersion(topicUserParam.getV());

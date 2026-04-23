@@ -42,6 +42,7 @@ import org.apache.rocketmq.remoting.protocol.heartbeat.MessageModel;
 
 import java.lang.reflect.*;
 import java.net.HttpURLConnection;
+import java.net.URLEncoder;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -66,7 +67,7 @@ public class RocketMQConsumer extends AbstractConfig {
     /**
      * 消费者
      */
-    private DefaultMQPushConsumer consumer;
+    protected DefaultMQPushConsumer consumer;
 
     @SuppressWarnings("rawtypes")
     private ConsumerCallback consumerCallback;
@@ -117,14 +118,23 @@ public class RocketMQConsumer extends AbstractConfig {
     // 消息消费
     private IMessageConsumer<?> messageConsumer;
 
-    // 启动时从某个时间点消费
-    public long consumeFromTimestampWhenBoot;
-
     // 是否启动过了
     private boolean started;
 
     // 是否暂停消费
     private volatile boolean pause = false;
+
+    // 消费方式: 0-集群消费 1-广播消费
+    private int consumeWay;
+
+    // 启动时是否重置队列的offset
+    protected boolean resetOffsetWhenBoot;
+
+    // 启动时重置队列的offset到某个时间戳
+    public long resetOffsetTimestamp;
+
+    // 启动时重置队列的offset到某个值
+    private Map<MessageQueue, Long> resetQueueOffsetMap;
 
     public RocketMQConsumer() {
     }
@@ -180,7 +190,7 @@ public class RocketMQConsumer extends AbstractConfig {
 
     private boolean start(boolean async) {
         if (started) {
-            logger.info("topic:{} group:{} has started, do not start again!", topic, group);
+            logger.info("topic:{} group:{} has started, do not start again!", getTopic(), group);
             return true;
         }
         try {
@@ -191,7 +201,7 @@ public class RocketMQConsumer extends AbstractConfig {
             // 初始化定时调度任务
             initScheduleTask();
             // 从某个时间点开始消费需要先暂停
-            if (consumeFromTimestampWhenBoot != 0) {
+            if (resetOffsetWhenBoot) {
                 consumer.suspend();
             }
             // 消费者启动
@@ -199,7 +209,7 @@ public class RocketMQConsumer extends AbstractConfig {
             // init after start
             initAfterStart();
             started = true;
-            logger.info("topic:{} group:{} start", topic, group);
+            logger.info("topic:{} group:{} start", getTopic(), group);
             return true;
         } catch (MQClientException e) {
             logger.error(e.getMessage(), e);
@@ -219,7 +229,7 @@ public class RocketMQConsumer extends AbstractConfig {
         new Thread(() -> {
             try {
                 do {
-                    logger.info("topic:{} group:{} is waiting async start", topic, group);
+                    logger.info("topic:{} group:{} is waiting async start", getTopic(), group);
                     Thread.sleep(5000);
                 } while (!start(true));
             } catch (Throwable e) {
@@ -235,15 +245,8 @@ public class RocketMQConsumer extends AbstractConfig {
         if (getClusterInfoDTO().isBroadcast()) {
             consumer.setMessageModel(MessageModel.BROADCASTING);
         }
-        if (tags == null) {
-            consumer.subscribe(topic, subExpression);
-        } else {
-            if (tags.size() == 1) {
-                consumer.subscribe(topic, tags.iterator().next());
-            } else {
-                consumer.subscribe(topic, String.join("||", tags));
-            }
-        }
+        // 订阅
+        subscribe(topic);
         // 构建消费者对象
         messageConsumer = detectMessageConsumer();
         // 注册顺序或并发消费
@@ -263,6 +266,21 @@ public class RocketMQConsumer extends AbstractConfig {
         }
         // 初始化消费者参数类型
         initConsumerParameterTypeClass();
+    }
+
+    public void subscribe(String topic) throws MQClientException {
+        if (topic == null) {
+            return;
+        }
+        if (tags == null) {
+            consumer.subscribe(topic, subExpression);
+        } else {
+            if (tags.size() == 1) {
+                consumer.subscribe(topic, tags.iterator().next());
+            } else {
+                consumer.subscribe(topic, String.join("||", tags));
+            }
+        }
     }
 
     /**
@@ -292,8 +310,9 @@ public class RocketMQConsumer extends AbstractConfig {
      */
     public void initConsumerConfig(boolean started) {
         try {
+            String group = URLEncoder.encode(getGroup(), "UTF-8");
             HttpResult result = HttpTinyClient.httpGet(
-                    "http://" + getMqCloudDomain() + "/consumer/config/" + getGroup(), null, null, "UTF-8",
+                    "http://" + getMqCloudDomain() + "/consumer/config/" + group, null, null, "UTF-8",
                     5000);
             if (HttpURLConnection.HTTP_OK != result.code) {
                 logger.error("http response err: code:{},info:{}", result.code, result.content);
@@ -369,37 +388,58 @@ public class RocketMQConsumer extends AbstractConfig {
     /**
      * 启动后，初始化某些逻辑
      */
-    public void initAfterStart() {
+    public void initAfterStart() throws MQClientException {
         // 注册私有处理器
         RemotingClient remotingClient = getMQClientInstance().getMQClientAPIImpl().getRemotingClient();
         SohuClientRemotingProcessor processor = new SohuClientRemotingProcessor(this);
         remotingClient.registerProcessor(RequestCode.GET_CONSUMER_RUNNING_INFO, processor, null);
         // 处理启动偏移量
-        if (consumeFromTimestampWhenBoot != 0) {
-            try {
-                Set<MessageQueue> mqs = null;
-                while (true) {
-                    mqs = consumer.fetchSubscribeMessageQueues(getTopic());
-                    if (mqs == null || mqs.size() == 0) {
-                        logger.info("{} wait for fetchSubscribeMessageQueues", getGroup());
-                        Thread.sleep(1000);
-                    } else {
-                        break;
-                    }
-                }
-                for (MessageQueue mq : mqs) {
-                    long offset = consumer.searchOffset(mq, consumeFromTimestampWhenBoot);
-                    consumer.getDefaultMQPushConsumerImpl().updateConsumeOffset(mq, offset);
-                }
-                consumer.getOffsetStore().persistAll(mqs);
-                consumer.resume();
-                logger.info("{} consume from:{}", getGroup(), consumeFromTimestampWhenBoot);
-            } catch (Exception e) {
-                logger.warn("{} resetOffsetByTimeStamp err", getGroup(), e);
-            }
+        if (resetOffsetWhenBoot) {
+            resetOffsetWhenBoot();
         }
         // 设置clientId
         messageConsumer.setClientId(getMQClientInstance().getClientId());
+    }
+
+    public void resetOffsetWhenBoot() {
+        try {
+            Set<MessageQueue> mqs = null;
+            while (true) {
+                mqs = consumer.fetchSubscribeMessageQueues(getTopic());
+                if (mqs == null || mqs.size() == 0) {
+                    logger.info("{} wait for fetchSubscribeMessageQueues", getGroup());
+                    Thread.sleep(1000);
+                } else {
+                    break;
+                }
+            }
+            for (MessageQueue mq : mqs) {
+                long offset = searchOffset(mq);
+                if (offset < 0) {
+                    logger.warn("{} {}'s offset is {}, ignore", getGroup(), mq, offset);
+                    continue;
+                }
+                logger.info("{} {}'s offset reset to {}", getGroup(), mq, offset);
+                consumer.getDefaultMQPushConsumerImpl().updateConsumeOffset(mq, offset);
+            }
+            consumer.getOffsetStore().persistAll(mqs);
+            consumer.resume();
+        } catch (Exception e) {
+            logger.warn("{} resetOffsetByTimeStamp err", getGroup(), e);
+        }
+    }
+
+    public long searchOffset(MessageQueue mq) throws MQClientException {
+        if (resetOffsetTimestamp > 0) {
+            return consumer.searchOffset(mq, resetOffsetTimestamp);
+        }
+        if (resetQueueOffsetMap != null) {
+            Long offset = resetQueueOffsetMap.get(mq);
+            if (offset == null) {
+                return -1;
+            }
+        }
+        return -1;
     }
 
     /**
@@ -576,13 +616,8 @@ public class RocketMQConsumer extends AbstractConfig {
         this.batchConsumerCallback = batchConsumerCallback;
     }
 
-    /**
-     * 1.8.3之后不用设置broadcast了，可以自动区分
-     * 
-     * @param broadcast
-     */
-    @Deprecated
-    public void setBroadcast(boolean broadcast) {
+    public void setMessageModelToBroadcasting() {
+        consumer.setMessageModel(MessageModel.BROADCASTING);
     }
 
     public String getSubExpression() {
@@ -992,10 +1027,10 @@ public class RocketMQConsumer extends AbstractConfig {
      */
     public void consumeMessage(String topic, String consumer, long start, long end) {
         if (!getGroup().equals(consumer)) {
-            logger.warn("consumeMessage topic:{} {}!={}", consumer, getGroup());
+            logger.warn("consumeMessage topic:{} {}!={}", getTopic(), consumer, getGroup());
             return;
         }
-        new TimespanConsumer(this, topic, start, end).start();
+        new TimespanConsumer(this, getTopic(), start, end).start();
     }
 
     @Override
@@ -1012,11 +1047,14 @@ public class RocketMQConsumer extends AbstractConfig {
     }
 
     public long getConsumeFromTimestampWhenBoot() {
-        return consumeFromTimestampWhenBoot;
+        return resetOffsetTimestamp;
     }
 
-    public void setConsumeFromTimestampWhenBoot(long consumeFromTimestampWhenBoot) {
-        this.consumeFromTimestampWhenBoot = consumeFromTimestampWhenBoot;
+    public void setConsumeFromTimestampWhenBoot(long resetOffsetTimestamp) {
+        if (resetOffsetTimestamp > 0) {
+            this.resetOffsetTimestamp = resetOffsetTimestamp;
+            resetOffsetWhenBoot = true;
+        }
     }
 
     public void setConsumeFromMaxOffsetWhenBoot() {
@@ -1062,6 +1100,10 @@ public class RocketMQConsumer extends AbstractConfig {
 
     public void setMessageModel(MessageModel messageModel) {
         consumer.setMessageModel(messageModel);
+    }
+
+    public void setResetQueueOffsetMap(Map<MessageQueue, Long> resetQueueOffsetMap) {
+        this.resetQueueOffsetMap = resetQueueOffsetMap;
     }
 
     @Override

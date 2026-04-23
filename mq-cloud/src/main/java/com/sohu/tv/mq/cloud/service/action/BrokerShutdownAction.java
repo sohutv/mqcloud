@@ -28,7 +28,14 @@ public class BrokerShutdownAction extends BrokerAction {
         if (pid == 0) {
             return Result.getResult(Status.BROKER_AUTO_UPDATE_CHECK_STATUS_ERROR).setMessage("pid is" + pidString);
         }
-        return mqDeployer.isPidDead(step.getIp(), pid);
+        Result pidResult = mqDeployer.isPidDead(step.getIp(), pid);
+        if (pidResult.isOK()) {
+            if (mqDeployer.abortFileNotExist(step.getIp(), step.getBrokerBaseDir())) {
+                return pidResult;
+            }
+            return Result.getResult(Status.BROKER_AUTO_UPDATE_CHECK_STATUS_ERROR).setMessage("abort file exist");
+        }
+        return pidResult;
     }
 
     @Override

@@ -1040,8 +1040,8 @@ public class AuditService {
             auditConsumerDeleteVO.setUser(userListResult.getResult());
         }
         // 增加消费者链接校验
-        Result<ConsumerConnection> connectionResult = consumerService.examineConsumerConnectionInfo(consumer.getName(),
-                clusterService.getMQClusterById(auditConsumerDeleteVO.getTopic().getClusterId()), consumer.isProxyRemoting());
+        Result<ConsumerConnection> connectionResult = consumerService.examineConsumerConnectionInfo(
+                clusterService.getMQClusterById(auditConsumerDeleteVO.getTopic().getClusterId()), consumer);
         if (connectionResult.isNotOK()) {
             auditConsumerDeleteVO.setClientIdListResult(connectionResult);
         } else {

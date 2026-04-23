@@ -1,21 +1,23 @@
 package com.sohu.tv.mq.cloud.service;
 
+import com.google.common.collect.Lists;
 import com.sohu.tv.mq.cloud.bo.CheckStatusEnum;
 import com.sohu.tv.mq.cloud.bo.Cluster;
 import com.sohu.tv.mq.cloud.bo.Controller;
-import com.sohu.tv.mq.cloud.common.mq.SohuMQAdmin;
 import com.sohu.tv.mq.cloud.dao.ControllerDao;
 import com.sohu.tv.mq.cloud.mq.MQAdminCallback;
 import com.sohu.tv.mq.cloud.mq.MQAdminTemplate;
 import com.sohu.tv.mq.cloud.util.Result;
+import org.apache.rocketmq.remoting.protocol.header.controller.GetMetaDataResponseHeader;
 import org.apache.rocketmq.tools.admin.MQAdminExt;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import java.util.Properties;
 
 /**
  * ControllerService
@@ -117,19 +119,14 @@ public class ControllerService {
     }
 
     /**
-     * 健康检查
-     *
-     * @param cluster
-     * @param addr
-     * @return
+     * 获取Controller元数据
      */
-    public Result<?> healthCheck(Cluster cluster, String addr) {
-        return mqAdminTemplate.execute(new MQAdminCallback<Result<?>>() {
-            public Result<?> callback(MQAdminExt mqAdmin) throws Exception {
+    public Result<GetMetaDataResponseHeader> getControllerMetaData(Cluster cluster, String addr) {
+        return mqAdminTemplate.execute(new MQAdminCallback<Result<GetMetaDataResponseHeader>>() {
+            public Result<GetMetaDataResponseHeader> callback(MQAdminExt mqAdmin) throws Exception {
                 try {
-                    SohuMQAdmin sohuMQAdmin = (SohuMQAdmin) mqAdmin;
-                    sohuMQAdmin.getControllerMetaData(addr);
-                    return Result.getOKResult();
+                    GetMetaDataResponseHeader getMetaDataResponseHeader = mqAdmin.getControllerMetaData(addr);
+                    return Result.getResult(getMetaDataResponseHeader);
                 } catch (Exception e) {
                     return Result.getDBErrorResult(e).setMessage("addr:" + addr + ";Exception: " + e.getMessage());
                 }
@@ -140,7 +137,32 @@ public class ControllerService {
             }
 
             @Override
-            public Result<?> exception(Exception e) throws Exception {
+            public Result<GetMetaDataResponseHeader> exception(Exception e) throws Exception {
+                return Result.getDBErrorResult(e).setMessage("Exception: " + e.getMessage());
+            }
+        });
+    }
+
+    /**
+     * 获取Controller配置
+     */
+    public Result<Properties> getControllerConfig(Cluster cluster, String addr) {
+        return mqAdminTemplate.execute(new MQAdminCallback<Result<Properties>>() {
+            public Result<Properties> callback(MQAdminExt mqAdmin) throws Exception {
+                try {
+                    Map<String, Properties> map = mqAdmin.getControllerConfig(Lists.newArrayList(addr));
+                    return Result.getResult(map.get(addr));
+                } catch (Exception e) {
+                    return Result.getDBErrorResult(e).setMessage("addr:" + addr + ";Exception: " + e.getMessage());
+                }
+            }
+
+            public Cluster mqCluster() {
+                return cluster;
+            }
+
+            @Override
+            public Result<Properties> exception(Exception e) throws Exception {
                 return Result.getDBErrorResult(e).setMessage("Exception: " + e.getMessage());
             }
         });

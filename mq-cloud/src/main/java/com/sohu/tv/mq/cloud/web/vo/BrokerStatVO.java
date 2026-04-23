@@ -82,6 +82,8 @@ public class BrokerStatVO {
     // 消费量不包含系统topic
     private String outCountWithoutSystemTopic;
 
+    private boolean controllerEnabled;
+
     public Map<String, String> getInfo() {
         return info;
     }
@@ -315,6 +317,14 @@ public class BrokerStatVO {
 
     public void setOutCountWithoutSystemTopic(String outCountWithoutSystemTopic) {
         this.outCountWithoutSystemTopic = outCountWithoutSystemTopic;
+    }
+
+    public boolean isControllerEnabled() {
+        return controllerEnabled;
+    }
+
+    public void setControllerEnabled(boolean controllerEnabled) {
+        this.controllerEnabled = controllerEnabled;
     }
 
     public class DelayQueue {

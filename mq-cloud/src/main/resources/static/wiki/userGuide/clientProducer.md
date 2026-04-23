@@ -93,7 +93,7 @@ producer.shutdown();
    // 转换为json
    String str = JSON.toJSONString(video);
    //建议设置keys(多个key用空格分隔)参数(也可以忽略该参数)，比如keys指定为id，那么就可以根据id查询消息
-   Result<SendResult> sendResult = producer.publish(str, String.valueOf(id));
+   Result<SendResult> sendResult = producer.send(MQMessage.build(str).setKeys(String.valueOf(id)));
    if(!sendResult.isSuccess){
        //失败消息处理
    }
@@ -106,8 +106,7 @@ producer.shutdown();
    int id = 123;
    Video video = new Video();
    video.setId(id);
-   //建议设置keys(多个key用空格分隔)参数(也可以忽略该参数)，比如keys指定为id，那么就可以根据id查询消息
-   Result<SendResult> sendResult = producer.publish(video, String.valueOf(id));
+   Result<SendResult> sendResult = producer.send(MQMessage.build(video));
    if(!sendResult.isSuccess){
        //失败消息处理
    }
@@ -129,7 +128,7 @@ producer.shutdown();
    message.put("vid", "123456");
    message.put("aid", "789172");
    //建议设置keys(多个key用空格分隔)参数(也可以忽略该参数)，比如keys指定为vid，那么就可以根据vid查询消息
-   Result<SendResult> sendResult = producer.publish(message);
+   Result<SendResult> sendResult = producer.send(MQMessage.build(message));
    if(!sendResult.isSuccess){
        //失败消息处理
    }
@@ -142,7 +141,7 @@ producer.shutdown();
 4. 如何使用rocketmq官方的方式发送消息？
 
    ```
-   producer.publish(Message message)
+   producer.send(Message message)
    ```
 
    具体可以参考rocketmq官方[demo](https://github.com/apache/rocketmq/blob/master/example/src/main/java/org/apache/rocketmq/example/quickstart/Producer.java)。
@@ -155,10 +154,16 @@ producer.shutdown();
 
    *注：与[RocketMQ自身的重试](#retry)是不一样的，因为RocketMQ默认的重试机制是同步的，并存在超时而无法完成重试的可能。* 
 
-   MQCloud在消息发送失败时，提供了异步重试api：
+   首先，需要设置异步重试次数：
 
    ```
-   Result<SendResult> sendResult = producer.send(MQMessage.build(msg).setKeys(key));
+   producer.setDefaultRetryTimes(1);
+   ```
+
+   可以根据返回结果知道是否重试失败：
+
+   ```
+   Result<SendResult> sendResult = producer.send(MQMessage.build(msg));
    if (!result.isSuccess && !result.isRetrying()) { // 发送失败并且没有正在重试认为失败
        System.out.println("发送失败");
    }
@@ -175,13 +180,7 @@ producer.shutdown();
    });
    ```
 
-   默认的重试次数为一次，可以通过如下api修改默认重试次数：
-
-   ```
-   producer.setDefaultRetryTimes(2)
-   ```
-
-   当然，如果想针对某条消息单独设置重试次数，可以参考如下，会覆盖默认重试次数：
+   如果想针对某条消息单独设置重试次数，可以参考如下，会覆盖默认重试次数：
 
    ```
    MQMessage.build(msg).setRetryTimes(3)
@@ -196,27 +195,10 @@ producer.shutdown();
 ## 五、<span id="produceOrderMessage">发送有序消息示例</span>
 
 ```
-/**
- * 相同的id发送到同一个队列
- * hash方法：id % 队列数
- */
-class IDHashMessageQueueSelector implements MessageQueueSelector {
-    public MessageQueue select(List<MessageQueue> mqs, Message msg, Object idObject) {
-        long id = (Long) idObject;
-        int size = mqs.size();
-        int index = (int) (id % size);
-        return mqs.get(index);
-    }
-}
-// 设置到producer
-producer.setMessageQueueSelector(new IDHashMessageQueueSelector());
-// 消息发送
 long id = 123L;
-Map<String, Object> map = new HashMap<String, Object>();
-map.put("id", id);
 Result<SendResult> sendResult = null;
 do {
-    sendResult = producer.publishOrder(map, String.valueOf(id), id);
+    sendResult = producer.send(MQMessage.build(msg).setOrderArg(id));
     if (!sendResult.isSuccess()) {
     	Thread.sleep(1000);
     }
@@ -255,11 +237,8 @@ TransactionListener transactionListener = new TransactionListener() {
 ${producer} producer = new ${producer}(producerGroup, topic, transactionListener);
 // 组装消息
 int id = 123;
-Map<String, Object> map = new HashMap<String, Object>();
-map.put("id", id);
-map.put("msg", "msg" + id);
 // 发送
-Result<SendResult> sendResult = producer.publishTransaction(JSON.toJSONString(map), String.valueOf(id), id);
+Result<SendResult> sendResult = producer.send(MQMessage.build(JSON.toJSONString(msg)).setTransaction(true).setTransactionArg(id));
 if(!sendResult.isSuccess){
     //失败消息处理
 }
@@ -519,7 +498,7 @@ if (!sendResult.isSuccess) { // 发送失败
 ```
 // 24小时后投递消息
 long deliveryTimestamp = System.currentTimeMillis() + (24 * 3600 * 1000L);
-MQMessage<?> mqMessage = MQMessage.build(msg).setKeys(key).setDeliveryTimestamp(deliveryTimestamp);
+MQMessage<?> mqMessage = MQMessage.build(msg).setDeliveryTimestamp(deliveryTimestamp);
 Result<SendResult> sendResult = producer.send(mqMessage);
 if (!sendResult.isSuccess) { // 发送失败
     System.out.println("发送失败");

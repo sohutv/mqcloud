@@ -68,7 +68,7 @@ DROP TABLE IF EXISTS `audit_consumer_delete`;
 CREATE TABLE `audit_consumer_delete` (
   `aid` int(11) NOT NULL COMMENT '审核id',
   `cid` int(11) NOT NULL COMMENT 'consumer id',
-  `consumer` varchar(64) DEFAULT NULL COMMENT 'consumer名字',
+  `consumer` varchar(255) DEFAULT NULL COMMENT 'consumer名字',
   `topic` varchar(64) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='审核消费者删除相关表';
 
@@ -146,7 +146,7 @@ CREATE TABLE `audit_user_consumer_delete` (
   `aid` int(11) NOT NULL COMMENT '审核id',
   `uid` int(11) NOT NULL COMMENT '此消费者对应的用户',
   `ucid` int(11) NOT NULL COMMENT 'user_consumer id',
-  `consumer` varchar(64) DEFAULT NULL,
+  `consumer` varchar(255) DEFAULT NULL,
   `topic` varchar(64) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='审核用户与消费者组关系删除相关表';
 
@@ -187,7 +187,7 @@ DROP TABLE IF EXISTS `audit_timespan_message_consume`;
 CREATE TABLE `audit_timespan_message_consume` (
   `aid` int(11) NOT NULL COMMENT '审核id',
   `topic` varchar(64) NOT NULL COMMENT 'topic',
-  `consumer` varchar(64) NOT NULL COMMENT 'consumer',
+  `consumer` varchar(255) NOT NULL COMMENT 'consumer',
   `client_id` varchar(255) DEFAULT NULL COMMENT '暂停的客户端Id',
   `start` bigint(20) DEFAULT NULL COMMENT '消费开始时间戳',
   `end` bigint(20) DEFAULT NULL COMMENT '消费结束时间戳'
@@ -258,7 +258,7 @@ DROP TABLE IF EXISTS `consumer`;
 CREATE TABLE `consumer` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `tid` int(11) NOT NULL COMMENT 'topic id',
-  `name` varchar(64) NOT NULL COMMENT 'consumer名',
+  `name` varchar(255) NOT NULL COMMENT 'consumer名',
   `consume_way` int(4) NOT NULL DEFAULT '0' COMMENT '0:集群消费,1:广播消费',
   `create_date` date NOT NULL,
   `update_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
@@ -571,11 +571,12 @@ CREATE TABLE `user_producer` (
 -- ----------------------------
 DROP TABLE IF EXISTS `warn_config`;
 CREATE TABLE `warn_config` (
-  `consumer` varchar(64) DEFAULT '' COMMENT 'consumer名，为空时代表默认（仅一条默认记录）',
+  `consumer` varchar(255) DEFAULT '' COMMENT 'consumer名，为空时代表默认（仅一条默认记录）',
   `accumulate_time` int(11) DEFAULT '300000' COMMENT '堆积时间',
   `accumulate_count` int(11) DEFAULT '10000' COMMENT '堆积数量',
   `block_time` int(11) DEFAULT '10000' COMMENT '阻塞时间',
   `consumer_fail_count` int(11) DEFAULT '10' COMMENT '消费失败数量',
+  `consumer_dead_count` int(11) COMMENT '死消息数量',
   `warn_unit_time` int(4) DEFAULT '1' COMMENT '报警频率的单位时间，单位小时',
   `warn_unit_count` int(4) DEFAULT '2' COMMENT '报警频率在单位时间的次数',
   `ignore_warn` int(4) DEFAULT '0' COMMENT '0:接收所有报警,1:不接收所有报警，此字段优先级最高',
@@ -802,7 +803,7 @@ CREATE TABLE `audit_consumer_config` (
 -- ----------------------------
 DROP TABLE IF EXISTS `consumer_config`;
 CREATE TABLE `consumer_config` (
-  `consumer` varchar(64) NOT NULL COMMENT 'consumer名',
+  `consumer` varchar(255) NOT NULL COMMENT 'consumer名',
   `retry_message_reset_to` bigint(20) DEFAULT NULL COMMENT '重置至时间戳，小于此时间的都将不再消息',
   `permits_per_second` float DEFAULT NULL COMMENT 'qps',
   `enable_rate_limit` tinyint(4) DEFAULT NULL COMMENT '0:不限速,1:限速',

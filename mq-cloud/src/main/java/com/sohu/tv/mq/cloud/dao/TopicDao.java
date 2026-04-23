@@ -200,11 +200,9 @@ public interface TopicDao {
     
     /**
      * 重置count
-     * 
-     * @param day
      */
-    @Update("update topic set count = 0, size = 0 where update_time < #{dayAgo}")
-    public Integer resetCount(@Param("dayAgo") Date dayAgo);
+    @Update("update topic set count = 0, size = 0 where count != 0 and update_time < #{updateTime,jdbcType=TIMESTAMP}")
+    public Integer resetCount(@Param("updateTime") Date updateTime);
 
     /**
      * 更新记录
@@ -218,7 +216,7 @@ public interface TopicDao {
      * 查询非trace topic
      * @return List<Topic>
      */
-    @Select("select * from topic t where cluster_id not in (select id from cluster where trace_enabled = 1)")
+    @Select("select * from topic t where cluster_id not in (select id from cluster where trace_enabled = 1) order by count desc")
     public List<Topic> selectNoneTraceableTopic();
 
 

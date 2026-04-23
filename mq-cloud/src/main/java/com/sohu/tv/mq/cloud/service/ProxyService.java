@@ -241,7 +241,7 @@ public class ProxyService {
             public Result<ClientConnectionInfo> callback(MQAdminExt mqAdmin) throws Exception {
                 DefaultSohuMQAdmin sohuMQAdmin = (DefaultSohuMQAdmin) mqAdmin;
                 ConsumerTableInfo consumerTableInfo = sohuMQAdmin.getAllConsumerInfo(addr, true);
-                return Result.getResult(ClientConnectionInfo.build(consumerTableInfo));
+                return Result.getResult(ClientConnectionInfo.build(mqCluster.getId(), consumerTableInfo));
             }
 
             public Cluster mqCluster() {

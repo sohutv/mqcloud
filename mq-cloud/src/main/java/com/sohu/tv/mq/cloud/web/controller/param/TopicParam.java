@@ -40,7 +40,7 @@ public class TopicParam {
     private int testEnabled;
     
     // 是否消息延迟
-    @Range(min = 0, max = 2)
+    @Range(min = 0, max = 3)
     private int msgType;
     
     // 序列化器

@@ -8,7 +8,7 @@ package com.sohu.tv.mq.cloud.bo;
  * @date 2018年9月26日
  */
 public class AlarmConfig {
-    // 报警
+    // 预警
     public static int ALERT = 0;
 
     // consumer名称，为空行为默认配置
@@ -21,12 +21,24 @@ public class AlarmConfig {
     private Long blockTime;
     // 消费失败数量
     private Long consumerFailCount;
-    // 单位时间，超过单位时间内的次数则不报警,单位小时
+    // 单位时间，超过单位时间内的次数则不预警,单位小时
     private Integer warnUnitTime;
     // 单位时间内的次数
     private Integer warnUnitCount;
-    // 报警总开关，是否接收报警
+    // 预警总开关，是否接收预警
     private Integer ignoreWarn;
+    // 消费死消息数量
+    private Long consumerDeadCount;
+
+    private AlarmConfig defaultConfig;
+
+    public AlarmConfig getDefaultConfig() {
+        return defaultConfig;
+    }
+
+    public void setDefaultConfig(AlarmConfig defaultConfig) {
+        this.defaultConfig = defaultConfig;
+    }
 
     public String getConsumer() {
         return consumer;
@@ -68,6 +80,14 @@ public class AlarmConfig {
         this.consumerFailCount = consumerFailCount;
     }
 
+    public Long getConsumerDeadCount() {
+        return consumerDeadCount;
+    }
+
+    public void setConsumerDeadCount(Long consumerDeadCount) {
+        this.consumerDeadCount = consumerDeadCount;
+    }
+
     public Integer getWarnUnitTime() {
         return warnUnitTime;
     }
@@ -85,32 +105,62 @@ public class AlarmConfig {
     }
 
     public Integer getIgnoreWarn() {
-        return ignoreWarn;
+        if (ignoreWarn != null) {
+            return ignoreWarn;
+        }
+        return defaultConfig.getIgnoreWarn();
     }
 
     public void setIgnoreWarn(Integer ignoreWarn) {
         this.ignoreWarn = ignoreWarn;
     }
 
-    // 为0的配置项，页面显示空
     public String getAccumulateTimeShow() {
-        return showValue(accumulateTime);
+        return showValue(accumulateTime == null ? defaultConfig.accumulateTime : accumulateTime, 1000, "秒");
     }
 
-    public String getAccumulateCountShow() {
-        return showValue(accumulateCount);
+    public Long getAccumulateTimeValue() {
+        return accumulateTime == null ? defaultConfig.accumulateTime / 1000 : accumulateTime / 1000;
+    }
+
+    public Long getAccumulateCountValue() {
+        return accumulateCount == null ? defaultConfig.accumulateCount : accumulateCount;
     }
 
     public String getBlockTimeShow() {
-        return showValue(blockTime);
+        return showValue(blockTime == null ? defaultConfig.blockTime : blockTime, 1000, "秒");
+    }
+
+    public Long getBlockTimeValue() {
+        return blockTime == null ? defaultConfig.blockTime / 1000 : blockTime / 1000;
     }
 
     public String getConsumerFailCountShow() {
-        return showValue(consumerFailCount);
+        return showValue(consumerFailCount == null ? defaultConfig.consumerFailCount : consumerFailCount);
+    }
+
+    public String getConsumerDeadCountShow() {
+        return showValue(consumerDeadCount == null ? defaultConfig.consumerDeadCount : consumerDeadCount);
+    }
+
+    public String getWarnUnitTimeShow() {
+        return showValue(Long.valueOf(warnUnitTime == null ? defaultConfig.warnUnitTime : warnUnitTime), "小时");
+    }
+
+    public Integer getWarnUnitTimeValue() {
+        return warnUnitTime == null ? defaultConfig.warnUnitTime : warnUnitTime;
+    }
+
+    public Integer getWarnUnitCountValue() {
+        return warnUnitCount == null ? defaultConfig.warnUnitCount : warnUnitCount;
+    }
+
+    public Integer getIgnoreWarnValue() {
+        return ignoreWarn == null ? defaultConfig.ignoreWarn : ignoreWarn;
     }
 
     /**
-     * 是否接收报警
+     * 是否接收预警
      * 
      * @return
      */
@@ -118,25 +168,34 @@ public class AlarmConfig {
         return ignoreWarn == ALERT;
     }
 
-    /**
-     * 拼接报警频率
-     * 
-     * @return
-     */
-    public String spliceWarnFrequency() {
-        if (warnUnitTime == null || warnUnitCount == null) {
-            return null;
-        }
-        return warnUnitTime + "小时" + warnUnitCount + "次";
+    private String showValue(Long arg) {
+        return showValue(arg, 0, null);
+    }
+
+    private String showValue(Long arg, String suffix) {
+        return showValue(arg, 0, suffix);
     }
 
     /**
      * 为null不显示
-     * 
-     * @param arg
-     * @return
      */
-    private String showValue(Long arg) {
-        return arg == null ? "" : String.valueOf(arg);
+    private String showValue(Long arg, long unit, String suffix) {
+        if (arg == null) {
+            return "";
+        }
+        String value = unit == 0 ? String.valueOf(arg) : String.valueOf(arg / unit);
+        return value + (suffix == null ? "" : suffix);
+    }
+
+    public void initDefaultConfigValue() {
+        defaultConfig = new AlarmConfig();
+        defaultConfig.setAccumulateTime(300000L);
+        defaultConfig.setAccumulateCount(10000L);
+        defaultConfig.setBlockTime(10000L);
+        defaultConfig.setConsumerFailCount(10L);
+        defaultConfig.setWarnUnitTime(1);
+        defaultConfig.setWarnUnitCount(1);
+        defaultConfig.setIgnoreWarn(0);
+        defaultConfig.setConsumerDeadCount(0L);
     }
 }

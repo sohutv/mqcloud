@@ -1,3 +1,4 @@
+<#if tid??>
 <div class="row">
     <div class="col-12">
         <div class="card card-secondary card-outline card-outline-tabs">
@@ -10,10 +11,18 @@
                         <a class="nav-link" data-toggle="tab" href="#myTab" role="tab" id="produce" data-url="${request.contextPath}/topic/${tid}/produce/progress">生产详情</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" data-toggle="tab" href="#myTab" role="tab" id="consume" data-url="${request.contextPath}/consumer/progress?tid=${tid}<#if RequestParameters.consumer??>&consumer=${RequestParameters.consumer}</#if><#if RequestParameters.currentPage??>&currentPage=${RequestParameters.currentPage}</#if>">消费详情</a>
+                        <a class="nav-link" data-toggle="tab" href="#myTab" role="tab" id="consume" data-url="${request.contextPath}/consumer/progress?tid=${tid}<#if RequestParameters.consumer??>&consumer=${RequestParameters.consumer}</#if><#if RequestParameters.currentPage??>&currentPage=${RequestParameters.currentPage}</#if><#if RequestParameters.numOfPage??>&numOfPage=${RequestParameters.numOfPage}</#if>">消费详情</a>
+                    </li>
+                    <#if isLmqParentTopic>
+                    <li class="nav-item">
+                        <a class="nav-link" data-toggle="tab" href="#myTab" role="tab" id="liteTopic" data-url="${request.contextPath}/topic/lmq?tid=${tid}<#if RequestParameters.currentPage??>&currentPage=${RequestParameters.currentPage}</#if><#if RequestParameters.numOfPage??>&numOfPage=${RequestParameters.numOfPage}</#if>">轻量Topic</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" data-toggle="tab" href="#myTab" role="tab" id="msg" data-url="${request.contextPath}/topic/message/index?tid=${tid}">消息</a>
+                        <a class="nav-link" data-toggle="tab" href="#myTab" role="tab" id="lmqConsume" data-url="${request.contextPath}/consumer/lmq/progress?tid=${tid}<#if RequestParameters.liteTopic??>&liteTopic=${RequestParameters.liteTopic}</#if><#if RequestParameters.lmqConsumer??>&lmqConsumer=${RequestParameters.lmqConsumer}</#if><#if RequestParameters.currentPage??>&currentPage=${RequestParameters.currentPage}</#if><#if RequestParameters.numOfPage??>&numOfPage=${RequestParameters.numOfPage}</#if>">轻量消费</a>
+                    </li>
+                    </#if>
+                    <li class="nav-item">
+                        <a class="nav-link" data-toggle="tab" href="#myTab" role="tab" id="msg" data-url="${request.contextPath}/topic/message/index?tid=${tid}<#if RequestParameters.liteTopic??>&liteTopic=${RequestParameters.liteTopic}</#if>">消息</a>
                     </li>
                 </ul>
             </div>
@@ -55,3 +64,4 @@
         })
     });
 </script>
+</#if>

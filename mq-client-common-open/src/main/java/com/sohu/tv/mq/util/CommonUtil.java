@@ -4,7 +4,10 @@ import com.sohu.index.tv.mq.common.Result;
 import com.sohu.tv.mq.dto.ClusterInfoDTO;
 import com.sohu.tv.mq.dto.DTOResult;
 import com.sohu.tv.mq.dto.WebResult;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.rocketmq.common.MixAll;
+import org.apache.rocketmq.common.message.MessageConst;
+import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.common.utils.HttpTinyClient;
 import org.apache.rocketmq.common.utils.NetworkUtil;
 import org.slf4j.Logger;
@@ -33,6 +36,8 @@ public class CommonUtil {
     public static final String MQ_AFFINITY_DEFAULT = "default";
 
     private static final String CANCEL_DELAY_URL = "/topic/message/cancelWheelMsg";
+
+    public static final String LMQ_TOPIC_SEPARATOR = "$";
     
     /**
      * mqcloud-test-topic -> mqcloud-test-trace-topic
@@ -175,5 +180,62 @@ public class CommonUtil {
             logger.error("cancelDelayedMsg err, topic:{}, uniqId:{}", topic, uniqId, e);
             return WebResult.setFail(500, e.getMessage());
         }
+    }
+
+    public static String stripLmqPrefix(String consumer) {
+        return consumer.substring(MixAll.LMQ_PREFIX.length());
+    }
+
+    public static String stripLmqParentPrefix(String topic) {
+        return topic.substring(topic.indexOf(LMQ_TOPIC_SEPARATOR) + 1);
+    }
+
+    public static String findLmqParentTopic(String topic) {
+        String tmpTopic = stripLmqPrefix(topic);
+        return tmpTopic.substring(0, tmpTopic.indexOf(LMQ_TOPIC_SEPARATOR));
+    }
+
+    public static String buildLmqTopic(String parentTopic, String lmqTopic) {
+        return MixAll.LMQ_PREFIX + parentTopic + LMQ_TOPIC_SEPARATOR + lmqTopic;
+    }
+
+    public static String buildLmqParentTopic(String parentTopic) {
+        return MixAll.LMQ_PREFIX + parentTopic;
+    }
+
+    public static String buildLmqConsumer(String consumer) {
+        return MixAll.LMQ_PREFIX + consumer;
+    }
+
+    public static long getLmqOffset(String liteTopic, MessageExt msg) {
+        if (!MixAll.isLmq(liteTopic)) {
+            return msg.getQueueOffset();
+        }
+        String[] queues = msg.getProperty(MessageConst.PROPERTY_INNER_MULTI_DISPATCH).split(MixAll.LMQ_DISPATCH_SEPARATOR);
+        String[] queueOffsets = msg.getProperty(MessageConst.PROPERTY_INNER_MULTI_QUEUE_OFFSET).split(MixAll.LMQ_DISPATCH_SEPARATOR);
+        return Long.parseLong(queueOffsets[ArrayUtils.indexOf(queues, liteTopic)]);
+    }
+
+    public static String getLmqOffsetInfo(MessageExt msg) {
+        String liteTopic = msg.getProperty(MessageConst.PROPERTY_INNER_MULTI_DISPATCH);
+        String liteTopicQueueOffset = msg.getProperty(MessageConst.PROPERTY_INNER_MULTI_QUEUE_OFFSET);
+        if (liteTopic == null || liteTopicQueueOffset == null) {
+            return null;
+        }
+        String[] liteTopics = liteTopic.split(MixAll.LMQ_DISPATCH_SEPARATOR);
+        String[] liteTopicQueueOffsets = liteTopicQueueOffset.split(MixAll.LMQ_DISPATCH_SEPARATOR);
+        if (liteTopics.length != liteTopicQueueOffsets.length) {
+            return null;
+        }
+        StringBuilder lmqOffsetInfo = new StringBuilder();
+        for (int i = 0; i < liteTopics.length; i++) {
+            if (i > 0) {
+                lmqOffsetInfo.append(";");
+            }
+            // strip MixAll.LMQ_PREFIX
+            String topic = CommonUtil.stripLmqParentPrefix(liteTopics[i]);
+            lmqOffsetInfo.append(topic).append(":").append(liteTopicQueueOffsets[i]);
+        }
+        return lmqOffsetInfo.toString();
     }
 }

@@ -14,9 +14,10 @@ public enum ConsumerWarnEnum {
     ACCUMULATE_COUNT(1, 10000L), 
     ACCUMULATE_TIME(2, 300000L), 
     BLOCK_TIME(3, 10000L), 
-    CONSUMER_FAIL_COUNT(4, 10L), 
-    WARN_UNIT_TIME(5, 1L), 
+    CONSUMER_FAIL_COUNT(4, 10L),
+    WARN_UNIT_TIME(5, 1L),
     WARN_UNIT_COUNT(6, 1L),
+    CONSUMER_DEAD_COUNT(7, 0L),
     ;
 
     private int id;
@@ -60,6 +61,8 @@ public enum ConsumerWarnEnum {
                 return config.getWarnUnitTime() == null ? null : config.getWarnUnitTime().longValue();
             case WARN_UNIT_COUNT:
                 return config.getWarnUnitCount() == null ? null : config.getWarnUnitCount().longValue();
+            case CONSUMER_DEAD_COUNT:
+                return config.getConsumerDeadCount();
             default:
                 break;
         }

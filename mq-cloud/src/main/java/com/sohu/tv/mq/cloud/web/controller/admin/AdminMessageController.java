@@ -127,8 +127,7 @@ public class AdminMessageController {
                 if (consumer.isClustering()) {
                     sendResult = messageService.resend(cluster, topic, msg.getMsgId(), consumer.getName());
                 } else {
-                    sendResult = messageService.resendDirectly(cluster, topic, msg.getMsgId(), consumer.getName(),
-                            consumer.isProxyRemoting());
+                    sendResult = messageService.resendDirectly(cluster, topic, msg.getMsgId(), consumer);
                 }
             } else {
                 ConsumerConfigParam consumerConfigParam = new ConsumerConfigParam();
@@ -226,8 +225,7 @@ public class AdminMessageController {
                 if (consumerResult.getResult().isClustering()) {
                     sendResult = messageService.resend(cluster, topic, msgId, consumer.getName());
                 } else {
-                    sendResult = messageService.resendDirectly(cluster, topic, msgId, consumer.getName(),
-                            consumer.isProxyRemoting());
+                    sendResult = messageService.resendDirectly(cluster, topic, msgId, consumer);
                 }
             } else {
                 ConsumerConfigParam consumerConfigParam = new ConsumerConfigParam();

@@ -1,6 +1,7 @@
 package com.sohu.tv.mq.cloud.service;
 
 import com.sohu.tv.mq.cloud.Application;
+import com.sohu.tv.mq.cloud.bo.Consumer;
 import com.sohu.tv.mq.cloud.bo.DecodedMessage;
 import com.sohu.tv.mq.cloud.bo.MessageData;
 import com.sohu.tv.mq.cloud.bo.MessageQueryCondition;
@@ -79,9 +80,10 @@ public class MessageServiceTest {
     @Test
     public void testResendDirectly() {
         String msgId = "0A131F9000002A9F00000001B214B695";
-        String consumer = "basic-apitest-topic-broadcast-consumer";
+        Consumer consumer = new Consumer();
+        consumer.setName("basic-apitest-topic-broadcast-consumer");
         int clusterId = 3;
-        Result<?> result = messageService.resendDirectly(clusterService.getMQClusterById(clusterId), null, msgId, consumer, false);
+        Result<?> result = messageService.resendDirectly(clusterService.getMQClusterById(clusterId), null, msgId, consumer);
         Assert.assertTrue(result.isOK());
     }
 

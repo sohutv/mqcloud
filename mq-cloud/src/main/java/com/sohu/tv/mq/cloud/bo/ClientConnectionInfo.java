@@ -9,6 +9,8 @@ import org.apache.rocketmq.remoting.protocol.body.ProducerInfo;
 import org.apache.rocketmq.remoting.protocol.body.ProducerTableInfo;
 import org.springframework.util.CollectionUtils;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.function.Function;
@@ -24,6 +26,7 @@ import static com.sohu.tv.mq.cloud.util.DateUtil.YMD_DASH_BLANK_HMS_COLON;
 public class ClientConnectionInfo {
     private String client;
     private List<ConnectionInfo> connectionInfoList;
+    private int cid;
 
     public ClientConnectionInfo(String client) {
         this.client = client;
@@ -36,24 +39,25 @@ public class ClientConnectionInfo {
         if (producerTableInfo == null || CollectionUtils.isEmpty(producerTableInfo.getData())) {
             return null;
         }
-        return build(producerTableInfo.getData().entrySet(), ConnectionInfo::build);
+        return build(0, producerTableInfo.getData().entrySet(), ConnectionInfo::build);
     }
 
     /**
      * 根据ConsumerTableInfo构建客户端链接信息
      */
-    public static List<ClientConnectionInfo> build(ConsumerTableInfo consumerTableInfo) {
+    public static List<ClientConnectionInfo> build(int cid, ConsumerTableInfo consumerTableInfo) {
         if (consumerTableInfo == null || CollectionUtils.isEmpty(consumerTableInfo.getData())) {
             return null;
         }
-        return build(consumerTableInfo.getData().entrySet(), ConnectionInfo::build);
+        return build(cid, consumerTableInfo.getData().entrySet(), ConnectionInfo::build);
     }
 
-    private static <T> List<ClientConnectionInfo> build(Set<Entry<String, List<T>>> entrySet,
+    private static <T> List<ClientConnectionInfo> build(int cid, Set<Entry<String, List<T>>> entrySet,
                                                         Function<T, ConnectionInfo> connectionInfoFunction) {
         List<ClientConnectionInfo> clientConnectionInfoList = new ArrayList<>();
         for (Entry<String, List<T>> entry : entrySet) {
             ClientConnectionInfo clientConnectionInfo = new ClientConnectionInfo(entry.getKey());
+            clientConnectionInfo.setCid(cid);
             for (T t : entry.getValue()) {
                 clientConnectionInfo.addConnectionInfo(connectionInfoFunction.apply(t));
             }
@@ -68,6 +72,22 @@ public class ClientConnectionInfo {
 
     public String getClient() {
         return client;
+    }
+
+    public String getEncodedClient() {
+        try {
+            return URLEncoder.encode(client, "UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            return client;
+        }
+    }
+
+    public int getCid() {
+        return cid;
+    }
+
+    public void setCid(int cid) {
+        this.cid = cid;
     }
 
     public List<ConnectionInfo> getConnectionInfoList() {

@@ -40,9 +40,9 @@ public interface AlarmConfigDao {
      * 插入记录
      */
     @Insert("replace into warn_config(consumer,accumulate_time,accumulate_count,block_time,consumer_fail_count,"
-            + "warn_unit_time,warn_unit_count,ignore_warn)"
+            + "consumer_dead_count,warn_unit_time,warn_unit_count,ignore_warn)"
             + "values(#{alarmConfig.consumer},#{alarmConfig.accumulateTime},#{alarmConfig.accumulateCount},"
-            + "#{alarmConfig.blockTime},#{alarmConfig.consumerFailCount},"
+            + "#{alarmConfig.blockTime},#{alarmConfig.consumerFailCount},#{alarmConfig.consumerDeadCount},"
             + "#{alarmConfig.warnUnitTime},#{alarmConfig.warnUnitCount},#{alarmConfig.ignoreWarn})")
     public Integer insert(@Param("alarmConfig") AlarmConfig alarmConfig);
 }

@@ -1,19 +1,18 @@
 package com.sohu.tv.mq.cloud.service;
 
-import java.util.ArrayList;
-import java.util.List;
-
+import com.sohu.tv.mq.cloud.bo.ClientVersion;
+import com.sohu.tv.mq.cloud.bo.User;
+import com.sohu.tv.mq.cloud.dao.ClientVersionDao;
+import com.sohu.tv.mq.cloud.dao.UserDao;
+import com.sohu.tv.mq.cloud.util.Result;
 import org.apache.commons.collections.CollectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import com.sohu.tv.mq.cloud.bo.ClientVersion;
-import com.sohu.tv.mq.cloud.bo.User;
-import com.sohu.tv.mq.cloud.dao.ClientVersionDao;
-import com.sohu.tv.mq.cloud.dao.UserDao;
-import com.sohu.tv.mq.cloud.util.Result;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * 客户端版本
@@ -149,5 +148,14 @@ public class ClientVersionService {
             return Result.getDBErrorResult(e);
         }
         return Result.getResult(clientVersions);
+    }
+
+    public Result<Integer> delete(String topic, String consumer){
+        try {
+            return Result.getResult(clientVersionDao.delete(topic, consumer, ClientVersion.CONSUMER));
+        } catch (Exception e) {
+            logger.error("delete topic:{} consumer:{}", topic, consumer, e);
+            return Result.getDBErrorResult(e);
+        }
     }
 }

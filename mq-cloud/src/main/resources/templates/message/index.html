@@ -14,8 +14,8 @@
 <div class="row">
 	<div class="col-md-12">
 		<div class="card">
-			<div class="card-body text-sm">
-				<form id="msgSearchForm">
+			<form id="msgSearchForm">
+				<div class="card-body text-sm">
 					<div class="row">
 						<div class="col-md-2 mb-3">
 							<label for="searchCondition">查询方式: <a data-toggle="tooltip" data-placement="top" title="点击查看各种方式区别" href="${request.contextPath}/wiki/userGuide/messageQuery" target=_blank><i class="fas fa-question-circle fa-sm"></i></a></label>
@@ -134,7 +134,7 @@
 									<div class="input-group">
 									<input type="text" class="form-control input-group-sm" id="msgKey" name="msgKey" placeholder="消息key">
 									<div class="input-group-append">
-										<button type="button" class="btn btn-default" data-toggle='tooltip' title="按key查询${response.result.topic}" onclick="searchKeyMessage()">
+										<button type="button" class="btn btn-default" data-toggle='tooltip' title="按key查询${response.result.topicShow}" onclick="searchKeyMessage()">
 											<i class="fa fa-search"></i>
 										</button>
 									</div>
@@ -151,7 +151,7 @@
 								<div class="input-group">
 									<input type="text" class="form-control" id="key" name="key" value="${response.result.key!}" placeholder="关键字，支持模糊匹配">
 									<div class="input-group-append">
-										<button type="button" data-toggle='tooltip' title="按时间段查询${response.result.topic}" class="btn btn-default" onclick="searchMessage(false)">
+										<button type="button" data-toggle='tooltip' title="按时间段查询${response.result.topicShow}" class="btn btn-default" onclick="searchMessage(false)">
 											<i class="fa fa-search"></i>
 										</button>
 									</div>
@@ -189,7 +189,7 @@
 								<div class="input-group">
 									<input type="text" class="form-control" id="msgId" name="msgId" value="${response.result.msgId!}" placeholder="消息id">
 									<div class="input-group-append">
-										<button type="button" data-toggle='tooltip' title="按消息id查询${response.result.topic}" class="btn btn-default" onclick="viewMessage()">
+										<button type="button" data-toggle='tooltip' title="按消息id查询${response.result.topicShow}" class="btn btn-default" onclick="viewMessage()">
 											<i class="fa fa-search"></i>
 										</button>
 									</div>
@@ -205,7 +205,7 @@
 								<div class="input-group">
 									<input type="text" class="form-control" id="traceKey" name="traceKey" placeholder="消息key或msgId">
 									<div class="input-group-append">
-										<button type="button" data-toggle='tooltip' title="按trace查询${response.result.topic}" class="btn btn-default" onclick="searchTraceMessage()">
+										<button type="button" data-toggle='tooltip' title="按trace查询${response.result.topicShow}" class="btn btn-default" onclick="searchTraceMessage()">
 											<i class="fa fa-search"></i>
 										</button>
 									</div>
@@ -217,11 +217,11 @@
 								<div class="input-group">
 									<input type="text" class="form-control input-group-sm" id="timerWheelKey" name="timerWheelKey" value="${response.result.key!}" placeholder="关键字，支持模糊匹配">
 									<div class="input-group-append">
-										<button type="button" class="btn btn-default" data-toggle='tooltip' title="按定时查询${response.result.topic}" onclick="searchTimerWheelMessage(false)">
+										<button type="button" class="btn btn-default" data-toggle='tooltip' title="按定时查询${response.result.topicShow}" onclick="searchTimerWheelMessage(false)">
 											<i class="fa fa-search"></i>
 										</button>
 									</div>
-									<button type="button" data-toggle='tooltip' title="取消${response.result.topic}中的定时消息" onclick="cancelTimerWheelMessage()" class="ml-1 btn btn-default"><i class="fas fa-stopwatch"></i></button>
+									<button type="button" data-toggle='tooltip' title="取消${response.result.topicShow}中的定时消息" onclick="cancelTimerWheelMessage()" class="ml-1 btn btn-default"><i class="fas fa-stopwatch"></i></button>
 									<!-- 消息重发 -->
 									<#if consumer == 1>
 										<button type="button" data-toggle='tooltip' title="重发消息" onclick="resendMessageTip()" class="ml-1 btn btn-default resendMessageBtn"><i class="far fa-paper-plane"></i></button>
@@ -234,7 +234,7 @@
 								<div class="input-group">
 									<input type="text" class="form-control" id="traceUniqKey" name="traceUniqKey" placeholder="msgId">
 									<div class="input-group-append">
-										<button type="button" data-toggle='tooltip' title="按定时消息trace查询${response.result.topic}" class="btn btn-default" onclick="searchTimerWheelMessageRollTrace()">
+										<button type="button" data-toggle='tooltip' title="按定时消息trace查询${response.result.topicShow}" class="btn btn-default" onclick="searchTimerWheelMessageRollTrace()">
 											<i class="fa fa-search"></i>
 										</button>
 									</div>
@@ -249,7 +249,7 @@
 								<div class="input-group">
 									<input type="text" class="form-control" id="offsetKey" name="offsetKey" value="${response.result.key!}" placeholder="关键字，支持模糊匹配">
 									<div class="input-group-append">
-										<button type="button" class="btn btn-default" data-toggle='tooltip' title="按偏移量查询${response.result.topic}" onclick="searchOffsetMessage(false)">
+										<button type="button" class="btn btn-default" data-toggle='tooltip' title="按偏移量查询${response.result.topicShow}" onclick="searchOffsetMessage(false)">
 											<i class="fa fa-search"></i>
 										</button>
 									</div>
@@ -274,8 +274,8 @@
 					<input type="hidden" name="traceEndTime" id="traceEndTime" value="${response.result.end?c}">
 					<input type="hidden" name="timerWheelStartTime" id="timerWheelStartTime" value="${response.result.start?c}">
 					<input type="hidden" name="timerWheelEndTime" id="timerWheelEndTime" value="${response.result.end?c}">
-				</form>
-			</div> <!-- card-body end -->
+				</div> <!-- card-body end -->
+			</form>
 		</div>
 		<div class="card">
 			<div class="card-body table-responsive p-0">
@@ -442,7 +442,7 @@
 			</div>
 			<div class="modal-body">
 				<form id="consumeTimespanMessageForm">
-					<input type="hidden" id="timespanConsumeTopic" name="topic" value="${response.result.topic}">
+					<input type="hidden" id="timespanConsumeTopic" name="topic" value="${response.result.realTopic}">
 					<input type="hidden" id="timespanConsumeStart" name="start">
 					<input type="hidden" id="timespanConsumeEnd" name="end">
 					<div class="input-group mb-3">
@@ -896,6 +896,9 @@ $(function(){
 		searchTimerWheelMessageRollTrace();
 	} else if (${msgType} == 2) {
 		changeQueryType("timerWheel");
+	} else if (queryType == "offset") {
+		$("#searchCondition").selectpicker('val', queryType);
+		changeSearchType(queryType);
 	}
 
 	// 初始化key查询方式的时间
@@ -1066,6 +1069,11 @@ function initBrokerList(componentId){
 	            	}
 	        		$("#"+componentId).html(content);
 	        		$("#"+componentId).selectpicker('refresh');
+					var broker = getQueryString("broker");
+					if (broker) {
+						$("#" + componentId).selectpicker('val', broker);
+						brokerNameSelectChange(document.getElementById(componentId));
+					}
 			    }else{
 			    	toastr.error("数据获取失败！"+data.message);  
 			    }
@@ -1099,6 +1107,19 @@ function brokerNameSelectChange(obj){
 	            	}
 	            	$("#queueSearchSelect").html(content);
 	            	$("#queueSearchSelect").selectpicker('refresh');
+					var queueId = getQueryString("queueId");
+					if (queueId) {
+						$("#queueSearchSelect").selectpicker('val', queueId);
+						var startOffset = getQueryString("startOffset");
+						if (startOffset) {
+							$("#offsetStart").val(startOffset);
+						}
+						var endOffset = getQueryString("endOffset");
+						if (endOffset) {
+							$("#offsetEnd").val(endOffset);
+						}
+						searchOffsetMessage(false);
+					}
 			    }
 	    }, 'json');
 }

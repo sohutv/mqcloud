@@ -1,12 +1,16 @@
 package com.sohu.tv.mq.cloud.service;
 
+import com.sohu.tv.mq.cloud.bo.Consumer;
 import com.sohu.tv.mq.cloud.bo.ConsumerConfig;
 import com.sohu.tv.mq.cloud.bo.ConsumerPauseConfig;
+import com.sohu.tv.mq.cloud.bo.HttpConsumerConfig;
 import com.sohu.tv.mq.cloud.dao.ConsumerConfigDao;
 import com.sohu.tv.mq.cloud.dao.ConsumerPauseConfigDao;
 import com.sohu.tv.mq.cloud.util.Result;
+import com.sohu.tv.mq.util.Constant;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -16,6 +20,9 @@ import org.springframework.util.CollectionUtils;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.concurrent.*;
+
+import static com.sohu.tv.mq.util.Constant.BROADCAST;
+import static org.apache.rocketmq.remoting.protocol.heartbeat.MessageModel.CLUSTERING;
 
 /**
  * 消费者配置服务
@@ -33,6 +40,9 @@ public class ConsumerConfigService implements InitializingBean {
     @Autowired
     private ConsumerPauseConfigDao consumerPauseConfigDao;
 
+    @Autowired
+    private MQProxyService mqProxyService;
+
     private ConcurrentMap<String, ConsumerConfig> consumerConfigMap = new ConcurrentHashMap<>();
 
     public ConsumerConfigService() {
@@ -41,6 +51,19 @@ public class ConsumerConfigService implements InitializingBean {
 
     public ConsumerConfig getConsumerConfig(String consumer) {
         return consumerConfigMap.get(consumer);
+    }
+
+    public ConsumerConfig getConsumerConfig(Consumer consumer) {
+        if (consumer.isHttpProtocol()) {
+            Result<HttpConsumerConfig> httpConsumerConfigResult = mqProxyService.getConsumerConfig(consumer.getName());
+            ConsumerConfig consumerConfig = new ConsumerConfig();
+            if (httpConsumerConfigResult.isOK()) {
+                HttpConsumerConfig httpConsumerConfig = httpConsumerConfigResult.getResult();
+                BeanUtils.copyProperties(httpConsumerConfig, consumerConfig);
+                return consumerConfig;
+            }
+        }
+        return consumerConfigMap.get(consumer.getName());
     }
 
     /**

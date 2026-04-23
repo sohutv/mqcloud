@@ -31,7 +31,7 @@ public class AlarmConfigTask {
     @Autowired
     private MQCloudConfigHelper mqCloudConfigHelper;
 
-    @Scheduled(cron = "3 */10 * * * *")
+    @Scheduled(cron = "3 */4 * * * *")
     public void refreshAlarmConfig() {
         long start = System.currentTimeMillis();
         Result<List<AlarmConfig>> userAlarmConfigResult = alarmConfigService.queryAll();

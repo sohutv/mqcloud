@@ -12,6 +12,7 @@ import com.sohu.tv.mq.cloud.web.controller.param.PaginationParam;
 import com.sohu.tv.mq.cloud.web.vo.*;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.rocketmq.common.TopicConfig;
 import org.apache.rocketmq.remoting.protocol.body.ClusterInfo;
 import org.apache.rocketmq.tools.admin.MQAdminExt;
 import org.springframework.beans.BeanUtils;
@@ -23,6 +24,8 @@ import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
 import java.util.*;
 import java.util.stream.Collectors;
+
+import static org.apache.rocketmq.common.TopicAttributes.LMQ_EXPIRATION_ATTRIBUTE;
 
 /**
  * 用户接口
@@ -367,7 +370,12 @@ public class UserController extends ViewController {
     @RequestMapping("/topic/{tid}/detail")
     public String detail(UserInfo userInfo, @PathVariable long tid, Map<String, Object> map) throws Exception {
         setView(map, "topicDetail", "我的Topic");
-        setResult(map, "tid",tid);
+        Result<Topic> topicResult = topicService.queryTopic(tid);
+        if (topicResult.isOK()) {
+            Topic topic = topicResult.getResult();
+            setResult(map, "isLmqParentTopic", topic.isLiteParentTopic());
+            setResult(map, "tid", tid);
+        }
         return view();
     }
 
@@ -425,13 +433,14 @@ public class UserController extends ViewController {
             }
 
             // 获取集群信息
+            Cluster cluster = clusterService.getMQClusterById(topic.getClusterId());
             ClusterInfo clusterInfo = mqAdminTemplate.execute(new DefaultCallback<ClusterInfo>() {
                 public ClusterInfo callback(MQAdminExt mqAdmin) throws Exception {
                     return mqAdmin.examineBrokerClusterInfo();
                 }
 
                 public Cluster mqCluster() {
-                    return clusterService.getMQClusterById(topic.getClusterId());
+                    return cluster;
                 }
             });
             int brokerSize = clusterInfo == null ? 0 : clusterInfo.getBrokerAddrTable().size();
@@ -523,6 +532,13 @@ public class UserController extends ViewController {
             // 设置全局顺序topic kv配置
             if (topic.isOrderedTopic()) {
                 result.getResult().setOrderTopicKVConfig(mqCloudConfigHelper.getOrderTopicKVConfig(String.valueOf(topic.getClusterId())));
+            }
+
+            // 获取lmq父topic过期时间
+            if (topic.isLiteParentTopic()) {
+                TopicConfig topicConfig = topicService.examineTopicConfig(cluster, topic.getName());
+                String expiration = topicConfig.getAttributes().get(LMQ_EXPIRATION_ATTRIBUTE.getName());
+                topic.setLmqExpiration(expiration);
             }
         }
 

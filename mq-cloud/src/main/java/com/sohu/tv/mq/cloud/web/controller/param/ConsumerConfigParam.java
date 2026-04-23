@@ -1,5 +1,6 @@
 package com.sohu.tv.mq.cloud.web.controller.param;
 
+import com.sohu.tv.mq.util.MQProtocol;
 import org.hibernate.validator.constraints.Range;
 
 import com.sohu.tv.mq.cloud.bo.Audit.TypeEnum;
@@ -22,6 +23,9 @@ public class ConsumerConfigParam {
     private Double permitsPerSecond;
     // 是否解注册
     private boolean unregister;
+    private long tid;
+    private String consumer;
+    private int protocol;
 
     public long getConsumerId() {
         return consumerId;
@@ -69,6 +73,34 @@ public class ConsumerConfigParam {
 
     public void setUnregister(boolean unregister) {
         this.unregister = unregister;
+    }
+
+    public long getTid() {
+        return tid;
+    }
+
+    public void setTid(long tid) {
+        this.tid = tid;
+    }
+
+    public String getConsumer() {
+        return consumer;
+    }
+
+    public void setConsumer(String consumer) {
+        this.consumer = consumer;
+    }
+
+    public int getProtocol() {
+        return protocol;
+    }
+
+    public void setProtocol(int protocol) {
+        this.protocol = protocol;
+    }
+
+    public boolean isHttpProtocol() {
+        return protocol == MQProtocol.HTTP.getType();
     }
 
     /**

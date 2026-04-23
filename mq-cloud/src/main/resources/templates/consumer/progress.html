@@ -156,7 +156,8 @@
 												<button type="button" class="btn btn-xs btn-outline-secondary disabled" title="非MQCloud客户端暂不支持限制消费速率" data-toggle="tooltip"><i class="fa-fw fa-solid fa-faucet-drip"></i></button>
 												<button type="button" class="btn btn-xs btn-outline-secondary disabled" data-toggle="tooltip" title="非MQCloud客户端暂不支持trace"><i class="fas fa-fw fa-eye-slash"></i></button>
 											</#if>
-			                    		</#if>
+											<button type="button" class="btn btn-xs btn-outline-secondary" data-toggle="tooltip" title="修改预警阈值" onclick="updateWarnThresholdShow('${consumerProgressVO.consumer.name}', ${consumerProgressVO.consumer.id})"><i class="fas fa-fw fa-exclamation-triangle"></i></button>
+										</#if>
 			                    		<button type="button" class="btn btn-xs btn-outline-secondary" title="删除${consumerProgressVO.consumer.name}" data-toggle="tooltip" onclick="deleteConsumerShow('${consumerProgressVO.consumer.name}', ${consumerProgressVO.consumer.id})"><i class="fas fa-fw fa-trash-alt"></i></button>
 		                    		</#if>
 									</p>
@@ -188,7 +189,7 @@
 																<th class="d-none d-sm-table-cell">最小偏移量</th>
 																<th class="d-none d-sm-table-cell">最大偏移量</th>
 																<th>消息量</th>
-																<th>消费时间</th>
+																<th>最后更新时间</th>
 															</tr>
 														</thead>
 														<tbody>
@@ -241,7 +242,7 @@
 																<th class="d-none d-sm-table-cell">broker偏移量</th>
 																<th class="d-none d-sm-table-cell">消费者偏移量</th>
 																<th>堆积量</th>
-																<th>消费时间</th>
+																<th>消费到</th>
 															</tr>
 														</thead>
 														<tbody>
@@ -287,7 +288,7 @@
 																<th class="d-none d-sm-table-cell">broker偏移量</th>
 																<th class="d-none d-sm-table-cell">消费者偏移量</th>
 																<th>堆积量</th>
-																<th>消费时间</th>
+																<th>消费到</th>
 																<th>操作</th>
 															</tr>
 														</thead>
@@ -457,7 +458,8 @@
 												<button type="button" class="btn btn-xs btn-outline-secondary disabled" title="非MQCloud客户端暂不支持暂停消费" data-toggle="tooltip"><i class="fas fa-fw fa-pause"></i></button>
 												<button type="button" class="btn btn-xs btn-outline-secondary disabled" title="非MQCloud客户端暂不支持限制消费速率" data-toggle="tooltip"><i class="fa-fw fa-solid fa-faucet-drip"></i></button>
 											</#if>
-			                    		</#if>
+											<button type="button" class="btn btn-xs btn-outline-secondary" data-toggle="tooltip" title="修改预警阈值" onclick="updateWarnThresholdShow('${consumerProgressVO.consumer.name}', ${consumerProgressVO.consumer.id})"><i class="fas fa-fw fa-exclamation-triangle"></i></button>
+										</#if>
 			                    		<button type="button" class="btn btn-xs btn-outline-secondary" title="删除${consumerProgressVO.consumer.name}" data-toggle="tooltip"  onclick="deleteConsumerShow('${consumerProgressVO.consumer.name}', ${consumerProgressVO.consumer.id})"><i class="fas fa-fw fa-trash-alt"></i></button>
 		                    		</#if>
 									</p>
@@ -486,6 +488,7 @@
 												<col>
 												<col>
 												<col>
+												<col>
 											</colgroup>
 											</#if>
 											<thead>
@@ -501,11 +504,10 @@
 													<th class="d-none d-sm-table-cell">消费者偏移量</th>
 													<th>堆积量</th>
 													<#if consumerProgressVO.consumer.httpProtocol>
-													<th>消费时间</th>
+													<th>消费到</th>
+													<th>最后拉取时间</th>
 													<th data-toggle="tooltip" title="单位: 秒.毫秒">锁定时间</th>
-													<#if consumerProgressVO.consumer.clustering>
 													<th>客户端ip</th>
-													</#if>
 													</#if>
 												</tr>
 											</thead>
@@ -531,6 +533,13 @@
 																</#if>
 															<#else>
 																${consumeStats.clientIdHtml}
+																<#if consumerProgressVO.consumerConfig?? && consumerProgressVO.consumerConfig.pop>
+																<#if consumerProgressVO.consumer.clustering>
+																	<button type="button" class="btn btn-xs btn-outline-secondary" data-toggle="tooltip" title="查看pop消费详情" onclick="showPopAckInfo('${consumerProgressVO.consumer.name}')"><i class="fas fa-eye"></i></button>
+																<#else>
+																	<button type="button" class="btn btn-xs btn-outline-secondary" data-toggle="tooltip" title="查看pop消费详情" onclick="showPopAckInfo('${consumerProgressVO.consumer.name}', '${consumeStats.clientId}')"><i class="fas fa-eye"></i></button>
+																</#if>
+																</#if>
 															</#if>
 														</td>
 													</tr>
@@ -553,6 +562,13 @@
 														</td>
 														<#if consumerProgressVO.consumer.httpProtocol>
 														<td>
+															<#if offset.consumeToTimestamp <= 0>
+																暂无
+															<#else>
+																${offset.consumeToTimestamp?number_to_datetime?string("yyyy-MM-dd HH:mm:ss")}
+															</#if>
+														</td>
+														<td>
 															<#if offset.lastTimestamp <= 0>
 																暂无
 															<#else>
@@ -562,11 +578,9 @@
 														<td>
 															${offset.lockTime}
 														</td>
-														<#if consumerProgressVO.consumer.clustering>
-															<td>
-																${offset.clientIp!}
-															</td>
-														</#if>
+														<td>
+															${offset.clientIp!}
+														</td>
 														</#if>
 													</tr>
 													</#list>
@@ -669,7 +683,7 @@
 		<div class="modal-content">
 			<div class="modal-header">
 				<h5 class="modal-title"><span id="msgTypeSpan"></span>消息查询</h5>
-				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+				<button type="button" class="close" data-dismiss="modal">&times;</button>
 			</div>
 			<div class="modal-body">
 				<div class="card">
@@ -1460,6 +1474,69 @@
 	</div>
 </div>
 
+<!-- 修改预警阈值 -->
+<div id="updateWarnThresholdModal" class="modal fade">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h4 class="modal-title">预警阈值配置</h4>
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+			</div>
+			<div class="modal-body">
+				<form id="updateWarnThresholdForm">
+				</form>
+			</div>
+			<div class="modal-footer">
+				<button type="button" data-dismiss="modal" class="btn btn-light" >取消</button>
+				<button type="button" class="btn btn-primary" onclick="submitUpdateWarnThreshold()" id="updateWarnThresholdBtn">确定</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- pop ack信息 -->
+<div id="popAckInfoModel" class="modal fade"  style="overflow-y: auto;">
+	<div class="modal-dialog  modal-xl">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title">POP消费</h5>
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+					<span aria-hidden="true">&times;</span>
+				</button>
+			</div>
+			<div class="modal-body">
+                <div class="card mt-2">
+                    <div class="card-header">
+                        <b>正在POP消费的消息(还未ACK)</b>
+                    </div>
+                    <div class="card-body table-responsive p-0">
+                        <table class="table table-striped text-nowrap">
+                            <thead>
+                            <tr>
+                                <th>broker</th>
+                                <th>队列</th>
+                                <th>偏移量</th>
+                                <th>消息量</th>
+                                <th>重试次数</th>
+                                <th>拉取时间</th>
+                                <th>过期时间</th>
+                                <th>客户端</th>
+                                <th>操作</th>
+                            </tr>
+                            </thead>
+                            <tbody id="popAckInfoBody">
+                                <tr>
+                                    <td colspan="9" class="text-center">暂无数据</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+			</div>
+		</div>
+	</div>
+</div>
+
 <#include "../inc/pagination.html">
 <script>
 /**
@@ -1641,6 +1718,37 @@ function resetOffset(){
 	    	enable("resetOffsetBtn");
 	    }
     }, 'json');
+}
+
+// 提交更新或添加请求
+function submitUpdateWarnThreshold() {
+	disable("updateWarnThresholdBtn");
+	$.post('${request.contextPath}/consumer/warn/config/update',
+			$("#updateWarnThresholdForm").serialize(),
+			function (data) {
+				if (data.status == 200) {
+					toastr.success("操作成功，即将刷新页面");
+					reload(2000);
+				} else {
+					toastr.error("操作失败！" + data.message);
+					enable("updateWarnThresholdBtn");
+				}
+			}, 'json');
+}
+
+//修改预警配置
+function updateWarnThresholdShow(consumer) {
+	post('${request.contextPath}/consumer/warn/config',
+			{
+				consumer: consumer
+			},
+			function (data) {
+				$("#updateWarnThresholdForm").html(data);
+				$("#updateWarnThresholdModal").modal('show');
+				$('[data-toggle="tooltip"]').tooltip({
+					container: 'body'
+				});
+			});
 }
 
 function deleteConsumerShow(consumer, consumerId){
@@ -2343,7 +2451,8 @@ function threadMetrics(){
 	post('${request.contextPath}/consumer/threadMetrics',
 		{
 			clientId: $("#clientIdSpan").html(),
-			consumer: $("#consumerGroup").html()
+			consumer: $("#consumerGroup").html(),
+			cid: ${topic.clusterId}
 		}, function(data){
 			$("#redoIcon").removeClass("fa-spin");
 			$("#threadMetricsBody").html(data);
@@ -2416,7 +2525,8 @@ function failedMetrics(){
 	post('${request.contextPath}/consumer/failedMetrics',
 		{
 			clientId: $("#failedClientIdSpan").html(),
-			consumer: $("#failedConsumerGroup").html()
+			consumer: $("#failedConsumerGroup").html(),
+			cid: ${topic.clusterId}
 		}, function(data){
 		$("#failedMetricsBody").html(data);
 	});
@@ -2533,5 +2643,56 @@ function isValid(flag, value, min, max) {
 		return false;
 	}
 	return true;
+}
+
+function showPopAckInfo(consumer, clientId) {
+	$.get('${request.contextPath}/consumer/popAckInfo', {
+		consumer: consumer,
+		clientId: clientId
+	}, function (data) {
+		$("#popAckInfoBody").html(data);
+		$("#popAckInfoModel").modal('show');
+	});
+}
+
+function nextPopAckInfo(comp, consumer, page, pageSize, clientId) {
+	var param = {
+		consumer: consumer,
+		page: page,
+		pageSize: pageSize
+	}
+	if (clientId) {
+		param.clientId = clientId;
+	}
+	$.get('${request.contextPath}/consumer/popAckInfo', param, function (data) {
+		$(comp).parent().parent().remove();
+		$("#popAckInfoBody").append(data);
+	});
+}
+
+function viewPopAckMsg(brokerName, queueId, startOffset, endOffset) {
+	window.open("${request.contextPath}/user/topic/${topic.id}/detail?tab=msg&queryType=offset&broker=" + brokerName + "&queueId=" + queueId + "&startOffset=" + startOffset + "&endOffset=" + endOffset, '_blank')
+}
+
+function skipPopAck(consumer, requestId, clientId) {
+	if(!confirm("确认跳过该消息？")){
+		return;
+	}
+	var param = {
+		topic: '${topic.name}',
+		consumer: consumer,
+		requestId: requestId
+	}
+	if (clientId) {
+		param.clientId = clientId;
+	}
+	$.get('${request.contextPath}/consumer/commitPopAck', param, function (data) {
+		if (data.status == 200) {
+			toastr.success("操作成功！即将刷新页面");
+			reload(2000);
+		} else {
+			toastr.error("操作失败！" + data.message);
+		}
+	});
 }
 </script>

@@ -36,6 +36,8 @@
 				<tr>
 					<td>addr</td>
 					<td>创建时间</td>
+					<td>组</td>
+					<td>leader</td>
 					<td data-toggle="tooltip" title="MQCloud会定时监控Controller是否存活">状态</td>
 					<td>监控时间</td>
 					<td>操作</td>
@@ -43,12 +45,20 @@
 			</thead>
 			<tbody>
 				<#if response.empty>
-					<tr class="text-center"><td colspan=5>暂无数据</td></tr>
+					<tr class="text-center"><td colspan=7>暂无数据</td></tr>
 				<#else>
 					<#list response.result as controller>
 						<tr>
 							<td>${controller.addr}</td>
 							<td>${controller.createTime?string("yyyy-MM-dd HH:mm:ss")}</td>
+							<td>${controller.group!}</td>
+							<td>
+								<#if controller.leader>
+									是
+								<#else>
+									否
+								</#if>
+							</td>
 							<td>
 								<#if controller.checkStatus == 2>
 									<font style='font-weight:bold' color='red'>${controller.checkStatusDesc}</font>
@@ -63,9 +73,10 @@
 							</td>
 							<td>
 								<#if controller.checkStatusOK>
-								<button type="button" class="btn btn-sm btn-danger" title="关闭Controller进程" data-target="#controllerOfflineModal" data-toggle="modal" onclick="offlineController('${controller.addr}');"><i class="fas fa-power-off"></i></button>
+									<button type="button" class="btn btn-sm btn-info" title="查看配置" data-target="#controllerConfigModal" data-toggle="modal" onclick="viewControllerConfig('${controller.addr}')"><i class="fas fa-eye"></i></button>
+									<button type="button" class="btn btn-sm btn-danger" title="关闭Controller进程" data-target="#controllerOfflineModal" data-toggle="modal" onclick="offlineController('${controller.addr}');"><i class="fas fa-power-off"></i></button>
 								<#else>
-								<button id="controllerBtn${controller_index}" data-toggle="tooltip" title="启动Controller" type="button" class="btn btn-sm btn-success" onclick="startupController('${controller.ip}', ${controller.port}, '${controller.baseDir!}', 'controllerBtn${controller_index}')"><i class="fas fa-power-off"></i></button>
+									<button id="controllerBtn${controller_index}" data-toggle="tooltip" title="启动Controller" type="button" class="btn btn-sm btn-success" onclick="startupController('${controller.ip}', ${controller.port}, '${controller.baseDir!}', 'controllerBtn${controller_index}')"><i class="fas fa-power-off"></i></button>
 								</#if>
 								<button type="button" class="btn btn-sm btn-danger" title="删除Controller地址" data-target="#controllerDeleteModal" data-toggle="modal" onclick="deleteController('${controller.addr}');"><span class="fas fa-trash-alt" aria-hidden="true"></span></button>
 							</td>
@@ -177,21 +188,60 @@
 							</div>
 						</div>
 						<div class="form-group row justify-content-center">
-							<label class="col-form-label col-md-3"> 组名: </label>
-							<div class="col-md-8">
-								<input type="text" id="controllerDLegerGroup" name="controllerDLegerGroup" data-toggle="tooltip" title="同属一个DLedger组需要一致" placeholder="group1" value="" class="form-control" />
+							<label class="col-md-3"> 类型: </label>
+							<div class="col-md-8 checkbox-inline">
+								<label>
+									<input type="radio" name="controllerType" value="jRaft" checked onclick="changeControllerType()"> jRaft
+								</label>&nbsp&nbsp;
+								<label>
+									<input type="radio" name="controllerType" value="DLedger" onclick="changeControllerType()"> DLedger
+								</label>
 							</div>
 						</div>
-						<div class="form-group row justify-content-center">
-							<label class="col-form-label col-md-3"> 节点id: </label>
-							<div class="col-md-8">
-								<input type="text" id="controllerDLegerSelfId" name="controllerDLegerSelfId" data-toggle="tooltip" title="DLedger组内各个节点要唯一" placeholder="n0" value="" class="form-control" />
+						<div id="jRaftInput">
+							<div class="form-group row justify-content-center">
+								<label class="col-form-label col-md-3"> 组名: </label>
+								<div class="col-md-8">
+									<input type="text" id="jRaftGroupId" name="jRaftGroupId" data-toggle="tooltip" title="组名" value="${selectedCluster.name}" class="form-control" />
+								</div>
+							</div>
+							<div class="form-group row justify-content-center">
+								<label class="col-form-label col-md-3"> 自身地址: </label>
+								<div class="col-md-8">
+									<input type="text" id="jRaftServerId" name="jRaftServerId" placeholder="localhost:9880" data-toggle="tooltip" title="jRaftServerId：必须出现在 组员内部通信地址 中" value="" class="form-control" />
+								</div>
+							</div>
+							<div class="form-group row justify-content-center">
+								<label class="col-form-label col-md-3"> 组员内部通信地址: </label>
+								<div class="col-md-8">
+									<input type="text" id="jRaftInitConf" placeholder="localhost:9880,localhost:9881,localhost:9882" data-toggle="tooltip" title="jRaftInitConf：格式:{ip:port},{ip:port}" name="jRaftInitConf" value="" class="form-control" />
+								</div>
+							</div>
+							<div class="form-group row justify-content-center">
+								<label class="col-form-label col-md-3"> 组员外部通信地址: </label>
+								<div class="col-md-8">
+									<input type="text" id="jRaftControllerRPCAddr" placeholder="localhost:9770,localhost:9771,localhost:9772" data-toggle="tooltip" title="jRaftControllerRPCAddr：格式:{ip:port},{ip:port}" name="jRaftControllerRPCAddr" value="" class="form-control" />
+								</div>
 							</div>
 						</div>
-						<div class="form-group row justify-content-center">
-							<label class="col-form-label col-md-3"> 组员信息: </label>
-							<div class="col-md-8">
-								<input type="text" id="controllerDLegerPeers" data-toggle="tooltip" title="DLedger组内成员节点和端口信息，同一个组内的各节点配置要一致。格式:{节点id}-{ip:port};{节点id}-{ip:port};" name="controllerDLegerPeers" placeholder="n0-127.0.0.1:19876;n1-127.0.0.2:19876;" value="" class="form-control" />
+						<div id="DlegerInput" style="display: none">
+							<div class="form-group row justify-content-center">
+								<label class="col-form-label col-md-3"> 组名: </label>
+								<div class="col-md-8">
+									<input type="text" id="controllerDLegerGroup" name="controllerDLegerGroup" data-toggle="tooltip"  value="${selectedCluster.name}" class="form-control" />
+								</div>
+							</div>
+							<div class="form-group row justify-content-center">
+								<label class="col-form-label col-md-3"> 自身Id: </label>
+								<div class="col-md-8">
+									<input type="text" id="controllerDLegerSelfId" name="controllerDLegerSelfId" data-toggle="tooltip" title="controllerDLegerSelfId：自身节点id" placeholder="n0" value="" class="form-control" />
+								</div>
+							</div>
+							<div class="form-group row justify-content-center">
+								<label class="col-form-label col-md-3"> 组员信息: </label>
+								<div class="col-md-8">
+									<input type="text" id="controllerDLegerPeers" data-toggle="tooltip" title="controllerDLegerPeers：同一个组内的各节点配置要一致。格式:{节点id}-{ip:port};{节点id}-{ip:port};" name="controllerDLegerPeers" placeholder="n0-127.0.0.1:19876;n1-127.0.0.2:19876;" value="" class="form-control" />
+								</div>
 							</div>
 						</div>
 						<div class="form-group row justify-content-center">
@@ -258,7 +308,7 @@
 
 <!-- 下线 -->
 <div id="controllerOfflineModal" class="modal fade" tabindex="-1" data-width="400">
-	<div class="modal-dialog modal-xl">
+	<div class="modal-dialog modal-lg">
 		<div class="modal-content">
 			<div class="modal-header">
 				<h4 class="modal-title">确定要下线Controller?</h4>
@@ -349,6 +399,24 @@
 	</div>
 </div>
 
+<!-- config -->
+<div id="controllerConfigModal" class="modal fade" tabindex="-1" data-width="400">
+	<div class="modal-dialog modal-lg">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h4 class="modal-title">查看配置</h4>
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+			</div>
+			<div class="modal-body">
+				<pre id="controllerConfigPre"></pre>
+			</div>
+			<div class="modal-footer">
+				<button type="button" data-dismiss="modal" class="btn btn-default" >关闭</button>
+			</div>
+		</div>
+	</div>
+</div>
+
 <script>
 
 $(function () {
@@ -380,17 +448,36 @@ function install(id){
 		alert("请先选择服务器");
 		return;
 	}
-	if (!$("#controllerDLegerGroup").val()) {
-		alert("请填写组名");
-		return;
-	}
-	if (!$("#controllerDLegerSelfId").val()) {
-		alert("请填写节点id");
-		return;
-	}
-	if (!$("#controllerDLegerPeers").val()) {
-		alert("请填写组员信息");
-		return;
+	if ($('input[name="controllerType"]:checked').val() == "jRaft") {
+		if (!$("#jRaftGroupId").val()) {
+			alert("请填写组名");
+			return;
+		}
+		if (!$("#jRaftServerId").val()) {
+			alert("请填写自身地址");
+			return;
+		}
+		if (!$("#jRaftInitConf").val()) {
+			alert("请填写组员内部通信地址");
+			return;
+		}
+		if (!$("#jRaftControllerRPCAddr").val()) {
+			alert("请填写组员外部通信地址");
+			return;
+		}
+	} else {
+		if (!$("#controllerDLegerGroup").val()) {
+			alert("请填写组名");
+			return;
+		}
+		if (!$("#controllerDLegerSelfId").val()) {
+			alert("请填写自身id");
+			return;
+		}
+		if (!$("#controllerDLegerPeers").val()) {
+			alert("请填写组员信息");
+			return;
+		}
 	}
 	if($('#'+id+'Install').html() == "继续"){
 		setTimeout(method+'()', 500);
@@ -436,21 +523,35 @@ function validateJDK(){
 /**
  * 端口校验
  */
-function checkPort(){
-	var peers = $('#controllerDLegerPeers').val();
-	var selfId = $("#controllerDLegerSelfId").val();
+function checkPort() {
 	var port = -1;
-	var peerArray = peers.split(";");
-	for (var i = 0; i < peerArray.length; i++) {
-		var array = peerArray[i].split("-");
-		if (selfId == array[0]) {
-			port = array[1].split(":")[1];
-			break;
+	if ($('input[name="controllerType"]:checked').val() == "jRaft") {
+		var peers = $('#jRaftControllerRPCAddr').val();
+		var selfId = $("#jRaftServerId").val();
+		var selfIp = selfId.split(":")[0];
+		var peerArray = peers.split(",");
+		for (var i = 0; i < peerArray.length; i++) {
+			var array = peerArray[i].split(":");
+			if (selfIp == array[0]) {
+				port = array[1];
+				break;
+			}
+		}
+	} else {
+		var peers = $('#controllerDLegerPeers').val();
+		var selfId = $("#controllerDLegerSelfId").val();
+		var peerArray = peers.split(";");
+		for (var i = 0; i < peerArray.length; i++) {
+			var array = peerArray[i].split("-");
+			if (selfId == array[0]) {
+				port = array[1].split(":")[1];
+				break;
+			}
 		}
 	}
 	if (port == -1) {
 		goOn("checkPort");
-		alert("请填写正确的组员信息");
+		alert("请填写正确的组员地址信息，确保能从中解析出端口号");
 		return;
 	}
 	$("#listenPort").val(port);
@@ -728,6 +829,31 @@ function warn_smartwizard(content, index) {
 
 function disable_smartwizard(content, index) {
 	$('#'+ content).smartWizard("setState", [index], "disable");
+}
+
+function changeControllerType() {
+	if ($('input[name="controllerType"]:checked').val() == "jRaft") {
+		$("#jRaftInput").show();
+		$("#DlegerInput").hide();
+	} else {
+		$("#jRaftInput").hide();
+		$("#DlegerInput").show();
+	}
+}
+
+function viewControllerConfig(addr) {
+	$.get('${request.contextPath}/admin/controller/config',
+			{
+				cid: ${selectedCluster.id},
+				addr: addr
+			},
+			function (data) {
+				if (data.status == 200){
+					$("#controllerConfigPre").jsonViewer(data.result, {withQuotes: true, rootCollapsable: false});
+				} else {
+					$("#controllerConfigPre").html("查询失败："+data.message);
+				}
+			}, 'json');
 }
 </script>
 </#if>

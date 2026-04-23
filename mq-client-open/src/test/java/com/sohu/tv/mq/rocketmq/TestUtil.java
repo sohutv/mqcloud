@@ -21,8 +21,6 @@ public class TestUtil {
     }
 
     public static RocketMQConsumer buildConsumer(String consumerGroup, String topic) {
-        RocketMQConsumer consumer = new RocketMQConsumer(consumerGroup, topic);
-        setDomain(consumer);
         return buildConsumer(consumerGroup, topic, false);
     }
 
@@ -46,6 +44,18 @@ public class TestUtil {
         RocketMQProducer producer = new RocketMQProducer(producerGroup, topic, transactionListener);
         setDomain(producer);
         return producer;
+    }
+
+    public static RocketMQLmqConsumer buildLMQConsumer(String consumerGroup, String parentTopic, String liteTopic) {
+        RocketMQLmqConsumer consumer = new RocketMQLmqConsumer(consumerGroup, parentTopic, liteTopic);
+        setDomain(consumer);
+        return consumer;
+    }
+
+    public static RocketMQLmqPullConsumer buildLMQPullConsumer(String consumerGroup, String parentTopic, String liteTopic) {
+        RocketMQLmqPullConsumer consumer = new RocketMQLmqPullConsumer(consumerGroup, parentTopic, liteTopic);
+        setDomain(consumer);
+        return consumer;
     }
 
     private static void setDomain(AbstractConfig abstractConfig) {

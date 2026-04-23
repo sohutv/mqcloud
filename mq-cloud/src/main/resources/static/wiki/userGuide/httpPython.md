@@ -2,7 +2,7 @@
 
 这里提供了python基于http协议的使用方式：
 
-**<span id="produce">一</span>、生产消息代码示例如下：** 
+**<span id="produce">一</span>、生产消息代码** 
 
 ```
 # coding=utf-8
@@ -35,7 +35,18 @@ def sendMessage():
 sendMessage()
 ```
 
-**<span id="consume">二</span>、消费消息代码示例如下：**
+**<span id="consume">二</span>、消费消息**
+
+关于http协议请求参数和响应数据说明请参考[http接入](http)，如果存在以下几种情况的任意一种，请使用pop消费：
+
+1. 希望全局有序均匀消费
+2. 单条消息处理时间较长
+3. 消息量可能突然增长，希望并发度突破队列数
+4. 高并发消费
+
+具体可以参考[pop消费](http#consumer)的介绍。
+
+消费示例代码如下：
 
 ```
 # coding=utf-8
@@ -48,7 +59,7 @@ running = True
 
 def httpConsume():
 	# 定义消费消息的参数
-	payload = {'topic': 'mqcloud-http-test-topic', 'consumer': 'clustering-mqcloud-http-consumer'}
+	payload = {'topic': 'mqcloud-http-test-topic', 'consumer': 'clustering-mqcloud-http-consumer', 'pop': True}
 	while running:
 		try:
 			# 拉取消息
@@ -96,5 +107,3 @@ signal.signal(signal.SIGTERM, signal_handler)
 
 httpConsume()
 ```
-
-关于http协议请求参数和响应数据说明请参考[http接入](http)。 

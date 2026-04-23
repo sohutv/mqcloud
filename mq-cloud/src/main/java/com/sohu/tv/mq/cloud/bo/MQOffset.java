@@ -11,6 +11,7 @@ public class MQOffset {
     private MessageQueue mq;
     private long minOffset;
     private long maxOffset;
+    private long realMaxOffset;
     private long offset;
     public MessageQueue getMq() {
         return mq;
@@ -36,9 +37,15 @@ public class MQOffset {
     public void setOffset(long offset) {
         this.offset = offset;
     }
+
     public boolean hasMessage() {
-        return offset < maxOffset && maxOffset > 0;
+        return maxOffset > 0 && (offset < maxOffset || (offset == maxOffset && offset < realMaxOffset));
     }
+
+    public void setRealMaxOffset(long realMaxOffset) {
+        this.realMaxOffset = realMaxOffset;
+    }
+
     @Override
     public String toString() {
         return "MQOffset [mq=" + mq + ", minOffset=" + minOffset + ", maxOffset=" + maxOffset + ", offset=" + offset

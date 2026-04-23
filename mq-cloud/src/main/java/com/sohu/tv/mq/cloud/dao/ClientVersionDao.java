@@ -2,6 +2,7 @@ package com.sohu.tv.mq.cloud.dao;
 
 import java.util.List;
 
+import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
@@ -41,4 +42,7 @@ public interface ClientVersionDao {
             + "<foreach collection=\"clients\" item=\"client\" separator=\",\" open=\"(\" close=\")\">#{client}</foreach> "
             + "</script>")
     public List<ClientVersion> selectClientVersionList(@Param("topic") String topic, @Param("clients") List<String> clients, @Param("role") int role);
+
+    @Delete("delete from client_version where topic = #{topic} and role = #{role} and client = #{client}")
+    public Integer delete(@Param("topic") String topic, @Param("client") String client, @Param("role") int role);
 }

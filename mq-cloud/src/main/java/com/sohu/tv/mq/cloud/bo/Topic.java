@@ -82,6 +82,10 @@ public class Topic {
     // 2天前的消息量
     private long count2d;
 
+    private String lmqExpiration;
+
+    private String liteTopic;
+
     public long getId() {
         return id;
     }
@@ -188,6 +192,10 @@ public class Topic {
 
     public boolean isDelayMsgType() {
         return msgType == 1;
+    }
+
+    public boolean isLiteParentTopic() {
+        return msgType == 3;
     }
     
     public int getSerializer() {
@@ -328,6 +336,22 @@ public class Topic {
 
     public void setCount2d(long count2d) {
         this.count2d = count2d;
+    }
+
+    public String getLmqExpiration() {
+        return lmqExpiration;
+    }
+
+    public void setLmqExpiration(String lmqExpiration) {
+        this.lmqExpiration = lmqExpiration;
+    }
+
+    public String getLiteTopic() {
+        return liteTopic;
+    }
+
+    public void setLiteTopic(String liteTopic) {
+        this.liteTopic = liteTopic;
     }
 
     @Override

@@ -5,12 +5,14 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+import com.sohu.tv.mq.util.CommonUtil;
 import com.sohu.tv.mq.util.JSONUtil;
 import org.apache.rocketmq.client.trace.TraceContext;
 import org.apache.rocketmq.client.trace.TraceType;
 
 import com.sohu.tv.mq.cloud.bo.TraceMessageDetail;
 import com.sohu.tv.mq.cloud.util.DateUtil;
+import org.apache.rocketmq.common.MixAll;
 
 /**
  * trace view vo
@@ -98,6 +100,9 @@ public class TraceViewVO {
         }
 
         public String getGroup() {
+            if (MixAll.isLmq(group)) {
+                return CommonUtil.stripLmqPrefix(group);
+            }
             return group;
         }
 

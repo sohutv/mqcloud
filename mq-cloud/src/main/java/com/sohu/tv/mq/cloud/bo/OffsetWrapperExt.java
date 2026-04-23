@@ -1,6 +1,5 @@
 package com.sohu.tv.mq.cloud.bo;
 
-import com.sohu.tv.mq.util.CommonUtil;
 import org.apache.rocketmq.remoting.protocol.admin.OffsetWrapper;
 
 /**
@@ -10,6 +9,7 @@ import org.apache.rocketmq.remoting.protocol.admin.OffsetWrapper;
 public class OffsetWrapperExt extends OffsetWrapper {
     private long lockTimestamp;
     private String clientIp;
+    private long consumeToTimestamp;
 
     public long getLockTimestamp() {
         return lockTimestamp;
@@ -33,5 +33,13 @@ public class OffsetWrapperExt extends OffsetWrapper {
 
     public void setClientIp(String clientIp) {
         this.clientIp = clientIp;
+    }
+
+    public long getConsumeToTimestamp() {
+        return consumeToTimestamp;
+    }
+
+    public void setConsumeToTimestamp(long consumeToTimestamp) {
+        this.consumeToTimestamp = consumeToTimestamp;
     }
 }

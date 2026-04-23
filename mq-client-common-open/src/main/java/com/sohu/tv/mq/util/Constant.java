@@ -32,8 +32,8 @@ public class Constant {
     public static final String COMMAND_TIMESPAN_START = "_ts_start";
     public static final String COMMAND_TIMESPAN_END = "_ts_end";
 
-    // 广播方式消费
-    public static int CLUSTERING = 0;
     // 集群方式消费
+    public static int CLUSTERING = 0;
+    // 广播方式消费
     public static int BROADCAST = 1;
 }

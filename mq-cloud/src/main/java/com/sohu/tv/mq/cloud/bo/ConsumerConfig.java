@@ -1,6 +1,7 @@
 package com.sohu.tv.mq.cloud.bo;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.rocketmq.remoting.protocol.heartbeat.MessageModel;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -29,6 +30,18 @@ public class ConsumerConfig {
 
     // 暂停具体某个客户端 clientId->unregister
     private Map<String, Boolean> pauseConfig;
+
+    private boolean pop;
+
+    private MessageModel messageModel;
+
+    public MessageModel getMessageModel() {
+        return messageModel;
+    }
+
+    public void setMessageModel(MessageModel messageModel) {
+        this.messageModel = messageModel;
+    }
 
     public String getConsumer() {
         return consumer;
@@ -104,6 +117,14 @@ public class ConsumerConfig {
             return null;
         }
         return pauseConfig.entrySet().iterator().next();
+    }
+
+    public boolean isPop() {
+        return pop;
+    }
+
+    public void setPop(boolean pop) {
+        this.pop = pop;
     }
 
     @Override

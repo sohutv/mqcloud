@@ -115,6 +115,14 @@
 							<label data-toggle="tooltip">
 								<input type="radio" name="msgType" value="0" checked>普通消息
 							</label>
+							<label data-toggle="tooltip" title="该topic内会发送轻量消息">
+								<input type="radio" name="msgType" value="3">轻量消息 <a href="${request.contextPath}/wiki/userGuide/liteTopic" data-toggle="tooltip" data-placement="bottom" title="点击查看轻量消息释义" target=_blank><i class="fas fa-question-circle fa-sm"></i></a>
+							</label>
+						</div>
+					</div>
+					<div class="input-group mb-3">
+						<label class="col-md-3"></label>
+						<div class="col-md-7 checkbox">
 							<label data-toggle="tooltip" title="该topic内会发送延迟消息">
 								<input type="radio" name="msgType" value="1">延迟消息 <a href="${request.contextPath}/wiki/userGuide/clientProducer#delay" data-toggle="tooltip" data-placement="bottom" title="点击查看延迟消息释义" target=_blank><i class="fas fa-question-circle fa-sm"></i></a>
 							</label>

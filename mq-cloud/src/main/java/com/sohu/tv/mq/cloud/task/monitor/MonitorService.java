@@ -178,7 +178,7 @@ public class MonitorService {
             consumer = new Consumer();
             consumer.setName(consumerGroup);
         }
-        ConsumerConnection cc = consumerService.examineConsumerConnectionInfo(consumerGroup, cluster, consumer.isProxyRemoting()).getResult();
+        ConsumerConnection cc = consumerService.examineConsumerConnectionInfo(cluster, consumer).getResult();
         if (cc == null) {
             return;
         }
@@ -254,7 +254,7 @@ public class MonitorService {
             Set<Connection> connSet = cc.getConnectionSet();
             for(Connection conn : connSet) {
                 Map<MessageQueue, Long> mqOffsetMap = (Map<MessageQueue, Long>) consumerService.fetchConsumerStatus(
-                        cluster, topic, consumer.getName(), conn, consumer.isProxyRemoting()).getResult();
+                        cluster, topic, consumer, conn).getResult();
                 if (mqOffsetMap == null) {
                     return;
                 }
@@ -277,8 +277,7 @@ public class MonitorService {
                 continue;
             }
 
-            ConsumerRunningInfo info = consumerService.getConsumerRunningInfo(cluster, consumer.getName(), clientId,
-                    consumer.isProxyRemoting()).getResult();
+            ConsumerRunningInfo info = consumerService.getConsumerRunningInfo(cluster, consumer, clientId).getResult();
             if (info != null) {
                 infoMap.put(clientId, info);
             }

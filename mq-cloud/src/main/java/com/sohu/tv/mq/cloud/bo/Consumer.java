@@ -1,6 +1,8 @@
 package com.sohu.tv.mq.cloud.bo;
 
+import com.sohu.tv.mq.util.CommonUtil;
 import com.sohu.tv.mq.util.MQProtocol;
+import org.apache.rocketmq.common.MixAll;
 
 import java.util.Date;
 
@@ -148,6 +150,17 @@ public class Consumer {
 
     public boolean isProxyRemoting() {
         return MQProtocol.isProxyRemoting(protocol);
+    }
+
+    public String getDisplayName() {
+        if (MixAll.isLmq(name)) {
+            return CommonUtil.stripLmqPrefix(name);
+        }
+        return name;
+    }
+
+    public boolean isLmqConsumer() {
+        return MixAll.isLmq(name);
     }
 
     @Override

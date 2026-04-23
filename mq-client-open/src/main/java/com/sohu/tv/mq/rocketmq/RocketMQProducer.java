@@ -8,6 +8,7 @@ import com.sohu.tv.mq.common.SohuSendMessageHook;
 import com.sohu.tv.mq.dto.WebResult;
 import com.sohu.tv.mq.metric.MQMetricsExporter;
 import com.sohu.tv.mq.rocketmq.circuitbreaker.SentinelCircuitBreaker;
+import com.sohu.tv.mq.rocketmq.producer.RendezvousHashMessageQueueSelector;
 import com.sohu.tv.mq.route.AffinityMQStrategy;
 import com.sohu.tv.mq.stats.StatsHelper;
 import com.sohu.tv.mq.trace.SendMessageWithBornHostTraceHookImpl;
@@ -117,6 +118,7 @@ public class RocketMQProducer extends AbstractConfig {
         List<String> topics = new ArrayList<>();
         topics.add(topic);
         producer.setTopics(topics);
+        messageQueueSelector = new RendezvousHashMessageQueueSelector();
         return this;
     }
 
@@ -628,6 +630,8 @@ public class RocketMQProducer extends AbstractConfig {
         if (mqMessage.isEnableCircuitBreaker()) {
             sentinelCircuitBreaker.entry(mqMessage);
         }
+        // 设置lmq属性
+        mqMessage.setLmqProperty(getTopic());
     }
 
     private Result _send(MQMessage mqMessage) throws MQBrokerException, RemotingException, InterruptedException, MQClientException {

@@ -63,6 +63,10 @@ public enum Status {
     BROKER_AUTO_UPDATE_CHECK_STATUS_ERROR(526, "broker自动更新检查状态异常"),
     BROKER_AUTO_UPDATE_CHECK_STATUS_FINISHED(527, "broker自动更新检查状态人工结束"),
     BROKER_UPDATING(528, "集群审核暂停中"),
+    BROKER_SHOULD_STOP_WRITE(529, "broker应先停止写入"),
+    PROXY_SHOULD_OFFLINE(530, "proxy应先摘除流量"),
+    NS_SHOULD_OFFLINE(531, "nameserver应先摘除流量"),
+    DELETE_ERR_ONLY_ONE_PRODUCER_RESULT(532, "只剩一个生产者时禁止删除"),
     
     // 6xx代表web请求异常
     WEB_ERROR(600, "请求错误"),

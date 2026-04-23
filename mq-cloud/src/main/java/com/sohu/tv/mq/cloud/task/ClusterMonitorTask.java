@@ -159,9 +159,10 @@ public class ClusterMonitorTask {
             KVTable kvTable = result.getResult();
             if (kvTable != null) {
                 broker.setMaxOffset(NumberUtils.toLong(kvTable.getTable().get("commitLogMaxOffset")));
-                brokerService.update(mqCluster.getId(), broker.getAddr(), CheckStatusEnum.OK);
+                brokerService.resetBrokerId(mqCluster, broker);
+                brokerService.update(mqCluster.getId(), broker.getAddr(), CheckStatusEnum.OK, broker.getBrokerID());
             } else if (result.getException() != null) {
-                brokerService.update(mqCluster.getId(), broker.getAddr(), CheckStatusEnum.FAIL);
+                brokerService.update(mqCluster.getId(), broker.getAddr(), CheckStatusEnum.FAIL, broker.getBrokerID());
                 statList.add(broker.getBrokerName() + ":" + (broker.isMaster() ? "master" : "slave") + ":"
                         + broker.getAddr() + ";Exception: " + result.getException().getMessage());
             }
@@ -284,7 +285,7 @@ public class ClusterMonitorTask {
         List<String> statList = new ArrayList<>();
         listResult.getResult().stream().forEach(controller -> {
             String addr = controller.getAddr();
-            Result<?> result = retry(() -> controllerService.healthCheck(mqCluster, addr));
+            Result<?> result = retry(() -> controllerService.getControllerMetaData(mqCluster, addr));
             if (result.isOK()) {
                 controllerService.update(mqCluster.getId(), addr, CheckStatusEnum.OK);
             } else {

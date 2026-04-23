@@ -258,6 +258,10 @@ public class AdminDeployController extends AdminViewController {
         if (ips.length != 2) {
             return Result.getResult(Status.PARAM_ERROR);
         }
+        Result<Broker> brokerResult = brokerService.queryBroker(ipAddr);
+        if (brokerResult.isNotOK()) {
+            return brokerResult;
+        }
         // 校验端口
         String ip = ips[0];
         int port = NumberUtils.toInt(ips[1]);
@@ -307,7 +311,15 @@ public class AdminDeployController extends AdminViewController {
         if (brokerResult.isNotOK()) {
             return brokerResult;
         }
-        return mqDeployer.shutdown(ip, port, brokerResult.getResult().getBaseDir());
+        Broker broker = brokerResult.getResult();
+        if (broker.isMaster() && broker.isWritable()) {
+            return Result.getResult(Status.BROKER_SHOULD_STOP_WRITE);
+        }
+        Result<?> shutdownResult = mqDeployer.shutdown(ip, port, broker.getBaseDir());
+        if (shutdownResult.isOK() && broker.isWritable()) {
+            brokerService.updateWritable(cid, addr, false);
+        }
+        return shutdownResult;
     }
 
     /**

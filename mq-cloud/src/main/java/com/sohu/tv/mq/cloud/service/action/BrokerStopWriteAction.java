@@ -3,6 +3,7 @@ package com.sohu.tv.mq.cloud.service.action;
 import com.sohu.tv.mq.cloud.bo.BrokerAutoUpdateStep;
 import com.sohu.tv.mq.cloud.bo.BrokerAutoUpdateStep.Action;
 import com.sohu.tv.mq.cloud.util.Result;
+import org.apache.rocketmq.client.exception.MQClientException;
 import org.apache.rocketmq.remoting.protocol.body.BrokerStatsData;
 import org.springframework.stereotype.Component;
 
@@ -25,6 +26,13 @@ public class BrokerStopWriteAction extends BrokerAction {
         // 检查broker是否停写
         Result<BrokerStatsData> result = brokerService.viewBrokerPutStats(step.getCid(), step.getBrokerAddr());
         if (result.isNotOK()) {
+            // 如果查询失败，且异常是MQClientException，且异常信息包含"not exist"，说明broker上没有put stats数据，说明broker停写了
+            if (result.getException() != null && result.getException() instanceof MQClientException) {
+                String error = ((MQClientException) result.getException()).getErrorMessage();
+                if (error != null && error.contains("not exist")) {
+                    return Result.getOKResult().setMessage("put stats:0");
+                }
+            }
             return result;
         }
         long putStats = result.getResult().getStatsMinute().getSum();

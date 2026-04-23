@@ -216,18 +216,27 @@
 		        function(data){
 		            if(data.status == 200){
 		            	var content = "";
-		            	for(var i in data.result){
-		            		var topic = data.result[i];
-	            			content += "<option value='"+topic.name+"'>"+topic.name+"</option>";
-		            	}
+						for (var i in data.result) {
+							var topic = data.result[i];
+							content += "<option value='" + topic.name + "' ";
+							<#if response.OK && response.result.queryTopic??>
+							if (topic.name == '${response.result.queryTopic}') {
+								content += "selected";
+							}
+							</#if>
+							content += " data-content='" + topic.name
+									+ " <span class=\"text-muted text-xs\">" + topic.countFormat + "条/小时</span>'></option>";
+						}
 		        		$("#topicSearchSelect").html(content);
 		        		$("#topicSearchSelect").selectpicker('refresh');
-	        			<#if response.OK && response.result.queryTopic??>
-			        		$('#' + componentId).selectpicker('val', '${response.result.queryTopic}');
-	        			</#if>
 				    }else{
 				    	toastr.error("数据获取失败！"+data.message);  
 				    }
 	        }, 'json');
 	}
 </script>
+<style>
+	.dropdown-item.active span, .dropdown-item:active span {
+		color: #fff !important;
+	}
+</style>

@@ -9,7 +9,10 @@ import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.remoting.RPCHook;
 import org.apache.rocketmq.remoting.protocol.RemotingCommand;
 import org.apache.rocketmq.remoting.protocol.ResponseCode;
+import org.apache.rocketmq.remoting.protocol.body.GroupPageList;
 import org.apache.rocketmq.remoting.protocol.body.ProducerTableInfo;
+import org.apache.rocketmq.remoting.protocol.body.TopicPageList;
+import org.apache.rocketmq.remoting.protocol.header.QueryTopicConsumeByWhoRequestHeader;
 
 import static org.apache.rocketmq.remoting.protocol.RemotingSysResponseCode.SUCCESS;
 
@@ -226,6 +229,50 @@ public class DefaultSohuMQAdmin extends SohuMQAdmin {
         switch (response.getCode()) {
             case ResponseCode.SUCCESS: {
                 return ProducerTableInfo.decode(response.getBody(), ProducerTableInfo.class);
+            }
+            default:
+                break;
+        }
+        throw new MQBrokerException(response.getCode(), response.getRemark(), brokerAddr);
+    }
+
+    /**
+     * 获取topic的消费者列表
+     */
+    public GroupPageList queryConsumerByTopic(String brokerAddr, String topic, int page, int pageSize) throws Exception {
+        QueryTopicConsumeByWhoRequestHeader requestHeader = new QueryTopicConsumeByWhoRequestHeader();
+        requestHeader.setTopic(topic);
+        requestHeader.setPage(page);
+        requestHeader.setPageSize(pageSize);
+        RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.QUERY_CONSUMER_BY_TOPIC, requestHeader);
+        RemotingCommand response = getMQClientInstance().getMQClientAPIImpl().getRemotingClient()
+                .invokeSync(MixAll.brokerVIPChannel(isVipChannelEnabled(), brokerAddr), request, getTimeoutMillis());
+        assert response != null;
+        switch (response.getCode()) {
+            case ResponseCode.SUCCESS: {
+                return GroupPageList.decode(response.getBody(), GroupPageList.class);
+            }
+            default:
+                break;
+        }
+        throw new MQBrokerException(response.getCode(), response.getRemark(), brokerAddr);
+    }
+
+    /**
+     * 获取topic的lmq
+     */
+    public TopicPageList queryLmqByTopic(String brokerAddr, String topic, int page, int pageSize) throws Exception {
+        QueryTopicConsumeByWhoRequestHeader requestHeader = new QueryTopicConsumeByWhoRequestHeader();
+        requestHeader.setTopic(topic);
+        requestHeader.setPage(page);
+        requestHeader.setPageSize(pageSize);
+        RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.QUERY_LMQ_BY_PARENT_TOPIC, requestHeader);
+        RemotingCommand response = getMQClientInstance().getMQClientAPIImpl().getRemotingClient()
+                .invokeSync(MixAll.brokerVIPChannel(isVipChannelEnabled(), brokerAddr), request, getTimeoutMillis());
+        assert response != null;
+        switch (response.getCode()) {
+            case ResponseCode.SUCCESS: {
+                return TopicPageList.decode(response.getBody(), TopicPageList.class);
             }
             default:
                 break;

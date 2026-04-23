@@ -5,7 +5,7 @@
                 <#if connectionInfo_index == 0>
                 <td rowspan=${clientConnectionInfo.connectionInfoListSize}>${clientConnectionInfo_index + 1}</td>
                 <td rowspan=${clientConnectionInfo.connectionInfoListSize}>
-                    <a target="_blank" href="${request.contextPath}/${connectionInfo.role}/detail?${connectionInfo.role}=${clientConnectionInfo.client}">
+                    <a target="_blank" href="${request.contextPath}/${connectionInfo.role}/detail?${connectionInfo.role}=${clientConnectionInfo.encodedClient}&cid=${clientConnectionInfo.cid}">
                         ${clientConnectionInfo.client}
                     </a>
                 </td>

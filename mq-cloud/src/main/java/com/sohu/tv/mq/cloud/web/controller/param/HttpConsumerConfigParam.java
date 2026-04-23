@@ -7,6 +7,8 @@ package com.sohu.tv.mq.cloud.web.controller.param;
  * @date 2024年7月12日
  */
 public class HttpConsumerConfigParam {
+    private String consumer;
+    private long tid;
     private long consumerId;
     private Integer pullSize;
     private Long pullTimeout;
@@ -42,6 +44,22 @@ public class HttpConsumerConfigParam {
 
     public void setConsumeTimeout(Long consumeTimeout) {
         this.consumeTimeout = consumeTimeout;
+    }
+
+    public String getConsumer() {
+        return consumer;
+    }
+
+    public void setConsumer(String consumer) {
+        this.consumer = consumer;
+    }
+
+    public long getTid() {
+        return tid;
+    }
+
+    public void setTid(long tid) {
+        this.tid = tid;
     }
 
     public void reset() {

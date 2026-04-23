@@ -225,6 +225,20 @@ public class AdminBrokerController extends AdminViewController {
             } else {
                 brokerStatVO.setCheckStatus(CheckStatusEnum.FAIL.getStatus());
             }
+            Properties config = brokerService.fetchBrokerConfig(mqCluster, broker.getAddr()).getResult();
+            if (config != null && "true".equals(config.get("enableControllerMode"))) {
+                brokerStatVO.setControllerEnabled(true);
+                brokerStatVO.setBrokerId(String.valueOf(config.get("brokerId")));
+            }
+        }
+        // 重置处理down掉的broker的id
+        for (List<BrokerStatVO> brokerStatVOList : brokerGroup.values()) {
+            boolean controllerEnabled = brokerStatVOList.stream().anyMatch(BrokerStatVO::isControllerEnabled);
+            if (controllerEnabled) {
+                brokerStatVOList.stream()
+                        .filter(brokerStatVO -> brokerStatVO.getCheckStatus() == CheckStatusEnum.FAIL.getStatus())
+                        .forEach(brokerStatVOFailed -> brokerStatVOFailed.setBrokerId("9"));
+            }
         }
         return brokerGroup;
     }
@@ -1160,6 +1174,26 @@ public class AdminBrokerController extends AdminViewController {
         }
         brokerAutoUpdateStep.setInfo("");
         return brokerAutoUpdateStepService.update(brokerAutoUpdateStep);
+    }
+
+    /**
+     * 切换至master
+     */
+    @ResponseBody
+    @PostMapping(value = "/switchToMaster")
+    public Result<?> switchToMaster(@RequestParam(name = "addr") String addr, Map<String, Object> map) {
+        Result<Broker> brokerResult = brokerService.queryBroker(addr);
+        if (brokerResult.isNotOK()) {
+            return Result.getWebResult(brokerResult);
+        }
+        logger.info("switch to master, addr:{}", addr);
+        Broker broker = brokerResult.getResult();
+        Cluster cluster = clusterService.getMQClusterById(broker.getCid());
+        Result<Boolean> result = brokerService.switchToMaster(cluster, broker);
+        if (result.isOK() && result.getResult()) {
+            brokerService.update(broker.getCid(), addr, CheckStatusEnum.OK, 0);
+        }
+        return Result.getWebResult(result);
     }
 
     @Override

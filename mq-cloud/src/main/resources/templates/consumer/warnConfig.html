@@ -1,0 +1,117 @@
+<#if response.notOK>
+    <b>错误：${response.message!}</b>
+<#else>
+<#assign config = response.result>
+<div class="modal-body">
+    <#if config.consumer?? && config.consumer?has_content>
+    <div class="input-group mb-3">
+        <label class="col-form-label  col-md-3"> 消费者: </label>
+        <div class="col-md-8">
+            <input type="text" readonly="readonly" name="consumer" value="${config.consumer}" class="form-control" />
+        </div>
+    </div>
+    </#if>
+    <div class="input-group mb-3">
+        <label class="col-md-3"> 接收预警: </label>
+        <div class="col-md-8 checkbox">
+            <label>
+                <input type="radio" name="ignoreWarn" value="0" <#if config.ignoreWarn == 0>checked=true</#if>>是
+            </label>
+            <label data-toggle="tooltip" title="选择“否”将不接收任何预警">
+                <input type="radio" name="ignoreWarn" value="1" <#if config.ignoreWarn == 1>checked=true</#if>>否
+            </label>
+        </div>
+    </div>
+    <div class="input-group mb-3" id="accumulateTimeID">
+        <label class="col-form-label col-md-3" data-toggle="tooltip" title="消息堆积时间大于${config.accumulateTimeShow}并且超过${config.accumulateCountValue}条时触发【消费堆积预警】"> 堆积阈值: <i class="fas fa-question-circle fa-sm text-primary"></i> </label>
+        <div class="col-md-8">
+            <div class="input-group">
+                <#if config.accumulateTime??>
+                    <input type="text" name="accumulateTime" value="${config.accumulateTimeValue}" class="form-control" />
+                <#else>
+                    <input type="text" name="accumulateTime" placeholder="默认${config.accumulateTimeValue}" class="form-control" />
+                </#if>
+                <div class="input-group-append">
+                    <span class="input-group-text ">秒</span>
+                </div>
+                <#if config.accumulateCount??>
+                    <input type="text" name="accumulateCount" value="${config.accumulateCountValue}" class="form-control" />
+                <#else>
+                    <input type="text" name="accumulateCount" placeholder="默认${config.accumulateCountValue}" class="form-control" />
+                </#if>
+                <div class="input-group-append">
+                    <span class="input-group-text ">条</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="input-group mb-3">
+        <label class="col-form-label col-md-3" data-toggle="tooltip" title="消费阻塞超过${config.blockTimeShow}时触发【消费阻塞预警】"> 阻塞阈值: <i class="fas fa-question-circle fa-sm text-primary"></i> </label>
+        <div class="col-md-8">
+            <div class="input-group">
+                <#if config.blockTime??>
+                    <input type="text" name="blockTime" value="${config.blockTimeValue}" class="form-control" />
+                <#else>
+                    <input type="text" name="blockTime" placeholder="默认${config.blockTimeValue}" class="form-control" />
+                </#if>
+                <div class="input-group-append">
+                    <span class="input-group-text ">秒</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="input-group mb-3">
+        <label class="col-form-label col-md-3" data-toggle="tooltip" title="消费消息失败超过${config.consumerFailCountShow}条时触发【消费失败预警】"> 消费失败: <i class="fas fa-question-circle fa-sm text-primary"></i> </label>
+        <div class="col-md-8">
+            <div class="input-group">
+                <#if config.consumerFailCount??>
+                    <input type="text" name="consumerFailCount" value="${config.consumerFailCountShow}" class="form-control" />
+                <#else>
+                    <input type="text" name="consumerFailCount" placeholder="默认${config.consumerFailCountShow}" class="form-control" />
+                </#if>
+                <div class="input-group-append">
+                    <span class="input-group-text ">条</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="input-group mb-3">
+        <label class="col-form-label col-md-3" data-toggle="tooltip" title="死消息超过${config.consumerDeadCountShow}条时触发【死消息预警】"> 死消息: <i class="fas fa-question-circle fa-sm text-primary"></i> </label>
+        <div class="col-md-8">
+            <div class="input-group">
+                <#if config.consumerDeadCount??>
+                    <input type="text" name="consumerDeadCount" value="${config.consumerDeadCountShow}" class="form-control" />
+                <#else>
+                    <input type="text" name="consumerDeadCount" placeholder="默认${config.consumerDeadCountShow}" class="form-control" />
+                </#if>
+                <div class="input-group-append">
+                    <span class="input-group-text ">条</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="input-group mb-3">
+        <label class="col-form-label col-md-3"> 预警频率: </label>
+        <div class="col-md-8">
+            <div class="input-group">
+                <#if config.warnUnitTime??>
+                    <input type="text" name="warnUnitTime" value="${config.warnUnitTimeValue}" class="form-control" />
+                <#else>
+                    <input type="text" name="warnUnitTime" placeholder="默认${config.warnUnitTimeValue}" class="form-control" />
+                </#if>
+                <div class="input-group-append">
+                    <span class="input-group-text ">小时</span>
+                </div>
+                <#if config.warnUnitCount??>
+                    <input type="text" name="warnUnitCount" value="${config.warnUnitCountValue}" class="form-control" />
+                <#else>
+                    <input type="text" name="warnUnitCount" placeholder="默认${config.warnUnitCountValue}" class="form-control" />
+                </#if>
+                <div class="input-group-append">
+                    <span class="input-group-text ">次</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</#if>

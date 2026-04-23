@@ -5,11 +5,9 @@ import com.sohu.tv.mq.cloud.bo.ConsumerStat;
 import com.sohu.tv.mq.cloud.service.AlarmConfigService;
 import com.sohu.tv.mq.cloud.service.ConsumerMonitorService;
 import com.sohu.tv.mq.cloud.util.Result;
-import com.sohu.tv.mq.cloud.web.controller.param.AlarmConfigParam;
 import com.sohu.tv.mq.cloud.web.controller.param.PaginationParam;
 import com.sohu.tv.mq.cloud.web.vo.ConsumerMonitorVO;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -58,7 +56,7 @@ public class AdminMonitorController extends AdminViewController {
         
         // 报警全部配置
         Result<List<AlarmConfig>> alarmConfigListResult = alarmConfigService.queryAll();
-        if (alarmConfigListResult.isNotOK() || alarmConfigListResult.getResult().isEmpty()) {
+        if (alarmConfigListResult.isEmpty()) {
             return view();
         }
         List<AlarmConfig> alarmConfiglist = alarmConfigListResult.getResult();
@@ -66,47 +64,20 @@ public class AdminMonitorController extends AdminViewController {
         while (iterator.hasNext()) {
             AlarmConfig alarmConfig = iterator.next();
             if (StringUtils.isBlank(alarmConfig.getConsumer())) {
+                alarmConfig.initDefaultConfigValue();
                 consumerMonitorVO.setDefaultConfig(alarmConfig);
                 iterator.remove();
                 break;
             }
         }
         if (alarmConfiglist.size() > 0) {
+            for (AlarmConfig alarmConfig : alarmConfiglist) {
+                alarmConfig.setDefaultConfig(consumerMonitorVO.getDefaultConfig());
+            }
             consumerMonitorVO.setAlarmConfig(alarmConfiglist);
         }
         setResult(map, consumerMonitorVO);
         return view();
-    }
-
-    /**
-     * 获取报警配置详情
-     *
-     * @param map
-     * @return
-     */
-    @RequestMapping(value = "/config/detail", method = RequestMethod.GET)
-    @ResponseBody
-    public Result<?> getAlarmConfigByID(@RequestParam("consumer") String consumer) {
-        Result<AlarmConfig> alarmConfigResult = alarmConfigService.queryByConsumer(consumer);
-        return alarmConfigResult;
-    }
-
-    /**
-     * 添加报警配置
-     *
-     * @param map
-     * @return
-     */
-    @RequestMapping(value = "/config/add", method = RequestMethod.POST)
-    @ResponseBody
-    public Result<?> addUserAlarmConfig(@Valid AlarmConfigParam alarmConfigParam) {
-        if (alarmConfigParam.getConsumer() == null) {
-            alarmConfigParam.setConsumer("");
-        }
-        AlarmConfig alarmConfig = new AlarmConfig();
-        BeanUtils.copyProperties(alarmConfigParam, alarmConfig);
-        Result<?> saveResult = alarmConfigService.save(alarmConfig);
-        return saveResult;
     }
 
     /**

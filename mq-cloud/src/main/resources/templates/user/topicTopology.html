@@ -14,6 +14,7 @@
 								<a href="javascript:void(0)" class="copied" data-toggle="tooltip" title="点击复制${response.result.topic.name}" data-clipboard-text="${response.result.topic.name}">${response.result.topic.name}</a>
 								<span data-toggle="tooltip" title="收藏"><i id="favorite" class="far fa-heart align-middle fa-xs text-secondary pointer" <#if response.result.favoriteId != 0>style="display:none;"</#if> onclick="favorite()"></i></span>
 								<span data-toggle="tooltip" title="取消收藏"><i id="unfavorite" class="fas fa-heart align-middle fa-xs text-secondary pointer" <#if response.result.favoriteId == 0>style="display:none;"</#if> onclick="unfavorite()"></i></span>
+								<#if response.result.topic.lmqExpiration??><span class="text-muted text-xs">过期时间:${response.result.topic.lmqExpiration}分钟</span></#if>
 							</td>
 						</tr>
 							<td class="text-muted"><span class="d-none d-lg-inline">所属</span>集群</td>
@@ -108,15 +109,21 @@
 						<#if response.result.producerFilterMap?? && response.result.producerFilterMap?size gt 0>
 							<#list response.result.producerFilterMap as key, producers>
 								<tr>
-									<td><a href="javascript:void(0)" onclick="showProducerStats('${key.producer}')" data-html="true" data-placement="bottom" data-toggle="tooltip" title="点击查看客户端状况<br><#if key.protocol == 0>协议：RocketMQ</#if><#if key.protocol == 1>协议：HTTP</#if><#if key.protocol == 2>协议：Proxy Remoting</#if>">${key.producer}</a> <span data-toggle="tooltip" title="点击复制${key.producer}"><i class="fas fa-copy fa-xs copied text-secondary pointer" data-clipboard-text="${key.producer}"></i></span></td>
+									<#assign flag = 0>
+									<#assign userName = userInfo.user.name!userInfo.user.getEmailName()>
+									<#list producers as producer>
+										<#if producer.username == userName>
+											<#assign flag = 1>
+										</#if>
+									</#list>
+									<td><a href="javascript:void(0)" onclick="showProducerStats('${key.producer}')"
+										   data-html="true" data-placement="bottom" data-toggle="tooltip" title="点击查看客户端状况<br><#if key.protocol == 0>协议：RocketMQ</#if><#if key.protocol == 1>协议：HTTP</#if><#if key.protocol == 2>协议：Proxy Remoting</#if>">${key.producer}</a>
+										<span data-toggle="tooltip" title="点击复制${key.producer}"><i class="fas fa-copy fa-xs copied text-secondary pointer" data-clipboard-text="${key.producer}"></i></span>
+										<#if producers?size == 1 && (flag == 1 || userInfo.user.type == 1)>
+											<span onclick="prepareDeleteProducer(${producers[0].id}, '${key.producer}')" data-toggle="tooltip" title="删除${key.producer}"><i class="fas fa-trash-alt fa-xs copied text-secondary pointer"></i></span>
+										</#if>
+									</td>
 									<td>
-										<#assign flag = 0>
-										<#assign userName = userInfo.user.name!userInfo.user.getEmailName()>
-										<#list producers as producer>
-											<#if producer.username == userName>
-											  <#assign flag = 1>
-											</#if>
-										</#list>
 										<#if flag == 1 || userInfo.user.type == 1>
 											<#if producers?size == 1>
 												<span>${producers[0].username}</span>
@@ -749,6 +756,33 @@ $(function() {
 	</div>
 </div>
 
+<!-- 删除Producer -->
+<div id="deleteProducerModal" class="modal fade">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title">确定删除生产者吗?</h5>
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+			</div>
+			<div class="modal-body">
+				<form id="deleteProducerForm">
+					<div class="input-group mb-3">
+						<label class="col-form-label col-md-3"> 生产者: </label>
+						<div class="col-md-9">
+							<input type="text" readonly="readonly" id="deleteProducerName" class="form-control" />
+						</div>
+					</div>
+					<input type="hidden" name="pid" id="deleteProducerId">
+				</form>
+			</div>
+			<div  class="modal-footer justify-content-between">
+				<button type="button" data-dismiss="modal" class="btn btn-default" >取消</button>
+				<button type="button" id="deleteProducerButton" class="btn btn-primary" onclick="deleteProducer()">确定</button>
+			</div>
+		</div>
+	</div>
+</div>
+
 <script>
 	$(function () {
 		// 初始化user列表
@@ -783,14 +817,39 @@ $(function() {
 			updateThresholdAppendSpan(value);
 		});
 	});
-	
+
 	// 准备删除生产者
+	function prepareDeleteProducer(pid, producer){
+		$("#deleteProducerId").val(pid);
+		$("#deleteProducerName").val(producer);
+		$("#deleteProducerModal").modal('show');
+	}
+
+	// 删除用户
+	function deleteProducer() {
+		disable("deleteProducerButton");
+		$.post('${request.contextPath}/userProducer/delete',
+				{
+					pid: $("#deleteProducerId").val()
+				},
+				function (data) {
+					if (data.status == 200) {
+						toastr.success("申请成功，请稍后查看！即将跳转到我的工单");
+						toMyAuditPage();
+					} else {
+						toastr.error("删除失败！" + data.message);
+						enable("deleteProducerButton");
+					}
+				}, 'json');
+	}
+
+	// 准备删除用户
 	function prepareDeleteUserProducer(pid){
 		$("#pid").val(pid);
 		$("#producer").val($("#producer_"+pid).text());
 		$("#deleteUserProducerModal").modal('show');
 	}
-	// 删除生产者
+	// 删除用户
 	function deleteUserProducer(){
 		disable("deleteProducerBtn");
 		$.post('${request.contextPath}/userProducer/delete',

@@ -43,11 +43,9 @@ public interface BrokerDao {
     
     /**
      * 更新
-     * 
-     * @param notice
      */
-    @Update("update broker set check_status = #{checkStatus}, check_time = now() where cid = #{cid} and addr = #{addr}")
-    public Integer update(@Param("cid") int cid, @Param("addr") String addr, @Param("checkStatus") int checkStatus);
+    @Update("update broker set check_status = #{checkStatus},broker_id = #{brokerId}, check_time = now() where cid = #{cid} and addr = #{addr}")
+    public Integer update(@Param("cid") int cid, @Param("addr") String addr, @Param("checkStatus") int checkStatus, @Param("brokerId") int brokerId);
     
     /**
      * 删除

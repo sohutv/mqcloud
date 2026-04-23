@@ -471,9 +471,19 @@ public class MQDeployer {
     public Result<?> configController(Map<String, Object> param) {
         param.remove("v");
         param.remove("cid");
-        param.remove("listenPort");
+        String controllerType = (String) param.get("controllerType");
+        if ("jRaft".equals(controllerType)) {
+            param.remove("controllerDLegerGroup");
+            param.remove("controllerDLegerPeers");
+            param.remove("controllerDLegerSelfId");
+        } else {
+            param.remove("jRaftGroupId");
+            param.remove("jRaftServerId");
+            param.remove("jRaftInitConf");
+            param.remove("jRaftControllerRPCAddr");
+        }
         String ip = param.remove("ip").toString();
-        String absoluteDir = param.get("dir").toString();
+        String absoluteDir = param.remove("dir").toString();
         String absoluteConfig = absoluteDir + "/" + CONFIG_FILE;
         String mqConf = map2String(param);
         String mqConfCommand = "echo -e \"" + mqConf + "\" > " + absoluteConfig;
@@ -997,8 +1007,20 @@ public class MQDeployer {
                     break;
                 }
             }
+            if (abortFileNotExist(ip, baseDir)) {
+                return Result.getOKResult();
+            }
+            return Result.getResult(Status.DB_ERROR).setMessage("abort file exist");
         }
         return result;
+    }
+
+    public boolean abortFileNotExist(String ip, String baseDir) {
+        Result<Boolean> abortFileExistResult = fileExist(ip, baseDir + "/data/abort");
+        if (abortFileExistResult.isOK() && !abortFileExistResult.getResult()) {
+            return true;
+        }
+        return false;
     }
     
     /**
@@ -1424,6 +1446,39 @@ public class MQDeployer {
         Result<?> result = wrapSSHResult(sshResult);
         if (!result.isOK()) {
             return result;
+        }
+        if ("0".equals(result.getResult())) {
+            return Result.getResult(false);
+        } else if ("1".equals(result.getResult())) {
+            return Result.getResult(true);
+        }
+        return Result.getResult(Status.NO_RESULT);
+    }
+
+    /**
+     * 判断文件是否存在
+     *
+     * @param ip
+     * @param dir
+     * @return Result.notOK:结果未知;Result<true>:存在;Result<false>:不存在
+     */
+    public Result<Boolean> fileExist(String ip, String path) {
+        String comm = "if [ -f \"" + path + "\" ];then echo 1;else echo 0;fi";
+        SSHResult sshResult = null;
+        try {
+            sshResult = sshTemplate.execute(ip, new SSHCallback() {
+                public SSHResult call(SSHSession session) {
+                    SSHResult sshResult = session.executeCommand(comm);
+                    return sshResult;
+                }
+            });
+        } catch (SSHException e) {
+            logger.error("fileExist, ip:{},dir:{}", ip, path, e);
+            return Result.getWebErrorResult(e);
+        }
+        Result<?> result = wrapSSHResult(sshResult);
+        if (!result.isOK()) {
+            return (Result<Boolean>) result;
         }
         if ("0".equals(result.getResult())) {
             return Result.getResult(false);

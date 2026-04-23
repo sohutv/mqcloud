@@ -12,11 +12,11 @@ import com.sohu.tv.mq.cloud.web.controller.param.PaginationParam;
 import com.sohu.tv.mq.cloud.web.vo.ClientLanguageVo;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.rocketmq.common.MQVersion;
+import org.apache.rocketmq.remoting.protocol.LanguageCode;
 import org.apache.rocketmq.remoting.protocol.body.Connection;
 import org.apache.rocketmq.remoting.protocol.body.ConsumerConnection;
 import org.apache.rocketmq.remoting.protocol.body.ConsumerRunningInfo;
 import org.apache.rocketmq.remoting.protocol.body.ProducerConnection;
-import org.apache.rocketmq.remoting.protocol.LanguageCode;
 import org.apache.rocketmq.tools.admin.MQAdminExt;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -395,12 +395,14 @@ public class ClientConnectionService {
             int index = paginationParam.getBegin();
             for (int i = 0; i < clientLanguages.size(); i++) {
                 ClientLanguage clientLanguage = clientLanguages.get(i);
+                List<Topic> topicLit = topicMap.get(clientLanguage.getTid());
+                if (topicLit == null) {
+                    continue;
+                }
                 ClientLanguageVo clientLanguageVo = new ClientLanguageVo();
                 clientLanguageVo.setClientLanguage(clientLanguages.get(i));
                 clientLanguageVo.setIndex(++index);
-                clientLanguageVo.setTopic(Optional.ofNullable(topicMap.get(clientLanguage.getTid()))
-                        .map(node -> node.get(0))
-                        .orElse(null));
+                clientLanguageVo.setTopic(topicLit.get(0));
                 clientLanguageVo.setClusterName(Optional.ofNullable(clusterService.getMQClusterById(clientLanguageVo.getClientLanguage().getCid()))
                         .map(Cluster::getName).orElse(null));
                 resultList.add(clientLanguageVo);

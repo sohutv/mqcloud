@@ -190,6 +190,9 @@
 											<button title="增加slave" type="button" class="btn btn-xs btn-primary"  onclick="addBroker('${key}', '${brokerStat.version}')" data-target="#addBrokerModal" data-toggle="modal"><span class="fas fa-plus" aria-hidden="true"></span></button>
 										</div>
 									<#else>
+										<#if brokerStat.controllerEnabled>
+										<button title="切换为master" type="button" class="btn btn-xs btn-warning" data-target="#switchToMasterModal" onclick="switchToMasterPrompt('${brokerStat.brokerAddr}')" data-toggle="modal"><i class="fas fa-crown"></i></button>
+										</#if>
 										<button title="slave可以直接关闭" type="button" class="btn btn-xs btn-danger" data-target="#brokerOfflineModal${i}" onclick="program('${brokerStat.brokerAddr}', 'brokerOfflineProgram${i}')" data-toggle="modal"><i class="fas fa-power-off"></i></button>
 									</#if>
 								<#else>
@@ -207,7 +210,7 @@
 				</#list>
 				<#else>
 					<tr>
-						<td colspan=11 class="text-center">暂无数据</td>
+						<td colspan=12 class="text-center">暂无数据</td>
 					</tr>
 				</#if>
 			</tbody>
@@ -1234,6 +1237,27 @@
 					<tr class="no_more_data"><td class="text-center" colspan="11">数据加载中...</td></tr>
 					</tbody>
 				</table>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- 切主 -->
+<div id="switchToMasterModal" class="modal fade" tabindex="-1" data-width="400">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h4 class="modal-title">切换确认</h4>
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+			</div>
+			<div class="modal-body">
+				<div class="form-group text-center">
+					<span>确定切换 <b id="switchToMasterInput"></b> 为master吗?</span>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" data-dismiss="modal" class="btn btn-light" >取消</button>
+				<button type="button" class="btn btn-primary" onclick="switchToMaster()" id="switchToMasterBtn">确定</button>
 			</div>
 		</div>
 	</div>
@@ -2810,6 +2834,24 @@ function updateAutoUpdateBrokerStep(id, action, comp) {
 		} else {
 			toastr.error("操作失败！" + data.message);
 			enable(comp)
+		}
+	}, 'json');
+}
+
+function switchToMasterPrompt(addr) {
+	$("#switchToMasterInput").html(addr);
+}
+function switchToMaster() {
+	disable('switchToMasterBtn');
+	post('${request.contextPath}/admin/broker/switchToMaster', {
+		addr: $("#switchToMasterInput").html()
+	}, function (data) {
+		if (data.status == 200) {
+			toastr.success("操作成功！系统将自动刷新");
+			reload(3000);
+		} else {
+			toastr.error("操作失败！" + data.message);
+			enable('switchToMasterBtn');
 		}
 	}, 'json');
 }

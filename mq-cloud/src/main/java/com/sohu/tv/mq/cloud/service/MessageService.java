@@ -196,7 +196,7 @@ public class MessageService {
         }
         // 获取broker集群信息
         ClusterInfo clusterInfo = examineBrokerClusterInfo(cluster).getResult();
-        return Result.getResult(toDecodedMessage(messageExt, clusterInfo));
+        return Result.getResult(toDecodedMessage(messageExt, clusterInfo, topic));
     }
 
     /**
@@ -212,7 +212,7 @@ public class MessageService {
         try {
             // 获取消费者
             Cluster cluster = clusterService.getMQClusterById(messageQueryCondition.getCid());
-            consumer = getConsumer(cluster);
+            consumer = getConsumer(cluster, messageQueryCondition);
             // 队列为空或者剩余消息不多且还有未搜索的队列，获取队列偏移量
             if (messageQueryCondition.getMqOffsetList() == null
                     || (messageQueryCondition.getLeftSize() <= 32
@@ -311,7 +311,7 @@ public class MessageService {
                         continue;
                     }
                     // 过滤不在当前offset查询条件内的消息
-                    if (msg.getQueueOffset() > mqOffset.getMaxOffset()) {
+                    if (CommonUtil.getLmqOffset(messageQueryCondition.getRealTopic(), msg) > mqOffset.getMaxOffset()) {
                         continue;
                     }
                     // 定时消息搜索需要过滤真实topic
@@ -329,7 +329,7 @@ public class MessageService {
                     if (!messageQueryCondition.isShowSysMessage() && DEFAULT_CANCEL_MESSAGE_TAGS.equals(tags)) {
                         continue;
                     }
-                    DecodedMessage m = toDecodedMessage(msg, mqOffset.getMq().getBrokerName());
+                    DecodedMessage m = toDecodedMessage(msg, mqOffset.getMq().getBrokerName(), messageQueryCondition.getRealTopic());
                     // 判断是否包含关键字
                     if (messageQueryCondition.getKey() == null) {
                         messageList.add(m);
@@ -385,7 +385,7 @@ public class MessageService {
                 logger.warn("MessageExt={}, MessageBody is null", msg);
                 continue;
             }
-            messageList.add(toDecodedMessage(msg, clusterInfo));
+            messageList.add(toDecodedMessage(msg, clusterInfo, topic));
         }
         // 按时间排序
         Collections.sort(messageList, new Comparator<DecodedMessage>() {
@@ -402,7 +402,7 @@ public class MessageService {
      * @param msg
      * @return clusterInfo
      */
-    private DecodedMessage toDecodedMessage(MessageExt msg, ClusterInfo clusterInfo) {
+    private DecodedMessage toDecodedMessage(MessageExt msg, ClusterInfo clusterInfo, String topic) {
         String broker = null;
         if (clusterInfo != null) {
             Map<String, BrokerData> brokerAddressMap = clusterInfo.getBrokerAddrTable();
@@ -419,7 +419,7 @@ public class MessageService {
                 }
             }
         }
-        return toDecodedMessage(msg, broker);
+        return toDecodedMessage(msg, broker, topic);
     }
 
     /**
@@ -428,7 +428,7 @@ public class MessageService {
      * @param msg
      * @return DecodedMessage
      */
-    public DecodedMessage toDecodedMessage(MessageExt msg, String broker) {
+    public DecodedMessage toDecodedMessage(MessageExt msg, String broker, String topic) {
         DecodedMessage m = new DecodedMessage();
         byte[] bytes = msg.getBody();
         m.setMsgLength(bytes.length);
@@ -471,6 +471,7 @@ public class MessageService {
         // fix json 反序列化空指针异常
         try {
             msg.getDeliverTimeMs();
+            msg.setPriority(0);
         } catch (Exception e) {
             msg.setDeliverTimeMs(-1);
         }
@@ -479,7 +480,7 @@ public class MessageService {
         // 设置topic原始信息
         String realTopic = msg.getProperty(MessageConst.PROPERTY_REAL_TOPIC);
         String retryTopic = msg.getProperty(MessageConst.PROPERTY_RETRY_TOPIC);
-        if(retryTopic == null) {
+        if (retryTopic == null) {
             m.setRealTopic(realTopic);
         } else {
             m.setRealTopic(retryTopic);
@@ -498,6 +499,11 @@ public class MessageService {
             m.getUserProperty(MessageConst.PROPERTY_BORN_HOST);
             m.getProperties().put(MessageConst.PROPERTY_BORN_HOST, bornHost);
         }
+        if (MixAll.isLmq(topic)) {
+            m.setQueueOffset(CommonUtil.getLmqOffset(topic, msg));
+        } else {
+            m.setLmqOffsetInfo(CommonUtil.getLmqOffsetInfo(msg));
+        }
         return m;
     }
 
@@ -513,16 +519,13 @@ public class MessageService {
             MessageQueryCondition messageQueryCondition, boolean retryWithErr, boolean offsetSearch) {
         List<MQOffset> offsetList = null;
         try {
-            String topic = messageQueryCondition.getTopic();
-            if (messageQueryCondition.isTimerWheelSearch()) {
-                topic = RMQ_SYS_WHEEL_TIMER;
-            }
-            Set<MessageQueue> mqs = consumer.fetchSubscribeMessageQueues(topic);
+            Set<MessageQueue> mqs = getMessageQueues(consumer, messageQueryCondition);
             messageQueryCondition.setTotalQueueNum(mqs.size());
             if (offsetSearch) {
                 // 偏移量搜索，过滤掉不符合条件的消息队列
                 mqs = mqs.stream().filter(mq -> isContainsBrokerOrQueue(mq, messageQueryCondition.getBrokerName(),
                         messageQueryCondition.getQueueId())).collect(Collectors.toSet());
+                messageQueryCondition.setTotalQueueNum(mqs.size());
             } else {
                 // 普通搜索，第一次最多搜索50个队列
                 if (messageQueryCondition.getMqOffsetList() == null) {
@@ -540,6 +543,7 @@ public class MessageService {
             for (MessageQueue mq : mqs) {
                 long minOffset = 0;
                 long maxOffset = 0;
+                long realMaxOffset = 0;
                 try {
                     if (!offsetSearch) {
                         minOffset = consumer.searchOffset(mq, messageQueryCondition.getStart());
@@ -555,9 +559,9 @@ public class MessageService {
                     } else {
                         maxOffset = messageQueryCondition.getEnd();
                         minOffset = messageQueryCondition.getStart();
-                        long tmpMaxOffset = consumer.maxOffset(mq);
-                        if (maxOffset > tmpMaxOffset) {
-                            maxOffset = tmpMaxOffset;
+                        realMaxOffset = consumer.maxOffset(mq);
+                        if (maxOffset > realMaxOffset) {
+                            maxOffset = realMaxOffset;
                         }
                         long tmpMinOffset = consumer.minOffset(mq);
                         if (minOffset < tmpMinOffset) {
@@ -576,6 +580,7 @@ public class MessageService {
                 mqOffset.setMaxOffset(maxOffset);
                 mqOffset.setMinOffset(minOffset);
                 mqOffset.setOffset(minOffset);
+                mqOffset.setRealMaxOffset(realMaxOffset);
                 offsetList.add(mqOffset);
             }
         } catch (Exception e) {
@@ -619,13 +624,30 @@ public class MessageService {
         return offsetList;
     }
 
+    private Set<MessageQueue> getMessageQueues(MQPullConsumer consumer, MessageQueryCondition messageQueryCondition) throws MQClientException {
+        String topic = messageQueryCondition.getTopic();
+        if (messageQueryCondition.isTimerWheelSearch()) {
+            topic = RMQ_SYS_WHEEL_TIMER;
+        }
+        Set<MessageQueue> mqs = consumer.fetchSubscribeMessageQueues(topic);
+        if (messageQueryCondition.getLiteTopic() == null) {
+            return mqs;
+        }
+        Set<MessageQueue> liteTopicMessageQueues = new HashSet<>();
+        for (MessageQueue mq : mqs) {
+            MessageQueue liteTopicMessageQueue = new MessageQueue(messageQueryCondition.getLiteTopic(), mq.getBrokerName(), (int) MixAll.LMQ_QUEUE_ID);
+            liteTopicMessageQueues.add(liteTopicMessageQueue);
+        }
+        return liteTopicMessageQueues;
+    }
+
     /**
      * 获取消费者
      * 
      * @return
      * @throws MQClientException
      */
-    private MQPullConsumer getConsumer(Cluster mqCluster) throws MQClientException {
+    private MQPullConsumer getConsumer(Cluster mqCluster, MessageQueryCondition messageQueryCondition) throws MQClientException {
         // 解析ns
         List<String> nsList = mqAdminTemplate.execute(new DefaultCallback<List<String>>() {
             public Cluster mqCluster() {
@@ -645,6 +667,11 @@ public class MessageService {
             consumer.getDefaultMQPullConsumerImpl().getPullAPIWrapper().setConnectBrokerByUser(true);
             consumer.getDefaultMQPullConsumerImpl().getPullAPIWrapper().setDefaultBrokerId(MixAll.MASTER_ID + 1);
         }
+        if (messageQueryCondition.getLiteTopic() != null) {
+            // use parent topic to fill up broker addr table
+            consumer.getDefaultMQPullConsumerImpl().getRebalanceImpl().getmQClientFactory()
+                    .updateTopicRouteInfoFromNameServer(messageQueryCondition.getTopic());
+        }
         return consumer;
     }
 
@@ -659,7 +686,7 @@ public class MessageService {
                 if (function.apply(o1) - function.apply(o2) == 0) {
                     return 0;
                 }
-                return (function.apply(o1) > function.apply(o2)) ? -1 : 1;
+                return (function.apply(o1) > function.apply(o2)) ? 1 : -1;
             }
         });
     }
@@ -736,8 +763,7 @@ public class MessageService {
         mt.setConsumerGroup(consumer.getName());
         mt.setTrackType(TrackType.UNKNOWN);
         // 检查消费者是否在线
-        Result<ConsumerConnection> result = consumerService.examineConsumerConnectionInfo(consumer.getName(), cluster,
-                consumer.isProxyRemoting());
+        Result<ConsumerConnection> result = consumerService.examineConsumerConnectionInfo(cluster, consumer);
         ConsumerConnection cc = result.getResult();
         if (cc == null) {
             if (Status.NO_ONLINE.getKey() == result.getStatus()) {
@@ -883,8 +909,7 @@ public class MessageService {
         for (Connection conn : connSet) {
             // 抓取状态
             Result<Map<MessageQueue, Long>> mqOffsetMapResult = (Result<Map<MessageQueue, Long>>)
-                    consumerService.fetchConsumerStatus(cluster, messageParam.getTopic(), consumer.getName(), conn,
-                            consumer.isProxyRemoting());
+                    consumerService.fetchConsumerStatus(cluster, messageParam.getTopic(), consumer, conn);
             if (mqOffsetMapResult.isNotOK()) {
                 return mqOffsetMapResult;
             }
@@ -1039,17 +1064,16 @@ public class MessageService {
      * @param consumer
      * @return
      */
-    public Result<?> resendDirectly(Cluster cluster, String topic, String msgId, String consumer,
-                                    boolean isProxyRemoting) {
+    public Result<?> resendDirectly(Cluster cluster, String topic, String msgId, Consumer consumer) {
         // 获取consumer连接
-        Result<ConsumerConnection> consumerConnectionResult = consumerService.examineConsumerConnectionInfo(consumer,
-                cluster, isProxyRemoting);
+        Result<ConsumerConnection> consumerConnectionResult = consumerService.examineConsumerConnectionInfo(cluster, consumer);
         ConsumerConnection consumerConnection = consumerConnectionResult.getResult();
         if (consumerConnection == null) {
             return consumerConnectionResult;
         }
+        String consumerName = consumer.getName();
         Set<Connection> connectionSet = consumerConnection.getConnectionSet();
-        if (isProxyRemoting) {
+        if (consumer.isProxyRemoting()) {
             Result<MessageExt> messageExtResult = viewMessage(cluster, topic, msgId);
             MessageExt messageExt = messageExtResult.getResult();
             if (messageExt == null) {
@@ -1062,18 +1086,18 @@ public class MessageService {
                 return Result.getResult(Status.NO_RESULT);
             }
             messageExt.setBrokerName(properties.getProperty("brokerName"));
-            return resendDirectly(connectionSet, cluster, msgId, consumer, true, (admin, clientId) -> {
+            return resendDirectly(connectionSet, cluster, msgId, consumerName, true, (admin, clientId) -> {
                 try {
                     SohuMQAdmin sohuMQAdmin = (SohuMQAdmin) admin;
-                    return sohuMQAdmin.consumeMessageDirectlyOfProxy(topic, consumer, clientId, msgId, messageExt);
+                    return sohuMQAdmin.consumeMessageDirectlyOfProxy(topic, consumerName, clientId, msgId, messageExt);
                 } catch (Exception e) {
                     throw new RuntimeException(e);
                 }
             });
         }
-        return resendDirectly(connectionSet, cluster, msgId, consumer, false, (admin, clientId) -> {
+        return resendDirectly(connectionSet, cluster, msgId, consumerName, false, (admin, clientId) -> {
             try {
-                return admin.consumeMessageDirectly(consumer, clientId, topic, msgId);
+                return admin.consumeMessageDirectly(consumerName, clientId, topic, msgId);
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }

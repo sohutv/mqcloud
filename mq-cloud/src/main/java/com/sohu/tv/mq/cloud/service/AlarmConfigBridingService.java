@@ -15,7 +15,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 /**
- * 监控获取报警配置的service
+ * 监控获取预警配置的service
  * 
  * @author zhehongyuan
  * @date 2018年9月18日
@@ -27,7 +27,7 @@ public class AlarmConfigBridingService {
 
     private static final long ONE_HOUR = 1 * 60 * 60 * 1000;
     
-    // 用户报警配置
+    // 用户预警配置
     private ConcurrentMap<String/* consumer */, AlarmConfig> CONFIG_TABLE = new ConcurrentHashMap<String, AlarmConfig>();
 
     @Autowired
@@ -52,7 +52,7 @@ public class AlarmConfigBridingService {
 
         long defaultTime = getAlarmConfig(keys[2], ConsumerWarnEnum.WARN_UNIT_TIME);
         long defaultCount = getAlarmConfig(keys[2], ConsumerWarnEnum.WARN_UNIT_COUNT);
-        // 均为负数说明 不接受报警
+        // 均为负数说明 不接受预警
         if (defaultTime < 0 && defaultCount < 0){
             return false;
         }
@@ -139,7 +139,14 @@ public class AlarmConfigBridingService {
     }
 
     /**
-     * 获取自定义报警配置
+     * 获取消费死消息数量
+     */
+    public long getConsumerDeadCount(String consumer) {
+        return getAlarmConfig(consumer, ConsumerWarnEnum.CONSUMER_DEAD_COUNT);
+    }
+
+    /**
+     * 获取自定义预警配置
      * 
      * @param consumer
      * @return

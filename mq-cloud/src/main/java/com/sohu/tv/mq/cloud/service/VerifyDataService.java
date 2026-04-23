@@ -163,18 +163,9 @@ public class VerifyDataService {
      * @return
      */
     public Result<?> verifyDeleteRecordUserProducerIsExist(long pid) {
-        // 增加校验，判断要删除的关系是否存在，主要防止浏览器缓存传过来失效的参数
-        Result<UserProducer> currentUserProducer = userProducerService.findUserProducer(pid);
-        if (currentUserProducer.isNotOK()) {
-            if (currentUserProducer.getStatus() == Status.NO_RESULT.getKey()) {
-                return Result.getResult(Status.PARAM_ERROR);
-            }
-            return currentUserProducer;
-        }
         // 增加校验用户不可重复发送审核信息 ,过滤审核记录的审核结果，同意，拒绝，未处置
         Result<?> findUserProducerResult = findAuditRecordsForNotReview(TypeEnum.DELETE_USERPRODUCER, pid, null);
-        logger.info("verify delete userProducer is ok, uid:{}, producer:{}", currentUserProducer.getResult().getUid(),
-                currentUserProducer.getResult().getProducer());
+        logger.info("verify delete userProducer is ok, pid:{}", pid);
         return findUserProducerResult;
     }
 

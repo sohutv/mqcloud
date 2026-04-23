@@ -1,5 +1,11 @@
 package com.sohu.tv.mq.cloud.service;
 
+import com.sohu.tv.mq.cloud.Application;
+import com.sohu.tv.mq.cloud.bo.AuditTopic;
+import com.sohu.tv.mq.cloud.bo.Cluster;
+import com.sohu.tv.mq.cloud.mq.DefaultCallback;
+import com.sohu.tv.mq.cloud.mq.MQAdminTemplate;
+import org.apache.rocketmq.common.TopicConfig;
 import org.apache.rocketmq.remoting.protocol.route.TopicRouteData;
 import org.apache.rocketmq.tools.admin.DefaultMQAdminExt;
 import org.apache.rocketmq.tools.admin.MQAdminExt;
@@ -9,11 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
 
-import com.sohu.tv.mq.cloud.Application;
-import com.sohu.tv.mq.cloud.bo.AuditTopic;
-import com.sohu.tv.mq.cloud.bo.Cluster;
-import com.sohu.tv.mq.cloud.mq.DefaultCallback;
-import com.sohu.tv.mq.cloud.mq.MQAdminTemplate;
+import static org.apache.rocketmq.common.TopicAttributes.LMQ_EXPIRATION_ATTRIBUTE;
 
 
 @RunWith(SpringRunner.class)
@@ -65,15 +67,15 @@ public class TopicServiceTest {
 
     @Test
     public void testDelete() {
-        Cluster mqCluster = clusterService.getMQClusterById(2);
-        String topic = "starfans-news_message_online-topic";
+        Cluster mqCluster = clusterService.getMQClusterById(8);
+        String topic = "mqcloud-json-test-topic";
         topicService.deleteTopicOnCluster(mqCluster, topic);
     }
     
     @Test
     public void testCreate() {
-        Cluster mqCluster = clusterService.getMQClusterById(1);
-        String topic = "starfans-news_message_online-topic";
+        Cluster mqCluster = clusterService.getMQClusterById(8);
+        String topic = "mqcloud-json-test-topic";
         AuditTopic at = new AuditTopic();
         at.setName(topic);
         at.setQueueNum(8);
@@ -89,5 +91,13 @@ public class TopicServiceTest {
         at.setQueueNum(8);
         at.setOrdered(1);
         topicService.createAndUpdateTopicOnCluster(mqCluster, at);
+    }
+
+    @Test
+    public void updateLmqTopicExpiration() {
+        Cluster cluster = clusterService.getMQClusterById(8);
+        TopicConfig topicConfig = topicService.examineTopicConfig(cluster,"lmq-test-topic");
+        topicConfig.getAttributes().put("+"+LMQ_EXPIRATION_ATTRIBUTE.getName(), "5");
+        topicService.createAndUpdateTopicOnCluster(cluster, topicConfig);
     }
 }

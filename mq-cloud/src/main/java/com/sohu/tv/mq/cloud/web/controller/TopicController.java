@@ -8,6 +8,7 @@ import com.sohu.tv.mq.cloud.util.DateUtil;
 import com.sohu.tv.mq.cloud.util.FreemarkerUtil;
 import com.sohu.tv.mq.cloud.util.Result;
 import com.sohu.tv.mq.cloud.util.Status;
+import com.sohu.tv.mq.cloud.web.controller.param.PaginationParam;
 import com.sohu.tv.mq.cloud.web.controller.param.TopicParam;
 import com.sohu.tv.mq.cloud.web.controller.param.TopicWarnConfigParam;
 import com.sohu.tv.mq.cloud.web.vo.BrokersQueueOffsetVO;
@@ -16,6 +17,7 @@ import com.sohu.tv.mq.cloud.web.vo.BrokersQueueOffsetVO.QueueOffset;
 import com.sohu.tv.mq.cloud.web.vo.IpSearchResultVO;
 import com.sohu.tv.mq.cloud.web.vo.UserInfo;
 import com.sohu.tv.mq.util.CommonUtil;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.rocketmq.common.MQVersion;
 import org.apache.rocketmq.common.MixAll;
@@ -25,6 +27,7 @@ import org.apache.rocketmq.remoting.protocol.admin.TopicStatsTable;
 import org.apache.rocketmq.remoting.protocol.body.Connection;
 import org.apache.rocketmq.remoting.protocol.body.ConsumerConnection;
 import org.apache.rocketmq.remoting.protocol.body.ProducerConnection;
+import org.apache.rocketmq.remoting.protocol.body.TopicPageList;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -35,6 +38,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * topic接口
@@ -426,8 +430,7 @@ public class TopicController extends ViewController {
             if (consumerResult.isNotOK()) {
                 return view;
             }
-            Result<ConsumerConnection> result = consumerService.examineConsumerConnectionInfo(group, cluster,
-                    consumerResult.getResult().isProxyRemoting());
+            Result<ConsumerConnection> result = consumerService.examineConsumerConnectionInfo(cluster, consumerResult.getResult());
             clientType = ClientLanguage.CONSUMER_CLIENT_GROUP_TYPE;
             if (result.isOK()) {
                 connectionSet = result.getResult().getConnectionSet();
@@ -728,6 +731,45 @@ public class TopicController extends ViewController {
     @GetMapping("/warn/config/{id}")
     public Result<?> warnConfig(@PathVariable long id) throws Exception {
         return Result.getWebResult(topicWarnConfigService.queryById(id));
+    }
+
+    /**
+     * 获取topic的lmq
+     */
+    @RequestMapping("/lmq")
+    public String produceProgress(@RequestParam("tid") int tid, @Valid PaginationParam paginationParam, Map<String, Object> map) throws Exception {
+        String view = viewModule() + "/lmq";
+        setPagination(map, paginationParam);
+        setResult(map, Result.getOKResult());
+        Result<Topic> topicResult = topicService.queryTopic(tid);
+        if (topicResult.isNotOK()) {
+            setResult(map, topicResult);
+            return view;
+        }
+        Topic topic = topicResult.getResult();
+        if (!topic.isLiteParentTopic()) {
+            setResult(map, Result.getResult(Status.PARAM_ERROR));
+            return view;
+        }
+        Cluster cluster = clusterService.getMQClusterById(topic.getClusterId());
+        Result<TopicPageList> topicPageListResult = topicService.queryLmq(cluster, topic.getName(),
+                paginationParam.getCurrentPage(), paginationParam.getNumOfPage());
+        if (topicPageListResult.isNotOK()) {
+            setResult(map, topicPageListResult);
+            return view;
+        }
+        // 设置分页
+        TopicPageList topicPageList = topicPageListResult.getResult();
+        paginationParam.caculatePagination(topicPageList.getTotal());
+        if (CollectionUtils.isEmpty(topicPageList.getTopicList())) {
+            setResult(map, Result.getResult(Status.NO_RESULT));
+            return view;
+        }
+        List<String> topicList = topicPageList.getTopicList().stream()
+                .map(CommonUtil::stripLmqParentPrefix)
+                .collect(Collectors.toList());
+        setResult(map, topicList);
+        return view;
     }
 
     /**

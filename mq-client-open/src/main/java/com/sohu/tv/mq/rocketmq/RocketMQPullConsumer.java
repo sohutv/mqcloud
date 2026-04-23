@@ -38,7 +38,7 @@ import java.util.Set;
  */
 public class RocketMQPullConsumer extends AbstractConfig {
     // 消费者
-    private DefaultMQPullConsumer consumer;
+    protected DefaultMQPullConsumer consumer;
 
     // 每批消息消最大拉取量
     private int maxPullSize = 32;
@@ -51,7 +51,7 @@ public class RocketMQPullConsumer extends AbstractConfig {
 
     private NoneBlockingRateLimiter rateLimiter;
 
-    private MQClientInstance mqClientInstance;
+    protected MQClientInstance mqClientInstance;
 
     public RocketMQPullConsumer() {
     }
@@ -73,9 +73,7 @@ public class RocketMQPullConsumer extends AbstractConfig {
 
     public void start() {
         try {
-            Set<String> registerTopics = new HashSet<>();
-            registerTopics.add(topic);
-            consumer.setRegisterTopics(registerTopics);
+            registerTopics(topic);
             // 初始化配置
             initConfig(consumer);
             if (getClusterInfoDTO().isBroadcast()) {
@@ -84,28 +82,40 @@ public class RocketMQPullConsumer extends AbstractConfig {
             // 消费者启动
             consumer.start();
             setMQClientInstance();
-            logger.info("topic:{} group:{} start", topic, group);
+            // init after start
+            initAfterStart();
+            logger.info("topic:{} group:{} start", getTopic(), group);
         } catch (MQClientException e) {
             logger.error(e.getMessage(), e);
         }
+    }
+
+    public void registerTopics(String topic) {
+        Set<String> registerTopics = new HashSet<>();
+        registerTopics.add(topic);
+        consumer.setRegisterTopics(registerTopics);
+    }
+
+    /**
+     * 启动后，初始化某些逻辑
+     */
+    public void initAfterStart() throws MQClientException {
+
     }
 
     public PullResponse pull(MessageQueue mq, long offset) throws MQBrokerException, RemotingException, InterruptedException, MQClientException {
         return pull(mq, offset, null);
     }
 
+    public PullResponse pull(MessageQueue mq, long offset, String clientHost)
+            throws MQClientException, RemotingException, MQBrokerException, InterruptedException {
+        return pull(mq, offset, maxPullSize, clientHost);
+    }
+
     /**
      * 拉取消息
-     *
-     * @param mq
-     * @param offset
-     * @return PullResponse
-     * @throws MQClientException
-     * @throws RemotingException
-     * @throws MQBrokerException
-     * @throws InterruptedException
      */
-    public PullResponse pull(MessageQueue mq, long offset, String clientHost)
+    public PullResponse pull(MessageQueue mq, long offset, int maxNums, String clientHost)
             throws MQClientException, RemotingException, MQBrokerException, InterruptedException {
         if (isPause()) {
             return PullResponse.build(Status.PAUSED);
@@ -117,7 +127,7 @@ public class RocketMQPullConsumer extends AbstractConfig {
         ClientHostThreadLocal.set(clientHost);
         PullResult rullResult = null;
         try {
-            rullResult = consumer.pull(mq, "*", offset, maxPullSize);
+            rullResult = consumer.pull(mq, "*", offset, maxNums);
         } finally {
             if (clientHost != null) {
                 ClientHostThreadLocal.remove();
@@ -242,7 +252,7 @@ public class RocketMQPullConsumer extends AbstractConfig {
     public TopicStatsTable getTopicStatsTable(String brokerAddr) {
         try {
             SohuGetTopicStatsInfoRequestHeader requestHeader = new SohuGetTopicStatsInfoRequestHeader();
-            requestHeader.setTopic(topic);
+            requestHeader.setTopic(getTopic());
             requestHeader.setOnlyOffset(true);
             RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.GET_TOPIC_STATS_INFO, requestHeader);
             RemotingCommand response = mqClientInstance.getMQClientAPIImpl().getRemotingClient().invokeSync(
@@ -275,5 +285,13 @@ public class RocketMQPullConsumer extends AbstractConfig {
     @Override
     public ServiceState getServiceState() {
         return consumer.getDefaultMQPullConsumerImpl().getServiceState();
+    }
+
+    public Set<MessageQueue> fetchSubscribeMessageQueues() throws MQClientException {
+        return consumer.fetchSubscribeMessageQueues(getTopic());
+    }
+
+    public DefaultMQPullConsumerImpl getDefaultMQPullConsumerImpl() {
+        return consumer.getDefaultMQPullConsumerImpl();
     }
 }

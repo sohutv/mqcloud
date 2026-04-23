@@ -20,7 +20,7 @@ public class AutoSubscribeConsumerTask {
     @Autowired
     private ConsumerService consumerService;
 
-    @Scheduled(cron = "0 0 4 * * ?")
+    @Scheduled(cron = "0 0 5 * * ?")
     @SchedulerLock(name = "consumerDeleteTask", lockAtMostFor = 2 * 60 * 1000, lockAtLeastFor = 2 * 60 * 1000)
     public void consumerDeleteTask() {
         long start = System.currentTimeMillis();

@@ -117,6 +117,13 @@ public class AdminNameServerController extends AdminViewController {
         if (port == 0) {
             return Result.getResult(Status.PARAM_ERROR);
         }
+        Result<NameServer> nameServerResult = nameServerService.query(addr);
+        if (nameServerResult.isNotOK()) {
+            return Result.getWebResult(nameServerResult);
+        }
+        if (nameServerResult.getResult().isStatusOK()) {
+            return Result.getResult(Status.NS_SHOULD_OFFLINE);
+        }
         return mqDeployer.shutdown(ip, port);
     }
     
@@ -132,6 +139,13 @@ public class AdminNameServerController extends AdminViewController {
     public Result<?> delete(UserInfo ui, @RequestParam(name = "addr") String addr,
             @RequestParam(name = "cid") int cid) {
         logger.warn("offline:{}, user:{}", addr, ui);
+        Result<NameServer> nameServerResult = nameServerService.query(addr);
+        if (nameServerResult.isNotOK()) {
+            return Result.getWebResult(nameServerResult);
+        }
+        if (nameServerResult.getResult().isStatusOK()) {
+            return Result.getResult(Status.NS_SHOULD_OFFLINE);
+        }
         Result<?> result = nameServerService.delete(cid, addr);
         return Result.getWebResult(result);
     }

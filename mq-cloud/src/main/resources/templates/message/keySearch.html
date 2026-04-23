@@ -17,7 +17,10 @@
 					<td><input title="选择消息：${msg_index + 1}" data-tooltip="true" type="checkbox" data="${msg.offsetMsgId}" dataIdx="${msg_index + 1}"></td>
 				</tr>
 				<tr>
-					<td class="msgTd" msgLength="${msg.msgLength}" style="border-top-width: 0px;" colspan="7" data-tooltip="true" title="序列化方式:<#if msg.messageBodySerializer??>${msg.messageBodySerializer.getName()}(${msg.messageBodyTypeString!})<#else>${msg.messageBodyTypeString!}</#if>,大小:${msg.formatMsgLength}"><#if msg.decodedBody?length gt 1000><pre>${msg.decodedBody}</pre><#else>${msg.decodedBody}</#if></td>
+					<td class="msgTd" msgLength="${msg.msgLength}" style="border-top-width: 0px;" colspan="<#if msg.lmqOffsetInfo??>4<#else>7</#if>" data-tooltip="true" title="序列化方式:<#if msg.messageBodySerializer??>${msg.messageBodySerializer.getName()}(${msg.messageBodyTypeString!})<#else>${msg.messageBodyTypeString!}</#if>,大小:${msg.formatMsgLength}"><#if msg.decodedBody?length gt 1000><pre>${msg.decodedBody}</pre><#else>${msg.decodedBody}</#if></td>
+					<#if msg.lmqOffsetInfo??>
+						<td style="border-top-width:0px;" colspan=3>${msg.lmqOffsetInfo}</td>
+					</#if>
 				</tr>
 			</#list>
 		</tbody>

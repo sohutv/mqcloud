@@ -1,13 +1,16 @@
 package com.sohu.tv.mq.cloud.service;
 
 import com.sohu.tv.mq.cloud.bo.HttpConsumerConfig;
+import com.sohu.tv.mq.cloud.bo.PopAckInfo;
 import com.sohu.tv.mq.cloud.bo.QueueOffset;
 import com.sohu.tv.mq.cloud.common.util.CipherHelper;
 import com.sohu.tv.mq.cloud.util.MQCloudConfigHelper;
 import com.sohu.tv.mq.cloud.util.Result;
 import com.sohu.tv.mq.cloud.util.Status;
 import com.sohu.tv.mq.cloud.web.vo.UserInfo;
+import com.sohu.tv.mq.util.CommonUtil;
 import com.sohu.tv.mq.util.JSONUtil;
+import org.apache.rocketmq.common.MixAll;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,6 +21,7 @@ import org.springframework.web.client.RestTemplate;
 
 import java.net.URI;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -193,6 +197,97 @@ public class MQProxyService {
         } catch (Exception e) {
             logger.error("getConsumerConfig err, url:{}", url, e);
             return Result.getWebErrorResult(e);
+        }
+    }
+
+    /**
+     * 获取集群pop消费ack
+     */
+    public Result<List<PopAckInfo>> clusteringPopAckInfo(String consumer, int page, int pageSize) {
+        String server = mqProxyServerChooser.choose();
+        if (server == null) {
+            return Result.getResult(Status.NO_RESULT);
+        }
+        String uriTemplate = "http://" + server + ":8081/mq/clustering/pop/ack?consumer={consumer}&page={page}&pageSize={pageSize}";
+        URI url = restTemplate.getUriTemplateHandler().expand(uriTemplate, consumer, page, pageSize);
+        try {
+            ResponseEntity<Result<List<PopAckInfo>>> response = restTemplate.exchange(url, HttpMethod.GET, null,
+                    new ParameterizedTypeReference<Result<List<PopAckInfo>>>() {
+                    });
+            Result<List<PopAckInfo>> result = response.getBody();
+            if (logger.isDebugEnabled()) {
+                logger.debug("url:{} result:{}", url, result);
+            }
+            return result;
+        } catch (Exception e) {
+            logger.error("clusteringPopAckInfo err, url:{}", url, e);
+            return Result.getErrorResult(Status.WEB_ERROR, e);
+        }
+    }
+
+    /**
+     * 获取广播pop消费ack
+     */
+    public Result<List<PopAckInfo>> broadcastPopAckInfo(String consumer, String clientId, int page, int pageSize) {
+        String server = mqProxyServerChooser.choose();
+        if (server == null) {
+            return Result.getResult(Status.NO_RESULT);
+        }
+        String uriTemplate = "http://" + server + ":8081/mq/broadcast/pop/ack?consumer={consumer}&clientId={clientId}&page={page}&pageSize={pageSize}";
+        URI url = restTemplate.getUriTemplateHandler().expand(uriTemplate, consumer, clientId, page, pageSize);
+        try {
+            ResponseEntity<Result<List<PopAckInfo>>> response = restTemplate.exchange(url, HttpMethod.GET, null,
+                    new ParameterizedTypeReference<Result<List<PopAckInfo>>>() {
+                    });
+            Result<List<PopAckInfo>> result = response.getBody();
+            if (logger.isDebugEnabled()) {
+                logger.debug("url:{} result:{}", url, result);
+            }
+            return result;
+        } catch (Exception e) {
+            logger.error("broadcastPopAckInfo err, url:{}", url, e);
+            return Result.getErrorResult(Status.WEB_ERROR, e);
+        }
+    }
+
+
+    /**
+     * 提交pop ack
+     */
+    public Result<String> commitPopAck(String topic, String liteTopic, String consumer, String requestId, String clientId) {
+        String server = mqProxyServerChooser.choose();
+        if (server == null) {
+            return Result.getResult(Status.NO_RESULT);
+        }
+        if (MixAll.isLmq(consumer)) {
+            consumer = CommonUtil.stripLmqPrefix(consumer);
+        }
+        String uriTemplate = "http://" + server + ":8081/mq/ack?pop=true&topic={topic}&consumer={consumer}&requestId={requestId}";
+        Map<String, Object> paramMap = new HashMap<>();
+        paramMap.put("topic", topic);
+        paramMap.put("consumer", consumer);
+        paramMap.put("requestId", requestId);
+        if (clientId != null) {
+            uriTemplate += "&clientId={clientId}";
+            paramMap.put("clientId", clientId);
+        }
+        if (liteTopic != null) {
+            uriTemplate += "&liteTopic={liteTopic}";
+            paramMap.put("liteTopic", liteTopic);
+        }
+        URI url = restTemplate.getUriTemplateHandler().expand(uriTemplate, paramMap);
+        try {
+            ResponseEntity<Result<String>> response = restTemplate.exchange(url, HttpMethod.GET, null,
+                    new ParameterizedTypeReference<Result<String>>() {
+                    });
+            Result<String> result = response.getBody();
+            if (logger.isDebugEnabled()) {
+                logger.debug("url:{} result:{}", url, result);
+            }
+            return result;
+        } catch (Exception e) {
+            logger.error("commitPopAck err, url:{}", url, e);
+            return Result.getErrorResult(Status.WEB_ERROR, e);
         }
     }
 

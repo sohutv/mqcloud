@@ -11,6 +11,7 @@ import com.sohu.tv.mq.cloud.util.Result;
 import com.sohu.tv.mq.cloud.util.Status;
 import com.sohu.tv.mq.cloud.web.vo.UserInfo;
 import org.apache.commons.lang3.math.NumberUtils;
+import org.apache.rocketmq.remoting.protocol.header.controller.GetMetaDataResponseHeader;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -19,6 +20,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 
 /**
  * controller
@@ -53,9 +55,12 @@ public class AdminControllerController extends AdminViewController {
         if (result.isNotEmpty()) {
             // 检查状态
             result.getResult().forEach(controller -> {
-                Result<?> healthCheckResult = controllerService.healthCheck(mqCluster, controller.getAddr());
+                Result<GetMetaDataResponseHeader> healthCheckResult = controllerService.getControllerMetaData(mqCluster, controller.getAddr());
                 if (healthCheckResult.isOK()) {
                     controller.setCheckStatus(CheckStatusEnum.OK.getStatus());
+                    GetMetaDataResponseHeader getMetaDataResponseHeader = healthCheckResult.getResult();
+                    controller.setLeader(getMetaDataResponseHeader.isLeader());
+                    controller.setGroup(getMetaDataResponseHeader.getGroup());
                 } else {
                     controller.setCheckStatus(CheckStatusEnum.FAIL.getStatus());
                 }
@@ -66,6 +71,16 @@ public class AdminControllerController extends AdminViewController {
         setResult(map, "selectedCluster", mqCluster);
         setResult(map, "username", mqCloudConfigHelper.getServerUser());
         return view();
+    }
+
+    @ResponseBody
+    @RequestMapping("/config")
+    public Result<Properties> config(@RequestParam(name = "cid") Integer cid, @RequestParam(name = "addr") String addr, Map<String, Object> map) {
+        Cluster mqCluster = clusterService.getOrDefaultMQCluster(cid);
+        if (mqCluster == null) {
+            return Result.getResult(Status.PARAM_ERROR);
+        }
+        return controllerService.getControllerConfig(mqCluster, addr);
     }
 
     /**
